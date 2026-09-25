@@ -52,6 +52,15 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         internal static extern bool SetWindowText(IntPtr hWnd, string text);
 
+        [DllImport("user32.dll")]
+        internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr processId);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        internal static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, [MarshalAs(UnmanagedType.Bool)] bool fAttach);
+
+        [DllImport("kernel32.dll")]
+        internal static extern uint GetCurrentThreadId();
+
         [DllImport("kernel32.dll")]
         internal static extern uint SetErrorMode(uint mode);
 

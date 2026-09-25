@@ -151,7 +151,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     required), plus a settable `VsFilterKeys` extension point for the real
     `IVsFilterKeys2.TranslateAcceleratorEx` path once that can be checked against a live `devenv.exe`
     (not done in this task - see the property's own doc for why guessing that COM signature was not
-    worth the risk). `tabOut`: a new `WM_APP`-based message
+    worth the risk). Even with forwarding and focus both correct, Ctrl+S still would not fire: Win32
+    keyboard messages do not carry modifiers, which are separate PER-THREAD state (`GetKeyState`) this
+    thread's own copy of never saw change, because Ctrl physically went to the surface's own thread
+    while it had the focus. `HandleUnhandledKey` now briefly `AttachThreadInput`s to the surface's
+    thread around each forwarded key (sharing that state table for the call, then detaching - never
+    held for the surface's whole focused lifetime, so a hung surface cannot freeze this thread's own
+    input). `tabOut`: a new `WM_APP`-based message
     (`kubuno_controls::host::WM_KUBUNO_TAB_OUT`/`notify_tab_out`) moves the WPF focus out with
     `MoveFocus`/`TraversalRequest`; `TabIntoCore` (WPF Tab INTO the surface) matches the spike's own
     override, exactly (missing from an early version of this class - a real regression an interactive
