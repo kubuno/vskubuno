@@ -16,4 +16,9 @@
     <AssemblyName>Kubuno.VisualStudio.Core</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- StartupItemSelector needs Kubuno.Cargo's CargoPackage/CargoTarget metadata model - still no VS SDK dependency, so plain `dotnet test` keeps working. -->
+    <ProjectReference Include="..\Kubuno.Cargo\Kubuno.Cargo.csproj" />
+  </ItemGroup>
+
 </Project>

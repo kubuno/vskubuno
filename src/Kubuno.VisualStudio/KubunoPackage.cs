@@ -193,7 +193,7 @@ namespace Kubuno.VisualStudio
             }
 
             await TaskScheduler.Default;
-            await RustLaunchTargetsGenerator.GenerateAsync(manifestPath, cargoToml, CancellationToken.None);
+            await RustLaunchTargetsGenerator.GenerateAsync(manifestPath, cargoToml, CancellationToken.None, _workspaceService?.CurrentWorkspace);
         }
 
         protected override void Dispose(bool disposing)

@@ -40,6 +40,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `Kubuno.VisualStudio.Views`, `Kubuno.TestAdapter`, `Kubuno.Mcp`, `Kubuno.Mcp.Bridge` and their
     three test projects are now part of `Kubuno.VisualStudio.sln`, so CI's `dotnet test --no-build`
     loop (which just discovers every `tests\*.csproj`) covers them.
+- **Open Folder now pre-selects a sensible "Select Startup Item" automatically**, the same way
+  CMake Tools/Makefile Open Folder support does, so F5 works right after opening a Cargo folder
+  instead of showing "Sélectionner un élément de démarrage…" until the developer picks one by
+  hand. New `Kubuno.VisualStudio.Core.StartupItemSelector` (pure, unit-tested -
+  `tests/Kubuno.VisualStudio.Tests/StartupItemSelectorTests.cs`, 7 cases) mirrors `cargo run`'s own
+  fallback chain: the package's `default-run` (`Kubuno.Cargo.Metadata.CargoPackage.DefaultRun`, new
+  field), then the only `[[bin]]`, then a bin named after the package, then the first bin.
+  `Debugging/RustLaunchTargetsGenerator.GenerateAsync` calls it once per launch-target
+  regeneration and, only when nothing has been selected yet (never overrides an existing choice,
+  including one made in an earlier session), applies it two ways: the documented
+  `Microsoft.VisualStudio.Workspace.Debug.IProjectConfigurationService.SetCurrentProject` API
+  (found by reflecting over the real `Microsoft.VisualStudio.Workspace.dll` - no public sample of
+  it exists for a plain `launch.vs.json`-only setup, so this is best-effort and its exact
+  `ProjectTargetFileContext.FilePath` semantics for this scenario are unconfirmed), and a
+  read-modify-write of `.vs\ProjectSettings.json`'s `CurrentProjectSetting` key - the actual
+  on-disk state backing the toolbar dropdown for this scenario, confirmed live. Verified live:
+  opening `samples\hello-rust` for the first time writes `CurrentProjectSetting: "hello-rust"`
+  with no prior manual selection, and `Debug.Start` goes from "command unavailable" (no startup
+  item) to recognizing a target.
 - **`Kubuno.VisualStudio.Designer` (work packages DSG-4/DSG-5, still standalone - not yet wired into
   the VSIX, see its own `INTEGRATION.md`):**
   - **Toolbox + Properties/Events (DSG-4).** A new `Registry\*` namespace mirrors the
@@ -169,41 +188,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `MefComponent` VSIX asset" way) composes and runs correctly, ruling out a general cross-assembly
   MEF problem.
 
+### Fixed (continued)
+
+- **`Debugging/NatvisInstaller.cs` now installs into both `Documents\Visual Studio 2022\Visualizers`
+  and `Documents\Visual Studio 18\Visualizers`**, idempotently, instead of gambling on a single
+  folder name: which one VS 18 (2026) actually reads could not be settled live (`EnvDTE`
+  automation of `Debug.Start`/`Debug.StartDebugTarget` proved too unreliable in this repo's
+  scripted-testing setup - `E_FAIL`/hung `RPC_E_CALL_REJECTED` COM calls with no actionable detail
+  - to drive an actual F5 session and read the Locals window), and installing into an unused
+  folder is harmless while installing into only the wrong one silently breaks natvis for every
+  VS 18 user. Current Microsoft Learn documentation still gives the 2022 folder name as the
+  example even under the moniker range covering the latest/2026 version, so that one is kept
+  installed too rather than replaced.
+
 ### Known limitations
 
-- **`kubuno-views-ls.exe` was still not observed starting for a `.kbview` file** even after the
-  content-type fix above and after moving the `ILanguageClient` export itself into the assembly
-  proven to work for Rust (see "Fixed"). The "Kubuno" Output pane (now read reliably, via a
-  small out-of-process `EnvDTE`/`EnvDTE80` probe using `OutputWindowPane.TextDocument.
-  CreateEditPoint().GetText(...)` - the original attempt to read it through late-bound PowerShell
-  COM automation silently returned zero panes for *every* pane, including built-in ones, which was
-  itself the bug, not a real absence) never logs a single kubuno-views-ls line for `.kbview`,
-  while the identically-shaped Rust client logs reliably for `.rs` in the same session. This rules
-  out both the MEF-asset-registration hypothesis and the cross-assembly-export hypothesis, leaving
-  `ILanguageClient` activation itself (something specific to how
-  `Microsoft.VisualStudio.LanguageServer.Client` decides to call `ActivateAsync` for this content
-  type) as the remaining suspect - not root-caused in this session; needs an actual attached
-  managed debugger on `ActivateAsync`/the LSP client host, which a script cannot drive. At least
-  the XML-editor hijacking is fixed, so `.kbview` files are no longer actively mis-colorized/
-  mis-validated while this remains open.
-- **Native debugging via `EnvDTE` automation is unreliable enough that the natvis per-user-folder
-  question (see `Debugging/NatvisInstaller.cs`) could not be settled by script in this session.**
-  `Debugger.Breakpoints.Add` works; `ExecuteCommand("Debug.Start")` initially reports the command
-  unavailable (fixed by pre-seeding `.vs\ProjectSettings.json`'s `CurrentProjectSetting`, since
-  Open Folder's "Select Startup Item" state has no scriptable setter otherwise) but then fails
-  with a bare COM `E_FAIL` with no further detail in the Build/Debug Output panes;
-  `ExecuteCommand("Debug.StartDebugTarget")` hangs the calling thread and leaves the DTE server
-  rejecting further calls (`RPC_E_CALL_REJECTED`) until `devenv` is restarted, with no visible
-  modal dialog to dismiss. Two marker `.natvis` files (`alloc::string::String` overridden to a
-  distinct literal per folder) are staged in both
-  `%USERPROFILE%\Documents\Visual Studio 2022\Visualizers` and `...\Visual Studio 18\Visualizers`
-  for whoever next runs an actual F5 session against `samples\hello-rust` (breakpoint at
-  `src\main.rs` line 3, on the `greeting: String` local - see the "Changed" entry above) to read
-  off in the Locals window. Current Microsoft Learn documentation (`create-custom-views-of-native-
-  objects`, moniker range covering the latest/2026 version, dated 2026-08) still gives
-  `...\Visual Studio 2022\Visualizers` as the example path even for the current version, so
-  `NatvisInstaller.cs` was left unchanged pending that live confirmation rather than "fixed" on a
-  guess.
+- **`kubuno-views-ls.exe` still does not start for a `.kbview` file, now precisely diagnosed**:
+  `ILanguageClient.ActivateAsync` itself never runs - confirmed directly (not inferred) by adding
+  a log line as the very first statement of `KbviewLanguageClient.ActivateAsync` (the forwarding
+  wrapper - see "Fixed" above) and observing it never appear in the "Kubuno" Output pane (now read
+  reliably via a small out-of-process `EnvDTE`/`EnvDTE80` probe using `OutputWindowPane.
+  TextDocument.CreateEditPoint().GetText(...)` - late-bound PowerShell COM automation of the same
+  API silently returned zero panes for *everything*, including built-in ones, which was itself a
+  bug in the probe, not a real absence). Ruled out in this session, each independently confirmed:
+  MEF composition (no errors in `ComponentModelCache\*.err`, the DLL is scanned, the sibling
+  `KbviewOptionsPage` `DialogPage` from the same assembly instantiates fine via `DTE.Properties`);
+  content-type resolution (the Error List has zero XML-editor errors for the file, whether opened
+  from inside or outside the workspace); the `[ContentType]`/`[Export(typeof(ILanguageClient))]`
+  attribute shape (character-for-character identical to `RustLanguageClient`, which logs reliably
+  in the same session); `CodeRemoteContentDefinition.CodeRemoteContentTypeName`'s actual value
+  (reflected directly off the installed `Microsoft.VisualStudio.LanguageServer.Client.dll`:
+  `"code-languageserver-preview"` - not `"code-languageserver-base"`, but the *same* symbolic
+  reference `RustLanguageClient` uses, so this cannot explain an asymmetry between the two);
+  `devenv /log` `ActivityLog.xml` (no "Kubuno" or "LanguageClient" mentions at default verbosity -
+  a dead end, not a lead). What is left unruled-out: something specific to how
+  `Microsoft.VisualStudio.LanguageServer.Client`'s internal host selects which registered
+  `ILanguageClient` to activate for a given content type, which needs either Microsoft's own
+  source or an attached managed debugger on that host to actually resolve - not diagnosable
+  further from outside the process. The XML-editor hijacking fix (see "Fixed") stands regardless
+  of this remaining issue.
 
 - `Kubuno.VisualStudio.Designer` (work package DSG-3, standalone library, not yet wired into the
   VSIX - see its own `INTEGRATION.md`): C# skeleton of the `.kbview` designer editor. An

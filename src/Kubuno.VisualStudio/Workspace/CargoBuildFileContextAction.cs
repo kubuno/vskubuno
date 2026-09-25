@@ -128,7 +128,7 @@ namespace Kubuno.VisualStudio.Workspace
             {
                 // Targets (and their executable paths) may have changed - regenerate the
                 // Select Startup Item / F5 launch configurations (phase 1c).
-                await RustLaunchTargetsGenerator.GenerateAsync(packageDirectory, cargoTomlPath, cancellationToken).ConfigureAwait(false);
+                await RustLaunchTargetsGenerator.GenerateAsync(packageDirectory, cargoTomlPath, cancellationToken, _workspace).ConfigureAwait(false);
             }
 
             return new FileContextActionResult(success);

@@ -86,9 +86,20 @@ namespace Kubuno.VisualStudio.LanguageService
 
         public event AsyncEventHandler<EventArgs>? StopAsync;
 
-        public Task<Connection?> ActivateAsync(CancellationToken token) => _inner.ActivateAsync(token);
+        public Task<Connection?> ActivateAsync(CancellationToken token)
+        {
+            // Temporary, high-signal diagnostic (see this class's own remarks): confirms whether
+            // VS's LSP client host calls this at all, independent of anything kubuno-views-ls.exe
+            // itself does or fails to do.
+            Kubuno.VisualStudio.Logging.KubunoLog.WriteLine("Kubuno: KbviewLanguageClient.ActivateAsync was called.");
+            return _inner.ActivateAsync(token);
+        }
 
-        public Task OnLoadedAsync() => _inner.OnLoadedAsync();
+        public Task OnLoadedAsync()
+        {
+            Kubuno.VisualStudio.Logging.KubunoLog.WriteLine("Kubuno: KbviewLanguageClient.OnLoadedAsync was called.");
+            return _inner.OnLoadedAsync();
+        }
 
         public Task OnServerInitializedAsync() => _inner.OnServerInitializedAsync();
 

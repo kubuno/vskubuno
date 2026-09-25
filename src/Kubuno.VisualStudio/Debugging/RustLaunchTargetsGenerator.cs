@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Kubuno.Cargo.Metadata;
 using Kubuno.Cargo.Processes;
 using Kubuno.Launch;
+using Kubuno.VisualStudio.Core;
 using Kubuno.VisualStudio.Logging;
+using Microsoft.VisualStudio.Workspace;
 
 namespace Kubuno.VisualStudio.Debugging
 {
@@ -39,7 +42,14 @@ namespace Kubuno.VisualStudio.Debugging
     {
         /// <param name="workingDirectory">Directory to run `cargo metadata` from (the package directory is fine).</param>
         /// <param name="manifestPath">Path to the `Cargo.toml` that was built.</param>
-        public static async Task GenerateAsync(string workingDirectory, string manifestPath, CancellationToken cancellationToken)
+        /// <param name="workspace">
+        /// The current Open Folder workspace, if known - used only for the best-effort
+        /// <see cref="EnsureStartupItemSelectedAsync"/> step (real
+        /// <c>IProjectConfigurationService</c> attempt); everything else this method does is
+        /// workspace-independent. <see langword="null"/> is accepted (skips that step) so callers
+        /// that do not have one handy do not need to special-case this method.
+        /// </param>
+        public static async Task GenerateAsync(string workingDirectory, string manifestPath, CancellationToken cancellationToken, IWorkspace? workspace = null)
         {
             try
             {
@@ -117,12 +127,109 @@ namespace Kubuno.VisualStudio.Debugging
 
                 File.WriteAllText(launchVsJsonPath, LaunchVsJsonWriter.WriteFile(entries));
                 KubunoLog.WriteLine($"Kubuno: wrote {launchVsJsonPath} with {entries.Count} target(s): {string.Join(", ", entries.Select(e => e.Description.Name))}.");
+
+                // The package actually built/opened (not every package in a multi-package
+                // workspace) is the only one whose default-run/bin-name fallback chain applies -
+                // see StartupItemSelector's own remarks for why.
+                var primaryPackage = metadata.Packages.FirstOrDefault(package =>
+                    string.Equals(package.ManifestPath, manifestPath, StringComparison.OrdinalIgnoreCase));
+                if (primaryPackage is not null)
+                {
+                    var defaultBinTarget = StartupItemSelector.SelectDefaultBinTarget(primaryPackage);
+                    if (defaultBinTarget is not null)
+                    {
+                        await EnsureStartupItemSelectedAsync(workspace, vsDirectory, manifestPath, defaultBinTarget, cancellationToken).ConfigureAwait(false);
+                    }
+                }
             }
             catch (Exception exception)
             {
                 // Best-effort: a failure here must never fail the build/workspace-open path that
                 // triggered it (see call sites).
                 KubunoLog.WriteException("Kubuno: failed to generate launch.vs.json", exception);
+            }
+        }
+
+        /// <summary>
+        /// Pre-selects <paramref name="binTargetName"/> as Open Folder's "Select Startup Item" -
+        /// so F5 works immediately after opening the folder, the same way CMake Tools/Makefile
+        /// Open Folder support pre-select a target - but only when nothing has been selected yet
+        /// (never overrides a choice the developer already made, including one made in a previous
+        /// session and persisted).
+        ///
+        /// Two mechanisms, both best-effort and independent of each other:
+        /// 1. <c>Microsoft.VisualStudio.Workspace.Debug.IProjectConfigurationService.SetCurrentProject</c>
+        ///    (via <c>WorkspaceServiceHelper.GetProjectConfigurationServiceAsync</c>) - the
+        ///    documented, supported API for this (the same "current project/target" surface
+        ///    CMake Tools-style Open Folder providers use), found by reflecting over the real
+        ///    <c>Microsoft.VisualStudio.Workspace.dll</c> assembly (no public sample of it exists
+        ///    for a plain `"type": "default"` launch.vs.json-only setup - <c>ProjectTargetFileContext</c>'s
+        ///    exact expected <c>FilePath</c> semantics for that case are the one thing this
+        ///    couldn't be fully confirmed against a live instance in the time available, hence
+        ///    mechanism 2 below as a verified fallback, not a replacement).
+        /// 2. Writing <c>CurrentProjectSetting</c> into <c>.vs\ProjectSettings.json</c> directly -
+        ///    the actual on-disk state backing the toolbar dropdown for this exact scenario (a
+        ///    Cargo folder with no project system), confirmed live: editing this file by hand
+        ///    changes `Debug.Start`'s availability. Read-modify-write (not blind overwrite) so any
+        ///    other key VS itself might add to this file is preserved.
+        /// </summary>
+        private static async Task EnsureStartupItemSelectedAsync(
+            IWorkspace? workspace, string vsDirectory, string manifestPath, string binTargetName, CancellationToken cancellationToken)
+        {
+            var projectSettingsPath = Path.Combine(vsDirectory, "ProjectSettings.json");
+
+            JsonObject settings;
+            try
+            {
+                settings = File.Exists(projectSettingsPath)
+                    ? (JsonNode.Parse(File.ReadAllText(projectSettingsPath)) as JsonObject) ?? new JsonObject()
+                    : new JsonObject();
+            }
+            catch (Exception)
+            {
+                // A corrupt/unexpected ProjectSettings.json is VS's own state, not this
+                // extension's - start from empty rather than fail the whole launch-target
+                // regeneration over it.
+                settings = new JsonObject();
+            }
+
+            if (settings.TryGetPropertyValue("CurrentProjectSetting", out var existing) &&
+                existing is JsonValue existingValue &&
+                existingValue.TryGetValue(out string? existingName) &&
+                !string.IsNullOrEmpty(existingName))
+            {
+                // Already chosen (by the developer, or by a previous run of this same method) -
+                // never override it.
+                return;
+            }
+
+            if (workspace is not null)
+            {
+                try
+                {
+                    var configurationService = await WorkspaceServiceHelper.GetProjectConfigurationServiceAsync(workspace).ConfigureAwait(false);
+                    if (configurationService is not null)
+                    {
+                        await configurationService.SetCurrentProject(new ProjectTargetFileContext(manifestPath, binTargetName), binTargetName).ConfigureAwait(false);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // Best-effort: mechanism 2 below is the one actually verified to move the
+                    // toolbar's selection for this scenario.
+                    KubunoLog.WriteException("Kubuno: IProjectConfigurationService.SetCurrentProject failed (falling back to ProjectSettings.json)", exception);
+                }
+            }
+
+            try
+            {
+                settings["CurrentProjectSetting"] = binTargetName;
+                File.WriteAllText(projectSettingsPath, settings.ToJsonString());
+                KubunoLog.WriteLine($"Kubuno: pre-selected '{binTargetName}' as the Open Folder startup item ({projectSettingsPath}).");
+            }
+            catch (Exception exception)
+            {
+                KubunoLog.WriteException("Kubuno: failed to write ProjectSettings.json for startup item pre-selection", exception);
             }
         }
 

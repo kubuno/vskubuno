@@ -16,6 +16,16 @@ namespace Kubuno.Cargo.Metadata
         /// <summary>Absolute path to this package's Cargo.toml.</summary>
         public string ManifestPath { get; set; } = string.Empty;
 
+        /// <summary>
+        /// The package's <c>[package] default-run</c> - the <c>[[bin]]</c> name <c>cargo run</c>
+        /// uses when more than one exists and none is given with <c>--bin</c>. <see
+        /// langword="null"/> when unset (most packages), in which case cargo falls back to "the
+        /// only bin", then "the bin named after the package", then "the first bin" - see
+        /// <c>Kubuno.VisualStudio.Debugging.StartupItemSelector</c>, which mirrors that exact
+        /// fallback chain to auto-pick Open Folder's "Select Startup Item".
+        /// </summary>
+        public string? DefaultRun { get; set; }
+
         public IReadOnlyList<CargoTarget> Targets { get; set; } = Array.Empty<CargoTarget>();
 
         /// <summary>Feature name to the list of features/deps it enables.</summary>

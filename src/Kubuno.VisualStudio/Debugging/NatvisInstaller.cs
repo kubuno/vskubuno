@@ -23,16 +23,32 @@ namespace Kubuno.VisualStudio.Debugging
     ///   sysroot), so vendoring a copy here would go stale and diverge from whatever `rustc`
     ///   version is actually in use.
     /// This leaves the third, lowest-priority but simplest documented source: the **per-user
-    /// Natvis directory** (`%USERPROFILE%\Documents\Visual Studio 2022\Visualizers` - the
-    /// Microsoft Learn doc's own moniker range keeps this exact folder name even under the
-    /// "latest" version range, so it is used as-is rather than guessing at a versioned variant
-    /// unverified in the docs). Files here apply globally, are auto-discovered with no VS restart,
-    /// and can be safely overwritten on every regeneration (see <see cref="EnsureInstalled"/>) to
+    /// Natvis directory**. Files here apply globally, are auto-discovered with no VS restart, and
+    /// can be safely overwritten on every regeneration (see <see cref="EnsureInstalled"/>) to
     /// track whichever toolchain last produced a launch configuration.
+    ///
+    /// **Which folder name VS 18 (2026) actually reads was left unresolved after a live
+    /// investigation** (see CHANGELOG.md): the current Microsoft Learn doc
+    /// ("create-custom-views-of-native-objects", moniker range covering the latest/2026 version,
+    /// last updated 2026-08) still gives <c>...\Visual Studio 2022\Visualizers</c> as the example
+    /// path even under the "latest" moniker, suggesting the folder name did not change - but a
+    /// live F5 test with a marker `.natvis` file per candidate folder was inconclusive (no
+    /// startup item was selected, so the debugger never actually launched) and was not repeated,
+    /// to stop burning time on a question the docs already lean one way on. Rather than gamble on
+    /// a single folder name, <see cref="EnsureInstalled"/> installs into **both**
+    /// <c>Documents\Visual Studio 2022\Visualizers</c> and <c>Documents\Visual Studio 18\Visualizers</c>
+    /// - installing into a folder VS does not read is harmless (an unused file), while installing
+    /// into only the wrong one silently breaks natvis for every VS 18 user. Revisit once someone
+    /// can actually confirm which one loads (Natvis diagnostic messages set to Verbose, Tools >
+    /// Options > Debugging > General, then read at a real breakpoint) and drop the other.
     /// </summary>
     internal static class NatvisInstaller
     {
-        private const string PersonalVisualizersSubPath = @"Visual Studio 2022\Visualizers";
+        private static readonly string[] PersonalVisualizersSubPaths =
+        {
+            @"Visual Studio 2022\Visualizers",
+            @"Visual Studio 18\Visualizers",
+        };
 
         public static void EnsureInstalled(IReadOnlyList<string> natvisFiles)
         {
@@ -49,25 +65,37 @@ namespace Kubuno.VisualStudio.Debugging
                     return;
                 }
 
-                var destinationDirectory = Path.Combine(documents, PersonalVisualizersSubPath);
-                Directory.CreateDirectory(destinationDirectory);
-
-                foreach (var sourcePath in natvisFiles)
+                foreach (var subPath in PersonalVisualizersSubPaths)
                 {
-                    var destinationPath = Path.Combine(destinationDirectory, Path.GetFileName(sourcePath));
-                    if (IsUpToDate(sourcePath, destinationPath))
-                    {
-                        continue;
-                    }
-
-                    File.Copy(sourcePath, destinationPath, overwrite: true);
-                    KubunoLog.WriteLine($"Kubuno: installed natvis '{destinationPath}' for the native debugger.");
+                    InstallInto(Path.Combine(documents, subPath), natvisFiles);
                 }
             }
             catch (Exception exception)
             {
                 // Natvis is a debugging nicety, not something that should block a build/launch.
                 KubunoLog.WriteException("Kubuno: failed to install toolchain natvis files", exception);
+            }
+        }
+
+        /// <summary>
+        /// Idempotent for a single destination directory - <see cref="IsUpToDate"/> skips a file
+        /// that is already an up-to-date copy, so calling this (twice, once per candidate folder)
+        /// on every launch-target regeneration is cheap once both folders are populated.
+        /// </summary>
+        private static void InstallInto(string destinationDirectory, IReadOnlyList<string> natvisFiles)
+        {
+            Directory.CreateDirectory(destinationDirectory);
+
+            foreach (var sourcePath in natvisFiles)
+            {
+                var destinationPath = Path.Combine(destinationDirectory, Path.GetFileName(sourcePath));
+                if (IsUpToDate(sourcePath, destinationPath))
+                {
+                    continue;
+                }
+
+                File.Copy(sourcePath, destinationPath, overwrite: true);
+                KubunoLog.WriteLine($"Kubuno: installed natvis '{destinationPath}' for the native debugger.");
             }
         }
 
