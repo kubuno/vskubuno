@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using Kubuno.VisualStudio.Designer.DesignSurface;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TextManager.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
@@ -22,6 +23,10 @@ namespace Kubuno.VisualStudio.Designer.UI
         private readonly DesignerSplitViewModel _viewModel = new();
         private readonly CodeWindowHost _codeWindowHost;
         private readonly IDesignSurfaceHost _designSurfaceHost;
+        // INTEGRATION.md §6/§8: EditRequested → kubuno/applyEdit → Editing/, and buffer changes →
+        // debounced setText. See DesignSurfaceEditingCoordinator's own doc for why this wiring lives
+        // there instead of inline here.
+        private readonly DesignSurfaceEditingCoordinator? _editingCoordinator;
         private readonly ColumnDefinition _designColumn;
         private readonly ColumnDefinition _splitterColumn;
         private readonly ColumnDefinition _xmlColumn;
@@ -31,14 +36,27 @@ namespace Kubuno.VisualStudio.Designer.UI
         private readonly ToggleButton _splitTab;
         private bool _disposed;
 
+        // VSTHRD010 cannot be satisfied with a preceding ThrowIfNotOnUIThread() call for a constructor
+        // that chains via ": this(...)" (there is no place to put a statement before a constructor
+        // initializer) - suppressed for this one delegating call, exactly like KubunoPackage.Dispose's
+        // own precedent (a ThreadHelper.CheckAccess() guard the analyzer cannot see through either).
+        // The real guarantee: the shell always constructs this on the main thread, via
+        // KbviewEditorFactory.CreateEditorInstance, which already asserts ThrowIfNotOnUIThread() before
+        // ever reaching here (see that method's own doc comment).
+#pragma warning disable VSTHRD010
         public DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider)
             : this(textBuffer, oleServiceProvider, DesignSurfaceHostFactoryHost.Current)
         {
         }
+#pragma warning restore VSTHRD010
 
         /// <summary>Overload used by tests to inject a fake <see cref="IDesignSurfaceHostFactory"/> instead of the static gateway's current value.</summary>
         internal DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, IDesignSurfaceHostFactory designSurfaceHostFactory)
         {
+            // See the public constructor's own comment above for why this is asserted rather than
+            // proven to the analyzer across the ": this(...)" chain.
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             if (textBuffer is null)
             {
                 throw new ArgumentNullException(nameof(textBuffer));
@@ -112,6 +130,8 @@ namespace Kubuno.VisualStudio.Designer.UI
             {
                 // Best-effort: an empty/uninitialized buffer should not prevent the pane from opening.
             }
+
+            _editingCoordinator = DesignSurfaceEditingCoordinator.TryCreate(_designSurfaceHost, textBuffer, _codeWindowHost, oleServiceProvider);
         }
 
         /// <summary>Current orientation - exposed for DSG-8's selection sync and for tests, not just the tab strip's own click handlers.</summary>
@@ -163,6 +183,7 @@ namespace Kubuno.VisualStudio.Designer.UI
             }
 
             _disposed = true;
+            _editingCoordinator?.Dispose();
             _designSurfaceHost.Dispose();
             _codeWindowHost.Dispose();
         }

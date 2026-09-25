@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Kubuno.VisualStudio.Views.Logging;
 
@@ -202,11 +203,23 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// </summary>
     public static class DesignSurfaceProtocol
     {
-        public static string EncodeSetText(string text) => JsonSerializer.Serialize(new { type = "setText", text });
+        /// <summary>
+        /// <see cref="System.Text.Json.JsonSerializer"/>'s default encoder HTML-escapes `&lt;`/`&gt;`/`&amp;`
+        /// (and a few other code points) for browser-embedding safety - `serde_json` on the Rust side
+        /// (`kubuno_views::protocol`) does not escape any of these, so a line like `setText` for a
+        /// `.kbview` document (all angle brackets) would otherwise come out byte-for-byte different from
+        /// what `kubuno_views::protocol`'s own round-trip tests assert (`vskubuno/docs/DESIGNER.md`'s
+        /// "DSG-6 protocol" §9, "unit-tests every wire shape byte-for-byte"). `UnsafeRelaxedJsonEscaping`
+        /// is safe here: this JSON never renders in a browser, only parsed back by `view_embed`'s own
+        /// `serde_json` on the other end of a pipe.
+        /// </summary>
+        private static readonly JsonSerializerOptions WireOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-        public static string EncodeSetDesignMode(bool on) => JsonSerializer.Serialize(new { type = "setDesignMode", on });
+        public static string EncodeSetText(string text) => JsonSerializer.Serialize(new { type = "setText", text }, WireOptions);
 
-        public static string EncodeSelect(string? id) => JsonSerializer.Serialize(new { type = "select", id });
+        public static string EncodeSetDesignMode(bool on) => JsonSerializer.Serialize(new { type = "setDesignMode", on }, WireOptions);
+
+        public static string EncodeSelect(string? id) => JsonSerializer.Serialize(new { type = "select", id }, WireOptions);
 
         /// <summary>
         /// Parses a `selectionChanged` line: `elementIds` is an empty list for `id: null`/absent, a

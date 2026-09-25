@@ -81,6 +81,10 @@
     <Compile Include="Debugging\NatvisInstaller.cs" />
     <Compile Include="Debugging\NativeDebugLauncher.cs" />
     <Compile Include="Debugging\DebugRustTestAtCursorCommand.cs" />
+    <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: shows its two package-registered tool windows. -->
+    <Compile Include="Designer\DesignerToolWindowCommands.cs" />
+    <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §6: resolves kubuno-views-surface.exe (DSG-7's embedded design surface). -->
+    <Compile Include="Designer\KubunoViewsSurfaceLocator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="source.extension.cs">
       <AutoGen>True</AutoGen>
@@ -99,6 +103,18 @@
       <Generator>VsixManifestGenerator</Generator>
       <LastGenOutput>source.extension.cs</LastGenOutput>
     </None>
+    <!--
+      Kubuno.VisualStudio.Designer's own INTEGRATION.md §3: the display-name resource id
+      [ProvideEditorFactory(typeof(KbviewEditorFactory), 110)] needs, resolved through this package's
+      own managed resources (PackageRegistration(UseManagedResourcesOnly = true)). ManifestResourceName
+      is set explicitly to "VSPackage" (rather than the default namespace-qualified name) because that
+      is the exact base name Microsoft.VisualStudio.Shell.Package's own resource lookup expects - the
+      standard VSSDK project template convention for this file.
+    -->
+    <EmbeddedResource Include="Resources\VSPackage.resx">
+      <MergeWithCTO>true</MergeWithCTO>
+      <ManifestResourceName>VSPackage</ManifestResourceName>
+    </EmbeddedResource>
     <Content Include="languages.pkgdef">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -191,7 +207,69 @@
       self-contained `dotnet publish` output instead.
     -->
     <KubunoMcpOutputDir Condition="'$(KubunoMcpOutputDir)' == ''">$(MSBuildThisFileDirectory)..\Kubuno.Mcp\bin\$(Configuration)\net8.0\</KubunoMcpOutputDir>
+    <!--
+      kubuno-views-surface.exe (Kubuno.VisualStudio.Designer's own INTEGRATION.md §6, DSG-7's embedded
+      design surface): built out-of-band from the desktop repo, same workspace as kubuno-views-ls but a
+      SEPARATE CARGO_TARGET_DIR (this crate is still examples-only, see kubuno-views/examples/view_embed.rs -
+      built on its own rather than sharing desktop-target's in-flight build):
+        cd Z:\projects\kubuno\desktop\windows
+        $env:CARGO_TARGET_DIR = "C:\kubuno-build\agent-dsgint"
+        cargo build -r -p kubuno-views -j 1 (plus the cargo "example" flag, spelled with two dashes,
+        naming view_embed - omitted above only because a doubled dash is not valid inside an XML
+        comment; see src/Kubuno.VisualStudio.Designer/INTEGRATION.md §6 for the literal command)
+      Shipped under its OWN tools\surface\ subfolder (see the Content items below), never merged with
+      kubuno-views-ls.exe's own tools\kubuno_ui.dll/std-*.dll: a Rust dylib has no stable ABI, and this
+      exe comes from a DIFFERENT CARGO_TARGET_DIR, so it needs its OWN matching kubuno_ui.dll copied
+      alongside it, not kubuno-views-ls's.
+    -->
+    <KubunoViewsSurfaceExePath Condition="'$(KubunoViewsSurfaceExePath)' == ''">C:\kubuno-build\agent-dsgint\release\examples\view_embed.exe</KubunoViewsSurfaceExePath>
+    <!--
+      An example binary lands in <profile>\examples\ but Cargo still uplifts the workspace's own
+      dylib (kubuno_ui.dll) one level up, at the profile root <profile>\ - the same layout
+      kubuno-views-ls.exe's own KubunoViewsLsDir relies on for a non-example binary, just one
+      directory higher here.
+    -->
+    <!--
+      Independently settable rather than derived from KubunoViewsSurfaceExePath (matching
+      KubunoRustStdDir's own precedent above): an example binary lands in <profile>\examples\, but
+      Cargo still uplifts the workspace's own dylib (kubuno_ui.dll) one level up, at the profile root
+      <profile>\ - override together if KubunoViewsSurfaceExePath is overridden to a differently
+      shaped CARGO_TARGET_DIR.
+    -->
+    <KubunoViewsSurfaceProfileDir Condition="'$(KubunoViewsSurfaceProfileDir)' == ''">C:\kubuno-build\agent-dsgint\release\</KubunoViewsSurfaceProfileDir>
   </PropertyGroup>
+
+  <Target Name="KubunoCheckSurfaceExe" BeforeTargets="Build">
+    <Error Condition="!Exists('$(KubunoViewsSurfaceExePath)')"
+           Text="kubuno-views-surface.exe (view_embed.exe) not found at '$(KubunoViewsSurfaceExePath)'. Build it: cd Z:\projects\kubuno\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-views -j 1 -- or pass /p:KubunoViewsSurfaceExePath=&lt;path&gt;." />
+    <Error Condition="!Exists('$(KubunoViewsSurfaceProfileDir)kubuno_ui.dll')"
+           Text="kubuno_ui.dll not found at '$(KubunoViewsSurfaceProfileDir)' (kubuno-views-surface.exe's own profile root). It must ship with the kubuno_ui.dll of the SAME cargo build (own CARGO_TARGET_DIR, do not reuse kubuno-views-ls's copy)." />
+  </Target>
+
+  <ItemGroup>
+    <!--
+      Link's directory (tools\surface\) is honored by VSIX packaging but its filename is NOT -
+      verified live by inspecting the built .vsix's zip contents, the exe ships under its own source
+      name regardless (see KubunoViewsSurfaceLocator.cs's own comment on this) - so this is left as
+      view_embed.exe rather than renamed, matching what actually ships.
+    -->
+    <Content Include="$(KubunoViewsSurfaceExePath)">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\surface\view_embed.exe</Link>
+    </Content>
+    <Content Include="$(KubunoViewsSurfaceProfileDir)kubuno_ui.dll" Condition="Exists('$(KubunoViewsSurfaceProfileDir)kubuno_ui.dll')">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\surface\kubuno_ui.dll</Link>
+    </Content>
+    <KubunoViewsSurfaceStdDll Include="$(KubunoRustStdDir)std-*.dll" />
+    <Content Include="@(KubunoViewsSurfaceStdDll)">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\surface\%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
 
   <Target Name="KubunoCheckToolExes" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoViewsLsExePath)')"
@@ -392,6 +470,13 @@
     <ProjectReference Include="..\Kubuno.VisualStudio.Views\Kubuno.VisualStudio.Views.csproj">
       <Project>{324405db-70e8-4fbb-b583-301706fc6c15}</Project>
       <Name>Kubuno.VisualStudio.Views</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md #1: the .kbview split Design|XML editor, its Toolbox/Properties tool windows and the DSG-7 design surface host. -->
+    <ProjectReference Include="..\Kubuno.VisualStudio.Designer\Kubuno.VisualStudio.Designer.csproj">
+      <Project>{1d196ab0-036f-4db8-bcdb-1ad232d81966}</Project>
+      <Name>Kubuno.VisualStudio.Designer</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>

@@ -39,8 +39,16 @@ namespace Kubuno.VisualStudio.Designer.Properties
 
         public string Name => Event.Name;
 
-        /// <summary>The XML attribute this event maps to, e.g. <c>Click</c> -&gt; <c>OnClick</c> (docs/DESIGNER.md §1).</summary>
-        public string AttributeName => "On" + Event.Name;
+        /// <summary>
+        /// The XML attribute this event maps to, e.g. <c>OnClick</c>. <see cref="Registry.EventMeta.Name"/>
+        /// is ALREADY the full attribute name (see that type's own doc comment - verified against the
+        /// real DSG-1 registry export/fixture), so this is a direct passthrough, not a
+        /// <c>"On" + Event.Name</c> computation (which previously produced <c>"OnOnClick"</c> against
+        /// real data - a bug caught by DSG-8's own selection-sync work; see
+        /// <c>Selection.SelectionSyncService.ApplyPropertiesPanel</c>'s doc comment for where it was
+        /// first flagged).
+        /// </summary>
+        public string AttributeName => Event.Name;
 
         /// <summary>The current <c>fn</c> name from the <c>On*="..."</c> attribute, or <see langword="null"/> if unset.</summary>
         public string? HandlerName

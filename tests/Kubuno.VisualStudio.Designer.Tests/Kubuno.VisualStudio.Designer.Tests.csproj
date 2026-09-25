@@ -9,6 +9,14 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <!--
+      See .runsettings (same folder) and its own comment: works around .NET Framework's
+      loader-from-remote-source restriction on a mapped network drive (e.g. Z:), which otherwise
+      fails MSTest.TestAdapter.dll's own load for every test in this net48 project. Picked up by
+      both `dotnet test` and VS's Test Explorer automatically - no shell environment variable to
+      remember.
+    -->
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory).runsettings</RunSettingsFilePath>
+    <!--
       Selection/Fakes/FakeDesignSurfaceHost.cs (IDesignSurfaceHost's own Content : FrameworkElement)
       needs WPF - a plain net48 SDK-style project does not reference PresentationCore/
       PresentationFramework/WindowsBase by default the way the old-style VSIX/Designer library

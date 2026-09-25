@@ -41,6 +41,28 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// caret; unused by <see cref="PlaceholderDesignSurfaceHost"/>, which never raises it.
         /// </summary>
         event EventHandler<DesignSurfaceSelectionChangedEventArgs>? SelectionChanged;
+
+        /// <summary>
+        /// Turns design mode on/off (docs/DESIGNER.md's DSG-6 protocol, <c>kubuno/setDesignMode</c>):
+        /// while on, clicks select elements instead of interacting with the compiled widgets, and
+        /// Delete/arrow gestures raise <see cref="EditRequested"/>. A no-op on
+        /// <see cref="PlaceholderDesignSurfaceHost"/>. Added to the interface (rather than left a
+        /// <see cref="RustDesignSurfaceHost"/>-only member, which already had a matching method before
+        /// this) so the VSIX integration step (INTEGRATION.md &sect;6/&sect;8) can turn it on through
+        /// <see cref="UI.DesignerSplitView"/>'s own <see cref="IDesignSurfaceHost"/>-typed field, with no
+        /// downcast.
+        /// </summary>
+        void SetDesignMode(bool on);
+
+        /// <summary>
+        /// Raised when a Delete or a nudging arrow on the design surface (while design mode is on)
+        /// produces an edit request (docs/DESIGNER.md's DSG-6 protocol, <c>editRequest</c>) - forward
+        /// <see cref="DesignSurfaceEditRequestedEventArgs.Op"/> to <c>kubuno-views-ls</c>'s
+        /// <c>kubuno/applyEdit</c> and apply the result through <c>Editing/</c> (see
+        /// <see cref="DesignSurfaceEditingCoordinator"/>, the VSIX integration step's own caller of this
+        /// event - INTEGRATION.md &sect;8). Never raised by <see cref="PlaceholderDesignSurfaceHost"/>.
+        /// </summary>
+        event EventHandler<DesignSurfaceEditRequestedEventArgs>? EditRequested;
     }
 
     /// <summary>

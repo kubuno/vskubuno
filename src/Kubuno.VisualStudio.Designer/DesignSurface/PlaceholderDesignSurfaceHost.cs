@@ -50,7 +50,13 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
 #pragma warning disable CS0067 // never raised by the placeholder; part of the interface contract for real hosts.
         public event EventHandler<DesignSurfaceSelectionChangedEventArgs>? SelectionChanged;
+        public event EventHandler<DesignSurfaceEditRequestedEventArgs>? EditRequested;
 #pragma warning restore CS0067
+
+        public void SetDesignMode(bool on)
+        {
+            // Intentionally a no-op: there is nothing to select or edit on a placeholder panel.
+        }
 
         public void Dispose()
         {

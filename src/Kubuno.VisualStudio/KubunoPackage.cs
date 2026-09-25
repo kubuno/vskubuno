@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
 using Kubuno.VisualStudio.Debugging;
+using Kubuno.VisualStudio.DesignerIntegration;
 using Kubuno.VisualStudio.Infrastructure;
 using Kubuno.VisualStudio.Logging;
 using Kubuno.VisualStudio.Options;
@@ -41,6 +42,21 @@ namespace Kubuno.VisualStudio
     [ProvideProfile(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, isToolsOptionPage: true)]
     [ProvideOptionPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true)]
     [ProvideProfile(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
+    // Kubuno.VisualStudio.Designer's own INTEGRATION.md §3: the split Design|XML editor for .kbview
+    // files, registered alongside - never instead of - languages.pkgdef's plain core text editor
+    // (that pkgdef entry's own comment: "the HIGHEST value wins the double-click default", 0x64 there
+    // vs. DesignerConstants.EditorExtensionPriority's 0x60 here, so the plain editor stays default).
+    [ProvideEditorFactory(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), 110)]
+    [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
+    [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a704-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
+    [ProvideEditorExtension(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), Kubuno.VisualStudio.Views.KbviewConstants.FileExtension, Kubuno.VisualStudio.Designer.DesignerConstants.EditorExtensionPriority)]
+    [ProvideOptionPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true)]
+    [ProvideProfile(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
+    // Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: the Toolbox/Properties tool windows, shown
+    // via "View > Other Windows > Kubuno Toolbox/Properties" (KubunoCommands.vsct).
+    [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.ToolboxToolWindow))]
+    [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.PropertiesToolWindow))]
+    [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow))]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(PackageGuidStrings.Package)]
     public sealed class KubunoPackage : AsyncPackage
@@ -82,6 +98,31 @@ namespace Kubuno.VisualStudio
             Kubuno.VisualStudio.Views.Options.KubunoViewsOptionsHost.Current =
                 (Kubuno.VisualStudio.Views.Options.KbviewOptionsPage)GetDialogPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage));
 
+            // Kubuno.VisualStudio.Designer's own INTEGRATION.md §3/§4/§6: the split Design|XML editor
+            // factory (a classic, package-registered IVsEditorFactory - [ProvideEditorFactory] only
+            // emits pkgdef metadata, VS still needs a live instance handed to it via RegisterEditorFactory),
+            // its options page's static gateway, and the DSG-7 design surface factory. Must happen
+            // before any .kbview document can open through "Open With... > Kubuno View Designer", so
+            // this runs unconditionally here, mirroring the Views language client's own logging/options
+            // wiring immediately above.
+            RegisterEditorFactory(new Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory());
+            Kubuno.VisualStudio.Designer.Options.DesignerOptionsHost.Current =
+                (Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage)GetDialogPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage));
+
+            var extensionInstallDirectory = GetExtensionInstallDirectory();
+            var surfaceExePath = KubunoViewsSurfaceLocator.Locate(extensionInstallDirectory, devBuildDirectory: @"C:\kubuno-build\agent-dsgint\release\examples");
+            if (surfaceExePath is not null)
+            {
+                var oleServiceProvider = (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)this;
+                Kubuno.VisualStudio.Designer.DesignSurface.DesignSurfaceHostFactoryHost.Current =
+                    new Kubuno.VisualStudio.Designer.DesignSurface.RustDesignSurfaceHostFactory(surfaceExePath, oleServiceProvider: oleServiceProvider);
+                KubunoLog.WriteLine($"Kubuno: design surface exe resolved at '{surfaceExePath}'.");
+            }
+            else
+            {
+                KubunoLog.WriteLine("Kubuno: kubuno-views-surface.exe not found - the Kubuno View Designer's Design pane will show its placeholder. Build it: cd Z:\\projects\\kubuno\\desktop\\windows ; $env:CARGO_TARGET_DIR='C:\\kubuno-build\\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-views -j 1");
+            }
+
             // Start the MCP bridge (docs/MCP.md "Integration"): async, off the UI thread's critical
             // path, and never allowed to fail package load - a developer not using Claude Code, or
             // a bridge that fails to bind its pipe/write its discovery file, must not affect Rust/
@@ -120,11 +161,32 @@ namespace Kubuno.VisualStudio
             if (await GetServiceAsync(typeof(IMenuCommandService)) is OleMenuCommandService commandService)
             {
                 DebugRustTestAtCursorCommand.Initialize(this, commandService);
+                DesignerToolWindowCommands.Initialize(this, commandService);
             }
         }
 
         private async Task OnActiveWorkspaceChangedAsync(object? sender, EventArgs e) =>
             await RegenerateLaunchTargetsForCurrentWorkspaceAsync();
+
+        /// <summary>
+        /// The directory this VSIX's own assembly is loaded from - the extension's install directory
+        /// once shipped, where the <c>tools\surface\kubuno-views-surface.exe</c> candidate is rooted
+        /// (see <see cref="KubunoViewsSurfaceLocator"/>). Same shape as
+        /// <c>Kubuno.VisualStudio.Views.LanguageService.KubunoViewsLanguageClient</c>'s own private
+        /// helper of the same name (that library cannot share this one - see its own csproj comment).
+        /// </summary>
+        private static string? GetExtensionInstallDirectory()
+        {
+            try
+            {
+                var location = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                return string.IsNullOrEmpty(location) ? null : Path.GetDirectoryName(location);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
 
         /// <summary>
         /// Starts the MCP bridge (see docs/MCP.md "Integration"): the net48 leg of

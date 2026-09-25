@@ -53,6 +53,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     a bare `"Click"` `"On" + Name` would need) - verified directly against
     `tests/Kubuno.VisualStudio.Designer.Tests/Fixtures/registry.sample.json`.
 
+- **Wired `Kubuno.VisualStudio.Designer` into the VSIX**, following its own `INTEGRATION.md`:
+  - Added the project and its tests to `Kubuno.VisualStudio.sln`, with a `ProjectReference` from
+    `Kubuno.VisualStudio.csproj`.
+  - Registered `KbviewEditorFactory` as a classic, package-registered `IVsEditorFactory`
+    (`[ProvideEditorFactory]`/two `[ProvideEditorLogicalView]`/`[ProvideEditorExtension]` at
+    priority `0x60`, below `languages.pkgdef`'s `0x64` for the plain text editor, plus the
+    `RegisterEditorFactory` call `KubunoPackage.InitializeAsync` needs) and its Tools > Options
+    page (`KbviewDesignerOptionsPage`); `.kbview` still opens in the plain text editor by
+    double-click, with "Kubuno View Designer" available from "Open With…". Added the
+    `Resources\VSPackage.resx` this attribute's display-name resource id needs (this VSIX had none
+    before).
+  - Hosted the Toolbox/Properties panels as VS tool windows (`ToolboxToolWindow`/
+    `PropertiesToolWindow`, `[ProvideToolWindow]`, shown from new "View > Other Windows > Kubuno
+    Toolbox/Properties" commands in `KubunoCommands.vsct`); the Toolbox refreshes itself from the
+    live `kubuno/registry` RPC (`JsonRpcRegistryClient`) once shown.
+  - Plugged `RustDesignSurfaceHost` into the Design pane through the `IDesignSurfaceHostFactory`
+    seam (`DesignSurfaceHostFactoryHost.Current`, resolved via a new `KubunoViewsSurfaceLocator`
+    pointing at `tools\surface\kubuno-views-surface.exe`, shipped with its own `kubuno_ui.dll` in
+    that subfolder since it is built from a separate `CARGO_TARGET_DIR` than `kubuno-views-ls.exe`
+    and a Rust dylib has no stable ABI to share across builds).
+  - Added `IDesignSurfaceHost.SetDesignMode`/`EditRequested` (implemented by `RustDesignSurfaceHost`
+    already, and as no-ops by `PlaceholderDesignSurfaceHost`) and a new
+    `DesignSurfaceEditingCoordinator` (`Kubuno.VisualStudio.Designer`) that turns design mode on,
+    forwards a Delete/nudge `EditRequested` to `kubuno-views-ls`'s `kubuno/applyEdit` and applies
+    the result through `BufferEditApplier` (one `ITextEdit`, one undo unit), and pushes the XML
+    pane's own buffer text back to the surface (`SetDocumentText`) on every `ITextBuffer.Changed`,
+    debounced 200 ms. Wired into `DesignerSplitView`'s constructor/`Dispose`.
+
+### Fixed
+
+- **`dotnet test` on `tests\Kubuno.VisualStudio.Designer.Tests`** now works unconditionally, without
+  a shell environment variable to remember: a new `.runsettings` (referenced from the csproj via
+  `RunSettingsFilePath`) sets `COMPlus_LoadFromRemoteSources=1` for the test host process, working
+  around .NET Framework's loader-from-remote-source restriction on this repository's mapped network
+  drive (`Z:`) that otherwise fails `MSTest.TestAdapter.dll`'s own load for every test in this net48
+  project (see `README.md`'s "Tests" section for the same issue, previously worked around by hand).
+- **`DesignSurfaceProtocol.EncodeSetText`/`EncodeSetDesignMode`/`EncodeSelect`** now match
+  `kubuno-views/src/protocol.rs`'s wire shape byte-for-byte for `.kbview` content (all angle
+  brackets): `System.Text.Json`'s default encoder HTML-escapes `<`/`>`/`&` for browser-embedding
+  safety, which `serde_json` on the Rust side does not do, so a `setText` line for real `.kbview`
+  text previously came out as `<...>` instead of `<...>`. Fixed by serializing with
+  `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` (safe here: this JSON is only ever parsed back by
+  `kubuno-views-surface.exe`'s own `serde_json` over a pipe, never rendered in a browser).
+
 - **Design surface DSG-6 protocol** (`Kubuno.VisualStudio.Designer`): `RustDesignSurfaceHost` now
   speaks the DSG-6 line-delimited JSON protocol (`vskubuno/docs/DESIGNER.md` §9) with the design
   surface exe over its own stdin/stdout (`ProcessStartInfo.RedirectStandardInput`/
