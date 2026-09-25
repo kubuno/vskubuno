@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Kubuno.VisualStudio.Designer.Tests</RootNamespace>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.4.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      References the whole library, mirroring tests\Kubuno.VisualStudio.Views.Tests's own csproj
+      comment: Kubuno.VisualStudio.Designer has no Microsoft.VsSDK.targets import, so it builds and
+      its VS-SDK-free classes (UI\DesignerSplitViewModel.cs - the only class this test project
+      exercises) run fine under plain `dotnet build`/`dotnet test`. Everything else in this library
+      (the editor factory, DesignerWindowPane, CodeWindowHost) either needs a live IVsTextLines/
+      IVsCodeWindow COM object or a hosted WPF Dispatcher/visual tree it only gets inside a real
+      devenv.exe process - see this project's own tests, and INTEGRATION.md/docs/DESIGNER.md's DSG-3
+      row ("Manual, experimental instance - visual check"), for why those are not unit-tested here.
+    -->
+    <ProjectReference Include="..\..\src\Kubuno.VisualStudio.Designer\Kubuno.VisualStudio.Designer.csproj" />
+  </ItemGroup>
+
+</Project>

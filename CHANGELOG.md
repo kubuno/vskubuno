@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `Kubuno.VisualStudio.Designer` (work package DSG-3, standalone library, not yet wired into the
+  VSIX - see its own `INTEGRATION.md`): C# skeleton of the `.kbview` designer editor. An
+  `IVsEditorFactory` (`KbviewEditorFactory`) produces a split Design | XML `WindowPane`
+  (`DesignerWindowPane`/`DesignerSplitView`) where the XML half embeds a real `IVsCodeWindow` on the
+  same `IVsTextLines` buffer (`CodeWindowHost`), so LSP/colorization for `.kbview` files keep working
+  unchanged, and the Design half is a placeholder WPF panel (`PlaceholderDesignSurfaceHost`) behind a
+  swappable `IDesignSurfaceHost`/`IDesignSurfaceHostFactory` seam for DSG-7's real embedded render
+  surface. Includes a Design/XML/Split orientation tab strip and a "Use as default editor" Tools >
+  Options toggle, off by default (the plain XML/text editor stays the default editor for `.kbview`
+  until the designer is more than a placeholder).
 - Initial VSIX skeleton for "Kubuno for Visual Studio": classic VSSDK `AsyncPackage`, .NET
   Framework 4.8, targeting Visual Studio 17.x/18.x (Community/Professional/Enterprise, amd64;
   arm64 declared but unverified).
