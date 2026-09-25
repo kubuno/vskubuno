@@ -1,0 +1,78 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    net48, matching Kubuno.TestAdapter exactly (see its own csproj comment for why: this adapter
+    is loaded in-process by Visual Studio's .NET Framework 4.8 AppDomain). Run with `dotnet test`
+    from this directory; on Z: (a mapped/UNC-style drive) set
+    COMPLUS_LoadFromRemoteSources=1 first - .NET Framework's loader otherwise refuses to load
+    assemblies from what it treats as a network location, which the net48 testhost hits when the
+    whole repo (including obj/bin) lives under Z:\.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.TestAdapter.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- See Kubuno.VisualStudio.csproj's matching comment: combining xunit's own System.Collections.Immutable
+         with the version pulled in transitively by the VS-install-only TestWindow assemblies (see the
+         KubunoResolveVsTestWindowAssemblies target below) makes MSBuild report a benign MSB3277 for the
+         auto-resolved (always-highest-wins) version, not a real mismatch. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!--
+    Containers/KubunoTestContainerDiscovererTests.cs exercises ITestContainer/ITestContainerDiscoverer
+    directly, so this test project needs its own reference to the same VS-install-only assembly
+    Kubuno.TestAdapter.csproj resolves (see its matching target/comment for the full rationale) -
+    a ProjectReference does not flow a referenced project's own non-NuGet Reference items
+    transitively.
+  -->
+  <Target Name="KubunoResolveVsTestWindowAssemblies" BeforeTargets="ResolveAssemblyReferences;ResolveReferences">
+    <PropertyGroup>
+      <_KubunoVsInstallRoot Condition="'$(VSINSTALLDIR)' != ''">$(VSINSTALLDIR.TrimEnd('\'))</_KubunoVsInstallRoot>
+    </PropertyGroup>
+    <Exec Condition="'$(_KubunoVsInstallRoot)' == ''"
+          Command="&quot;$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer\vswhere.exe&quot; -latest -prerelease -property installationPath"
+          ConsoleToMSBuild="true"
+          StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_KubunoVsInstallRoot" />
+    </Exec>
+    <ItemGroup>
+      <!--
+        Private=True here (unlike the same reference in Kubuno.TestAdapter.csproj, which must
+        stay Private=False so the VSIX never ships a copy of a VS-owned assembly): `dotnet test`
+        runs this assembly standalone, outside Visual Studio, so the real DLL must be copied
+        next to the test host for the CLR to find it at run time.
+      -->
+      <Reference Include="Microsoft.VisualStudio.TestWindow.Interfaces">
+        <HintPath>$(_KubunoVsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\TestWindow\Microsoft.VisualStudio.TestWindow.Interfaces.dll</HintPath>
+        <Private>True</Private>
+      </Reference>
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kubuno.TestAdapter\Kubuno.TestAdapter.csproj" />
+    <ProjectReference Include="..\..\src\Kubuno.Cargo\Kubuno.Cargo.csproj" />
+    <ProjectReference Include="..\..\src\Kubuno.Launch\Kubuno.Launch.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Real captured cargo/libtest output (build, list, run), read by tests at run time (same pattern as tests/Kubuno.Cargo.Tests/TestFixtures.cs). -->
+    <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

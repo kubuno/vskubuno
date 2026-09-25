@@ -1,0 +1,95 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    VSTest adapter (ITestDiscoverer/ITestExecutor) that makes `cargo test` targets show up in
+    Visual Studio's Test Explorer for an Open Folder Cargo workspace, plus the (legacy but still
+    shipping in VS 18 - see INTEGRATION.md) ITestContainerDiscoverer/ITestContainer pair that is
+    how VS finds test containers when there is no project system to enumerate compiled test
+    assemblies from.
+
+    Targets net48 (not netstandard2.0 like Kubuno.Cargo/Kubuno.Launch): unlike those two pure
+    libraries, this assembly is loaded directly by Visual Studio's own MEF composition
+    (ITestContainerDiscoverer) and by VSTest's "UnitTestExtension" extension scan, both of which
+    run in-process in devenv's .NET Framework 4.8 AppDomain (see docs/ARCHITECTURE.md - "classic
+    VSSDK (in-proc, .NET Framework 4.8)"). It also references two Visual Studio-install-only
+    assemblies (Microsoft.VisualStudio.TestWindow.Interfaces.dll and the VS copy of
+    Microsoft.VisualStudio.TestPlatform.ObjectModel.dll living next to it) that only ship for
+    net48 consumption - see the KubunoResolveVsTestWindowAssemblies target below and
+    INTEGRATION.md for why both must come from the same VS install rather than a floating NuGet
+    version of the ObjectModel package (type-identity mismatch on FrameworkVersion/Architecture,
+    used by ITestContainer).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.TestAdapter</RootNamespace>
+    <AssemblyName>Kubuno.TestAdapter</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MEF attributes (Export/ImportingConstructor) for KubunoTestContainerDiscoverer - built into .NET Framework, no NuGet package needed. -->
+    <Reference Include="System.ComponentModel.Composition" />
+  </ItemGroup>
+
+  <!--
+    Resolves the two Visual Studio-install-only assemblies this project references and adds them
+    as Reference items before ResolveAssemblyReferences runs (a plain, non-VSIX SDK-style project
+    has no $(VsInstallRoot) property - that one is defined by importing Microsoft.VsSDK.targets,
+    which Kubuno.VisualStudio.csproj does for its own, unrelated reasons - VSCT compilation,
+    pkgdef generation, VSIX packaging - none of which this class library needs). $(VSINSTALLDIR)
+    is set when building from a Developer Command Prompt / devenv-launched MSBuild; vswhere.exe
+    (ships with every VS 2017+ install, under Program Files (x86)) is the documented fallback for
+    a plain command-line build. See INTEGRATION.md for the exact files this resolves.
+  -->
+  <Target Name="KubunoResolveVsTestWindowAssemblies" BeforeTargets="ResolveAssemblyReferences;ResolveReferences">
+    <PropertyGroup>
+      <_KubunoVsInstallRoot Condition="'$(VSINSTALLDIR)' != ''">$(VSINSTALLDIR.TrimEnd('\'))</_KubunoVsInstallRoot>
+    </PropertyGroup>
+    <Exec Condition="'$(_KubunoVsInstallRoot)' == ''"
+          Command="&quot;$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer\vswhere.exe&quot; -latest -prerelease -property installationPath"
+          ConsoleToMSBuild="true"
+          StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_KubunoVsInstallRoot" />
+    </Exec>
+    <Error Condition="'$(_KubunoVsInstallRoot)' == '' or !Exists('$(_KubunoVsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\TestWindow\Microsoft.VisualStudio.TestWindow.Interfaces.dll')"
+           Text="Could not locate a Visual Studio 2022+/2026 install with the Test Window component (Microsoft.VisualStudio.TestWindow.Interfaces.dll). Set VSINSTALLDIR or install Visual Studio with the 'Managed desktop' / core test tools workload." />
+    <ItemGroup>
+      <Reference Include="Microsoft.VisualStudio.TestWindow.Interfaces">
+        <HintPath>$(_KubunoVsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\TestWindow\Microsoft.VisualStudio.TestWindow.Interfaces.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <!--
+        Same directory as the interfaces DLL above, deliberately not the NuGet
+        Microsoft.TestPlatform.ObjectModel package: ITestContainer exposes
+        Microsoft.VisualStudio.TestPlatform.ObjectModel.FrameworkVersion/Architecture, and the
+        CLR treats those as a different type from the NuGet package's build of the same-named
+        type unless both references resolve to this exact file (see the block comment above).
+        This single assembly is also where ITestDiscoverer/ITestExecutor/TestCase/TestResult
+        (Adapter contracts, used throughout Discovery/ and Execution/) come from - referencing it
+        once here, rather than mixing in the NuGet package, keeps every VSTest ObjectModel type in
+        this project (adapter contracts and container contracts alike) identity-consistent with
+        the actual VS process that will load this DLL.
+      -->
+      <Reference Include="Microsoft.VisualStudio.TestPlatform.ObjectModel">
+        <HintPath>$(_KubunoVsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\TestWindow\Microsoft.VisualStudio.TestPlatform.ObjectModel.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <!--
+      Read-only references, per the task split: Kubuno.Cargo supplies the cargo process runner,
+      command-line builder and Windows quoting (CargoCommandLine); Kubuno.Launch supplies the
+      launch/debug-environment computation (sysroot, PATH additions, LaunchDescription) reused
+      for "debug this test". Neither is modified by this project - see Discovery/CargoTestBuild.cs
+      and Execution/DebugTestLauncher.cs for exactly what is reused vs. deliberately reimplemented
+      (profile.test isn't modeled by Kubuno.Cargo's public CargoArtifact - documented there).
+    -->
+    <ProjectReference Include="..\Kubuno.Cargo\Kubuno.Cargo.csproj" />
+    <ProjectReference Include="..\Kubuno.Launch\Kubuno.Launch.csproj" />
+  </ItemGroup>
+
+</Project>

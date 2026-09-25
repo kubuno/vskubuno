@@ -1,0 +1,15 @@
+
+running 1 test
+test tests::it_is_ignored ... 
+thread 'tests::it_is_ignored' (35976) panicked at src\lib.rs:23:9:
+should never run
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    tests::it_is_ignored
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+

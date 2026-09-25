@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Multi-targeted so the SAME contract (DTOs, JSON-RPC-ish pipe framing, dispatcher,
+    discovery-file format) is compiled twice:
+
+      - net48:  the flavor the VSIX (Kubuno.VisualStudio, in-proc devenv.exe) loads. Only this
+                flavor compiles DteVsContextProvider.cs, because EnvDTE/EnvDTE80 are Framework-only
+                COM interop assemblies with no net8.0 assets (see the PackageReference Condition
+                below) - pulling them into the net8.0 build would break restore for anything
+                referencing this project from net8.0 (notably Kubuno.Mcp and its tests).
+      - net8.0: the flavor Kubuno.Mcp (the standalone MCP server exe, net8.0) and
+                tests/Kubuno.Mcp.Tests reference. It gets the pipe client, the framing/dispatch
+                logic and the discovery-file reader/writer - everything except the DTE-specific
+                reference implementation - so the wire contract is never duplicated between the
+                exe and the in-proc bridge, and it is unit-testable with plain `dotnet test`
+                (see CLAUDE.md: "Mode de dev choisi = publié" doesn't apply to in-repo contracts;
+                this is the one place code is intentionally shared as source, not as a published
+                artifact, because both flavors ship from the same VSIX release).
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Mcp.Bridge</RootNamespace>
+    <AssemblyName>Kubuno.Mcp.Bridge</AssemblyName>
+  </PropertyGroup>
+
+  <!-- net8.0 needs no System.Text.Json package: it ships in the shared framework. net48 gets it transitively from Microsoft.VisualStudio.SDK below (see its comment). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <!--
+      Same package versions as src/Kubuno.VisualStudio/Kubuno.VisualStudio.csproj, so a future
+      in-proc load inside devenv.exe binds against the identical EnvDTE/EnvDTE80 surface the VSIX
+      itself already carries. ExcludeAssets=runtime: at runtime inside devenv.exe these are
+      resolved against the host's own copies, never shipped standalone (this library isn't the
+      one packaging the VSIX; that stays owned by Kubuno.VisualStudio's own csproj/tools\ layout -
+      see docs/MCP.md).
+    -->
+    <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
+    <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" />
+    <!--
+      Same version as the VSIX's Microsoft.VisualStudio.SDK reference: brings in
+      Microsoft.VisualStudio.Shell.ThreadHelper, used to marshal every DTE call in
+      DteVsContextProvider.cs onto the main thread (DTE is single-apartment COM; the pipe host
+      dispatches requests from a background/thread-pool task - see VsMcpBridgeHost.HandleClientAsync).
+      ExcludeAssets=runtime: resolved against the running devenv.exe's own copy, same reasoning as
+      the VSIX project (see its csproj comments). No direct System.Text.Json PackageReference here
+      on purpose: Microsoft.VisualStudio.SDK's own net462 dependency closure already pulls
+      System.Text.Json >= 9.0.0; the VSIX project pins System.Text.Json to 8.0.5 directly instead
+      (for its own unrelated Kubuno.Cargo/Kubuno.Launch needs) and that downgrade is only a
+      *warning* (NU1605) there because it is a legacy-format csproj - the same explicit downgrade
+      is promoted to a build *error* in this SDK-style project, so it is avoided by not pinning at all.
+    -->
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
+    <!-- EnvDTE/EnvDTE80 are net48-only COM interop assemblies: never compiled into the net8.0 flavor. -->
+    <Compile Remove="Dte\**\*.cs" />
+  </ItemGroup>
+
+</Project>

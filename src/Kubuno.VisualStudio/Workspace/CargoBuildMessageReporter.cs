@@ -159,6 +159,16 @@ namespace Kubuno.VisualStudio.Workspace
         {
             try
             {
+                // This whole sequence (GlobalProvider.GetService, IVsOutputWindow.GetPane,
+                // OutputStringThreadSafe) is the documented free-threaded path to the Output
+                // window - ServiceProvider.GlobalProvider marshals internally, GetPane is a cheap
+                // metadata lookup with no UI affinity, and OutputStringThreadSafe is explicitly
+                // named/documented as safe off the UI thread. This method is called from
+                // CargoBuildMessageReporter while streaming cargo's output, which happens off the
+                // UI thread (see CargoBuildFileContextAction.RunCargoAsync) - switching to the UI
+                // thread just for this would add latency to every streamed build line for no
+                // benefit.
+#pragma warning disable VSTHRD010
                 if (ServiceProvider.GlobalProvider.GetService(typeof(SVsOutputWindow)) is not IVsOutputWindow outputWindow)
                 {
                     return;
@@ -170,7 +180,6 @@ namespace Kubuno.VisualStudio.Workspace
                     return;
                 }
 
-#pragma warning disable VSTHRD010 // OutputStringThreadSafe is documented safe to call off the UI thread.
                 pane.OutputStringThreadSafe(text);
 #pragma warning restore VSTHRD010
             }

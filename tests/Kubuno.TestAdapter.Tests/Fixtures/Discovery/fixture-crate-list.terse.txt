@@ -1,0 +1,3 @@
+tests::it_fails: test
+tests::it_is_ignored: test
+tests::it_passes: test

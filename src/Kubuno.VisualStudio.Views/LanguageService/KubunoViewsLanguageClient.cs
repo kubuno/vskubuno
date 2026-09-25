@@ -1,0 +1,198 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using Kubuno.VisualStudio.Views.Infrastructure;
+using Kubuno.VisualStudio.Views.Locating;
+using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.VisualStudio.Views.Options;
+using Microsoft.VisualStudio.LanguageServer.Client;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Threading;
+using Microsoft.VisualStudio.Utilities;
+using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
+using StreamJsonRpc;
+using Process = System.Diagnostics.Process;
+
+namespace Kubuno.VisualStudio.Views.LanguageService
+{
+    /// <summary>
+    /// Hosts <c>kubuno-views-ls</c> as an LSP server for <c>.kbview</c> files (content type "kbview",
+    /// see <see cref="ContentDefinition"/>). Finds the executable via
+    /// <see cref="KubunoViewsLanguageServerLocator"/> (option override, then the extension's own
+    /// <c>tools</c> folder, then PATH, then the local dev build folders) and, when it cannot be
+    /// found, shows an info bar with the exact fix instead of activating silently with no server.
+    ///
+    /// Mirrors the sibling VSIX project's <c>RustLanguageClient</c> closely, with two differences
+    /// forced by this library not being able to reference that project (see INTEGRATION.md): logging
+    /// goes through <see cref="KubunoViewsLogHost"/>/<see cref="IKubunoLog"/> instead of the VSIX's
+    /// own static <c>KubunoLog</c>, and options come from <see cref="KubunoViewsOptionsHost"/> instead
+    /// of <c>KubunoPackage.Instance.GetDialogPage</c>.
+    /// </summary>
+    [ContentType(KbviewConstants.ContentType)]
+    [Export(typeof(ILanguageClient))]
+    public sealed class KubunoViewsLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
+    {
+        private readonly IKubunoViewsLanguageServerEnvironment _environment = new RealKubunoViewsLanguageServerEnvironment();
+
+        [Import]
+        internal IVsFolderWorkspaceService? WorkspaceService { get; set; }
+
+        [Import]
+        internal SVsServiceProvider? ServiceProvider { get; set; }
+
+        public string Name => "Kubuno Views Language Server";
+
+        public IEnumerable<string> ConfigurationSections => Array.Empty<string>();
+
+        public object? InitializationOptions => null;
+
+        public IEnumerable<string>? FilesToWatch => null;
+
+        public object? MiddleLayer => null;
+
+        public object? CustomMessageTarget => null;
+
+        public bool ShowNotificationOnInitializeFailed => true;
+
+        public JsonRpc? Rpc { get; set; }
+
+        public event AsyncEventHandler<EventArgs>? StartAsync;
+
+        public event AsyncEventHandler<EventArgs>? StopAsync;
+
+        public async Task<Connection?> ActivateAsync(CancellationToken token)
+        {
+            await TaskScheduler.Default;
+
+            var optionOverride = KubunoViewsOptionsHost.Current?.LanguageServerPathOverride;
+            var extensionDirectory = GetExtensionInstallDirectory();
+            var locateResult = KubunoViewsLanguageServerLocator.Locate(optionOverride, extensionDirectory, _environment);
+            if (!locateResult.IsFound)
+            {
+                KubunoViewsLogHost.Current.WriteLine(
+                    "kubuno-views-ls was not found (checked: option override, " +
+                    $"'{extensionDirectory ?? "(unknown extension directory)"}\\{KbviewConstants.ExtensionToolsFolderName}\\{KbviewConstants.LanguageServerExecutableName}', " +
+                    "PATH, C:\\kubuno-build\\desktop-target\\debug\\, C:\\kubuno-build\\agent-views-ls\\debug\\). " +
+                    "Not starting the Kubuno views language server.");
+                KubunoViewsLanguageServerMissingInfoBar.ShowIfNeeded();
+                return null;
+            }
+
+            KubunoViewsLogHost.Current.WriteLine($"Using kubuno-views-ls from {locateResult.Path} (source: {locateResult.Source}).");
+
+            var workspaceRoot = await GetWorkspaceRootAsync();
+            var workingDirectory = workspaceRoot ?? Path.GetDirectoryName(locateResult.Path!);
+            KubunoViewsLogHost.Current.WriteLine($"Cargo workspace root: {workspaceRoot ?? "(unknown - using kubuno-views-ls's own directory)"}");
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = locateResult.Path,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = workingDirectory,
+            };
+
+            Process process;
+            try
+            {
+                process = Process.Start(startInfo);
+            }
+            catch (Exception exception)
+            {
+                KubunoViewsLogHost.Current.WriteException("Failed to start kubuno-views-ls", exception);
+                KubunoViewsLanguageServerMissingInfoBar.ShowIfNeeded();
+                return null;
+            }
+
+            if (process == null)
+            {
+                KubunoViewsLogHost.Current.WriteLine("Failed to start kubuno-views-ls: Process.Start returned null.");
+                return null;
+            }
+
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    KubunoViewsLogHost.Current.WriteLine($"[kubuno-views-ls stderr] {e.Data}");
+                }
+            };
+            process.BeginErrorReadLine();
+
+            KubunoViewsLogHost.Current.WriteLine($"kubuno-views-ls started (PID {process.Id}).");
+            return new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream);
+        }
+
+        public Task OnLoadedAsync() => StartAsync?.InvokeAsync(this, EventArgs.Empty) ?? Task.CompletedTask;
+
+        public Task OnServerInitializedAsync()
+        {
+            KubunoViewsLogHost.Current.WriteLine("kubuno-views-ls initialized.");
+            return Task.CompletedTask;
+        }
+
+        public Task<InitializationFailureContext?> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState)
+        {
+            var exception = initializationState.InitializationException;
+            KubunoViewsLogHost.Current.WriteException("kubuno-views-ls failed to initialize", exception ?? new InvalidOperationException("Unknown initialization failure."));
+            KubunoViewsLanguageServerMissingInfoBar.ShowIfNeeded();
+            return Task.FromResult<InitializationFailureContext?>(new InitializationFailureContext
+            {
+                FailureMessage = $"Kubuno: kubuno-views-ls failed to initialize.\n{exception}",
+            });
+        }
+
+        public Task AttachForCustomMessageAsync(JsonRpc rpc)
+        {
+            Rpc = rpc;
+
+            // Unlike RustLanguageClient, there is no per-user trace-level option here yet (see
+            // INTEGRATION.md/this library's own scope note): errors and the startup/shutdown lines
+            // above are always logged; raw request/response traffic is not, to avoid flooding the
+            // "Kubuno" pane by default. A trace-level option can be added to KbviewOptionsPage later,
+            // following RustOptionsPage's LspTrace property, without changing this method's shape.
+            return Task.CompletedTask;
+        }
+
+        public Task StopServerAsync() => StopAsync?.InvokeAsync(this, EventArgs.Empty) ?? Task.CompletedTask;
+
+        /// <summary>
+        /// The directory this library's own assembly is loaded from - the extension's install
+        /// directory once shipped inside the VSIX (see INTEGRATION.md), which is where the
+        /// <c>tools\kubuno-views-ls.exe</c> candidate is rooted.
+        /// </summary>
+        private static string? GetExtensionInstallDirectory()
+        {
+            try
+            {
+                var location = Assembly.GetExecutingAssembly().Location;
+                return string.IsNullOrEmpty(location) ? null : Path.GetDirectoryName(location);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private async Task<string?> GetWorkspaceRootAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var openedFolder = WorkspaceService?.CurrentWorkspace?.Location;
+            if (string.IsNullOrEmpty(openedFolder))
+            {
+                return null;
+            }
+
+            return KbviewWorkspaceLocator.FindWorkspaceRoot(openedFolder, Directory.Exists, File.Exists);
+        }
+    }
+}

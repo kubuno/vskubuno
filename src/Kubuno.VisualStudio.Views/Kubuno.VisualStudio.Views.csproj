@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A class library (net48, MEF), not a VSIX project of its own: it declares no
+    source.extension.vsixmanifest, generates no pkgdef, and is never installed/loaded standalone.
+    It exists to be REFERENCED by the Kubuno.VisualStudio VSIX project later (see INTEGRATION.md),
+    which is why it references the exact same Visual Studio SDK package versions that project's own
+    csproj uses (Kubuno.VisualStudio.csproj) - so no binding-redirect/version-mismatch surprises once
+    that reference is added, and no ProjectReference in the other direction (this library must not
+    depend on Kubuno.VisualStudio or Kubuno.VisualStudio.Core - a reference the other way would be
+    circular once integrated, and both are owned/edited by a parallel task right now).
+
+    TargetFramework is net48 to match the VSIX's own in-proc runtime (classic VSSDK extensions are
+    .NET Framework 4.8), and to let types like Microsoft.VisualStudio.Shell.DialogPage (used by
+    Options\KbviewOptionsPage.cs) resolve without any shims.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Kubuno.VisualStudio.Views</RootNamespace>
+    <AssemblyName>Kubuno.VisualStudio.Views</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Same versions as src\Kubuno.VisualStudio\Kubuno.VisualStudio.csproj (verified by reading that
+      file before writing this one - do not bump independently; bump both together if the VSIX
+      project's own versions ever change, to keep them aligned).
+    -->
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.14.60" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="17.12.19" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Grammars\kbview.tmLanguage.json" />
+    <None Include="Grammars\kbview-language-configuration.json" />
+    <None Include="Grammars\LICENSE-vscode.txt" />
+    <None Include="Grammars\LICENSE-atom-language-xml.txt" />
+    <None Include="Grammars\THIRD-PARTY-NOTICES.md" />
+    <None Include="kbview-languages.pkgdef" />
+    <None Include="INTEGRATION.md" />
+  </ItemGroup>
+
+</Project>

@@ -1,3 +1,4 @@
 fn main() {
-    println!("{}", hello_rust::greet("Kubuno"));
+    let greeting = hello_rust::greet("Kubuno");
+    println!("{}", greeting);
 }

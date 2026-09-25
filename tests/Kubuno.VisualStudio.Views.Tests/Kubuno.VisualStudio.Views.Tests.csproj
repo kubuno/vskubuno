@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Kubuno.VisualStudio.Views.Tests</RootNamespace>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.4.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      References the whole library, not just a split-out "Core" project: unlike the sibling VSIX
+      project, Kubuno.VisualStudio.Views has no Microsoft.VsSDK.targets import (see its own csproj's
+      top comment) - it is a plain net48 class library whose only VS-SDK dependencies are ordinary
+      NuGet PackageReferences, so it builds and its pure-logic classes (Locating\*) run fine under
+      plain `dotnet build`/`dotnet test`, exactly like Kubuno.VisualStudio.Core does in the sibling
+      project - no split assembly needed to get that property here.
+    -->
+    <ProjectReference Include="..\..\src\Kubuno.VisualStudio.Views\Kubuno.VisualStudio.Views.csproj" />
+  </ItemGroup>
+
+</Project>

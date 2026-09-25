@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
+using EnvDTE80;
 using Kubuno.VisualStudio.Debugging;
 using Kubuno.VisualStudio.Infrastructure;
 using Kubuno.VisualStudio.Logging;
@@ -38,12 +39,15 @@ namespace Kubuno.VisualStudio
     [ProvideAutoLoad(VSConstants.UICONTEXT.FolderOpened_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideOptionPage(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, supportsAutomation: true)]
     [ProvideProfile(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, isToolsOptionPage: true)]
+    [ProvideOptionPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true)]
+    [ProvideProfile(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(PackageGuidStrings.Package)]
     public sealed class KubunoPackage : AsyncPackage
     {
         private FormatOnSaveDocumentEvents? _formatOnSaveEvents;
         private IVsFolderWorkspaceService? _workspaceService;
+        private Kubuno.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost? _mcpBridgeHost;
 
         /// <summary>
         /// Set once the package is sited, so MEF components (which are not package-owned and would
@@ -68,6 +72,22 @@ namespace Kubuno.VisualStudio
                     KubunoLog.Initialize(pane);
                 }
             }
+
+            // Kubuno.VisualStudio.Views (the .kbview language client) never references
+            // Kubuno.VisualStudio.Logging.KubunoLog directly (that would be a circular reference -
+            // see that library's Logging\IKubunoLog.cs remarks and its own INTEGRATION.md &sect;5);
+            // this adapter is the seam instead. Must happen before any .kbview document can open,
+            // so it runs unconditionally here rather than being deferred.
+            Kubuno.VisualStudio.Views.Logging.KubunoViewsLogHost.Current = new KubunoLogAdapter();
+            Kubuno.VisualStudio.Views.Options.KubunoViewsOptionsHost.Current =
+                (Kubuno.VisualStudio.Views.Options.KbviewOptionsPage)GetDialogPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage));
+
+            // Start the MCP bridge (docs/MCP.md "Integration"): async, off the UI thread's critical
+            // path, and never allowed to fail package load - a developer not using Claude Code, or
+            // a bridge that fails to bind its pipe/write its discovery file, must not affect Rust/
+            // Cargo/Views functionality at all. StartAsync's own try/catch logs to the "Kubuno" pane.
+            var dte = await GetServiceAsync(typeof(SDTE)) as DTE2;
+            JoinableTaskFactory.RunAsync(() => StartMcpBridgeAsync(dte)).FileAndForget("Kubuno/McpBridge/Start");
 
             var runningDocumentTable = new RunningDocumentTable(this);
             _formatOnSaveEvents = new FormatOnSaveDocumentEvents(
@@ -105,6 +125,45 @@ namespace Kubuno.VisualStudio
 
         private async Task OnActiveWorkspaceChangedAsync(object? sender, EventArgs e) =>
             await RegenerateLaunchTargetsForCurrentWorkspaceAsync();
+
+        /// <summary>
+        /// Starts the MCP bridge (see docs/MCP.md "Integration"): the net48 leg of
+        /// Kubuno.Mcp.Bridge, loaded in-proc here, hosts a named pipe that <c>kubuno-vs-mcp.exe</c>
+        /// (started independently by Claude Code, outside this process - see docs/MCP.md) connects
+        /// to. Called fire-and-forget from <see cref="InitializeAsync"/> via <c>JoinableTaskFactory.RunAsync(...).FileAndForget(...)</c>,
+        /// so a slow or failing bridge start never delays package load; every failure is caught and
+        /// logged to the "Kubuno" Output pane rather than surfaced as an exception - read-only VS
+        /// context for Claude is a convenience, never something Rust/Cargo/Views functionality
+        /// should depend on being available.
+        /// </summary>
+        private async Task StartMcpBridgeAsync(DTE2? dte)
+        {
+            // Explicit switch (rather than ThreadHelper.ThrowIfNotOnUIThread()) per VSTHRD109:
+            // this is a Task-returning method, so it must switch to the thread it needs instead of
+            // asserting it is already there. In practice this is a no-op resume: InitializeAsync
+            // calls this via JoinableTaskFactory.RunAsync(() => StartMcpBridgeAsync(dte)) while
+            // already on the main thread.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            try
+            {
+                if (dte is null)
+                {
+                    KubunoLog.WriteLine("Kubuno: MCP bridge not started - the DTE service is unavailable.");
+                    return;
+                }
+
+                var provider = new Kubuno.Mcp.Bridge.Dte.DteVsContextProvider(dte);
+                var host = new Kubuno.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost(provider);
+                host.Start(visualStudioVersion: dte.Version, solutionOrFolderPath: dte.Solution?.FullName);
+                _mcpBridgeHost = host;
+                KubunoLog.WriteLine($"Kubuno: MCP bridge started (pipe '{host.PipeName}').");
+            }
+            catch (Exception exception)
+            {
+                KubunoLog.WriteException("Kubuno: failed to start the MCP bridge", exception);
+            }
+        }
 
         /// <summary>
         /// Regenerates <c>.vs\launch.vs.json</c> (see <see cref="RustLaunchTargetsGenerator"/>)
@@ -155,6 +214,9 @@ namespace Kubuno.VisualStudio
                     _workspaceService = null;
                 }
 
+                _mcpBridgeHost?.Dispose();
+                _mcpBridgeHost = null;
+
                 if (Instance == this)
                 {
                     Instance = null;
@@ -162,6 +224,19 @@ namespace Kubuno.VisualStudio
             }
 
             base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// Forwards <c>Kubuno.VisualStudio.Views.Logging.IKubunoLog</c> calls to this package's own
+        /// <see cref="Logging.KubunoLog"/> "Kubuno" pane - see
+        /// <c>src/Kubuno.VisualStudio.Views/INTEGRATION.md</c> &sect;5 for why that library cannot
+        /// reference <see cref="Logging.KubunoLog"/> directly.
+        /// </summary>
+        private sealed class KubunoLogAdapter : Kubuno.VisualStudio.Views.Logging.IKubunoLog
+        {
+            public void WriteLine(string message) => KubunoLog.WriteLine(message);
+
+            public void WriteException(string context, Exception exception) => KubunoLog.WriteException(context, exception);
         }
     }
 }

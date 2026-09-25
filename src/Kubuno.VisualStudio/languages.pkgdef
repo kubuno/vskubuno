@@ -2,11 +2,17 @@
 ; get syntax coloring from rust.tmLanguage.json even before (or without) rust-analyzer running.
 [$RootKey$\TextMate\Repositories]
 "Kubuno"="$PackageFolder$\Grammars"
+; Kubuno.VisualStudio.Views' own grammar (see its kbview-languages.pkgdef and INTEGRATION.md #3),
+; merged here under a distinct key/subfolder so it never collides with the Rust one above.
+"KubunoViews"="$PackageFolder$\Grammars\Kbview"
 
-; Brackets/comments/indentation for the grammar's scope (source.rust) and for the LSP content
-; type (rust, see LanguageService\ContentDefinition.cs) - both keys point at the same file.
+; Brackets/comments/indentation for the grammar's scope (source.rust / text.xml.kbview) and for
+; the LSP content type (rust / kbview, see LanguageService\ContentDefinition.cs in each project) -
+; each pair of keys points at the same file.
 [$RootKey$\TextMate\LanguageConfiguration\GrammarMapping]
 "source.rust"="$PackageFolder$\Grammars\rust-language-configuration.json"
+"text.xml.kbview"="$PackageFolder$\Grammars\Kbview\kbview-language-configuration.json"
 
 [$RootKey$\TextMate\LanguageConfiguration\ContentTypeMapping]
 "rust"="$PackageFolder$\Grammars\rust-language-configuration.json"
+"kbview"="$PackageFolder$\Grammars\Kbview\kbview-language-configuration.json"

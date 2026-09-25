@@ -45,5 +45,24 @@
     <Assets>
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
+        <!--
+          Kubuno.VisualStudio.Views' own INTEGRATION.md #2's documented fallback: composition from
+          %CurrentProject% alone was live-verified NOT sufficient for kubuno-views-ls.exe to start
+          for a .kbview file (rust-analyzer starts fine for .rs files the same way, so this is
+          specific to the Views assembly, not a general MEF/VSIX wiring problem) - add an explicit
+          second MefComponent asset for it, exactly as that document anticipated.
+        -->
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.VisualStudio.Views" Path="|Kubuno.VisualStudio.Views|" />
+        <!--
+          Kubuno.TestAdapter's own INTEGRATION.md #3.2: two registrations for the SAME assembly
+          (Kubuno.TestAdapter.dll, copied into this VSIX's output by the ProjectReference in
+          Kubuno.VisualStudio.csproj) - MefComponent registers KubunoTestContainerDiscoverer
+          ([Export(typeof(ITestContainerDiscoverer))], what makes Test Explorer know Cargo.toml
+          files exist); UnitTestExtension registers KubunoTestDiscoverer/KubunoTestExecutor with
+          VSTest's extension manager (what makes a run/debug actually work), matching the real,
+          currently-shipping "CMake Linux and Mac Test Adapter" extension's own manifest shape.
+        -->
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.TestAdapter" Path="|Kubuno.TestAdapter|" />
+        <Asset Type="UnitTestExtension" d:Source="Project" d:ProjectName="Kubuno.TestAdapter" Path="|Kubuno.TestAdapter|" />
     </Assets>
 </PackageManifest>

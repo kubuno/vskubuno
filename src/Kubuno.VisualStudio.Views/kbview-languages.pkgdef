@@ -1,0 +1,23 @@
+; Registers the Grammars folder shipped by Kubuno.VisualStudio.Views as a TextMate repository, so
+; .kbview files get syntax coloring from kbview.tmLanguage.json (see LanguageService/ContentDefinition.cs
+; for the "kbview" content type these keys are paired with). This is a STANDALONE pkgdef fragment:
+; it is not consumed directly. Once this library is referenced by the VSIX (see INTEGRATION.md),
+; these keys must be merged into the VSIX's own languages.pkgdef (src/Kubuno.VisualStudio/languages.pkgdef),
+; following the exact pattern already used there for the Rust grammar - one [$RootKey$\TextMate\Repositories]
+; entry per extension, keyed by a distinct name so the two grammars do not collide.
+;
+; $PackageFolder$ below resolves relative to the VSIX's own install folder (see
+; Microsoft.VisualStudio.Shell's pkgdef $PackageFolder$ token), so on merge the "Grammars" path
+; must point at wherever this library's Grammars folder is actually shipped inside the VSIX - see
+; INTEGRATION.md ("Grammar folder inclusion") for the exact Content/VSIX Asset entries this requires.
+
+[$RootKey$\TextMate\Repositories]
+"KubunoViews"="$PackageFolder$\Grammars"
+
+; Brackets/comments/indentation for the grammar's scope (text.xml.kbview) and for the LSP content
+; type (kbview, see LanguageService\ContentDefinition.cs) - both keys point at the same file.
+[$RootKey$\TextMate\LanguageConfiguration\GrammarMapping]
+"text.xml.kbview"="$PackageFolder$\Grammars\kbview-language-configuration.json"
+
+[$RootKey$\TextMate\LanguageConfiguration\ContentTypeMapping]
+"kbview"="$PackageFolder$\Grammars\kbview-language-configuration.json"

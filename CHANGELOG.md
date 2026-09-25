@@ -8,6 +8,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Integrated `Kubuno.VisualStudio.Views`, `Kubuno.TestAdapter` and `Kubuno.Mcp`/`Kubuno.Mcp.Bridge`
+  into the VSIX**, following each library's own `INTEGRATION.md`/`docs/MCP.md`:
+  - `.kbview` files now get an `ILanguageClient` (hosting `kubuno-views-ls.exe`), TextMate coloring
+    (`Grammars\Kbview\`, merged into `languages.pkgdef` under a distinct `KubunoViews` key so it
+    never collides with the Rust grammar), and a Tools > Options > Kubuno > Views page.
+  - Cargo tests now show up in Test Explorer for an Open Folder workspace: `Kubuno.TestAdapter` is
+    registered as both a `Microsoft.VisualStudio.MefComponent` and a `UnitTestExtension`
+    (`source.extension.vsixmanifest`), and a new `Workspace/CargoWorkspaceSource.cs` implements
+    `ICargoWorkspaceSource` against the real Open Folder workspace (`IWorkspace4.GetFilesAsync` for
+    manifest enumeration - `IFileFinder`/`GetFileFinder()` does not exist in the
+    `Microsoft.VisualStudio.Workspace` 17.12.19 this VSIX pins, contrary to the integration doc's
+    tentative guess; `IWorkspace.OnActiveWorkspaceChanged` + `IFileWatcherService.OnFileSystemChanged`
+    for change notification).
+  - The MCP bridge (`Kubuno.Mcp.Bridge`'s net48 leg, hosting a named pipe for `kubuno-vs-mcp.exe`)
+    now starts at package load, fully asynchronously (`JoinableTaskFactory.RunAsync(...).FileAndForget(...)`,
+    never blocking the UI thread) and never crashes package load on failure (every step logged to
+    the "Kubuno" Output pane). Verified live end to end: `kubuno-vs-mcp.exe` run standalone
+    connects through its discovery file/named pipe to a running experimental instance and a real
+    `vs_solution_or_folder` tool call returns the actual open folder and detected Cargo workspace.
+  - `kubuno-views-ls.exe` (built from the separate `desktop` repo, crate `kubuno-views-ls`) and
+    `kubuno-vs-mcp.exe` (this repo's own `Kubuno.Mcp`, net8.0, framework-dependent) both ship under
+    the VSIX's `tools\` folder, via two new `Kubuno.VisualStudio.csproj` MSBuild properties -
+    `KubunoViewsLsExePath` (default `C:\kubuno-build\desktop-target\release\kubuno-views-ls.exe`,
+    matching this workspace's documented `CARGO_TARGET_DIR` convention) and `KubunoMcpOutputDir`
+    (default: `Kubuno.Mcp`'s own build output for the same `$(Configuration)`, built automatically
+    as part of the solution via a `ReferenceOutputAssembly=false` `ProjectReference`) - each with a
+    `BeforeTargets="Build"` `Error` if the exe is missing. `.github/workflows/build.yml` now checks
+    out `kubuno/desktop`, builds `kubuno-views-ls` before the solution build, and passes
+    `KubunoViewsLsExePath` accordingly.
+  - `Kubuno.VisualStudio.Views`, `Kubuno.TestAdapter`, `Kubuno.Mcp`, `Kubuno.Mcp.Bridge` and their
+    three test projects are now part of `Kubuno.VisualStudio.sln`, so CI's `dotnet test --no-build`
+    loop (which just discovers every `tests\*.csproj`) covers them.
+
+### Changed
+
+- `samples/hello-rust/src/main.rs` binds `greet(...)`'s result to a local `greeting: String` before
+  printing it, instead of passing the call inline - gives the sample a concrete `String` local to
+  breakpoint/inspect (used to verify natvis end to end for this task; also a generally more useful
+  manual-testing fixture, matching `lib.rs`'s own stated purpose for this crate).
+
+### Known limitations
+
+- **`kubuno-views-ls.exe` was not observed starting for a `.kbview` file, live, in the experimental
+  instance** (rust-analyzer reliably starts for `.rs` files opened the same way in the same
+  session). `Kubuno.VisualStudio.Views.INTEGRATION.md`'s documented fallback (an explicit second
+  `Microsoft.VisualStudio.MefComponent` VSIX asset for `Kubuno.VisualStudio.Views`, in case
+  composition from `%CurrentProject%` alone is not enough) is now in `source.extension.vsixmanifest`,
+  but did not change the outcome after a clean rebuild/redeploy/relaunch. The MEF composition error
+  log (`ComponentModelCache\Microsoft.VisualStudio.Default.err`) shows no Kubuno-related errors
+  either, and `Kubuno.VisualStudio.Views.dll` is confirmed present in the deployed extension
+  folder's MEF catalog scan - so this looks like an `ILanguageClient` activation-time issue (or
+  never being invoked at all for this content type) rather than a composition/export failure.
+  `KubunoViewsLanguageClient.ActivateAsync` unconditionally attempts `Process.Start` once invoked
+  (no early-return on a missing workspace root), so the next step is confirming, interactively,
+  whether `ActivateAsync` runs at all (the "Kubuno" pane's `KubunoViewsLogHost` lines could not be
+  read through `EnvDTE` `OutputWindow` automation from a script in this session - it reported 0
+  panes even for the built-in "Build"/"General" panes, which is itself suspicious and may be a
+  script-side automation issue rather than a real absence) - needs an interactive look at the
+  "Kubuno" pane (View > Output) and/or a `/log` `ActivityLog.xml` capture. Not fixed blind in this
+  session; flagged for the next one instead.
+
 - `Kubuno.VisualStudio.Designer` (work package DSG-3, standalone library, not yet wired into the
   VSIX - see its own `INTEGRATION.md`): C# skeleton of the `.kbview` designer editor. An
   `IVsEditorFactory` (`KbviewEditorFactory`) produces a split Design | XML `WindowPane`

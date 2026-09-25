@@ -28,6 +28,19 @@
     <StartProgram Condition="'$(DevEnvDir)' != ''">$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix Exp</StartArguments>
     <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
+    <!--
+      Combining several first-party Microsoft.VisualStudio.* NuGet packages of slightly different
+      vintages (Microsoft.VisualStudio.SDK 17.14.x pulling 18.x-era transitive VS assemblies vs.
+      Microsoft.VisualStudio.Workspace.VSIntegration 17.12.19 and the VS-install-only
+      TestWindow/EnvDTE assemblies Kubuno.TestAdapter/Kubuno.Mcp.Bridge resolve against) makes
+      MSBuild's reference unification report an MSB3277 "unresolved conflict" note for each one it
+      auto-resolves (always by picking the highest version - the same resolution the running VS
+      instance itself performs at load time). This is expected/benign for a VSSDK extension
+      referencing this many VS SDK packages at once, not a real version mismatch to fix by hand;
+      suppressed here rather than silenced per-conflict, which would need re-editing on every SDK
+      package bump.
+    -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -63,6 +76,7 @@
     <Compile Include="Workspace\CargoBuildFileContext.cs" />
     <Compile Include="Workspace\CargoBuildFileContextAction.cs" />
     <Compile Include="Workspace\CargoBuildMessageReporter.cs" />
+    <Compile Include="Workspace\CargoWorkspaceSource.cs" />
     <Compile Include="Debugging\RustLaunchTargetsGenerator.cs" />
     <Compile Include="Debugging\NatvisInstaller.cs" />
     <Compile Include="Debugging\NativeDebugLauncher.cs" />
@@ -108,6 +122,85 @@
     <Content Include="Grammars\THIRD-PARTY-NOTICES.md">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!--
+      Kubuno.VisualStudio.Views' own grammar (see its INTEGRATION.md #3): shipped under a
+      Grammars\Kbview\ subfolder, not flattened alongside the Rust grammar files above, so each
+      grammar's own THIRD-PARTY-NOTICES.md/LICENSE files stay unambiguous (different upstream
+      licenses/attribution). languages.pkgdef's "KubunoViews" keys (merged below) point here.
+    -->
+    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\kbview.tmLanguage.json">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Grammars\Kbview\kbview.tmLanguage.json</Link>
+    </Content>
+    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\kbview-language-configuration.json">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Grammars\Kbview\kbview-language-configuration.json</Link>
+    </Content>
+    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\LICENSE-vscode.txt">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Grammars\Kbview\LICENSE-vscode.txt</Link>
+    </Content>
+    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\LICENSE-atom-language-xml.txt">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Grammars\Kbview\LICENSE-atom-language-xml.txt</Link>
+    </Content>
+    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\THIRD-PARTY-NOTICES.md">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Grammars\Kbview\THIRD-PARTY-NOTICES.md</Link>
+    </Content>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!--
+      kubuno-views-ls.exe (Rust LSP server, Kubuno.VisualStudio.Views' INTEGRATION.md #6) - built
+      out-of-band from the separate `desktop` repo
+      (Z:\projects\kubuno\desktop\windows, crate kubuno-views-ls):
+        cd Z:\projects\kubuno\desktop\windows
+        $env:CARGO_TARGET_DIR = "C:\kubuno-build\desktop-target"   # this workspace's documented default (vskubuno/CLAUDE.md #5)
+        cargo build -p kubuno-views-ls -r        (-r is cargo's short form of the "release" flag)
+      Default matches that convention; override with /p:KubunoViewsLsExePath=<path> for a
+      differently-configured CARGO_TARGET_DIR, or in CI (see .github/workflows/build.yml, which
+      checks out kubuno/desktop and builds this crate before invoking MSBuild).
+    -->
+    <KubunoViewsLsExePath Condition="'$(KubunoViewsLsExePath)' == ''">C:\kubuno-build\desktop-target\release\kubuno-views-ls.exe</KubunoViewsLsExePath>
+    <!--
+      kubuno-vs-mcp.exe (Kubuno.Mcp, net8.0 - docs/MCP.md "Integration"). Default: this repo's own
+      build output for the same $(Configuration) (a ReferenceOutputAssembly=false ProjectReference
+      below drives that build as part of this solution/project build - see its own comment for why
+      it is not a normal assembly reference). Override with /p:KubunoMcpOutputDir=<path> to ship a
+      self-contained `dotnet publish` output instead.
+    -->
+    <KubunoMcpOutputDir Condition="'$(KubunoMcpOutputDir)' == ''">$(MSBuildThisFileDirectory)..\Kubuno.Mcp\bin\$(Configuration)\net8.0\</KubunoMcpOutputDir>
+  </PropertyGroup>
+
+  <Target Name="KubunoCheckToolExes" BeforeTargets="Build">
+    <Error Condition="!Exists('$(KubunoViewsLsExePath)')"
+           Text="kubuno-views-ls.exe not found at '$(KubunoViewsLsExePath)'. Build it from the desktop repo: cd Z:\projects\kubuno\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -- or pass /p:KubunoViewsLsExePath=&lt;path to kubuno-views-ls.exe&gt;." />
+    <Error Condition="!Exists('$(KubunoMcpOutputDir)kubuno-vs-mcp.exe')"
+           Text="kubuno-vs-mcp.exe not found under '$(KubunoMcpOutputDir)'. It should have been built automatically as part of this solution (src\Kubuno.Mcp\Kubuno.Mcp.csproj) - build that project first, or pass /p:KubunoMcpOutputDir=&lt;its output folder&gt;." />
+  </Target>
+
+  <ItemGroup>
+    <Content Include="$(KubunoViewsLsExePath)">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\kubuno-views-ls.exe</Link>
+    </Content>
+    <!--
+      Every file Kubuno.Mcp's own build produces (kubuno-vs-mcp.exe/.dll/.deps.json/.runtimeconfig.json
+      and its dependency DLLs, e.g. ModelContextProtocol*.dll) - it is a framework-dependent net8.0
+      exe, not self-contained, so all of these are required for it to actually run once shipped.
+    -->
+    <Content Include="$(KubunoMcpOutputDir)**\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\kubuno-vs-mcp\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
   <ItemGroup>
@@ -163,6 +256,8 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
+    <!-- Package.GetDialogPage(...) (used for Kubuno.VisualStudio.Views' KbviewOptionsPage - see KubunoPackage.InitializeAsync) returns a DialogPage, which implements System.Windows.Forms.IWin32Window. -->
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
@@ -206,6 +301,8 @@
     -->
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
+    <!-- DTE2 (EnvDTE80), needed for the MCP bridge start (docs/MCP.md "Integration") - same version as Kubuno.Mcp.Bridge.csproj's own net48 leg. -->
+    <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.Extensions.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.Extensions.VS.dll" />
@@ -240,6 +337,47 @@
       <Name>Kubuno.Launch</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- Kubuno.VisualStudio.Views' INTEGRATION.md #1: the .kbview language client. -->
+    <ProjectReference Include="..\Kubuno.VisualStudio.Views\Kubuno.VisualStudio.Views.csproj">
+      <Project>{324405db-70e8-4fbb-b583-301706fc6c15}</Project>
+      <Name>Kubuno.VisualStudio.Views</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- Kubuno.TestAdapter's own INTEGRATION.md #3.1: the Cargo Test Explorer adapter. -->
+    <ProjectReference Include="..\Kubuno.TestAdapter\Kubuno.TestAdapter.csproj">
+      <Project>{6bd0b996-c446-4040-a5a3-0052b5864ed6}</Project>
+      <Name>Kubuno.TestAdapter</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!--
+      docs/MCP.md "Integration": the net48 leg is picked up automatically (multi-targeted
+      net48;net8.0 project - see its own csproj comment); this is what provides
+      Kubuno.Mcp.Bridge.Dte.DteVsContextProvider/PipeProtocol.VsMcpBridgeHost to KubunoPackage.
+    -->
+    <ProjectReference Include="..\Kubuno.Mcp.Bridge\Kubuno.Mcp.Bridge.csproj">
+      <Project>{cb4d8d70-b802-48ee-ba00-5d9cc66a6339}</Project>
+      <Name>Kubuno.Mcp.Bridge</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!--
+      kubuno-vs-mcp.exe (net8.0, standalone process - never in-proc, never assembly-referenced from
+      this net48 VSIX): ReferenceOutputAssembly=false makes this a build-ordering-only reference, so
+      `msbuild Kubuno.VisualStudio.sln`/building this project also builds Kubuno.Mcp first, into
+      $(KubunoMcpOutputDir) (see the Content item above that ships it under tools\).
+    -->
+    <ProjectReference Include="..\Kubuno.Mcp\Kubuno.Mcp.csproj">
+      <Project>{be214089-0974-4c47-95ea-eb1a059eb17a}</Project>
+      <Name>Kubuno.Mcp</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <!-- Kubuno.Mcp targets net8.0 (see its own csproj comment); this legacy net48 project would
+           otherwise fail the target-framework compatibility check MSBuild runs for every
+           ProjectReference regardless of ReferenceOutputAssembly. Build-ordering-only reference -
+           no assembly/type from Kubuno.Mcp is ever compiled against here. -->
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

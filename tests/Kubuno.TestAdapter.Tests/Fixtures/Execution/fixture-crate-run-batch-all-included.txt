@@ -1,0 +1,25 @@
+
+running 3 tests
+test tests::it_fails ... about to fail
+
+thread 'tests::it_fails' (90100) panicked at src\lib.rs:17:9:
+assertion `left == right` failed: math is broken
+  left: 4
+ right: 5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test tests::it_is_ignored ... 
+thread 'tests::it_is_ignored' (76968) panicked at src\lib.rs:23:9:
+should never run
+FAILED
+test tests::it_passes ... ok
+
+failures:
+
+failures:
+    tests::it_fails
+    tests::it_is_ignored
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+exit=101
