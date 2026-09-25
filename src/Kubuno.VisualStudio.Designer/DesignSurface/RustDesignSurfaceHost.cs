@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Kubuno.VisualStudio.Views.Logging;
 
@@ -50,12 +51,15 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// this window's own <see cref="WndProc"/> sees is, by construction, one of these forwarded messages
     /// - routed by <see cref="HandleUnhandledKey"/> (via <see cref="VsFilterKeysBridge"/>) to the real VS
     /// accelerator path (`IVsFilterKeys2.TranslateAcceleratorEx`) when running inside VS, else to a WPF
-    /// fallback (<see cref="RaiseWpfKeyEvent"/>, real routed keyboard events via
-    /// <see cref="InputManager.ProcessInput"/>) - see that method's own doc for the full story of what
-    /// did NOT work first (a purely passive approach; `ComponentDispatcher.RaiseThreadMessage`, which
-    /// cannot reach WPF's routed-event pipeline for a plain child `HWND` at all; `AttachThreadInput`
-    /// alone, without the captured-modifiers message, which reads the wrong, already-stale key state for
-    /// a fast chord) and why each was replaced.</item>
+    /// fallback (<see cref="RaiseWpfKeyEvent"/>, which walks up from this element and directly executes
+    /// the matching `InputBinding`'s command - see that method's own doc for the full story of what did
+    /// NOT work first: a purely passive approach; `ComponentDispatcher.RaiseThreadMessage`, which cannot
+    /// reach WPF's routed-event pipeline for a plain child `HWND` at all; `AttachThreadInput` alone,
+    /// without the captured-modifiers message, which reads the wrong, already-stale key state for a fast
+    /// chord; and finally synthesizing routed `PreviewKeyDown`/`KeyDown` events through
+    /// `InputManager.ProcessInput`, which needed an explicit `Keyboard.Focus(this)` to route at all and
+    /// that, confirmed live, moved native Win32 focus away from the surface with no reliable way to give
+    /// it back without also stopping the very `KeyBinding` it was trying to reach).</item>
     /// <item><b>tabOut</b>: a custom <c>WM_APP</c>-based message (<c>kubuno_controls::host::WM_KUBUNO_TAB_OUT</c>,
     /// posted by <c>kubuno_controls::host::notify_tab_out</c>) - <see cref="WndProc"/> calls
     /// <see cref="UIElement.MoveFocus"/> with a <see cref="TraversalRequest"/>, moving the WPF focus out
@@ -610,7 +614,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 }
                 else
                 {
-                    RaiseWpfKeyEvent(wParam);
+                    RaiseWpfKeyEvent(wParam, mods);
                 }
             }
             catch (Exception ex)
@@ -634,49 +638,111 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         /// <summary>
         /// The WPF fallback (no VS to route through - this library's own tests, the updated spike):
-        /// raises real, routed <see cref="Keyboard.PreviewKeyDownEvent"/>/<see cref="Keyboard.KeyDownEvent"/>
-        /// events through <see cref="InputManager.ProcessInput"/>, which - unlike
-        /// <see cref="ComponentDispatcher.RaiseThreadMessage"/> (see <see cref="HandleUnhandledKey"/>'s
-        /// own doc for why that does not work here) - reaches WPF's actual keyboard routed-event
-        /// pipeline and, through it, `InputBinding`/`KeyBinding` matching (`KeyGesture.Matches` reads
-        /// `Keyboard.Modifiers`, which is why the caller forces the key-state table before this runs).
-        /// Routes to <see cref="Keyboard.FocusedElement"/> (this sink, once <see cref="TabIntoCore"/> or
-        /// the click handler gave it the focus) via <see cref="Keyboard.PrimaryDevice"/>, exactly as a
-        /// real keystroke on an `HwndSource`'s own window would have.
+        /// converts the captured virtual key and modifiers (see
+        /// <c>kubuno_controls::host::WM_KUBUNO_KEY_MODS</c>'s own doc) into WPF's own
+        /// <see cref="Key"/>/<see cref="ModifierKeys"/> types and asks
+        /// <see cref="TryExecuteMatchingInputBinding"/> to find and execute a matching `KeyBinding`
+        /// directly - see that method's own doc for why this, rather than synthesizing routed keyboard
+        /// events, is what actually works here, confirmed live.
         /// </summary>
-        private void RaiseWpfKeyEvent(IntPtr wParam)
+        private void RaiseWpfKeyEvent(IntPtr wParam, int mods)
         {
-            var source = PresentationSource.FromVisual(this);
-            if (source == null)
-            {
-                KubunoViewsLogHost.Current.WriteLine("[designer] RaiseWpfKeyEvent: no PresentationSource for this element, skipped.");
-                return;
-            }
-
-            // InputManager.ProcessInput routes a KeyEventArgs through Keyboard.FocusedElement, WPF's OWN
-            // logical-focus tracking - which is NOT necessarily in sync with the native Win32 focus this
-            // class just spent a whole call establishing correctly. `TabIntoCore` keeps them in sync (WPF
-            // itself asked this sink to take the focus), but the OTHER way native focus reaches the
-            // surface - a raw click, handled entirely on the Rust side via a plain SetFocus on its own
-            // window - never notifies the container, so WPF's logical focus can be left pointing at
-            // whatever it was before, and a KeyEventArgs would then tunnel/bubble through the WRONG part
-            // of the tree, missing this window's own InputBindings entirely - confirmed live to be the
-            // remaining gap after the modifiers fix: the surface correctly saw Ctrl+S and forwarding was
-            // correct, but the WPF KeyBinding still never fired. Explicitly re-asserting focus here, every
-            // time, is cheap and makes this method correct regardless of how native focus arrived.
-            Keyboard.Focus(this);
-
             var key = KeyInterop.KeyFromVirtualKey((int)wParam.ToInt64());
-            var timestamp = Environment.TickCount;
-            bool Raise(RoutedEvent routedEvent)
+            var modifiers = ModifierKeys.None;
+            if ((mods & 0x1) != 0)
             {
-                var args = new KeyEventArgs(Keyboard.PrimaryDevice, source, timestamp, key) { RoutedEvent = routedEvent };
-                return InputManager.Current.ProcessInput(args);
+                modifiers |= ModifierKeys.Control;
             }
 
-            Raise(Keyboard.PreviewKeyDownEvent);
-            var handled = Raise(Keyboard.KeyDownEvent);
-            KubunoViewsLogHost.Current.WriteLine($"[designer] RaiseWpfKeyEvent key={key} handled={handled} focusedElement={Keyboard.FocusedElement}");
+            if ((mods & 0x2) != 0)
+            {
+                modifiers |= ModifierKeys.Shift;
+            }
+
+            if ((mods & 0x4) != 0)
+            {
+                modifiers |= ModifierKeys.Alt;
+            }
+
+            var executed = TryExecuteMatchingInputBinding(key, modifiers);
+            KubunoViewsLogHost.Current.WriteLine($"[designer] RaiseWpfKeyEvent key={key} modifiers={modifiers} executed={executed}");
+        }
+
+        /// <summary>
+        /// Walks up from this element (the visual tree, falling back to the logical tree for a
+        /// <see cref="ContentElement"/>) looking for an <see cref="InputBinding"/> whose
+        /// <see cref="KeyGesture"/> matches, and executes its <see cref="ICommand"/> directly.
+        ///
+        /// This is DELIBERATELY not done by synthesizing <c>PreviewKeyDown</c>/<c>KeyDown</c> through
+        /// <see cref="InputManager.ProcessInput"/> and letting WPF's own <see cref="CommandManager"/>
+        /// translate it into the bound command - that WAS the first WPF-fallback implementation, and was
+        /// confirmed live, repeatedly and reproducibly, to silently NOT invoke the command, even with
+        /// <see cref="Keyboard.FocusedElement"/> and <see cref="Keyboard.Modifiers"/> BOTH verified
+        /// correct at the exact moment of the call (logged). Worse, making that approach route correctly
+        /// at all required an explicit <see cref="Keyboard.Focus(IInputElement)"/> call first, which -
+        /// confirmed live - moves NATIVE Win32 focus from the surface's own child window onto this
+        /// class's container, so the very next physical keystroke would go to WPF instead of the
+        /// surface; restoring native focus after (tried both synchronously and deferred via
+        /// <see cref="DispatcherObject.Dispatcher"/>.<c>BeginInvoke</c>) made the KeyBinding stop firing
+        /// again. This method sidesteps the whole problem: it never touches focus, native or logical, at
+        /// all - deterministic, and exactly what is needed here (fire a VS-accelerator-shaped
+        /// `KeyBinding`), without depending on the precise timing of WPF's own routed-input pipeline.
+        /// </summary>
+        private bool TryExecuteMatchingInputBinding(Key key, ModifierKeys modifiers)
+        {
+            for (DependencyObject? node = this; node != null; node = GetVisualOrLogicalParent(node))
+            {
+                var bindings = node switch
+                {
+                    UIElement ue => ue.InputBindings,
+                    ContentElement ce => ce.InputBindings,
+                    _ => null,
+                };
+                if (bindings == null)
+                {
+                    continue;
+                }
+
+                foreach (InputBinding binding in bindings)
+                {
+                    if (binding.Gesture is not KeyGesture gesture || gesture.Key != key || gesture.Modifiers != modifiers)
+                    {
+                        continue;
+                    }
+
+                    var parameter = binding.CommandParameter;
+                    if (binding.Command is RoutedCommand routedCommand)
+                    {
+                        var target = binding.CommandTarget ?? (node as IInputElement);
+                        if (routedCommand.CanExecute(parameter, target))
+                        {
+                            routedCommand.Execute(parameter, target);
+                            return true;
+                        }
+                    }
+                    else if (binding.Command != null && binding.Command.CanExecute(parameter))
+                    {
+                        binding.Command.Execute(parameter);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static DependencyObject? GetVisualOrLogicalParent(DependencyObject node)
+        {
+            if (node is Visual visual)
+            {
+                var visualParent = VisualTreeHelper.GetParent(visual);
+                if (visualParent != null)
+                {
+                    return visualParent;
+                }
+            }
+
+            return LogicalTreeHelper.GetParent(node);
         }
 
         /// <summary>

@@ -286,6 +286,19 @@ namespace HwndHostSpike
                 await WaitAsync(300);
                 Check("Ctrl+S reaches the WPF handler while the surface has focus (unhandledKey)", _ctrlS, $"child saw S={RustSaid("key vk 0x53")}");
 
+                // 3b. Ctrl+S must not steal native focus away from the child: RaiseWpfKeyEvent's
+                // Keyboard.Focus(this) (added to make Ctrl+S itself reach the KeyBinding) sets WPF's
+                // LOGICAL focus - if that also moves native Win32 focus onto the container instead of
+                // just keeping WPF's bookkeeping in sync, the next real keystroke would go to WPF instead
+                // of the surface, breaking ordinary typing right after any VS accelerator.
+                await WaitAsync(100);
+                var tiAfterCtrlS = Native.ThreadInfo(child);
+                Check("focus stays on the child after Ctrl+S", tiAfterCtrlS.hwndFocus == child, $"focus={Native.Hex(tiAfterCtrlS.hwndFocus)}");
+                ClearRust();
+                Press(0x42); // 'B'
+                await WaitAsync(300);
+                Check("key 'B' still delivered to child right after Ctrl+S", RustSaid("key vk 0x42"));
+
                 // 4. Tab from WPF into the host.
                 _before.Focus();
                 await WaitAsync(200);

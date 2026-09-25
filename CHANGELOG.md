@@ -164,19 +164,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
       `Microsoft.VisualStudio.Interop.dll` on first construction, standalone - a real, live-observed
       startup crash this isolation fixes) queries `SVsFilterKeys`/`IVsFilterKeys2` from an optional
       `IOleServiceProvider` and calls `TranslateAcceleratorEx` with the global keybinding scope.
-    - **The WPF fallback** (this library's own tests, the updated spike - no VS to query) raises real,
-      routed `Keyboard.PreviewKeyDownEvent`/`KeyDownEvent` through `InputManager.ProcessInput` -
-      `ComponentDispatcher.RaiseThreadMessage`, tried first, never reached a `KeyBinding` at all,
-      because WPF only turns a message into a routed keyboard event through an `HwndSource`'s own
-      `HwndKeyboardInputProvider` for THAT `HwndSource`'s window, and the embedding container is a
-      plain child `HWND`, not an `HwndSource`. Getting a real routed event to reach the window's own
-      `InputBindings` needed one more fix even after that: `Keyboard.Focus(this)` before raising it -
-      WPF's own logical focus tracking is only kept in sync with the native Win32 focus this class
-      establishes when focus arrives via `TabIntoCore` (WPF itself asked the sink to take it); a raw
-      click, handled entirely on the Rust side via a plain `SetFocus` on its own window, never
-      notifies the container, so a routed event could tunnel/bubble through the wrong part of the
-      tree and silently miss the window's `InputBindings` even with modifiers and forwarding both
-      already correct.
+    - **The WPF fallback** (this library's own tests, the updated spike - no VS to query) walks up
+      from this element and directly executes the matching `InputBinding`'s command - deliberately
+      NOT by synthesizing routed keyboard events. Two other approaches were tried first and both
+      failed, live and reproducibly: `ComponentDispatcher.RaiseThreadMessage` never reached a
+      `KeyBinding` at all (WPF only turns a message into a routed keyboard event through an
+      `HwndSource`'s own `HwndKeyboardInputProvider` for THAT `HwndSource`'s window, and the
+      embedding container is a plain child `HWND`, not an `HwndSource`); raising real, routed
+      `PreviewKeyDown`/`KeyDown` through `InputManager.ProcessInput` needed an explicit
+      `Keyboard.Focus(this)` first to route to the right element at all (confirmed with logging:
+      focus and modifiers both correct, `KeyBinding` still silently did not fire) - and THAT call
+      itself moves native Win32 focus from the surface's own child window onto the container, so the
+      very next physical keystroke would go to WPF instead of the surface; restoring native focus
+      afterwards (tried both synchronously and deferred to the next dispatcher pass) reliably stopped
+      the same `KeyBinding` from firing again. Walking `InputBindings` directly and calling
+      `ICommand.Execute` sidesteps all of it: it never touches focus, native or logical, so nothing
+      needs restoring, and it is exactly what firing a VS-accelerator-shaped `KeyBinding` needs -
+      confirmed live, twice, with every `--selftest` check green, including two new checks added for
+      exactly this regression (native focus stays on the child after Ctrl+S, and the very next key
+      still reaches it).
     - `tabOut`: a new `WM_APP`-based message (`kubuno_controls::host::WM_KUBUNO_TAB_OUT`/
       `notify_tab_out`) moves the WPF focus out with `MoveFocus`/`TraversalRequest`; `TabIntoCore`
       (WPF Tab INTO the surface) matches the spike's own override, exactly (missing from an early
