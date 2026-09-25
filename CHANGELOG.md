@@ -118,18 +118,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - **Keyboard protocol**, both sides: the surface (`kubuno_controls::host`, additive in
     `kubuno-controls/src/host/mod.rs` - see the `desktop` repo's own changelog) forwards a key it did
     not consume as the SAME `WM_KEYDOWN`/`WM_SYSKEYDOWN` a real keystroke would have produced,
-    posted to the container. `RustDesignSurfaceHost.WndProc` does NOT itself call
-    `ComponentDispatcher.RaiseThreadMessage` for it - an interactive `--selftest` run caught that
-    explicit second call (WPF's own Dispatcher pump already raises it, ambiently, for every message
-    on the thread) stealing native keyboard focus back from the surface, so it was removed; only the
-    ambient pump handles it now, plus a settable `VsFilterKeys` extension point for the real
+    posted to the container. `RustDesignSurfaceHost.WndProc` routes it through
+    `ComponentDispatcher.RaiseThreadMessage` (a purely passive/ambient approach - relying only on
+    WPF's own Dispatcher pump raising it for every message it pumps, with no explicit call here -
+    was tried and, live, a genuine Ctrl+S never reached the WPF `KeyBinding`; the explicit call is
+    required), plus a settable `VsFilterKeys` extension point for the real
     `IVsFilterKeys2.TranslateAcceleratorEx` path once that can be checked against a live `devenv.exe`
     (not done in this task - see the property's own doc for why guessing that COM signature was not
     worth the risk). `tabOut`: a new `WM_APP`-based message
     (`kubuno_controls::host::WM_KUBUNO_TAB_OUT`/`notify_tab_out`) moves the WPF focus out with
-    `MoveFocus`/`TraversalRequest`; `TabIntoCore` (WPF Tab INTO the surface) is restored to match the
-    spike's own override, exactly (missing from an earlier version of this class - another regression
-    the same interactive run caught).
+    `MoveFocus`/`TraversalRequest`; `TabIntoCore` (WPF Tab INTO the surface) matches the spike's own
+    override, exactly (missing from an early version of this class - a real regression an interactive
+    `--selftest` run caught, since without it WPF has no way to hand the surface the focus on Tab).
   - `SetDocumentText` bridges DSG-3's "buffer is truth" rule onto the current exe (`view_embed.exe`,
     file-polling - DSG-6's own `kubuno-views-designer` process/`kubuno/setBuffer` IPC does not exist
     yet) via a private temp `.kbview` file, swappable for real IPC without touching anything else in
@@ -143,6 +143,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     fixed a race in the crash-restart check itself: it subscribed to the host's `ChildReady` event
     only AFTER a fixed post-kill wait, which the production restart-with-backoff (250 ms+relaunch, well
     under that wait) had usually already fired by - now subscribes before killing the surface.
+  - `RustDesignSurfaceHost` gained a `SurfaceOutputLine` event (every line the surface process writes
+    to its own stderr) and the spike now re-publishes it into its own `RustSaid`/`ClearRust` test
+    helper with the ORIGINAL spike's "  rust| " prefix. Its absence was a real bug, not a forwarding
+    regression: the surface's own `[embed]` trace lines were landing in the shared log file (via
+    `KubunoViewsLogHost`, this class's own internal logging) but never reaching the spike's separate
+    `_rustLines` list, so `RustSaid` always returned false and every keyboard check read as FAIL even
+    when the log line right above it proved the key had, in fact, arrived.
+  - `SelfTestAsync` acquires the foreground itself now (`TryAcquireForegroundAsync`:
+    `AllowSetForegroundWindow` + an `AttachThreadInput`-brokered `SetForegroundWindow`, falling back to
+    a synthetic Alt tap), and fails fast with one clear "environment: no foreground" line instead of
+    cascading through every focus-dependent check when a non-interactive launch is denied it entirely.
+  - The "Tab exits the surface" check now stops pressing Tab as soon as focus actually leaves the
+    child instead of always pressing exactly 6 times: with only 3 WPF-level tab stops in this fixture
+    (`_before`/`_after`/the host), continuing to press after tab-out already fired could cycle straight
+    back into the host via `TabIntoCore` and read as a false FAIL.
   - Not wired into the VSIX (`src/Kubuno.VisualStudio/*`, `Kubuno.VisualStudio.sln`) - see this
     library's `INTEGRATION.md` for the remaining steps.
 

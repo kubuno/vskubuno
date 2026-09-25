@@ -86,6 +86,14 @@ namespace HwndHostSpike
             // truth" bridged onto the current disk-polling exe - see RustDesignSurfaceHost's own doc);
             // seed it with the fixture `--view` file's content instead of passing that path directly.
             _host.SetDocumentText(File.ReadAllText(view));
+            // The host owns its OWN stderr capture/logging now (unlike the original spike, where
+            // DesignSurfaceHost took a Log callback directly) - re-publish every line into `_rustLines`
+            // with the SAME "  rust| " prefix the original spike used, so RustSaid/ClearRust below keep
+            // working. Their absence here was a real bug: every "child never saw the key" FAIL in an
+            // earlier version of this file was this wiring missing, not a forwarding regression - the
+            // surface's own [embed] trace lines were landing in the log file (via KubunoViewsLogHost)
+            // but never in `_rustLines`, so RustSaid always returned false.
+            _host.SurfaceOutputLine += line => Log("  rust| " + line);
             var top = new StackPanel { Orientation = Orientation.Horizontal };
             _before.Width = 200; _after.Width = 200;
             top.Children.Add(_before); top.Children.Add(_after);
@@ -144,6 +152,61 @@ namespace HwndHostSpike
 
         private void Check(string name, bool ok, string detail = "") => Log($"{(ok ? "PASS" : "FAIL")} {name} {detail}");
 
+        /// <summary>
+        /// Makes this window the real foreground/active window, robustly enough to survive a
+        /// non-interactive launch (a background/automation session, which Windows' foreground-lock
+        /// heuristic normally refuses a plain <c>SetForegroundWindow</c> for - a coordinator running this
+        /// manually hit exactly that and worked around it by hand before this method existed). Tries, in
+        /// order: <c>AllowSetForegroundWindow</c> plus an <c>AttachThreadInput</c>-brokered
+        /// <c>SetForegroundWindow</c> (attach to whatever thread currently owns the foreground, act,
+        /// detach - the standard robust technique, not just a superficial "GetForegroundWindow now
+        /// returns us" check), then a synthetic Alt tap (a well-known way to satisfy the foreground-lock
+        /// timeout heuristic) as a last resort. Returns whether it actually worked, checked the only way
+        /// that matters for this harness: <c>GetForegroundWindow() == Main</c> afterwards.
+        /// </summary>
+        private async Task<bool> TryAcquireForegroundAsync()
+        {
+            Topmost = true;
+            Activate();
+            Native.AllowSetForegroundWindow(Native.ASFW_ANY);
+
+            var fg = Native.GetForegroundWindow();
+            var fgThread = fg != IntPtr.Zero ? Native.GetWindowThreadProcessId(fg, out _) : 0;
+            var ourThread = Native.GetCurrentThreadId();
+            var attached = fgThread != 0 && fgThread != ourThread && Native.AttachThreadInput(ourThread, fgThread, true);
+            try
+            {
+                Native.BringWindowToTop(Main);
+                Native.SetForegroundWindow(Main);
+                Native.SetFocus(Main);
+            }
+            finally
+            {
+                if (attached)
+                {
+                    Native.AttachThreadInput(ourThread, fgThread, false);
+                }
+            }
+
+            await WaitAsync(300);
+            var ok = Native.GetForegroundWindow() == Main;
+            Log($"INFO foreground==main {ok} (AttachThreadInput used={attached})");
+            if (ok)
+            {
+                return true;
+            }
+
+            // Last resort: a synthetic Alt press+release is a well-known way to satisfy the
+            // foreground-lock timeout heuristic when a plain SetForegroundWindow is refused outright.
+            Native.keybd_event(0x12 /* VK_MENU */, 0, 0, UIntPtr.Zero);
+            Native.keybd_event(0x12, 0, Native.KEYEVENTF_KEYUP, UIntPtr.Zero);
+            Native.SetForegroundWindow(Main);
+            await WaitAsync(300);
+            ok = Native.GetForegroundWindow() == Main;
+            Log($"INFO foreground==main {ok} (after Alt-tap fallback)");
+            return ok;
+        }
+
         private List<IntPtr> Overlays()
         {
             var list = new List<IntPtr>();
@@ -170,11 +233,12 @@ namespace HwndHostSpike
                 Log($"INFO dpi main {Native.GetDpiForWindow(Main)} child {Native.GetDpiForWindow(child)}; awareness main {Aw(Main)} child {Aw(child)} (2 = per-monitor)");
                 Check("cross-process child created", child != IntPtr.Zero && childPid != mainPid);
 
-                Topmost = true;
-                Activate();
-                Native.SetForegroundWindow(Main);
-                await WaitAsync(300);
-                Log($"INFO foreground==main {Native.GetForegroundWindow() == Main}");
+                if (!await TryAcquireForegroundAsync())
+                {
+                    Log("FAIL environment: no foreground - this session denies SetForegroundWindow to this process even with AttachThreadInput/AllowSetForegroundWindow/an Alt-tap fallback, so click/keyboard input cannot reliably reach any window here. Aborting the rest of --selftest instead of cascading unrelated failures.");
+                    Log("SELFTEST DONE");
+                    return;
+                }
 
                 // 1. Click focuses the child.
                 Native.GetWindowRect(child, out var cr);
@@ -216,8 +280,19 @@ namespace HwndHostSpike
                 // RustDesignSurfaceHost's WndProc turns that into MoveFocus, moving the keyboard focus
                 // out of the child and into whatever WPF element is next. Up to 6 Tabs for margin (the
                 // ring wraps within 3 from an unfocused state); the check is simply that focus is no
-                // longer in the child by the end.
-                for (var i = 0; i < 6; i++) { Press(0x09); await WaitAsync(150); }
+                // longer in the child by the end. Checked and stopped as soon as focus leaves (rather
+                // than always firing exactly 6): the WPF-level tab cycle here is only 3 stops (before,
+                // after, host), so blindly continuing to press Tab after it already left can cycle
+                // straight back into the host via TabIntoCore and produce a false FAIL.
+                for (var i = 0; i < 6; i++)
+                {
+                    Press(0x09);
+                    await WaitAsync(150);
+                    if (Native.ThreadInfo(child).hwndFocus != child)
+                    {
+                        break;
+                    }
+                }
                 ti = Native.ThreadInfo(child);
                 Check("Tab exits the surface (tabOut protocol)", ti.hwndFocus != child, $"focus={Native.Hex(ti.hwndFocus)} wpf={Keyboard.FocusedElement}");
 

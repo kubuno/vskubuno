@@ -29,6 +29,10 @@ namespace HwndHostSpike
         [DllImport("user32.dll")] public static extern IntPtr GetAncestor(IntPtr h, uint flags);
         [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
         [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+        [DllImport("user32.dll")] public static extern bool AllowSetForegroundWindow(int dwProcessId);
+        [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);
+        public const int ASFW_ANY = -1;
         [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
         [DllImport("user32.dll")] public static extern bool GetGUIThreadInfo(uint thread, ref GUITHREADINFO info);
         [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr h);
