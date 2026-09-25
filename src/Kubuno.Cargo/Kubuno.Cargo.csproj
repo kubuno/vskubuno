@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pure, VS-independent Cargo brain for the extension: cargo metadata / build-message
+    parsing, a command-line builder and a mockable process runner. Targets netstandard2.0
+    so the .NET Framework 4.8 VSIX project (Kubuno.VisualStudio) can reference it directly,
+    while still being testable with plain `dotnet test` on any modern SDK.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Cargo</RootNamespace>
+    <AssemblyName>Kubuno.Cargo</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- netstandard2.0 has no built-in JSON support; the package ships its own implementation. -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+</Project>

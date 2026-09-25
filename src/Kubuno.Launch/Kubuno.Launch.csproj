@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pure, VS-independent logic for phase 1c (launch/debug Rust targets with the native
+    debugger). Targets netstandard2.0 so it has no dependency on the VS SDK or any
+    particular .NET runtime: it is consumed by the VSIX project (net48, classic VSSDK)
+    and exercised directly by `dotnet test` without a Visual Studio host.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Launch</RootNamespace>
+    <AssemblyName>Kubuno.Launch</AssemblyName>
+  </PropertyGroup>
+
+</Project>
