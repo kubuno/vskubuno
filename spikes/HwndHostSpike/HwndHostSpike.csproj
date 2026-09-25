@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    DSG-7 spike (docs/DESIGNER.md): a standalone WPF window hosting the Rust
+    view surface (view_embed.exe, another process) through an HwndHost.
+    Deliberately NOT part of Kubuno.VisualStudio.sln. net48 on purpose: it is
+    the runtime the VSIX itself runs on inside devenv.exe.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RootNamespace>HwndHostSpike</RootNamespace>
+    <StartupObject>HwndHostSpike.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
