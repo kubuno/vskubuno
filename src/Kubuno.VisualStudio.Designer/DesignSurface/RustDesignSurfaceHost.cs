@@ -46,13 +46,15 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// not consume this frame (<c>kubuno_controls::host::forward_unhandled_keys</c>, additive in
     /// <c>kubuno-controls/src/host/mod.rs</c>). Since the container never itself has the keyboard focus
     /// (the grandchild does), EVERY <c>WM_KEYDOWN</c>/<c>WM_SYSKEYDOWN</c> this window's own
-    /// <see cref="WndProc"/> sees is, by construction, one of these forwarded messages - handled by
-    /// <see cref="VsFilterKeys"/> if the VSIX wired it (real <c>IVsFilterKeys2.TranslateAcceleratorEx</c>,
-    /// left as an integration-time extension point here - see that property's own doc for why), else by
-    /// <see cref="ComponentDispatcher.RaiseThreadMessage"/>, which is the documented, testable mechanism
-    /// for handing a message that arrived outside WPF's own <c>HwndSource</c> hook chain to WPF's
-    /// mnemonic/accelerator processing (proved out by this library's own spike-derived test harness,
-    /// <c>spikes/HwndHostSpike</c>'s updated <c>--selftest</c>).</item>
+    /// <see cref="WndProc"/> sees is, by construction, one of these forwarded messages. This class does
+    /// NOT call <c>ComponentDispatcher.RaiseThreadMessage</c> itself for it (an earlier version did, and
+    /// a live interactive run showed that SECOND, explicit call stealing native keyboard focus back from
+    /// the surface): WPF's own Dispatcher message pump already raises it, ambiently, for every message
+    /// pumped on this thread, which is the passive "cheap variant" docs/DESIGNER.md §7 describes - just
+    /// posting the message is enough. <see cref="VsFilterKeys"/> is still given every forwarded key, for
+    /// the real <c>IVsFilterKeys2.TranslateAcceleratorEx</c> path once the VSIX wires it (see that
+    /// property's own doc for why that COM call is left as an integration-time extension point here
+    /// rather than guessed at in this task).</item>
     /// <item><b>tabOut</b>: a custom <c>WM_APP</c>-based message (<c>kubuno_controls::host::WM_KUBUNO_TAB_OUT</c>,
     /// posted by <c>kubuno_controls::host::notify_tab_out</c>) - <see cref="WndProc"/> calls
     /// <see cref="UIElement.MoveFocus"/> with a <see cref="TraversalRequest"/>, moving the WPF focus out
@@ -100,17 +102,18 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// <summary>
         /// Optional hook into the real VS <c>IVsFilterKeys2.TranslateAcceleratorEx</c> path (see the
         /// class doc's "unhandledKey" remarks). Takes the raw <c>(message, wParam, lParam)</c> of a
-        /// forwarded key and returns whether it was translated/executed as a VS command; returning
-        /// <see langword="false"/> (including when this is left <see langword="null"/>, its default -
-        /// always the case in this library's own tests and the updated spike, which has no live VS) falls
-        /// through to <see cref="ComponentDispatcher.RaiseThreadMessage"/>.
+        /// forwarded key; its return value is not currently acted on here (WPF's own ambient message
+        /// pump already routes the SAME forwarded message through <c>ComponentDispatcher</c> - see the
+        /// class doc), it exists so a caller can log/assert whether VS's own command routing translated
+        /// it. Left <see langword="null"/> (its default) in this library's own tests and the updated
+        /// spike, which have no live VS to call into.
         ///
         /// Left as a settable property rather than wired directly to the real COM interface here: this
         /// task could not exercise <c>IVsFilterKeys2</c> against a live <c>devenv.exe</c> (see
         /// <c>docs/DESIGNER.md</c> §7's own "still to verify" list), and guessing its call shape without
         /// that verification risks a silently wrong integration. The VSIX's own integration step (see
         /// <c>INTEGRATION.md</c>) should set this from a working reference against the real SDK once it
-        /// can be checked live; until then <see cref="ComponentDispatcher"/> alone is the tested path.
+        /// can be checked live.
         /// </summary>
         public Func<int, IntPtr, IntPtr, bool>? VsFilterKeys { get; set; }
 
@@ -453,7 +456,17 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 // The container is never itself focused (the surface's grandchild window is), so every
                 // WM_KEYDOWN/WM_SYSKEYDOWN reaching this WndProc is one `forward_unhandled_keys` posted
                 // (see the class doc's "unhandledKey" remarks) - never a real keystroke on this window.
-                HandleUnhandledKey(hwnd, msg, wParam, lParam);
+                // Deliberately NO explicit ComponentDispatcher.RaiseThreadMessage call here (an earlier
+                // version of this class had one): WPF's own Dispatcher message pump already raises
+                // ComponentDispatcher.RaiseThreadMessage for every message it pumps on this thread,
+                // including ones posted to a window it does not own, BEFORE DispatchMessage reaches this
+                // WndProc at all - that ambient pass is what docs/DESIGNER.md §7 calls "re-routes it
+                // through ... ComponentDispatcher" for the "cheap variant". Calling it a SECOND time here
+                // was observed, live in an interactive session, to steal native keyboard focus back from
+                // the surface (a real WPF/HwndHost side effect, not this project's own state) - removed
+                // as the fix. `VsFilterKeys` (VS's OWN command routing, not WPF's input pipeline) carries
+                // none of that risk and is still given the chance.
+                HandleUnhandledKey(msg, wParam, lParam);
             }
             else if (msg == WmKubunoTabOut)
             {
@@ -470,29 +483,39 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             return base.WndProc(hwnd, msg, wParam, lParam, ref handled);
         }
 
-        private void HandleUnhandledKey(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam)
+        private void HandleUnhandledKey(int msg, IntPtr wParam, IntPtr lParam)
         {
             try
             {
-                if (VsFilterKeys?.Invoke(msg, wParam, lParam) == true)
-                {
-                    return;
-                }
-
-                var nativeMsg = new MSG
-                {
-                    hwnd = hwnd,
-                    message = msg,
-                    wParam = wParam,
-                    lParam = lParam,
-                };
-                ComponentDispatcher.RaiseThreadMessage(ref nativeMsg);
+                // See the WndProc call site's own comment for why this is the ONLY explicit action:
+                // the ambient Dispatcher pump already does the ComponentDispatcher part.
+                VsFilterKeys?.Invoke(msg, wParam, lParam);
             }
             catch (Exception ex)
             {
                 // A keyboard shim must never crash the designer pane over a single forwarded key.
-                KubunoViewsLogHost.Current.WriteException("Forwarding an unhandled design-surface key failed", ex);
+                KubunoViewsLogHost.Current.WriteException("VsFilterKeys threw while handling a forwarded design-surface key", ex);
             }
+        }
+
+        /// <summary>
+        /// Tab from WPF INTO the surface: WPF asks the sink to take the focus - exactly the spike's own
+        /// override (<c>git show 614594d:spikes/HwndHostSpike/DesignSurfaceHost.cs</c>), missing from an
+        /// earlier version of this class (a real regression: without it, WPF's Tab navigation has no way
+        /// to know this sink can take the focus and simply skips over it, per docs/DESIGNER.md §7's own
+        /// "Tab from WPF into the surface" row - restored here as the fix, found via an interactive
+        /// <c>--selftest</c> run whose "Tab from WPF enters the child (TabIntoCore)" check failed).
+        /// </summary>
+        protected override bool TabIntoCore(TraversalRequest request)
+        {
+            var child = Child;
+            if (child == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            NativeMethods.SetFocus(child);
+            return true;
         }
 
         protected override void DestroyWindowCore(HandleRef hwnd)

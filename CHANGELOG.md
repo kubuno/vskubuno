@@ -99,13 +99,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - **Keyboard protocol**, both sides: the surface (`kubuno_controls::host`, additive in
     `kubuno-controls/src/host/mod.rs` - see the `desktop` repo's own changelog) forwards a key it did
     not consume as the SAME `WM_KEYDOWN`/`WM_SYSKEYDOWN` a real keystroke would have produced,
-    posted to the container; `RustDesignSurfaceHost.WndProc` routes it through
-    `ComponentDispatcher.RaiseThreadMessage` (verified end to end via the updated spike below), with
-    a settable `VsFilterKeys` extension point for the real `IVsFilterKeys2.TranslateAcceleratorEx`
-    path once that can be checked against a live `devenv.exe` (not done in this task - see the
-    property's own doc for why guessing that COM signature was not worth the risk). `tabOut`: a new
-    `WM_APP`-based message (`kubuno_controls::host::WM_KUBUNO_TAB_OUT`/`notify_tab_out`) moves the
-    WPF focus out with `MoveFocus`/`TraversalRequest`.
+    posted to the container. `RustDesignSurfaceHost.WndProc` does NOT itself call
+    `ComponentDispatcher.RaiseThreadMessage` for it - an interactive `--selftest` run caught that
+    explicit second call (WPF's own Dispatcher pump already raises it, ambiently, for every message
+    on the thread) stealing native keyboard focus back from the surface, so it was removed; only the
+    ambient pump handles it now, plus a settable `VsFilterKeys` extension point for the real
+    `IVsFilterKeys2.TranslateAcceleratorEx` path once that can be checked against a live `devenv.exe`
+    (not done in this task - see the property's own doc for why guessing that COM signature was not
+    worth the risk). `tabOut`: a new `WM_APP`-based message
+    (`kubuno_controls::host::WM_KUBUNO_TAB_OUT`/`notify_tab_out`) moves the WPF focus out with
+    `MoveFocus`/`TraversalRequest`; `TabIntoCore` (WPF Tab INTO the surface) is restored to match the
+    spike's own override, exactly (missing from an earlier version of this class - another regression
+    the same interactive run caught).
   - `SetDocumentText` bridges DSG-3's "buffer is truth" rule onto the current exe (`view_embed.exe`,
     file-polling - DSG-6's own `kubuno-views-designer` process/`kubuno/setBuffer` IPC does not exist
     yet) via a private temp `.kbview` file, swappable for real IPC without touching anything else in
@@ -115,7 +120,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     real `PASS`/`FAIL` checks: Ctrl+S reaching the WPF `KeyBinding` while the surface has focus, and
     Tab exiting the surface once `view_embed.rs`'s own two-control demo focus ring (`save_btn`/
     `menu_btn` - added there for exactly this, since the compiled `.kbview` content's own focus ring
-    is `kubuno-views/src/runtime.rs`'s, out of this task's scope) runs past its last control.
+    is `kubuno-views/src/runtime.rs`'s, out of this task's scope) runs past its last control. Also
+    fixed a race in the crash-restart check itself: it subscribed to the host's `ChildReady` event
+    only AFTER a fixed post-kill wait, which the production restart-with-backoff (250 ms+relaunch, well
+    under that wait) had usually already fired by - now subscribes before killing the surface.
   - Not wired into the VSIX (`src/Kubuno.VisualStudio/*`, `Kubuno.VisualStudio.sln`) - see this
     library's `INTEGRATION.md` for the remaining steps.
 
