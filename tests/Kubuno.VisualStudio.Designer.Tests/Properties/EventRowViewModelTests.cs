@@ -13,7 +13,7 @@ namespace Kubuno.VisualStudio.Designer.Tests.Properties
         [TestMethod]
         public void AttributeName_PrependsOn()
         {
-            var row = new EventRowViewModel(CreateClickMeta(), null, Array.Empty<string>());
+            var row = new EventRowViewModel(CreateClickMeta(), null, Array.Empty<string>(), "file:///view.kbview", "0");
 
             Assert.AreEqual("OnClick", row.AttributeName);
         }
@@ -21,7 +21,7 @@ namespace Kubuno.VisualStudio.Designer.Tests.Properties
         [TestMethod]
         public void NoHandler_HasHandlerIsFalse()
         {
-            var row = new EventRowViewModel(CreateClickMeta(), null, Array.Empty<string>());
+            var row = new EventRowViewModel(CreateClickMeta(), null, Array.Empty<string>(), "file:///view.kbview", "0");
 
             Assert.IsFalse(row.HasHandler);
         }
@@ -29,15 +29,24 @@ namespace Kubuno.VisualStudio.Designer.Tests.Properties
         [TestMethod]
         public void WithHandler_HasHandlerIsTrue()
         {
-            var row = new EventRowViewModel(CreateClickMeta(), "button1_click", new[] { "button1_click" });
+            var row = new EventRowViewModel(CreateClickMeta(), "button1_click", new[] { "button1_click" }, "file:///view.kbview", "0");
 
             Assert.IsTrue(row.HasHandler);
         }
 
         [TestMethod]
+        public void Constructor_ExposesDocumentUriAndElementId()
+        {
+            var row = new EventRowViewModel(CreateClickMeta(), null, Array.Empty<string>(), "file:///settings_view.kbview", "0.1");
+
+            Assert.AreEqual("file:///settings_view.kbview", row.DocumentUri);
+            Assert.AreEqual("0.1", row.ElementId);
+        }
+
+        [TestMethod]
         public void RequestCreateHandler_RaisesEvent()
         {
-            var row = new EventRowViewModel(CreateClickMeta(), null, Array.Empty<string>());
+            var row = new EventRowViewModel(CreateClickMeta(), null, Array.Empty<string>(), "file:///view.kbview", "0");
             var raised = false;
             row.CreateHandlerRequested += (_, _) => raised = true;
 
@@ -49,7 +58,7 @@ namespace Kubuno.VisualStudio.Designer.Tests.Properties
         [TestMethod]
         public void SettingHandlerName_RaisesPropertyChanged_ForHandlerNameAndHasHandler()
         {
-            var row = new EventRowViewModel(CreateClickMeta(), null, Array.Empty<string>());
+            var row = new EventRowViewModel(CreateClickMeta(), null, Array.Empty<string>(), "file:///view.kbview", "0");
             var raised = new System.Collections.Generic.List<string?>();
             row.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
 

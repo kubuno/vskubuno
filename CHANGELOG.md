@@ -228,6 +228,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Not wired into the VSIX (`src/Kubuno.VisualStudio/*`, `Kubuno.VisualStudio.sln`) - see this
     library's `INTEGRATION.md` for the remaining steps.
 
+- **`Handlers\HandlerCreationService` (work package DSG-10): double-click a control/event on the
+  Events tab -> create its Rust handler.** Calls `kubuno-views-ls`'s new `kubuno/createHandler`
+  (via `Handlers\IKubunoViewsLanguageServerClient`, the real implementation
+  `Handlers\Infrastructure\JsonRpcKubunoViewsLanguageServerClient` wrapping the same
+  `StreamJsonRpc.JsonRpc` `KubunoViewsLanguageClient.Rpc` already exposes) and applies the
+  resulting edit through the existing `Editing\*` services - `BufferEditCore.TryApply`, called
+  ONCE PER FILE in the response's `edit.changes` map (never `CompoundEditCoordinator`, which links
+  several requests into one undo unit: the `.kbview` attribute edit and the code-behind `.rs` stub
+  must stay two SEPARATE undo units), then opens the code-behind file at the new `fn` via
+  `Handlers\IHandlerDocumentHost` (real implementation `Handlers\Infrastructure
+  \VsHandlerDocumentHost`, bridging `IVsTextLines`/`ITextBuffer` the same way `INTEGRATION.md` §8
+  point 1 already documents). When the event already names a handler, it instead just navigates to
+  that handler's existing definition - no edit. `Handlers\CreateHandlerResponseParser` is the pure,
+  `System.Text.Json`-based half that turns the RPC's JSON result into typed DTOs, decoupled from the
+  transport (reuses DSG-2/DSG-5's own `Editing\TextEditDto`/`LspRange`/`LspPosition` for every
+  file's edits - no second edit type). `Properties\EventRowViewModel`/`PropertiesPanelViewModel`
+  gained the `DocumentUri`/`ElementId` a "create handler" request needs (the minimal `Properties\`
+  change this package's own brief calls for); `Handlers\EventsTabHandlerCreationBridge` is the one
+  line of wiring from `EventRowViewModel.CreateHandlerRequested` to the new service. Unit-tested
+  with fakes (`tests\Kubuno.VisualStudio.Designer.Tests\Handlers\`, incl. a version-drift test for
+  the apply-rejection path); the two real, VS/JsonRpc-dependent adapters are left for a manual
+  check in the experimental instance, same as this library's other VS-SDK-bound classes. See
+  `desktop` repo's own CHANGELOG for the `kubuno-views-ls` half (`kubuno/createHandler`).
+
 ### Changed
 
 - `samples/hello-rust/src/main.rs` binds `greet(...)`'s result to a local `greeting: String` before

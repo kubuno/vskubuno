@@ -34,7 +34,9 @@ namespace Kubuno.VisualStudio.Designer.Tests.Properties
                 CreateButtonMeta(),
                 new Dictionary<string, string?> { ["Text"] = "Save" },
                 new Dictionary<string, string?>(),
-                new[] { "button1_click" });
+                new[] { "button1_click" },
+                "file:///view.kbview",
+                "0");
 
             Assert.IsTrue(viewModel.HasSelection);
             Assert.AreEqual(2, viewModel.Properties.Count);
@@ -44,6 +46,8 @@ namespace Kubuno.VisualStudio.Designer.Tests.Properties
             Assert.AreEqual(1, viewModel.Events.Count);
             Assert.AreEqual("Click", viewModel.Events[0].Name);
             CollectionAssert.AreEqual(new[] { "button1_click" }, viewModel.Events[0].AvailableHandlerNames.ToArray());
+            Assert.AreEqual("file:///view.kbview", viewModel.Events[0].DocumentUri);
+            Assert.AreEqual("0", viewModel.Events[0].ElementId);
         }
 
         [TestMethod]
@@ -55,7 +59,9 @@ namespace Kubuno.VisualStudio.Designer.Tests.Properties
                 CreateButtonMeta(),
                 new Dictionary<string, string?>(),
                 new Dictionary<string, string?> { ["Click"] = "button1_click" },
-                new[] { "button1_click" });
+                new[] { "button1_click" },
+                "file:///view.kbview",
+                "0");
 
             Assert.AreEqual("button1_click", viewModel.Events[0].HandlerName);
         }
@@ -64,7 +70,7 @@ namespace Kubuno.VisualStudio.Designer.Tests.Properties
         public void ClearSelection_EmptiesRows()
         {
             var viewModel = new PropertiesPanelViewModel();
-            viewModel.SetSelection(CreateButtonMeta(), new Dictionary<string, string?>(), new Dictionary<string, string?>(), new string[0]);
+            viewModel.SetSelection(CreateButtonMeta(), new Dictionary<string, string?>(), new Dictionary<string, string?>(), new string[0], "file:///view.kbview", "0");
 
             viewModel.ClearSelection();
 
@@ -77,7 +83,7 @@ namespace Kubuno.VisualStudio.Designer.Tests.Properties
         public void EventRow_CreateHandlerRequested_BubblesThroughPanelViewModel()
         {
             var viewModel = new PropertiesPanelViewModel();
-            viewModel.SetSelection(CreateButtonMeta(), new Dictionary<string, string?>(), new Dictionary<string, string?>(), new string[0]);
+            viewModel.SetSelection(CreateButtonMeta(), new Dictionary<string, string?>(), new Dictionary<string, string?>(), new string[0], "file:///view.kbview", "0");
             CreateHandlerRequestedEventArgs? captured = null;
             viewModel.CreateHandlerRequested += (_, e) => captured = e;
 

@@ -47,13 +47,20 @@ namespace Kubuno.VisualStudio.Designer.Properties
         /// Populates <see cref="Properties"/>/<see cref="Events"/> for a newly-selected element.
         /// <paramref name="attributeValues"/>/<paramref name="eventHandlers"/> hold only the attributes
         /// actually present on the element (missing keys fall back to each <see cref="PropertyMeta.Default"/>
-        /// via <see cref="PropertyRowViewModel.EffectiveValue"/>).
+        /// via <see cref="PropertyRowViewModel.EffectiveValue"/>). <paramref name="documentUri"/>/
+        /// <paramref name="elementId"/> identify the selected element itself (the open <c>.kbview</c>
+        /// document's own URI, and its stable id, docs/DESIGNER.md §6/§8's "DSG-2 protocol") - carried
+        /// through to each <see cref="EventRowViewModel"/> so a "create handler" request
+        /// (<see cref="CreateHandlerRequested"/>) has everything <c>Handlers.HandlerCreationService</c>
+        /// needs without this view-model depending on that package itself (DSG-10).
         /// </summary>
         public void SetSelection(
             ComponentMeta component,
             IReadOnlyDictionary<string, string?> attributeValues,
             IReadOnlyDictionary<string, string?> eventHandlers,
-            IReadOnlyList<string> availableHandlerNames)
+            IReadOnlyList<string> availableHandlerNames,
+            string documentUri,
+            string elementId)
         {
             if (component is null)
             {
@@ -75,6 +82,16 @@ namespace Kubuno.VisualStudio.Designer.Properties
                 throw new ArgumentNullException(nameof(availableHandlerNames));
             }
 
+            if (documentUri is null)
+            {
+                throw new ArgumentNullException(nameof(documentUri));
+            }
+
+            if (elementId is null)
+            {
+                throw new ArgumentNullException(nameof(elementId));
+            }
+
             Component = component;
 
             Properties = component.Properties
@@ -84,7 +101,12 @@ namespace Kubuno.VisualStudio.Designer.Properties
             Events = component.Events
                 .Select(e =>
                 {
-                    var row = new EventRowViewModel(e, eventHandlers.TryGetValue(e.Name, out var h) ? h : null, availableHandlerNames);
+                    var row = new EventRowViewModel(
+                        e,
+                        eventHandlers.TryGetValue(e.Name, out var h) ? h : null,
+                        availableHandlerNames,
+                        documentUri,
+                        elementId);
                     row.CreateHandlerRequested += (_, _) => CreateHandlerRequested?.Invoke(this, new CreateHandlerRequestedEventArgs(row));
                     return row;
                 })

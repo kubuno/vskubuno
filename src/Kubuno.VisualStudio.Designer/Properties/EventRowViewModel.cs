@@ -16,11 +16,18 @@ namespace Kubuno.VisualStudio.Designer.Properties
     {
         private string? _handlerName;
 
-        public EventRowViewModel(EventMeta @event, string? handlerName, IReadOnlyList<string> availableHandlerNames)
+        public EventRowViewModel(
+            EventMeta @event,
+            string? handlerName,
+            IReadOnlyList<string> availableHandlerNames,
+            string documentUri,
+            string elementId)
         {
             Event = @event ?? throw new ArgumentNullException(nameof(@event));
             _handlerName = handlerName;
             AvailableHandlerNames = availableHandlerNames ?? throw new ArgumentNullException(nameof(availableHandlerNames));
+            DocumentUri = documentUri ?? throw new ArgumentNullException(nameof(documentUri));
+            ElementId = elementId ?? throw new ArgumentNullException(nameof(elementId));
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -54,6 +61,12 @@ namespace Kubuno.VisualStudio.Designer.Properties
 
         /// <summary>Handler names already known to the language server for this document (definition.rs's existing lookup) - the dropdown's source list.</summary>
         public IReadOnlyList<string> AvailableHandlerNames { get; }
+
+        /// <summary>The open <c>.kbview</c> document's own URI - together with <see cref="ElementId"/>, everything <c>Handlers.HandlerCreationService</c> needs to call <c>kubuno/createHandler</c> for this row (DSG-10).</summary>
+        public string DocumentUri { get; }
+
+        /// <summary>The owning element's stable id (docs/DESIGNER.md §6/§8's "DSG-2 protocol").</summary>
+        public string ElementId { get; }
 
         public bool HasHandler => !string.IsNullOrEmpty(_handlerName);
 
