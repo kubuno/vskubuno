@@ -245,6 +245,26 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>System.Runtime.CompilerServices.Unsafe.dll</Link>
     </Content>
+    <!--
+      Added after a live Test Explorer smoke test: discovery (Kubuno.TestAdapter.dll, loaded by
+      VSTest's UnitTestExtension host, not the in-proc VSSDK AppDomain the six DLLs above were
+      first added for - see Kubuno.TestAdapter/AssemblyResolution.cs for why that host needs its
+      *own* fix too) failed with the exact same "file not found" pattern this whole ItemGroup
+      exists to prevent, this time for Microsoft.Bcl.AsyncInterfaces (IAsyncEnumerable support -
+      needed once Kubuno.Cargo's JSON parsing/CargoWorkspaceSource's IWorkspace4.GetFilesAsync are
+      actually exercised, not just referenced).
+    -->
+    <Content Include="$(NuGetPackageRoot)microsoft.bcl.asyncinterfaces\9.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Microsoft.Bcl.AsyncInterfaces.dll</Link>
+    </Content>
+    <!-- Also part of Kubuno.TestAdapter's own dependency closure (confirmed via its plain `dotnet build` output, which does copy every transitive dependency correctly - only VSIX packaging drops them, per this ItemGroup's opening comment). -->
+    <Content Include="$(NuGetPackageRoot)system.valuetuple\4.5.0\lib\net47\System.ValueTuple.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>System.ValueTuple.dll</Link>
+    </Content>
     <Content Include="$(NuGetPackageRoot)system.threading.tasks.extensions\4.6.0\lib\net462\System.Threading.Tasks.Extensions.dll">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

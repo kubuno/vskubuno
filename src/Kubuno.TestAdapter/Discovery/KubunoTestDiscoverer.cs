@@ -24,6 +24,8 @@ namespace Kubuno.TestAdapter.Discovery
         private readonly IProcessRunner _processRunner;
         private readonly IReadOnlyDictionary<string, string>? _environmentVariables;
 
+        static KubunoTestDiscoverer() => AssemblyResolution.EnsureInstalled();
+
         public KubunoTestDiscoverer()
             : this(new ProcessRunner(), environmentVariables: null)
         {

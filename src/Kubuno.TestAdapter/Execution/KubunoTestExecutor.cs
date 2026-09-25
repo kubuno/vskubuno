@@ -24,6 +24,8 @@ namespace Kubuno.TestAdapter.Execution
         private readonly IProcessRunner _processRunner;
         private volatile CancellationTokenSource? _cancellationTokenSource;
 
+        static KubunoTestExecutor() => AssemblyResolution.EnsureInstalled();
+
         public KubunoTestExecutor()
             : this(new ProcessRunner())
         {

@@ -28,6 +28,8 @@ namespace Kubuno.TestAdapter.Containers
     {
         private readonly ICargoWorkspaceSource _workspaceSource;
 
+        static KubunoTestContainerDiscoverer() => AssemblyResolution.EnsureInstalled();
+
         [ImportingConstructor]
         public KubunoTestContainerDiscoverer(ICargoWorkspaceSource workspaceSource)
         {

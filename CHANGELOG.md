@@ -81,6 +81,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     being excluded from the test output directory (`Microsoft.VisualStudio.SDK`'s own
     `ExcludeAssets="runtime"` cascades to its whole dependency graph), which is fine inside
     `devenv.exe` but left the standalone `dotnet test` host unable to load the assembly at all.
+- **`RustDesignSurfaceHost` (work package DSG-7, production): the real embedded design surface,
+  turning the DSG-7 spike (`docs/DESIGNER.md` §7) into code that plugs into DSG-3's
+  `IDesignSurfaceHost` seam.** New `Kubuno.VisualStudio.Designer.DesignSurface.RustDesignSurfaceHost`
+  (an `HwndHost`) and `RustDesignSurfaceHostFactory`:
+  - Embeds the design surface exe exactly as the spike proved out (a plain Win32 "Static" container
+    child of WPF's own hosting window, the surface launched with `--parent <container>` and creating
+    its own `WS_CHILD` inside it - no `SetParent` needed).
+  - **Lifecycle**: a persistent Job Object (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`) so the surface
+    process cannot outlive its host even on a hard VS kill; `SetErrorMode(SEM_FAILCRITICALERRORS |
+    SEM_NOOPENFILEERRORBOX)` so a missing runtime DLL fails with an exit code instead of the
+    loader's modal dialog; restart-with-backoff on an unexpected exit (250 ms, doubling to a 30 s
+    cap, reset after 10 s of stable uptime); a pre-launch check for `kubuno_ui.dll`/`std-*.dll`
+    beside the exe, showing a clear message in the container itself (and retrying with the same
+    backoff, so staging the runtime while the pane is open recovers automatically) instead of
+    launching into a missing-DLL crash loop.
+  - **Keyboard protocol**, both sides: the surface (`kubuno_controls::host`, additive in
+    `kubuno-controls/src/host/mod.rs` - see the `desktop` repo's own changelog) forwards a key it did
+    not consume as the SAME `WM_KEYDOWN`/`WM_SYSKEYDOWN` a real keystroke would have produced,
+    posted to the container; `RustDesignSurfaceHost.WndProc` routes it through
+    `ComponentDispatcher.RaiseThreadMessage` (verified end to end via the updated spike below), with
+    a settable `VsFilterKeys` extension point for the real `IVsFilterKeys2.TranslateAcceleratorEx`
+    path once that can be checked against a live `devenv.exe` (not done in this task - see the
+    property's own doc for why guessing that COM signature was not worth the risk). `tabOut`: a new
+    `WM_APP`-based message (`kubuno_controls::host::WM_KUBUNO_TAB_OUT`/`notify_tab_out`) moves the
+    WPF focus out with `MoveFocus`/`TraversalRequest`.
+  - `SetDocumentText` bridges DSG-3's "buffer is truth" rule onto the current exe (`view_embed.exe`,
+    file-polling - DSG-6's own `kubuno-views-designer` process/`kubuno/setBuffer` IPC does not exist
+    yet) via a private temp `.kbview` file, swappable for real IPC without touching anything else in
+    this class.
+  - `spikes/HwndHostSpike` now drives this production class instead of its own (removed) local
+    `DesignSurfaceHost`, and its `--selftest` turned two former "INFO, not implemented" lines into
+    real `PASS`/`FAIL` checks: Ctrl+S reaching the WPF `KeyBinding` while the surface has focus, and
+    Tab exiting the surface once `view_embed.rs`'s own two-control demo focus ring (`save_btn`/
+    `menu_btn` - added there for exactly this, since the compiled `.kbview` content's own focus ring
+    is `kubuno-views/src/runtime.rs`'s, out of this task's scope) runs past its last control.
+  - Not wired into the VSIX (`src/Kubuno.VisualStudio/*`, `Kubuno.VisualStudio.sln`) - see this
+    library's `INTEGRATION.md` for the remaining steps.
 
 ### Changed
 
@@ -89,26 +126,76 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   breakpoint/inspect (used to verify natvis end to end for this task; also a generally more useful
   manual-testing fixture, matching `lib.rs`'s own stated purpose for this crate).
 
+### Fixed
+
+- **Test Explorer discovery/execution for a real Cargo.toml, live-verified end to end** (2 Rust
+  tests discovered, both run and reported passed): `Kubuno.TestAdapter.dll`, loaded by VSTest's
+  out-of-process discovery/execution host, failed with `FileNotFoundException: Could not load
+  ... 'System.Text.Json'` (then, once that was shipped, `Microsoft.Bcl.AsyncInterfaces`) the
+  moment it called into `Kubuno.Cargo` - unlike the in-proc VSSDK `AsyncPackage` AppDomain, that
+  host does not probe an extension assembly's own directory for its dependencies, even though the
+  files sit right next to it in the deployed VSIX (read the actual failure by dumping the "Tests"
+  Output pane's `TextDocument` through `EnvDTE`, not by guessing). Fixed two ways: a new
+  `Kubuno.TestAdapter/AssemblyResolution.cs` installs a normal `AppDomain.AssemblyResolve` handler
+  (hooked from the static constructors of `KubunoTestDiscoverer`/`KubunoTestExecutor`/
+  `KubunoTestContainerDiscoverer`) that resolves from the adapter's own directory - the standard
+  pattern for VSTest adapters with a non-trivial dependency closure; and `Kubuno.VisualStudio.csproj`
+  now also ships `Microsoft.Bcl.AsyncInterfaces.dll` and `System.ValueTuple.dll` as explicit
+  `Content` items (found missing by diffing the deployed extension folder against
+  `Kubuno.TestAdapter`'s own plain `dotnet build` output, which does copy its full transitive
+  closure correctly).
+- **`.kbview` files were being claimed by Visual Studio's own XML editor**, not our content type
+  (4 "namespace prefix 'x' is not defined" errors on `x:Name` - which this format deliberately
+  allows without an `xmlns:x` declaration - confirmed live via the Error List). Root cause:
+  `Kubuno.VisualStudio.Views.dll`'s `FileExtensionToContentTypeDefinition`/`ContentTypeDefinition`
+  MEF exports for `.kbview`/`"kbview"` were not taking effect, so the file fell through to VS's
+  content-based "this looks like XML" fallback. Fixed by duplicating that mapping directly in
+  `Kubuno.VisualStudio.dll` (`LanguageService/ContentDefinition.cs`) - the same assembly
+  `RustLanguageClient`'s own, working `.rs`/`"rust"` mapping already lives in - confirmed live:
+  the Error List is clean again after this change. `KubunoViewsLanguageClient`'s own
+  `[Export(typeof(ILanguageClient))]` was *also* moved into this assembly the same way (a new
+  `LanguageService/KbviewLanguageClient.cs`, a pure forwarding wrapper - no behavior of its own,
+  everything still owned by `Kubuno.VisualStudio.Views.LanguageService.KubunoViewsLanguageClient`,
+  untouched per that library's own INTEGRATION.md), since `Kubuno.TestAdapter.dll`'s own MEF part
+  (`ITestContainerDiscoverer`, registered the exact same "separate assembly, own
+  `MefComponent` VSIX asset" way) composes and runs correctly, ruling out a general cross-assembly
+  MEF problem.
+
 ### Known limitations
 
-- **`kubuno-views-ls.exe` was not observed starting for a `.kbview` file, live, in the experimental
-  instance** (rust-analyzer reliably starts for `.rs` files opened the same way in the same
-  session). `Kubuno.VisualStudio.Views.INTEGRATION.md`'s documented fallback (an explicit second
-  `Microsoft.VisualStudio.MefComponent` VSIX asset for `Kubuno.VisualStudio.Views`, in case
-  composition from `%CurrentProject%` alone is not enough) is now in `source.extension.vsixmanifest`,
-  but did not change the outcome after a clean rebuild/redeploy/relaunch. The MEF composition error
-  log (`ComponentModelCache\Microsoft.VisualStudio.Default.err`) shows no Kubuno-related errors
-  either, and `Kubuno.VisualStudio.Views.dll` is confirmed present in the deployed extension
-  folder's MEF catalog scan - so this looks like an `ILanguageClient` activation-time issue (or
-  never being invoked at all for this content type) rather than a composition/export failure.
-  `KubunoViewsLanguageClient.ActivateAsync` unconditionally attempts `Process.Start` once invoked
-  (no early-return on a missing workspace root), so the next step is confirming, interactively,
-  whether `ActivateAsync` runs at all (the "Kubuno" pane's `KubunoViewsLogHost` lines could not be
-  read through `EnvDTE` `OutputWindow` automation from a script in this session - it reported 0
-  panes even for the built-in "Build"/"General" panes, which is itself suspicious and may be a
-  script-side automation issue rather than a real absence) - needs an interactive look at the
-  "Kubuno" pane (View > Output) and/or a `/log` `ActivityLog.xml` capture. Not fixed blind in this
-  session; flagged for the next one instead.
+- **`kubuno-views-ls.exe` was still not observed starting for a `.kbview` file** even after the
+  content-type fix above and after moving the `ILanguageClient` export itself into the assembly
+  proven to work for Rust (see "Fixed"). The "Kubuno" Output pane (now read reliably, via a
+  small out-of-process `EnvDTE`/`EnvDTE80` probe using `OutputWindowPane.TextDocument.
+  CreateEditPoint().GetText(...)` - the original attempt to read it through late-bound PowerShell
+  COM automation silently returned zero panes for *every* pane, including built-in ones, which was
+  itself the bug, not a real absence) never logs a single kubuno-views-ls line for `.kbview`,
+  while the identically-shaped Rust client logs reliably for `.rs` in the same session. This rules
+  out both the MEF-asset-registration hypothesis and the cross-assembly-export hypothesis, leaving
+  `ILanguageClient` activation itself (something specific to how
+  `Microsoft.VisualStudio.LanguageServer.Client` decides to call `ActivateAsync` for this content
+  type) as the remaining suspect - not root-caused in this session; needs an actual attached
+  managed debugger on `ActivateAsync`/the LSP client host, which a script cannot drive. At least
+  the XML-editor hijacking is fixed, so `.kbview` files are no longer actively mis-colorized/
+  mis-validated while this remains open.
+- **Native debugging via `EnvDTE` automation is unreliable enough that the natvis per-user-folder
+  question (see `Debugging/NatvisInstaller.cs`) could not be settled by script in this session.**
+  `Debugger.Breakpoints.Add` works; `ExecuteCommand("Debug.Start")` initially reports the command
+  unavailable (fixed by pre-seeding `.vs\ProjectSettings.json`'s `CurrentProjectSetting`, since
+  Open Folder's "Select Startup Item" state has no scriptable setter otherwise) but then fails
+  with a bare COM `E_FAIL` with no further detail in the Build/Debug Output panes;
+  `ExecuteCommand("Debug.StartDebugTarget")` hangs the calling thread and leaves the DTE server
+  rejecting further calls (`RPC_E_CALL_REJECTED`) until `devenv` is restarted, with no visible
+  modal dialog to dismiss. Two marker `.natvis` files (`alloc::string::String` overridden to a
+  distinct literal per folder) are staged in both
+  `%USERPROFILE%\Documents\Visual Studio 2022\Visualizers` and `...\Visual Studio 18\Visualizers`
+  for whoever next runs an actual F5 session against `samples\hello-rust` (breakpoint at
+  `src\main.rs` line 3, on the `greeting: String` local - see the "Changed" entry above) to read
+  off in the Locals window. Current Microsoft Learn documentation (`create-custom-views-of-native-
+  objects`, moniker range covering the latest/2026 version, dated 2026-08) still gives
+  `...\Visual Studio 2022\Visualizers` as the example path even for the current version, so
+  `NatvisInstaller.cs` was left unchanged pending that live confirmation rather than "fixed" on a
+  guess.
 
 - `Kubuno.VisualStudio.Designer` (work package DSG-3, standalone library, not yet wired into the
   VSIX - see its own `INTEGRATION.md`): C# skeleton of the `.kbview` designer editor. An
