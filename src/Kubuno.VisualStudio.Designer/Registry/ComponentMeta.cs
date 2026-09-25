@@ -5,13 +5,12 @@ namespace Kubuno.VisualStudio.Designer.Registry
     /// <summary>
     /// Mirrors one exported <c>kubuno_views::registry::ComponentMeta</c> entry - the whole shape
     /// docs/DESIGNER.md §5 specifies for the <c>kubuno/registry</c> response ("one JSON object per
-    /// ComponentMeta: {name, doc, properties: [...], events: [...], children, family}", plus the two
-    /// additive fields, <see cref="Icon"/> and <see cref="LayoutKind"/>, that section calls for). DSG-1
-    /// (not built yet) owns the real Rust struct and the language-server endpoint that serializes it;
-    /// this class only needs to deserialize whatever that endpoint eventually returns, which is why it
-    /// is loaded from a JSON string (<see cref="ComponentRegistry.FromJson"/>) rather than referencing
-    /// any Rust crate directly - see docs/ARCHITECTURE.md's "everything that knows Rust/Kubuno is in
-    /// Rust; C# only integrates".
+    /// ComponentMeta: {name, doc, properties: [...], events: [...], children, family}", plus the
+    /// additive fields <see cref="Icon"/>, <see cref="LayoutKind"/> and <see cref="AllowedChildren"/>
+    /// that section (and DSG-1's own implementation, <c>kubuno-views/src/registry/export.rs</c>) call
+    /// for. Loaded from a JSON string (<see cref="ComponentRegistry.FromJson"/>) rather than
+    /// referencing the Rust crate directly - see docs/ARCHITECTURE.md's "everything that knows
+    /// Rust/Kubuno is in Rust; C# only integrates".
     /// </summary>
     public sealed class ComponentMeta
     {
@@ -24,13 +23,26 @@ namespace Kubuno.VisualStudio.Designer.Registry
         public string Family { get; set; } = string.Empty;
 
         /// <summary>
-        /// A short curated glyph name (§5: "an icon glyph name (none exists yet; node.rs's static_icon
-        /// table is the right precedent for a short curated name list, reused for the toolbox)"). May be
-        /// <see langword="null"/> for a component the registry hasn't assigned one yet.
+        /// A short glyph name for the toolbox (§5: "an icon glyph name"). The real export
+        /// (<c>export.rs</c>) derives this mechanically - the component name, kebab-cased - rather
+        /// than from a hand-curated table, so it is effectively never <see langword="null"/> for a
+        /// component the real registry exports; kept nullable here only because nothing in this type
+        /// should assume the server always sets it.
         /// </summary>
         public string? Icon { get; set; }
 
         public ChildrenModel Children { get; set; }
+
+        /// <summary>
+        /// <see cref="ChildrenModel.List"/>'s gated child element names (docs/DESIGNER.md §5:
+        /// "children model incl. allowed child names"), e.g. <c>["TabItem"]</c> for <c>Tabs</c>. Empty
+        /// for every other component and for an ungated <see cref="ChildrenModel.List"/> container
+        /// (e.g. <c>Stack</c>, which accepts any child). A new field the real export
+        /// (<c>ComponentJson::allowed_children</c>) added alongside <see cref="Children"/> rather than
+        /// folding into it, since <see cref="Children"/> must stay the bare string
+        /// <c>JsonStringEnumConverter</c> expects.
+        /// </summary>
+        public List<string> AllowedChildren { get; set; } = new List<string>();
 
         /// <summary>See <see cref="Registry.LayoutKind"/>'s own doc comment for why this is nullable.</summary>
         public LayoutKind? LayoutKind { get; set; }

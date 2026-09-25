@@ -1,135 +1,1859 @@
 [
   {
+    "name": "Button",
+    "doc": "A push button (`kubuno_controls::buttons::Button` replica).",
+    "family": "core",
+    "icon": "button",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The label (the replica's `text` field, set directly through `Deref`)."
+      },
+      {
+        "name": "Variant",
+        "kind": {
+          "Enum": [
+            "Primary",
+            "Secondary",
+            "Ghost",
+            "Text",
+            "Danger",
+            "TextDanger"
+          ]
+        },
+        "default": "Primary",
+        "doc": "The button's visual weight — filled accent, bordered, ghost, text-only, or danger."
+      },
+      {
+        "name": "Size",
+        "kind": {
+          "Enum": [
+            "Sm",
+            "Md",
+            "Lg"
+          ]
+        },
+        "default": "Md",
+        "doc": "The button's height and horizontal padding."
+      },
+      {
+        "name": "Icon",
+        "kind": "String",
+        "default": "",
+        "doc": "A leading icon glyph name from the shared icon set."
+      },
+      {
+        "name": "Loading",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Replaces the content with a spinning ring and disables the button."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnClick",
+        "doc": "Raised when the button is activated (pointer click or Space/Enter)."
+      }
+    ]
+  },
+  {
+    "name": "Switch",
+    "doc": "A toggle switch (`kubuno_controls::buttons::CheckBox`-backed replica).",
+    "family": "core",
+    "icon": "switch",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "On",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "The switch's checked state."
+      },
+      {
+        "name": "Label",
+        "kind": "String",
+        "default": "",
+        "doc": "The text to the switch's right."
+      },
+      {
+        "name": "Description",
+        "kind": "String",
+        "default": "",
+        "doc": "A secondary line under the label, `text-xs text-text-secondary`."
+      },
+      {
+        "name": "Size",
+        "kind": {
+          "Enum": [
+            "Sm",
+            "Md"
+          ]
+        },
+        "default": "Md",
+        "doc": "The track/thumb size."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnToggled",
+        "doc": "Raised when the switch's checked state changes."
+      }
+    ]
+  },
+  {
+    "name": "TextField",
+    "doc": "A single-line text input (`kubuno_controls::text::TextBox` replica).",
+    "family": "core",
+    "icon": "text-field",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The field's content."
+      },
+      {
+        "name": "Placeholder",
+        "kind": "String",
+        "default": "",
+        "doc": "Shown in place of an empty value."
+      },
+      {
+        "name": "Invalid",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Turns the border and the focus outline to the danger colour."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnChanged",
+        "doc": "Raised when the text changes (typing, paste, programmatic edit)."
+      }
+    ]
+  },
+  {
     "name": "Card",
-    "doc": "A titled container with a single body widget.",
+    "doc": "A titled surface (`kubuno_ui::containers::Card`, wraps a `Panel`).",
     "family": "core",
     "icon": "card",
     "children": "SingleWidget",
+    "allowed_children": [],
     "layout_kind": null,
     "properties": [
-      { "name": "Title", "kind": "String", "default": "", "doc": "The card's header text." },
-      { "name": "Elevated", "kind": "Bool", "default": "false", "doc": "Whether the card renders a drop shadow." }
+      {
+        "name": "Title",
+        "kind": "String",
+        "default": "",
+        "doc": "The header title; empty hides the header band."
+      },
+      {
+        "name": "Subtitle",
+        "kind": "String",
+        "default": "",
+        "doc": "The secondary line under the title."
+      },
+      {
+        "name": "Dense",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Tighter header/footer/body padding and a body-size title."
+      },
+      {
+        "name": "Flush",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "No body padding — for a table or list that must bleed to the card's edges."
+      },
+      {
+        "name": "Surface",
+        "kind": {
+          "Enum": [
+            "Card",
+            "Layer",
+            "Raised"
+          ]
+        },
+        "default": "Card",
+        "doc": "The card's ground: the Kubuno card, the console's current `Layer` look (`on_layer`), or the card lifted off the page with a shadow (`raised`)."
+      }
     ],
     "events": []
   },
   {
     "name": "Stack",
-    "doc": "A flow container that lays its children out along one axis.",
+    "doc": "A flow column/row of fixed-extent blocks (`kubuno_ui::containers::Stack`).",
     "family": "core",
     "icon": "stack",
     "children": "List",
+    "allowed_children": [],
     "layout_kind": "Flow",
     "properties": [
-      { "name": "Direction", "kind": { "Enum": ["Horizontal", "Vertical"] }, "default": "Vertical", "doc": "The axis children stack along." },
-      { "name": "Gap", "kind": "F32", "default": "0", "doc": "Spacing between children, in DIPs." }
-    ],
-    "events": []
-  },
-  {
-    "name": "Button",
-    "doc": "A clickable push button.",
-    "family": "core",
-    "icon": "button",
-    "children": "None",
-    "layout_kind": null,
-    "properties": [
-      { "name": "Text", "kind": "String", "default": "", "doc": "The button's label." },
-      { "name": "Enabled", "kind": "Bool", "default": "true", "doc": "Whether the button accepts input." },
-      { "name": "Variant", "kind": { "Enum": ["Primary", "Secondary", "Ghost"] }, "default": "Primary", "doc": "Visual emphasis." }
-    ],
-    "events": [
-      { "name": "Click", "doc": "Raised when the button is activated." }
-    ]
-  },
-  {
-    "name": "Switch",
-    "doc": "A boolean on/off toggle.",
-    "family": "core",
-    "icon": "switch",
-    "children": "None",
-    "layout_kind": null,
-    "properties": [
-      { "name": "Checked", "kind": "Bool", "default": "false", "doc": "Current on/off state." }
-    ],
-    "events": [
-      { "name": "Toggled", "doc": "Raised when Checked changes." }
-    ]
-  },
-  {
-    "name": "TextField",
-    "doc": "A single-line editable text input.",
-    "family": "core",
-    "icon": "text-field",
-    "children": "None",
-    "layout_kind": null,
-    "properties": [
-      { "name": "Value", "kind": "String", "default": "", "doc": "The current text." },
-      { "name": "Placeholder", "kind": "String", "default": "", "doc": "Text shown when empty." },
-      { "name": "Width", "kind": "F32", "default": null, "doc": "Explicit width in DIPs; unset lets the layout measure it." }
-    ],
-    "events": [
-      { "name": "Changed", "doc": "Raised on every keystroke that changes Value." }
-    ]
-  },
-  {
-    "name": "RadioGroup",
-    "doc": "A mutually-exclusive set of choices.",
-    "family": "choice",
-    "icon": "radio-group",
-    "children": "List",
-    "layout_kind": "Flow",
-    "properties": [
-      { "name": "SelectedIndex", "kind": "F32", "default": "-1", "doc": "Index of the selected option, or -1 for none." }
-    ],
-    "events": [
-      { "name": "SelectionChanged", "doc": "Raised when SelectedIndex changes." }
-    ]
-  },
-  {
-    "name": "Panel",
-    "doc": "A generic container whose children position themselves via Dock or Anchor.",
-    "family": "containers",
-    "icon": "panel",
-    "children": "List",
-    "layout_kind": "Dock",
-    "properties": [],
-    "events": []
-  },
-  {
-    "name": "DataGrid",
-    "doc": "A tabular, bound data view.",
-    "family": "data",
-    "icon": "data-grid",
-    "children": "None",
-    "layout_kind": null,
-    "properties": [
-      { "name": "ItemsSource", "kind": "String", "default": null, "doc": "A {Binding} expression to the row collection." }
-    ],
-    "events": [
-      { "name": "RowActivated", "doc": "Raised on row double-click." }
-    ]
-  },
-  {
-    "name": "Image",
-    "doc": "A static or bound bitmap.",
-    "family": "display",
-    "icon": "image",
-    "children": "None",
-    "layout_kind": null,
-    "properties": [
-      { "name": "Source", "kind": "String", "default": "", "doc": "Asset path or {Binding} expression." }
+      {
+        "name": "Direction",
+        "kind": {
+          "Enum": [
+            "LeftToRight",
+            "TopDown",
+            "RightToLeft",
+            "BottomUp"
+          ]
+        },
+        "default": "TopDown",
+        "doc": "The axis blocks run along — the real `FlowDirection` variant names (the design note's friendlier `Horizontal`/`Vertical` aliases are an interpreter-level naming convenience, not modelled yet; see the crate's top-level docs' deviation list)."
+      },
+      {
+        "name": "Gap",
+        "kind": "F32",
+        "default": "8",
+        "doc": "The space between two blocks, in DIP."
+      },
+      {
+        "name": "Padding",
+        "kind": "F32",
+        "default": "0",
+        "doc": "Uniform padding on all four sides, in DIP."
+      },
+      {
+        "name": "Surface",
+        "kind": {
+          "Enum": [
+            "None",
+            "Layer",
+            "Card",
+            "Raised",
+            "Well"
+          ]
+        },
+        "default": "None",
+        "doc": "The ground painted under the stack's children."
+      }
     ],
     "events": []
   },
   {
     "name": "Label",
-    "doc": "Static, non-editable text.",
-    "family": "text",
+    "doc": "A text run at one of the five type-scale steps (`kubuno_ui::display::Label`).",
+    "family": "display",
     "icon": "label",
     "children": "None",
+    "allowed_children": [],
     "layout_kind": null,
     "properties": [
-      { "name": "Text", "kind": "String", "default": "", "doc": "The text to display." }
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The label's text."
+      },
+      {
+        "name": "Role",
+        "kind": {
+          "Enum": [
+            "Micro",
+            "Meta",
+            "Body",
+            "Heading",
+            "Title"
+          ]
+        },
+        "default": "Body",
+        "doc": "Which step of the web type scale the text is set in."
+      },
+      {
+        "name": "Align",
+        "kind": {
+          "Enum": [
+            "TopLeft",
+            "TopCenter",
+            "TopRight",
+            "MiddleLeft",
+            "MiddleCenter",
+            "MiddleRight",
+            "BottomLeft",
+            "BottomCenter",
+            "BottomRight"
+          ]
+        },
+        "default": "TopLeft",
+        "doc": "One of the nine alignment cells."
+      },
+      {
+        "name": "Overflow",
+        "kind": {
+          "Enum": [
+            "Ellipsis",
+            "Clip",
+            "Wrap"
+          ]
+        },
+        "default": "Ellipsis",
+        "doc": "What happens to text wider than the box: trailing « … », a hard clip, or wrapped onto several lines."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "LinkLabel",
+    "doc": "A hyperlink-styled label (`kubuno_ui::display::LinkLabel`).",
+    "family": "display",
+    "icon": "link-label",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The link's text."
+      },
+      {
+        "name": "Role",
+        "kind": {
+          "Enum": [
+            "Micro",
+            "Meta",
+            "Body",
+            "Heading",
+            "Title"
+          ]
+        },
+        "default": "Body",
+        "doc": "Which step of the web type scale the text is set in."
+      },
+      {
+        "name": "Visited",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Marks the link visited (the replica's `LinkVisited`)."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnClick",
+        "doc": "Raised when the link is activated (pointer click over the text)."
+      }
+    ]
+  },
+  {
+    "name": "Badge",
+    "doc": "A counting / status pill (`kubuno_ui::display::Badge`).",
+    "family": "display",
+    "icon": "badge",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The pill's text."
+      },
+      {
+        "name": "Variant",
+        "kind": {
+          "Enum": [
+            "Default",
+            "Primary",
+            "Success",
+            "Warning",
+            "Danger",
+            "Neutral"
+          ]
+        },
+        "default": "Default",
+        "doc": "The pill's tone."
+      },
+      {
+        "name": "Size",
+        "kind": {
+          "Enum": [
+            "Sm",
+            "Md"
+          ]
+        },
+        "default": "Md",
+        "doc": "The pill's text size and horizontal padding."
+      },
+      {
+        "name": "Dot",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "A leading status dot in the variant's saturated hue."
+      },
+      {
+        "name": "MaxWidth",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The widest the pill may grow, in DIP, before its text ellipsizes inside it. `0` means no cap."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "Icon",
+    "doc": "A vector glyph from the shared icon set (`kubuno_ui::display::Icon`).",
+    "family": "display",
+    "icon": "icon",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Name",
+        "kind": "String",
+        "default": "",
+        "doc": "The glyph's name, from the shared icon set. An unrecognised name paints the missing-glyph box."
+      },
+      {
+        "name": "Size",
+        "kind": "F32",
+        "default": "20",
+        "doc": "The glyph box's side, in DIP."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "Separator",
+    "doc": "A hairline rule (`kubuno_ui::display::Separator`).",
+    "family": "display",
+    "icon": "separator",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Orientation",
+        "kind": {
+          "Enum": [
+            "Horizontal",
+            "Vertical"
+          ]
+        },
+        "default": "Horizontal",
+        "doc": "Which way the rule runs."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "Spinner",
+    "doc": "An indeterminate activity ring (`kubuno_ui::feedback::Spinner`).",
+    "family": "display",
+    "icon": "spinner",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Size",
+        "kind": {
+          "Enum": [
+            "Xs",
+            "Sm",
+            "Md",
+            "Lg"
+          ]
+        },
+        "default": "Md",
+        "doc": "The ring's outer box."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "ProgressBar",
+    "doc": "A determinate or indeterminate progress track (`kubuno_ui::range::ProgressBar`).",
+    "family": "display",
+    "icon": "progress-bar",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Min",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The range's lower bound."
+      },
+      {
+        "name": "Max",
+        "kind": "F32",
+        "default": "100",
+        "doc": "The range's upper bound."
+      },
+      {
+        "name": "Value",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The current value, clamped to `Min..=Max`."
+      },
+      {
+        "name": "Indeterminate",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Unknown progress: a travelling sliver instead of a fill (the replica's `Marquee` style)."
+      },
+      {
+        "name": "Label",
+        "kind": "String",
+        "default": "",
+        "doc": "A header line above the track; empty shows no header."
+      },
+      {
+        "name": "ShowValue",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Shows the rounded percentage on the header line."
+      },
+      {
+        "name": "Variant",
+        "kind": {
+          "Enum": [
+            "Auto",
+            "Primary",
+            "Success",
+            "Warning",
+            "Danger"
+          ]
+        },
+        "default": "Auto",
+        "doc": "The fill's colour. `Auto` goes amber then red past the design system's own quota thresholds."
+      },
+      {
+        "name": "Size",
+        "kind": {
+          "Enum": [
+            "Sm",
+            "Md"
+          ]
+        },
+        "default": "Md",
+        "doc": "The track's thickness."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "Callout",
+    "doc": "An inline severity banner (`kubuno_ui::feedback::Callout`).",
+    "family": "display",
+    "icon": "callout",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Body",
+        "kind": "String",
+        "default": "",
+        "doc": "The callout's text."
+      },
+      {
+        "name": "Title",
+        "kind": "String",
+        "default": "",
+        "doc": "A bold first line above the body; empty renders body only."
+      },
+      {
+        "name": "Variant",
+        "kind": {
+          "Enum": [
+            "Info",
+            "Success",
+            "Warning",
+            "Danger"
+          ]
+        },
+        "default": "Info",
+        "doc": "The callout's severity — tints the ground and the glyph."
+      },
+      {
+        "name": "Dismissible",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Adds a close button."
+      },
+      {
+        "name": "ShowIcon",
+        "kind": "Bool",
+        "default": "true",
+        "doc": "Shows the severity glyph."
+      },
+      {
+        "name": "ActionLabel",
+        "kind": "String",
+        "default": "",
+        "doc": "The single inline action's label (\"Réessayer\", \"Configurer\"…); empty shows no action."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnAction",
+        "doc": "Raised when the inline action is activated."
+      },
+      {
+        "name": "OnDismiss",
+        "doc": "Raised when the close button is activated (only when `Dismissible`)."
+      }
+    ]
+  },
+  {
+    "name": "EmptyState",
+    "doc": "The centred « there is nothing here » block (`kubuno_ui::feedback::EmptyState`).",
+    "family": "display",
+    "icon": "empty-state",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Icon",
+        "kind": "String",
+        "default": "",
+        "doc": "The medallion's glyph name, from the shared icon set."
+      },
+      {
+        "name": "Title",
+        "kind": "String",
+        "default": "",
+        "doc": "The block's title."
+      },
+      {
+        "name": "Description",
+        "kind": "String",
+        "default": "",
+        "doc": "A secondary line under the title; empty shows none."
+      },
+      {
+        "name": "Variant",
+        "kind": {
+          "Enum": [
+            "FirstUse",
+            "NoResults",
+            "Error",
+            "Unavailable"
+          ]
+        },
+        "default": "FirstUse",
+        "doc": "Why the area is empty — only `FirstUse` gets a primary-styled main action."
+      },
+      {
+        "name": "Compact",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Halves the vertical breathing room, for a small card."
+      },
+      {
+        "name": "ActionLabel",
+        "kind": "String",
+        "default": "",
+        "doc": "The main action's label; empty shows no main action."
+      },
+      {
+        "name": "SecondaryActionLabel",
+        "kind": "String",
+        "default": "",
+        "doc": "The secondary action's label; empty shows no secondary action."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnAction",
+        "doc": "Raised when the main action is activated."
+      },
+      {
+        "name": "OnSecondaryAction",
+        "doc": "Raised when the secondary action is activated."
+      }
+    ]
+  },
+  {
+    "name": "IconButton",
+    "doc": "A round icon-only button (`kubuno_ui::buttons::IconButton` replica).",
+    "family": "choice",
+    "icon": "icon-button",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Icon",
+        "kind": "String",
+        "default": "",
+        "doc": "A curated glyph key (`check`, `close`, `trash`, `search`, `plus`, `help`, `chevron-up`/`chevron-down`/`chevron-right`, `caret-down`, `more-vertical`); unrecognised or empty falls back to a generic \"more\" glyph."
+      },
+      {
+        "name": "Diameter",
+        "kind": "F32",
+        "default": "36",
+        "doc": "The circle's diameter, in DIP (the header's own controls are 36; the waffle's pencil is 40)."
+      },
+      {
+        "name": "Glyph",
+        "kind": "F32",
+        "default": "18",
+        "doc": "The icon's size inside the circle, in DIP."
+      },
+      {
+        "name": "Filled",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "A resting tint (`surface-2`) instead of no background at rest — the waffle pencil's look."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnClick",
+        "doc": "Raised when the button is activated (pointer click or Space/Enter)."
+      }
+    ]
+  },
+  {
+    "name": "CheckBox",
+    "doc": "A two-state check box (`kubuno_ui::buttons::CheckBox` replica, `Appearance::Normal`).",
+    "family": "choice",
+    "icon": "check-box",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The label."
+      },
+      {
+        "name": "Description",
+        "kind": "String",
+        "default": "",
+        "doc": "A secondary line under the label."
+      },
+      {
+        "name": "Checked",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "The check box's checked state."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnCheckedChanged",
+        "doc": "Raised when the checked state changes (a completed click)."
+      }
+    ]
+  },
+  {
+    "name": "RadioButton",
+    "doc": "A mutually-exclusive option (`kubuno_ui::buttons::RadioButton` replica). Selection is not a flag this element owns: it is `SelectedValue == Value`, so several `<RadioButton>` elements bound to the SAME `SelectedValue` path exclude each other with no group registry — see this family's module doc.",
+    "family": "choice",
+    "icon": "radio-button",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The label."
+      },
+      {
+        "name": "Description",
+        "kind": "String",
+        "default": "",
+        "doc": "A secondary line under the label."
+      },
+      {
+        "name": "Value",
+        "kind": "String",
+        "default": "",
+        "doc": "This option's own value token."
+      },
+      {
+        "name": "Group",
+        "kind": "String",
+        "default": "",
+        "doc": "Advisory grouping id: not enforced by the interpreter (exclusion comes from the shared `SelectedValue` binding alone), but used together with `Value` to seed a stable `FocusId` when the element carries no `x:Name` — read as a plain literal, never as a `{Binding …}`, since only stability across frames matters here."
+      },
+      {
+        "name": "SelectedValue",
+        "kind": "String",
+        "default": "",
+        "doc": "The group's current value, typically `{Binding …, Mode=TwoWay}`; this option paints selected when it resolves to the same text as `Value`."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnCheckedChanged",
+        "doc": "Raised with the new `SelectedValue` when this option is chosen."
+      }
+    ]
+  },
+  {
+    "name": "Slider",
+    "doc": "A drag-to-set range control (`kubuno_ui::range::Slider`, `@ui/RangeSlider` replica).",
+    "family": "choice",
+    "icon": "slider",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Min",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The lowest reachable value (`TrackBar::Minimum`)."
+      },
+      {
+        "name": "Max",
+        "kind": "F32",
+        "default": "10",
+        "doc": "The highest reachable value (`TrackBar::Maximum`)."
+      },
+      {
+        "name": "Value",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The current value, folded into `[Min, Max]`."
+      },
+      {
+        "name": "Step",
+        "kind": "F32",
+        "default": "1",
+        "doc": "One keyboard/small step (`TrackBar::SmallChange`)."
+      },
+      {
+        "name": "LargeStep",
+        "kind": "F32",
+        "default": "5",
+        "doc": "One page step (`TrackBar::LargeChange`)."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnValueChanged",
+        "doc": "Raised on every value change while dragging."
+      }
+    ]
+  },
+  {
+    "name": "NumericField",
+    "doc": "A numeric spinner (`kubuno_ui::range::NumericField`, `@ui/NumberInput` replica). Only the step buttons are interactive today; see this family's module doc for why free-text typing is deferred.",
+    "family": "choice",
+    "icon": "numeric-field",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Min",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The lowest reachable value (`NumericUpDown::Minimum`)."
+      },
+      {
+        "name": "Max",
+        "kind": "F32",
+        "default": "100",
+        "doc": "The highest reachable value (`NumericUpDown::Maximum`)."
+      },
+      {
+        "name": "Value",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The current value, folded into `[Min, Max]`."
+      },
+      {
+        "name": "Step",
+        "kind": "F32",
+        "default": "1",
+        "doc": "One spin-button step (`NumericUpDown::Increment`)."
+      },
+      {
+        "name": "Invalid",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Turns the border and the focus outline to the danger colour."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnValueChanged",
+        "doc": "Raised when a step button changes the value."
+      }
+    ]
+  },
+  {
+    "name": "Option",
+    "doc": "A Dropdown/ComboBox item — data only, never painted on its own.",
+    "family": "text",
+    "icon": "option",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Value",
+        "kind": "String",
+        "default": "",
+        "doc": "The option's value — matched against a Dropdown/ComboBox's bound SelectedValue."
+      },
+      {
+        "name": "Label",
+        "kind": "String",
+        "default": "",
+        "doc": "The option's displayed text; defaults to Value when omitted."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "TextArea",
+    "doc": "A multiline text input (`kubuno_ui::text::TextArea`, the multiline case of TextField).",
+    "family": "text",
+    "icon": "text-area",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The field's content."
+      },
+      {
+        "name": "Placeholder",
+        "kind": "String",
+        "default": "",
+        "doc": "Shown in place of an empty value."
+      },
+      {
+        "name": "Invalid",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Turns the border and the focus outline to the danger colour."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnChanged",
+        "doc": "Raised when the text changes (typing, paste, programmatic edit)."
+      }
+    ]
+  },
+  {
+    "name": "SearchField",
+    "doc": "A search pill (`kubuno_ui::text::SearchField`) — a leading glyph and a clear \"x\" shown while it holds text.",
+    "family": "text",
+    "icon": "search-field",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The query text."
+      },
+      {
+        "name": "Placeholder",
+        "kind": "String",
+        "default": "",
+        "doc": "Shown in place of an empty value."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnChanged",
+        "doc": "Raised when the text changes (typing, paste, the clear ✕, Escape)."
+      }
+    ]
+  },
+  {
+    "name": "MaskedField",
+    "doc": "A field governed by a WinForms mask (`kubuno_ui::text::MaskedField`, e.g. \"00/00/0000\").",
+    "family": "text",
+    "icon": "masked-field",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Mask",
+        "kind": "String",
+        "default": "",
+        "doc": "The WinForms mask pattern (e.g. `00/00/0000`); applied once and re-applied whenever this value changes."
+      },
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The field's visible content (literals, entered characters, the prompt glyph)."
+      },
+      {
+        "name": "Invalid",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Turns the border and the focus outline to the danger colour — a natural driver is `!mask_completed()`, left to the caller."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnChanged",
+        "doc": "Raised when the masked content changes."
+      }
+    ]
+  },
+  {
+    "name": "Dropdown",
+    "doc": "A selector with a floating list (`kubuno_ui::editors::Dropdown`) — items are <Option Value=\"..\" Label=\"..\"/> children.",
+    "family": "text",
+    "icon": "dropdown",
+    "children": "List",
+    "allowed_children": [
+      "Option"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "SelectedValue",
+        "kind": "String",
+        "default": "",
+        "doc": "The selected <Option>'s Value, or empty for no selection — see the family's module doc."
+      },
+      {
+        "name": "Placeholder",
+        "kind": "String",
+        "default": "",
+        "doc": "Shown in the trigger when nothing is selected."
+      },
+      {
+        "name": "Variant",
+        "kind": {
+          "Enum": [
+            "Default",
+            "Ghost"
+          ]
+        },
+        "default": "Default",
+        "doc": "The trigger's look: a bordered field, or borderless (for a toolbar)."
+      },
+      {
+        "name": "ItemsSource",
+        "kind": "String",
+        "default": "",
+        "doc": "A `{Binding Path}` to a row list (`crate::binding::Value::List`); each row becomes one `<Option>`, `DisplayMember`/`ValueMember` naming which row field is the label/value, re-read every frame. Static `<Option Value=\"..\" Label=\"..\"/>` children still work and are used as long as this either names no binding or the binding is unset/not a list."
+      },
+      {
+        "name": "DisplayMember",
+        "kind": "String",
+        "default": "Label",
+        "doc": "The row field shown as each bound option's label."
+      },
+      {
+        "name": "ValueMember",
+        "kind": "String",
+        "default": "Value",
+        "doc": "The row field matched against SelectedValue."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnChanged",
+        "doc": "Raised with the new SelectedValue when the selection changes."
+      }
+    ]
+  },
+  {
+    "name": "ComboBox",
+    "doc": "A select-only combo box with a floating list (`kubuno_ui::lists::ComboBox`) — items are <Option Value=\"..\" Label=\"..\"/> children.",
+    "family": "text",
+    "icon": "combo-box",
+    "children": "List",
+    "allowed_children": [
+      "Option"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "SelectedValue",
+        "kind": "String",
+        "default": "",
+        "doc": "The selected <Option>'s Value, or empty for no selection — see the family's module doc."
+      },
+      {
+        "name": "ItemsSource",
+        "kind": "String",
+        "default": "",
+        "doc": "A `{Binding Path}` to a row list (`crate::binding::Value::List`); each row becomes one `<Option>`, `DisplayMember`/`ValueMember` naming which row field is the label/value, re-read every frame. Static `<Option Value=\"..\" Label=\"..\"/>` children still work and are used as long as this either names no binding or the binding is unset/not a list."
+      },
+      {
+        "name": "DisplayMember",
+        "kind": "String",
+        "default": "Label",
+        "doc": "The row field shown as each bound option's label."
+      },
+      {
+        "name": "ValueMember",
+        "kind": "String",
+        "default": "Value",
+        "doc": "The row field matched against SelectedValue."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnChanged",
+        "doc": "Raised with the new SelectedValue when the selection changes."
+      }
+    ]
+  },
+  {
+    "name": "DatePicker",
+    "doc": "A date field with a floating calendar (`kubuno_ui::datetime::DatePicker`).",
+    "family": "text",
+    "icon": "date-picker",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Date",
+        "kind": "String",
+        "default": "",
+        "doc": "The selected date, ISO 8601 (`YYYY-MM-DD`)."
+      },
+      {
+        "name": "Format",
+        "kind": {
+          "Enum": [
+            "Long",
+            "Short",
+            "Time"
+          ]
+        },
+        "default": "Long",
+        "doc": "The culture's long/short date pattern, or a time-of-day field with a spinner."
+      },
+      {
+        "name": "Invalid",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Turns the border and the focus ring to the danger colour."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnChanged",
+        "doc": "Raised with the new Date (ISO 8601) when the value changes."
+      }
+    ]
+  },
+  {
+    "name": "ColorField",
+    "doc": "A colour swatch trigger (`kubuno_ui::color::ColorField`). GAP: its floating ColorPicker panel is not wired — see the family module doc; a host reacts to OnClick itself.",
+    "family": "text",
+    "icon": "color-field",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Color",
+        "kind": "String",
+        "default": "#000000",
+        "doc": "The swatch's colour, as a `#rrggbb` hex literal."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnClick",
+        "doc": "Raised when the swatch is activated — a host shows its own colour editor in response."
+      }
+    ]
+  },
+  {
+    "name": "Panel",
+    "doc": "A box that places its children by Dock or Anchor (`kubuno_ui::containers::Panel`).",
+    "family": "containers",
+    "icon": "panel",
+    "children": "List",
+    "allowed_children": [],
+    "layout_kind": "DockAnchor",
+    "properties": [
+      {
+        "name": "Padding",
+        "kind": "F32",
+        "default": "0",
+        "doc": "Uniform padding on all four sides, in DIP."
+      },
+      {
+        "name": "Surface",
+        "kind": {
+          "Enum": [
+            "None",
+            "Layer",
+            "Card",
+            "Raised",
+            "Well"
+          ]
+        },
+        "default": "None",
+        "doc": "The ground painted under the panel's children."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "GroupBox",
+    "doc": "A titled frame around one child (`kubuno_ui::containers::GroupBox`).",
+    "family": "containers",
+    "icon": "group-box",
+    "children": "SingleWidget",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Title",
+        "kind": "String",
+        "default": "",
+        "doc": "The caption drawn in the frame's top band."
+      },
+      {
+        "name": "Padding",
+        "kind": "F32",
+        "default": "0",
+        "doc": "Uniform padding on all four sides, in DIP."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "ScrollArea",
+    "doc": "Scrolls whatever its one child paints past its edges (`kubuno_ui::containers::ScrollArea`).",
+    "family": "containers",
+    "icon": "scroll-area",
+    "children": "SingleWidget",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Corner",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The region's rounded-corner radius; 0 for a square region."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "Splitter",
+    "doc": "Two panes separated by a draggable band (`kubuno_ui::containers::Splitter`).",
+    "family": "containers",
+    "icon": "splitter",
+    "children": "List",
+    "allowed_children": [],
+    "layout_kind": "Split",
+    "properties": [
+      {
+        "name": "Orientation",
+        "kind": {
+          "Enum": [
+            "Vertical",
+            "Horizontal"
+          ]
+        },
+        "default": "Vertical",
+        "doc": "`Vertical`: a vertical BAR, panes side by side. `Horizontal`: a horizontal bar, panes stacked."
+      },
+      {
+        "name": "Distance",
+        "kind": "F32",
+        "default": "200",
+        "doc": "Pane 1's extent (width for Vertical, height for Horizontal), in DIP; bindable two-way — dragging the bar (mouse or, once focused, the keyboard: the two arrows along the split axis, Home/End, Shift for a larger step) writes the new value back."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnDistanceChanged",
+        "doc": "Raised when a drag or a keyboard move changes Distance."
+      }
+    ]
+  },
+  {
+    "name": "TabItem",
+    "doc": "One page of a `<Tabs>` strip: a header and a body. Valid only as a direct `<Tabs>` child.",
+    "family": "containers",
+    "icon": "tab-item",
+    "children": "SingleWidget",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Header",
+        "kind": "String",
+        "default": "",
+        "doc": "The tab's strip label."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "Tabs",
+    "doc": "An underline tab strip (`kubuno_ui::navigation::Tabs` + `TabsController`), pages `<TabItem>`.",
+    "family": "containers",
+    "icon": "tabs",
+    "children": "List",
+    "allowed_children": [
+      "TabItem"
+    ],
+    "layout_kind": "Tabs",
+    "properties": [
+      {
+        "name": "SelectedIndex",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The selected tab's index."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnSelectionChanged",
+        "doc": "Raised when the selected tab changes (click or keyboard)."
+      }
+    ]
+  },
+  {
+    "name": "BreadcrumbItem",
+    "doc": "One segment of a `<Breadcrumb>` trail. Valid only as a direct `<Breadcrumb>` child.",
+    "family": "containers",
+    "icon": "breadcrumb-item",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The segment's label."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnClick",
+        "doc": "Raised when this segment is activated (it is not the trail's last/current segment)."
+      }
+    ]
+  },
+  {
+    "name": "Breadcrumb",
+    "doc": "A path trail (`kubuno_ui::navigation::Breadcrumb`), segments `<BreadcrumbItem>`.",
+    "family": "containers",
+    "icon": "breadcrumb",
+    "children": "List",
+    "allowed_children": [
+      "BreadcrumbItem"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "RootChevron",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Reserves a leading chevron for a caller-drawn home icon."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "ToolbarItem",
+    "doc": "One command of a `<Toolbar>`. Valid only as a direct `<Toolbar>` child.",
+    "family": "containers",
+    "icon": "toolbar-item",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The command's caption (icon-only when empty)."
+      },
+      {
+        "name": "Icon",
+        "kind": "String",
+        "default": "",
+        "doc": "A leading icon glyph name from the shared icon set."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnClick",
+        "doc": "Raised when this command is activated."
+      }
+    ]
+  },
+  {
+    "name": "Toolbar",
+    "doc": "A command bar (`kubuno_ui::navigation::Toolbar`), commands `<ToolbarItem>`.",
+    "family": "containers",
+    "icon": "toolbar",
+    "children": "List",
+    "allowed_children": [
+      "ToolbarItem"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Band",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Paints its own `layer_background` band under the commands."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "AccordionSection",
+    "doc": "One collapsible group of a `<Accordion>`. Valid only as a direct `<Accordion>` child.",
+    "family": "containers",
+    "icon": "accordion-section",
+    "children": "SingleWidget",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Header",
+        "kind": "String",
+        "default": "",
+        "doc": "The section's title."
+      },
+      {
+        "name": "Open",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Whether the section starts expanded."
+      },
+      {
+        "name": "Disabled",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Renders muted and stays collapsed."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnToggled",
+        "doc": "Raised when this section's open state changes."
+      }
+    ]
+  },
+  {
+    "name": "Accordion",
+    "doc": "A stack of collapsible groups (`kubuno_ui::feedback::Accordion`), sections `<AccordionSection>`.",
+    "family": "containers",
+    "icon": "accordion",
+    "children": "List",
+    "allowed_children": [
+      "AccordionSection"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Size",
+        "kind": {
+          "Enum": [
+            "Sm",
+            "Md"
+          ]
+        },
+        "default": "Md",
+        "doc": "The header/panel padding scale."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "Step",
+    "doc": "One step of a `<Stepper>` trail. Valid only as a direct `<Stepper>` child.",
+    "family": "containers",
+    "icon": "step",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Label",
+        "kind": "String",
+        "default": "",
+        "doc": "The step's caption."
+      },
+      {
+        "name": "Description",
+        "kind": "String",
+        "default": "",
+        "doc": "A secondary line under the label."
+      },
+      {
+        "name": "Status",
+        "kind": {
+          "Enum": [
+            "Pending",
+            "Current",
+            "Complete",
+            "Error",
+            "Disabled"
+          ]
+        },
+        "default": "Pending",
+        "doc": "An explicit status; empty derives it from the position relative to the current step."
+      },
+      {
+        "name": "Optional",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Appends an « (optional) » marker."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "Stepper",
+    "doc": "A wizard's progress spine (`kubuno_ui::feedback::Stepper`), steps `<Step>`.",
+    "family": "containers",
+    "icon": "stepper",
+    "children": "List",
+    "allowed_children": [
+      "Step"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "CurrentIndex",
+        "kind": "F32",
+        "default": "0",
+        "doc": "The step the user is on, by index."
+      },
+      {
+        "name": "Orientation",
+        "kind": {
+          "Enum": [
+            "Horizontal",
+            "Vertical"
+          ]
+        },
+        "default": "Horizontal",
+        "doc": "Which way the trail runs."
+      },
+      {
+        "name": "AllowForward",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Whether a step past the current one may be clicked."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnStepSelected",
+        "doc": "Raised when the user picks a reachable step."
+      }
+    ]
+  },
+  {
+    "name": "ListBox",
+    "doc": "A scrolling list of strings (`kubuno_ui::lists::ListBox` replica).",
+    "family": "data",
+    "icon": "list-box",
+    "children": "List",
+    "allowed_children": [
+      "Item"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "SelectionMode",
+        "kind": {
+          "Enum": [
+            "None",
+            "One",
+            "MultiSimple",
+            "MultiExtended"
+          ]
+        },
+        "default": "One",
+        "doc": "How many rows can be selected at once, and how a click combines with Ctrl/Shift."
+      },
+      {
+        "name": "SelectedIndex",
+        "kind": "F32",
+        "default": "-1",
+        "doc": "The anchor of the selection (`-1` = none); bindable two-way."
+      },
+      {
+        "name": "ItemsSource",
+        "kind": "String",
+        "default": "",
+        "doc": "A `{Binding Path}` to a row list (`crate::binding::Value::List`); each row's `Text` field becomes one row's label, re-read every frame. Static `<Item Text=\"..\"/>` children still work and are used as long as this either names no binding or the binding is unset/not a list."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnSelectionChanged",
+        "doc": "Raised when the selection changes (a pointer click)."
+      }
+    ]
+  },
+  {
+    "name": "CheckedListBox",
+    "doc": "A `ListBox` whose rows carry a check box (`kubuno_ui::lists::CheckedListBox` replica).",
+    "family": "data",
+    "icon": "checked-list-box",
+    "children": "List",
+    "allowed_children": [
+      "Item"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "SelectedIndex",
+        "kind": "F32",
+        "default": "-1",
+        "doc": "The single selected row (`-1` = none); bindable two-way."
+      },
+      {
+        "name": "CheckOnClick",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Toggle a row's check on a plain click instead of requiring the check well."
+      },
+      {
+        "name": "ItemsSource",
+        "kind": "String",
+        "default": "",
+        "doc": "A `{Binding Path}` to a row list (`crate::binding::Value::List`); each row's `Text` field becomes one row's label, re-read every frame (all unchecked — a bound row's check state is not modelled, see this family's report). Static `<Item Text=\"..\"/>` children still work and are used as long as this either names no binding or the binding is unset/not a list."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnSelectionChanged",
+        "doc": "Raised when the selected row changes."
+      },
+      {
+        "name": "OnCheckedChanged",
+        "doc": "Raised when a row's check state toggles."
+      }
+    ]
+  },
+  {
+    "name": "ListView",
+    "doc": "A columned, virtualised row list (`kubuno_ui::views::ListView` replica, Details mode).",
+    "family": "data",
+    "icon": "list-view",
+    "children": "List",
+    "allowed_children": [
+      "Item",
+      "Column"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "SelectedIndex",
+        "kind": "F32",
+        "default": "-1",
+        "doc": "The anchor of the selection (`-1` = none); bindable two-way."
+      },
+      {
+        "name": "MultiSelect",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Allow more than one selected row."
+      },
+      {
+        "name": "ItemsSource",
+        "kind": "String",
+        "default": "",
+        "doc": "A `{Binding Path}` to a row list (`crate::binding::Value::List`); with `<Column>` children declared, each row's field named by a column's own `Binding` (its bare path, e.g. `Name` for `{Binding Name}`) becomes that column's cell text for that row, re-read every frame. A column with no `Binding` reads no field (an empty cell for every bound row). Static `<Item Text=\"..\"/>` children still work and are used as long as this either names no binding or the binding is unset/not a list; `<Column>` children always declare the columns themselves either way."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnSelectionChanged",
+        "doc": "Raised when the selection changes (a pointer click)."
+      },
+      {
+        "name": "OnActivate",
+        "doc": "Raised on a double-click on a row."
+      }
+    ]
+  },
+  {
+    "name": "TreeView",
+    "doc": "An indented, expandable node tree (`kubuno_ui::views::TreeView` replica).",
+    "family": "data",
+    "icon": "tree-view",
+    "children": "List",
+    "allowed_children": [
+      "Item"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "SelectedPath",
+        "kind": "String",
+        "default": "",
+        "doc": "The selected node, as dot-joined child indices (`\"0.2.1\"`, `\"\"` = none); bindable two-way."
+      },
+      {
+        "name": "MultiSelect",
+        "kind": "Bool",
+        "default": "false",
+        "doc": "Allow more than one selected node."
+      },
+      {
+        "name": "ItemsSource",
+        "kind": "String",
+        "default": "",
+        "doc": "A `{Binding Path}` to a row list (`crate::binding::Value::List`); each row's `Text` field becomes one FLAT, top-level, always-childless node — `Value::List` has no nested-row shape, so a bound tree is one level deep (see this family's report); nest with static `<Item Text=\"..\">..</Item>` children for a real hierarchy. Static children still work and are used as long as this either names no binding or the binding is unset/not a list."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnSelectionChanged",
+        "doc": "Raised when the selected node changes."
+      },
+      {
+        "name": "OnActivate",
+        "doc": "Raised on a double-click on a node."
+      }
+    ]
+  },
+  {
+    "name": "DataTable",
+    "doc": "A full data grid — toolbar, sortable columns, pagination (`kubuno_ui::tables::DataTable` replica).",
+    "family": "data",
+    "icon": "data-table",
+    "children": "List",
+    "allowed_children": [
+      "Column"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "SelectedIndex",
+        "kind": "F32",
+        "default": "-1",
+        "doc": "The anchor of the selection (`-1` = none); bindable two-way."
+      },
+      {
+        "name": "ItemsSource",
+        "kind": "String",
+        "default": "",
+        "doc": "A `{Binding Path}` to a row list (`crate::binding::Value::List`), the shape `admin_users.rs::table()` already hand-builds; each row's field named by a column's own `Binding` (its bare path, e.g. `Name` for `{Binding Name}` — the same name that column's id/sort-key already uses) becomes that column's cell text for that row, re-read every frame. Without this, the table declares its columns with static `<Column Header=\"..\" Binding=\"..\"/>` children and starts with zero rows."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnSelectionChanged",
+        "doc": "Raised when the selected row changes."
+      },
+      {
+        "name": "OnRowActivated",
+        "doc": "Raised on a double-click on a row."
+      },
+      {
+        "name": "OnSortChanged",
+        "doc": "Raised when a sortable column header is clicked."
+      }
+    ]
+  },
+  {
+    "name": "MonthCalendar",
+    "doc": "A one-month date grid (`kubuno_ui::datetime::MonthCalendar` replica).",
+    "family": "data",
+    "icon": "month-calendar",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "SelectedDate",
+        "kind": "String",
+        "default": "",
+        "doc": "The picked day, as an ISO `YYYY-MM-DD` date (`\"\"` = none); bindable two-way."
+      }
+    ],
+    "events": [
+      {
+        "name": "OnDateSelected",
+        "doc": "Raised when a day is picked (a click on a selectable day)."
+      }
+    ]
+  },
+  {
+    "name": "Item",
+    "doc": "A static list entry — a row of `<ListBox>`/`<CheckedListBox>`/`<ListView>`, or (nested under itself) one node of a `<TreeView>`'s tree. Read directly off the parsed XML by the parent's `build` (see this file's module doc); never reached through `Props::build_children`, so it builds an inert placeholder. Accepts any attribute name, not just `Text`: a `<ListView>`/`<DataTable>` row's other columns are read the same way, by an attribute named exactly like that column's own `Binding` field (see `static_item_rows`).",
+    "family": "data",
+    "icon": "item",
+    "children": "List",
+    "allowed_children": [
+      "Item"
+    ],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Text",
+        "kind": "String",
+        "default": "",
+        "doc": "The row's (or tree node's) label."
+      }
+    ],
+    "events": []
+  },
+  {
+    "name": "Column",
+    "doc": "A static column declaration — a `<ListView>`/`<DataTable>` child. Read directly off the parsed XML by the parent's `build` (see this file's module doc); never reached through `Props::build_children`, so it builds an inert placeholder.",
+    "family": "data",
+    "icon": "column",
+    "children": "None",
+    "allowed_children": [],
+    "layout_kind": null,
+    "properties": [
+      {
+        "name": "Header",
+        "kind": "String",
+        "default": "",
+        "doc": "The column's header label."
+      },
+      {
+        "name": "Binding",
+        "kind": "String",
+        "default": "",
+        "doc": "A `{Binding Path}` naming the row field this column shows — accepted (and used to derive the column's stable id) but not resolved per row until `ItemsSource` is (see this file's module doc)."
+      },
+      {
+        "name": "Width",
+        "kind": "F32",
+        "default": "160",
+        "doc": "The column's width, in DIP."
+      }
     ],
     "events": []
   }

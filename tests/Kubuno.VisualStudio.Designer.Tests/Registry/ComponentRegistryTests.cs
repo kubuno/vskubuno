@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Kubuno.VisualStudio.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,7 +16,12 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
         {
             var registry = LoadFixture();
 
-            Assert.AreEqual(10, registry.Components.Count);
+            // The fixture is now the real `kubuno-views` registry export (DSG-1,
+            // `kubuno-views/src/registry/export.rs`), regenerated straight from
+            // `cargo test -p kubuno-views`'s own component table rather than
+            // hand-written - 49 components: the 5 phase-2a examples plus every
+            // enabled family (choice 5, containers 14, data 8, display 9, text 8).
+            Assert.AreEqual(49, registry.Components.Count);
             Assert.IsNotNull(registry.Find("Button"));
             Assert.IsNull(registry.Find("DoesNotExist"));
         }
@@ -25,12 +31,20 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
         {
             var registry = LoadFixture();
 
+            // First-seen order in the real export is `components::ALL` (-> "core")
+            // followed by `families::ALL_FAMILIES`'s own declared order
+            // (display, choice, text, containers, data -
+            // `kubuno-views/src/registry/families/mod.rs`), not alphabetical.
             CollectionAssert.AreEqual(
-                new[] { "core", "choice", "containers", "data", "display", "text" },
+                new[] { "core", "display", "choice", "text", "containers", "data" },
                 registry.FamilyNames.ToArray());
 
             Assert.AreEqual(5, registry.Families["core"].Count);
-            Assert.AreEqual(1, registry.Families["choice"].Count);
+            Assert.AreEqual(5, registry.Families["choice"].Count);
+            Assert.AreEqual(14, registry.Families["containers"].Count);
+            Assert.AreEqual(8, registry.Families["data"].Count);
+            Assert.AreEqual(9, registry.Families["display"].Count);
+            Assert.AreEqual(8, registry.Families["text"].Count);
         }
 
         [TestMethod]
@@ -42,9 +56,9 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
             var text = button.Properties.Single(p => p.Name == "Text");
             Assert.AreEqual(PropKindTag.String, text.Kind.Tag);
 
-            var enabled = button.Properties.Single(p => p.Name == "Enabled");
-            Assert.AreEqual(PropKindTag.Bool, enabled.Kind.Tag);
-            Assert.AreEqual("true", enabled.Default);
+            var loading = button.Properties.Single(p => p.Name == "Loading");
+            Assert.AreEqual(PropKindTag.Bool, loading.Kind.Tag);
+            Assert.AreEqual("false", loading.Default);
 
             var stack = registry.Find("Stack")!;
             var gap = stack.Properties.Single(p => p.Name == "Gap");
@@ -59,7 +73,9 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
 
             var variant = button.Properties.Single(p => p.Name == "Variant");
             Assert.AreEqual(PropKindTag.Enum, variant.Kind.Tag);
-            CollectionAssert.AreEqual(new[] { "Primary", "Secondary", "Ghost" }, variant.Kind.EnumVariants.ToArray());
+            CollectionAssert.AreEqual(
+                new[] { "Primary", "Secondary", "Ghost", "Text", "Danger", "TextDanger" },
+                variant.Kind.EnumVariants.ToArray());
         }
 
         [TestMethod]
@@ -73,6 +89,17 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
         }
 
         [TestMethod]
+        public void FromJson_ParsesAllowedChildren_EmptyWhenUngated_SetForAGatedListContainer()
+        {
+            var registry = LoadFixture();
+
+            // `Stack` accepts any child (an ungated `List`); `Tabs` only ever hosts
+            // `TabItem` (a gated `List`, `ChildrenModel::List(&["TabItem"])`).
+            CollectionAssert.AreEqual(Array.Empty<string>(), registry.Find("Stack")!.AllowedChildren.ToArray());
+            CollectionAssert.AreEqual(new[] { "TabItem" }, registry.Find("Tabs")!.AllowedChildren.ToArray());
+        }
+
+        [TestMethod]
         public void FromJson_ParsesLayoutKind_NullForLeavesAndSingleWidget_SetForListContainers()
         {
             var registry = LoadFixture();
@@ -80,7 +107,11 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
             Assert.IsNull(registry.Find("Button")!.LayoutKind);
             Assert.IsNull(registry.Find("Card")!.LayoutKind);
             Assert.AreEqual(Designer.Registry.LayoutKind.Flow, registry.Find("Stack")!.LayoutKind);
-            Assert.AreEqual(Designer.Registry.LayoutKind.Dock, registry.Find("Panel")!.LayoutKind);
+            // `Panel`'s single Dock/Anchor engine - see `Registry/LayoutKind.cs`'s
+            // own doc comment for why this is `DockAnchor`, not the originally
+            // guessed `Dock`.
+            Assert.AreEqual(Designer.Registry.LayoutKind.DockAnchor, registry.Find("Panel")!.LayoutKind);
+            Assert.AreEqual(Designer.Registry.LayoutKind.Tabs, registry.Find("Tabs")!.LayoutKind);
         }
 
         [TestMethod]
@@ -90,17 +121,25 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
             var button = registry.Find("Button")!;
 
             Assert.AreEqual(1, button.Events.Count);
-            Assert.AreEqual("Click", button.Events[0].Name);
+            Assert.AreEqual("OnClick", button.Events[0].Name);
         }
 
         [TestMethod]
-        public void FromJson_ParsesNullDefault()
+        public void FromJson_DefaultIsNeverNull_RealPropertyMetaHasNoOptionalDefault()
         {
+            // `kubuno_views::registry::PropertyMeta.default` is a plain
+            // `&'static str` (never `Option`), so the real export never emits a
+            // JSON `null` default - unlike the old illustrative fixture's
+            // fictional `TextField.Width` (no such property exists on the real
+            // `TextField`). `PropertyMeta.Default` stays nullable in C# for
+            // robustness, but every property in a real export has a literal
+            // string default, possibly empty.
             var registry = LoadFixture();
             var textField = registry.Find("TextField")!;
 
-            var width = textField.Properties.Single(p => p.Name == "Width");
-            Assert.IsNull(width.Default);
+            var text = textField.Properties.Single(p => p.Name == "Text");
+            Assert.AreEqual(string.Empty, text.Default);
+            Assert.IsTrue(registry.Components.SelectMany(c => c.Properties).All(p => p.Default != null));
         }
     }
 }

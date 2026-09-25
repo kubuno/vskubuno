@@ -59,6 +59,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   opening `samples\hello-rust` for the first time writes `CurrentProjectSetting: "hello-rust"`
   with no prior manual selection, and `Debug.Start` goes from "command unavailable" (no startup
   item) to recognizing a target.
+- **`Kubuno.VisualStudio.Designer.Registry` now targets the real `kubuno/registry` export
+  (work package DSG-1 lands).** `kubuno-views-ls` (in the separate `desktop` repo) now actually
+  implements `kubuno/registry`, serializing the real component registry via a new
+  `kubuno_views::registry::export` module; this repo's checked-in test fixture
+  (`tests\Kubuno.VisualStudio.Designer.Tests\Fixtures\registry.sample.json`) is regenerated
+  straight from that export (49 real components, not the 10 illustrative ones DSG-4 was built
+  against), so both sides now share one truth instead of a fixture that could quietly drift.
+  Two places where the note the C# side was first built against (`docs\DESIGNER.md` §5) and the
+  real Rust schema disagreed, resolved by following the real schema (documented in
+  `export.rs`'s own module doc on the Rust side):
+  - `Registry\LayoutKind.cs` is widened to the real `kubuno_views::registry::LayoutKind`'s actual
+    four variants (`Flow`, `DockAnchor`, `Split`, `Tabs`) - the original guess (`Anchor`, `Dock`,
+    `Flow`, `Split`) predated that Rust enum and split into two variants an engine that, in the
+    real implementation, decides Dock-vs-Anchor per *child*, not per container; it also missed
+    `Tabs`.
+  - `ComponentMeta.AllowedChildren` is a new field carrying `ChildrenModel::List`'s gated child
+    names (e.g. `["TabItem"]` for `Tabs`) - not in the original sketch, added as its own array
+    alongside `Children` (which stays the bare `"List"` string `JsonStringEnumConverter` needs)
+    per the task's "children model incl. allowed child names" requirement.
+  - `Registry\ComponentRegistryTests.cs`/`Toolbox\ToolboxViewModelTests.cs` are updated for the
+    real component set (counts, family order/sizes, real property/event names such as Button's
+    `OnClick` rather than the fixture's old fictional `Click`, and search terms that are no
+    longer ambiguous or extinct - e.g. `"grid"`/`"DataGrid"` -> `"tree"`/`TreeView`, the real
+    registry has no `DataGrid`). `dotnet test` passes (`Kubuno.VisualStudio.Designer.Tests`, and
+    the rest of the solution unaffected - that project is not yet part of `Kubuno.VisualStudio
+    .sln`, same as before this change).
 - **`Kubuno.VisualStudio.Designer` (work packages DSG-4/DSG-5, still standalone - not yet wired into
   the VSIX, see its own `INTEGRATION.md`):**
   - **Toolbox + Properties/Events (DSG-4).** A new `Registry\*` namespace mirrors the

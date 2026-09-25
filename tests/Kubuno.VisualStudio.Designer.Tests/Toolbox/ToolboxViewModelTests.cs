@@ -25,11 +25,15 @@ namespace Kubuno.VisualStudio.Designer.Tests.Toolbox
         {
             var viewModel = CreateViewModel();
 
-            viewModel.SearchText = "butt";
+            // "butt" now also matches `IconButton`/`RadioButton` (family "choice")
+            // in the real registry export the fixture carries (DSG-1), so this
+            // case-insensitivity check uses "SWiTch" instead, which - across all
+            // 49 real components - matches only `Switch` (family "core").
+            viewModel.SearchText = "SWiTch";
 
             var family = viewModel.Families.Single();
             Assert.AreEqual("core", family.Family);
-            Assert.AreEqual("Button", family.Items.Single().DisplayName);
+            Assert.AreEqual("Switch", family.Items.Single().DisplayName);
         }
 
         [TestMethod]
@@ -37,11 +41,14 @@ namespace Kubuno.VisualStudio.Designer.Tests.Toolbox
         {
             var viewModel = CreateViewModel();
 
-            viewModel.SearchText = "grid";
+            // "tree" matches only `TreeView` (family "data") in the real
+            // registry export the fixture now carries (DSG-1) - the old
+            // fictional "DataGrid"/"grid" pairing no longer exists.
+            viewModel.SearchText = "tree";
 
             var family = viewModel.Families.Single();
             Assert.AreEqual("data", family.Family);
-            Assert.AreEqual("DataGrid", family.Items.Single().DisplayName);
+            Assert.AreEqual("TreeView", family.Items.Single().DisplayName);
         }
 
         [TestMethod]
