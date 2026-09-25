@@ -170,6 +170,20 @@
     -->
     <KubunoViewsLsExePath Condition="'$(KubunoViewsLsExePath)' == ''">C:\kubuno-build\desktop-target\release\kubuno-views-ls.exe</KubunoViewsLsExePath>
     <!--
+      kubuno-views-ls.exe is NOT self-contained: the desktop workspace links kubuno-ui as a Rust
+      dylib with -C prefer-dynamic (desktop/windows/.cargo/config.toml), so the exe imports
+      kubuno_ui.dll and Rust's own std-<hash>.dll. Shipped alone it dies at load time with
+      STATUS_DLL_NOT_FOUND (0xC0000135) before reading a single byte of stdin, which VS reports as a
+      JSON-RPC ConnectionLostException during "initialize". Both DLLs are therefore shipped beside it
+      in tools\ (the Windows loader looks in the exe's own folder first):
+        - kubuno_ui.dll comes from the SAME cargo build as the exe (Cargo uplifts it next to the exe);
+          a Rust dylib has no stable ABI, so it must never be mixed with a different build.
+        - std-*.dll comes from the toolchain that built the exe (default: the stable MSVC toolchain
+          this workspace documents, vskubuno/CLAUDE.md #5); override with /p:KubunoRustStdDir=<dir>.
+    -->
+    <KubunoViewsLsDir>$([System.IO.Path]::GetDirectoryName('$(KubunoViewsLsExePath)'))\</KubunoViewsLsDir>
+    <KubunoRustStdDir Condition="'$(KubunoRustStdDir)' == ''">$(USERPROFILE)\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib\</KubunoRustStdDir>
+    <!--
       kubuno-vs-mcp.exe (Kubuno.Mcp, net8.0 - docs/MCP.md "Integration"). Default: this repo's own
       build output for the same $(Configuration) (a ReferenceOutputAssembly=false ProjectReference
       below drives that build as part of this solution/project build - see its own comment for why
@@ -182,6 +196,10 @@
   <Target Name="KubunoCheckToolExes" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoViewsLsExePath)')"
            Text="kubuno-views-ls.exe not found at '$(KubunoViewsLsExePath)'. Build it from the desktop repo: cd Z:\projects\kubuno\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -- or pass /p:KubunoViewsLsExePath=&lt;path to kubuno-views-ls.exe&gt;." />
+    <Error Condition="!Exists('$(KubunoViewsLsDir)kubuno_ui.dll')"
+           Text="kubuno_ui.dll not found beside kubuno-views-ls.exe in '$(KubunoViewsLsDir)'. kubuno-views-ls.exe imports it (kubuno-ui is a Rust dylib) and must ship with the kubuno_ui.dll of the same cargo build." />
+    <Error Condition="'@(KubunoRustStdDll)' == ''"
+           Text="Rust's std-*.dll not found in '$(KubunoRustStdDir)'. kubuno-views-ls.exe imports it (-C prefer-dynamic); pass /p:KubunoRustStdDir=&lt;rustc --print sysroot&gt;\lib\rustlib\x86_64-pc-windows-msvc\lib\ for the toolchain that built it." />
     <Error Condition="!Exists('$(KubunoMcpOutputDir)kubuno-vs-mcp.exe')"
            Text="kubuno-vs-mcp.exe not found under '$(KubunoMcpOutputDir)'. It should have been built automatically as part of this solution (src\Kubuno.Mcp\Kubuno.Mcp.csproj) - build that project first, or pass /p:KubunoMcpOutputDir=&lt;its output folder&gt;." />
   </Target>
@@ -191,6 +209,18 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>tools\kubuno-views-ls.exe</Link>
+    </Content>
+    <!-- kubuno-views-ls.exe's runtime DLLs - see KubunoViewsLsDir/KubunoRustStdDir above. -->
+    <KubunoRustStdDll Include="$(KubunoRustStdDir)std-*.dll" />
+    <Content Include="$(KubunoViewsLsDir)kubuno_ui.dll" Condition="Exists('$(KubunoViewsLsDir)kubuno_ui.dll')">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\kubuno_ui.dll</Link>
+    </Content>
+    <Content Include="@(KubunoRustStdDll)">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\%(Filename)%(Extension)</Link>
     </Content>
     <!--
       Every file Kubuno.Mcp's own build produces (kubuno-vs-mcp.exe/.dll/.deps.json/.runtimeconfig.json

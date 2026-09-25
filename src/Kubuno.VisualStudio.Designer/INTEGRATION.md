@@ -128,21 +128,18 @@ Notes:
   run here - see the repo's own `CLAUDE.md`, "toujours tester réellement" - and per this task's
   instructions, no VS was launched except via PowerShell if truly needed, which it was not for a
   C#-only skeleton). Verify in the experimental instance after wiring this up:
-  1. `.kbview` files should still **open in the plain XML/text editor on double-click** (current
-     behavior - today `.kbview` has *no* explicit `ProvideEditorExtension` at all, so it falls back to
-     VS's built-in Source Code Editor purely from the "kbview" content type; adding any
-     `ProvideEditorExtension` for the first time is the part that needs checking).
+  1. `.kbview` files should still **open in the plain text editor on double-click**. This is no
+     longer implicit: `src/Kubuno.VisualStudio/languages.pkgdef` now maps `.kbview` explicitly to VS's
+     built-in Source Code (Text) Editor (`Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions`,
+     `"kbview"=dword:00000064`), because without that key VS opened it in its XML editor (DTE
+     `Document.Language` was "XML" - the content looks like XML), the buffer got the XML content type and the kbview
+     language client never activated (root-caused live - see the repo CHANGELOG). The editor with the
+     HIGHEST value in these `Extensions` keys is the double-click default (VSSDK
+     `ProvideEditorExtension` semantics), so the designer's `0x60` stays below the text editor's
+     `0x64` - keep it that way, and re-check that the language client still activates for a `.kbview`
+     opened in the designer's embedded code view once the factory is registered.
   2. "Open With..." on a `.kbview` file should list **both** "Kubuno View Designer" and the plain text
      editor.
-  3. If step 1 fails (the designer becomes the double-click default instead of staying opt-in), the
-     fix is almost certainly to also add an explicit `ProvideEditorExtension` for VS's own built-in
-     text editor factory (`VSConstants.CLSID.VsTextEditorFactory_guid`) at a *lower* priority number
-     than `0x60`, forcing it to remain first - this cannot itself be attribute-driven the normal way
-     (`ProvideEditorExtension`'s `factoryType` parameter expects a package-owned `Type`, not an
-     arbitrary external CLSID), so it would need a lower-level pkgdef fragment (see how
-     `kbview-languages.pkgdef` already ships a hand-written fragment merged into `languages.pkgdef` -
-     `Kubuno.VisualStudio.Views/INTEGRATION.md` §3 - the same technique applies here for an
-     `Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions\kbview` key).
 
 In `KubunoPackage.InitializeAsync` (after the package is sited), register the factory instance itself
 - `[ProvideEditorFactory]` only emits pkgdef metadata; VS still needs a live instance handed to it:

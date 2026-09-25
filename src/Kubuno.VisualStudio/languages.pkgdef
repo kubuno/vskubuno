@@ -16,3 +16,17 @@
 [$RootKey$\TextMate\LanguageConfiguration\ContentTypeMapping]
 "rust"="$PackageFolder$\Grammars\rust-language-configuration.json"
 "kbview"="$PackageFolder$\Grammars\Kbview\kbview-language-configuration.json"
+
+; Opens .kbview files in VS's own core text editor ("Source Code (Text) Editor",
+; VSConstants.CLSID.VsTextEditorFactory), so the buffer gets the "kbview" content type from
+; Kubuno.VisualStudio.Views' FileExtensionToContentTypeDefinition - the content type the kbview
+; ILanguageClient (kubuno-views-ls) is bound to. Without an explicit entry, .kbview is an unknown
+; extension and, because its content looks like XML, VS opens it in its XML editor instead
+; (verified live: DTE Document.Language = "XML"): the buffer then gets the XML language service and
+; content type, and the kbview language client is never activated. .rs has no such issue - it opens
+; in the core editor ("Plain Text" language service, "rust" content type) without any entry.
+; The HIGHEST value wins the double-click default, so 0x64 must stay above any other editor
+; registered for "kbview" that should stay opt-in (e.g. the Kubuno View Designer's 0x60, see
+; Kubuno.VisualStudio.Designer/INTEGRATION.md).
+[$RootKey$\Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions]
+"kbview"=dword:00000064

@@ -237,22 +237,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `Content` items (found missing by diffing the deployed extension folder against
   `Kubuno.TestAdapter`'s own plain `dotnet build` output, which does copy its full transitive
   closure correctly).
-- **`.kbview` files were being claimed by Visual Studio's own XML editor**, not our content type
-  (4 "namespace prefix 'x' is not defined" errors on `x:Name` - which this format deliberately
-  allows without an `xmlns:x` declaration - confirmed live via the Error List). Root cause:
-  `Kubuno.VisualStudio.Views.dll`'s `FileExtensionToContentTypeDefinition`/`ContentTypeDefinition`
-  MEF exports for `.kbview`/`"kbview"` were not taking effect, so the file fell through to VS's
-  content-based "this looks like XML" fallback. Fixed by duplicating that mapping directly in
-  `Kubuno.VisualStudio.dll` (`LanguageService/ContentDefinition.cs`) - the same assembly
-  `RustLanguageClient`'s own, working `.rs`/`"rust"` mapping already lives in - confirmed live:
-  the Error List is clean again after this change. `KubunoViewsLanguageClient`'s own
-  `[Export(typeof(ILanguageClient))]` was *also* moved into this assembly the same way (a new
-  `LanguageService/KbviewLanguageClient.cs`, a pure forwarding wrapper - no behavior of its own,
-  everything still owned by `Kubuno.VisualStudio.Views.LanguageService.KubunoViewsLanguageClient`,
-  untouched per that library's own INTEGRATION.md), since `Kubuno.TestAdapter.dll`'s own MEF part
-  (`ITestContainerDiscoverer`, registered the exact same "separate assembly, own
-  `MefComponent` VSIX asset" way) composes and runs correctly, ruling out a general cross-assembly
-  MEF problem.
+- **`.kbview` language support now actually runs: `kubuno-views-ls.exe` starts, and diagnostics and
+  completion work in Visual Studio** (verified live in the experimental instance on a scratch copy of
+  `kubuno-views/examples/views/settings.kbview`: an unknown `<Bogus/>` element shows up in the Error
+  List as ``unknown element `<Bogus>` `` and disappears on undo; `textDocument/completion` after `<`
+  returns `Button`, `Switch`, `TextField`, `Card`...). Four separate defects stacked on top of each
+  other, each confirmed with evidence rather than guessed:
+  - **Root cause - `.kbview` was opened by VS's XML editor.** `.kbview` is an extension no editor
+    registers, and since its content looks like XML, VS opened it in its XML editor (DTE
+    `Document.Language` = `"XML"`, versus `"Plain Text"` for a `.rs` file): the buffer got the XML
+    language service and content type, never `"kbview"`, so no `ILanguageClient` bound to `"kbview"`
+    could ever be activated. `languages.pkgdef` now maps `.kbview` explicitly to VS's core text
+    editor (`Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions`, `"kbview"=dword:0x64`); the
+    buffer now gets the `"kbview"` content type from `Kubuno.VisualStudio.Views`' own MEF exports
+    and the client activates.
+  - **The runtime DLLs were not shipped.** `kubuno-views-ls.exe` imports `kubuno_ui.dll` and Rust's
+    `std-<hash>.dll` (the desktop workspace links `kubuno-ui` as a dylib with `-C prefer-dynamic`),
+    so the exe shipped alone in `tools\` died at load time with `STATUS_DLL_NOT_FOUND`
+    (`0xC0000135`), which VS reported as a JSON-RPC `ConnectionLostException` during `initialize`.
+    `Kubuno.VisualStudio.csproj` now ships both DLLs beside it: `kubuno_ui.dll` from the same cargo
+    build as the exe (a Rust dylib has no stable ABI), `std-*.dll` from the toolchain
+    (`KubunoRustStdDir`, default: the stable MSVC toolchain), with a build error if either is missing.
+  - **VS never sent `didOpen`/`didChange`** because the server advertised the bare
+    `textDocumentSync: 1` shorthand, which VS's LSP client treats as "no open/close notifications"
+    (no diagnostics; `documentSymbol` answered `null` for a document the server was never told
+    about). Fixed server-side in the `desktop` repo (`kubuno-views-ls` now advertises
+    `{ openClose: true, change: Full }`).
+  - **`kubuno-views-ls` never exited** after `exit` or when VS closed (a classic `lsp-server`
+    deadlock: joining the I/O threads while still holding the connection's sender), leaving an
+    orphan process that locked the extension's `tools\` folder. Also fixed in the `desktop` repo.
+- **Removed the earlier `.kbview` workarounds that did not address the cause**: the duplicate
+  `.kbview`/`"kbview"` content-type exports in `Kubuno.VisualStudio.dll` (`Kubuno.VisualStudio.Views.dll`'s
+  own exports compose and work once the XML editor no longer claims the file) and the forwarding
+  `LanguageService/KbviewLanguageClient.cs` wrapper - which had never actually been compiled (the
+  old-style `Kubuno.VisualStudio.csproj` lists its `Compile` items explicitly and did not list it),
+  which is why its diagnostic log line never appeared. Its absence from the stale MEF cache
+  (`ComponentModelCache`, older than the deployed DLL) was consistent with that.
 
 ### Fixed (continued)
 
@@ -268,31 +288,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   installed too rather than replaced.
 
 ### Known limitations
-
-- **`kubuno-views-ls.exe` still does not start for a `.kbview` file, now precisely diagnosed**:
-  `ILanguageClient.ActivateAsync` itself never runs - confirmed directly (not inferred) by adding
-  a log line as the very first statement of `KbviewLanguageClient.ActivateAsync` (the forwarding
-  wrapper - see "Fixed" above) and observing it never appear in the "Kubuno" Output pane (now read
-  reliably via a small out-of-process `EnvDTE`/`EnvDTE80` probe using `OutputWindowPane.
-  TextDocument.CreateEditPoint().GetText(...)` - late-bound PowerShell COM automation of the same
-  API silently returned zero panes for *everything*, including built-in ones, which was itself a
-  bug in the probe, not a real absence). Ruled out in this session, each independently confirmed:
-  MEF composition (no errors in `ComponentModelCache\*.err`, the DLL is scanned, the sibling
-  `KbviewOptionsPage` `DialogPage` from the same assembly instantiates fine via `DTE.Properties`);
-  content-type resolution (the Error List has zero XML-editor errors for the file, whether opened
-  from inside or outside the workspace); the `[ContentType]`/`[Export(typeof(ILanguageClient))]`
-  attribute shape (character-for-character identical to `RustLanguageClient`, which logs reliably
-  in the same session); `CodeRemoteContentDefinition.CodeRemoteContentTypeName`'s actual value
-  (reflected directly off the installed `Microsoft.VisualStudio.LanguageServer.Client.dll`:
-  `"code-languageserver-preview"` - not `"code-languageserver-base"`, but the *same* symbolic
-  reference `RustLanguageClient` uses, so this cannot explain an asymmetry between the two);
-  `devenv /log` `ActivityLog.xml` (no "Kubuno" or "LanguageClient" mentions at default verbosity -
-  a dead end, not a lead). What is left unruled-out: something specific to how
-  `Microsoft.VisualStudio.LanguageServer.Client`'s internal host selects which registered
-  `ILanguageClient` to activate for a given content type, which needs either Microsoft's own
-  source or an attached managed debugger on that host to actually resolve - not diagnosable
-  further from outside the process. The XML-editor hijacking fix (see "Fixed") stands regardless
-  of this remaining issue.
 
 - `Kubuno.VisualStudio.Designer` (work package DSG-3, standalone library, not yet wired into the
   VSIX - see its own `INTEGRATION.md`): C# skeleton of the `.kbview` designer editor. An
