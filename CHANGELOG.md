@@ -41,6 +41,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   explicitly (that property DOES exist on net48), symmetrically. New regression test pinning the
   encoding configuration (`RustDesignSurfaceHostDragDropTests.cs`).
 
+- `RustDesignSurfaceHost.DragDrop.cs`'s own stdout listener was only ever wired from its
+  `Notify*` (toolbox-drag) methods, so a pane whose first gesture was a mouse drag (not a toolbox
+  drop) never attached it, and `EditRequestsReceived`/`DropTargetChanged` silently never fired
+  (the line was logged as "unrecognised" by `RustDesignSurfaceHost.Protocol.cs`'s own, unrelated
+  listener instead - easy to mistake for a parsing bug, but the parsing was never reached). Found
+  during DSG-9's own visual check. Now ALSO wired via a static `EventManager.RegisterClassHandler`
+  on `FrameworkElement.LoadedEvent` (subscribes to `ChildReady`, which fires once per start/restart
+  with a live process), independent of any toolbox gesture ever happening.
+
+- `kubuno_views::design::DesignController::press` now selects AND arms a Move/Resize/Reorder drag
+  in the SAME press (a new `DRAG_THRESHOLD` gates when an armed session actually starts
+  moving/reordering, so a plain click still just selects) - the previous two-press design (select,
+  then a second press to arm) read, live, as "dragging an unselected element does nothing but
+  select it".
+
 ### Added
 
 - **DSG-9: move/resize drag, Flow reorder and toolbox drop** (`docs/DESIGNER.md` §10): the design
@@ -52,9 +67,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   would not collide with concurrent DSG-8 work on those two files): `NotifyDragEnter`/
   `NotifyDragOver`/`NotifyDrop`/`NotifyDragLeave` (named to avoid shadowing `UIElement`'s own
   same-named routed events) send the new host→surface messages; a second, independent
-  `Process.OutputDataReceived` listener (wired lazily on first use, since an instance field
-  initializer cannot call an instance method and this file must not touch
-  `RustDesignSurfaceHost.cs`'s own constructor) raises the new `EditRequestsReceived`/
+  `Process.OutputDataReceived` listener (wired via a static `Loaded` class handler - see the
+  "Fixed" entry above for why an instance field initializer/the `Notify*` methods alone were not
+  enough) raises the new `EditRequestsReceived`/
   `DragDropEditRequested`/`DropTargetChanged` events for the shapes `RustDesignSurfaceHost
   .Protocol.cs`'s own listener does not already recognise. New
   `Kubuno.VisualStudio.Designer.Tests/DesignSurface/RustDesignSurfaceHostDragDropTests.cs`

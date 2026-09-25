@@ -852,15 +852,19 @@ host` directly — `examples/view_embed.rs` is the only bridge):
 - **`DesignController::press(layout, x, y) -> bool`** — a completed press. If
   the CURRENTLY selected element is a `DockAnchor` child, a press on one of
   its 8 resize handles (`handle_at`, hit-testing [`resize_handles`]'s own
-  geometry at [`RESIZE_HANDLE_SIZE`]) arms a `Resize` drag; a press elsewhere
-  on its own bounds arms a `Move` drag. If the selection is a `Flow` child, a
-  press on its bounds arms a `Reorder` drag (§4 below). Otherwise falls back
-  to the existing [`DesignController::click_select`] (a caller still checks
-  [`DesignController::selected`] afterwards for `selectionChanged`, exactly
-  as before). Deliberately no "moved past a threshold" tracking: a first
-  press on an unselected element only selects it; the SAME element pressed
-  again arms the drag — a drag armed with zero subsequent movement is
-  harmless (`end_drag` returns no ops for it, same as a plain click).
+  geometry at [`RESIZE_HANDLE_SIZE`]) arms a `Resize` drag immediately,
+  `confirmed` (unambiguous intent, no debounce). Otherwise, SELECTS whatever
+  is under the pointer and, if it is itself draggable (`DockAnchor` → `Move`,
+  `Flow` → `Reorder`), arms that gesture in the SAME press, `confirmed:
+  false` — revised from an earlier two-press design (select, then a SECOND
+  press to arm) after a live visual check showed that reads as "dragging an
+  unselected element does nothing but select it", not the WinForms/XAML
+  one-gesture behavior DSG-9 item 1 actually asks for. An unconfirmed session
+  produces no preview/marker and no `EditOp`; [`DesignController::update_drag`]
+  confirms it — applying the FULL delta from the original press, no jump —
+  the first time the pointer crosses [`DRAG_THRESHOLD`] (4 DIP), so a plain
+  click (press, release with negligible movement) still just selects.
+  Returns whether the selection itself changed.
 - **`DesignController::update_drag(layout, x, y, suppress_snap)`** — called
   every frame a drag is active. For `Move`/`Resize`, computes the raw new
   bounds ([`move_rect`]/[`resize_rect`], pure `Rect` arithmetic — `resize_rect`
@@ -1145,3 +1149,73 @@ raw manual pipe) showed `setText`/`setDesignMode` both succeeding on the
 surface's very first two writes, the probe line's `design=` field turning
 `true`, and the full toolbox-drop pipeline (`dragEnter`/`dragOver`/
 `dropTargetChanged`/`drop`/`DragDropEditRequested`) working end to end.
+
+### Second visual check — findings and fixes
+
+With the BOM fixed, an interactive visual check (real mouse gestures, not
+`--simulate-toolbox`) found two more real bugs, both fixed, and three
+polish items left open (budget-constrained: documented here instead of
+implemented).
+
+**Fixed:**
+
+1. **"Press-and-drag on an unselected element did nothing but select it."**
+   `DesignController::press`'s ORIGINAL design required two presses (select,
+   then a second press on the now-selected element to arm the drag) — a
+   deliberate simplification at the time, but not the WinForms/XAML-class
+   "one gesture" behavior DSG-9 item 1 actually asks for. Fixed: `press` now
+   selects AND arms the gesture in the SAME press (`DragSession::confirmed:
+   false`), and `DRAG_THRESHOLD` (4 DIP) gates when an armed-but-unconfirmed
+   session actually starts moving/reordering — see §10's own "Move/resize
+   drag" section above, now rewritten to match.
+2. **The C# host logged `editRequests`/`dropTargetChanged` as "unrecognised".**
+   Root cause was NOT a parsing mismatch (the wire shapes and
+   `DesignSurfaceDragDropProtocol`'s parsing were already correct end to
+   end — confirmed by re-reading both sides' tests side by side) but a
+   WIRING gap: `RustDesignSurfaceHost.DragDrop.cs`'s own stdout listener
+   (`OnDragDropProtocolLine`) was only ever attached from the `Notify*`
+   (toolbox-drag) entry points, so if the user's FIRST gesture on a pane was
+   a mouse drag — not a toolbox drop — the listener was never attached at
+   all, and the line was seen only by `RustDesignSurfaceHost.Protocol.cs`'s
+   own, unrelated listener, which correctly (and misleadingly) logs it as
+   unrecognised. Fixed by wiring `EnsureDragDropListenerWired` from a STATIC
+   `EventManager.RegisterClassHandler` on `FrameworkElement.LoadedEvent`
+   instead (every instance, every `Loaded`, subscribes to `ChildReady`,
+   which fires once per (re)start with a live `Surface`) — see
+   `RustDesignSurfaceHost.DragDrop.cs`'s own updated doc for the full
+   reasoning, including why this still could not be constructor code or a
+   field initializer.
+
+**Open** (not implemented under this session's budget constraint — next
+session's own scope):
+
+3. **Invalid-drop feedback painted the WHOLE surface solid opaque red**
+   (`paint_drop_marker`'s `c.fill_rect(&target.marker, color)` branch, hit
+   whenever `target.xy` is `None` — a Flow/other target, including the root
+   `<Card>` itself rejecting a drop — fills `target.marker`, which for a
+   non-Anchor, non-Flow target is the CONTAINER'S OWN full bounds, not a
+   thin line). Needs a subtle indication instead: a red OUTLINE (or a light
+   hatched overlay, in this crate's own existing `dashed_outline`-style
+   "draw the geometry ourselves" idiom — no alpha-blended fill primitive is
+   available without adding a `windows`/Direct2D feature this crate does not
+   already depend on, see `PaintCx`/`Canvas`'s own doc) around the target
+   container only, plus a "no" cursor (host-side, from
+   `DropTargetChanged.Target.Valid`).
+4. **A simulated toolbox drop's insertion index did not match a manual
+   trace at the same drop point.** `--simulate-toolbox`'s own fixed short
+   path (a few `dragOver` steps then `drop`) landed at `index: 0` where an
+   earlier manual trace at a deliberately-chosen deeper point gave `index: 3`
+   — both are `flow_insertion_index`'s correct answer for their OWN actual
+   drop coordinates (`drop`'s own handler re-evaluates `drag_over` at the
+   EXACT drop point, `DESIGNER.md` §10's own "Toolbox drop" section already
+   documents this), so this is very likely `--simulate-toolbox`'s fixed path
+   not reaching far enough into the `<Stack>` before dropping, not a real
+   index-computation bug — needs a live re-check (move the mouse to the
+   BOTTOM of the `<Stack>` and confirm the drop appends) before treating it
+   as one.
+5. **The move ghost is a thin outline, easy to miss against the original.**
+   `paint_drag_preview` currently only strokes `preview`'s outline. Wanted: a
+   translucent filled rectangle (~20% alpha) plus the outline, optionally
+   dimming the original — blocked on the same "no alpha-blended fill
+   primitive available in this crate without a new dependency" constraint as
+   item 3; the same hatched-fill idiom would work here too.

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Windows;
 
 namespace Kubuno.VisualStudio.Designer.DesignSurface
 {
@@ -146,6 +147,40 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
             _dragDropWiredSurface = proc;
             proc.OutputDataReceived += OnDragDropProtocolLine;
+        }
+
+        /// <summary>
+        /// FIX (found live in a DSG-9 visual check): calling <see cref="EnsureDragDropListenerWired"/>
+        /// only from the `Notify*` methods above left a real gap - a move/resize drag's batched
+        /// `editRequests`, and a Flow reorder's/toolbox drop's single `moveElement`/`insertChild`
+        /// `editRequest`, can all arrive from a REAL MOUSE gesture on the surface's own window with NO
+        /// toolbox interaction ever happening first. If the user's first gesture on a pane is a drag, not
+        /// a toolbox drop, no `Notify*` call had ever run, so this listener was never attached and
+        /// `EditRequestsReceived` never fired (the line was seen only by `RustDesignSurfaceHost.Protocol
+        /// .cs`'s OWN, unrelated listener, which correctly does not recognise it and logs it as
+        /// unrecognised - easy to mistake for a parsing bug, but the parsing was never reached at all).
+        ///
+        /// Wired instead via a STATIC class handler on <see cref="FrameworkElement.LoadedEvent"/> - not
+        /// constructor code (this file must not touch `RustDesignSurfaceHost.cs`'s own constructor) and
+        /// not an instance field initializer (cannot call an instance method - C# `CS0236`, confirmed live
+        /// while first building this file). `Loaded` fires for every instance of this type once it is part
+        /// of a rendered visual tree; at that point it subscribes to the (also existing) <see
+        /// cref="ChildReady"/> event, which fires once per (re)start with the surface `Process` already
+        /// live - covering the very first start AND every crash-restart, with no dependency on any toolbox
+        /// gesture ever happening.
+        /// </summary>
+        static RustDesignSurfaceHost()
+        {
+            EventManager.RegisterClassHandler(typeof(RustDesignSurfaceHost), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnLoadedWireDragDropListener));
+        }
+
+        private static void OnLoadedWireDragDropListener(object sender, RoutedEventArgs e)
+        {
+            if (sender is RustDesignSurfaceHost host)
+            {
+                host.EnsureDragDropListenerWired();
+                host.ChildReady += host.EnsureDragDropListenerWired;
+            }
         }
 
         /// <summary>
