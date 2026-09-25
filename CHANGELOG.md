@@ -40,6 +40,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `Kubuno.VisualStudio.Views`, `Kubuno.TestAdapter`, `Kubuno.Mcp`, `Kubuno.Mcp.Bridge` and their
     three test projects are now part of `Kubuno.VisualStudio.sln`, so CI's `dotnet test --no-build`
     loop (which just discovers every `tests\*.csproj`) covers them.
+- **`Kubuno.VisualStudio.Designer` (work packages DSG-4/DSG-5, still standalone - not yet wired into
+  the VSIX, see its own `INTEGRATION.md`):**
+  - **Toolbox + Properties/Events (DSG-4).** A new `Registry\*` namespace mirrors the
+    `kubuno/registry` JSON shape `docs/DESIGNER.md` §5 specifies (`ComponentMeta`/`PropertyMeta`/
+    `EventMeta`/`PropKind`/`ChildrenModel`, plus the two additive fields that section calls for,
+    `Icon` and the new `LayoutKind` enum) with a `System.Text.Json`-based loader
+    (`ComponentRegistry.FromJson`) - DSG-1 hasn't landed yet, so this is exercised against a
+    checked-in, schema-faithful fixture (`tests\Kubuno.VisualStudio.Designer.Tests\Fixtures\
+    registry.sample.json`), not real `kubuno-views-ls` output. `Toolbox\ToolboxViewModel`/
+    `ToolboxView` group the registry by family with a live search filter; `Properties\
+    PropertiesPanelViewModel`/`PropertiesPanelView` render a Properties tab (one editor per
+    `PropKind` - checkbox for `Bool`, dropdown for `Enum`, a digits-only text box for `F32`, plain
+    text box for `String`; a `{Binding Path[, Mode=TwoWay]}` value instead shows a small binding
+    glyph, parsed by the new `Properties\BindingExpressionParser`; unset/default-equal values are
+    shown greyed with a reset-to-default button) and an Events tab (handler name dropdown, plus a
+    "Create handler" button/double-click-on-empty-row hook - `EventRowViewModel
+    .CreateHandlerRequested` - for DSG-10 to wire up later). All WPF views are code-only (no .xaml,
+    matching the rest of this repo) and themed via `Microsoft.VisualStudio.PlatformUI.
+    EnvironmentColors` dynamic resource keys so they track the VS light/dark/high-contrast theme.
+  - **Buffer-apply plumbing (DSG-5).** `Editing\LspPositionMapper`/`TextEditPlanner` are pure,
+    VS-free range→offset mapping, edit ordering and overlap/conflict detection over the LSP-style
+    `{range, newText}` shape `kubuno/applyEdit` will return (`Editing\TextEditDto`/`LspRange`/
+    `LspPosition`); `Editing\BufferEditCore` version-checks a request's base version against the
+    live buffer (rejecting a stale request rather than clobbering a concurrent edit) and applies
+    every edit in a batch as ONE call to the narrow `IEditableTextBuffer` seam, so it lands as ONE
+    `ITextEdit`/undo unit. `Editing\Infrastructure\BufferEditApplier` is the thin real
+    `Microsoft.VisualStudio.Text.ITextBuffer` adapter; `Editing\Infrastructure\DesignerUndoScope`
+    (real `ITextUndoHistory`) plus the pure `Editing\CompoundEditCoordinator` coalesce a gesture
+    that needs more than one `kubuno/applyEdit` round trip (e.g. a `MoveChild` decomposed into a
+    remove then a re-computed insert) into one user-visible undo transaction, rolling back the
+    whole batch if any request in it fails its version check or conflicts. All of the pure logic is
+    unit-tested (`tests\Kubuno.VisualStudio.Designer.Tests\Editing\`, incl. a regression test for a
+    non-adjacent-overlap conflict a naive adjacent-pairs scan would miss); the two VS-dependent
+    adapters need a live `ITextBuffer`/`ITextUndoHistory` and are left for a manual Ctrl+Z check in
+    the experimental instance, same as this library's other VS-SDK-bound classes.
+  - Added an explicit `System.Text.Json` `PackageReference` (pinned to the same version
+    `Microsoft.VisualStudio.SDK` already resolves to, not lower) to `tests\
+    Kubuno.VisualStudio.Designer.Tests.csproj`: that transitive dependency's runtime assets were
+    being excluded from the test output directory (`Microsoft.VisualStudio.SDK`'s own
+    `ExcludeAssets="runtime"` cascades to its whole dependency graph), which is fine inside
+    `devenv.exe` but left the standalone `dotnet test` host unable to load the assembly at all.
 
 ### Changed
 

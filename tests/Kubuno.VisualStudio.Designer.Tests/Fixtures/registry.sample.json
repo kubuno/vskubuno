@@ -1,0 +1,136 @@
+[
+  {
+    "name": "Card",
+    "doc": "A titled container with a single body widget.",
+    "family": "core",
+    "icon": "card",
+    "children": "SingleWidget",
+    "layout_kind": null,
+    "properties": [
+      { "name": "Title", "kind": "String", "default": "", "doc": "The card's header text." },
+      { "name": "Elevated", "kind": "Bool", "default": "false", "doc": "Whether the card renders a drop shadow." }
+    ],
+    "events": []
+  },
+  {
+    "name": "Stack",
+    "doc": "A flow container that lays its children out along one axis.",
+    "family": "core",
+    "icon": "stack",
+    "children": "List",
+    "layout_kind": "Flow",
+    "properties": [
+      { "name": "Direction", "kind": { "Enum": ["Horizontal", "Vertical"] }, "default": "Vertical", "doc": "The axis children stack along." },
+      { "name": "Gap", "kind": "F32", "default": "0", "doc": "Spacing between children, in DIPs." }
+    ],
+    "events": []
+  },
+  {
+    "name": "Button",
+    "doc": "A clickable push button.",
+    "family": "core",
+    "icon": "button",
+    "children": "None",
+    "layout_kind": null,
+    "properties": [
+      { "name": "Text", "kind": "String", "default": "", "doc": "The button's label." },
+      { "name": "Enabled", "kind": "Bool", "default": "true", "doc": "Whether the button accepts input." },
+      { "name": "Variant", "kind": { "Enum": ["Primary", "Secondary", "Ghost"] }, "default": "Primary", "doc": "Visual emphasis." }
+    ],
+    "events": [
+      { "name": "Click", "doc": "Raised when the button is activated." }
+    ]
+  },
+  {
+    "name": "Switch",
+    "doc": "A boolean on/off toggle.",
+    "family": "core",
+    "icon": "switch",
+    "children": "None",
+    "layout_kind": null,
+    "properties": [
+      { "name": "Checked", "kind": "Bool", "default": "false", "doc": "Current on/off state." }
+    ],
+    "events": [
+      { "name": "Toggled", "doc": "Raised when Checked changes." }
+    ]
+  },
+  {
+    "name": "TextField",
+    "doc": "A single-line editable text input.",
+    "family": "core",
+    "icon": "text-field",
+    "children": "None",
+    "layout_kind": null,
+    "properties": [
+      { "name": "Value", "kind": "String", "default": "", "doc": "The current text." },
+      { "name": "Placeholder", "kind": "String", "default": "", "doc": "Text shown when empty." },
+      { "name": "Width", "kind": "F32", "default": null, "doc": "Explicit width in DIPs; unset lets the layout measure it." }
+    ],
+    "events": [
+      { "name": "Changed", "doc": "Raised on every keystroke that changes Value." }
+    ]
+  },
+  {
+    "name": "RadioGroup",
+    "doc": "A mutually-exclusive set of choices.",
+    "family": "choice",
+    "icon": "radio-group",
+    "children": "List",
+    "layout_kind": "Flow",
+    "properties": [
+      { "name": "SelectedIndex", "kind": "F32", "default": "-1", "doc": "Index of the selected option, or -1 for none." }
+    ],
+    "events": [
+      { "name": "SelectionChanged", "doc": "Raised when SelectedIndex changes." }
+    ]
+  },
+  {
+    "name": "Panel",
+    "doc": "A generic container whose children position themselves via Dock or Anchor.",
+    "family": "containers",
+    "icon": "panel",
+    "children": "List",
+    "layout_kind": "Dock",
+    "properties": [],
+    "events": []
+  },
+  {
+    "name": "DataGrid",
+    "doc": "A tabular, bound data view.",
+    "family": "data",
+    "icon": "data-grid",
+    "children": "None",
+    "layout_kind": null,
+    "properties": [
+      { "name": "ItemsSource", "kind": "String", "default": null, "doc": "A {Binding} expression to the row collection." }
+    ],
+    "events": [
+      { "name": "RowActivated", "doc": "Raised on row double-click." }
+    ]
+  },
+  {
+    "name": "Image",
+    "doc": "A static or bound bitmap.",
+    "family": "display",
+    "icon": "image",
+    "children": "None",
+    "layout_kind": null,
+    "properties": [
+      { "name": "Source", "kind": "String", "default": "", "doc": "Asset path or {Binding} expression." }
+    ],
+    "events": []
+  },
+  {
+    "name": "Label",
+    "doc": "Static, non-editable text.",
+    "family": "text",
+    "icon": "label",
+    "children": "None",
+    "layout_kind": null,
+    "properties": [
+      { "name": "Text", "kind": "String", "default": "", "doc": "The text to display." }
+    ],
+    "events": []
+  }
+]
