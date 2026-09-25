@@ -5,6 +5,21 @@
     view surface (view_embed.exe, another process) through an HwndHost.
     Deliberately NOT part of Kubuno.VisualStudio.sln. net48 on purpose: it is
     the runtime the VSIX itself runs on inside devenv.exe.
+
+    Now drives the PRODUCTION host class (`Kubuno.VisualStudio.Designer.
+    DesignSurface.RustDesignSurfaceHost`) instead of the spike's own
+    `DesignSurfaceHost` (removed - superseded): this project is what the
+    selftest flag is run against to verify DSG-7's production code (job
+    object, restart backoff, error mode, DLL check, keyboard protocol)
+    without needing a live devenv.exe. `Native.cs` stays: it drives synthetic
+    input and inspects windows/processes for the test itself, which is a
+    different concern from the host's own plumbing (now in the referenced
+    project's `DesignSurface/NativeMethods.cs`). The `ProjectReference` alone
+    does not pull `Kubuno.VisualStudio.Designer` into `Kubuno.VisualStudio.
+    sln` (it is a plain MSBuild project-to-project reference); that library's
+    own `Microsoft.VisualStudio.SDK` package is `ExcludeAssets="runtime"`, so
+    nothing here needs devenv.exe's assemblies to run standalone - confirmed
+    by this spike actually running outside VS.
   -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -20,6 +35,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kubuno.VisualStudio.Designer\Kubuno.VisualStudio.Designer.csproj" />
   </ItemGroup>
 
 </Project>

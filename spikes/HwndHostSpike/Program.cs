@@ -8,34 +8,61 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using Kubuno.VisualStudio.Designer.DesignSurface;
+using Kubuno.VisualStudio.Views.Logging;
 
 namespace HwndHostSpike
 {
     /// <summary>
-    /// DSG-7 spike: <c>HwndHostSpike.exe --exe view_embed.exe --view file.kbview [--selftest] [--close] [--log path]</c>.
-    /// With <c>--selftest</c> it drives focus/keyboard/popup/capture/resize/crash
-    /// probes itself (real input through the system queue) and logs PASS/INFO lines.
+    /// DSG-7 verification harness: <c>HwndHostSpike.exe --exe view_embed.exe --view file.kbview [--selftest] [--close] [--log path]</c>.
+    /// Drives the PRODUCTION <see cref="RustDesignSurfaceHost"/> (not a spike-local class anymore -
+    /// see the csproj's own comment) so <c>--selftest</c> exercises the real job object, restart
+    /// backoff, error mode, DLL check and keyboard protocol (<c>unhandledKey</c>/<c>tabOut</c>) without
+    /// needing a live <c>devenv.exe</c>. With <c>--selftest</c> it drives focus/keyboard/popup/capture/
+    /// resize/crash/keyboard-protocol probes itself (real input through the system queue) and logs
+    /// PASS/FAIL/INFO lines.
     /// </summary>
     public static class Program
     {
-        private const uint SEM_FAILCRITICALERRORS = 0x0001, SEM_NOOPENFILEERRORBOX = 0x8000;
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")] private static extern uint SetErrorMode(uint mode);
-
         [STAThread]
         public static int Main(string[] args)
         {
-            // Inherited by the child process: a missing DLL makes it fail with
-            // an exit code instead of popping the loader's modal dialog.
-            SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
+            // RustDesignSurfaceHost's own static constructor path already calls SetErrorMode before any
+            // child process is started (see its EnsureErrorModeSet) - no need to duplicate it here.
             string Arg(string name, string dflt) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : dflt; }
-            var exe = Arg("--exe", @"C:\kubuno-build\agent-dsg7\debug\examples\view_embed.exe");
+            var exe = Arg("--exe", @"C:\kubuno-build\agent-dsg7b\debug\examples\view_embed.exe");
             var view = Arg("--view", @"Z:\projects\kubuno\desktop\windows\src\crates\kubuno-views\examples\views\settings.kbview");
             var logPath = Arg("--log", Path.Combine(Path.GetTempPath(), "hwndhostspike.log"));
             File.WriteAllText(logPath, "");
+            KubunoViewsLogHost.Current = new SpikeLogAdapter(logPath);
             var app = new Application();
             var win = new SpikeWindow(exe, view, logPath, args.Contains("--selftest"), args.Contains("--close"));
             return app.Run(win);
         }
+    }
+
+    /// <summary>
+    /// Routes <see cref="RustDesignSurfaceHost"/>'s own logging (job object, restart backoff, DLL
+    /// check...) into the SAME log file <see cref="SpikeWindow"/> already writes to and
+    /// <c>--selftest</c> already greps - the "VSIX supplies a small adapter" pattern
+    /// <c>Kubuno.VisualStudio.Views/INTEGRATION.md</c> documents for the real package.
+    /// </summary>
+    internal sealed class SpikeLogAdapter : IKubunoLog
+    {
+        private readonly string _logPath;
+        private readonly object _gate = new object();
+
+        public SpikeLogAdapter(string logPath) => _logPath = logPath;
+
+        public void WriteLine(string message)
+        {
+            lock (_gate)
+            {
+                File.AppendAllText(_logPath, DateTime.Now.ToString("HH:mm:ss.fff ") + message + Environment.NewLine);
+            }
+        }
+
+        public void WriteException(string context, Exception exception) => WriteLine($"{context}: {exception}");
     }
 
     internal sealed class SpikeWindow : Window
@@ -43,7 +70,7 @@ namespace HwndHostSpike
         private readonly string _logPath;
         private readonly object _gate = new object();
         private readonly List<string> _rustLines = new List<string>();
-        private readonly DesignSurfaceHost _host;
+        private readonly RustDesignSurfaceHost _host;
         private readonly TextBox _before, _after;
         private bool _ctrlS;
 
@@ -54,7 +81,11 @@ namespace HwndHostSpike
             Width = 900; Height = 640;
             _before = new TextBox { Text = "WPF before", Margin = new Thickness(4) };
             _after = new TextBox { Text = "WPF after", Margin = new Thickness(4) };
-            _host = new DesignSurfaceHost(exe, "\"" + view + "\"", Log);
+            _host = new RustDesignSurfaceHost(exe);
+            // The production host owns its own temp `.kbview` file (docs/DESIGNER.md §2's "buffer is
+            // truth" bridged onto the current disk-polling exe - see RustDesignSurfaceHost's own doc);
+            // seed it with the fixture `--view` file's content instead of passing that path directly.
+            _host.SetDocumentText(File.ReadAllText(view));
             var top = new StackPanel { Orientation = Orientation.Horizontal };
             _before.Width = 200; _after.Width = 200;
             top.Children.Add(_before); top.Children.Add(_after);
@@ -68,7 +99,12 @@ namespace HwndHostSpike
             Log($"spike pid {Process.GetCurrentProcess().Id}, exe {exe}");
             if (selftest)
             {
-                async void Once() { _host.ChildReady -= Once; await SelfTest(close); }
+                // `ChildReady` is a plain `Action`, so the handler must be void - `async void` is the
+                // only shape that fits; SelfTestAsync's own try/catch is what keeps an exception from
+                // crashing the process instead of a caller awaiting this one.
+#pragma warning disable VSTHRD100
+                async void Once() { _host.ChildReady -= Once; await SelfTestAsync(close); }
+#pragma warning restore VSTHRD100
                 _host.ChildReady += Once;
             }
             Closed += (_, __) => Log("window closed");
@@ -86,7 +122,7 @@ namespace HwndHostSpike
         private bool RustSaid(string needle) { lock (_gate) return _rustLines.Any(l => l.Contains(needle)); }
         private void ClearRust() { lock (_gate) _rustLines.Clear(); }
         private IntPtr Main => new WindowInteropHelper(this).Handle;
-        private static Task Wait(int ms) => Task.Delay(ms);
+        private static Task WaitAsync(int ms) => Task.Delay(ms);
 
         private static async Task ClickAsync(int x, int y)
         {
@@ -121,11 +157,11 @@ namespace HwndHostSpike
             return list;
         }
 
-        private async Task SelfTest(bool close)
+        private async Task SelfTestAsync(bool close)
         {
             try
             {
-                await Wait(800);
+                await WaitAsync(800);
                 var child = _host.Child;
                 Native.GetWindowThreadProcessId(child, out var childPid);
                 Native.GetWindowThreadProcessId(Main, out var mainPid);
@@ -137,49 +173,59 @@ namespace HwndHostSpike
                 Topmost = true;
                 Activate();
                 Native.SetForegroundWindow(Main);
-                await Wait(300);
+                await WaitAsync(300);
                 Log($"INFO foreground==main {Native.GetForegroundWindow() == Main}");
 
                 // 1. Click focuses the child.
                 Native.GetWindowRect(child, out var cr);
                 Log($"INFO child rect {cr}");
                 await ClickAsync((cr.Left + cr.Right) / 2, cr.Bottom - 20);
-                await Wait(400);
+                await WaitAsync(400);
                 var ti = Native.ThreadInfo(child);
                 Check("click moves keyboard focus into child", ti.hwndFocus == child, $"focus={Native.Hex(ti.hwndFocus)}; main still active={Native.ThreadInfo(Main).hwndActive == Main}");
 
                 // 2. Keys reach the child.
                 ClearRust();
                 Press(0x41);
-                await Wait(300);
+                await WaitAsync(300);
                 Check("key 'A' delivered to child", RustSaid("key vk 0x41"));
 
-                // 3. A WPF accelerator while the child has focus.
+                // 3. A WPF accelerator while the child has focus - the "unhandledKey" protocol:
+                // the surface does not consume a bare Ctrl+S, forwards WM_KEYDOWN to the container
+                // (kubuno_controls::host::forward_unhandled_keys), and RustDesignSurfaceHost's WndProc
+                // routes it into WPF via ComponentDispatcher.RaiseThreadMessage, firing this window's
+                // own KeyBinding - the VS-accelerator stand-in.
                 _ctrlS = false; ClearRust();
                 Press(0x53, ctrl: true);
-                await Wait(300);
-                Log($"INFO Ctrl+S with child focused: WPF KeyBinding fired={_ctrlS}, child saw S={RustSaid("key vk 0x53")}");
+                await WaitAsync(300);
+                Check("Ctrl+S reaches the WPF handler while the surface has focus (unhandledKey)", _ctrlS, $"child saw S={RustSaid("key vk 0x53")}");
 
                 // 4. Tab from WPF into the host.
                 _before.Focus();
-                await Wait(200);
+                await WaitAsync(200);
                 Press(0x09); // Tab: before -> after
-                await Wait(200);
+                await WaitAsync(200);
                 Press(0x09); // after -> host?
-                await Wait(400);
+                await WaitAsync(400);
                 ti = Native.ThreadInfo(child);
                 Check("Tab from WPF enters the child (TabIntoCore)", ti.hwndFocus == child, $"focus={Native.Hex(ti.hwndFocus)} wpf={Keyboard.FocusedElement}");
 
-                // 5. Tab inside the child: does focus ever come back to WPF?
-                for (var i = 0; i < 6; i++) { Press(0x09); await Wait(150); }
+                // 5. Tab inside the child: the "tabOut" protocol. view_embed.rs's own two-control demo
+                // ring (save_btn, menu_btn - see that file's module doc) calls
+                // kubuno_controls::host::notify_tab_out once Tab runs past its LAST control;
+                // RustDesignSurfaceHost's WndProc turns that into MoveFocus, moving the keyboard focus
+                // out of the child and into whatever WPF element is next. Up to 6 Tabs for margin (the
+                // ring wraps within 3 from an unfocused state); the check is simply that focus is no
+                // longer in the child by the end.
+                for (var i = 0; i < 6; i++) { Press(0x09); await WaitAsync(150); }
                 ti = Native.ThreadInfo(child);
-                Log($"INFO after 6 Tabs inside child: focus still in child={ti.hwndFocus == child} (no Tab-out protocol yet)");
+                Check("Tab exits the surface (tabOut protocol)", ti.hwndFocus != child, $"focus={Native.Hex(ti.hwndFocus)} wpf={Keyboard.FocusedElement}");
 
                 // 6. Popup (menu) overflowing the child, owned top-level.
                 var scale = Native.GetDpiForWindow(child) / 96.0;
                 Native.GetWindowRect(child, out cr);
-                async Task OpenMenu() { await ClickAsync(cr.Right - (int)(48 * scale), cr.Top + (int)(14 * scale)); await Wait(600); }
-                await OpenMenu();
+                async Task OpenMenuAsync() { await ClickAsync(cr.Right - (int)(48 * scale), cr.Top + (int)(14 * scale)); await WaitAsync(600); }
+                await OpenMenuAsync();
                 var ov = Overlays();
                 if (ov.Count == 0) Check("popup shown", false);
                 foreach (var o in ov)
@@ -192,34 +238,34 @@ namespace HwndHostSpike
                 // Click item 2 in the part of the popup that lies OUTSIDE the child.
                 ClearRust();
                 await ClickAsync(cr.Right + (int)(60 * scale), cr.Top + (int)((26 + 2 + 4 + 28 + 14) * scale));
-                await Wait(500);
+                await WaitAsync(500);
                 Check("click on the overflowing part of the popup reaches the child's page", RustSaid("popup item 2 clicked"));
                 Log($"INFO focus after popup click still in child={Native.ThreadInfo(child).hwndFocus == child}");
                 // Reopen, then click on a WPF element: focus leaves the child -> blur -> menu closes.
-                await OpenMenu();
+                await OpenMenuAsync();
                 Log($"INFO reopened overlays={Overlays().Count}");
                 var p = _after.PointToScreen(new Point(10, 5));
                 await ClickAsync((int)p.X, (int)p.Y);
-                await Wait(600);
+                await WaitAsync(600);
                 Check("popup dismissed when focus leaves the child", Overlays().Count == 0, $"visible overlays={Overlays().Count}");
 
                 // 7. Mouse capture while dragging out of the child.
                 Native.GetWindowRect(child, out cr);
                 Native.SetCursorPos((cr.Left + cr.Right) / 2, (cr.Top + cr.Bottom) / 2);
                 Native.mouse_event(Native.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-                await Wait(150);
+                await WaitAsync(150);
                 Native.SetCursorPos(cr.Right + 200, cr.Bottom + 100);
-                await Wait(200);
+                await WaitAsync(200);
                 ti = Native.ThreadInfo(child);
                 Check("drag keeps capture in child outside its rect", ti.hwndCapture == child, $"capture={Native.Hex(ti.hwndCapture)}");
                 Native.mouse_event(Native.MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-                await Wait(150);
+                await WaitAsync(150);
 
                 // 8. Resize follows.
                 foreach (var (w, h) in new[] { (700.0, 500.0), (1100.0, 800.0), (900.0, 640.0) })
                 {
                     Width = w; Height = h;
-                    await Wait(400);
+                    await WaitAsync(400);
                     Native.GetClientRect(_host.Container, out var c1);
                     Native.GetWindowRect(_host.Child, out var c2);
                     Check($"child follows container at {w}x{h}", c1.Right == c2.Right - c2.Left && c1.Bottom == c2.Bottom - c2.Top, $"container {c1} child {c2}");
@@ -231,7 +277,7 @@ namespace HwndHostSpike
                 {
                     var dpiBefore = Native.GetDpiForWindow(_host.Child);
                     Native.SetWindowPos(Main, IntPtr.Zero, s.WorkingArea.Left + 50, s.WorkingArea.Top + 50, 0, 0, 0x0001 | Native.SWP_NOZORDER | Native.SWP_NOACTIVATE);
-                    await Wait(600);
+                    await WaitAsync(600);
                     Native.GetClientRect(_host.Container, out var c1);
                     Native.GetWindowRect(_host.Child, out var c2);
                     Log($"INFO on {s.DeviceName}: dpi main {Native.GetDpiForWindow(Main)} child {dpiBefore}->{Native.GetDpiForWindow(_host.Child)}; sizes match {c1.Right == c2.Right - c2.Left && c1.Bottom == c2.Bottom - c2.Top}");
@@ -239,23 +285,29 @@ namespace HwndHostSpike
                 Log($"INFO WM_DPICHANGED_AFTERPARENT seen by child: {RustSaid("WM_DPICHANGED_AFTERPARENT")}");
                 Left = origin.Left; Top = origin.Top;
 
-                // 10. Child crash: host survives, surface restarts.
+                // 10. Child crash: host survives, surface restarts AUTOMATICALLY (production's own
+                // restart-with-backoff, no manual StartSurface call anymore - see
+                // RustDesignSurfaceHost.OnSurfaceExited/ScheduleRetry). Subscribe to ChildReady
+                // BEFORE killing: the automatic backoff (250 ms initial + launch, well under 1 s) is
+                // fast enough to complete DURING a fixed post-kill wait, so subscribing only after
+                // that wait (as a manual-restart flow could afford to) races the very event it is
+                // waiting for and times out having missed it - this bit the first version of this
+                // check.
                 var oldPid = _host.Surface.Id;
-                _host.Surface.Kill();
-                await Wait(700);
-                Check("host survives child crash", Native.IsWindow(_host.Container) && IsLoaded, $"container alive={Native.IsWindow(_host.Container)} child gone={_host.Child == IntPtr.Zero}");
                 var restarted = new TaskCompletionSource<bool>();
                 void OnReady() { _host.ChildReady -= OnReady; restarted.TrySetResult(true); }
                 _host.ChildReady += OnReady;
-                _host.StartSurface();
+                _host.Surface.Kill();
+                await WaitAsync(300);
+                Check("host survives child crash", Native.IsWindow(_host.Container) && IsLoaded, $"container alive={Native.IsWindow(_host.Container)} child gone={_host.Child == IntPtr.Zero}");
                 var done = await Task.WhenAny(restarted.Task, Task.Delay(15000));
-                Check("surface restarts into the same container", done == restarted.Task && _host.Surface.Id != oldPid);
+                Check("surface restarts into the same container (automatic backoff)", done == restarted.Task && _host.Surface.Id != oldPid);
 
                 Topmost = false;
                 Log("SELFTEST DONE");
                 if (close)
                 {
-                    await Wait(500);
+                    await WaitAsync(500);
                     var pid = _host.Surface.Id;
                     var sw = Stopwatch.StartNew();
                     Close();

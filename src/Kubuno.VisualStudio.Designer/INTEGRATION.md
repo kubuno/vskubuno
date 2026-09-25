@@ -27,8 +27,14 @@ What this library provides, at a glance (see the class doc comments for the full
   attaches by "kbview" content type, independent of which editor opened the file) keeps working
   unchanged.
 - `DesignSurface\IDesignSurfaceHost.cs` / `IDesignSurfaceHostFactory.cs` /
-  `DesignSurfaceHostFactoryHost.cs` - the seam DSG-7 plugs its real embedded render surface into;
-  today `PlaceholderDesignSurfaceHost` is the only implementation.
+  `DesignSurfaceHostFactoryHost.cs` - the seam DSG-7 plugs its real embedded render surface into.
+  `DesignSurface\RustDesignSurfaceHost.cs` / `RustDesignSurfaceHostFactory.cs` (DSG-7, production)
+  are now the real implementation, turning `docs/DESIGNER.md` §7's spike
+  (`spikes/HwndHostSpike`) into code: the `HwndHost` embedding, the Job Object/restart-backoff/
+  `SetErrorMode`/DLL-check lifecycle, and the `unhandledKey`/`tabOut` keyboard protocol - see that
+  class's own doc comment for the full design, and §6 below for what the VSIX still needs to do to
+  actually use it (`DesignSurfaceHostFactoryHost.Current` still defaults to
+  `PlaceholderDesignSurfaceHostFactory.Instance` until it does).
 - `Options\KbviewDesignerOptionsPage.cs` - the "Use as default editor" toggle (off by default).
 - `Registry\*` (DSG-4) - a C# model of the `kubuno/registry` JSON shape (`docs/DESIGNER.md` §5:
   `ComponentMeta`/`PropertyMeta`/`EventMeta`/`PropKind`/`ChildrenModel`/`LayoutKind`) and a loader
@@ -209,15 +215,50 @@ content itself, not its `ToolWindowPane` hosting.
 
 ## 6. `IDesignSurfaceHost` seam for DSG-7
 
-Nothing to integrate here yet: `DesignSurfaceHostFactoryHost.Current` defaults to
-`PlaceholderDesignSurfaceHostFactory.Instance` and needs no VSIX wiring to work as today's
-placeholder. When DSG-7 lands its real `kubuno-views-designer`-backed `IDesignSurfaceHost`
-(`HwndHost` subclass doing the spawn/handshake/`SetParent`/focus forwarding, per docs/DESIGNER.md §7),
-its integration step only needs to set
-`Kubuno.VisualStudio.Designer.DesignSurface.DesignSurfaceHostFactoryHost.Current` to its own factory -
-either from `KubunoPackage.InitializeAsync` (if DSG-7 stays a separate library the VSIX also
-references) or from this library directly (if DSG-7 adds its files here instead). No change to
-`DesignerWindowPane`, `DesignerSplitView`, or this integration document's §3/§4 is expected.
+`RustDesignSurfaceHost`/`RustDesignSurfaceHostFactory` (`DesignSurface\RustDesignSurfaceHost.cs`) are
+the real implementation now, but `DesignSurfaceHostFactoryHost.Current` still defaults to
+`PlaceholderDesignSurfaceHostFactory.Instance` - this task deliberately did not flip that switch (it
+must not touch `KubunoPackage.cs`/the VSIX project, per this document's own top note). What the VSIX
+integration step needs to do:
+
+1. **Resolve the design surface exe's path.** There is no locator for it yet (unlike
+   `KubunoViewsLanguageServerLocator` for `kubuno-views-ls.exe` -
+   `Kubuno.VisualStudio.Views/Locating/KubunoViewsLanguageServerLocator.cs`), because the exe itself
+   does not exist as a shipped artifact yet: DSG-6 (`docs/DESIGNER.md` §6) is still examples-only
+   (`kubuno-views/examples/view_embed.rs`, promoted out of `examples/` into a real
+   `kubuno-views-designer` crate is that package's own scope). Until DSG-6 ships a real binary, either
+   point `RustDesignSurfaceHostFactory` at a dev build of `view_embed.exe` (mirroring
+   `KubunoViewsLsExePath`'s own MSBuild-property convention in `Kubuno.VisualStudio.csproj` - e.g. a
+   new `KubunoViewsDesignerExePath` defaulting under the same `C:\kubuno-build\desktop-target`
+   convention) or write a proper locator once DSG-6 lands, following
+   `KubunoViewsLanguageServerLocator`'s exact order (option override → extension `tools\` folder →
+   PATH → dev build folders).
+2. **Set the factory**, in `KubunoPackage.InitializeAsync`, alongside the other static-gateway
+   assignments (§3/§4's own pattern):
+   ```csharp
+   Kubuno.VisualStudio.Designer.DesignSurface.DesignSurfaceHostFactoryHost.Current =
+       new Kubuno.VisualStudio.Designer.DesignSurface.RustDesignSurfaceHostFactory(resolvedExePath);
+   ```
+   No change to `DesignerWindowPane`/`DesignerSplitView` is needed - both already go through
+   `DesignSurfaceHostFactoryHost.Current`, never `PlaceholderDesignSurfaceHostFactory` directly.
+3. **`RustDesignSurfaceHost.VsFilterKeys`** (see its own doc comment): the real
+   `IVsFilterKeys2.TranslateAcceleratorEx` path for the `unhandledKey` protocol was deliberately left
+   unwired in this task - guessing that COM signature without a live `devenv.exe` to check it against
+   risked a silently wrong integration (`ComponentDispatcher.RaiseThreadMessage` alone, the tested
+   fallback, already routes a forwarded key into WPF's own accelerator/mnemonic processing - verified
+   end to end via `spikes/HwndHostSpike --selftest`). Wiring the real VS path is: obtain
+   `SVsFilterKeys`/`IVsFilterKeys2` from the package's service provider, and set
+   `RustDesignSurfaceHostFactory`'s `vsFilterKeys` constructor argument to a delegate calling
+   `TranslateAcceleratorEx` on it. Verify in the experimental instance that this actually improves on
+   `ComponentDispatcher` alone (docs/DESIGNER.md §7 lists this among what the spike could not check)
+   before relying on it over the fallback.
+4. **Still to verify live** (docs/DESIGNER.md §7's own list, not exercised by the standalone spike):
+   the same `HwndHost` inside a real `WindowPane`/tool window, docking/undocking (popup ownership must
+   be re-checked after a re-dock - the surface's `kubuno_ui` popups are owned top-levels resolved
+   through the container's ancestor chain), VS theme switches, and whether
+   `ComponentDispatcher.RaiseThreadMessage` alone is enough for VS's OWN accelerator table (Ctrl+S,
+   F5, Ctrl+Shift+B...) the way it is for the spike's plain WPF `KeyBinding`, or whether point 3's
+   `IVsFilterKeys2` path turns out to be required after all.
 
 ## 7. Hosting the Toolbox/Properties WPF content as VS tool windows (DSG-4)
 
@@ -308,7 +349,7 @@ reach it:
 
 Everything under `src/Kubuno.VisualStudio.Designer/` and `tests/Kubuno.VisualStudio.Designer.Tests/`
 is otherwise ready to reference as-is: no source file here needs editing to complete the integration,
-only the VSIX-side wiring above (§1, §3, §4, §7, §8) and, if a `VSPackage.resx` does not already exist
-by the time this runs, its creation (§3). §7/§8's own new `ToolWindowPane` subclasses and MEF-imported
-buffer/undo-history bridge are new files this step adds - most naturally to this library, per their own
-suggestion - not edits to anything already here.
+only the VSIX-side wiring above (§1, §3, §4, §6, §7, §8) and, if a `VSPackage.resx` does not already
+exist by the time this runs, its creation (§3). §6's exe-path resolution (point 1), §7/§8's own new
+`ToolWindowPane` subclasses and MEF-imported buffer/undo-history bridge are new files this step adds -
+most naturally to this library, per their own suggestion - not edits to anything already here.
