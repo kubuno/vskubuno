@@ -827,3 +827,285 @@ not just the new ones — a pre-existing tooling/SDK-resolution issue (only the
 previously-passing test (`ComponentRegistryTests`) too. The new tests are
 verified by `MSBuild` compiling the test project cleanly; running them was
 not possible in this environment.
+
+## 10. DSG-9 protocol
+
+Work package DSG-9 (§6) is implemented, scoped exactly as the table asks:
+**split across `kubuno-views`** (`src/design.rs`'s own snap/insertion-index/
+drop-validation math, `src/protocol.rs`'s wire extensions, `examples/
+view_embed.rs`'s wiring) **and a NEW C# file**,
+`Kubuno.VisualStudio.Designer/DesignSurface/RustDesignSurfaceHost.DragDrop.cs`
+— a `partial class` split out for the same reason DSG-6's own `RustDesignSurfaceHost
+.Protocol.cs` was ("so this work does not collide with concurrent changes"):
+`RustDesignSurfaceHost.cs`, `RustDesignSurfaceHost.Protocol.cs` and
+`IDesignSurfaceHost.cs` were all under active concurrent development by other
+work (DSG-8's selection sync) while this package was written, and none of
+them needed to change for DSG-9's own scope.
+
+### Move/resize drag (Anchor containers)
+
+`design::DesignController` gained a `drag: Option<DragSession>` state machine,
+driven entirely by the same host-agnostic pattern DSG-6 established
+(`click_select`/`update_hover`/`handle_keys` never read `kubuno_controls::
+host` directly — `examples/view_embed.rs` is the only bridge):
+
+- **`DesignController::press(layout, x, y) -> bool`** — a completed press. If
+  the CURRENTLY selected element is a `DockAnchor` child, a press on one of
+  its 8 resize handles (`handle_at`, hit-testing [`resize_handles`]'s own
+  geometry at [`RESIZE_HANDLE_SIZE`]) arms a `Resize` drag; a press elsewhere
+  on its own bounds arms a `Move` drag. If the selection is a `Flow` child, a
+  press on its bounds arms a `Reorder` drag (§4 below). Otherwise falls back
+  to the existing [`DesignController::click_select`] (a caller still checks
+  [`DesignController::selected`] afterwards for `selectionChanged`, exactly
+  as before). Deliberately no "moved past a threshold" tracking: a first
+  press on an unselected element only selects it; the SAME element pressed
+  again arms the drag — a drag armed with zero subsequent movement is
+  harmless (`end_drag` returns no ops for it, same as a plain click).
+- **`DesignController::update_drag(layout, x, y, suppress_snap)`** — called
+  every frame a drag is active. For `Move`/`Resize`, computes the raw new
+  bounds ([`move_rect`]/[`resize_rect`], pure `Rect` arithmetic — `resize_rect`
+  clamps at [`MIN_ELEMENT_SIZE`] per handle, the opposite edge never moving)
+  then, unless `suppress_snap` (Shift held — `DESIGNER.md` §4: "Shift
+  suppresses snapping, as WinForms does"), snaps it ([`snap_bounds`] below)
+  against the OTHER children of the same parent plus the parent's own outer
+  bounds. The result is [`DesignController::drag_preview`] (a live GHOST
+  rect) — **never written to text**, exactly §2's "intermediate mouse-move
+  frames update the design surface's local, client-side preview only".
+- **`DesignController::end_drag(doc) -> DragOutcome`** — mouse-up. Compares
+  the final live bounds to the drag's own starting bounds and emits one
+  `setAttribute` per axis that actually changed (`X`/`Y` for a `Move`,
+  whichever of `X`/`Y`/`Width`/`Height` a `Resize` handle touched — reusing
+  the same `nudge_attr` helper DSG-6's own arrow-nudge already uses, so the
+  new value is read from `doc`'s CURRENT literal attribute, per that
+  function's own "absolute value, never a delta" rule), wrapped as
+  **`DragOutcome::Batch { ops, gesture }`** — never a `DragOutcome::Single`
+  for this pair of gestures, because the whole point is that every op in it
+  lands as ONE undo unit (below). An unmoved drag (no axis changed) is
+  `DragOutcome::None`.
+- **Esc cancels** — [`DesignController::handle_keys`] checks
+  `self.drag.is_some()` BEFORE its existing Esc-to-parent handling: cancelling
+  a drag (`DesignController::cancel_drag`, just drops the session — nothing
+  was ever written to text) leaves the SELECTION untouched, unlike the
+  ordinary Esc-to-parent case it would otherwise fall into.
+
+**Snapping** (`design::snap_bounds`) is deliberately axis-independent: a
+drag's left/right/h-centre are matched against every candidate rect's own
+left/right/centre-x (and similarly top/bottom/v-centre against y), within
+[`SNAP_THRESHOLD`] DIP, picking the closest match per axis — so a drag can
+snap horizontally without also snapping vertically, and vice versa. Returns
+both the (possibly shifted, same-size) bounds and the [`SnapGuide`]s that
+fired, for [`paint_drag_preview`] to draw as blue lines. Candidates are
+"every other bounds worth snapping to" (siblings' own painted rects, the
+container's own outer bounds) — `LayoutMap` records painted bounds only, no
+padding value (`DesignSlot`'s own doc), so "container padding" (DSG-9 item
+1's own phrasing) snaps to the container's outer edge, the padding-`0` line;
+this is a documented approximation, not the container's real inset.
+
+### Reorder (Flow containers)
+
+A `Reorder` drag session tracks a `reorder_index`, recomputed every
+`update_drag` from **[`flow_insertion_index`]**: the OTHER children of the
+same parent (the dragged element excluded), their own painted bounds, and
+the pointer's position along whichever axis **[`flow_axis`]** infers the
+container flows along (comparing how much the siblings' own centres spread
+in X vs. Y — `LayoutMap` carries no `Direction` attribute, the same kind of
+approximation `snap_bounds` makes for padding). **[`flow_insertion_marker`]**
+turns that same index into the paintable line DSG-9 item 2 asks for ("an
+insertion marker between siblings"), which
+[`DesignController::reorder_marker`] exposes for `view_embed` to paint via
+[`paint_insertion_marker`]. Mouse-up (`end_drag`) compares the final index to
+the one recorded when the drag armed and, if it moved, emits exactly ONE
+`EditOp::MoveElement { element_id, new_parent_id, index }` as
+`DragOutcome::Single` — DSG-2's own `moveElement` shape (`DESIGNER.md` §8),
+same parent on both sides (an in-place reorder; DSG-9 never produces a
+cross-container move — out of this package's own scope, §6's table).
+
+### Toolbox drop
+
+`design::ToolboxController` is independent of `DesignController` (a toolbox
+drag has no click-selection of its own — the dragged thing is a NEW,
+not-yet-inserted component) and directly mirrors the four host→surface
+messages:
+
+- **`drag_enter(component)`** (`kubuno/dragEnter`) — remembers the registry
+  element name being dragged; clears any stale target.
+- **`drag_over(layout, doc, x, y) -> Option<&DropTarget>`** (`kubuno/dragOver`)
+  — **routing rule**: if the element directly under the pointer itself
+  accepts children (`registry::lookup`'s own `ChildrenModel != None`), the
+  target is THAT element (dropping "into" it); otherwise the target is its
+  PARENT (dropping "near" a leaf targets its container) — the same rule a
+  WinForms-class designer uses. The target's `index`/`xy`/`marker` then
+  depend on the target container's own registry `LayoutKind`: `DockAnchor`
+  gets `xy = Some((x, y))` parent-local DIP (an approximation of the same
+  kind `snap_bounds` already documents — no padding value on hand) and an
+  outline ghost sized [`DEFAULT_DROP_WIDTH`]×[`DEFAULT_DROP_HEIGHT`];
+  `Flow` gets [`flow_insertion_index`]/[`flow_insertion_marker`] exactly as
+  the reorder drag does; anything else (a `SingleWidget` body, `Split`,
+  `Tabs`) gets no `xy`, an append index, and the container's own outline as
+  the marker. **Validity** (`can_drop_component`) mirrors `crate::validate`'s
+  own gating rule at single-candidate granularity: `ChildrenModel::None`
+  never accepts; `SingleWidget` only when currently empty (§4's own SDG-1-era
+  note flagged replace-vs-wrap as an undecided product call — DSG-9 makes
+  neither: an already-filled `SingleWidget` is simply an INVALID drop target,
+  same as `ChildrenModel::None`, deferring that decision exactly as before);
+  `List(allowed)` accepts an ungated component unconditionally, a GATED one
+  (some other component's own `allowed` names it — `is_gated_anywhere`) only
+  when `allowed` itself names it.
+- **`drop() -> Option<EditOp>`** (`kubuno/drop`) — consumes the current
+  target; `None` for no active drag, no computed target, or an INVALID one
+  (DSG-9 item 3's "not allowed… marker" — the surface itself refuses to emit
+  an edit for it, not just paint a warning). A valid drop emits
+  `EditOp::InsertChild { parent_id, index, xml }`, `xml` a skeleton built by
+  `skeleton_xml`: `<Component/>` for a Flow/other target, `<Component X="…"
+  Y="…" Width="80" Height="24"/>` for an Anchor one — "sensible defaults", not
+  a per-component table (out of this package's own scope).
+- **`drag_leave()`** (`kubuno/dragLeave`) — clears the drag entirely.
+
+### Wire protocol (extends §9's DSG-6 protocol)
+
+Host → surface (`kubuno_views::protocol::HostMessage`, new variants):
+
+| `type` | Fields | Meaning |
+|---|---|---|
+| `dragEnter` | `component: string` | A VS Toolbox drag entered the surface's window. |
+| `dragOver` | `x: number, y: number` | The toolbox drag moved to `(x, y)`, surface-client DIP. |
+| `drop` | `x: number, y: number` | The toolbox drag was released at `(x, y)`. |
+| `dragLeave` | *(none)* | The toolbox drag left the surface's window. |
+
+Surface → host (`kubuno_views::protocol::SurfaceMessage`, new variants):
+
+| `type` | Fields | Meaning |
+|---|---|---|
+| `editRequests` | `ops: EditOp[], gesture: "move"\|"resize"` | A move/resize drag's mouse-up — EVERY entry is a `setAttribute` (design.rs's own `end_drag` never batches anything else); the host applies the whole list as ONE undo-scoped compound action (§2, DSG-5's own scope). |
+| `dropTargetChanged` | `target: {valid, parentId, index, xy, marker} \| null` | Re-sent after every `dragOver` (and on `dragLeave`, with `target: null`) — live drop feedback: `valid` is what a real `IDropTarget.DragOver` would read to choose `DROPEFFECT_COPY` vs. `DROPEFFECT_NONE` (the "not allowed" cursor). |
+
+A Flow reorder's `moveElement` and a toolbox drop's `insertChild` both travel
+as the EXISTING single `editRequest { op }` message (§9) — DSG-2's
+`kubuno/applyEdit` op shape already covers both kinds (§8); DSG-9 adds no new
+message for them, only two more `op.kind` values a consumer must handle.
+
+Example traffic for a toolbox drag dropped into a `<Stack>` (captured live
+against `examples/view_embed.rs`, §11 below):
+
+```text
+host   : {"type":"dragEnter","component":"Button"}
+host   : {"type":"dragOver","x":60.0,"y":130.0}
+surface: {"type":"dropTargetChanged","target":{"valid":true,"parentId":"0","index":0,"xy":null,"marker":{"left":33.0,"top":110.5,"right":753.29,"bottom":113.5}}}
+host   : {"type":"drop","x":60.0,"y":250.0}
+surface: {"type":"editRequest","op":{"kind":"insertChild","parentId":"0","index":3,"xml":"<Button/>"}}
+surface: {"type":"dropTargetChanged","target":null}
+```
+
+### C# side (`vskubuno`)
+
+`RustDesignSurfaceHost.DragDrop.cs` adds, to the existing `RustDesignSurfaceHost`
+(now a THIRD partial-class piece, alongside the DSG-6-era `.cs`/`.Protocol.cs`):
+
+- **`NotifyDragEnter`/`NotifyDragOver`/`NotifyDrop`/`NotifyDragLeave`** — NOT
+  named `DragEnter`/`DragOver`/`Drop`/`DragLeave`: `RustDesignSurfaceHost`
+  derives from `HwndHost` → `UIElement`, which already declares ROUTED EVENTS
+  of those exact names for WPF's own (unrelated) drag-drop system; reusing
+  them would only HIDE, not override, WPF's own members (confirmed live: a
+  `CS0108` build warning) — a legal but needlessly confusing shadow this file
+  avoids by not colliding on the name at all. Each writes one JSON line via
+  the EXISTING private `SendLine` (`RustDesignSurfaceHost.Protocol.cs`) —
+  calling a sibling partial-class-part's private member is ordinary C#, not a
+  file edit.
+- **`OnDragDropProtocolLine`** — a SECOND, independent listener on the
+  surface process's own `Process.OutputDataReceived`, recognising only the
+  shapes DSG-9 adds that `RustDesignSurfaceHost.Protocol.cs`'s own
+  `OnSurfaceProtocolLine` does NOT already parse: the batched `editRequests`,
+  a single `editRequest` whose `op.kind` is `moveElement`/`insertChild`
+  (`DesignSurfaceProtocol.TryParseEditRequest` already returns `false` for
+  those two kinds, leaving the line otherwise unhandled), and
+  `dropTargetChanged`. The two listeners' recognised shapes are DISJOINT by
+  construction, so a line is never processed twice. Wired LAZILY — from the
+  top of every `Notify*` method (`EnsureDragDropListenerWired`), not from the
+  constructor: **an instance field initializer cannot call an instance
+  method** (`CS0236`, confirmed live while building this file, the first
+  approach tried), and this file must not touch `RustDesignSurfaceHost.cs`'s
+  own constructor body either — lazy wiring on first use sidesteps both
+  constraints, and doubles as its own restart-recovery (a fresh `Process`
+  instance after a crash compares unequal to whatever was last wired, so the
+  very next `Notify*` call re-attaches automatically).
+- **`EditRequestsReceived`/`DragDropEditRequested`/`DropTargetChanged`** — the
+  three new public events, plus their own event-args/op types
+  (`DesignSurfaceGesture`, `DesignSurfaceDragDropOp(Kind)`,
+  `DesignSurfaceDropTarget`) mirroring the Rust shapes field-for-field.
+  `DesignSurfaceEditOpKind` itself (DSG-6's own two-kind enum, declared in
+  `RustDesignSurfaceHost.Protocol.cs`) could not be extended with
+  `MoveElement`/`InsertChild` (C# enums are not `partial`) — the batched
+  `editRequests`' own ops ARE always plain `setAttribute`, so those reuse the
+  EXISTING `DesignSurfaceEditOp`/`DesignSurfaceEditOpKind` unchanged; only the
+  two DSG-9-specific single-op kinds get the new, separate
+  `DesignSurfaceDragDropOp` type.
+- **`DesignSurfaceDragDropProtocol`** — the pure encode/parse half, structured
+  exactly like DSG-6's own `DesignSurfaceProtocol`, kept as a separate static
+  class rather than added to that one (this package must not touch that
+  file).
+
+Forwarding these three events into `kubuno-views-ls`'s `kubuno/applyEdit`
+(`EditRequestsReceived` as one undo-scoped compound action, DSG-5's own
+scope) and turning `DropTargetChanged` into a real OLE `IDropTarget`'s
+`DragOver`/`Drop` effect is wiring left for whichever package connects the
+two ends end-to-end (the same carve-out DSG-6's own doc already states for
+`EditRequested`) — not implemented here.
+
+### Testing
+
+`kubuno-views/src/design.rs` unit-tests the pure geometry (`handle_at`'s
+eight compass points, `move_rect`/`resize_rect` incl. the
+`MIN_ELEMENT_SIZE` clamp, `snap_bounds`'s per-axis matching and its own
+threshold cutoff, `flow_axis`/`flow_insertion_index`/`flow_insertion_marker`'s
+before/between/past-the-end cases) with no `LayoutMap`/`Canvas` at all; the
+`DesignController` drag state machine end to end (press arms the right
+gesture for `DockAnchor` vs. `Flow` vs. neither, a Move/Resize batch's exact
+emitted `SetAttribute` values, a zero-movement drag ending as a no-op, Esc
+cancelling without disturbing the selection, a Reorder drag's exact
+`MoveElement` index, a reorder back to its own starting slot ending as a
+no-op) against hand-built `LayoutMap`s and parsed `ast::Document`s; and
+`ToolboxController` end to end (an Anchor drop's `xy`, a Flow drop's bare
+skeleton, a leaf hit routing to its own parent, a gated child rejected
+outside its required parent, an already-full `SingleWidget` rejected, an
+unknown component rejected, `dragLeave` clearing the drag) — 50 tests total
+in this file, all passing, no live window anywhere. `kubuno-views/src/protocol
+.rs` unit-tests every new wire shape byte-for-byte (the batched
+`editRequests`, the `moveElement`/`insertChild` single `editRequest`,
+`dropTargetChanged` with and without a target) the same way §9's own tests
+already do. `cargo clippy -p kubuno-views --all-targets -- -D warnings`
+passes clean; zero `unwrap()`/`expect()` outside `#[cfg(test)]` anywhere
+in the new code.
+
+`Kubuno.VisualStudio.Designer.Tests/DesignSurface/RustDesignSurfaceHostDragDropTests.cs`
+asserts the identical `Encode*`/exact-string shapes on the C# side (no live
+process/WPF `Dispatcher` needed), plus every `TryParse*` rejection case
+(wrong `type`, blank/garbage lines, a batch entry that is not `setAttribute`,
+an unrecognised `gesture`, `setAttribute`/`removeElement` correctly left to
+the OTHER parser) — same environment limitation as §9 (`MSTest.TestAdapter.dll`
+fails to load on this machine for every test in this project, pre-existing);
+verified by `MSBuild` compiling both `Kubuno.VisualStudio.Designer.csproj` and
+`Kubuno.VisualStudio.Designer.Tests.csproj` cleanly.
+
+**A live, end-to-end trace against the compiled `view_embed.exe`** (piping
+the exact JSON lines a real host would over the exe's own stdin/stdout, no
+C# involved) confirmed the whole toolbox-drop pipeline for real: routing a
+drop onto the `<Card>` root correctly reports `valid:false` (it already has
+its one `SingleWidget` child, the `<Stack>`), walking the pointer down into
+the `<Stack>` correctly reports `valid:true` with an increasing Flow
+insertion `index` and a moving marker, and the final `drop` emits exactly
+`{"kind":"insertChild","parentId":"0","index":3,"xml":"<Button/>"}` — the
+example traffic block above is taken directly from that run. One
+methodology note from that same session, **not a DSG-9 bug**: piping raw
+JSON lines into the exe's stdin from a fresh `System.Diagnostics.Process`
+loses the FIRST line whenever the underlying `.NET` `StreamWriter` happens to
+prepend a UTF-8 BOM to it (confirmed byte-for-byte: the line arrives on the
+Rust side as `\u{feff}{...}`, which `str::trim()` does not strip — BOM lost
+its Unicode `White_Space` property in Unicode 6.3 — so `parse_host_message`
+correctly, silently ignores it, same as any other malformed line). Working
+around it (a throwaway first line) was enough to unblock this package's own
+manual trace, but `RustDesignSurfaceHost.cs`'s own `ProcessStartInfo` (§7)
+does not set `StandardInputEncoding` either — whether the FIRST real
+`kubuno/setText`/`kubuno/setDesignMode` a freshly-launched production surface
+ever receives is silently dropped the same way is worth a follow-up check by
+whichever package next touches that file's `LaunchSurface` (out of DSG-9's
+own scope: that file is off-limits here).

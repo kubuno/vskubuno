@@ -28,6 +28,17 @@ namespace HwndHostSpike
     /// event to the same log file `--selftest` already greps - a click on the embedded surface should
     /// select the element under it (adorners drawn, a `SelectionChanged` line logged); Delete/an arrow
     /// on an Anchor element should log an `EditRequested` line.
+    ///
+    /// <c>--simulate-toolbox &lt;Component&gt;</c> (DSG-9 visual check, requires <c>--design</c>): once
+    /// the surface's child window is ready, drives the SAME <see cref="RustDesignSurfaceHost.NotifyDragEnter"/>/
+    /// <see cref="RustDesignSurfaceHost.NotifyDragOver"/>/<see cref="RustDesignSurfaceHost.NotifyDrop"/>/
+    /// <see cref="RustDesignSurfaceHost.NotifyDragLeave"/> calls a real VS Toolbox OLE-drag translation
+    /// would (there is no live Toolbox to drag from here) - a few `dragOver` steps walking toward the
+    /// drop point, so the insertion marker/ghost has time to visibly update between them, then `drop`.
+    /// Logs every <see cref="RustDesignSurfaceHost.DropTargetChanged"/>/
+    /// <see cref="RustDesignSurfaceHost.EditRequestsReceived"/>/<see cref="RustDesignSurfaceHost.DragDropEditRequested"/>
+    /// event to the same log file, and the marker/ghost itself should be visible on screen while the
+    /// simulated drag is in progress.
     /// </summary>
     public static class Program
     {
@@ -40,10 +51,11 @@ namespace HwndHostSpike
             var exe = Arg("--exe", @"C:\kubuno-build\agent-dsg7b\debug\examples\view_embed.exe");
             var view = Arg("--view", @"Z:\projects\kubuno\desktop\windows\src\crates\kubuno-views\examples\views\settings.kbview");
             var logPath = Arg("--log", Path.Combine(Path.GetTempPath(), "hwndhostspike.log"));
+            var simulateToolbox = Arg("--simulate-toolbox", string.Empty);
             File.WriteAllText(logPath, "");
             KubunoViewsLogHost.Current = new SpikeLogAdapter(logPath);
             var app = new Application();
-            var win = new SpikeWindow(exe, view, logPath, args.Contains("--selftest"), args.Contains("--close"), args.Contains("--design"));
+            var win = new SpikeWindow(exe, view, logPath, args.Contains("--selftest"), args.Contains("--close"), args.Contains("--design"), simulateToolbox);
             return app.Run(win);
         }
     }
@@ -100,7 +112,7 @@ namespace HwndHostSpike
         private readonly TextBox _before, _after;
         private bool _ctrlS;
 
-        public SpikeWindow(string exe, string view, string logPath, bool selftest, bool close, bool design = false)
+        public SpikeWindow(string exe, string view, string logPath, bool selftest, bool close, bool design = false, string simulateToolboxComponent = "")
         {
             _logPath = logPath;
             Title = "HwndHost spike (DSG-7)";
@@ -119,7 +131,25 @@ namespace HwndHostSpike
                 _host.SetDesignMode(true);
                 _host.SelectionChanged += (_, e) => Log($"SelectionChanged ids=[{string.Join(",", e.ElementIds)}]");
                 _host.EditRequested += (_, e) => Log($"EditRequested kind={e.Op.Kind} elementId={e.Op.ElementId} name={e.Op.Name} value={e.Op.Value}");
+                // DSG-9 visual check: the batched move/resize form, the single moveElement/insertChild
+                // form, and the live toolbox drop-target feedback - see `Program`'s own `--simulate-toolbox` doc.
+                _host.EditRequestsReceived += (_, e) => Log($"EditRequestsReceived gesture={e.Gesture} ops=[{FormatOps(e.Ops)}]");
+                _host.DragDropEditRequested += (_, e) => Log(
+                    $"DragDropEditRequested kind={e.Op.Kind} elementId={e.Op.ElementId} newParentId={e.Op.NewParentId} parentId={e.Op.ParentId} index={e.Op.Index} xml={e.Op.Xml}");
+                _host.DropTargetChanged += (_, e) => Log(e.Target == null
+                    ? "DropTargetChanged target=null"
+                    : $"DropTargetChanged valid={e.Target.Valid} parentId={e.Target.ParentId} index={e.Target.Index} xy=({e.Target.X},{e.Target.Y})");
                 Log("design mode ON (--design)");
+
+                if (!string.IsNullOrEmpty(simulateToolboxComponent))
+                {
+                    // `ChildReady` is a plain `Action` (void handler) - same `async void` shape the
+                    // `--selftest` wiring below already uses, and for the same reason.
+#pragma warning disable VSTHRD100
+                    async void OnceToolbox() { _host.ChildReady -= OnceToolbox; await SimulateToolboxDropAsync(simulateToolboxComponent); }
+#pragma warning restore VSTHRD100
+                    _host.ChildReady += OnceToolbox;
+                }
             }
             // The host owns its OWN stderr capture/logging now (unlike the original spike, where
             // DesignSurfaceHost took a Log callback directly) - re-publish every line into `_rustLines`
@@ -444,6 +474,51 @@ namespace HwndHostSpike
             {
                 Log("SELFTEST ERROR " + e);
             }
+        }
+
+        /// <summary>
+        /// DSG-9 visual check driver (`Program`'s own `--simulate-toolbox &lt;Component&gt;` doc): plays
+        /// out a toolbox drag entirely through <see cref="RustDesignSurfaceHost"/>'s own DSG-9 API, since
+        /// there is no live VS Toolbox here to actually drag from. A few `dragOver` steps (not one) so the
+        /// insertion marker/ghost has time to visibly move between them in a screenshot/recording, ending
+        /// well inside the child's own client area (a fixed, small offset - this spike does not know the
+        /// loaded view's own layout, so it cannot aim at a specific container; the log's own
+        /// `DropTargetChanged`/`DragDropEditRequested` lines say exactly where it actually landed).
+        /// </summary>
+        private async Task SimulateToolboxDropAsync(string component)
+        {
+            Log($"--simulate-toolbox: dragEnter {component}");
+            _host.NotifyDragEnter(component);
+            await WaitAsync(400);
+
+            double x = 40.0;
+            double y = 40.0;
+            for (var i = 0; i < 4; i++)
+            {
+                Log($"--simulate-toolbox: dragOver ({x:F0}, {y:F0})");
+                _host.NotifyDragOver(x, y);
+                await WaitAsync(350);
+                x += 15.0;
+                y += 20.0;
+            }
+
+            Log($"--simulate-toolbox: drop ({x:F0}, {y:F0})");
+            _host.NotifyDrop(x, y);
+            await WaitAsync(400);
+            _host.NotifyDragLeave();
+            Log("--simulate-toolbox: done");
+        }
+
+        /// <summary>One line per op, for <see cref="RustDesignSurfaceHost.EditRequestsReceived"/>'s own log line above - no LINQ, matching this file's existing style.</summary>
+        private static string FormatOps(System.Collections.Generic.IReadOnlyList<DesignSurfaceEditOp> ops)
+        {
+            var parts = new System.Collections.Generic.List<string>(ops.Count);
+            foreach (var op in ops)
+            {
+                parts.Add($"{op.Kind}:{op.ElementId}.{op.Name}={op.Value}");
+            }
+
+            return string.Join(";", parts);
         }
 
         private sealed class Relay : ICommand

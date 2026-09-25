@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **DSG-9: move/resize drag, Flow reorder and toolbox drop** (`docs/DESIGNER.md` §10): the design
+  surface protocol (`kubuno_views::protocol`, implemented in the `desktop` repo) gained a batched
+  `editRequests {ops, gesture}` message so a move/resize drag's mouse-up applies as one undo unit,
+  and a `dragEnter`/`dragOver`/`drop`/`dragLeave` quartet for a VS Toolbox drag translated by the
+  host. New file `Kubuno.VisualStudio.Designer/DesignSurface/RustDesignSurfaceHost.DragDrop.cs` (a
+  third `partial class` piece alongside the DSG-6-era `.cs`/`.Protocol.cs`, kept separate so it
+  would not collide with concurrent DSG-8 work on those two files): `NotifyDragEnter`/
+  `NotifyDragOver`/`NotifyDrop`/`NotifyDragLeave` (named to avoid shadowing `UIElement`'s own
+  same-named routed events) send the new host→surface messages; a second, independent
+  `Process.OutputDataReceived` listener (wired lazily on first use, since an instance field
+  initializer cannot call an instance method and this file must not touch
+  `RustDesignSurfaceHost.cs`'s own constructor) raises the new `EditRequestsReceived`/
+  `DragDropEditRequested`/`DropTargetChanged` events for the shapes `RustDesignSurfaceHost
+  .Protocol.cs`'s own listener does not already recognise. New
+  `Kubuno.VisualStudio.Designer.Tests/DesignSurface/RustDesignSurfaceHostDragDropTests.cs`
+  (`DesignSurfaceDragDropProtocol`'s encode/parse, no live process). Forwarding these events into
+  `kubuno-views-ls`'s `kubuno/applyEdit`/an actual OLE drop effect is left for a later package,
+  same as DSG-6's own `EditRequested` was.
+
 - **DSG-8: bidirectional selection sync + Document Outline** (`Kubuno.VisualStudio.Designer`,
   `vskubuno/docs/DESIGNER.md` §6/§8/§9): new `Selection/` and `Outline/` folders.
   - `Selection.SelectionSyncService` keeps the design surface, the XML text view and the (optional)
