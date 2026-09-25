@@ -44,23 +44,18 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// <item><b>unhandledKey</b>: the surface re-posts to the container the SAME
     /// <c>WM_KEYDOWN</c>/<c>WM_SYSKEYDOWN</c> a real keystroke would have produced, for whatever it did
     /// not consume this frame (<c>kubuno_controls::host::forward_unhandled_keys</c>, additive in
-    /// <c>kubuno-controls/src/host/mod.rs</c>). Since the container never itself has the keyboard focus
-    /// (the grandchild does), EVERY <c>WM_KEYDOWN</c>/<c>WM_SYSKEYDOWN</c> this window's own
-    /// <see cref="WndProc"/> sees is, by construction, one of these forwarded messages - handled by
-    /// <see cref="VsFilterKeys"/> if the VSIX wired it (real <c>IVsFilterKeys2.TranslateAcceleratorEx</c>,
-    /// left as an integration-time extension point here - see that property's own doc for why), else by
-    /// <see cref="ComponentDispatcher.RaiseThreadMessage"/>. An interactive `--selftest` run confirmed a
-    /// purely PASSIVE approach (relying only on WPF's own Dispatcher pump raising
-    /// `ComponentDispatcher` ambiently for every message it pumps, without an explicit call here) does
-    /// NOT reach a `KeyBinding` - the explicit call is required. An EARLIER interactive run had
-    /// suspected this same explicit call of stealing native focus back from the surface, but that run
-    /// predated this class having a <see cref="TabIntoCore"/> override (see its own doc - a real,
-    /// independently confirmed bug); with `TabIntoCore` giving WPF a properly established focus scope
-    /// for this sink, the explicit call is the correct, restored design. One more fix was needed even
-    /// after that: <see cref="HandleUnhandledKey"/> briefly <c>AttachThreadInput</c>s to the surface's
-    /// thread around the call - modifiers are not IN a `WM_KEYDOWN` message, they are separate per-thread
-    /// state (`GetKeyState`), and this thread's own copy of it never saw Ctrl go down (the surface's
-    /// thread did) - see that method's own doc for the full story.</item>
+    /// <c>kubuno-controls/src/host/mod.rs</c>), preceded by a <c>kubuno_controls::host::WM_KUBUNO_KEY_MODS</c>
+    /// message carrying the modifiers held at that ORIGINAL, physical moment. Since the container never
+    /// itself has the keyboard focus (the grandchild does), EVERY <c>WM_KEYDOWN</c>/<c>WM_SYSKEYDOWN</c>
+    /// this window's own <see cref="WndProc"/> sees is, by construction, one of these forwarded messages
+    /// - routed by <see cref="HandleUnhandledKey"/> (via <see cref="VsFilterKeysBridge"/>) to the real VS
+    /// accelerator path (`IVsFilterKeys2.TranslateAcceleratorEx`) when running inside VS, else to a WPF
+    /// fallback (<see cref="RaiseWpfKeyEvent"/>, real routed keyboard events via
+    /// <see cref="InputManager.ProcessInput"/>) - see that method's own doc for the full story of what
+    /// did NOT work first (a purely passive approach; `ComponentDispatcher.RaiseThreadMessage`, which
+    /// cannot reach WPF's routed-event pipeline for a plain child `HWND` at all; `AttachThreadInput`
+    /// alone, without the captured-modifiers message, which reads the wrong, already-stale key state for
+    /// a fast chord) and why each was replaced.</item>
     /// <item><b>tabOut</b>: a custom <c>WM_APP</c>-based message (<c>kubuno_controls::host::WM_KUBUNO_TAB_OUT</c>,
     /// posted by <c>kubuno_controls::host::notify_tab_out</c>) - <see cref="WndProc"/> calls
     /// <see cref="UIElement.MoveFocus"/> with a <see cref="TraversalRequest"/>, moving the WPF focus out
@@ -95,35 +90,48 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// <summary>The modifier bits carried by the last <see cref="WmKubunoKeyMods"/> message, consumed by the very next forwarded key (see that message constant's own doc).</summary>
         private int _pendingKeyMods;
 
+        /// <summary>
+        /// An <c>IVsFilterKeys2</c>, boxed as <see cref="object"/> - see
+        /// <see cref="VsFilterKeysBridge"/>'s own doc for why this field's DECLARED type must not be the
+        /// real VS interop type (it would force <c>Microsoft.VisualStudio.Interop.dll</c> to be loaded
+        /// the moment this class is, in every caller - this library's own tests and the updated spike
+        /// included - confirmed live as an actual startup crash before this fix:
+        /// <c>FileNotFoundException</c> for that assembly, thrown from this constructor).
+        /// </summary>
+        private readonly object? _vsFilterKeys2;
+
         /// <param name="exePath">Full path to the design surface exe (today, <c>view_embed.exe</c> - see the class doc).</param>
         /// <param name="extraArgs">Extra command-line arguments appended after the temp view file, if any.</param>
-        public RustDesignSurfaceHost(string exePath, string extraArgs = "")
+        /// <param name="oleServiceProvider">
+        /// The VS package/site's own <c>IOleServiceProvider</c> (the same object
+        /// <c>UI\DesignerSplitView.cs</c> already threads through to <c>UI\CodeWindowHost.cs</c>) - an
+        /// <c>Microsoft.VisualStudio.OLE.Interop.IServiceProvider</c> instance, typed as
+        /// <see cref="object"/> here on purpose (see <see cref="VsFilterKeysBridge"/>'s own doc), used to
+        /// query <c>SVsFilterKeys</c>/<c>IVsFilterKeys2</c> for the real VS accelerator path (see
+        /// <see cref="HandleUnhandledKey"/>'s own doc). <see langword="null"/> (always the case in this
+        /// library's own tests and the updated spike, which have no live VS to query) means every
+        /// forwarded key goes straight to the WPF fallback.
+        /// </param>
+        public RustDesignSurfaceHost(string exePath, string extraArgs = "", object? oleServiceProvider = null)
         {
             _exePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
             _extraArgs = extraArgs ?? string.Empty;
             _tempViewFile = Path.Combine(Path.GetTempPath(), "kubuno-designer-" + Guid.NewGuid().ToString("N") + ".kbview");
+            // The null-check itself needs no VS type, so it is safe to sit directly in this always-run
+            // constructor; VsFilterKeysBridge.TryQuery is only ever CALLED (hence only ever JIT'd, hence
+            // only ever needs Microsoft.VisualStudio.Interop.dll loaded) when there is something to query.
+            // VSTHRD010 flags this call site because TryQuery asserts the UI thread internally - correct,
+            // but adding ANOTHER ThreadHelper call directly in THIS method (to satisfy the analyzer
+            // itself) would reintroduce a hard runtime dependency on Microsoft.VisualStudio.Shell.15.0.dll
+            // in an always-executed constructor, exactly the bug VsFilterKeysBridge's own doc describes -
+            // suppressed here, not fixed by adding the call back.
+#pragma warning disable VSTHRD010
+            _vsFilterKeys2 = oleServiceProvider != null ? VsFilterKeysBridge.TryQuery(oleServiceProvider) : null;
+#pragma warning restore VSTHRD010
             Focusable = true;
             EnsureErrorModeSet();
             _retryTimer.Tick += (_, _) => { _retryTimer.Stop(); StartOrShowProblem(); };
         }
-
-        /// <summary>
-        /// Optional hook into the real VS <c>IVsFilterKeys2.TranslateAcceleratorEx</c> path (see the
-        /// class doc's "unhandledKey" remarks). Takes the raw <c>(message, wParam, lParam)</c> of a
-        /// forwarded key and returns whether it was translated/executed as a VS command; returning
-        /// <see langword="true"/> skips the <see cref="ComponentDispatcher.RaiseThreadMessage"/> fallback
-        /// for that key. Left <see langword="null"/> (its default - always the case in this library's own
-        /// tests and the updated spike, which have no live VS to call into) means every forwarded key
-        /// goes straight to that fallback.
-        ///
-        /// Left as a settable property rather than wired directly to the real COM interface here: this
-        /// task could not exercise <c>IVsFilterKeys2</c> against a live <c>devenv.exe</c> (see
-        /// <c>docs/DESIGNER.md</c> §7's own "still to verify" list), and guessing its call shape without
-        /// that verification risks a silently wrong integration. The VSIX's own integration step (see
-        /// <c>INTEGRATION.md</c>) should set this from a working reference against the real SDK once it
-        /// can be checked live.
-        /// </summary>
-        public Func<int, IntPtr, IntPtr, bool>? VsFilterKeys { get; set; }
 
         /// <summary>The design surface's own process, once started.</summary>
         public Process? Surface => _surface;
@@ -515,7 +523,11 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 // established focus scope for this sink to hand control back to.
                 var mods = _pendingKeyMods;
                 _pendingKeyMods = 0;
+                // See the constructor's own comment on why this is suppressed, not "fixed" with another
+                // ThreadHelper call directly in WndProc.
+#pragma warning disable VSTHRD010
                 HandleUnhandledKey(hwnd, msg, wParam, lParam, mods);
+#pragma warning restore VSTHRD010
             }
             else if (msg == WmKubunoTabOut)
             {
@@ -534,34 +546,30 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         }
 
         /// <summary>
-        /// Routes one forwarded key to <see cref="VsFilterKeys"/> then
-        /// <see cref="ComponentDispatcher.RaiseThreadMessage"/>, with the calling (WPF UI) thread's
-        /// per-thread key-state table ("input state" - what <c>GetKeyState</c>/<c>Keyboard.Modifiers</c>/
-        /// `IVsFilterKeys2` all read modifiers from) briefly forced to match <paramref name="mods"/> -
-        /// the modifiers <c>kubuno_controls::host::forward_unhandled_keys</c> captured at the ORIGINAL,
-        /// physical moment this key went down (see <c>kubuno_controls::host::WM_KUBUNO_KEY_MODS</c>'s own
-        /// doc). Two things had to be fixed to get here, in order, each confirmed live:
-        /// <list type="number">
-        /// <item>Without a properly established WPF focus scope for this sink (<see cref="TabIntoCore"/>
-        /// missing), the explicit <c>ComponentDispatcher</c> call itself was suspected of stealing native
-        /// focus back from the surface - restoring `TabIntoCore` fixed that, and a purely ambient/passive
-        /// approach (no explicit call at all) turned out not to reach a `KeyBinding` regardless, so the
-        /// explicit call is required.</item>
-        /// <item>Even with the explicit call and focus both correct, Ctrl+S still would not fire: a
-        /// `WM_KEYDOWN` carries NO modifier state at all (it is not part of the message), and this
-        /// thread's own key-state table never itself saw Ctrl go down (Ctrl physically went to the
-        /// surface's thread while it had the focus) - `AttachThreadInput` alone was not enough either,
-        /// because by the time this method runs (after a frame, a `PostMessage` round trip and this
-        /// thread's own queue), the ambient/CURRENT state it shares may already show Ctrl released again
-        /// (a fast Ctrl+S can release Ctrl well before the forwarded key is finally processed). Only
-        /// explicitly forcing the table to the CAPTURED snapshot works.</item>
-        /// </list>
-        /// <c>AttachThreadInput</c> is kept alongside `SetKeyboardState` (belt and braces - some of what
-        /// downstream code reads may come from the shared/attached state rather than this thread's own
-        /// table); both are undone in a `finally`, and only for the duration of this one call, never for
-        /// the surface's whole focused lifetime - a long-lived attachment shares MORE than key state
-        /// (also the active/focus/capture window) and would let an unresponsive surface process hang this
-        /// thread's own input processing.
+        /// Routes one forwarded key to the real VS accelerator path (`IVsFilterKeys2.
+        /// TranslateAcceleratorEx`, via <see cref="VsFilterKeysBridge"/> and <see cref="_vsFilterKeys2"/>)
+        /// when running inside VS, else to a WPF fallback (<see cref="RaiseWpfKeyEvent"/>) - "the VS path is
+        /// primary, WPF is only the fallback for when the host is not VS" (confirmed live to be
+        /// necessary: <c>ComponentDispatcher.RaiseThreadMessage</c>, tried first, never reached a
+        /// `KeyBinding` at all, because WPF only turns a message into a routed keyboard event through an
+        /// `HwndSource`'s own `HwndKeyboardInputProvider` for THAT `HwndSource`'s window - the container
+        /// is a plain child `HWND`, not an `HwndSource`, so `ComponentDispatcher` was never going to work
+        /// here regardless of focus or modifiers).
+        ///
+        /// Either path reads modifiers from the calling (WPF UI) thread's per-thread key-state table
+        /// ("input state" - what `GetKeyState`/`Keyboard.Modifiers`/`IVsFilterKeys2` all read modifiers
+        /// from), briefly forced to match <paramref name="mods"/> - the modifiers
+        /// `kubuno_controls::host::forward_unhandled_keys` captured at the ORIGINAL, physical moment this
+        /// key went down (see `kubuno_controls::host::WM_KUBUNO_KEY_MODS`'s own doc) - confirmed live to
+        /// be necessary too: `AttachThreadInput` alone shares only the CURRENT/ambient state, which by
+        /// the time this method runs (after a frame, a `PostMessage` round trip and this thread's own
+        /// queue) may already show a fast chord's modifiers released again. `AttachThreadInput` is kept
+        /// alongside `SetKeyboardState` (belt and braces - some of what downstream code reads may come
+        /// from the shared/attached state rather than this thread's own table); both are undone in a
+        /// `finally`, and only for the duration of this one call, never for the surface's whole focused
+        /// lifetime - a long-lived attachment shares MORE than key state (also the active/focus/capture
+        /// window) and would let an unresponsive surface process hang this thread's own input
+        /// processing.
         /// </summary>
         private void HandleUnhandledKey(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, int mods)
         {
@@ -578,10 +586,8 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             var stateApplied = false;
             try
             {
-                var beforeCtrl = (Keyboard.GetKeyStates(Key.LeftCtrl) & KeyStates.Down) != 0
-                    || (Keyboard.GetKeyStates(Key.RightCtrl) & KeyStates.Down) != 0;
                 KubunoViewsLogHost.Current.WriteLine(
-                    $"[designer] unhandledKey msg={msg:X} vk={wParam.ToInt64():X} capturedMods=(ctrl={ctrl},shift={shift},alt={alt}) beforeCtrlOnThisThread={beforeCtrl}");
+                    $"[designer] unhandledKey msg={msg:X} vk={wParam.ToInt64():X} capturedMods=(ctrl={ctrl},shift={shift},alt={alt}) viaVs={_vsFilterKeys2 != null}");
 
                 var state = new byte[256];
                 if (NativeMethods.GetKeyboardState(state))
@@ -593,19 +599,19 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     stateApplied = NativeMethods.SetKeyboardState(state);
                 }
 
-                if (VsFilterKeys?.Invoke(msg, wParam, lParam) == true)
+                if (_vsFilterKeys2 != null)
                 {
-                    return;
+                    // See the constructor's own comment on why this is suppressed, not "fixed" with
+                    // another ThreadHelper call directly in this method.
+#pragma warning disable VSTHRD010
+                    var diagnostic = VsFilterKeysBridge.TryTranslateAccelerator(_vsFilterKeys2, hwnd, msg, wParam, lParam);
+#pragma warning restore VSTHRD010
+                    KubunoViewsLogHost.Current.WriteLine("[designer] " + diagnostic);
                 }
-
-                var nativeMsg = new MSG
+                else
                 {
-                    hwnd = hwnd,
-                    message = msg,
-                    wParam = wParam,
-                    lParam = lParam,
-                };
-                ComponentDispatcher.RaiseThreadMessage(ref nativeMsg);
+                    RaiseWpfKeyEvent(wParam);
+                }
             }
             catch (Exception ex)
             {
@@ -624,6 +630,53 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     NativeMethods.AttachThreadInput(ourThreadId, childThreadId, false);
                 }
             }
+        }
+
+        /// <summary>
+        /// The WPF fallback (no VS to route through - this library's own tests, the updated spike):
+        /// raises real, routed <see cref="Keyboard.PreviewKeyDownEvent"/>/<see cref="Keyboard.KeyDownEvent"/>
+        /// events through <see cref="InputManager.ProcessInput"/>, which - unlike
+        /// <see cref="ComponentDispatcher.RaiseThreadMessage"/> (see <see cref="HandleUnhandledKey"/>'s
+        /// own doc for why that does not work here) - reaches WPF's actual keyboard routed-event
+        /// pipeline and, through it, `InputBinding`/`KeyBinding` matching (`KeyGesture.Matches` reads
+        /// `Keyboard.Modifiers`, which is why the caller forces the key-state table before this runs).
+        /// Routes to <see cref="Keyboard.FocusedElement"/> (this sink, once <see cref="TabIntoCore"/> or
+        /// the click handler gave it the focus) via <see cref="Keyboard.PrimaryDevice"/>, exactly as a
+        /// real keystroke on an `HwndSource`'s own window would have.
+        /// </summary>
+        private void RaiseWpfKeyEvent(IntPtr wParam)
+        {
+            var source = PresentationSource.FromVisual(this);
+            if (source == null)
+            {
+                KubunoViewsLogHost.Current.WriteLine("[designer] RaiseWpfKeyEvent: no PresentationSource for this element, skipped.");
+                return;
+            }
+
+            // InputManager.ProcessInput routes a KeyEventArgs through Keyboard.FocusedElement, WPF's OWN
+            // logical-focus tracking - which is NOT necessarily in sync with the native Win32 focus this
+            // class just spent a whole call establishing correctly. `TabIntoCore` keeps them in sync (WPF
+            // itself asked this sink to take the focus), but the OTHER way native focus reaches the
+            // surface - a raw click, handled entirely on the Rust side via a plain SetFocus on its own
+            // window - never notifies the container, so WPF's logical focus can be left pointing at
+            // whatever it was before, and a KeyEventArgs would then tunnel/bubble through the WRONG part
+            // of the tree, missing this window's own InputBindings entirely - confirmed live to be the
+            // remaining gap after the modifiers fix: the surface correctly saw Ctrl+S and forwarding was
+            // correct, but the WPF KeyBinding still never fired. Explicitly re-asserting focus here, every
+            // time, is cheap and makes this method correct regardless of how native focus arrived.
+            Keyboard.Focus(this);
+
+            var key = KeyInterop.KeyFromVirtualKey((int)wParam.ToInt64());
+            var timestamp = Environment.TickCount;
+            bool Raise(RoutedEvent routedEvent)
+            {
+                var args = new KeyEventArgs(Keyboard.PrimaryDevice, source, timestamp, key) { RoutedEvent = routedEvent };
+                return InputManager.Current.ProcessInput(args);
+            }
+
+            Raise(Keyboard.PreviewKeyDownEvent);
+            var handled = Raise(Keyboard.KeyDownEvent);
+            KubunoViewsLogHost.Current.WriteLine($"[designer] RaiseWpfKeyEvent key={key} handled={handled} focusedElement={Keyboard.FocusedElement}");
         }
 
         /// <summary>

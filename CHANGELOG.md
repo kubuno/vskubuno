@@ -141,37 +141,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     beside the exe, showing a clear message in the container itself (and retrying with the same
     backoff, so staging the runtime while the pane is open recovers automatically) instead of
     launching into a missing-DLL crash loop.
-  - **Keyboard protocol**, both sides: the surface (`kubuno_controls::host`, additive in
-    `kubuno-controls/src/host/mod.rs` - see the `desktop` repo's own changelog) forwards a key it did
-    not consume as the SAME `WM_KEYDOWN`/`WM_SYSKEYDOWN` a real keystroke would have produced,
-    posted to the container. `RustDesignSurfaceHost.WndProc` routes it through
-    `ComponentDispatcher.RaiseThreadMessage` (a purely passive/ambient approach - relying only on
-    WPF's own Dispatcher pump raising it for every message it pumps, with no explicit call here -
-    was tried and, live, a genuine Ctrl+S never reached the WPF `KeyBinding`; the explicit call is
-    required), plus a settable `VsFilterKeys` extension point for the real
-    `IVsFilterKeys2.TranslateAcceleratorEx` path once that can be checked against a live `devenv.exe`
-    (not done in this task - see the property's own doc for why guessing that COM signature was not
-    worth the risk). Even with forwarding and focus both correct, Ctrl+S still would not fire: Win32
-    keyboard messages carry no modifiers at all - a SEPARATE, per-thread `GetKeyState` table, which
-    only updates for a thread when it retrieves the raw hardware message, so this thread's own copy
-    never saw Ctrl go down (it went to the surface's own thread). A first fix (briefly
-    `AttachThreadInput`-ing to the surface's thread around each forwarded key) was not enough either:
-    by the time the forwarded key is finally processed - after a frame, a `PostMessage` round trip and
-    this thread's own queue - even the SHARED/ambient state can already show Ctrl released again (a
-    fast Ctrl+S can release Ctrl well before that). The real fix carries the modifiers explicitly:
-    `kubuno_controls::host::forward_unhandled_keys` now posts a new
-    `kubuno_controls::host::WM_KUBUNO_KEY_MODS` message (the modifiers captured at the ORIGINAL,
-    physical moment the key went down) immediately before each forwarded key (`PostMessage` to the same
-    destination from the same source thread is FIFO, so delivery order is guaranteed);
-    `RustDesignSurfaceHost.HandleUnhandledKey` remembers it and briefly forces this thread's key-state
-    table to that CAPTURED snapshot (`GetKeyboardState`/`SetKeyboardState`, `AttachThreadInput` kept
-    alongside as belt and braces) for the duration of the `ComponentDispatcher`/`VsFilterKeys` call
-    only, restoring the real table right after - never held for the surface's whole focused lifetime,
-    so a hung surface cannot freeze this thread's own input. `tabOut`: a new `WM_APP`-based message
-    (`kubuno_controls::host::WM_KUBUNO_TAB_OUT`/`notify_tab_out`) moves the WPF focus out with
-    `MoveFocus`/`TraversalRequest`; `TabIntoCore` (WPF Tab INTO the surface) matches the spike's own
-    override, exactly (missing from an early version of this class - a real regression an interactive
-    `--selftest` run caught, since without it WPF has no way to hand the surface the focus on Tab).
+  - **Keyboard protocol**, both sides, verified live end to end (every `--selftest` check passes,
+    including Ctrl+S) after several rounds of fixes to genuine bugs each interactive run caught:
+    - The surface (`kubuno_controls::host`, additive in `kubuno-controls/src/host/mod.rs` - see the
+      `desktop` repo's own changelog) forwards a key it did not consume as the SAME
+      `WM_KEYDOWN`/`WM_SYSKEYDOWN` a real keystroke would have produced, preceded by a new
+      `kubuno_controls::host::WM_KUBUNO_KEY_MODS` message carrying the modifiers held at that
+      ORIGINAL, physical moment (`PostMessage` to the same destination from the same source thread is
+      FIFO, so delivery order is guaranteed) - a Win32 keyboard message carries no modifiers at all,
+      and by the time the forwarded key is finally processed (after a frame, a `PostMessage` round
+      trip, this thread's own queue) the physical Ctrl/Shift/Alt keys may already be released again.
+    - `RustDesignSurfaceHost.HandleUnhandledKey` remembers the captured modifiers and briefly forces
+      this thread's key-state table to that snapshot (`GetKeyboardState`/`SetKeyboardState`,
+      `AttachThreadInput` to the surface's own thread kept alongside as belt and braces) for the
+      duration of one call, restoring the real table right after in a `finally` - never held for the
+      surface's whole focused lifetime, so a hung surface cannot freeze this thread's own input.
+    - **VS is the primary path, WPF only the fallback for when the host is not VS**: a new
+      `VsFilterKeysBridge` (isolating every VS SDK type behind an `object`-only boundary - see its own
+      doc for why: `Microsoft.VisualStudio.SDK`'s package reference is `ExcludeAssets="runtime"`
+      throughout this repo, and simply DECLARING a VS interop type in `RustDesignSurfaceHost`'s own
+      always-executed constructor/`WndProc` was enough to throw `FileNotFoundException` for
+      `Microsoft.VisualStudio.Interop.dll` on first construction, standalone - a real, live-observed
+      startup crash this isolation fixes) queries `SVsFilterKeys`/`IVsFilterKeys2` from an optional
+      `IOleServiceProvider` and calls `TranslateAcceleratorEx` with the global keybinding scope.
+    - **The WPF fallback** (this library's own tests, the updated spike - no VS to query) raises real,
+      routed `Keyboard.PreviewKeyDownEvent`/`KeyDownEvent` through `InputManager.ProcessInput` -
+      `ComponentDispatcher.RaiseThreadMessage`, tried first, never reached a `KeyBinding` at all,
+      because WPF only turns a message into a routed keyboard event through an `HwndSource`'s own
+      `HwndKeyboardInputProvider` for THAT `HwndSource`'s window, and the embedding container is a
+      plain child `HWND`, not an `HwndSource`. Getting a real routed event to reach the window's own
+      `InputBindings` needed one more fix even after that: `Keyboard.Focus(this)` before raising it -
+      WPF's own logical focus tracking is only kept in sync with the native Win32 focus this class
+      establishes when focus arrives via `TabIntoCore` (WPF itself asked the sink to take it); a raw
+      click, handled entirely on the Rust side via a plain `SetFocus` on its own window, never
+      notifies the container, so a routed event could tunnel/bubble through the wrong part of the
+      tree and silently miss the window's `InputBindings` even with modifiers and forwarding both
+      already correct.
+    - `tabOut`: a new `WM_APP`-based message (`kubuno_controls::host::WM_KUBUNO_TAB_OUT`/
+      `notify_tab_out`) moves the WPF focus out with `MoveFocus`/`TraversalRequest`; `TabIntoCore`
+      (WPF Tab INTO the surface) matches the spike's own override, exactly (missing from an early
+      version of this class - a real regression an interactive `--selftest` run caught, since without
+      it WPF has no way to hand the surface the focus on Tab).
   - `SetDocumentText` bridges DSG-3's "buffer is truth" rule onto the current exe (`view_embed.exe`,
     file-polling - DSG-6's own `kubuno-views-designer` process/`kubuno/setBuffer` IPC does not exist
     yet) via a private temp `.kbview` file, swappable for real IPC without touching anything else in

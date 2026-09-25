@@ -13,27 +13,27 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     {
         private readonly string _exePath;
         private readonly string _extraArgs;
-        private readonly Func<int, IntPtr, IntPtr, bool>? _vsFilterKeys;
+        private readonly object? _oleServiceProvider;
 
         /// <param name="exePath">Full path to the design surface exe - see <see cref="RustDesignSurfaceHost"/>'s own doc for what runs there today.</param>
         /// <param name="extraArgs">Extra command-line arguments for every pane's surface process, if any.</param>
-        /// <param name="vsFilterKeys">Forwarded to every created host's <see cref="RustDesignSurfaceHost.VsFilterKeys"/> - see that property's own doc.</param>
-        public RustDesignSurfaceHostFactory(string exePath, string extraArgs = "", Func<int, IntPtr, IntPtr, bool>? vsFilterKeys = null)
+        /// <param name="oleServiceProvider">
+        /// The VS package's own site-wide <c>IOleServiceProvider</c> (obtained once, e.g. in
+        /// <c>KubunoPackage.InitializeAsync</c> - <c>SVsFilterKeys</c> is a package-level service, not a
+        /// per-document one), forwarded to every created host's own constructor for the real
+        /// <c>IVsFilterKeys2</c> accelerator path - see <see cref="RustDesignSurfaceHost"/>'s own doc for
+        /// what runs there, and <see cref="VsFilterKeysBridge"/>'s own doc for why this parameter is
+        /// deliberately typed <see cref="object"/> rather than the real VS interop type (a real,
+        /// live-observed startup crash outside VS otherwise). <see langword="null"/> outside VS (this
+        /// library's own tests, the updated spike).
+        /// </param>
+        public RustDesignSurfaceHostFactory(string exePath, string extraArgs = "", object? oleServiceProvider = null)
         {
             _exePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
             _extraArgs = extraArgs ?? string.Empty;
-            _vsFilterKeys = vsFilterKeys;
+            _oleServiceProvider = oleServiceProvider;
         }
 
-        public IDesignSurfaceHost Create()
-        {
-            var host = new RustDesignSurfaceHost(_exePath, _extraArgs);
-            if (_vsFilterKeys != null)
-            {
-                host.VsFilterKeys = _vsFilterKeys;
-            }
-
-            return host;
-        }
+        public IDesignSurfaceHost Create() => new RustDesignSurfaceHost(_exePath, _extraArgs, _oleServiceProvider);
     }
 }
