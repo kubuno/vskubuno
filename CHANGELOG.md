@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Design surface DSG-6 protocol** (`Kubuno.VisualStudio.Designer`): `RustDesignSurfaceHost` now
+  speaks the DSG-6 line-delimited JSON protocol (`vskubuno/docs/DESIGNER.md` §9) with the design
+  surface exe over its own stdin/stdout (`ProcessStartInfo.RedirectStandardInput`/
+  `RedirectStandardOutput`, both now `true`) — implemented in a new sibling file,
+  `RustDesignSurfaceHost.Protocol.cs` (the class is now `partial`, kept separate from its
+  keyboard-forwarding code). `SetDocumentText` (`IDesignSurfaceHost`) now sends a `setText`
+  message instead of writing a temp file, which this class no longer creates or cleans up; new
+  `SetDesignMode`/`Select` methods send `setDesignMode`/`select`. A new `EditRequested` event
+  (`EventHandler<DesignSurfaceEditRequestedEventArgs>`) is raised for a `SetAttribute`/
+  `RemoveElement` edit request the surface reports (a nudge/resize or a Delete on the design
+  surface), and `SelectionChanged` is now actually wired to the surface's own `selectionChanged`
+  messages. A crash-restart resends the pane's last known text/design-mode/selection to the
+  fresh process. The pure encode/parse half (`DesignSurfaceProtocol`) is unit-tested
+  independently of any live process
+  (`tests/Kubuno.VisualStudio.Designer.Tests/DesignSurface/RustDesignSurfaceHostProtocolTests.cs`),
+  matching `kubuno-views/src/protocol.rs`'s wire shapes byte-for-byte. `Toolbox/`, `Properties/`
+  and `Editing/` are untouched by this change.
+
 - **Integrated `Kubuno.VisualStudio.Views`, `Kubuno.TestAdapter` and `Kubuno.Mcp`/`Kubuno.Mcp.Bridge`
   into the VSIX**, following each library's own `INTEGRATION.md`/`docs/MCP.md`:
   - `.kbview` files now get an `ILanguageClient` (hosting `kubuno-views-ls.exe`), TextMate coloring

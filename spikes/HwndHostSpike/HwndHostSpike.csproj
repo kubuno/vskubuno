@@ -35,6 +35,18 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <!--
+      DSG-6: RustDesignSurfaceHost.Protocol.cs (Kubuno.VisualStudio.Designer) calls into
+      System.Text.Json at runtime now (every SetDocumentText call, not only when the "design"
+      flag is set). Inside
+      devenv.exe that assembly is supplied by the host (the library's own PackageReference is
+      ExcludeAssets="runtime" - see its csproj comment); this spike runs standalone, so without
+      an explicit reference here its System.Text.Json.dll never lands next to HwndHostSpike.exe
+      (FileNotFoundException at run time, not a build error) - same fix, same pinned version, as
+      tests/Kubuno.VisualStudio.Designer.Tests' own csproj comment already documents for the same
+      reason.
+    -->
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>

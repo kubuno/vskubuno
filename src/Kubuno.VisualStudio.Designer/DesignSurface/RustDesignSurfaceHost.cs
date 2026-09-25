@@ -67,7 +67,11 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// direction (WPF into the surface).</item>
     /// </list>
     /// </summary>
-    public sealed class RustDesignSurfaceHost : HwndHost, IDesignSurfaceHost
+    // `partial`: the DSG-6 IPC protocol (`kubuno/setText`/`setDesignMode`/`select` on stdin,
+    // `selectionChanged`/`editRequest` on stdout - see `vskubuno/docs/DESIGNER.md`'s "DSG-6 protocol"
+    // section) is implemented in the sibling file `RustDesignSurfaceHost.Protocol.cs`, kept separate so
+    // it does not collide with concurrent work on this file's own keyboard-forwarding code.
+    public sealed partial class RustDesignSurfaceHost : HwndHost, IDesignSurfaceHost
     {
         // Backoff for both "the surface just crashed" and "the runtime DLLs are still missing" -
         // unified into one retry loop (see ScheduleRetry): a user who runs tools/stage-runtime.ps1
@@ -80,7 +84,6 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         private readonly string _exePath;
         private readonly string _extraArgs;
-        private readonly string _tempViewFile;
         private readonly DispatcherTimer _childPoll = new() { Interval = TimeSpan.FromMilliseconds(20) };
         private readonly DispatcherTimer _retryTimer = new();
 
@@ -120,7 +123,6 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         {
             _exePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
             _extraArgs = extraArgs ?? string.Empty;
-            _tempViewFile = Path.Combine(Path.GetTempPath(), "kubuno-designer-" + Guid.NewGuid().ToString("N") + ".kbview");
             // The null-check itself needs no VS type, so it is safe to sit directly in this always-run
             // constructor; VsFilterKeysBridge.TryQuery is only ever CALLED (hence only ever JIT'd, hence
             // only ever needs Microsoft.VisualStudio.Interop.dll loaded) when there is something to query.
@@ -160,25 +162,20 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         FrameworkElement IDesignSurfaceHost.Content => this;
 
-        public void SetDocumentText(string xmlText)
-        {
-            try
-            {
-                File.WriteAllText(_tempViewFile, xmlText ?? string.Empty);
-            }
-            catch (IOException)
-            {
-                // Best-effort (see the class doc's "Document text" remarks): a transient share
-                // violation must not prevent the pane from opening or take down the editor.
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-        }
+        /// <summary>
+        /// Pushes the buffer's current text as a `kubuno/setText` DSG-6 protocol message
+        /// (<c>RustDesignSurfaceHost.Protocol.cs</c>) - see that file's own doc for the wire shape and
+        /// why this replaced the earlier temp-file bridge.
+        /// </summary>
+        public void SetDocumentText(string xmlText) => SendSetText(xmlText ?? string.Empty);
 
-#pragma warning disable CS0067 // DSG-8 (selection sync) raises this once the surface reports hit-tests; not yet wired (see IDesignSurfaceHost's own remarks).
+        /// <summary>
+        /// Raised when the design surface reports a new selection (a click, or Esc-to-parent) - the
+        /// DSG-6 `selectionChanged` protocol message, handled in
+        /// <c>RustDesignSurfaceHost.Protocol.cs</c>. Consumed by DSG-8's bidirectional selection sync to
+        /// move the XML pane's caret.
+        /// </summary>
         public event EventHandler<DesignSurfaceSelectionChangedEventArgs>? SelectionChanged;
-#pragma warning restore CS0067
 
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
@@ -254,11 +251,18 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         {
             NativeMethods.SetWindowText(_container, string.Empty);
             var dir = Path.GetDirectoryName(_exePath)!;
-            var args = $"--parent {_container.ToInt64()} \"{_tempViewFile}\"" + (_extraArgs.Length > 0 ? " " + _extraArgs : string.Empty);
+            // No `<file.kbview>` positional argument any more (DSG-6: `view_embed`'s file argument is now
+            // OPTIONAL, and the document text arrives over stdin instead - see `SendSetText`).
+            var args = $"--parent {_container.ToInt64()}" + (_extraArgs.Length > 0 ? " " + _extraArgs : string.Empty);
             var psi = new ProcessStartInfo(_exePath, args)
             {
                 UseShellExecute = false,
                 RedirectStandardError = true,
+                // DSG-6 (`RustDesignSurfaceHost.Protocol.cs`): the surface's own stdin/stdout now carry
+                // the line-delimited JSON protocol (`setText`/`setDesignMode`/`select` out,
+                // `selectionChanged`/`editRequest` in) - stderr stays the plain trace channel above.
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
                 CreateNoWindow = true,
                 WorkingDirectory = dir,
             };
@@ -315,6 +319,10 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             };
             _surface.BeginErrorReadLine();
             _surface.Exited += OnSurfaceExited;
+            // DSG-6 protocol wiring (`RustDesignSurfaceHost.Protocol.cs`): starts the async stdout
+            // reader and re-sends whatever the pane already knows (design mode, selection) to the FRESH
+            // process - a restart-with-backoff (`OnSurfaceExited`) must not silently drop that state.
+            BeginProtocolIo();
             AssignToJobObject(proc);
             _lastStart = DateTime.UtcNow;
             KubunoViewsLogHost.Current.WriteLine($"[designer] design surface started (PID {proc.Id}).");
@@ -793,20 +801,6 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             {
                 NativeMethods.CloseHandle(_job);
                 _job = IntPtr.Zero;
-            }
-
-            try
-            {
-                if (File.Exists(_tempViewFile))
-                {
-                    File.Delete(_tempViewFile);
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
             }
         }
 

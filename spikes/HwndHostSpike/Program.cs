@@ -14,13 +14,20 @@ using Kubuno.VisualStudio.Views.Logging;
 namespace HwndHostSpike
 {
     /// <summary>
-    /// DSG-7 verification harness: <c>HwndHostSpike.exe --exe view_embed.exe --view file.kbview [--selftest] [--close] [--log path]</c>.
+    /// DSG-7 verification harness: <c>HwndHostSpike.exe --exe view_embed.exe --view file.kbview [--selftest] [--close] [--log path] [--design]</c>.
     /// Drives the PRODUCTION <see cref="RustDesignSurfaceHost"/> (not a spike-local class anymore -
     /// see the csproj's own comment) so <c>--selftest</c> exercises the real job object, restart
     /// backoff, error mode, DLL check and keyboard protocol (<c>unhandledKey</c>/<c>tabOut</c>) without
     /// needing a live <c>devenv.exe</c>. With <c>--selftest</c> it drives focus/keyboard/popup/capture/
     /// resize/crash/keyboard-protocol probes itself (real input through the system queue) and logs
     /// PASS/FAIL/INFO lines.
+    ///
+    /// <c>--design</c> (DSG-6 visual check): turns design mode on right after the surface's first
+    /// `setText` (<see cref="RustDesignSurfaceHost.SetDesignMode"/>) and logs every
+    /// <see cref="RustDesignSurfaceHost.SelectionChanged"/>/<see cref="RustDesignSurfaceHost.EditRequested"/>
+    /// event to the same log file `--selftest` already greps - a click on the embedded surface should
+    /// select the element under it (adorners drawn, a `SelectionChanged` line logged); Delete/an arrow
+    /// on an Anchor element should log an `EditRequested` line.
     /// </summary>
     public static class Program
     {
@@ -36,7 +43,7 @@ namespace HwndHostSpike
             File.WriteAllText(logPath, "");
             KubunoViewsLogHost.Current = new SpikeLogAdapter(logPath);
             var app = new Application();
-            var win = new SpikeWindow(exe, view, logPath, args.Contains("--selftest"), args.Contains("--close"));
+            var win = new SpikeWindow(exe, view, logPath, args.Contains("--selftest"), args.Contains("--close"), args.Contains("--design"));
             return app.Run(win);
         }
     }
@@ -93,7 +100,7 @@ namespace HwndHostSpike
         private readonly TextBox _before, _after;
         private bool _ctrlS;
 
-        public SpikeWindow(string exe, string view, string logPath, bool selftest, bool close)
+        public SpikeWindow(string exe, string view, string logPath, bool selftest, bool close, bool design = false)
         {
             _logPath = logPath;
             Title = "HwndHost spike (DSG-7)";
@@ -101,10 +108,19 @@ namespace HwndHostSpike
             _before = new TextBox { Text = "WPF before", Margin = new Thickness(4) };
             _after = new TextBox { Text = "WPF after", Margin = new Thickness(4) };
             _host = new RustDesignSurfaceHost(exe);
-            // The production host owns its own temp `.kbview` file (docs/DESIGNER.md §2's "buffer is
-            // truth" bridged onto the current disk-polling exe - see RustDesignSurfaceHost's own doc);
-            // seed it with the fixture `--view` file's content instead of passing that path directly.
+            // DSG-6: `SetDocumentText` now sends a `setText` protocol message over the surface's own
+            // stdin (see that method's own doc) instead of writing a temp file - nothing here needed to
+            // change to pick that up.
             _host.SetDocumentText(File.ReadAllText(view));
+            if (design)
+            {
+                // DSG-6 visual check: turn design mode on and log every selection/edit-request the
+                // surface reports - see this class's own `--design` doc on `Program`.
+                _host.SetDesignMode(true);
+                _host.SelectionChanged += (_, e) => Log($"SelectionChanged ids=[{string.Join(",", e.ElementIds)}]");
+                _host.EditRequested += (_, e) => Log($"EditRequested kind={e.Op.Kind} elementId={e.Op.ElementId} name={e.Op.Name} value={e.Op.Value}");
+                Log("design mode ON (--design)");
+            }
             // The host owns its OWN stderr capture/logging now (unlike the original spike, where
             // DesignSurfaceHost took a Log callback directly) - re-publish every line into `_rustLines`
             // with the SAME "  rust| " prefix the original spike used, so RustSaid/ClearRust below keep
