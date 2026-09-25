@@ -114,17 +114,17 @@ namespace Kubuno.VisualStudio.Designer.Selection
         }
 
         /// <summary>The Document Outline's own entry point (docs/DESIGNER.md §1: "click -&gt; select in both views") - wired from <c>Outline.OutlineViewModel.NodeActivated</c>, see this library's own INTEGRATION.md.</summary>
-        public Task SelectFromOutlineAsync(string? elementId) => RunGuarded(() => ApplySelectionAsync(elementId, range: null, SelectionOrigin.Outline));
+        public Task SelectFromOutlineAsync(string? elementId) => RunGuardedAsync(() => ApplySelectionAsync(elementId, range: null, SelectionOrigin.Outline));
 
         private void OnSurfaceSelectionChanged(object? sender, DesignSurfaceSelectionChangedEventArgs e)
         {
             var elementId = e.ElementIds.Count > 0 ? e.ElementIds[0] : null;
-            _ = RunGuarded(() => ApplySelectionAsync(elementId, range: null, SelectionOrigin.Surface));
+            _ = RunGuardedAsync(() => ApplySelectionAsync(elementId, range: null, SelectionOrigin.Surface));
         }
 
         private void OnCaretMoved(object? sender, EventArgs e)
         {
-            _ = RunGuarded(HandleCaretMovedAsync);
+            _ = RunGuardedAsync(HandleCaretMovedAsync);
         }
 
         private async Task HandleCaretMovedAsync()
@@ -266,7 +266,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
             _propertiesPanel.SetSelection(component, attributes.Attributes, eventHandlers, Array.Empty<string>(), _documentUri, elementId);
         }
 
-        private static async Task RunGuarded(Func<Task> action)
+        private static async Task RunGuardedAsync(Func<Task> action)
         {
             try
             {
