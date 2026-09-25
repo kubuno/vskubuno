@@ -58,6 +58,19 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         [DllImport("user32.dll", SetLastError = true)]
         internal static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, [MarshalAs(UnmanagedType.Bool)] bool fAttach);
 
+        /// <summary>The 256-entry virtual-key state table of the CALLING thread's input queue - see <see cref="RustDesignSurfaceHost.HandleUnhandledKey"/>'s own doc for why this class touches it at all.</summary>
+        [DllImport("user32.dll", SetLastError = true)]
+        internal static extern bool GetKeyboardState(byte[] lpKeyState);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        internal static extern bool SetKeyboardState(byte[] lpKeyState);
+
+        internal const int VK_SHIFT = 0x10;
+        internal const int VK_CONTROL = 0x11;
+        internal const int VK_MENU = 0x12;
+        /// <summary>The high bit of a <see cref="GetKeyboardState"/>/<see cref="SetKeyboardState"/> byte: "currently down".</summary>
+        internal const byte KEY_DOWN_BIT = 0x80;
+
         [DllImport("kernel32.dll")]
         internal static extern uint GetCurrentThreadId();
 

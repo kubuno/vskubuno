@@ -42,25 +42,44 @@ namespace HwndHostSpike
     }
 
     /// <summary>
+    /// The ONE place that ever appends to the log file, from either the UI thread
+    /// (<see cref="SpikeWindow.Log"/>) or a .NET thread-pool thread
+    /// (<see cref="SpikeLogAdapter"/>, reached from <see cref="RustDesignSurfaceHost"/>'s own
+    /// <c>ErrorDataReceived</c> handler - a real, live-observed bug: those two classes used to each lock
+    /// their OWN separate <c>object</c> around their own <c>File.AppendAllText</c> call, which serialised
+    /// each writer against ITSELF but not against the OTHER one, so two truly concurrent appends to the
+    /// same file could still race and throw <see cref="IOException"/> ("file in use") - which, unhandled
+    /// on that thread-pool thread, took the whole process down mid-selftest). A single shared lock here
+    /// is the fix; every writer funnels through this instead of touching the file itself.
+    /// </summary>
+    internal static class SpikeLog
+    {
+        private static readonly object Gate = new object();
+
+        public static void Append(string logPath, string line)
+        {
+            lock (Gate)
+            {
+                File.AppendAllText(logPath, DateTime.Now.ToString("HH:mm:ss.fff ") + line + Environment.NewLine);
+            }
+        }
+    }
+
+    /// <summary>
     /// Routes <see cref="RustDesignSurfaceHost"/>'s own logging (job object, restart backoff, DLL
     /// check...) into the SAME log file <see cref="SpikeWindow"/> already writes to and
     /// <c>--selftest</c> already greps - the "VSIX supplies a small adapter" pattern
-    /// <c>Kubuno.VisualStudio.Views/INTEGRATION.md</c> documents for the real package.
+    /// <c>Kubuno.VisualStudio.Views/INTEGRATION.md</c> documents for the real package. Runs on a
+    /// thread-pool thread (this class is reached from <c>ErrorDataReceived</c>), so every write goes
+    /// through <see cref="SpikeLog"/>'s single shared lock, never its own.
     /// </summary>
     internal sealed class SpikeLogAdapter : IKubunoLog
     {
         private readonly string _logPath;
-        private readonly object _gate = new object();
 
         public SpikeLogAdapter(string logPath) => _logPath = logPath;
 
-        public void WriteLine(string message)
-        {
-            lock (_gate)
-            {
-                File.AppendAllText(_logPath, DateTime.Now.ToString("HH:mm:ss.fff ") + message + Environment.NewLine);
-            }
-        }
+        public void WriteLine(string message) => SpikeLog.Append(_logPath, message);
 
         public void WriteException(string context, Exception exception) => WriteLine($"{context}: {exception}");
     }
@@ -120,11 +139,14 @@ namespace HwndHostSpike
 
         private void Log(string line)
         {
+            // `_gate` only ever protects `_rustLines` now - the file write itself goes through
+            // SpikeLog's own single shared lock (see that class's doc for the bug this fixes).
             lock (_gate)
             {
                 if (line.StartsWith("  rust|")) _rustLines.Add(line);
-                File.AppendAllText(_logPath, DateTime.Now.ToString("HH:mm:ss.fff ") + line + Environment.NewLine);
             }
+
+            SpikeLog.Append(_logPath, line);
         }
 
         private bool RustSaid(string needle) { lock (_gate) return _rustLines.Any(l => l.Contains(needle)); }

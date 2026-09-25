@@ -92,6 +92,8 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private int _backoffMs = BackoffInitialMs;
         private bool _disposed;
         private static bool s_errorModeSet;
+        /// <summary>The modifier bits carried by the last <see cref="WmKubunoKeyMods"/> message, consumed by the very next forwarded key (see that message constant's own doc).</summary>
+        private int _pendingKeyMods;
 
         /// <param name="exePath">Full path to the design surface exe (today, <c>view_embed.exe</c> - see the class doc).</param>
         /// <param name="extraArgs">Extra command-line arguments appended after the temp view file, if any.</param>
@@ -273,10 +275,30 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             _surface.EnableRaisingEvents = true;
             _surface.ErrorDataReceived += (_, e) =>
             {
-                if (e.Data != null)
+                if (e.Data == null)
+                {
+                    return;
+                }
+
+                // This runs on a .NET thread-pool thread (async pipe read), not the UI thread. A
+                // misbehaving IKubunoLog implementation or SurfaceOutputLine subscriber must not be able
+                // to crash the process from there - caught and logged, never rethrown.
+                try
                 {
                     KubunoViewsLogHost.Current.WriteLine("[design surface] " + e.Data);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("KubunoViewsLogHost.Current.WriteLine threw for a design-surface stderr line: " + ex);
+                }
+
+                try
+                {
                     SurfaceOutputLine?.Invoke(e.Data);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("A SurfaceOutputLine subscriber threw for a design-surface stderr line: " + ex);
                 }
             };
             _surface.BeginErrorReadLine();
@@ -467,6 +489,13 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     NativeMethods.SetFocus(child);
                 }
             }
+            else if (msg == WmKubunoKeyMods)
+            {
+                // See kubuno_controls::host::WM_KUBUNO_KEY_MODS's own doc: posted immediately BEFORE the
+                // key message it describes (same source thread, same destination - PostMessage is FIFO),
+                // so simply remembering it here and consuming it in HandleUnhandledKey is reliable.
+                _pendingKeyMods = (int)wParam.ToInt64();
+            }
             else if (msg == WmKeyDown || msg == WmSysKeyDown)
             {
                 // The container is never itself focused (the surface's grandchild window is), so every
@@ -484,7 +513,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 // method's own doc - its absence was a real, independently confirmed bug), so the
                 // explicit call is restored here as the more likely correct fix once WPF has a properly
                 // established focus scope for this sink to hand control back to.
-                HandleUnhandledKey(hwnd, msg, wParam, lParam);
+                var mods = _pendingKeyMods;
+                _pendingKeyMods = 0;
+                HandleUnhandledKey(hwnd, msg, wParam, lParam, mods);
             }
             else if (msg == WmKubunoTabOut)
             {
@@ -504,33 +535,64 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         /// <summary>
         /// Routes one forwarded key to <see cref="VsFilterKeys"/> then
-        /// <see cref="ComponentDispatcher.RaiseThreadMessage"/>, with the WPF UI thread's per-thread key
-        /// state ("input state" - <c>GetKeyState</c>/<c>Keyboard.Modifiers</c>) briefly made to match the
-        /// SURFACE's own for the duration of the call. Win32 does not carry modifiers in a
-        /// <c>WM_KEYDOWN</c>'s <c>wParam</c>/<c>lParam</c> at all (`vskubuno` had this fully forwarded, S
-        /// arriving correctly - confirmed live) - modifiers are a SEPARATE per-thread state
-        /// (<c>GetKeyState</c>) that only updates for a thread when it itself retrieves the raw hardware
-        /// message, which Ctrl never did on THIS (the container's/WPF's) thread, since Ctrl physically
-        /// went to the surface's own thread when the surface had the focus. `IVsFilterKeys2` reads
-        /// modifiers the same way (per its own contract), so this fixes both paths, not just
-        /// `ComponentDispatcher`. <c>AttachThreadInput</c> makes two threads SHARE one input state table,
-        /// so a `GetKeyState` call made here (from either this class or downstream WPF/VS code running on
-        /// this thread) sees the surface's real, physically-current modifier state - confirmed live to be
-        /// the missing piece after the message-forwarding and focus-scope (`TabIntoCore`) fixes: with
-        /// forwarding and focus both already correct, Ctrl+S still failed to fire the `KeyBinding` until
-        /// this was added. Attached and detached around EACH call, not for the surface's whole focused
-        /// lifetime: a long-lived attachment shares MORE than key state (also the active/focus/capture
-        /// window) and would let an unresponsive surface process hang this thread's own input processing.
+        /// <see cref="ComponentDispatcher.RaiseThreadMessage"/>, with the calling (WPF UI) thread's
+        /// per-thread key-state table ("input state" - what <c>GetKeyState</c>/<c>Keyboard.Modifiers</c>/
+        /// `IVsFilterKeys2` all read modifiers from) briefly forced to match <paramref name="mods"/> -
+        /// the modifiers <c>kubuno_controls::host::forward_unhandled_keys</c> captured at the ORIGINAL,
+        /// physical moment this key went down (see <c>kubuno_controls::host::WM_KUBUNO_KEY_MODS</c>'s own
+        /// doc). Two things had to be fixed to get here, in order, each confirmed live:
+        /// <list type="number">
+        /// <item>Without a properly established WPF focus scope for this sink (<see cref="TabIntoCore"/>
+        /// missing), the explicit <c>ComponentDispatcher</c> call itself was suspected of stealing native
+        /// focus back from the surface - restoring `TabIntoCore` fixed that, and a purely ambient/passive
+        /// approach (no explicit call at all) turned out not to reach a `KeyBinding` regardless, so the
+        /// explicit call is required.</item>
+        /// <item>Even with the explicit call and focus both correct, Ctrl+S still would not fire: a
+        /// `WM_KEYDOWN` carries NO modifier state at all (it is not part of the message), and this
+        /// thread's own key-state table never itself saw Ctrl go down (Ctrl physically went to the
+        /// surface's thread while it had the focus) - `AttachThreadInput` alone was not enough either,
+        /// because by the time this method runs (after a frame, a `PostMessage` round trip and this
+        /// thread's own queue), the ambient/CURRENT state it shares may already show Ctrl released again
+        /// (a fast Ctrl+S can release Ctrl well before the forwarded key is finally processed). Only
+        /// explicitly forcing the table to the CAPTURED snapshot works.</item>
+        /// </list>
+        /// <c>AttachThreadInput</c> is kept alongside `SetKeyboardState` (belt and braces - some of what
+        /// downstream code reads may come from the shared/attached state rather than this thread's own
+        /// table); both are undone in a `finally`, and only for the duration of this one call, never for
+        /// the surface's whole focused lifetime - a long-lived attachment shares MORE than key state
+        /// (also the active/focus/capture window) and would let an unresponsive surface process hang this
+        /// thread's own input processing.
         /// </summary>
-        private void HandleUnhandledKey(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam)
+        private void HandleUnhandledKey(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, int mods)
         {
             var child = Child;
             var childThreadId = child == IntPtr.Zero ? 0 : NativeMethods.GetWindowThreadProcessId(child, IntPtr.Zero);
             var ourThreadId = NativeMethods.GetCurrentThreadId();
             var attached = childThreadId != 0 && childThreadId != ourThreadId
                 && NativeMethods.AttachThreadInput(ourThreadId, childThreadId, true);
+
+            var ctrl = (mods & 0x1) != 0;
+            var shift = (mods & 0x2) != 0;
+            var alt = (mods & 0x4) != 0;
+            byte[]? savedState = null;
+            var stateApplied = false;
             try
             {
+                var beforeCtrl = (Keyboard.GetKeyStates(Key.LeftCtrl) & KeyStates.Down) != 0
+                    || (Keyboard.GetKeyStates(Key.RightCtrl) & KeyStates.Down) != 0;
+                KubunoViewsLogHost.Current.WriteLine(
+                    $"[designer] unhandledKey msg={msg:X} vk={wParam.ToInt64():X} capturedMods=(ctrl={ctrl},shift={shift},alt={alt}) beforeCtrlOnThisThread={beforeCtrl}");
+
+                var state = new byte[256];
+                if (NativeMethods.GetKeyboardState(state))
+                {
+                    savedState = (byte[])state.Clone();
+                    state[NativeMethods.VK_CONTROL] = ctrl ? NativeMethods.KEY_DOWN_BIT : (byte)0;
+                    state[NativeMethods.VK_SHIFT] = shift ? NativeMethods.KEY_DOWN_BIT : (byte)0;
+                    state[NativeMethods.VK_MENU] = alt ? NativeMethods.KEY_DOWN_BIT : (byte)0;
+                    stateApplied = NativeMethods.SetKeyboardState(state);
+                }
+
                 if (VsFilterKeys?.Invoke(msg, wParam, lParam) == true)
                 {
                     return;
@@ -552,6 +614,11 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             }
             finally
             {
+                if (stateApplied && savedState != null)
+                {
+                    NativeMethods.SetKeyboardState(savedState);
+                }
+
                 if (attached)
                 {
                     NativeMethods.AttachThreadInput(ourThreadId, childThreadId, false);
@@ -644,5 +711,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private const int WmSysKeyDown = 0x0104;
         /// <summary>Must match Rust's <c>kubuno_controls::host::WM_KUBUNO_TAB_OUT</c> exactly (<c>WM_APP + 0x4B4F</c>).</summary>
         private const int WmKubunoTabOut = 0x8000 + 0x4B4F;
+        /// <summary>Must match Rust's <c>kubuno_controls::host::WM_KUBUNO_KEY_MODS</c> exactly (<c>WM_APP + 0x4B50</c>).</summary>
+        private const int WmKubunoKeyMods = 0x8000 + 0x4B50;
     }
 }

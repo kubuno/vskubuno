@@ -152,12 +152,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     `IVsFilterKeys2.TranslateAcceleratorEx` path once that can be checked against a live `devenv.exe`
     (not done in this task - see the property's own doc for why guessing that COM signature was not
     worth the risk). Even with forwarding and focus both correct, Ctrl+S still would not fire: Win32
-    keyboard messages do not carry modifiers, which are separate PER-THREAD state (`GetKeyState`) this
-    thread's own copy of never saw change, because Ctrl physically went to the surface's own thread
-    while it had the focus. `HandleUnhandledKey` now briefly `AttachThreadInput`s to the surface's
-    thread around each forwarded key (sharing that state table for the call, then detaching - never
-    held for the surface's whole focused lifetime, so a hung surface cannot freeze this thread's own
-    input). `tabOut`: a new `WM_APP`-based message
+    keyboard messages carry no modifiers at all - a SEPARATE, per-thread `GetKeyState` table, which
+    only updates for a thread when it retrieves the raw hardware message, so this thread's own copy
+    never saw Ctrl go down (it went to the surface's own thread). A first fix (briefly
+    `AttachThreadInput`-ing to the surface's thread around each forwarded key) was not enough either:
+    by the time the forwarded key is finally processed - after a frame, a `PostMessage` round trip and
+    this thread's own queue - even the SHARED/ambient state can already show Ctrl released again (a
+    fast Ctrl+S can release Ctrl well before that). The real fix carries the modifiers explicitly:
+    `kubuno_controls::host::forward_unhandled_keys` now posts a new
+    `kubuno_controls::host::WM_KUBUNO_KEY_MODS` message (the modifiers captured at the ORIGINAL,
+    physical moment the key went down) immediately before each forwarded key (`PostMessage` to the same
+    destination from the same source thread is FIFO, so delivery order is guaranteed);
+    `RustDesignSurfaceHost.HandleUnhandledKey` remembers it and briefly forces this thread's key-state
+    table to that CAPTURED snapshot (`GetKeyboardState`/`SetKeyboardState`, `AttachThreadInput` kept
+    alongside as belt and braces) for the duration of the `ComponentDispatcher`/`VsFilterKeys` call
+    only, restoring the real table right after - never held for the surface's whole focused lifetime,
+    so a hung surface cannot freeze this thread's own input. `tabOut`: a new `WM_APP`-based message
     (`kubuno_controls::host::WM_KUBUNO_TAB_OUT`/`notify_tab_out`) moves the WPF focus out with
     `MoveFocus`/`TraversalRequest`; `TabIntoCore` (WPF Tab INTO the surface) matches the spike's own
     override, exactly (missing from an early version of this class - a real regression an interactive
@@ -190,6 +200,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     child instead of always pressing exactly 6 times: with only 3 WPF-level tab stops in this fixture
     (`_before`/`_after`/the host), continuing to press after tab-out already fired could cycle straight
     back into the host via `TabIntoCore` and read as a false FAIL.
+  - Fixed a live crash: the spike's own log writes (UI thread, `SpikeWindow.Log`) and
+    `RustDesignSurfaceHost`'s own logging of the surface's stderr (a .NET thread-pool thread, via
+    `KubunoViewsLogHost`) each locked a SEPARATE `object` around their own `File.AppendAllText` call to
+    the SAME log file - serialising each writer against itself but not against the other, so two
+    genuinely concurrent appends could still race and throw `IOException` ("file in use"), unhandled,
+    taking the whole process down mid-`--selftest`. Fixed with one shared lock (`SpikeLog`) every
+    writer funnels through. `RustDesignSurfaceHost`'s own `ErrorDataReceived` handler also now catches
+    around `KubunoViewsLogHost`/`SurfaceOutputLine` individually: a misbehaving logger or subscriber
+    must never be able to crash the HOST process (VS, ultimately) from that thread-pool callback.
   - Not wired into the VSIX (`src/Kubuno.VisualStudio/*`, `Kubuno.VisualStudio.sln`) - see this
     library's `INTEGRATION.md` for the remaining steps.
 
