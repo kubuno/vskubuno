@@ -1,0 +1,21 @@
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+TestResults/
+
+# VSIX packaging
+*.vsix
+# NOTE: source.extension.cs (VSIX Synchronizer output, Vsix.* constants from the manifest) is
+# intentionally NOT ignored: MSBuild CLI builds do not regenerate it (only the VS designer does),
+# so it is committed, like other classic VSSDK projects do.
+
+# Rust / Cargo
+target/
+**/*.rs.bk
+Cargo.lock
+!samples/**/Cargo.lock

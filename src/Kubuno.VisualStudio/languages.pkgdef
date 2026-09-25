@@ -1,0 +1,12 @@
+; Registers the Grammars folder shipped in this VSIX as a TextMate repository, so .rs files
+; get syntax coloring from rust.tmLanguage.json even before (or without) rust-analyzer running.
+[$RootKey$\TextMate\Repositories]
+"Kubuno"="$PackageFolder$\Grammars"
+
+; Brackets/comments/indentation for the grammar's scope (source.rust) and for the LSP content
+; type (rust, see LanguageService\ContentDefinition.cs) - both keys point at the same file.
+[$RootKey$\TextMate\LanguageConfiguration\GrammarMapping]
+"source.rust"="$PackageFolder$\Grammars\rust-language-configuration.json"
+
+[$RootKey$\TextMate\LanguageConfiguration\ContentTypeMapping]
+"rust"="$PackageFolder$\Grammars\rust-language-configuration.json"

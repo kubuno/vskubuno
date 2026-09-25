@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0"
+  xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011"
+  xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+    <Metadata>
+        <Identity Id="Kubuno.VisualStudio.a3f0e6c2-5b1d-4e6a-8b1a-9c1a2f3e4d5c" Version="1.0.0" Language="en-US" Publisher="Kubuno" />
+        <DisplayName>Kubuno for Visual Studio</DisplayName>
+        <Description xml:space="preserve">Rust language support (rust-analyzer, syntax coloring, rustfmt) for developing Kubuno modules in Visual Studio.</Description>
+        <MoreInfo>https://github.com/kubuno/vskubuno</MoreInfo>
+        <ReleaseNotes>https://github.com/kubuno/vskubuno/blob/main/CHANGELOG.md</ReleaseNotes>
+        <Tags>Rust;Cargo;rust-analyzer;Kubuno</Tags>
+    </Metadata>
+    <Installation>
+        <!--
+          [17.0,) rather than [18.0,): VS 2026's compatibility model only checks the lower bound
+          (upper bound is ignored), so this open range covers 18.x (VS 2026) while also staying
+          installable on 17.x (VS 2022) - the range the default VSIX template itself now generates.
+          amd64 is the only architecture actually verified (see README); arm64 is declared because
+          this is a pure .NET Framework/managed extension with no native P/Invoke beyond spawning
+          rust-analyzer, so nothing here is expected to be architecture-specific, but it has not
+          been run on an arm64 Visual Studio.
+        -->
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,)">
+            <ProductArchitecture>arm64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,)">
+            <ProductArchitecture>arm64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0,)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0,)">
+            <ProductArchitecture>arm64</ProductArchitecture>
+        </InstallationTarget>
+    </Installation>
+    <Prerequisites>
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,)" DisplayName="Visual Studio core editor" />
+    </Prerequisites>
+    <Assets>
+        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
+    </Assets>
+</PackageManifest>

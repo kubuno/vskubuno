@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pure logic shared by the VSIX project and its unit tests: no dependency on the VS SDK,
+    so it can be unit-tested with plain `dotnet test` without a Visual Studio host.
+    Targets net48 to match the VSIX project's runtime (classic VSSDK extensions are
+    .NET Framework 4.8 in-proc); nothing here is Framework-specific, but keeping the same
+    TFM avoids any binding-redirect surprises when Kubuno.VisualStudio references this project.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.VisualStudio.Core</RootNamespace>
+    <AssemblyName>Kubuno.VisualStudio.Core</AssemblyName>
+  </PropertyGroup>
+
+</Project>

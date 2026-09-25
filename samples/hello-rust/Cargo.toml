@@ -1,0 +1,17 @@
+[package]
+name = "hello-rust"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Minimal fixture used to manually verify the Kubuno Visual Studio extension: open this folder in
+# an experimental instance (`devenv /rootsuffix Exp samples\hello-rust`) and check that src/main.rs
+# is colorized and that rust-analyzer starts against this Cargo.toml as its workspace root.
+
+[[bin]]
+name = "hello-rust"
+path = "src/main.rs"
+
+[[example]]
+name = "greet"
+path = "examples/greet.rs"

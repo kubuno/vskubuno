@@ -1,0 +1,130 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+
+namespace Kubuno.VisualStudio.Logging
+{
+    /// <summary>
+    /// Writes to the "Kubuno" pane of the Output window: rust-analyzer discovery decisions,
+    /// language client start/stop/errors, and (via <see cref="CreateJsonRpcTraceListener"/>) raw
+    /// LSP traffic. A static, lazily-created singleton rather than something threaded through
+    /// every MEF-constructed component, since MEF parts (the language client, the content type
+    /// exports) are built by the MEF container, not by <see cref="KubunoPackage"/>.
+    ///
+    /// The pane itself is created once, on the UI thread, by <see cref="KubunoPackage.InitializeAsync"/>
+    /// (via <see cref="Initialize"/>) - not lazily from here. The language client can log before the
+    /// package has finished loading (MEF activation is not gated on package load), so messages
+    /// written before <see cref="Initialize"/> runs are buffered and flushed once the pane exists,
+    /// rather than silently dropped or (the previous, broken approach) built lazily via a blocking
+    /// <c>JoinableTaskFactory.Run</c> call from arbitrary background threads, whose failures had no
+    /// way to surface (the pane was simply never created, with nothing logged anywhere about why).
+    ///
+    /// Every method is safe to call from any thread and never throws: logging must not be a new
+    /// source of failure for the very code that reports failures.
+    /// </summary>
+    internal static class KubunoLog
+    {
+        private const int MaxBufferedLines = 500;
+
+        private static readonly object SyncRoot = new();
+        private static readonly List<string> PendingLines = new();
+        private static IVsOutputWindowPane? _pane;
+
+        /// <summary>Called once, on the UI thread, from <see cref="KubunoPackage.InitializeAsync"/>.</summary>
+        public static void Initialize(IVsOutputWindowPane pane)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            List<string> toFlush;
+            lock (SyncRoot)
+            {
+                if (_pane != null)
+                {
+                    return;
+                }
+
+                _pane = pane;
+                toFlush = new List<string>(PendingLines);
+                PendingLines.Clear();
+            }
+
+            foreach (var line in toFlush)
+            {
+                WriteToPane(pane, line);
+            }
+        }
+
+        public static void WriteLine(string message)
+        {
+            var line = FormatLine(message);
+
+            IVsOutputWindowPane? pane;
+            lock (SyncRoot)
+            {
+                pane = _pane;
+                if (pane == null)
+                {
+                    PendingLines.Add(line);
+                    if (PendingLines.Count > MaxBufferedLines)
+                    {
+                        PendingLines.RemoveAt(0);
+                    }
+
+                    return;
+                }
+            }
+
+            WriteToPane(pane, line);
+        }
+
+        public static void WriteException(string context, Exception exception)
+        {
+            WriteLine($"{context}: {exception}");
+        }
+
+        /// <summary>
+        /// A <see cref="TraceListener"/> that forwards to the Kubuno pane, meant to be attached to
+        /// the StreamJsonRpc <c>JsonRpc.TraceSource</c> of the rust-analyzer connection so LSP
+        /// traffic/errors show up here too (see RustLanguageClient.AttachForCustomMessageAsync).
+        /// </summary>
+        public static TraceListener CreateJsonRpcTraceListener() => new OutputPaneTraceListener();
+
+        private static string FormatLine(string message) => $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+
+        private static void WriteToPane(IVsOutputWindowPane pane, string line)
+        {
+            try
+            {
+#pragma warning disable VSTHRD010 // OutputStringThreadSafe is documented safe to call off the UI thread - that is the point of WriteLine.
+                pane.OutputStringThreadSafe(line + Environment.NewLine);
+#pragma warning restore VSTHRD010
+            }
+            catch (Exception)
+            {
+                // Logging itself must never throw into caller code; there is nowhere further to
+                // report a failure of the logger.
+            }
+        }
+
+        private sealed class OutputPaneTraceListener : TraceListener
+        {
+            public override void Write(string? message)
+            {
+                if (message != null)
+                {
+                    WriteLine(message);
+                }
+            }
+
+            public override void WriteLine(string? message)
+            {
+                if (message != null)
+                {
+                    KubunoLog.WriteLine(message);
+                }
+            }
+        }
+    }
+}
