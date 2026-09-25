@@ -428,3 +428,114 @@ already exist by the time this runs, its creation (§3). §6's exe-path resoluti
 own new `ToolWindowPane` subclasses and MEF-imported buffer/undo-history bridge, and §9's new
 `OutlineToolWindow` are new files this step adds - most naturally to this library, per their own
 suggestion - not edits to anything already here.
+
+## 10. Designer integration — open issues (VSIX integration step, live testing)
+
+The VSIX-side wiring above (§1, §3, §4, §6, §7, §8, §9) is implemented, committed, and builds with
+0 warnings (Debug and Release). Live testing in the experimental instance found one **unresolved,
+severe** issue and fixed one registration issue; both are recorded here rather than left silent.
+
+### Confirmed working
+
+- **`KubunoPackage` loads cleanly** in the experimental instance (`ActivityLog.xml`: `Begin`/`End
+  package load [KubunoPackage]`, no error in between) - the pkgdef entries this package's
+  `[ProvideEditorFactory]`/`[ProvideToolWindow]`/`[ProvideOptionPage]` attributes emit are present
+  and well-formed (verified byte-for-byte in the deployed `Kubuno.VisualStudio.pkgdef`).
+- **`KbviewEditorFactory.MapLogicalView` IS invoked** by the shell for the Designer logical view
+  (`{7651a703-06e5-11d1-8ebd-00a0c90f26ea}`) - confirmed with a temporary file-write probe (since
+  removed) plus a real `IVsUIShellOpenDocument.OpenSpecificEditor` call (built as a standalone net48
+  probe exe referencing `envdte`/`Microsoft.VisualStudio.OLE.Interop`/`Microsoft.VisualStudio.Shell
+  .Interop`/`Microsoft.VisualStudio.Interop`, since `EnvDTE.ItemOperations.OpenFile(path, viewKind)`
+  turned out to be the WRONG API for this: when a document is already open, it just reactivates the
+  existing window without ever calling into a non-default editor factory - `OpenSpecificEditor` is
+  the API "Open With..." itself uses, and is what actually exercises the factory). This means editor
+  registration/discovery itself is correct - the `.kbview` → editor-factory → logical-view wiring is
+  not the problem.
+
+### Open issue: `CreateEditorInstance` crashes VS on a never-opened document
+
+**Reproduced twice, consistently.** Calling `IVsUIShellOpenDocument.OpenSpecificEditor` with this
+factory's GUID against a `.kbview` file that has **never been opened in this VS session** (so
+`CreateEditorInstance` must run the full `CreateTextBuffer` → `new DesignerWindowPane(...)` path, not
+just reuse an existing pane) makes `devenv.exe` **crash outright**: Windows Application event log
+records `Exception code: 0xc0000005` (access violation) in `msenv.dll` (VS's own core shell module,
+not a managed DLL - this is a native crash, not an unhandled .NET exception with a catchable stack
+trace). The same call against an **already-open** document (reusing an existing pane/doc data) does
+**not** crash and returns a working `IVsWindowFrame` with the right caption.
+
+**What is proven, precisely:**
+- `MapLogicalView` is entered and returns `S_OK` (confirmed via the temporary log probe before the
+  crash).
+- `CreateEditorInstance`'s own entry log line (written immediately after
+  `ThreadHelper.ThrowIfNotOnUIThread()`) was **never reached** in the crashing run - so either that
+  thread-affinity assertion itself throws in this specific call context, or the crash happens between
+  the shell deciding to call `CreateEditorInstance` and that first line executing.
+- The crash is a native access violation inside VS's own shell code, not inside a `Kubuno.*`
+  assembly by name (no `Kubuno` frame appears in the crash's module list) - consistent with a
+  **window/HWND-parenting problem** triggered by our pane construction rather than a plain managed
+  exception.
+
+**Caveat on the test method itself:** the crash was triggered by `OpenSpecificEditor` called from a
+**separate process** (the standalone probe exe) via cross-process COM, not by a genuine user click on
+"Open With..." inside `devenv.exe`'s own UI thread. `EnvDTE.Commands.ExecuteCommand("View.OpenWith")`
+could not be driven from outside the process ("command not available" - it needs real Win32 focus, not
+just `DTE.ActiveDocument`), so the fully-authentic UI path (right-click a tab → "Open With..." →
+select "Kubuno View Designer" → OK) was **not itself exercised** here. It remains possible - though
+not confirmed either way - that the crash is specific to the cross-process call context (e.g. some
+re-entrancy/message-pump assumption in `HwndHost`/`IVsCodeWindow` construction that a genuine
+in-process, UI-thread-originated call would not violate) rather than a bug that reproduces for a real
+user. **Do not assume it is safe merely because the cross-process trigger looks unusual** - the
+suspects below are real, plausible bugs regardless of how the pane construction was entered.
+
+**Suspects, in order of likelihood** (none of these were fixed here - this section is a handoff, not
+a diagnosis to closure):
+1. **`UI\CodeWindowHost.BuildWindowCore`** - creates `new VsCodeWindowClass()`, calls
+   `SetBuffer`/`SetSite`/`CreatePaneWindow(hwndParent.Handle, ...)` against the freshly-created
+   `IVsTextLines` from `KbviewEditorFactory.CreateTextBuffer`. If that buffer is not yet fully
+   initialized/sited (e.g. content-type/language-service detection, driven by the
+   `VsBufferDetectLangSid_guid` flag `CreateTextBuffer` sets, is asynchronous or not complete by the
+   time `CreatePaneWindow` runs), a native text-view construction reading uninitialized/inconsistent
+   buffer state is a classic source of an access violation this deep in `msenv.dll`. Also worth
+   checking: whether `hwndParent.Handle` is valid/non-zero at the point `BuildWindowCore` runs when
+   the pane is constructed via this call path (a `WindowPane`/WPF control not yet attached to a real
+   top-level HWND would make this a null/garbage parent).
+2. **`DesignSurface\RustDesignSurfaceHost`/`RustDesignSurfaceHostFactory`** - `DesignerSplitView`'s
+   constructor creates this (via `DesignSurfaceHostFactoryHost.Current`) and it spawns the
+   `kubuno-views-surface.exe` child process and creates a `WS_CHILD` native window under WPF's own
+   `HwndHost` container. The DSG-7 spike (docs/DESIGNER.md §7) proved this technique works for a
+   **top-level WPF window already shown**; it was never verified for a pane being constructed **during
+   shell-driven `CreateEditorInstance`**, before the owning `WindowPane`'s frame necessarily has a
+   realized top-level HWND yet.
+3. **`DesignSurfaceEditingCoordinator`'s constructor-time fire-and-forget** (`ThreadHelper
+   .JoinableTaskFactory.RunAsync(SetupSelectionSyncAsync)`) - runs synchronously-adjacent to pane
+   construction; unlikely to itself cause a *synchronous* access violation during
+   `CreateEditorInstance`, but worth ruling out if suspect 1/2 turn up clean.
+
+**Next steps for whoever picks this up:**
+1. First, cheaply rule the test-method caveat in or out: reproduce (or fail to reproduce) via a
+   genuine UI-driven "Open With..." click inside a real, focused `devenv.exe` window (not
+   cross-process automation) on a `.kbview` file never opened this session.
+2. If it still crashes: attach a debugger to `devenv.exe /rootsuffix Exp` *before* triggering the
+   open (Debug > Attach to Process, or launch `devenv` under the debugger directly) and get a real
+   managed+native mixed-mode stack for the access violation - far more conclusive than log-probing.
+3. Suspect 1 is the cheapest to test in isolation: temporarily stub `RustDesignSurfaceHostFactory`
+   out (force `DesignSurfaceHostFactoryHost.Current` back to `PlaceholderDesignSurfaceHostFactory
+   .Instance`) and retry the same never-opened-document open; if it still crashes, the design-surface
+   `HwndHost` (suspect 2) is exonerated and `CodeWindowHost` is the remaining suspect, and vice versa.
+4. Registration itself does not need further work (see "Confirmed working" above) - do not re-litigate
+   `[ProvideEditorFactory]`/pkgdef priorities without new evidence.
+
+### Fixed during this pass: View menu commands had no canonical name
+
+The Toolbox/Properties/Outline "show" commands were originally placed in their own group parented to
+`vsshlids.h`'s `IDG_VS_WNDO_OTRWNDWS1` ("View > Other Windows"). Live testing found that
+`EnvDTE.Commands.Item(guid, id)` returned an object for each of them, but with an **empty**
+`Name`/`LocalizedName` - unlike the pre-existing `Tools.KubunoDebugRustTestatCursor` command, which
+resolves correctly - and the coordinator's own direct visual check confirmed none of the three
+appeared under either "View" or "View > Other Windows" in the real menu. Root cause not fully
+isolated (possibly `IDG_VS_WNDO_OTRWNDWS1` not being the right merge point in this VS build, or
+needing a `<Menu>`/`<CommandPlacement>` this task did not add), but rather than keep guessing at an
+unverified menu location, the three commands were moved into the same, already-proven-working
+`KubunoToolsMenuGroup` (parented to `IDM_VS_MENU_TOOLS`) the Rust debug command already uses
+successfully. They now live under **Tools**, not **View > Other Windows** - update
+`docs/DESIGNER.md`/any user-facing docs that assume the latter location.

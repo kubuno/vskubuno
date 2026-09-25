@@ -6,7 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Known issues
+
+- **`Kubuno.VisualStudio.Designer`'s editor factory crashes `devenv.exe` when opening a `.kbview`
+  file that was never opened in the current session** through `IVsUIShellOpenDocument
+  .OpenSpecificEditor` (the API "Open With..." itself uses): Windows records an access violation
+  (`0xc0000005`) inside VS's own `msenv.dll`, not inside a `Kubuno.*` assembly. Reproduced twice via
+  a cross-process COM call (registration/discovery itself is confirmed correct - `MapLogicalView` is
+  reached, and the SAME call against an already-open document does not crash); not yet confirmed via
+  a genuine, in-process "Open With..." click. See `src/Kubuno.VisualStudio.Designer/INTEGRATION.md`
+  §10 for the full repro, the suspects (`UI\CodeWindowHost.BuildWindowCore`,
+  `DesignSurface\RustDesignSurfaceHost`), and next steps. `.kbview` files continue to open normally
+  in the plain text editor (the double-click default is unaffected).
+
 ### Fixed
+
+- **View menu commands moved to the Tools menu.** "Kubuno Toolbox"/"Kubuno Properties"/"Kubuno View
+  Outline" were originally placed under View > Other Windows
+  (`vsshlids.h`'s `IDG_VS_WNDO_OTRWNDWS1`); live testing found they never got a resolved canonical
+  command name there and did not appear in the real menu (confirmed by direct visual check), unlike
+  the pre-existing Tools > Kubuno: Debug Rust Test at Cursor command. Moved into that same,
+  already-working `KubunoToolsMenuGroup` (Tools menu) instead - see
+  `src/Kubuno.VisualStudio.Designer/INTEGRATION.md` §10 for the detail.
 
 - The design surface's stdin could silently lose the FIRST protocol line ever sent to a
   freshly-launched process (typically `setText`, leaving the surface with no document loaded) -

@@ -19,14 +19,6 @@
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
       </Group>
-      <!--
-        Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: the Toolbox/Properties tool windows'
-        show commands, under View > Other Windows (the standard location a VSSDK tool window
-        template puts its own show command - see vsshlids.h's IDG_VS_WNDO_OTRWNDWS1).
-      -->
-      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoViewMenuGroup" priority="0x0600">
-        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
-      </Group>
     </Groups>
 
     <Buttons>
@@ -40,7 +32,7 @@
         </Strings>
       </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowKubunoToolbox" priority="0x0100" type="Button">
-        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoViewMenuGroup" />
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Icon guid="ImageCatalogGuid" id="ToolWindow" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
@@ -48,7 +40,7 @@
         </Strings>
       </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowKubunoProperties" priority="0x0101" type="Button">
-        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoViewMenuGroup" />
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Icon guid="ImageCatalogGuid" id="ToolWindow" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
@@ -56,7 +48,7 @@
         </Strings>
       </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowKubunoOutline" priority="0x0102" type="Button">
-        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoViewMenuGroup" />
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Icon guid="ImageCatalogGuid" id="ToolWindow" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
@@ -72,7 +64,6 @@
     <GuidSymbol name="guidKubunoCommandsPackageCmdSet" value="{5A67B8C7-E9FD-4917-B844-F103C0485DE1}">
       <IDSymbol name="KubunoToolsMenuGroup" value="0x1020" />
       <IDSymbol name="cmdidDebugRustTestAtCursor" value="0x0100" />
-      <IDSymbol name="KubunoViewMenuGroup" value="0x1030" />
       <IDSymbol name="cmdidShowKubunoToolbox" value="0x0101" />
       <IDSymbol name="cmdidShowKubunoProperties" value="0x0102" />
       <IDSymbol name="cmdidShowKubunoOutline" value="0x0103" />
