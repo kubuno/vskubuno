@@ -8,6 +8,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **DSG-8: bidirectional selection sync + Document Outline** (`Kubuno.VisualStudio.Designer`,
+  `vskubuno/docs/DESIGNER.md` §6/§8/§9): new `Selection/` and `Outline/` folders.
+  - `Selection.SelectionSyncService` keeps the design surface, the XML text view and the (optional)
+    Document Outline showing the same selected element, whichever originated the change: a surface
+    click (`IDesignSurfaceHost.SelectionChanged`) resolves the element's full range via
+    `kubuno/rangeOfElement` and selects it in the XML view (whole element, caret at its start); a
+    caret move in the XML view (polled every ~150 ms - the legacy `IVsTextView` this library already
+    standardises on has no caret-changed event) resolves the element via `kubuno/elementAtOffset`
+    and pushes `select {id}` to the surface; an Outline click does the same through the new
+    `SelectFromOutlineAsync`. Each origin never gets echoed back to itself (a per-origin skip plus a
+    synchronous re-entrancy guard). The Properties panel follows every selection change, fed from a
+    new `Selection.ElementAttributeReader` - a pure, hand-rolled reader over the CURRENT buffer text
+    (no LS round trip; `kubuno-views-ls` has no `kubuno/elementAttributes` method today, and reading
+    the buffer directly keeps this on the selection-change hot path) using the same stable element-id
+    scheme as `kubuno_views::ast::Element::stable_id`/`Document::resolve_id` - deliberately NOT
+    `System.Xml.Linq` (checked against `kubuno-views`' own corpus: `x:Name`/`x:Class` are flat
+    identifiers, not real XML-namespaced names resolved against a declared `xmlns:x`, which
+    `XDocument` would reject).
+  - New `Selection.IViewsSelectionLanguageServerClient` (real impl
+    `Selection.Infrastructure.JsonRpcViewsSelectionLanguageServerClient`) calls
+    `kubuno/elementAtOffset`/`kubuno/rangeOfElement`/the standard `textDocument/documentSymbol` over
+    the same `JsonRpc` object `Handlers.Infrastructure.JsonRpcKubunoViewsLanguageServerClient`
+    already uses for `kubuno/createHandler`.
+  - New `Outline.OutlineViewModel`/`OutlineNodeViewModel`/`OutlineView` (a plain `TreeView`, no
+    `.xaml`) and `Outline.DocumentSymbolTreeBuilder`, which maps a `textDocument/documentSymbol`
+    response onto stable element ids purely from each node's ordinal position in the tree - no extra
+    round trip, since `kubuno-views-ls`'s `symbols.rs` already walks `Element::children()` in the
+    same order `stable_id` itself indexes by.
+  - Every VS-dependent piece (`Selection.Infrastructure.VsTextViewSelectionAdapter` wrapping
+    `IVsTextView`, `Selection.Infrastructure.DesignSurfaceSelectionTarget` wrapping
+    `RustDesignSurfaceHost.Select`, the JsonRpc client above) sits behind a small, unit-testable
+    interface (`ITextViewSelectionAdapter`, `IDesignSurfaceSelectionTarget`,
+    `IViewsSelectionLanguageServerClient`); `SelectionSyncService`/`ElementAttributeReader`/
+    `DocumentSymbolTreeBuilder`/`OutlineViewModel`/`StableElementId`/`SelectionResponseParser` are
+    all covered by `tests/Kubuno.VisualStudio.Designer.Tests/Selection/` and `.../Outline/` with no
+    live VS/JsonRpc/design-surface process needed. Wiring into the VSIX (constructing the service
+    once a `.kbview` designer pane opens, resolving a real `ITextView`/`ComponentRegistry`/`JsonRpc`
+    for it) is left to the integration step - see `Kubuno.VisualStudio.Designer/INTEGRATION.md`'s new
+    "Selection sync & Outline" section.
+  - Flagged (not fixed - out of this change's scope, `Properties/` gets no logic changes):
+    `Registry.EventMeta.Name`/`Properties.EventRowViewModel.AttributeName` disagree with the real
+    DSG-1 registry export (`events[].name` is already the full attribute name, e.g. `"OnClick"`, not
+    a bare `"Click"` `"On" + Name` would need) - verified directly against
+    `tests/Kubuno.VisualStudio.Designer.Tests/Fixtures/registry.sample.json`.
+
 - **Design surface DSG-6 protocol** (`Kubuno.VisualStudio.Designer`): `RustDesignSurfaceHost` now
   speaks the DSG-6 line-delimited JSON protocol (`vskubuno/docs/DESIGNER.md` §9) with the design
   surface exe over its own stdin/stdout (`ProcessStartInfo.RedirectStandardInput`/

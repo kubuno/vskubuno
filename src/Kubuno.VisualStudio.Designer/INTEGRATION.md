@@ -342,11 +342,89 @@ reach it:
    .CreateHandlerRequested`, and whatever DSG-9 adds for drag/drop) plus the buffer-apply pipeline
    itself, not a Rust-computed-edit → buffer-write path wired end to end.
 
+## 9. Selection sync & Outline (DSG-8)
+
+`Selection\SelectionSyncService` (docs/DESIGNER.md §6/§8/§9) is ready to construct today - it only
+needs five collaborators, all behind small interfaces this library already defines, plus the
+`Outline\` tool-window content. Nothing here is VSIX-specific by itself, but every real collaborator
+still needs a live VS/JsonRpc object only the VSIX integration step can hand it:
+
+1. **`ITextViewSelectionAdapter` - `Selection.Infrastructure.VsTextViewSelectionAdapter`.** Needs a
+   real `IVsTextView` - exactly `UI.CodeWindowHost.PrimaryView` (that property's own doc: "Callers
+   (DSG-8's selection sync) must tolerate null here and re-query later"). Construct
+   `new VsTextViewSelectionAdapter(codeWindowHost.PrimaryView)` once `PrimaryView` is non-null (poll
+   or retry after `DesignerSplitView`/`CodeWindowHost` construction the same way §6/§8 above already
+   describe for other DSG-7/DSG-8 pieces needing a laid-out view); `Dispose()` it when the designer
+   pane closes (it owns a `DispatcherTimer` - see that class's own doc comment for why it polls
+   instead of subscribing to a real caret-changed event).
+2. **`IDesignSurfaceSelectionTarget` - `Selection.Infrastructure.DesignSurfaceSelectionTarget`.**
+   Needs the same `RustDesignSurfaceHost` instance `DesignerSplitView`/`DesignSurfaceEditingCoordinator`
+   already hold (constructed by `DesignSurfaceHostFactoryHost.Current`, §6 above) - the SAME object
+   also serves as the `IDesignSurfaceHost` argument below (it implements both roles; this library
+   just does not let `SelectionSyncService` assume that via a single interface - see
+   `IDesignSurfaceSelectionTarget`'s own doc comment for why).
+3. **`IViewsSelectionLanguageServerClient` - `Selection.Infrastructure.JsonRpcViewsSelectionLanguageServerClient`.**
+   Needs the same `StreamJsonRpc.JsonRpc` object §7 point 2/§8 point 2 above already get from
+   `KubunoViewsLanguageClient.AttachForCustomMessageAsync` - construct one instance per open
+   `.kbview` document (or share one across documents; the interface takes a `documentUri` per call,
+   so either works) the same way `Handlers.Infrastructure.JsonRpcKubunoViewsLanguageServerClient` is
+   already constructed for DSG-10.
+4. **`Registry.ComponentRegistry`** - the same live registry §7 point 2 above already gets from
+   `kubuno/registry`, cached for the language client's session.
+5. **`Properties.PropertiesPanelViewModel`** - the same instance the Properties tool window (§7
+   above) already shows; `SelectionSyncService` drives its `SetSelection`/`ClearSelection` directly,
+   so no separate wiring is needed for the Properties panel to follow the selection once the service
+   itself is constructed.
+6. **`IOutlineSelectionTarget` (optional)** - a new `Outline.OutlineViewModel` instance, most
+   naturally owned by a new `OutlineToolWindow : ToolWindowPane` (the same shape §7 point 1 above
+   already asks for the Toolbox/Properties tool windows - add
+   `DesignerConstants.OutlineToolWindowGuidString` alongside the other two GUIDs, and a
+   "Tools > Other Windows > Kubuno View Outline" command). Populate it from
+   `DocumentSymbolTreeBuilder.Build(await client.DocumentSymbolAsync(documentUri, ct))` once when the
+   pane opens, and again on every debounced buffer change (the same `ITextBuffer.Changed`
+   subscription `DesignSurfaceEditingCoordinator`'s own 200 ms debounce, §6 above, already
+   demonstrates the shape of - reuse that cadence rather than inventing a second one). Subscribe
+   `outlineViewModel.NodeActivated += (_, id) => _ = selectionSyncService.SelectFromOutlineAsync(id);`
+   to close the loop. Construct `SelectionSyncService` with this view-model as its last
+   (`outline`) constructor argument; omit it (`null`, the default) if the Outline tool window is not
+   open/available for a given pane - `SelectionSyncService` tolerates that (`_outline?.Select(...)`).
+
+Putting it together, once a `.kbview` `DesignerWindowPane` has a laid-out `CodeWindowHost.PrimaryView`
+and a live `JsonRpc`:
+
+```csharp
+var textView = new VsTextViewSelectionAdapter(codeWindowHost.PrimaryView);
+var surfaceTarget = new DesignSurfaceSelectionTarget(rustDesignSurfaceHost);
+var client = new JsonRpcViewsSelectionLanguageServerClient(rpc);
+var service = new SelectionSyncService(
+    rustDesignSurfaceHost, surfaceTarget, textView, client, componentRegistry,
+    propertiesPanelViewModel, documentUri, outlineViewModel);
+// service.Dispose() (and textView.Dispose()) when the pane closes.
+```
+
+**Not wired by this package** (left for whoever owns the surrounding piece, same as every other
+"later step" this document already calls out): continuously refreshing the Outline tree on every
+buffer edit (point 6 above - `DesignSurfaceEditingCoordinator`'s existing debounce is the natural
+place to also call `DocumentSymbolAsync` again and `outlineViewModel.Load(...)` the result, since it
+already owns an `ITextBuffer.Changed` subscription for the SAME document); the Events tab's
+"available handler names" dropdown (`PropertiesPanelViewModel.SetSelection`'s `availableHandlerNames`
+parameter - `SelectionSyncService.ApplyPropertiesPanel` always passes `Array.Empty<string>()` today;
+`definition.rs`'s existing handler-location lookup would need a new LS method to enumerate names,
+which does not exist yet, docs/DESIGNER.md §1's own "already found via the language server (see §3)"
+phrasing not withstanding). Also flagged, not fixed here (`Properties/` gets no logic changes from
+this package): `Registry.EventMeta.Name`/`Properties.EventRowViewModel.AttributeName`'s `"On" + Name`
+computation disagrees with the real DSG-1 registry export, where `events[].name` is ALREADY the full
+attribute name (e.g. `"OnClick"`) - verified against `tests/Kubuno.VisualStudio.Designer.Tests/Fixtures/registry.sample.json`.
+`SelectionSyncService.ApplyPropertiesPanel` itself already uses the correct (verified) convention, so
+this only affects `EventRowViewModel.AttributeName`'s own (separately) displayed value, not anything
+this package produces.
+
 ## What NOT to change on this library's side
 
 Everything under `src/Kubuno.VisualStudio.Designer/` and `tests/Kubuno.VisualStudio.Designer.Tests/`
 is otherwise ready to reference as-is: no source file here needs editing to complete the integration,
-only the VSIX-side wiring above (§1, §3, §4, §6, §7, §8) and, if a `VSPackage.resx` does not already
-exist by the time this runs, its creation (§3). §6's exe-path resolution (point 1), §7/§8's own new
-`ToolWindowPane` subclasses and MEF-imported buffer/undo-history bridge are new files this step adds -
-most naturally to this library, per their own suggestion - not edits to anything already here.
+only the VSIX-side wiring above (§1, §3, §4, §6, §7, §8, §9) and, if a `VSPackage.resx` does not
+already exist by the time this runs, its creation (§3). §6's exe-path resolution (point 1), §7/§8's
+own new `ToolWindowPane` subclasses and MEF-imported buffer/undo-history bridge, and §9's new
+`OutlineToolWindow` are new files this step adds - most naturally to this library, per their own
+suggestion - not edits to anything already here.

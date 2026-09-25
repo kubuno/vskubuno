@@ -8,6 +8,13 @@
     <RootNamespace>Kubuno.VisualStudio.Designer.Tests</RootNamespace>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <!--
+      Selection/Fakes/FakeDesignSurfaceHost.cs (IDesignSurfaceHost's own Content : FrameworkElement)
+      needs WPF - a plain net48 SDK-style project does not reference PresentationCore/
+      PresentationFramework/WindowsBase by default the way the old-style VSIX/Designer library
+      projects do (see their own csproj <Reference> items); UseWPF is the SDK-style equivalent.
+    -->
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
