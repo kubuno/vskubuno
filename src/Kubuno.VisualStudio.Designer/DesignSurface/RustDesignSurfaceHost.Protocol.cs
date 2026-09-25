@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Kubuno.VisualStudio.Views.Logging;
@@ -60,6 +61,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// <see cref="BeginProtocolIo"/> (on restart) resends the pane's last known state (see that
         /// method's own doc), so nothing is permanently lost.
         /// </summary>
+        /// <summary>UTF-8, no byte-order mark - see <see cref="SendLine"/>'s own doc for why the write goes through this instead of <see cref="Process.StandardInput"/>'s own <see cref="System.IO.StreamWriter"/> directly.</summary>
+        private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
         private void SendLine(string json)
         {
             var proc = _surface;
@@ -70,8 +74,20 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
             try
             {
-                proc.StandardInput.WriteLine(json);
-                proc.StandardInput.Flush();
+                // Writes raw bytes to the UNDERLYING stream, bypassing `Process.StandardInput`'s own
+                // auto-created `StreamWriter` - `ProcessStartInfo.StandardInputEncoding` does not exist on
+                // .NET Framework 4.8 (added only in .NET Core 3.0+/.NET 5, confirmed live: `CS0117` on a
+                // build attempt), so it cannot be set the way `StandardOutputEncoding` (below, and on
+                // `LaunchSurface`'s own `ProcessStartInfo`) is. Without this, that auto-created
+                // `StreamWriter`'s default encoding prepended a UTF-8 BOM to the FIRST write on the stream
+                // only - confirmed live during DSG-9's own visual check, the surface's `parse_host_message`
+                // silently dropping the very first `setText`/`setDesignMode` a freshly launched surface
+                // ever received as an unrecognised line prefixed with a U+FEFF byte-order mark, so it
+                // never even loaded a document. Writing bytes directly here has no such preamble, on
+                // the first write or any other.
+                var bytes = Utf8NoBom.GetBytes(json + "\n");
+                proc.StandardInput.BaseStream.Write(bytes, 0, bytes.Length);
+                proc.StandardInput.BaseStream.Flush();
             }
             catch (Exception ex) when (ex is IOException or ObjectDisposedException or InvalidOperationException)
             {

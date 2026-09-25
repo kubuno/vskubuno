@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Kubuno.VisualStudio.Designer.DesignSurface;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -259,6 +261,37 @@ namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
             var args = new DesignSurfaceEditRequestsReceivedEventArgs(ops, DesignSurfaceGesture.Resize);
             Assert.AreSame(ops, args.Ops);
             Assert.AreEqual(DesignSurfaceGesture.Resize, args.Gesture);
+        }
+
+        // ── BOM regression (DSG-9 visual check finding) ─────────────────
+
+        /// <summary>
+        /// A live DSG-9 visual check found that the FIRST line ever written to a freshly-launched
+        /// surface's stdin arrived on the Rust side prefixed with a U+FEFF UTF-8 byte-order mark -
+        /// some <see cref="StreamWriter"/> configurations emit that preamble on their very first write only.
+        /// <see cref="RustDesignSurfaceHost"/>'s own <c>LaunchSurface</c> now sets
+        /// <c>StandardInputEncoding</c>/<c>StandardOutputEncoding</c> to
+        /// <c>new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)</c> explicitly (that fix lives in
+        /// <c>RustDesignSurfaceHost.cs</c>, not this file) - this test pins the encoding CONFIGURATION
+        /// itself (the exact constructor call used there), so a future edit that drops the `false` (or
+        /// reverts to the platform default) fails a test instead of silently reintroducing the bug.
+        /// `kubuno_views::protocol::parse_host_message` also strips a leading BOM defensively (Rust-side
+        /// test: `parse_host_message_strips_a_leading_byte_order_mark`), but this is the check that the
+        /// BOM is not produced in the first place.
+        /// </summary>
+        [TestMethod]
+        public void Utf8NoBomEncoding_TheFirstWriteOnAFreshStreamHasNoBomPreamble()
+        {
+            using var stream = new MemoryStream();
+            using (var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), 1024, leaveOpen: true))
+            {
+                writer.WriteLine(DesignSurfaceProtocol.EncodeSetDesignMode(true));
+                writer.Flush();
+            }
+
+            var bytes = stream.ToArray();
+            Assert.IsTrue(bytes.Length >= 3, "expected at least the 3 BOM bytes' worth of output");
+            Assert.IsFalse(bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF, "the first write must not carry a UTF-8 BOM preamble");
         }
     }
 }

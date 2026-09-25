@@ -1094,18 +1094,54 @@ its one `SingleWidget` child, the `<Stack>`), walking the pointer down into
 the `<Stack>` correctly reports `valid:true` with an increasing Flow
 insertion `index` and a moving marker, and the final `drop` emits exactly
 `{"kind":"insertChild","parentId":"0","index":3,"xml":"<Button/>"}` — the
-example traffic block above is taken directly from that run. One
-methodology note from that same session, **not a DSG-9 bug**: piping raw
-JSON lines into the exe's stdin from a fresh `System.Diagnostics.Process`
-loses the FIRST line whenever the underlying `.NET` `StreamWriter` happens to
-prepend a UTF-8 BOM to it (confirmed byte-for-byte: the line arrives on the
-Rust side as `\u{feff}{...}`, which `str::trim()` does not strip — BOM lost
-its Unicode `White_Space` property in Unicode 6.3 — so `parse_host_message`
-correctly, silently ignores it, same as any other malformed line). Working
-around it (a throwaway first line) was enough to unblock this package's own
-manual trace, but `RustDesignSurfaceHost.cs`'s own `ProcessStartInfo` (§7)
-does not set `StandardInputEncoding` either — whether the FIRST real
-`kubuno/setText`/`kubuno/setDesignMode` a freshly-launched production surface
-ever receives is silently dropped the same way is worth a follow-up check by
-whichever package next touches that file's `LaunchSurface` (out of DSG-9's
-own scope: that file is off-limits here).
+example traffic block above is taken directly from that run.
+
+### First-write BOM (found and fixed during this package's own visual check)
+
+The first manual trace above surfaced a real bug, not a DSG-9 one but one
+that blocked DSG-9's own visual check outright: the FIRST line ever written
+to a freshly-launched surface's stdin arrived on the Rust side as
+`\u{feff}{...}` — a UTF-8 byte-order mark `str::trim()` does not strip (BOM
+lost its Unicode `White_Space` property in Unicode 6.3), so
+`parse_host_message` correctly, silently ignored it, same as any other
+malformed line — except this "malformed line" was the surface's own
+`setText`, so it never loaded a document and every later gesture (including
+DSG-9's own toolbox drop) had nothing to hit-test against. Traced to
+`RustDesignSurfaceHost.cs`'s own `LaunchSurface` (§7): its `ProcessStartInfo`
+never set an input encoding, so `Process.StandardInput`'s auto-created
+`StreamWriter` used whatever `.NET` picks by default, which — on this
+machine, confirmed live — emits a UTF-8 BOM preamble on the stream's very
+FIRST write only.
+
+Fixed two ways, belt and braces, with the visual-check orchestrator's
+explicit authorisation to touch `RustDesignSurfaceHost.cs`/`.Protocol.cs` for
+this specific bug (both otherwise off-limits to this package):
+
+- **The real fix, at the write site.** `ProcessStartInfo.StandardInputEncoding`
+  does not exist on .NET Framework 4.8 at all (confirmed live: `CS0117` on a
+  build attempt — that property was only added in .NET Core 3.0+), so it
+  cannot be set the way `StandardOutputEncoding` (which DOES exist on net48,
+  and is now also set explicitly, symmetrically) can. `RustDesignSurfaceHost
+  .Protocol.cs`'s `SendLine` now writes UTF-8-without-BOM bytes directly to
+  `Process.StandardInput.BaseStream` instead of calling `StreamWriter
+  .WriteLine` — bypassing the auto-created writer's preamble logic entirely,
+  on the first write and every other one.
+- **Defence in depth, on the Rust side.** `kubuno_views::protocol
+  ::parse_host_message` now strips a leading `\u{feff}` before parsing, so a
+  BOM arriving from ANY host (not just this one, and not just on the first
+  line) is silently tolerated rather than silently dropped as an
+  unrecognised line.
+
+`Kubuno.VisualStudio.Designer.Tests/DesignSurface
+/RustDesignSurfaceHostDragDropTests.cs` gained a regression test pinning the
+exact `UTF8Encoding(encoderShouldEmitUTF8Identifier: false)` construction
+used at the write site (the encoding CONFIGURATION, not a live process) so a
+future edit that drops the `false` fails a test instead of silently
+reintroducing the bug; `kubuno-views/src/protocol.rs` gained two tests for
+the BOM-stripping itself (with and without surrounding whitespace). Re-run
+after the fix, the SAME live trace (this time through the real
+`HwndHostSpike.exe` → `RustDesignSurfaceHost` → `view_embed.exe` path, not a
+raw manual pipe) showed `setText`/`setDesignMode` both succeeding on the
+surface's very first two writes, the probe line's `design=` field turning
+`true`, and the full toolbox-drop pipeline (`dragEnter`/`dragOver`/
+`dropTargetChanged`/`drop`/`DragDropEditRequested`) working end to end.

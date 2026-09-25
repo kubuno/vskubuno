@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -263,6 +264,13 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 // `selectionChanged`/`editRequest` in) - stderr stays the plain trace channel above.
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
+                // Explicit UTF-8 WITHOUT a BOM preamble - left unset, .NET's default `StreamWriter`/
+                // `StreamReader` preamble handling silently corrupted the FIRST line ever written to a
+                // freshly-launched surface's stdin (confirmed live, DSG-9's own visual check: the Rust
+                // side's `parse_host_message` correctly, silently dropped a line arriving with a
+                // leading U+FEFF byte-order mark, so the surface never even loaded a document). Also
+                // set for stdout for the same reason, symmetrically, even though no BOM was observed there.
+                StandardOutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
                 CreateNoWindow = true,
                 WorkingDirectory = dir,
             };

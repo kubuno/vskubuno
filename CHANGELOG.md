@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The design surface's stdin could silently lose the FIRST protocol line ever sent to a
+  freshly-launched process (typically `setText`, leaving the surface with no document loaded) -
+  some `.NET` `StreamWriter` configurations emit a UTF-8 byte-order mark on a stream's very first
+  write only, which the Rust side correctly (but unhelpfully) treated as an unrecognised line.
+  Found and fixed during DSG-9's own visual check. `ProcessStartInfo.StandardInputEncoding` does
+  not exist on .NET Framework 4.8 (only added in .NET Core 3.0+), so `RustDesignSurfaceHost
+  .Protocol.cs`'s `SendLine` now writes UTF-8-without-BOM bytes directly to
+  `Process.StandardInput.BaseStream` instead of going through `StreamWriter.WriteLine`;
+  `RustDesignSurfaceHost.cs`'s own `ProcessStartInfo` now also sets `StandardOutputEncoding`
+  explicitly (that property DOES exist on net48), symmetrically. New regression test pinning the
+  encoding configuration (`RustDesignSurfaceHostDragDropTests.cs`).
+
 ### Added
 
 - **DSG-9: move/resize drag, Flow reorder and toolbox drop** (`docs/DESIGNER.md` §10): the design
