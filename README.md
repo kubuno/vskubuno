@@ -41,6 +41,44 @@ Kubuno.VisualStudio.sln
 - **rustfmt**: "Format Document" (`Edit.FormatDocument`) works through the LSP formatting request,
   which rust-analyzer delegates to rustfmt. An optional **"Format on save"** setting (off by
   default, Tools > Options > Kubuno > Rust) runs Format Document just before a `.rs` file is saved.
+- **Cargo workspace in Open Folder mode**: every `Cargo.toml` in an opened folder (or a subfolder)
+  exposes **Build**/**Rebuild**/**Clean**, both from its right-click menu (Solution Explorer/Folder
+  View) and from the **Build** menu when it is the active context. This uses VS's Open Folder
+  workspace extensibility (`Microsoft.VisualStudio.Workspace`'s `IFileContextProvider` /
+  `IFileContextActionProvider` - `src/Kubuno.VisualStudio/Workspace/`), not a declarative
+  `tasks.vs.json`: the goal is clickable, structured diagnostics (file/line/column, severity,
+  code, project), which needs `cargo build/clean --message-format=json-diagnostic-rendered-ansi`
+  parsed by `Kubuno.Cargo` - a static task file's generic output-window error matching can't do
+  that. `cargo` runs through `Kubuno.Cargo`'s `CargoCommand`/`ProcessRunner`/`CargoMessageParser`.
+  Diagnostics become clickable **Error List** entries through Open Folder's own
+  `IBuildMessageService` (any `BuildMessage.TaskType` other than `None`); the full rustc-rendered
+  text (source snippet, carets, notes) is written straight to the **Build** Output pane via
+  `IVsOutputWindowPane.OutputStringThreadSafe` rather than through `IBuildMessageService` too -
+  verified live that sending it as a second `BuildMessage` instead reproducibly crashed devenv
+  (see `Workspace/CargoBuildMessageReporter.cs` and the CHANGELOG for the full story).
+- **Launch and debug**: every `bin` and `example` target reported by `cargo metadata` appears in
+  the **Select Startup Item** dropdown. This is driven by a `.vs\launch.vs.json` the extension
+  generates - on Open Folder workspace open, and after every successful Build/Rebuild
+  (`src/Kubuno.VisualStudio/Debugging/RustLaunchTargetsGenerator.cs`, built on `Kubuno.Launch`'s
+  `LaunchDescriptionBuilder`/`LaunchVsJsonWriter`) - rather than a live
+  `ILaunchDebugTargetProvider`/`IVsDebugLaunchTargetProvider` MEF component: those interfaces
+  exist but are undocumented beyond their member names and version-fragmented (5 and 3 versions
+  respectively), so implementing against them with no way to compile-check intermediate
+  assumptions (unlike `IFileContextProvider`, whose shape could be verified against the real
+  assemblies before writing the real implementation - see the design-choices note in
+  `RustLaunchTargetsGenerator.cs`) was judged too high-risk. A generated `launch.vs.json`'s
+  `"type": "default"` configurations are handled entirely by Visual Studio's own native (MSVC/PDB)
+  debug engine once written, so F5/Ctrl+F5 and breakpoints in `.rs` files work with **no further
+  launch code from this extension** - the one thing this route does not give is an automatic
+  "build before F5" hook (see Known limitations below).
+- **"Kubuno: Debug Rust Test at Cursor"** (Tools menu): with the caret in or just before a
+  `#[test]` function in the active `.rs` file, builds that test's binary
+  (`cargo test --no-run --message-format=json`) and launches it under the native debugger with
+  `<name> --exact --nocapture --test-threads=1`, via `IVsDebugger4.LaunchDebugTargets4`
+  (`src/Kubuno.VisualStudio/Debugging/NativeDebugLauncher.cs`). The enclosing test's fully
+  qualified name (module path + function name) is found by
+  `Kubuno.VisualStudio.Core.RustTestLocator`, a small brace/string/comment-aware text scanner -
+  no semantic model or rust-analyzer round-trip needed.
 
 ### Options (Tools > Options > Kubuno > Rust)
 
@@ -136,12 +174,25 @@ Code's built-in Rust extension (itself sourced from `dustypomerleau/rust-syntax`
 licensed. See `Grammars/THIRD-PARTY-NOTICES.md` for the full attribution and the (single, cosmetic)
 change made to the vendored copy.
 
-## Known limitations (phase 1a)
+## Known limitations
 
-- No Cargo workspace integration yet (targets from `cargo metadata`, Build/Clean/Rebuild, Error
-  List) - that is phase 1b. Opening a folder works and rust-analyzer starts against the nearest
-  `Cargo.toml`, but there is no "Select Startup Item" content specific to Cargo targets yet.
-- No Rust debugging integration yet - phase 1c.
+- **No automatic "build before F5"**: a `launch.vs.json` `"type": "default"` configuration (what
+  the Select Startup Item dropdown is built from) has no documented pre-launch build hook, unlike
+  VS Code's `preLaunchTask`. Build (or Rebuild) explicitly first - the same workflow VS's own
+  CMake/Makefile Open Folder support expects for a custom build system.
+- **Select Startup Item only lists `bin`/`example` targets**, not test binaries: a test binary's
+  name is hash-suffixed and only known after `cargo test --no-run` runs, so it can't be listed
+  ahead of time the way `launch.vs.json` needs. Use "Kubuno: Debug Rust Test at Cursor" instead.
+- `.vs\launch.vs.json` is regenerated on workspace open and after a successful Build/Rebuild, not
+  on every `Cargo.toml`/source-file edit; if a target's name or kind changes without a build in
+  between (e.g. editing `Cargo.toml` by hand), rerun Build (or Rebuild) to refresh it.
+- The debugger's expression evaluator speaks C++, not Rust (see `docs/ARCHITECTURE.md`'s "Known
+  limits"): natvis views of `std` types work - the toolchain's own `.natvis` files (discovered via
+  `Kubuno.Launch.RustToolchain.FindNatvisFiles`) are installed to the per-user Natvis directory
+  (`%USERPROFILE%\Documents\Visual Studio 2022\Visualizers`, `Debugging/NatvisInstaller.cs`; VS's
+  own auto-discovery mechanism for it - see the doc comment there for why PDB embedding and a
+  VSIX asset were both ruled out) - but Rust expressions (method calls, trait dispatch) in the
+  Watch window do not.
 - Visual Studio's built-in LSP client does not let an `ILanguageClient` override the `initialize`
   request's `rootUri`; the workspace root is instead passed as the spawned rust-analyzer process's
   working directory (which rust-analyzer falls back to when `rootUri` is absent), combined with

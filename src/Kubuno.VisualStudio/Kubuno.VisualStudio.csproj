@@ -60,12 +60,24 @@
     <Compile Include="Infrastructure\RealRustAnalyzerEnvironment.cs" />
     <Compile Include="Infrastructure\RustAnalyzerMissingInfoBar.cs" />
     <Compile Include="Infrastructure\FormatOnSaveDocumentEvents.cs" />
+    <Compile Include="Workspace\CargoBuildFileContext.cs" />
+    <Compile Include="Workspace\CargoBuildFileContextAction.cs" />
+    <Compile Include="Workspace\CargoBuildMessageReporter.cs" />
+    <Compile Include="Debugging\RustLaunchTargetsGenerator.cs" />
+    <Compile Include="Debugging\NatvisInstaller.cs" />
+    <Compile Include="Debugging\NativeDebugLauncher.cs" />
+    <Compile Include="Debugging\DebugRustTestAtCursorCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="source.extension.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <VSCTCompile Include="KubunoCommands.vsct">
+      <ResourceName>Menus.ctmenu</ResourceName>
+    </VSCTCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
@@ -99,6 +111,54 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <!--
+      Kubuno.Cargo (netstandard2.0) depends on System.Text.Json 8.0.5, which - unlike
+      Newtonsoft.Json - .NET Framework 4.8 does not ship, plus its own netstandard2.0 polyfill
+      closure. These resolve and copy-local correctly into bin\Debug (proving the reference
+      itself is fine), but - unlike a project's own direct <Reference>/<ProjectReference> output -
+      VSSDK's VSIX-packaging step was verified (by inspecting the built .vsix's zip contents) to
+      silently drop them when only pulled in transitively; a <Target> computing them from
+      @(ReferenceCopyLocalPaths) after ResolveReferences was tried and confirmed present in that
+      item group, but still ran too late for whatever earlier target VSSDK uses to decide VSIX
+      membership. Explicit, statically-declared Content items (the same mechanism already used
+      for languages.pkgdef/the grammar files above) are what actually works. $(NuGetPackageRoot)
+      is set by the auto-imported *.nuget.g.props before this ItemGroup is evaluated, so no
+      absolute machine path is hard-coded - only the package versions are (System.Text.Json's own
+      pin above, and its dependencies' versions as resolved into obj\project.assets.json; bump
+      these together if System.Text.Json's version ever changes).
+    -->
+    <Content Include="$(NuGetPackageRoot)system.text.json\8.0.5\lib\net462\System.Text.Json.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>System.Text.Json.dll</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)system.buffers\4.6.0\lib\net462\System.Buffers.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>System.Buffers.dll</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)system.memory\4.6.0\lib\net462\System.Memory.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>System.Memory.dll</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)system.numerics.vectors\4.6.0\lib\net462\System.Numerics.Vectors.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>System.Numerics.Vectors.dll</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)system.runtime.compilerservices.unsafe\6.1.0\lib\net462\System.Runtime.CompilerServices.Unsafe.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>System.Runtime.CompilerServices.Unsafe.dll</Link>
+    </Content>
+    <Content Include="$(NuGetPackageRoot)system.threading.tasks.extensions\4.6.0\lib\net462\System.Threading.Tasks.Extensions.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>System.Threading.Tasks.Extensions.dll</Link>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Design" />
@@ -106,6 +166,25 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
+    <!--
+      Not published on NuGet: this assembly ships only inside the Visual Studio installation
+      itself (CommonExtensions\Microsoft\OpenFolder), unlike the rest of the Open Folder
+      workspace API (Microsoft.VisualStudio.Workspace(.Extensions), restored from NuGet below).
+      It carries IVsCommandItem, which a build/rebuild/clean IFileContextAction implements to
+      bind itself to VS's well-known Build/Rebuild/Clean command IDs (see
+      Workspace\CargoBuildFileContextAction.cs). Private=False and SuppressFromVsix (below):
+      resolved against the *running* VS's own copy at both compile and run time, never copied
+      into the VSIX - the version here only needs to satisfy the compiler.
+    -->
+    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
+      <!--
+        $(VsInstallRoot) (defined by Microsoft.VsSDK.targets, imported below) rather than
+        $(DevEnvDir): the latter is only set when MSBuild is itself launched from inside
+        devenv.exe, which is not the case for a plain command-line build (see README).
+      -->
+      <HintPath>$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\OpenFolder\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
@@ -115,16 +194,50 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.14.60" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="17.12.19" ExcludeAssets="runtime" />
+    <!--
+      Kubuno.Cargo (netstandard2.0) hard-depends on System.Text.Json 8.0.5, which - unlike
+      Newtonsoft.Json - .NET Framework 4.8 does not ship: referencing it directly here (rather
+      than relying on it flowing transitively from the Kubuno.Cargo ProjectReference below) is
+      what makes NuGet's own version-unification keep a runtime copy of it, and its netstandard2.0
+      polyfill closure (System.Buffers/System.Memory/System.Numerics.Vectors/
+      System.Runtime.CompilerServices.Unsafe/System.Threading.Tasks.Extensions/
+      System.Text.Encodings.Web), actually inside this VSIX - verified by inspecting the built
+      .vsix's zip contents (see the phase 1b/1c report).
+    -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.Extensions.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.Extensions.VS.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.dll" />
+    <SuppressFromVsix Include="Microsoft.VisualStudio.Debugger.Interop*.dll" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Kubuno.VisualStudio.Core\Kubuno.VisualStudio.Core.csproj">
       <Project>{F70EA62B-E3C4-4FF3-8DA4-176C2EEB6577}</Project>
       <Name>Kubuno.VisualStudio.Core</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!--
+      Kubuno.Cargo/Kubuno.Launch are netstandard2.0 (see their own csproj comments): referencing
+      them here, rather than only from the pure test projects, is what actually drives the Cargo
+      workspace integration (1b) and launch/debug (1c) at runtime. BuiltProjectOutputGroupDependencies
+      pulls their own dependency DLLs (notably System.Text.Json and its netstandard2.0 polyfill
+      set - System.Buffers/System.Memory/System.Numerics.Vectors/System.Runtime.CompilerServices.Unsafe/
+      System.Text.Encodings.Web/System.Threading.Tasks.Extensions - none of which net48 has built
+      in) into the VSIX alongside them, so they actually load in Visual Studio and not just at
+      `dotnet build` time.
+    -->
+    <ProjectReference Include="..\Kubuno.Cargo\Kubuno.Cargo.csproj">
+      <Project>{6A81CEC0-A903-4831-8F16-CF6D2A9F58BA}</Project>
+      <Name>Kubuno.Cargo</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\Kubuno.Launch\Kubuno.Launch.csproj">
+      <Project>{869D6510-4C5E-4840-B50D-9847B2B1AAE7}</Project>
+      <Name>Kubuno.Launch</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>

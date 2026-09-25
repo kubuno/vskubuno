@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <!--
+    Phase 1c: "Kubuno: Debug Rust Test at Cursor" (Debugging\DebugRustTestAtCursorCommand.cs).
+    Placed in the Tools menu, a fixed, low-risk location that avoids depending on undocumented
+    dynamic-visibility wiring for the .rs editor's own context menu - see the phase 1c report for
+    the fuller reasoning (same "prefer the documented route" principle as launch.vs.json over
+    ILaunchDebugTargetProvider). Its BeforeQueryStatus handler already enables/disables it based
+    on the active document being a .rs file.
+  -->
+
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+  <Include href="KnownImageIds.vsct"/>
+
+  <Commands package="guidKubunoPackage">
+    <Groups>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDebugRustTestAtCursor" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="Test" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno: Debug Rust Test at Cursor</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="guidKubunoPackage" value="{5f3a9b2e-9e0c-4f0a-9a7a-6f0f3c9c9d10}" />
+
+    <GuidSymbol name="guidKubunoCommandsPackageCmdSet" value="{5A67B8C7-E9FD-4917-B844-F103C0485DE1}">
+      <IDSymbol name="KubunoToolsMenuGroup" value="0x1020" />
+      <IDSymbol name="cmdidDebugRustTestAtCursor" value="0x0100" />
+    </GuidSymbol>
+  </Symbols>
+
+</CommandTable>

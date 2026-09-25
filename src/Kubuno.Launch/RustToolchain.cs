@@ -31,6 +31,31 @@ namespace Kubuno.Launch
     }
 
     /// <summary>
+    /// The result of asking the toolchain for its host triple.
+    /// </summary>
+    public readonly struct HostTripleResult
+    {
+        private HostTripleResult(bool succeeded, string? hostTriple, string? error)
+        {
+            Succeeded = succeeded;
+            HostTriple = hostTriple;
+            Error = error;
+        }
+
+        public bool Succeeded { get; }
+
+        /// <summary>The host triple (e.g. `x86_64-pc-windows-msvc`), when <see cref="Succeeded"/>.</summary>
+        public string? HostTriple { get; }
+
+        /// <summary>A diagnostic message, when not <see cref="Succeeded"/>.</summary>
+        public string? Error { get; }
+
+        public static HostTripleResult Success(string hostTriple) => new(true, hostTriple, null);
+
+        public static HostTripleResult Failure(string error) => new(false, null, error);
+    }
+
+    /// <summary>
     /// Resolves facts about the active Rust toolchain that phase 1c needs: the sysroot
     /// (for the dylib search path and natvis files) and the host triple's std library
     /// directory.
@@ -80,6 +105,86 @@ namespace Kubuno.Launch
             }
 
             return SysrootResult.Success(sysroot);
+        }
+
+        /// <summary>
+        /// Runs `rustc -vV` (verbose version) through the given <paramref name="processRunner"/>
+        /// and extracts the `host: &lt;triple&gt;` line — the triple `RustDebugEnvironment` needs to
+        /// locate the host standard library's dylib directory (see
+        /// <see cref="GetTargetLibDir"/>) when the target isn't cross-compiled. Kept as a
+        /// separate call from <see cref="GetSysroot"/> (rather than folded into one `rustc`
+        /// invocation) because the two outputs are parsed independently and callers may only
+        /// need one of them.
+        /// </summary>
+        /// <param name="processRunner">How to invoke `rustc`.</param>
+        /// <param name="workingDirectory">
+        /// The directory to run `rustc` from, so rustup's directory/`rust-toolchain.toml`
+        /// override picks the right toolchain. Pass the workspace or package root.
+        /// </param>
+        public static HostTripleResult GetHostTriple(IProcessRunner processRunner, string? workingDirectory = null)
+        {
+            if (processRunner is null)
+            {
+                throw new ArgumentNullException(nameof(processRunner));
+            }
+
+            ProcessRunResult result;
+            try
+            {
+                result = processRunner.Run("rustc", "-vV", workingDirectory);
+            }
+            catch (Exception ex)
+            {
+                return HostTripleResult.Failure($"Failed to run 'rustc -vV': {ex.Message}");
+            }
+
+            if (!result.Succeeded)
+            {
+                var stderr = result.StandardError.Trim();
+                return HostTripleResult.Failure(
+                    string.IsNullOrEmpty(stderr)
+                        ? $"'rustc -vV' exited with code {result.ExitCode}."
+                        : $"'rustc -vV' exited with code {result.ExitCode}: {stderr}");
+            }
+
+            var hostTriple = ParseHostTriple(result.StandardOutput);
+            if (hostTriple is null)
+            {
+                return HostTripleResult.Failure("'rustc -vV' output did not contain a 'host:' line.");
+            }
+
+            return HostTripleResult.Success(hostTriple);
+        }
+
+        /// <summary>
+        /// Extracts the triple from a `host: &lt;triple&gt;` line in `rustc -vV`'s output (which
+        /// also includes `rustc`/`binary`/`commit-hash`/`release`/`LLVM version` lines this
+        /// doesn't care about). Pure string parsing, split out from <see cref="GetHostTriple"/>
+        /// so it's directly testable against captured `rustc -vV` output with no process runner
+        /// involved. Returns null when no `host:` line is present.
+        /// </summary>
+        public static string? ParseHostTriple(string rustcVerboseVersionOutput)
+        {
+            if (string.IsNullOrEmpty(rustcVerboseVersionOutput))
+            {
+                return null;
+            }
+
+            const string prefix = "host:";
+            foreach (var rawLine in rustcVerboseVersionOutput.Split('\n'))
+            {
+                var line = rawLine.Trim('\r', ' ', '\t');
+                if (line.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    var triple = line.Substring(prefix.Length).Trim();
+                    if (triple.Length > 0)
+                    {
+                        return triple;
+                    }
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

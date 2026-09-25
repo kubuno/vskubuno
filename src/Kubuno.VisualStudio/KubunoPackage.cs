@@ -1,14 +1,20 @@
 using System;
+using System.ComponentModel.Design;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
+using Kubuno.VisualStudio.Debugging;
 using Kubuno.VisualStudio.Infrastructure;
 using Kubuno.VisualStudio.Logging;
 using Kubuno.VisualStudio.Options;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
+using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 
 namespace Kubuno.VisualStudio
 {
@@ -32,10 +38,12 @@ namespace Kubuno.VisualStudio
     [ProvideAutoLoad(VSConstants.UICONTEXT.FolderOpened_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideOptionPage(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, supportsAutomation: true)]
     [ProvideProfile(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, isToolsOptionPage: true)]
+    [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(PackageGuidStrings.Package)]
     public sealed class KubunoPackage : AsyncPackage
     {
         private FormatOnSaveDocumentEvents? _formatOnSaveEvents;
+        private IVsFolderWorkspaceService? _workspaceService;
 
         /// <summary>
         /// Set once the package is sited, so MEF components (which are not package-owned and would
@@ -75,6 +83,58 @@ namespace Kubuno.VisualStudio
                     return GetService(typeof(DTE)) as DTE;
                 });
             _formatOnSaveEvents.Advise();
+
+            if (await GetServiceAsync(typeof(SComponentModel)) is IComponentModel componentModel)
+            {
+                _workspaceService = componentModel.GetService<IVsFolderWorkspaceService>();
+            }
+
+            if (_workspaceService != null)
+            {
+                _workspaceService.OnActiveWorkspaceChanged += OnActiveWorkspaceChangedAsync;
+                // The package can finish loading after a folder is already open (e.g. the user
+                // reopens the same folder next session): regenerate for whatever is open right now too.
+                await RegenerateLaunchTargetsForCurrentWorkspaceAsync();
+            }
+
+            if (await GetServiceAsync(typeof(IMenuCommandService)) is OleMenuCommandService commandService)
+            {
+                DebugRustTestAtCursorCommand.Initialize(this, commandService);
+            }
+        }
+
+        private async Task OnActiveWorkspaceChangedAsync(object? sender, EventArgs e) =>
+            await RegenerateLaunchTargetsForCurrentWorkspaceAsync();
+
+        /// <summary>
+        /// Regenerates <c>.vs\launch.vs.json</c> (see <see cref="RustLaunchTargetsGenerator"/>)
+        /// for the folder currently open in Open Folder mode, if any, and if it (or a subfolder)
+        /// has a <c>Cargo.toml</c>. Best-effort: a workspace with no Cargo project, or any
+        /// failure resolving the toolchain, simply results in no file being written (see the
+        /// generator's own try/catch and logging).
+        /// </summary>
+        private async Task RegenerateLaunchTargetsForCurrentWorkspaceAsync()
+        {
+            var workspaceRoot = _workspaceService?.CurrentWorkspace?.Location;
+            if (string.IsNullOrEmpty(workspaceRoot))
+            {
+                return;
+            }
+
+            var manifestPath = Kubuno.VisualStudio.Core.CargoWorkspaceLocator.FindWorkspaceRoot(workspaceRoot, Directory.Exists, File.Exists);
+            if (manifestPath is null)
+            {
+                return;
+            }
+
+            var cargoToml = Path.Combine(manifestPath, Constants.CargoManifestFileName);
+            if (!File.Exists(cargoToml))
+            {
+                return;
+            }
+
+            await TaskScheduler.Default;
+            await RustLaunchTargetsGenerator.GenerateAsync(manifestPath, cargoToml, CancellationToken.None);
         }
 
         protected override void Dispose(bool disposing)
@@ -88,6 +148,13 @@ namespace Kubuno.VisualStudio
                 _formatOnSaveEvents?.Dispose();
 #pragma warning restore VSTHRD010
                 _formatOnSaveEvents = null;
+
+                if (_workspaceService != null)
+                {
+                    _workspaceService.OnActiveWorkspaceChanged -= OnActiveWorkspaceChangedAsync;
+                    _workspaceService = null;
+                }
+
                 if (Instance == this)
                 {
                     Instance = null;

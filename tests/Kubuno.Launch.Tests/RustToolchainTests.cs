@@ -53,6 +53,72 @@ namespace Kubuno.Launch.Tests
         }
 
         [TestMethod]
+        public void GetHostTriple_ExtractsHostLine_FromVerboseVersionOutput()
+        {
+            var runner = new FakeProcessRunner().Enqueue(0,
+                "rustc 1.90.0 (1159e78c4 2026-05-27)\r\n" +
+                "binary: rustc\r\n" +
+                "commit-hash: 1159e78c4747b02ef996e55b136bb0d049d1a5c\r\n" +
+                "commit-date: 2026-05-27\r\n" +
+                "host: x86_64-pc-windows-msvc\r\n" +
+                "release: 1.90.0\r\n" +
+                "LLVM version: 19.1.7\r\n");
+
+            var result = RustToolchain.GetHostTriple(runner, workingDirectory: @"Z:\projects\kubuno\desktop\windows");
+
+            Assert.IsTrue(result.Succeeded);
+            Assert.AreEqual("x86_64-pc-windows-msvc", result.HostTriple);
+            Assert.AreEqual(1, runner.Calls.Count);
+            Assert.AreEqual("rustc", runner.Calls[0].FileName);
+            Assert.AreEqual("-vV", runner.Calls[0].Arguments);
+            Assert.AreEqual(@"Z:\projects\kubuno\desktop\windows", runner.Calls[0].WorkingDirectory);
+        }
+
+        [TestMethod]
+        public void GetHostTriple_FailsWithDiagnostic_OnNonZeroExitCode()
+        {
+            var runner = new FakeProcessRunner().Enqueue(1, string.Empty, "error: no toolchain installed");
+
+            var result = RustToolchain.GetHostTriple(runner);
+
+            Assert.IsFalse(result.Succeeded);
+            Assert.IsNull(result.HostTriple);
+            StringAssert.Contains(result.Error, "no toolchain installed");
+        }
+
+        [TestMethod]
+        public void GetHostTriple_FailsWithDiagnostic_WhenNoHostLinePresent()
+        {
+            var runner = new FakeProcessRunner().Enqueue(0, "rustc 1.90.0 (1159e78c4 2026-05-27)\r\n");
+
+            var result = RustToolchain.GetHostTriple(runner);
+
+            Assert.IsFalse(result.Succeeded);
+            StringAssert.Contains(result.Error, "host:");
+        }
+
+        [TestMethod]
+        public void GetHostTriple_ThrowsOnNullProcessRunner()
+        {
+            Assert.ThrowsExactly<ArgumentNullException>(() => RustToolchain.GetHostTriple(null!));
+        }
+
+        [TestMethod]
+        public void ParseHostTriple_ReturnsNull_OnNullOrEmptyInput()
+        {
+            Assert.IsNull(RustToolchain.ParseHostTriple(string.Empty));
+            Assert.IsNull(RustToolchain.ParseHostTriple(null!));
+        }
+
+        [TestMethod]
+        public void ParseHostTriple_IgnoresUnrelatedLines()
+        {
+            var triple = RustToolchain.ParseHostTriple("rustc 1.90.0\nrelease: 1.90.0\nhost:   aarch64-pc-windows-msvc  \n");
+
+            Assert.AreEqual("aarch64-pc-windows-msvc", triple);
+        }
+
+        [TestMethod]
         public void GetTargetLibDir_CombinesSysrootRustlibTripleLib()
         {
             var path = RustToolchain.GetTargetLibDir(

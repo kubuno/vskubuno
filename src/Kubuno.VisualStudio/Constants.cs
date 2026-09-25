@@ -18,5 +18,13 @@ namespace Kubuno.VisualStudio
 
         /// <summary>Exact remediation command shown in the info bar when rust-analyzer cannot be found.</summary>
         public const string InstallRustAnalyzerCommand = "rustup component add rust-analyzer";
+
+        public const string CargoManifestFileName = "Cargo.toml";
+
+        /// <summary>File name of the generated Open Folder debug configuration (see <see cref="Kubuno.Launch.LaunchVsJsonWriter"/>).</summary>
+        public const string LaunchVsJsonFileName = "launch.vs.json";
+
+        /// <summary>The `.vs` hidden folder Visual Studio itself uses for Open Folder state, relative to the workspace root.</summary>
+        public const string VsHiddenFolderName = ".vs";
     }
 }
