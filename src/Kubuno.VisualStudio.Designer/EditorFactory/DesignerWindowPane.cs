@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.Design;
+using System.Linq;
 using Kubuno.VisualStudio.Designer.Toolbox;
 using Microsoft.VisualStudio.Designer.Interfaces;
 using Kubuno.VisualStudio.Designer.UI;
@@ -146,6 +147,27 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
                 return menu.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
             }
 
+            // The Layout toolbar / Format commands (docs/DESIGNER.md §13): VS's own standard commands, enabled
+            // from the current selection.
+            if (pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97 && _view.EditingCoordinator is { } coordinator &&
+                prgCmds is { Length: > 0 } && cCmds > 0 &&
+                prgCmds.Take((int)Math.Min(cCmds, (uint)prgCmds.Length)).All(c => Editing.DesignerLayoutCommands.TryFromStandardCommand(c.cmdID, out _)))
+            {
+                for (var i = 0; i < cCmds && i < prgCmds.Length; i++)
+                {
+                    Editing.DesignerLayoutCommands.TryFromStandardCommand(prgCmds[i].cmdID, out var layout);
+                    var flags = OleInterop.OLECMDF.OLECMDF_SUPPORTED;
+                    if (coordinator.IsLayoutCommandEnabled(layout))
+                    {
+                        flags |= OleInterop.OLECMDF.OLECMDF_ENABLED;
+                    }
+
+                    prgCmds[i].cmdf = (uint)flags;
+                }
+
+                return VSConstants.S_OK;
+            }
+
             return GetService(typeof(System.ComponentModel.Design.IMenuCommandService)) is OleInterop.IOleCommandTarget commands
                 ? commands.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText)
                 : (int)OleInterop.Constants.OLECMDERR_E_NOTSUPPORTED;
@@ -157,6 +179,18 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
             if (pguidCmdGroup == DesignSurface.DesignerCommandIds.CommandSet && _view.EditingCoordinator?.ActiveMenuTarget is { } menu)
             {
                 return menu.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+            }
+
+            if (pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97 && _view.EditingCoordinator is { } coordinator &&
+                Editing.DesignerLayoutCommands.TryFromStandardCommand(nCmdID, out var layout))
+            {
+                if (!coordinator.IsLayoutCommandEnabled(layout))
+                {
+                    return (int)OleInterop.Constants.OLECMDERR_E_DISABLED;
+                }
+
+                coordinator.RunLayoutCommand(layout);
+                return VSConstants.S_OK;
             }
 
             return GetService(typeof(System.ComponentModel.Design.IMenuCommandService)) is OleInterop.IOleCommandTarget commands

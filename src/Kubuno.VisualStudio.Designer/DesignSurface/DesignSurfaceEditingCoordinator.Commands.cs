@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,7 +54,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
             try
             {
-                var model = DesignerMenuModel.Build(GetCurrentText(), e.ElementId, Registry, DesignerClipboard.PeekTag());
+                var model = DesignerMenuModel.Build(GetCurrentText(), e.ElementId, Registry, DesignerClipboard.PeekTag(), SelectionIds());
                 var target = new DesignerContextMenuCommandTarget(model, this);
                 // Cascading submenus are routed like any command, to the active pane - which forwards them here.
                 ActiveMenuTarget = target;
@@ -118,12 +119,13 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         public void CreateHandler(string elementId, string eventName) => CreateOrShowHandler(elementId, eventName, suggestedName: null);
 
-        public void Copy(string elementId) => Run(() => CopyAsync(elementId), "Copy");
+        public void Copy(string elementId) => Run(() => CopyAsync(GroupFor(elementId)), "Copy");
 
         public void Cut(string elementId)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (elementId.Length == 0)
+            var group = MultiSelection.TopLevel(GroupFor(elementId));
+            if (group.Count == 0)
             {
                 ShowStatus(DesignerText.StatusRootNotRemovable);
                 return;
@@ -132,10 +134,10 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                if (await CopyAsync(elementId))
+                if (await CopyAsync(group))
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    await ApplyEncodedOpsAsync(new object[] { new { kind = "removeElement", elementId } }, "Cut");
+                    await ApplyEncodedOpsAsync(RemoveOps(group), "Cut");
                 }
             }, "Cut");
         }
@@ -143,30 +145,31 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         public void Delete(string elementId)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (elementId.Length == 0)
+            var group = MultiSelection.TopLevel(GroupFor(elementId));
+            if (group.Count == 0)
             {
                 ShowStatus(DesignerText.StatusRootNotRemovable);
                 return;
             }
 
-            RunEdit(new { kind = "removeElement", elementId }, "Delete");
+            RunEdit(RemoveOps(group), group.Count == 1 ? "Delete" : "Delete " + group.Count + " controls");
         }
 
         public void Paste(string? targetId)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var fragment = DesignerClipboard.Read();
-            var tag = DesignerFragment.RootTag(fragment);
-            if (fragment is null || tag is null)
+            var tags = DesignerFragment.RootTags(fragment);
+            if (fragment is null || tags.Count == 0)
             {
                 ShowStatus(DesignerText.StatusClipboardEmpty);
                 return;
             }
 
             var target = string.IsNullOrEmpty(targetId) ? null : targetId;
-            if (DesignerStructurePlanner.PlanPaste(GetCurrentText(), target, tag, Registry) is not { } plan)
+            if (DesignerStructurePlanner.PlanPasteMany(GetCurrentText(), target, tags, Registry) is not { } plan)
             {
-                ShowStatus(DesignerText.StatusPasteRefused(tag));
+                ShowStatus(DesignerText.StatusPasteRefused(string.Join(">, <", tags.Distinct())));
                 return;
             }
 
@@ -176,6 +179,28 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         public void Duplicate(string elementId)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            var group = MultiSelection.TopLevel(GroupFor(elementId));
+            if (group.Count > 1)
+            {
+                // A multi-selection: every copy, in document order, after the last selected element of the
+                // primary's container, in ONE insertion (docs/DESIGNER.md §13).
+                if (DesignerStructurePlanner.PlanDuplicateMany(GetCurrentText(), group, elementId, Registry) is not { } many)
+                {
+                    ShowStatus(DesignerText.StatusDuplicateRefused(string.Join(">, <", group.Select(id => ElementAttributeReader.Read(GetCurrentText(), id)?.TagName ?? "?").Distinct())));
+                    return;
+                }
+
+                Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    if (await ReadFragmentsAsync(group) is { } fragments)
+                    {
+                        await InsertFragmentAsync(many, fragments, "Duplicate");
+                    }
+                }, "Duplicate");
+                return;
+            }
+
             var text = GetCurrentText();
             var tag = ElementAttributeReader.Read(text, elementId)?.TagName ?? string.Empty;
             if (DesignerStructurePlanner.PlanDuplicate(text, elementId, Registry) is not { } plan)
@@ -342,16 +367,126 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             }
         }
 
-        /// <summary>Puts <paramref name="elementId"/>'s XML on the clipboard; false when it could not be read.</summary>
-        private async Task<bool> CopyAsync(string elementId)
+        /// <summary>Puts the elements' XML on the clipboard (one after the other, in document order); false when one could not be read.</summary>
+        private async Task<bool> CopyAsync(IReadOnlyList<string> elementIds)
         {
-            if (await ReadElementFragmentAsync(elementId) is not { } fragment)
+            if (await ReadFragmentsAsync(elementIds) is not { } fragment)
             {
                 return false;
             }
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             return DesignerClipboard.Write(fragment);
+        }
+
+        /// <summary>The elements' XML as one fragment (<see cref="DesignerFragment.Join"/>, document order), or null when one could not be read.</summary>
+        private async Task<string?> ReadFragmentsAsync(IReadOnlyList<string> elementIds)
+        {
+            var fragments = new List<string>();
+            foreach (var id in MultiSelection.InDocumentOrder(elementIds))
+            {
+                if (await ReadElementFragmentAsync(id) is not { } fragment)
+                {
+                    return null;
+                }
+
+                fragments.Add(fragment);
+            }
+
+            return fragments.Count == 0 ? null : DesignerFragment.Join(fragments);
+        }
+
+        /// <summary>
+        /// The elements a command on <paramref name="elementId"/> applies to: the whole multi-selection when
+        /// <paramref name="elementId"/> is part of it (a context menu or a keyboard command on a multi-selection,
+        /// docs/DESIGNER.md §13), else the element alone.
+        /// </summary>
+        private IReadOnlyList<string> GroupFor(string elementId)
+        {
+            var ids = SelectionIds();
+            return ids.Count > 1 && ids.Contains(elementId) ? ids : new[] { elementId };
+        }
+
+        /// <summary>The current selection (primary first), empty when selection sync is not up yet.</summary>
+        private IReadOnlyList<string> SelectionIds() => _selectionSync?.CurrentElementIds ?? Array.Empty<string>();
+
+        private static IReadOnlyList<object> RemoveOps(IEnumerable<string> elementIds) =>
+            elementIds.Select(id => (object)new { kind = "removeElement", elementId = id }).ToList();
+
+        // ---- Layout toolbar / Format menu (docs/DESIGNER.md §13) ----
+
+        private (int Version, string Selection, LayoutSelectionInfo Info)? _layoutCache;
+
+        /// <summary>What the Layout commands can do with the current selection - cached per buffer version and selection (Visual Studio asks on every idle).</summary>
+        internal LayoutSelectionInfo CurrentLayout()
+        {
+            var ids = SelectionIds();
+            var key = string.Join("|", ids);
+            var version = CurrentVersion;
+            if (_layoutCache is { } cache && cache.Version == version && cache.Selection == key)
+            {
+                return cache.Info;
+            }
+
+            var info = _registry is null ? LayoutSelectionInfo.Empty : LayoutSelectionInfo.Build(GetCurrentText(), ids, _selectionSync?.CurrentElementId, Registry);
+            _layoutCache = (version, key, info);
+            return info;
+        }
+
+        /// <summary>Whether a Layout command is enabled (the toolbar buttons, the pane and the context submenus).</summary>
+        internal bool IsLayoutCommandEnabled(DesignerLayoutCommand command) => CurrentLayout().IsEnabled(command);
+
+        /// <summary>
+        /// Runs a Layout command: align/size/spacing/center are computed by the design surface from its painted
+        /// layout (<c>format</c> → one <c>editRequests</c> batch); Bring to Front / Send to Back reorder the XML
+        /// (<c>reorderChildren</c>), then keep the moved elements selected. One undo unit either way.
+        /// </summary>
+        public void RunLayoutCommand(DesignerLayoutCommand command)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var info = CurrentLayout();
+            if (!info.IsEnabled(command))
+            {
+                return;
+            }
+
+            if (DesignerLayoutCommands.FormatName(command) is { } name)
+            {
+                if (_host is RustDesignSurfaceHost rustHost)
+                {
+                    FlushPendingPush();
+                    rustHost.Format(name);
+                }
+
+                return;
+            }
+
+            var order = command == DesignerLayoutCommand.BringToFront ? info.FrontOrder : info.BackOrder;
+            if (order is null || info.OrderParentId is not { } parentId)
+            {
+                return;
+            }
+
+            // Where each selected element of that container ends up, to keep it selected.
+            var moved = SelectionIds()
+                .Select(id => DesignerStructurePlanner.TrySplit(id, out var p, out var index) && p == parentId && order.Contains(index)
+                    ? (Old: id, New: StableElementId.Child(parentId, order.ToList().IndexOf(index)))
+                    : (Old: id, New: (string?)null))
+                .Where(m => m.New is not null)
+                .ToList();
+            var primary = _selectionSync?.CurrentElementId;
+            var newPrimary = moved.FirstOrDefault(m => m.Old == primary).New ?? moved.FirstOrDefault().New;
+            Run(async () =>
+            {
+                if (await ApplyEncodedOpsAsync(new object[] { new { kind = "reorderChildren", parentId, order } }, command == DesignerLayoutCommand.BringToFront ? "Bring to Front" : "Send to Back") &&
+                    _host is RustDesignSurfaceHost rustHost && newPrimary is not null)
+                {
+                    await Task.Delay(350).ConfigureAwait(true);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    FlushPendingPush();
+                    rustHost.SelectMany(moved.Select(m => m.New!).ToList(), newPrimary);
+                }
+            }, "ZOrder");
         }
 
         /// <summary>The element's own XML from the current buffer, as a column-0 fragment (<see cref="DesignerFragment.Normalize"/>).</summary>

@@ -1451,3 +1451,152 @@ text starting with an element.
 Design/XML/Split tab, the Properties window, context menus): use screen captures of a DPI-aware process
 (`C:\kubuno-build\rsproj-test\screencap.ps1`) and DPI-aware input (`input.ps1`, with `-NoFocus` while a
 menu is open - `SetForegroundWindow` closes it).
+
+## 13. Multi-selection, marquee and Layout commands (WinForms parity)
+
+Product-owner request (2026-09-28): "a selection rectangle (which also allows multiple selections) like
+Windows Forms with the mouse" - plus WinForms' click modifiers, group operations, the Layout toolbar /
+Format menu, and the Properties window on several objects.
+
+### Selection model (`kubuno_views::design`)
+
+- `Selection`: the selected stable ids in selection order plus the **primary** selection (the last
+  clicked; the reference of Align / Make Same Size, the element the XML view, the Outline and the
+  Properties window's combo box show). The root (`""`, the view itself) is never part of a
+  multi-selection: selecting it alone replaces everything, adding anything to it replaces it.
+  `top_level_ids` is what every group gesture applies to: the root and every element whose container is
+  also selected are dropped (WinForms: a control follows its selected container).
+- `DesignController::press_with(layout, x, y, PointerModifiers {ctrl, shift})`:
+  - on a resize handle of the primary (an Anchor child; Ctrl not held - Shift only suppresses snapping):
+    a resize of every selected Anchor child by the same edge deltas (`apply_edge_deltas`, never below
+    `MIN_ELEMENT_SIZE`);
+  - on the **empty area of a container** (`LayoutEntry::container`, recorded by `DesignSlot` from the
+    registry's `ChildrenModel`) that is not already selected-and-draggable - the view's root always: the
+    container is selected (no modifier) and a **marquee** is armed inside it. Past `DRAG_THRESHOLD` it
+    follows the pointer (`marquee_rect`), the children of **that container** it touches are highlighted
+    (`marquee_hits`, WinForms semantics), and the release selects them (first in document order =
+    primary; the container stays selected when it touched nothing). Ctrl makes it toggle, Shift add; a
+    Ctrl/Shift click that never became a marquee toggles/adds the container. Esc cancels. A press on the
+    dark canvas around the view starts a marquee over the view's root (`begin_marquee`). A selected
+    Anchor container is moved instead (click once to select it, then drag) - the price of starting a
+    marquee inside an unselected Panel;
+  - on anything else: Ctrl toggles, Shift adds, a plain press keeps the multi-selection when the element
+    is part of it (it becomes the primary) or selects it alone; a still-selected Anchor child arms a
+    **group move** of every selected Anchor child, snapped as one rectangle (`union_rect` of the group)
+    against the primary's siblings that are not moving; a lone Flow child arms the reorder drag as
+    before.
+- Keyboard: arrows nudge every selected Anchor child; Delete removes every top-level selected element;
+  Ctrl+A (`DesignKeyInput::select_all`) selects the primary's siblings (the view's top-level elements
+  when the view or nothing is selected); Esc cancels a drag/marquee, else selects the primary's parent.
+  A right-click on an element of the selection keeps it (`select_for_context`).
+- Drags write **whole DIP** values (`drag_attr` rounds; a pointer delta at 150 % is fractional).
+- Adorners (`paint_adorners(…, &Selection, hover)`): every selected element gets its frame and grab
+  handles; the primary's handles are white with an accent border, the others' are filled; a grey
+  border instead of an accent one marks an element that cannot be resized there (a flow child).
+  `paint_marquee` draws the rectangle (a light line under accent dashes, readable on the view and on the
+  canvas); the touched elements get a light frame while dragging.
+
+### Layout commands
+
+`design::FormatCommand` (camelCase on the wire) and `format_ops(layout, doc, selection, command)`,
+pure geometry over the painted layout (`format_rects`, unit-tested per command):
+
+| Command | Members needed | Result |
+|---|---|---|
+| `alignLefts`/`alignCenters`/`alignRights`, `alignTops`/`alignMiddles`/`alignBottoms` | 2 (primary among them) | edge/centre on the primary's |
+| `makeSameWidth`/`makeSameHeight`/`makeSameSize` | 2 (primary among them) | the primary's size |
+| `horizontalSpacingEqual`/`verticalSpacingEqual` | 3 | first and last stay, gaps evened |
+| `…SpacingIncrease`/`…Decrease`/`…Remove` | 2 | every gap ±`SPACING_STEP` (8, WinForms' grid; never below 0) or 0, the primary stays |
+| `centerHorizontally`/`centerVertically` | 1 | each container's members, as a group, centred in it |
+
+Members (`format_members`) are the top-level selected elements placed by a Dock/Anchor container and not
+docked. Every changed `X`/`Y` (relative to the container's box, §12) and `Width`/`Height` is written,
+rounded, as ONE `editRequests {gesture: "format"}` - one undo unit. Bring to Front / Send to Back are
+not surface commands: the host reorders the XML (below).
+
+### Protocol additions
+
+Host → surface:
+
+| `type` | Fields | Meaning |
+|---|---|---|
+| `selectMany` | `ids: string[]`, `primary: string \| null` | Host-driven multi-selection (the surface keeps `primary` when it is one of `ids`, else the first). |
+| `format` | `command: FormatCommand` | Apply a Layout command to the current selection; the surface answers with one `editRequests {gesture: "format"}`, or nothing when it does not apply. |
+
+Surface → host:
+
+- `selectionChanged` gains `ids: string[]` - the whole selection, primary included, in selection order
+  (`id` stays the primary; an older line without `ids` still parses). The C# parser returns the primary
+  first, then the others (`DesignSurfaceSelectionChangedEventArgs.ElementIds`).
+- `editRequests.gesture` gains `"delete"` (Delete on a multi-selection: every op a `removeElement`) and
+  `"format"`. A single-element gesture still sends the single `editRequest`; several ops (a group nudge,
+  or X and Y together) always travel as ONE batch.
+
+`kubuno/applyEdit` (`kubuno-views-ls`): new `reorderChildren {parentId, order}` (slot `i` receives the
+child currently at `order[i]`; only the elements' own text moves, the whitespace between them stays -
+`edit::reorder_children`); `insertFragment`'s `xml` may hold several elements (parsed inside a wrapper),
+inserted in order, each on its own line, names made unique across the whole fragment.
+
+### Visual Studio side
+
+- **Selection sync** (`SelectionSyncService`): `CurrentElementIds` holds the whole selection (primary
+  first). A caret move inside the primary keeps the multi-selection; the same primary with a different set
+  only updates the set (no XML re-selection, no echo to the surface); a selection from the XML view, the
+  Outline or the Properties combo collapses it to that element. The XML view selects the primary's
+  range; the Outline highlights the primary (a single-selection tree).
+- **Properties window**: `PropertiesWindowPublisher.Publish(selectedObjects, selectable)` puts every
+  selected `KbviewElementObject` (primary first) in `SelectedObjects`: VS's grid merges the rows by name
+  and type (every row is string-typed, so a Button's `X` merges with a Stack's), blanks a value that
+  differs, and leaves the element combo empty. It sets an edited value on each object in turn,
+  synchronously - `PropertyEditBatcher` gathers those `setAttribute`/`removeAttribute` calls until the
+  next dispatcher turn and applies them as ONE `kubuno/applyEdit` batch (one undo unit; without it every
+  object after the first would be computed against a stale buffer version).
+- **Commands on the selection** (`DesignSurfaceEditingCoordinator.Commands.cs`): a command whose element
+  belongs to the multi-selection applies to all of it (`GroupFor`): Delete/Cut remove every top-level
+  element in one batch; Copy puts their XML one after the other (document order) on the clipboard;
+  Paste accepts such a fragment (`DesignerFragment.RootTags`, `DesignerStructurePlanner.PlanPasteMany`:
+  into the target when it takes them all, else next to it); Duplicate inserts all the copies after the
+  last selected element of the primary's container (`PlanDuplicateMany`) in one `insertFragment`.
+- **Layout commands**: `DesignerLayoutCommand` maps each command to Visual Studio's own standard command
+  (`guidVSStd97`: `cmdidAlignLeft`, `cmdidAlignHorizontalCenters`, …, `cmdidSizeToControl…`,
+  `cmdidHorizSpace…`/`cmdidVertSpace…`, `cmdidCenterHorizontally`/`…Vertically`,
+  `cmdidBringToFront`/`cmdidSendToBack`), so they carry VS's own icons and localized names.
+  `LayoutSelectionInfo` (pure, cached per buffer version and selection) decides enabling with the same
+  member rule as the surface, plus the `reorderChildren` orders of Bring to Front (the selected children
+  of the primary's container last, painted on top) / Send to Back (first). `DesignerWindowPane` answers
+  these commands (toolbar, `Format.*` commands, and the context submenus, which VS routes to the active
+  pane); align/size/spacing/center send `format`, z-order applies `reorderChildren` and re-selects the
+  moved elements (`selectMany`).
+- **`KubunoCommands.vsct`**: a `Kubuno Layout` toolbar (`KubunoDesignerLayoutToolbar`, `DefaultDocked`)
+  with the placements above, shown by a `VisibilityItem` on the designer's command UI context
+  (`B634717B-…`, `KbviewEditorFactory`'s `pguidCmdUI` - active exactly while a `.kbview` designer is the
+  active document; found live: the toolbar appears by itself); the element context menu gains Align ›,
+  Make Same Size ›, Horizontal Spacing ›, Vertical Spacing ›, Center in View ›
+  (`DesignerCommandIds.AlignMenu`…, localized through `TextChanges`). On a multi-selection the
+  single-element items (Create Handler ›, Select ›, Wrap In ›, Remove Container) are hidden or disabled.
+  *Found live:* `DTE.ExecuteCommand("Format.…")` reports "not available" while a tool window (e.g. the
+  Output window) is the active frame - the commands follow the active document, like WinForms'.
+
+### Testing
+
+Rust (`kubuno-views`, 394 tests): the selection model (toggle/add/primary/root exclusivity,
+`top_level_ids`), `marquee_hits`, marquee press/drag/release incl. Ctrl/Shift and Esc, a nested
+container marqueed until selected then dragged, group move (with snapping on the group bounds), group
+resize (incl. Shift on a handle), whole-DIP rounding, Ctrl+A, multi nudge/delete, every `format_rects`
+command and `format_ops`; `protocol.rs` pins the new wire shapes; `edit.rs`/`edit_bridge.rs` cover
+`reorder_children` and multi-element `insertFragment`. C# (`Kubuno.VisualStudio.Designer.Tests`, 265
+tests): protocol parsing (`ids`, `selectMany`, `format`, `delete`/`format` batches), `SelectionSyncService`
+with a multi-selection, `MultiSelection`, `LayoutSelectionInfo` enabling and z-order orders, the
+standard-command mapping, `PlanPasteMany`/`PlanDuplicateMany`/`RootTags`, the context-menu model and
+target on a multi-selection, the Properties window's merged rows and `PropertyEditBatcher`.
+
+Live (experimental instance, a copy of `MenuTestApp` with a third Anchor button; the buffer read back
+through DTE after each gesture): a marquee from a Panel's empty area and from the canvas selects the
+touched buttons (primary white handles, others filled); arrows nudge both, one Ctrl+Z reverts both;
+Ctrl+click adds, a Shift-drag moves all three by the same delta; `Format.AlignLefts` aligns on the
+primary, `Format.MakeVerticalSpacingEqual` evens the gaps, `Format.SendtoBack` puts the three buttons
+before the TextField; Ctrl+A + Ctrl+click + Delete removes three buttons in one undo unit; Ctrl+C / Ctrl+V
+of two buttons pastes `hello2`/`third2`; Ctrl+D duplicates two; a Shift-drag of the primary's corner
+handle resizes both (whole DIP, found live: the first build wrote `569.3334`). The Properties window
+showed three buttons with the differing values blank, the Kubuno Layout toolbar appeared by itself, and
+the context menu showed the French Layout submenus.

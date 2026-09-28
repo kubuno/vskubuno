@@ -37,6 +37,16 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// different element. <see langword="null"/> clears the selection.</summary>
         public void Select(string? elementId) => SendSelect(elementId);
 
+        /// <summary>Host-driven multi-selection (<c>selectMany</c>, docs/DESIGNER.md §13).</summary>
+        public void SelectMany(IReadOnlyList<string> elementIds, string? primary)
+        {
+            _lastSentSelection = primary;
+            SendLine(DesignSurfaceProtocol.EncodeSelectMany(elementIds, primary));
+        }
+
+        /// <summary>Asks the surface to apply a Layout toolbar / Format menu command to its selection (<c>format</c>); it answers with one <c>editRequests</c> batch.</summary>
+        public void Format(string command) => SendLine(DesignSurfaceProtocol.EncodeFormat(command));
+
         private void SendSetText(string text)
         {
             _lastSentText = text;
@@ -250,6 +260,12 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         public static string EncodeSelect(string? id) => JsonSerializer.Serialize(new { type = "select", id }, WireOptions);
 
+        /// <summary><c>selectMany {ids, primary}</c> (docs/DESIGNER.md §13).</summary>
+        public static string EncodeSelectMany(IReadOnlyList<string> ids, string? primary) => JsonSerializer.Serialize(new { type = "selectMany", ids, primary }, WireOptions);
+
+        /// <summary><c>format {command}</c>: a Layout toolbar / Format menu command, by its surface name (docs/DESIGNER.md §13).</summary>
+        public static string EncodeFormat(string command) => JsonSerializer.Serialize(new { type = "format", command }, WireOptions);
+
         /// <summary>
         /// Parses a `selectionChanged` line: `elementIds` is an empty list for `id: null`/absent, a
         /// single-element list for a string `id` (including `""`, the root element) - matching
@@ -270,7 +286,20 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             // canvas or on the view frame's title bar (docs/DESIGNER.md §12).
             if (root.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String && idProp.GetString() is { } id)
             {
-                elementIds = new[] { id };
+                // docs/DESIGNER.md §13: `ids` is the whole multi-selection; the primary (`id`) always comes first here.
+                var list = new List<string> { id };
+                if (root.TryGetProperty("ids", out var idsProp) && idsProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in idsProp.EnumerateArray())
+                    {
+                        if (item.ValueKind == JsonValueKind.String && item.GetString() is { } other && !list.Contains(other))
+                        {
+                            list.Add(other);
+                        }
+                    }
+                }
+
+                elementIds = list;
             }
 
             return true;

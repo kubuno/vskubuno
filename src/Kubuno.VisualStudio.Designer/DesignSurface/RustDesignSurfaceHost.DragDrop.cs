@@ -177,6 +177,12 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     {
         Move,
         Resize,
+
+        /// <summary>Delete on a multi-selection: every op is a <c>removeElement</c> (docs/DESIGNER.md §13).</summary>
+        Delete,
+
+        /// <summary>A Layout toolbar / Format menu command (<c>format</c>): every op is a <c>setAttribute</c> (docs/DESIGNER.md §13).</summary>
+        Format,
     }
 
     /// <summary>See <see cref="RustDesignSurfaceHost.EditRequestsReceived"/>.</summary>
@@ -343,6 +349,12 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 case "resize":
                     gesture = DesignSurfaceGesture.Resize;
                     break;
+                case "delete":
+                    gesture = DesignSurfaceGesture.Delete;
+                    break;
+                case "format":
+                    gesture = DesignSurfaceGesture.Format;
+                    break;
                 default:
                     return false;
             }
@@ -355,7 +367,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             var list = new List<DesignSurfaceEditOp>();
             foreach (var opElement in opsProp.EnumerateArray())
             {
-                if (!TryParseSetAttributeOp(opElement, out var op) || op == null)
+                if (!TryParseBatchOp(opElement, out var op) || op == null)
                 {
                     return false;
                 }
@@ -365,6 +377,25 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
             ops = list;
             return true;
+        }
+
+        /// <summary>One op of an <c>editRequests</c> batch: a <c>setAttribute</c> (move, resize, format) or - docs/DESIGNER.md §13, Delete on a multi-selection - a <c>removeElement</c>.</summary>
+        private static bool TryParseBatchOp(JsonElement opElement, out DesignSurfaceEditOp? op)
+        {
+            if (opElement.ValueKind == JsonValueKind.Object &&
+                opElement.TryGetProperty("kind", out var kindProp) && kindProp.ValueKind == JsonValueKind.String && kindProp.GetString() == "removeElement")
+            {
+                op = null;
+                if (!opElement.TryGetProperty("elementId", out var idProp) || idProp.ValueKind != JsonValueKind.String)
+                {
+                    return false;
+                }
+
+                op = new DesignSurfaceEditOp(DesignSurfaceEditOpKind.RemoveElement, idProp.GetString()!);
+                return true;
+            }
+
+            return TryParseSetAttributeOp(opElement, out op);
         }
 
         private static bool TryParseSetAttributeOp(JsonElement opElement, out DesignSurfaceEditOp? op)

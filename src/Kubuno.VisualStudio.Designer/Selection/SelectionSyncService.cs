@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kubuno.VisualStudio.Designer.DesignSurface;
@@ -87,6 +88,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
         private readonly string _documentUri;
 
         private string? _currentElementId;
+        private IReadOnlyList<string> _currentElementIds = Array.Empty<string>();
         private bool _applyingRemoteSelection;
         private bool _disposed;
 
@@ -123,6 +125,12 @@ namespace Kubuno.VisualStudio.Designer.Selection
         public string? CurrentElementId => _currentElementId;
 
         /// <summary>
+        /// The whole selection (docs/DESIGNER.md §13): the primary (<see cref="CurrentElementId"/>) first, then the other
+        /// elements of a multi-selection made on the design surface; empty when nothing is selected.
+        /// </summary>
+        public IReadOnlyList<string> CurrentElementIds => _currentElementIds;
+
+        /// <summary>
         /// Selects <paramref name="elementId"/> everywhere (surface, XML, Outline, Properties) - used by the
         /// Properties window's element combo box and after a Toolbox insertion. <paramref name="force"/>
         /// re-applies even when the id did not change (an insertion can shift a different element onto the
@@ -143,8 +151,9 @@ namespace Kubuno.VisualStudio.Designer.Selection
 
         private void OnSurfaceSelectionChanged(object? sender, DesignSurfaceSelectionChangedEventArgs e)
         {
+            // The primary comes first; the others are the rest of a multi-selection (docs/DESIGNER.md §13).
             var elementId = e.ElementIds.Count > 0 ? e.ElementIds[0] : null;
-            _ = RunGuardedAsync(() => ApplySelectionAsync(elementId, range: null, SelectionOrigin.Surface));
+            _ = RunGuardedAsync(() => ApplySelectionAsync(elementId, range: null, SelectionOrigin.Surface, e.ElementIds));
         }
 
         private void OnCaretMoved(object? sender, EventArgs e)
@@ -172,14 +181,31 @@ namespace Kubuno.VisualStudio.Designer.Selection
         /// pay for a second <c>kubuno/rangeOfElement</c> round trip); <see langword="null"/> for the other
         /// two origins, resolved here.
         /// </summary>
-        private async Task ApplySelectionAsync(string? elementId, LspRange? range, SelectionOrigin origin)
+        private async Task ApplySelectionAsync(string? elementId, LspRange? range, SelectionOrigin origin, IReadOnlyList<string>? elementIds = null)
         {
+            var ids = NormalizeIds(elementId, elementIds);
             if (elementId == _currentElementId)
             {
+                // A caret move inside the primary element (e.g. the caret our own SelectElementRange put there) keeps
+                // the multi-selection; the same primary with a different set of elements (a Ctrl+click on the surface,
+                // or a single-element select collapsing a multi-selection) only updates the set.
+                if (origin == SelectionOrigin.TextView || ids.SequenceEqual(_currentElementIds))
+                {
+                    return;
+                }
+
+                _currentElementIds = ids;
+                if (origin != SelectionOrigin.Surface)
+                {
+                    _surfaceTarget.Select(elementId);
+                }
+
+                SelectionApplied?.Invoke(this, elementId);
                 return;
             }
 
             _currentElementId = elementId;
+            _currentElementIds = ids;
 
             if (elementId is null)
             {
@@ -212,6 +238,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
                     // the other views against an id that no longer means anything (docs/DESIGNER.md §8's
                     // "never an error ... degrade to no-op" rule).
                     _currentElementId = null;
+                    _currentElementIds = Array.Empty<string>();
                     return;
                 }
 
@@ -291,6 +318,26 @@ namespace Kubuno.VisualStudio.Designer.Selection
             // dropdown of handler names already found via the language server, see §3") - out of scope
             // here, so an empty list for now; this library's INTEGRATION.md records it as still open.
             _propertiesPanel.SetSelection(component, attributes.Attributes, eventHandlers, Array.Empty<string>(), _documentUri, elementId);
+        }
+
+        /// <summary>The selection list: <paramref name="primary"/> first, then the other ids (duplicates dropped); empty for none.</summary>
+        private static IReadOnlyList<string> NormalizeIds(string? primary, IReadOnlyList<string>? ids)
+        {
+            if (primary is null)
+            {
+                return Array.Empty<string>();
+            }
+
+            var list = new List<string> { primary };
+            foreach (var id in ids ?? Array.Empty<string>())
+            {
+                if (id is not null && !list.Contains(id))
+                {
+                    list.Add(id);
+                }
+            }
+
+            return list;
         }
 
         private static async Task RunGuardedAsync(Func<Task> action)

@@ -73,6 +73,63 @@
           <ButtonText>Wrap In</ButtonText>
         </Strings>
       </Menu>
+
+      <!--
+        docs/DESIGNER.md §13: the Windows Forms designer's Layout commands. Every item is one of VS's own
+        standard commands (guidVSStd97: Align Lefts..., Make Same Size, spacing, Center, z-order - with VS's
+        own icons and localized names), placed below in the element context menu's Layout submenus and in the
+        designer's Layout toolbar, and answered by DesignerWindowPane / DesignerContextMenuCommandTarget from
+        the current selection. The toolbar shows while a .kbview designer is the active document (its command
+        UI context, KbviewEditorFactory's pguidCmdUI, VisibilityConstraints below).
+      -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignMenu" priority="0x0100" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Align</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSizeMenu" priority="0x0101" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Make Same Size</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHorizontalSpacingMenu" priority="0x0102" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Horizontal Spacing</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerVerticalSpacingMenu" priority="0x0103" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Vertical Spacing</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCenterMenu" priority="0x0104" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Center in View</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" priority="0x0000" type="Toolbar">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar"/>
+        <CommandFlag>DefaultDocked</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno Layout</ButtonText>
+          <CommandName>Kubuno Layout</CommandName>
+        </Strings>
+      </Menu>
     </Menus>
     <Groups>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" priority="0x0600">
@@ -138,6 +195,43 @@
       </Group>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewPropertiesGroup" priority="0x0300">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewContextMenu" />
+      </Group>
+      <!-- docs/DESIGNER.md §13: the Layout submenus of the element context menu, and the Layout toolbar groups. -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutGroup" priority="0x0450">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSizeListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSizeMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHorizontalSpacingListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHorizontalSpacingMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerVerticalSpacingListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerVerticalSpacingMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCenterListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCenterMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarAlignGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarSizeGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarHorizontalSpacingGroup" priority="0x0300">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarVerticalSpacingGroup" priority="0x0400">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarCenterGroup" priority="0x0500">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarOrderGroup" priority="0x0600">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" />
       </Group>
     </Groups>
 
@@ -397,6 +491,127 @@
     <CommandPlacement guid="guidVSStd97" id="cmdidViewCode" priority="0x0100">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewCodeGroup" />
     </CommandPlacement>
+    <!-- docs/DESIGNER.md §13: the Layout commands, in the context submenus and in the Layout toolbar. -->
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignLeft" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignLeft" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarAlignGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignHorizontalCenters" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignHorizontalCenters" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarAlignGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignRight" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignRight" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarAlignGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignTop" priority="0x0103">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignTop" priority="0x0103">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarAlignGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignVerticalCenters" priority="0x0104">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignVerticalCenters" priority="0x0104">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarAlignGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignBottom" priority="0x0105">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidAlignBottom" priority="0x0105">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarAlignGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidSizeToControlWidth" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSizeListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidSizeToControlWidth" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarSizeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidSizeToControlHeight" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSizeListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidSizeToControlHeight" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarSizeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidSizeToControl" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSizeListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidSizeToControl" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarSizeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidHorizSpaceMakeEqual" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHorizontalSpacingListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidHorizSpaceMakeEqual" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarHorizontalSpacingGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidHorizSpaceIncrease" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHorizontalSpacingListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidHorizSpaceIncrease" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarHorizontalSpacingGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidHorizSpaceDecrease" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHorizontalSpacingListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidHorizSpaceDecrease" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarHorizontalSpacingGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidHorizSpaceConcatenate" priority="0x0103">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHorizontalSpacingListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidHorizSpaceConcatenate" priority="0x0103">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarHorizontalSpacingGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidVertSpaceMakeEqual" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerVerticalSpacingListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidVertSpaceMakeEqual" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarVerticalSpacingGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidVertSpaceIncrease" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerVerticalSpacingListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidVertSpaceIncrease" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarVerticalSpacingGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidVertSpaceDecrease" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerVerticalSpacingListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidVertSpaceDecrease" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarVerticalSpacingGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidVertSpaceConcatenate" priority="0x0103">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerVerticalSpacingListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidVertSpaceConcatenate" priority="0x0103">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarVerticalSpacingGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidCenterHorizontally" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCenterListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidCenterHorizontally" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarCenterGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidCenterVertically" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCenterListGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidCenterVertically" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarCenterGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidBringToFront" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarOrderGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidSendToBack" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarOrderGroup" />
+    </CommandPlacement>
   </CommandPlacements>
 
   <Symbols>
@@ -417,6 +632,9 @@
       extended "Ajouter" submenu to Rust projects only, instead of DynamicVisibility+BeforeQueryStatus.
     -->
     <GuidSymbol name="guidRustProjectUIContext" value="{2e69f0d4-848f-4fc0-a7a1-0fdaefec0f1d}" />
+
+    <!-- The .kbview designer command UI context (DesignerConstants.CommandUiContextGuidString): active while it is the active document. -->
+    <GuidSymbol name="guidKubunoDesignerCmdUI" value="{B634717B-8D65-47A1-BCAD-DA3C18B559C1}" />
 
     <GuidSymbol name="guidKubunoCommandsPackageCmdSet" value="{5A67B8C7-E9FD-4917-B844-F103C0485DE1}">
       <IDSymbol name="KubunoToolsMenuGroup" value="0x1020" />
@@ -468,6 +686,25 @@
       <IDSymbol name="cmdidDesignerWrapScrollArea" value="0x0214" />
       <IDSymbol name="cmdidDesignerCreateHandlerFirst" value="0x0220" />
       <IDSymbol name="cmdidDesignerSelectFirst" value="0x0240" />
+      <!-- docs/DESIGNER.md §13: Layout submenus and toolbar. -->
+      <IDSymbol name="KubunoDesignerAlignMenu" value="0x1035" />
+      <IDSymbol name="KubunoDesignerSizeMenu" value="0x1036" />
+      <IDSymbol name="KubunoDesignerHorizontalSpacingMenu" value="0x1037" />
+      <IDSymbol name="KubunoDesignerVerticalSpacingMenu" value="0x1038" />
+      <IDSymbol name="KubunoDesignerCenterMenu" value="0x1039" />
+      <IDSymbol name="KubunoDesignerLayoutGroup" value="0x104D" />
+      <IDSymbol name="KubunoDesignerAlignListGroup" value="0x104E" />
+      <IDSymbol name="KubunoDesignerSizeListGroup" value="0x104F" />
+      <IDSymbol name="KubunoDesignerLayoutToolbar" value="0x1050" />
+      <IDSymbol name="KubunoDesignerToolbarAlignGroup" value="0x1051" />
+      <IDSymbol name="KubunoDesignerToolbarSizeGroup" value="0x1052" />
+      <IDSymbol name="KubunoDesignerToolbarHorizontalSpacingGroup" value="0x1053" />
+      <IDSymbol name="KubunoDesignerToolbarVerticalSpacingGroup" value="0x1054" />
+      <IDSymbol name="KubunoDesignerToolbarCenterGroup" value="0x1055" />
+      <IDSymbol name="KubunoDesignerToolbarOrderGroup" value="0x1056" />
+      <IDSymbol name="KubunoDesignerHorizontalSpacingListGroup" value="0x1057" />
+      <IDSymbol name="KubunoDesignerVerticalSpacingListGroup" value="0x1058" />
+      <IDSymbol name="KubunoDesignerCenterListGroup" value="0x1059" />
     </GuidSymbol>
   </Symbols>
 
@@ -485,6 +722,8 @@
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustExample" context="guidRustProjectUIContext" />
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustBinary" context="guidRustProjectUIContext" />
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddCargoDependency" context="guidRustProjectUIContext" />
+    <!-- The designer Layout toolbar (docs/DESIGNER.md §13): shown while a .kbview designer is the active document. -->
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" context="guidKubunoDesignerCmdUI" />
   </VisibilityConstraints>
 
 </CommandTable>

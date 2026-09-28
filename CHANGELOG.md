@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Multi-selection in the `.kbview` designer, like the Windows Forms designer**: a drag on the empty
+  area of a container (or of the view, or of the canvas around it) draws a dashed selection rectangle
+  that selects the children of that container it touches; Ctrl+click toggles an element, Shift+click adds
+  it, Ctrl+A selects all its siblings; Esc cancels the rectangle. The primary selection (the last clicked)
+  has white grab handles, the others filled ones. Dragging, arrow keys, Delete, Cut/Copy/Paste and
+  Duplicate apply to the whole selection, and a resize on the primary's handles resizes every selected
+  element by the same amount - each gesture is one undo unit. A right-click on a selected element keeps
+  the selection.
+- **Layout commands (Windows Forms' Layout toolbar and Format menu)**: Align (Lefts, Centers, Rights,
+  Tops, Middles, Bottoms - relative to the primary selection), Make Same Size (width, height, both),
+  Horizontal/Vertical Spacing (make equal, increase, decrease, remove), Center in View (horizontally,
+  vertically), Bring to Front / Send to Back - Visual Studio's own commands, with its icons and names, in a
+  new "Kubuno Layout" toolbar shown while a `.kbview` designer is active and in submenus of the surface's
+  context menu, enabled only when meaningful (e.g. two movable elements in a Panel to align). Each is one
+  undo unit.
+- **The Properties window (F4) shows a multi-selection**: the common properties, a blank value where the
+  elements differ, and an edit applies to every selected element as one undo unit. The XML view and the
+  Document Outline follow the primary selection.
+
 - **Resizable design canvas in the `.kbview` designer, like the Windows Forms designer**: the view is
   shown in a Kubuno window frame (its `Title` in the title bar) at its design size on a dark neutral
   canvas, with three resize handles (right edge, bottom edge, corner), a live relayout and a size tooltip

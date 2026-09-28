@@ -84,6 +84,18 @@ namespace Kubuno.VisualStudio.Designer
 
         public static string MenuDesignSize => T("Design Size...", "Taille de conception…");
 
+        // ---- Layout submenus (docs/DESIGNER.md §13) - the Windows Forms designer's Format menu names ----
+
+        public static string MenuAlign => T("Align", "Aligner");
+
+        public static string MenuMakeSameSize => T("Make Same Size", "Uniformiser la taille");
+
+        public static string MenuHorizontalSpacing => T("Horizontal Spacing", "Espacement horizontal");
+
+        public static string MenuVerticalSpacing => T("Vertical Spacing", "Espacement vertical");
+
+        public static string MenuCenterInView => T("Center in View", "Centrer dans la vue");
+
         public static string DesignSizeTitle => T("Design Size", "Taille de conception");
 
         public static string DesignSizeWidth => T("Width:", "Largeur :");

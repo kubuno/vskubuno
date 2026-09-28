@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Kubuno.VisualStudio.Designer.Editing;
 using Kubuno.VisualStudio.Designer.Properties;
@@ -193,6 +194,74 @@ namespace Kubuno.VisualStudio.Designer.Tests.Selection
 
             Assert.IsFalse(h.Properties.HasSelection);
             Assert.AreEqual("", h.Outline.LastSelection);
+        }
+
+        // ── docs/DESIGNER.md §13: multi-selection ─────────────────────────────
+
+        private const string TwoButtons = "<Stack><Button Text=\"A\"/><Button Text=\"B\"/></Stack>";
+
+        private static ComponentRegistry StackRegistry() => ComponentRegistry.FromJson(TestFixtures.ReadAllText("registry.sample.json"));
+
+        [TestMethod]
+        public async Task SurfaceMultiSelection_ExposesEveryElement_AndSelectsThePrimaryInTheXml()
+        {
+            var h = new Harness { Registry = StackRegistry() };
+            h.TextView.CurrentText = TwoButtons;
+            h.Client.RangesByElementId["1"] = Range(0, 26, 0, 46);
+            var service = h.BuildService();
+            var applied = new List<string?>();
+            service.SelectionApplied += (_, id) => applied.Add(id);
+
+            h.SurfaceHost.RaiseMultiSelectionChanged("1", "0");
+            await WaitUntilAsync(() => h.TextView.Selections.Count > 0);
+
+            Assert.AreEqual("1", service.CurrentElementId);
+            CollectionAssert.AreEqual(new[] { "1", "0" }, service.CurrentElementIds.ToArray());
+            Assert.AreEqual(Range(0, 26, 0, 46), h.TextView.Selections[0], "the XML view shows the primary element");
+            Assert.AreEqual("1", h.Outline.LastSelection, "the Outline highlights the primary");
+            CollectionAssert.AreEqual(new string?[] { "1" }, applied);
+
+            // Same primary, one more element (a Shift+click that kept the primary): only the set changes.
+            h.SurfaceHost.RaiseMultiSelectionChanged("1", "0", "2");
+            await WaitUntilAsync(() => applied.Count > 1);
+            CollectionAssert.AreEqual(new[] { "1", "0", "2" }, service.CurrentElementIds.ToArray());
+            Assert.AreEqual(1, h.TextView.Selections.Count, "the XML selection is not redone");
+            Assert.AreEqual(0, h.SurfaceTarget.Selections.Count, "never echoed back to the surface");
+        }
+
+        [TestMethod]
+        public async Task CaretInsideThePrimary_KeepsTheMultiSelection()
+        {
+            var h = new Harness { Registry = StackRegistry() };
+            h.TextView.CurrentText = TwoButtons;
+            h.Client.RangesByElementId["1"] = Range(0, 26, 0, 46);
+            h.Client.ElementAtOffsetResponse = new ElementAtOffsetResponse("1", Range(0, 26, 0, 46));
+            var service = h.BuildService();
+            h.SurfaceHost.RaiseMultiSelectionChanged("1", "0");
+            await WaitUntilAsync(() => h.TextView.Selections.Count > 0);
+
+            h.TextView.RaiseCaretMoved();
+            await WaitUntilAsync(() => h.Client.ElementAtOffsetCallCount > 0);
+            await Task.Delay(30);
+
+            CollectionAssert.AreEqual(new[] { "1", "0" }, service.CurrentElementIds.ToArray());
+            Assert.AreEqual(0, h.SurfaceTarget.Selections.Count);
+        }
+
+        [TestMethod]
+        public async Task SelectingThePrimaryFromElsewhere_CollapsesTheMultiSelection()
+        {
+            var h = new Harness { Registry = StackRegistry() };
+            h.TextView.CurrentText = TwoButtons;
+            h.Client.RangesByElementId["1"] = Range(0, 26, 0, 46);
+            var service = h.BuildService();
+            h.SurfaceHost.RaiseMultiSelectionChanged("1", "0");
+            await WaitUntilAsync(() => h.TextView.Selections.Count > 0);
+
+            await service.SelectElementAsync("1");
+
+            CollectionAssert.AreEqual(new[] { "1" }, service.CurrentElementIds.ToArray());
+            Assert.AreEqual("1", h.SurfaceTarget.LastSelection, "the surface is told to select the primary alone");
         }
 
         private static async Task WaitUntilAsync(System.Func<bool> condition)

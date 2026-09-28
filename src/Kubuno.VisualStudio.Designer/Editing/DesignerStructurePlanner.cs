@@ -60,6 +60,84 @@ namespace Kubuno.VisualStudio.Designer.Editing
             return PlanNextTo(text, id, fragmentTag, registry);
         }
 
+        /// <summary>
+        /// A paste of several elements (a multi-selection copied together, docs/DESIGNER.md §13) onto
+        /// <paramref name="targetId"/>: into the target when it accepts every one of <paramref name="tags"/> (appended,
+        /// in order), else next to it in its parent. Null when neither accepts them all.
+        /// </summary>
+        public static StructurePlacement? PlanPasteMany(string text, string? targetId, IReadOnlyList<string> tags, ComponentRegistry registry)
+        {
+            if (tags is null || tags.Count == 0)
+            {
+                return null;
+            }
+
+            if (tags.Count == 1)
+            {
+                return PlanPaste(text, targetId, tags[0], registry);
+            }
+
+            var id = targetId ?? StableElementId.Root;
+            if (tags.Any(t => registry.Find(t) is null) || ElementAttributeReader.Read(text, id) is not { } target)
+            {
+                return null;
+            }
+
+            if (AcceptsAll(target, tags, registry))
+            {
+                return new StructurePlacement(id, target.ChildTagNames.Count);
+            }
+
+            return TrySplit(id, out var parentId, out var index) && ElementAttributeReader.Read(text, parentId) is { } parent && AcceptsAll(parent, tags, registry)
+                ? new StructurePlacement(parentId, index + 1)
+                : null;
+        }
+
+        /// <summary>
+        /// Where "Duplicate" puts the copies of a multi-selection (docs/DESIGNER.md §13): all of them, in document
+        /// order, right after the last selected element of the primary's container - like a WinForms paste next to
+        /// the selection. Null when that container does not accept them all, or for the root.
+        /// </summary>
+        public static StructurePlacement? PlanDuplicateMany(string text, IReadOnlyList<string> elementIds, string primaryId, ComponentRegistry registry)
+        {
+            var top = MultiSelection.TopLevel(elementIds ?? Array.Empty<string>());
+            if (top.Count == 0 || !TrySplit(primaryId, out var parentId, out _) || ElementAttributeReader.Read(text, parentId) is not { } parent)
+            {
+                return null;
+            }
+
+            var tags = top.Select(id => ElementAttributeReader.Read(text, id)?.TagName ?? string.Empty).ToList();
+            if (tags.Any(t => registry.Find(t) is null) || !AcceptsAll(parent, tags, registry))
+            {
+                return null;
+            }
+
+            var last = top.Select(id => TrySplit(id, out var p, out var i) && p == parentId ? i : -1).Max();
+            return new StructurePlacement(parentId, (last < 0 ? parent.ChildTagNames.Count - 1 : last) + 1);
+        }
+
+        /// <summary>Whether <paramref name="container"/> accepts all of <paramref name="tags"/> added to its current children.</summary>
+        private static bool AcceptsAll(ElementAttributes container, IReadOnlyList<string> tags, ComponentRegistry registry)
+        {
+            if (registry.Find(container.TagName) is not { } meta)
+            {
+                return false;
+            }
+
+            var count = container.ChildTagNames.Count;
+            foreach (var tag in tags)
+            {
+                if (!ToolboxInsertionPlanner.CanDrop(meta, count, tag, registry))
+                {
+                    return false;
+                }
+
+                count++;
+            }
+
+            return true;
+        }
+
         /// <summary>A copy of <paramref name="elementId"/> right after it, in the same container; null for the root or a forbidden duplicate.</summary>
         public static StructurePlacement? PlanDuplicate(string text, string elementId, ComponentRegistry registry) =>
             ElementAttributeReader.Read(text, elementId) is { } element ? PlanNextTo(text, elementId, element.TagName, registry) : null;

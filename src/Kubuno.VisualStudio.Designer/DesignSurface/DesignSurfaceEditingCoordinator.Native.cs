@@ -56,11 +56,27 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         public string GetCurrentText() => _buffer.CurrentSnapshot.GetText();
 
-        public void SetAttribute(string elementId, string name, string value) =>
-            RunEdit(new { kind = "setAttribute", elementId, name, value }, "Set " + name);
+        public void SetAttribute(string elementId, string name, string value) => PropertyEdits.Enqueue(new PropertyEdit(elementId, name, value));
 
-        public void RemoveAttribute(string elementId, string name) =>
-            RunEdit(new { kind = "removeAttribute", elementId, name }, "Reset " + name);
+        public void RemoveAttribute(string elementId, string name) => PropertyEdits.Enqueue(new PropertyEdit(elementId, name, null));
+
+        /// <summary>
+        /// The Properties window's edits, batched per dispatcher turn (docs/DESIGNER.md §13): with several elements
+        /// selected the grid sets the value on each in turn, and they must land as ONE undo unit.
+        /// </summary>
+        private PropertyEditBatcher PropertyEdits => _propertyEdits ??= new PropertyEditBatcher(
+#pragma warning disable VSTHRD001, VSTHRD110 // a plain "later on this UI thread", like the surface's own event marshalling.
+            flush => System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(flush),
+#pragma warning restore VSTHRD001, VSTHRD110
+            edits =>
+            {
+                var ops = edits.Select(e => e.Value is null
+                    ? (object)new { kind = "removeAttribute", elementId = e.ElementId, name = e.Name }
+                    : new { kind = "setAttribute", elementId = e.ElementId, name = e.Name, value = e.Value }).ToList();
+                RunEdit(ops, edits.Count == 1 ? (edits[0].Value is null ? "Reset " : "Set ") + edits[0].Name : "Set " + edits[0].Name + " on " + edits.Count + " elements");
+            });
+
+        private PropertyEditBatcher? _propertyEdits;
 
         public bool IsHandlerRequestRecent(string elementId, string eventName) =>
             _handlerRequests.TryGetValue(elementId + "|" + eventName, out var at) && DateTime.UtcNow - at < HandlerRequestWindow;
@@ -103,7 +119,15 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
             // The Events tab needs this pane's design surface to be Visual Studio's active designer.
             _ensureActiveDesigner?.Invoke();
-            var selected = CreateElementObject(elementId ?? string.Empty);
+            // A multi-selection (docs/DESIGNER.md §13) publishes every selected element, the primary first.
+            var ids = _selectionSync?.CurrentElementIds is { Count: > 1 } multi && multi[0] == elementId
+                ? multi
+                : new[] { elementId ?? string.Empty };
+            var selected = ids
+                .Select(id => CreateElementObject(id))
+                .Where(o => o is not null)
+                .Cast<KbviewElementObject>()
+                .ToList();
             var selectable = _outlineElements
                 .Select(e => CreateElementObject(e.Id, e.Tag))
                 .Where(o => o is not null)
@@ -204,7 +228,14 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private void OnEditRequestsReceived(object? sender, DesignSurfaceEditRequestsReceivedEventArgs e)
         {
             var ops = e.Ops.Select(EncodeOp).ToList();
-            RunEdit(ops, e.Gesture == DesignSurfaceGesture.Resize ? "Resize control" : "Move control");
+            var description = e.Gesture switch
+            {
+                DesignSurfaceGesture.Resize => "Resize control",
+                DesignSurfaceGesture.Delete => "Delete " + ops.Count + " controls",
+                DesignSurfaceGesture.Format => "Format controls",
+                _ => "Move control",
+            };
+            RunEdit(ops, description);
         }
 
         /// <summary>Selects a just-inserted element once the language server has seen the edit (its <c>didChange</c> trails the buffer by a moment).</summary>

@@ -34,6 +34,26 @@ namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
             Assert.AreEqual(@"{""type"":""select"",""id"":""0.1""}", DesignSurfaceProtocol.EncodeSelect("0.1"));
         }
 
+        // ── docs/DESIGNER.md §13: multi-selection and Layout commands ────
+
+        [TestMethod]
+        public void EncodeSelectManyAndFormat_MatchTheRustWireShapes()
+        {
+            Assert.AreEqual(@"{""type"":""selectMany"",""ids"":[""0"",""1""],""primary"":""1""}", DesignSurfaceProtocol.EncodeSelectMany(new[] { "0", "1" }, "1"));
+            Assert.AreEqual(@"{""type"":""format"",""command"":""horizontalSpacingEqual""}", DesignSurfaceProtocol.EncodeFormat("horizontalSpacingEqual"));
+        }
+
+        [TestMethod]
+        public void TryParseSelectionChanged_PutsThePrimaryFirstThenTheRestOfTheSelection()
+        {
+            Assert.IsTrue(DesignSurfaceProtocol.TryParseSelectionChanged(
+                @"{""type"":""selectionChanged"",""id"":""0.1"",""bounds"":null,""ids"":[""0.0"",""0.1"",""0.2""]}", out var ids));
+            CollectionAssert.AreEqual(new[] { "0.1", "0.0", "0.2" }, System.Linq.Enumerable.ToArray(ids));
+
+            Assert.IsTrue(DesignSurfaceProtocol.TryParseSelectionChanged(@"{""type"":""selectionChanged"",""id"":null,""bounds"":null,""ids"":[]}", out var none));
+            Assert.AreEqual(0, none.Count);
+        }
+
         [TestMethod]
         public void EncodeSelect_WithNoIdSerializesANullNotAMissingField()
         {

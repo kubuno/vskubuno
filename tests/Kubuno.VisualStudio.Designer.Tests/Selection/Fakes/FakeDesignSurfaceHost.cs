@@ -31,6 +31,10 @@ namespace Kubuno.VisualStudio.Designer.Tests.Selection.Fakes
             SelectionChanged?.Invoke(this, new DesignSurfaceSelectionChangedEventArgs(
                 elementId is null ? Array.Empty<string>() : new[] { elementId }));
 
+        /// <summary>A multi-selection (docs/DESIGNER.md §13): the primary first, as <c>DesignSurfaceProtocol.TryParseSelectionChanged</c> produces it.</summary>
+        public void RaiseMultiSelectionChanged(params string[] elementIds) =>
+            SelectionChanged?.Invoke(this, new DesignSurfaceSelectionChangedEventArgs(elementIds));
+
         public void Dispose()
         {
         }

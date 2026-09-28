@@ -45,20 +45,34 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         public void Publish(KbviewElementObject? selected, IReadOnlyList<KbviewElementObject> selectable)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            Publish(selected is null ? Array.Empty<KbviewElementObject>() : new[] { selected }, selectable);
+        }
+
+        /// <summary>
+        /// Shows several elements at once (a multi-selection, docs/DESIGNER.md §13), the primary first: the
+        /// Properties window then lists their common properties, blanks a value that differs between them, sets
+        /// an edited value on every one of them, and leaves its element combo box empty - exactly its behavior
+        /// with several WinForms controls selected.
+        /// </summary>
+        public void Publish(IReadOnlyList<KbviewElementObject> selectedObjects, IReadOnlyList<KbviewElementObject> selectable)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
 
             var list = selectable.ToList();
-            if (selected is not null)
+            foreach (var selectedObject in selectedObjects.Reverse())
             {
-                var sameElement = list.FindIndex(o => string.Equals(o.ElementId, selected.ElementId, StringComparison.Ordinal));
+                var sameElement = list.FindIndex(o => string.Equals(o.ElementId, selectedObject.ElementId, StringComparison.Ordinal));
                 if (sameElement >= 0)
                 {
-                    list[sameElement] = selected;
+                    list[sameElement] = selectedObject;
                 }
                 else
                 {
-                    list.Insert(0, selected);
+                    list.Insert(0, selectedObject);
                 }
             }
+
+            var selected = selectedObjects.Count > 0 ? selectedObjects[0] : null;
 
             if (_container is not null)
             {
@@ -68,7 +82,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             var container = new SelectionContainer(selectableReadOnly: true, selectedReadOnly: false)
             {
                 SelectableObjects = list,
-                SelectedObjects = selected is null ? Array.Empty<object>() : new object[] { selected },
+                SelectedObjects = selectedObjects.Cast<object>().ToArray(),
             };
             container.SelectedObjectsChanged += OnSelectedObjectsChanged;
             _container = container;

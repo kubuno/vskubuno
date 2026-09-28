@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -79,6 +81,26 @@ namespace Kubuno.VisualStudio.Designer.Editing
             var match = RootTagPattern.Match(fragment);
             return match.Success ? match.Groups[1].Value : null;
         }
+
+        /// <summary>
+        /// The tag names of the fragment's top-level elements, in order - several for a multi-selection copied
+        /// together (docs/DESIGNER.md §13: the elements' fragments one after the other). Empty when the text
+        /// holds no element.
+        /// </summary>
+        public static IReadOnlyList<string> RootTags(string? fragment)
+        {
+            if (string.IsNullOrWhiteSpace(fragment))
+            {
+                return Array.Empty<string>();
+            }
+
+            // Read inside a wrapper, so a sequence of elements is one document.
+            var wrapper = ElementAttributeReader.Read("<Fragment>" + fragment + "</Fragment>", StableElementId.Root);
+            return wrapper?.ChildTagNames.ToList() ?? (IReadOnlyList<string>)Array.Empty<string>();
+        }
+
+        /// <summary>Several elements' fragments as one clipboard text (each at column 0, one after the other).</summary>
+        public static string Join(IEnumerable<string> fragments) => string.Join("\n", fragments.Where(f => !string.IsNullOrWhiteSpace(f)).Select(f => f.Trim()));
     }
 
     /// <summary>

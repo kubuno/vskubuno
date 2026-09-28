@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kubuno.VisualStudio.Designer.DesignSurface;
+using Kubuno.VisualStudio.Designer.Editing;
 using Kubuno.VisualStudio.Designer.Registry;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -162,6 +163,72 @@ namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
             }
         }
 
+        // ── docs/DESIGNER.md §13: multi-selection and Layout submenus ─────
+
+        private const string PanelView = "<Panel>\n  <Button X=\"10\" Y=\"10\"/>\n  <Button X=\"100\" Y=\"20\"/>\n  <Stack/>\n</Panel>";
+
+        [TestMethod]
+        public void MultiModel_AppliesToTheWholeSelection_AndDropsSingleElementGestures()
+        {
+            var model = DesignerMenuModel.Build(PanelView, "1", Registry, clipboardTag: null, selectedIds: new[] { "1", "0" });
+
+            Assert.IsTrue(model.IsMultiple);
+            CollectionAssert.AreEqual(new[] { "1", "0" }, model.SelectedIds.ToArray());
+            Assert.IsTrue(model.CanRemove);
+            Assert.IsTrue(model.CanCopy);
+            Assert.IsTrue(model.CanDuplicate);
+            Assert.AreEqual(0, model.Events.Count);
+            Assert.IsFalse(model.CanUnwrap);
+            Assert.IsTrue(model.Layout.IsEnabled(DesignerLayoutCommand.AlignLefts));
+
+            // A right-click outside the multi-selection is a menu for that element alone.
+            Assert.IsFalse(DesignerMenuModel.Build(PanelView, "2", Registry, null, new[] { "1", "0" }).IsMultiple);
+        }
+
+        [TestMethod]
+        public void Target_EnablesTheLayoutSubmenusAndCommandsFromTheSelection()
+        {
+            var actions = new RecordingActions();
+            var multi = new DesignerContextMenuCommandTarget(DesignerMenuModel.Build(PanelView, "1", Registry, null, new[] { "1", "0" }), actions);
+
+            Assert.AreEqual(Enabled, Std97(multi, 3u), "Align Lefts");
+            Assert.AreEqual(Disabled, Std97(multi, 24u), "Make Horizontal Spacing Equal needs three");
+            Assert.AreEqual(Enabled, Std97(multi, DesignerContextMenuCommandTarget.Std97BringToFront));
+            QueryRaw(multi, DesignerCommandIds.CommandSet, DesignerCommandIds.AlignMenu, out var alignMenu);
+            Assert.AreEqual(Enabled, alignMenu);
+
+            Exec(multi, DesignerContextMenuCommandTarget.StandardCommandSet97, 3);
+            Exec(multi, DesignerContextMenuCommandTarget.StandardCommandSet97, (int)DesignerContextMenuCommandTarget.Std97BringToFront);
+            Exec(multi, DesignerContextMenuCommandTarget.StandardCommandSet97, (int)DesignerContextMenuCommandTarget.Std97Delete);
+            CollectionAssert.AreEqual(new[] { "Layout AlignLefts", "Layout BringToFront", "Delete 1" }, actions.Calls);
+
+            // One Anchor child: only centering; a Stack (flow) child: nothing.
+            var single = new DesignerContextMenuCommandTarget(DesignerMenuModel.Build(PanelView, "0", Registry, null), new RecordingActions());
+            Assert.AreEqual(Disabled, Std97(single, 3u));
+            Assert.AreEqual(Enabled, Std97(single, 12u), "Center Horizontally");
+            QueryRaw(single, DesignerCommandIds.CommandSet, DesignerCommandIds.AlignMenu, out var singleAlign);
+            Assert.AreEqual(Disabled, singleAlign);
+            QueryRaw(single, DesignerCommandIds.CommandSet, DesignerCommandIds.CenterMenu, out var center);
+            Assert.AreEqual(Enabled, center);
+        }
+
+        [TestMethod]
+        public void Target_NamesTheLayoutSubmenusInVisualStudiosLanguage()
+        {
+            DesignerText.ForceFrench = true;
+            try
+            {
+                var target = new DesignerContextMenuCommandTarget(DesignerMenuModel.Build(PanelView, "0", Registry, null), new RecordingActions());
+                Assert.AreEqual("Aligner", QueryText(target, DesignerCommandIds.AlignMenu));
+                Assert.AreEqual("Espacement horizontal", QueryText(target, DesignerCommandIds.HorizontalSpacingMenu));
+                Assert.AreEqual("Centrer dans la vue", QueryText(target, DesignerCommandIds.CenterMenu));
+            }
+            finally
+            {
+                DesignerText.ForceFrench = null;
+            }
+        }
+
         // ── helpers ─────────────────────────────────────────────────────
 
         private const uint Enabled = (uint)(OleInterop.OLECMDF.OLECMDF_SUPPORTED | OleInterop.OLECMDF.OLECMDF_ENABLED);
@@ -237,6 +304,8 @@ namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
             public void ShowProperties(string? elementId) => Calls.Add("Properties " + elementId);
 
             public void EditDesignSize() => Calls.Add("DesignSize");
+
+            public void RunLayoutCommand(DesignerLayoutCommand command) => Calls.Add("Layout " + command);
         }
     }
 }

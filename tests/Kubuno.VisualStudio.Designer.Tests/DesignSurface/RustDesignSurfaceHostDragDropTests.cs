@@ -101,12 +101,37 @@ namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
         }
 
         [TestMethod]
-        public void TryParseEditRequestsBatch_RejectsANonSetAttributeOp()
+        public void TryParseEditRequestsBatch_RejectsAnOpThatIsNeitherSetAttributeNorRemoveElement()
         {
             var ok = DesignSurfaceDragDropProtocol.TryParseEditRequestsBatch(
-                @"{""type"":""editRequests"",""ops"":[{""kind"":""removeElement"",""elementId"":""0""}],""gesture"":""move""}",
+                @"{""type"":""editRequests"",""ops"":[{""kind"":""moveElement"",""elementId"":""0"",""newParentId"":"""",""index"":1}],""gesture"":""move""}",
                 out _, out _);
             Assert.IsFalse(ok);
+        }
+
+        [TestMethod]
+        public void TryParseEditRequestsBatch_ReadsAMultiSelectionDelete()
+        {
+            // docs/DESIGNER.md §13: Delete on a multi-selection is one batch of removeElement ops.
+            var ok = DesignSurfaceDragDropProtocol.TryParseEditRequestsBatch(
+                @"{""type"":""editRequests"",""ops"":[{""kind"":""removeElement"",""elementId"":""0""},{""kind"":""removeElement"",""elementId"":""2""}],""gesture"":""delete""}",
+                out var ops, out var gesture);
+            Assert.IsTrue(ok);
+            Assert.AreEqual(DesignSurfaceGesture.Delete, gesture);
+            Assert.AreEqual(2, ops.Count);
+            Assert.AreEqual(DesignSurfaceEditOpKind.RemoveElement, ops[1].Kind);
+            Assert.AreEqual("2", ops[1].ElementId);
+        }
+
+        [TestMethod]
+        public void TryParseEditRequestsBatch_ReadsAFormatCommandBatch()
+        {
+            var ok = DesignSurfaceDragDropProtocol.TryParseEditRequestsBatch(
+                @"{""type"":""editRequests"",""ops"":[{""kind"":""setAttribute"",""elementId"":""1"",""name"":""Y"",""value"":""10""}],""gesture"":""format""}",
+                out var ops, out var gesture);
+            Assert.IsTrue(ok);
+            Assert.AreEqual(DesignSurfaceGesture.Format, gesture);
+            Assert.AreEqual("Y", ops[0].Name);
         }
 
         [TestMethod]

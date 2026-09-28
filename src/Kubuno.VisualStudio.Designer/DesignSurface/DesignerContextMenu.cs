@@ -26,6 +26,16 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         public const int SelectMenu = 0x1033;
         public const int WrapMenu = 0x1034;
 
+        /// <summary>The Layout submenus (docs/DESIGNER.md §13): Align ›, Make Same Size ›, Horizontal Spacing ›, Vertical Spacing ›, Center in View ›.</summary>
+        public const int AlignMenu = 0x1035;
+        public const int SizeMenu = 0x1036;
+        public const int HorizontalSpacingMenu = 0x1037;
+        public const int VerticalSpacingMenu = 0x1038;
+        public const int CenterMenu = 0x1039;
+
+        /// <summary>The designer's Layout toolbar (shown while a .kbview designer is active).</summary>
+        public const int LayoutToolbar = 0x1050;
+
         public const int Duplicate = 0x0200;
         public const int Properties = 0x0201;
         public const int Unwrap = 0x0202;
@@ -84,16 +94,41 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         public int? BackIndex { get; private set; }
 
+        /// <summary>The elements the menu applies to (docs/DESIGNER.md §13): the whole multi-selection when the menu's element is part of it, else that element alone; empty for the view.</summary>
+        public IReadOnlyList<string> SelectedIds { get; private set; } = Array.Empty<string>();
+
+        /// <summary>Whether the menu applies to a multi-selection.</summary>
+        public bool IsMultiple => SelectedIds.Count > 1;
+
+        /// <summary>What the Layout commands (Align ›, Make Same Size ›, spacing, centering, z-order) can do with <see cref="SelectedIds"/>.</summary>
+        public LayoutSelectionInfo Layout { get; private set; } = LayoutSelectionInfo.Empty;
+
         /// <summary>
         /// The model for <paramref name="elementId"/> (null = the view) against the current
         /// <paramref name="text"/>; <paramref name="clipboardTag"/> is the tag of the element on the clipboard, if any.
+        /// <paramref name="selectedIds"/> is the current selection (primary first): when it holds
+        /// <paramref name="elementId"/> and more, the menu applies to all of it (WinForms: a right-click on a
+        /// selected control keeps the multi-selection).
         /// </summary>
-        public static DesignerMenuModel Build(string text, string? elementId, ComponentRegistry registry, string? clipboardTag)
+        public static DesignerMenuModel Build(string text, string? elementId, ComponentRegistry registry, string? clipboardTag, IReadOnlyList<string>? selectedIds = null)
         {
             var model = new DesignerMenuModel(elementId);
             model.CanPaste = clipboardTag is not null && DesignerStructurePlanner.PlanPaste(text, elementId, clipboardTag, registry) is not null;
             if (elementId is null || ElementAttributeReader.Read(text, elementId) is not { } element)
             {
+                return model;
+            }
+
+            model.SelectedIds = selectedIds is { Count: > 1 } && selectedIds.Contains(elementId) ? selectedIds : new[] { elementId };
+            model.Layout = LayoutSelectionInfo.Build(text, model.SelectedIds, elementId, registry);
+            if (model.IsMultiple)
+            {
+                // A multi-selection: the clipboard, delete, duplicate and layout commands apply to all of it; the
+                // single-element gestures (handlers, wrap, unwrap, select a container) are not offered.
+                model.TagName = element.TagName;
+                model.CanCopy = true;
+                model.CanRemove = MultiSelection.TopLevel(model.SelectedIds).Count > 0;
+                model.CanDuplicate = DesignerStructurePlanner.PlanDuplicateMany(text, model.SelectedIds, elementId, registry) is not null;
                 return model;
             }
 
@@ -144,6 +179,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         void ShowProperties(string? elementId);
 
         void EditDesignSize();
+
+        /// <summary>A Layout toolbar / Format menu command on the current selection (docs/DESIGNER.md §13).</summary>
+        void RunLayoutCommand(DesignerLayoutCommand command);
     }
 
     /// <summary>
@@ -231,8 +269,15 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     case Std97Copy: _actions.Copy(id!); break;
                     case Std97Paste: _actions.Paste(id); break;
                     case Std97Delete: _actions.Delete(id!); break;
-                    case Std97BringToFront: _actions.MoveWithinParent(id!, _model.FrontIndex!.Value); break;
-                    case Std97SendToBack: _actions.MoveWithinParent(id!, _model.BackIndex!.Value); break;
+                    case Std97BringToFront when !_model.IsMultiple: _actions.MoveWithinParent(id!, _model.FrontIndex!.Value); break;
+                    case Std97SendToBack when !_model.IsMultiple: _actions.MoveWithinParent(id!, _model.BackIndex!.Value); break;
+                    default:
+                        if (DesignerLayoutCommands.TryFromStandardCommand(nCmdID, out var layout))
+                        {
+                            _actions.RunLayoutCommand(layout);
+                        }
+
+                        break;
                 }
 
                 return SOk;
@@ -281,9 +326,11 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 case Std97Copy: return new CommandState(_model.CanCopy);
                 case Std97Paste: return new CommandState(_model.CanPaste);
                 case Std97Delete: return new CommandState(_model.CanRemove);
-                case Std97BringToFront: return new CommandState(_model.FrontIndex is not null);
-                case Std97SendToBack: return new CommandState(_model.BackIndex is not null);
-                default: return null;
+                case Std97BringToFront when !_model.IsMultiple: return new CommandState(_model.FrontIndex is not null);
+                case Std97SendToBack when !_model.IsMultiple: return new CommandState(_model.BackIndex is not null);
+                default:
+                    // The Layout commands (docs/DESIGNER.md §13) - and z-order on a multi-selection.
+                    return DesignerLayoutCommands.TryFromStandardCommand(cmdId, out var layout) ? new CommandState(!_model.IsView && _model.Layout.IsEnabled(layout)) : null;
             }
         }
 
@@ -300,6 +347,11 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 case DesignerCommandIds.Unwrap: return new CommandState(_model.CanUnwrap, true, DesignerText.MenuUnwrap);
                 case DesignerCommandIds.ViewProperties: return new CommandState(true, true, DesignerText.MenuViewProperties);
                 case DesignerCommandIds.DesignSize: return new CommandState(true, true, DesignerText.MenuDesignSize);
+                case DesignerCommandIds.AlignMenu: return LayoutMenu(DesignerText.MenuAlign, DesignerLayoutCommand.AlignLefts, DesignerLayoutCommand.AlignBottoms);
+                case DesignerCommandIds.SizeMenu: return LayoutMenu(DesignerText.MenuMakeSameSize, DesignerLayoutCommand.MakeSameWidth, DesignerLayoutCommand.MakeSameSize);
+                case DesignerCommandIds.HorizontalSpacingMenu: return LayoutMenu(DesignerText.MenuHorizontalSpacing, DesignerLayoutCommand.HorizontalSpacingEqual, DesignerLayoutCommand.HorizontalSpacingRemove);
+                case DesignerCommandIds.VerticalSpacingMenu: return LayoutMenu(DesignerText.MenuVerticalSpacing, DesignerLayoutCommand.VerticalSpacingEqual, DesignerLayoutCommand.VerticalSpacingRemove);
+                case DesignerCommandIds.CenterMenu: return LayoutMenu(DesignerText.MenuCenterInView, DesignerLayoutCommand.CenterHorizontally, DesignerLayoutCommand.CenterVertically);
             }
 
             if (Index(cmdId, DesignerCommandIds.WrapFirst, DesignerStructurePlanner.WrapContainers.Count) is { } wrap)
@@ -335,6 +387,13 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
             return index == 0 ? new CommandState(false, false, string.Empty) : null;
         }
+
+        /// <summary>A Layout submenu: shown on an element's menu, enabled when one of its commands (<paramref name="first"/>..<paramref name="last"/>) is.</summary>
+        private CommandState LayoutMenu(string text, DesignerLayoutCommand first, DesignerLayoutCommand last) =>
+            new CommandState(
+                Enumerable.Range((int)first, (int)last - (int)first + 1).Any(c => _model.Layout.IsEnabled((DesignerLayoutCommand)c)),
+                !_model.IsView,
+                text);
 
         private static int? Index(int cmdId, int first, int count) => cmdId >= first && cmdId < first + count ? cmdId - first : null;
 
