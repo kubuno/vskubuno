@@ -624,9 +624,15 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     // See the constructor's own comment on why this is suppressed, not "fixed" with
                     // another ThreadHelper call directly in this method.
 #pragma warning disable VSTHRD010
-                    var diagnostic = VsFilterKeysBridge.TryTranslateAccelerator(_vsFilterKeys2, hwnd, msg, wParam, lParam);
+                    var diagnostic = VsFilterKeysBridge.TryTranslateAccelerator(_vsFilterKeys2, hwnd, msg, wParam, lParam, out var translated);
 #pragma warning restore VSTHRD010
                     KubunoViewsLogHost.Current.WriteLine("[designer] " + diagnostic);
+                    if (!translated && (msg == WmKeyDown || msg == WmSysKeyDown))
+                    {
+                        // Found live: Visual Studio does not translate every chord that reaches it this way
+                        // (Ctrl+Z came back untranslated), so the pane gets a last chance to act on it.
+                        UnhandledSurfaceKey?.Invoke(this, new DesignSurfaceKeyEventArgs((int)wParam.ToInt64(), ctrl, shift, alt));
+                    }
                 }
                 else
                 {

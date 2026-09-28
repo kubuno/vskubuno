@@ -73,6 +73,9 @@ namespace Kubuno.VisualStudio.SolutionExplorer
 
         public int CompareTo(object obj) => obj is KubunoTreeItem other ? Order.CompareTo(other.Order) : 0;
 
+        /// <summary>The Kubuno control icon (<see cref="ControlIcons"/>, KubunoControls.imagemanifest) of a <c>.kbview</c> element tag.</summary>
+        internal static ImageMoniker ControlIcon(string? tag) => new ImageMoniker { Guid = ControlIcons.ImagesGuid, Id = ControlIcons.IdFor(tag) };
+
         /// <summary>A <c>KnownMonikers</c> property by name (see <see cref="SymbolMonikerNames"/>), cached.</summary>
         protected static ImageMoniker Moniker(string name)
         {
@@ -124,7 +127,11 @@ namespace Kubuno.VisualStudio.SolutionExplorer
             ? $"<{Symbol.ElementTag}> - line {Symbol.Line + 1}"
             : $"{Symbol.Name}{(string.IsNullOrEmpty(Symbol.Detail) ? string.Empty : " - " + Symbol.Detail)} ({Symbol.Visibility.ToString().ToLowerInvariant()}, line {Symbol.Line + 1})";
 
-        public override ImageMoniker IconMoniker => Moniker(SymbolMonikerNames.For(Symbol));
+        // .kbview elements: the Kubuno control icon of their tag (the same as in the designer's Toolbox);
+        // Rust symbols: Visual Studio's own catalog glyphs, like Roslyn.
+        public override ImageMoniker IconMoniker => Symbol.Kind == SolutionSymbolKind.ViewElement
+            ? ControlIcon(Symbol.ElementTag)
+            : Moniker(SymbolMonikerNames.For(Symbol));
 
         public override bool HasItems => _children.Count > 0;
 

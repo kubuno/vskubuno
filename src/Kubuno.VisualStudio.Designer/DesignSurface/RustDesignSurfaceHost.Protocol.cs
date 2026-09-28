@@ -162,6 +162,13 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 return;
             }
 
+            // DSG-9's shapes (editRequests, moveElement/insertChild, dropTargetChanged) - see
+            // RustDesignSurfaceHost.DragDrop.cs.
+            if (TryDispatchDragDropLine(line))
+            {
+                return;
+            }
+
             // Neither recognised shape matched: a malformed line, or a `type` this version of the host
             // does not know about yet - logged, never thrown (see the class doc's own "never crash the
             // pane over one bad line" posture, already established by `ErrorDataReceived`'s handler).

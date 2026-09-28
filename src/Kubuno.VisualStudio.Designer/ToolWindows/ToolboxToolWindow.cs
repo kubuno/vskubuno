@@ -67,7 +67,7 @@ namespace Kubuno.VisualStudio.Designer.ToolWindows
                 }
 
                 var client = componentModel.DefaultExportProvider.GetExportedValues<ILanguageClient>().OfType<KubunoViewsLanguageClient>().FirstOrDefault();
-                var registry = await JsonRpcRegistryClient.FetchAsync(client?.Rpc, CancellationToken.None);
+                var registry = await JsonRpcRegistryClient.FetchAsync(client?.ReadyRpc, CancellationToken.None);
                 if (registry.Components.Count > 0)
                 {
                     Content = new ToolboxView(new ToolboxViewModel(registry));

@@ -10,79 +10,13 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
     /// accessibility (<c>...Public</c> = no overlay, <c>...Internal</c> = Friend heart,
     /// <c>...Protected</c> = star, <c>...Private</c> = lock). Kept as names so the mapping is
     /// unit-testable without the image catalog; the VSIX resolves them once by reflection.
+    /// Rust symbols only: <c>.kbview</c> element nodes use the Kubuno control icons (<see cref="ControlIcons"/>),
+    /// shared with the designer's Toolbox (docs/DESIGNER.md section 11).
     /// </summary>
     public static class SymbolMonikerNames
     {
         /// <summary>Used when a name cannot be resolved (never expected; guards against catalog changes).</summary>
         public const string Fallback = "Type";
-
-        private static readonly Dictionary<string, string> ElementFamilies = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            // Containers / layout.
-            ["Card"] = "Panel",
-            ["Panel"] = "Panel",
-            ["Stack"] = "StackPanel",
-            ["Grid"] = "Grid",
-            ["Dock"] = "DockPanel",
-            ["Wrap"] = "WrapPanel",
-            ["GroupBox"] = "GroupBox",
-            ["ScrollArea"] = "ScrollViewer",
-            ["Splitter"] = "GridSplitter",
-            ["Accordion"] = "Expander",
-            ["AccordionSection"] = "Expander",
-            ["Tabs"] = "Tab",
-            ["TabItem"] = "Tab",
-            ["Toolbar"] = "ToolBar",
-            ["ToolbarItem"] = "MenuItem",
-            ["Separator"] = "MenuSeparator",
-
-            // Commands.
-            ["Button"] = "Button",
-            ["IconButton"] = "ImageButton",
-            ["LinkLabel"] = "HyperLink",
-            ["Breadcrumb"] = "LinkButton",
-            ["BreadcrumbItem"] = "LinkButton",
-            ["Stepper"] = "ButtonGroup",
-            ["Step"] = "Button",
-
-            // Choices.
-            ["CheckBox"] = "CheckBoxChecked",
-            ["Switch"] = "ToggleButton",
-            ["RadioButton"] = "RadioButton",
-            ["CheckedListBox"] = "CheckBoxList",
-            ["ComboBox"] = "ComboBox",
-            ["Dropdown"] = "ComboBox",
-            ["Option"] = "ComboBoxItem",
-            ["Item"] = "ComboBoxItem",
-            ["ListBox"] = "ListBox",
-            ["ListView"] = "ListView",
-            ["TreeView"] = "TreeView",
-            ["DataTable"] = "Table",
-            ["Column"] = "TemplateColumn",
-
-            // Text input.
-            ["TextField"] = "TextBox",
-            ["SearchField"] = "TextBox",
-            ["MaskedField"] = "TextBox",
-            ["ColorField"] = "TextBox",
-            ["PasswordField"] = "PasswordBox",
-            ["TextArea"] = "RichTextBox",
-            ["NumericField"] = "Numeric",
-            ["DatePicker"] = "DateTimePicker",
-            ["MonthCalendar"] = "Calendar",
-            ["Slider"] = "Slider",
-
-            // Display.
-            ["Label"] = "Label",
-            ["Text"] = "TextBlock",
-            ["Badge"] = "Label",
-            ["Callout"] = "RichTooltip",
-            ["EmptyState"] = "Label",
-            ["Icon"] = "ImageIcon",
-            ["Image"] = "Image",
-            ["ProgressBar"] = "ProgressBar",
-            ["Spinner"] = "Spinner",
-        };
 
         /// <summary>The moniker name for <paramref name="symbol"/>.</summary>
         public static string For(SolutionSymbol symbol)
@@ -92,9 +26,8 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
                 throw new ArgumentNullException(nameof(symbol));
             }
 
-            return symbol.Kind == SolutionSymbolKind.ViewElement
-                ? ForViewElement(symbol.ElementTag)
-                : ForRust(symbol.Kind, symbol.Visibility);
+            // .kbview elements use the Kubuno control icons (ControlIcons), not the image catalog.
+            return symbol.Kind == SolutionSymbolKind.ViewElement ? Fallback : ForRust(symbol.Kind, symbol.Visibility);
         }
 
         public static string ForRust(SolutionSymbolKind kind, SymbolVisibility visibility)
@@ -125,23 +58,6 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
             return family + visibility;
         }
 
-        /// <summary>A control-like glyph per element family (button, check box, text box, panel, list...).</summary>
-        public static string ForViewElement(string tag)
-        {
-            if (tag != null && ElementFamilies.TryGetValue(tag, out var name))
-            {
-                return name;
-            }
-
-            // Unknown / custom elements: guess from the usual suffixes, else a generic control.
-            tag ??= string.Empty;
-            if (tag.EndsWith("Button", StringComparison.Ordinal)) return "Button";
-            if (tag.EndsWith("Field", StringComparison.Ordinal) || tag.EndsWith("Box", StringComparison.Ordinal)) return "TextBox";
-            if (tag.EndsWith("List", StringComparison.Ordinal)) return "ListBox";
-            if (tag.EndsWith("Panel", StringComparison.Ordinal) || tag.EndsWith("Layout", StringComparison.Ordinal)) return "Panel";
-            if (tag.EndsWith("View", StringComparison.Ordinal) || tag.EndsWith("Window", StringComparison.Ordinal)) return "WindowsForm";
-            return "UserControl";
-        }
 
         /// <summary>Every moniker name this class can return (checked against the real catalog by the tests).</summary>
         public static IEnumerable<string> AllNames()
@@ -159,15 +75,7 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
                 }
             }
 
-            foreach (var name in ElementFamilies.Values)
-            {
-                yield return name;
-            }
-
-            foreach (var name in new[] { "Button", "TextBox", "ListBox", "Panel", "WindowsForm", "UserControl", Fallback })
-            {
-                yield return name;
-            }
+            yield return Fallback;
         }
     }
 }

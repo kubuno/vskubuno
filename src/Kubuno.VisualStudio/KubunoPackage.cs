@@ -87,6 +87,9 @@ namespace Kubuno.VisualStudio
     // LOGVIEWID_Designer fell back to the plain text editor before this fix).
     [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a702-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
     [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
+    // LOGVIEWID_Code (verified by reflecting VSConstants.LOGVIEWID_Code): "View Code" (F7) opens the XML in a
+    // plain code window of this factory (KbviewEditorFactory.CodePhysicalView), like WinForms' Form1.cs.
+    [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
     [ProvideEditorExtension(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), Kubuno.VisualStudio.Views.KbviewConstants.FileExtension, Kubuno.VisualStudio.Designer.DesignerConstants.EditorExtensionPriority)]
     [ProvideOptionPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true)]
     [ProvideProfile(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
@@ -102,6 +105,8 @@ namespace Kubuno.VisualStudio
         private FormatOnSaveDocumentEvents? _formatOnSaveEvents;
         private IVsFolderWorkspaceService? _workspaceService;
         private Kubuno.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost? _mcpBridgeHost;
+        private IVsRegisterPriorityCommandTarget? _priorityTargets;
+        private uint _viewSwitchCookie;
 
         /// <summary>
         /// Set once the package is sited, so MEF components (which are not package-owned and would
@@ -147,9 +152,31 @@ namespace Kubuno.VisualStudio
             Kubuno.VisualStudio.Designer.Options.DesignerOptionsHost.Current =
                 (Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage)GetDialogPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage));
 
+            // docs/DESIGNER.md §11 (WinForms-like designer): the native Toolbox shows each Kubuno component
+            // with the same Kubuno control icon as its Solution Explorer element node (KubunoControls.imagemanifest), and F7/Shift+F7
+            // switch between a .kbview's designer and its XML.
+            Kubuno.VisualStudio.Designer.Toolbox.NativeToolboxInstaller.IconMoniker =
+                tag => SolutionExplorer.KubunoTreeItem.ControlIcon(tag);
+            // The Properties window resolves the IEventBindingService behind a double-click on an event
+            // row through its own service chain, which ends at Visual Studio's global services - found
+            // live that the chain does not always reach the active designer's surface (the row then did
+            // nothing). Proffered globally too; it only knows .kbview elements, so it is inert for every
+            // other designer (whose own designer host answers first anyway).
+            ((System.ComponentModel.Design.IServiceContainer)this).AddService(
+                typeof(System.ComponentModel.Design.IEventBindingService),
+                Kubuno.VisualStudio.Designer.PropertyBrowser.KbviewEventBindingService.Instance,
+                promote: true);
+            if (await GetServiceAsync(typeof(SVsRegisterPriorityCommandTarget)) is IVsRegisterPriorityCommandTarget priorityTargets)
+            {
+                var viewSwitch = new Kubuno.VisualStudio.Designer.EditorFactory.DesignerViewSwitchCommandTarget(this);
+                ErrorHandler.ThrowOnFailure(priorityTargets.RegisterPriorityCommandTarget(0, viewSwitch, out _viewSwitchCookie));
+                _priorityTargets = priorityTargets;
+            }
+
             var extensionInstallDirectory = GetExtensionInstallDirectory();
             RustSdkFeedInstaller.EnsureRegistered(extensionInstallDirectory);
             PreloadTemplateWizardAssembly();
+            PreloadImageResourceAssembly();
             var surfaceExePath = KubunoViewsSurfaceLocator.Locate(extensionInstallDirectory, devBuildDirectory: @"C:\kubuno-build\agent-dsgint\release\examples");
             if (surfaceExePath is not null)
             {
@@ -258,6 +285,26 @@ namespace Kubuno.VisualStudio
             catch (Exception ex)
             {
                 KubunoLog.WriteLine($"Kubuno: could not preload Kubuno.VisualStudio.TemplateWizard.dll - $cratename$/$moduleid$ template substitution will not be available ({ex.Message}).");
+            }
+        }
+
+        /// <summary>
+        /// Loads Kubuno.VisualStudio.RustProjectSystem.dll - the assembly whose WPF resources hold the file and
+        /// control icons of RustProject.imagemanifest / KubunoControls.imagemanifest - at package load. The image
+        /// service resolves those pack URIs by assembly NAME; inside a .rsproj, CPS has always loaded the assembly
+        /// already, but in Open Folder nothing does, which is the likely reason the .rs/.kbview file icons were
+        /// blank there (docs/RSPROJ.md lot 8). Same "identity cache" reasoning as <see cref="PreloadTemplateWizardAssembly"/>.
+        /// Never allowed to fail package load.
+        /// </summary>
+        private static void PreloadImageResourceAssembly()
+        {
+            try
+            {
+                _ = typeof(Kubuno.VisualStudio.RustProjectSystem.RustProjectCapabilities).Assembly.GetName();
+            }
+            catch (Exception ex)
+            {
+                KubunoLog.WriteLine($"Kubuno: could not preload Kubuno.VisualStudio.RustProjectSystem.dll - file icons may be missing outside .rsproj projects ({ex.Message}).");
             }
         }
 
@@ -407,6 +454,14 @@ namespace Kubuno.VisualStudio
 
                 _mcpBridgeHost?.Dispose();
                 _mcpBridgeHost = null;
+
+                if (_priorityTargets is not null)
+                {
+#pragma warning disable VSTHRD010 // guarded by ThreadHelper.CheckAccess() above, like the RDT unadvise.
+                    _priorityTargets.UnregisterPriorityCommandTarget(_viewSwitchCookie);
+#pragma warning restore VSTHRD010
+                    _priorityTargets = null;
+                }
 
                 if (Instance == this)
                 {

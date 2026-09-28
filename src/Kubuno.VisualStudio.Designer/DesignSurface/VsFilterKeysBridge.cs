@@ -66,7 +66,10 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 var hr = sp.QueryService(ref guidService, ref guidInterface, out var ptr);
                 if (hr != 0 || ptr == IntPtr.Zero)
                 {
-                    return null;
+                    // Found live: the package's own QueryService does not hand out IVsFilterKeys2 (the
+                    // unhandledKey log showed viaVs=False, so Ctrl+Z on the surface never reached Edit.Undo);
+                    // the global service provider does.
+                    return Package.GetGlobalService(typeof(SVsFilterKeys)) as IVsFilterKeys2;
                 }
 
                 try
@@ -92,9 +95,11 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// key with no VS window of its own to own a narrower scope). Returns a one-line diagnostic for
         /// the caller to log (keeping this the only class that needs to format a VS-typed result); never
         /// throws - a COM call failing must not crash the designer pane over one forwarded key.
+        /// <paramref name="translated"/> reports whether Visual Studio translated (and ran) the key.
         /// </summary>
-        internal static string TryTranslateAccelerator(object vsFilterKeys2, IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam)
+        internal static string TryTranslateAccelerator(object vsFilterKeys2, IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, out bool translated)
         {
+            translated = false;
             // See TryQuery's own comment: always the UI thread, in VS and standalone alike.
             ThreadHelper.ThrowIfNotOnUIThread();
             try
@@ -112,9 +117,10 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     Array.Empty<Guid>(),
                     out _,
                     out _,
-                    out var translated,
+                    out var wasTranslated,
                     out _);
-                return $"IVsFilterKeys2.TranslateAcceleratorEx hr={hr:X8} translated={translated != 0}";
+                translated = wasTranslated != 0;
+                return $"IVsFilterKeys2.TranslateAcceleratorEx hr={hr:X8} translated={translated}";
             }
             catch (Exception ex)
             {

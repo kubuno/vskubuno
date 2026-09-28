@@ -65,7 +65,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
                 current = current.Children[index];
             }
 
-            return new ElementAttributes(current.Name, current.Attributes);
+            return new ElementAttributes(current.Name, current.Attributes, current.Children.ConvertAll(child => child.Name));
         }
 
         private sealed class ScannedElement

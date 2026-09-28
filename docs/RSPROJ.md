@@ -691,3 +691,14 @@ yet isolated (needs a live `devenv` with a debugger attached to `Kubuno.VisualSt
 what type/relationship Open Folder's Folder View actually calls `CreateCollectionSource` with, if
 it calls it at all, for a plain file node - not attempted blind here per this repo's own "always
 test for real" rule) - tracked as a known limitation rather than shipped as an unverified fix.
+
+**Open Folder follow-up (2026-09-28, designer WinForms pass).** File icons: the per-extension
+association itself is confirmed working - `IVsImageService2.GetImageMonikerForFile` in the
+experimental instance returns `7d2b8c4e-…:2` for `a.rs` and `…:3` for `b.kbview` (C# files return
+VS's own). The images live in XAML resources of `Kubuno.VisualStudio.RustProjectSystem.dll`, which
+the image service resolves by assembly NAME; inside a `.rsproj`, CPS has always loaded that assembly,
+but in Open Folder nothing did - the likely cause of the blank icons. `KubunoPackage` now preloads it
+(`PreloadImageResourceAssembly`); the Open Folder rendering itself still needs a visual check.
+Symbol expansion in Open Folder: unchanged - `SymbolTreeProvider.CreateForHierarchyItem` is never
+reached for an Open Folder file node; isolating why needs a debugger attached to the Folder View's
+attached-collection lookup (not attempted blind).

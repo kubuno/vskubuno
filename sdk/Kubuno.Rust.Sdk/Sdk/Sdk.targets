@@ -85,6 +85,18 @@
   </ItemGroup>
 
   <!--
+    .kbview files are designer documents (docs/DESIGNER.md §11), like a WinForms form or a WPF window:
+    SubType="Designer" is the item metadata the project system reads (CPS's HasDesigner check) to
+    offer "View Designer" (Shift+F7) and "View Code" (F7) on them in Solution Explorer, and "View
+    Designer" on their nested code-behind .rs. A project may override it per item.
+  -->
+  <ItemGroup>
+    <None Update="**/*.kbview">
+      <SubType Condition="'%(None.SubType)' == ''">Designer</SubType>
+    </None>
+  </ItemGroup>
+
+  <!--
     Rule files (docs/RSPROJ.mdÂ§3): what CPS uses to know the item types it displays, and the
     project/file property pages. Neutral language only (no localized copies yet).
   -->

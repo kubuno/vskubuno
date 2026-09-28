@@ -137,6 +137,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>RustProject.imagemanifest</Link>
     </Content>
+    <!-- Kubuno control icons (docs/DESIGNER.md section 11): the designer's Toolbox items and the .kbview
+         element nodes of Solution Explorer; the XAML icons are WPF pages of Kubuno.VisualStudio.RustProjectSystem.dll. -->
+    <Content Include="..\Kubuno.VisualStudio.RustProjectSystem\Resources\KubunoControls.imagemanifest">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>KubunoControls.imagemanifest</Link>
+    </Content>
     <Content Include="Grammars\rust.tmLanguage.json">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

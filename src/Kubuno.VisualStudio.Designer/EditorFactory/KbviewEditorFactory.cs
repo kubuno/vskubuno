@@ -21,16 +21,22 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
     /// <c>[ProvideEditorLogicalView]</c> attributes a VSIX package class must add to actually register
     /// this factory - nothing here does that itself (this library ships no package class).
     ///
-    /// Both logical views this factory declares (Designer and TextView, see INTEGRATION.md) resolve to
-    /// the *same* physical view/window: <see cref="DesignerWindowPane"/> always shows the Design/XML/
-    /// Split tab strip, and the requested logical view only affects which tab starts active
-    /// (<see cref="MapLogicalView"/> intentionally returns the one physical view name for either).
+    /// Two physical views, like the WinForms designer's <c>Form1.cs [Design]</c> / <c>Form1.cs</c> pair
+    /// (docs/DESIGNER.md §11): the Designer and Primary logical views map to <see cref="DesignPhysicalView"/>
+    /// - a <see cref="DesignerWindowPane"/> opened on its Design tab, captioned <c>xxx.kbview [Design]</c>
+    /// (<c>[Conception]</c> in a French Visual Studio) - and the Code and TextView logical views map to
+    /// <see cref="CodePhysicalView"/>, a plain Visual Studio code window on the SAME text buffer (the XML;
+    /// "View Code"/F7). Both windows share one document (doc data), so an edit in either is an edit of the
+    /// file. The Design window keeps its own XML and Split tabs for side-by-side editing.
     /// </summary>
     [Guid(DesignerConstants.EditorFactoryGuidString)]
     public sealed class KbviewEditorFactory : IVsEditorFactory
     {
-        /// <summary>The single physical view this factory ever creates - both logical views map to it (see class remarks).</summary>
-        private const string PhysicalViewName = "Design";
+        /// <summary>Physical view of the designer window (Designer/Primary logical views).</summary>
+        public const string DesignPhysicalView = "Design";
+
+        /// <summary>Physical view of the plain XML code window (Code/TextView logical views).</summary>
+        public const string CodePhysicalView = "Code";
 
         private OleInterop.IServiceProvider? _oleServiceProvider;
 
@@ -44,15 +50,19 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
 
         public int MapLogicalView(ref Guid rguidLogicalView, out string? pbstrPhysicalView)
         {
-            // Accept the Designer and (plain) TextView/Primary logical views - see INTEGRATION.md for
-            // the exact ProvideEditorLogicalView attributes this corresponds to. Both resolve to the
-            // one split-view physical window (class remarks); anything else is "not supported here",
-            // which is the documented meaning of returning a null physical view name with E_NOTIMPL.
+            // See the class remarks; anything else is "not supported here", which is the documented
+            // meaning of returning a null physical view name with E_NOTIMPL.
             if (rguidLogicalView == VSConstants.LOGVIEWID_Primary ||
-                rguidLogicalView == VSConstants.LOGVIEWID_TextView ||
                 rguidLogicalView == VSConstants.LOGVIEWID_Designer)
             {
-                pbstrPhysicalView = PhysicalViewName;
+                pbstrPhysicalView = DesignPhysicalView;
+                return VSConstants.S_OK;
+            }
+
+            if (rguidLogicalView == VSConstants.LOGVIEWID_Code ||
+                rguidLogicalView == VSConstants.LOGVIEWID_TextView)
+            {
+                pbstrPhysicalView = CodePhysicalView;
                 return VSConstants.S_OK;
             }
 
@@ -121,11 +131,26 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
                     return VSConstants.VS_E_INCOMPATIBLEDOCDATA;
                 }
 
+                if (string.Equals(pszPhysicalView, CodePhysicalView, StringComparison.Ordinal))
+                {
+                    // "View Code" (F7): the standard VSSDK pattern for a text view of an editor factory's
+                    // own document - a plain code window on the same buffer, hosted by the shell exactly
+                    // like the core text editor's (same command UI context, so every text command works).
+                    var codeWindow = GetEditorAdapters(oleServiceProvider).CreateVsCodeWindowAdapter(oleServiceProvider);
+                    ErrorHandler.ThrowOnFailure(codeWindow.SetBuffer(textLines));
+                    ppunkDocView = Marshal.GetIUnknownForObject(codeWindow);
+                    ppunkDocData = Marshal.GetIUnknownForObject(textLines);
+                    pguidCmdUI = VSConstants.GUID_TextEditorFactory;
+                    pbstrEditorCaption = string.Empty;
+                    return VSConstants.S_OK;
+                }
+
                 pane = new DesignerWindowPane(textLines, oleServiceProvider);
 
                 ppunkDocView = Marshal.GetIUnknownForObject(pane);
                 ppunkDocData = Marshal.GetIUnknownForObject(textLines);
-                pbstrEditorCaption = string.Empty;
+                // "main_view.kbview [Design]" / "[Conception]", like WinForms' "Form1.cs [Design]".
+                pbstrEditorCaption = DesignerText.DesignCaptionSuffix;
                 return VSConstants.S_OK;
             }
             catch (Exception ex)

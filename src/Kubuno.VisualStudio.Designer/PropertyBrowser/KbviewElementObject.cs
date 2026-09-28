@@ -1,0 +1,218 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.Design;
+using System.Linq;
+using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.VisualStudio.Designer.Selection;
+
+namespace Kubuno.VisualStudio.Designer.PropertyBrowser
+{
+    /// <summary>
+    /// One <c>.kbview</c> element as Visual Studio's native Properties window (F4) sees it: published by
+    /// the designer pane through <c>ITrackSelection</c>/<c>SelectionContainer</c>, and described entirely
+    /// by an <see cref="ICustomTypeDescriptor"/> generated from the component registry - no CLR type per
+    /// component. The Properties window then behaves like it does for a WinForms control:
+    /// <list type="bullet">
+    /// <item>one row per registry property (plus <c>(Name)</c> = <c>x:Name</c> and the layout attributes
+    /// every element accepts), grouped in WinForms-like categories (<see cref="PropertyCategoryMap"/>), with
+    /// the registry doc as the description, enum/bool dropdowns, bold when set to a non-default value and
+    /// "Reset" to remove the attribute;</item>
+    /// <item>the Events tab (the ⚡ button) listing the component's registry events through
+    /// <see cref="GetEvents()"/> and <see cref="KbviewEventBindingService"/> (see that class for how the tab
+    /// appears); double-clicking one creates/shows the handler (DSG-10).</item>
+    /// </list>
+    /// Values are always read back from the live buffer text (<see cref="IKbviewElementHost.GetCurrentText"/>,
+    /// cached per buffer version), so the grid follows XML edits too; an edit is written through
+    /// <see cref="IKbviewElementHost"/> as a surgical attribute edit (one undo unit), and shown optimistically
+    /// until the buffer catches up. Implements <see cref="IComponent"/> because <c>PropertyGrid</c> only
+    /// wires events for components (its <c>ViewEvent</c> bails out otherwise).
+    /// </summary>
+    public sealed class KbviewElementObject : ICustomTypeDescriptor, IComponent
+    {
+        private static readonly (string Name, PropKind Kind, string Doc)[] CommonAttributes =
+        {
+            // kubuno-views-ls/src/common_attrs.rs's COMMON_ATTRIBUTES, same order.
+            ("Dock", PropKind.CreateEnum(new[] { "Top", "Bottom", "Left", "Right", "Fill" }), "Which band of the parent <Panel> this child occupies (Dock layout engine)."),
+            ("Anchor", PropKind.String, "A comma-combination of Top/Bottom/Left/Right - which edges of the parent this child stays pinned to (Anchor layout engine)."),
+            ("X", PropKind.F32, "The child's left offset in DIP (Anchor layout engine)."),
+            ("Y", PropKind.F32, "The child's top offset in DIP (Anchor layout engine)."),
+            ("Width", PropKind.F32, "The child's width in DIP."),
+            ("Height", PropKind.F32, "The child's height in DIP."),
+        };
+
+        private readonly IKbviewElementHost _host;
+        private readonly Dictionary<string, (int Version, string? Value)> _pending = new Dictionary<string, (int, string?)>(StringComparer.Ordinal);
+        private PropertyDescriptorCollection? _properties;
+        private PropertyDescriptorCollection? _eventProperties;
+        private EventDescriptorCollection? _events;
+        private int _cachedVersion = int.MinValue;
+        private ElementAttributes? _cached;
+
+        public KbviewElementObject(IKbviewElementHost host, string elementId, ComponentMeta component)
+        {
+            _host = host ?? throw new ArgumentNullException(nameof(host));
+            ElementId = elementId ?? throw new ArgumentNullException(nameof(elementId));
+            Component = component ?? throw new ArgumentNullException(nameof(component));
+            Site = new KbviewElementSite(this);
+        }
+
+        public event EventHandler? Disposed;
+
+        /// <summary>The stable element id (docs/DESIGNER.md §8) this object edits.</summary>
+        public string ElementId { get; }
+
+        public ComponentMeta Component { get; }
+
+        internal IKbviewElementHost Host => _host;
+
+        public ISite? Site { get; set; }
+
+        /// <summary>The element's <c>x:Name</c>, or null.</summary>
+        public string? XName => GetRawValue("x:Name");
+
+        /// <summary>
+        /// The raw attribute value as currently written (an optimistic, not-yet-applied edit first), or
+        /// null when the attribute is absent.
+        /// </summary>
+        public string? GetRawValue(string attributeName)
+        {
+            if (_pending.TryGetValue(attributeName, out var pending))
+            {
+                if (pending.Version == _host.CurrentVersion)
+                {
+                    return pending.Value;
+                }
+
+                _pending.Remove(attributeName);
+            }
+
+            var attributes = ReadAttributes();
+            return attributes is not null && attributes.Attributes.TryGetValue(attributeName, out var value) ? value : null;
+        }
+
+        /// <summary>Whether this element still resolves against the current text (a stale id after a structural edit does not).</summary>
+        public bool IsValid => ReadAttributes() is { } attributes && string.Equals(attributes.TagName, Component.Name, StringComparison.Ordinal);
+
+        internal void SetAttribute(string name, string value)
+        {
+            _pending[name] = (_host.CurrentVersion, value);
+            _host.SetAttribute(ElementId, name, value);
+        }
+
+        internal void RemoveAttribute(string name)
+        {
+            _pending[name] = (_host.CurrentVersion, null);
+            _host.RemoveAttribute(ElementId, name);
+        }
+
+        private ElementAttributes? ReadAttributes()
+        {
+            var version = _host.CurrentVersion;
+            if (version != _cachedVersion)
+            {
+                _cached = ElementAttributeReader.Read(_host.GetCurrentText(), ElementId);
+                _cachedVersion = version;
+            }
+
+            return _cached;
+        }
+
+        /// <summary>The Properties tab's rows (built once per object; values are read live).</summary>
+        public PropertyDescriptorCollection GetAttributeProperties()
+        {
+            if (_properties is null)
+            {
+                var list = new List<PropertyDescriptor>
+                {
+                    new KbviewAttributePropertyDescriptor("x:Name", "Name", kind: null, defaultValue: null, DesignerText.NameDescription, PropertyCategoryMap.Category.Design),
+                };
+
+                var seen = new HashSet<string>(StringComparer.Ordinal) { "x:Name" };
+                foreach (var property in Component.Properties)
+                {
+                    if (seen.Add(property.Name))
+                    {
+                        list.Add(new KbviewAttributePropertyDescriptor(property.Name, property.Name, property.Kind, property.Default, property.Doc, PropertyCategoryMap.For(property.Name, property.Kind)));
+                    }
+                }
+
+                foreach (var (name, kind, doc) in CommonAttributes)
+                {
+                    if (seen.Add(name))
+                    {
+                        list.Add(new KbviewAttributePropertyDescriptor(name, name, kind, defaultValue: null, doc, PropertyCategoryMap.Category.Layout));
+                    }
+                }
+
+                _properties = new PropertyDescriptorCollection(list.ToArray(), readOnly: true);
+            }
+
+            return _properties;
+        }
+
+        /// <summary>The Events tab's rows - one string-valued row per registry event (the <c>On*</c> attribute holding the handler name).</summary>
+        public PropertyDescriptorCollection GetEventProperties()
+        {
+            if (_eventProperties is null)
+            {
+                _eventProperties = new PropertyDescriptorCollection(
+                    GetEvents().Cast<KbviewEventDescriptor>().Select(e => (PropertyDescriptor)new KbviewEventPropertyDescriptor(e)).ToArray(),
+                    readOnly: true);
+            }
+
+            return _eventProperties;
+        }
+
+        public EventDescriptorCollection GetEvents()
+        {
+            if (_events is null)
+            {
+                _events = new EventDescriptorCollection(
+                    Component.Events.Select(e => (EventDescriptor)new KbviewEventDescriptor(e)).ToArray(),
+                    readOnly: true);
+            }
+
+            return _events;
+        }
+
+        /// <summary>The Events tab's default row (the component's first event, e.g. <c>OnClick</c> for a <c>Button</c>).</summary>
+        public PropertyDescriptor? DefaultEventProperty => GetEventProperties().Count > 0 ? GetEventProperties()[0] : null;
+
+        public override string ToString() => XName is { Length: > 0 } name ? $"{name} ({Component.Name})" : Component.Name;
+
+        // ---- ICustomTypeDescriptor ----
+
+        public AttributeCollection GetAttributes() => new AttributeCollection(
+            new DefaultPropertyAttribute(Component.Properties.Count > 0 ? Component.Properties[0].Name : "x:Name"),
+            new DefaultEventAttribute(Component.Events.Count > 0 ? Component.Events[0].Name : null));
+
+        public string GetClassName() => Component.Name;
+
+        public string? GetComponentName() => XName;
+
+        public TypeConverter GetConverter() => new TypeConverter();
+
+        public EventDescriptor? GetDefaultEvent() => GetEvents().Count > 0 ? GetEvents()[0] : null;
+
+        public PropertyDescriptor? GetDefaultProperty()
+        {
+            var properties = GetAttributeProperties();
+            return Component.Properties.Count > 0 ? properties.Find(Component.Properties[0].Name, ignoreCase: false) : properties[0];
+        }
+
+        public object? GetEditor(Type editorBaseType) => null;
+
+        public EventDescriptorCollection GetEvents(Attribute[]? attributes) => GetEvents();
+
+        public PropertyDescriptorCollection GetProperties() => GetAttributeProperties();
+
+        public PropertyDescriptorCollection GetProperties(Attribute[]? attributes) => GetAttributeProperties();
+
+        public object GetPropertyOwner(PropertyDescriptor? pd) => this;
+
+        // ---- IComponent ----
+
+        public void Dispose() => Disposed?.Invoke(this, EventArgs.Empty);
+    }
+}

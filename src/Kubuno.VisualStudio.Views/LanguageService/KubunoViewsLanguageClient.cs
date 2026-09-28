@@ -61,6 +61,17 @@ namespace Kubuno.VisualStudio.Views.LanguageService
 
         public JsonRpc? Rpc { get; set; }
 
+        /// <summary>
+        /// True once the server answered <c>initialize</c> (<see cref="OnServerInitializedAsync"/>). <see cref="Rpc"/> is
+        /// attached BEFORE that, and kubuno-views-ls rejects - and exits on - any request that precedes
+        /// <c>initialize</c> (found live: a designer restored with the solution sent <c>kubuno/registry</c>
+        /// too early), so custom-message callers must wait for this, not just for <see cref="Rpc"/>.
+        /// </summary>
+        public bool IsInitialized { get; private set; }
+
+        /// <summary><see cref="Rpc"/> once the server is initialized, otherwise null.</summary>
+        public JsonRpc? ReadyRpc => IsInitialized ? Rpc : null;
+
         public event AsyncEventHandler<EventArgs>? StartAsync;
 
         public event AsyncEventHandler<EventArgs>? StopAsync;
@@ -135,6 +146,7 @@ namespace Kubuno.VisualStudio.Views.LanguageService
 
         public Task OnServerInitializedAsync()
         {
+            IsInitialized = true;
             KubunoViewsLogHost.Current.WriteLine("kubuno-views-ls initialized.");
             return Task.CompletedTask;
         }
@@ -162,7 +174,11 @@ namespace Kubuno.VisualStudio.Views.LanguageService
             return Task.CompletedTask;
         }
 
-        public Task StopServerAsync() => StopAsync?.InvokeAsync(this, EventArgs.Empty) ?? Task.CompletedTask;
+        public Task StopServerAsync()
+        {
+            IsInitialized = false;
+            return StopAsync?.InvokeAsync(this, EventArgs.Empty) ?? Task.CompletedTask;
+        }
 
         /// <summary>
         /// The directory this library's own assembly is loaded from - the extension's install

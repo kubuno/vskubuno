@@ -64,7 +64,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// (<see cref="Infrastructure.BufferEditApplier"/>/<see cref="Infrastructure.DesignerUndoScope"/>'s
     /// own doc comments).
     /// </summary>
-    internal sealed class DesignSurfaceEditingCoordinator : IDisposable
+    internal sealed partial class DesignSurfaceEditingCoordinator : IDisposable
     {
         private const string ApplyEditMethod = "kubuno/applyEdit";
         private static readonly TimeSpan DebounceInterval = TimeSpan.FromMilliseconds(200);
@@ -75,6 +75,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private readonly CodeWindowHost _codeWindowHost;
         private readonly Func<KubunoViewsLanguageClient?> _resolveLanguageClient;
         private readonly DispatcherTimer _pushTimer;
+        private readonly Func<ITrackSelection?>? _trackSelection;
+        private readonly OleInterop.IServiceProvider? _oleServiceProvider;
+        private readonly Action? _ensureActiveDesigner;
         private bool _disposed;
 
         // Set once SetupSelectionSyncAsync completes (INTEGRATION.md §9) - null until then, and
@@ -91,18 +94,32 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             ITextBuffer buffer,
             IVsTextLines textLines,
             CodeWindowHost codeWindowHost,
-            Func<KubunoViewsLanguageClient?> resolveLanguageClient)
+            Func<KubunoViewsLanguageClient?> resolveLanguageClient,
+            Func<ITrackSelection?>? trackSelection,
+            OleInterop.IServiceProvider? oleServiceProvider,
+            Action? ensureActiveDesigner)
         {
             _host = host;
             _buffer = buffer;
             _textLines = textLines;
             _codeWindowHost = codeWindowHost;
             _resolveLanguageClient = resolveLanguageClient;
+            _trackSelection = trackSelection;
+            _oleServiceProvider = oleServiceProvider;
+            _ensureActiveDesigner = ensureActiveDesigner;
 
             _pushTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = DebounceInterval };
             _pushTimer.Tick += OnPushTimerTick;
 
             _host.EditRequested += OnEditRequested;
+            if (_host is RustDesignSurfaceHost rustHost)
+            {
+                // DSG-9: a Flow reorder / toolbox drop and a move/resize batch (see the .Native.cs half).
+                rustHost.DragDropEditRequested += OnDragDropEditRequested;
+                rustHost.EditRequestsReceived += OnEditRequestsReceived;
+                rustHost.UnhandledSurfaceKey += OnUnhandledSurfaceKey;
+            }
+
             _buffer.Changed += OnBufferChanged;
             _host.SetDesignMode(true);
 
@@ -121,7 +138,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// are unavailable - logged, never thrown, since a half-available host must still let the pane
         /// open (docs/DESIGNER.md's own "degrade to no-op" posture, mirrored here on the C# side).
         /// </summary>
-        internal static DesignSurfaceEditingCoordinator? TryCreate(IDesignSurfaceHost host, IVsTextLines textLines, CodeWindowHost codeWindowHost, OleInterop.IServiceProvider? oleServiceProvider)
+        internal static DesignSurfaceEditingCoordinator? TryCreate(IDesignSurfaceHost host, IVsTextLines textLines, CodeWindowHost codeWindowHost, OleInterop.IServiceProvider? oleServiceProvider, Func<ITrackSelection?>? trackSelection = null, Action? ensureActiveDesigner = null)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -150,7 +167,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 KubunoViewsLanguageClient? ResolveClient() =>
                     componentModel.DefaultExportProvider.GetExportedValues<ILanguageClient>().OfType<KubunoViewsLanguageClient>().FirstOrDefault();
 
-                return new DesignSurfaceEditingCoordinator(host, dataBuffer, textLines, codeWindowHost, ResolveClient);
+                return new DesignSurfaceEditingCoordinator(host, dataBuffer, textLines, codeWindowHost, ResolveClient, trackSelection, oleServiceProvider, ensureActiveDesigner);
             }
             catch (Exception ex) when (ex is InvalidOperationException or COMException)
             {
@@ -206,7 +223,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             try
             {
                 var symbols = await client.DocumentSymbolAsync(documentUri, CancellationToken.None);
-                _outlineViewModel.Load(DocumentSymbolTreeBuilder.Build(symbols));
+                var tree = DocumentSymbolTreeBuilder.Build(symbols);
+                _outlineViewModel.Load(tree);
+                UpdateSelectableElements(tree);
             }
             catch (Exception ex)
             {
@@ -249,11 +268,13 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     return;
                 }
 
-                var client = _resolveLanguageClient();
-                var rpc = client?.Rpc;
+                // A document restored at startup (or opened before the language server finished
+                // initializing) gets here before the client is attached - wait for it instead of giving up
+                // (found live: the designer restored with the solution had no selection sync at all).
+                var rpc = await WaitForLanguageClientRpcAsync();
                 if (rpc is null)
                 {
-                    KubunoViewsLogHost.Current.WriteLine("[designer] selection sync skipped: the Kubuno Views language client is not attached yet.");
+                    KubunoViewsLogHost.Current.WriteLine("[designer] selection sync skipped: the Kubuno Views language client did not attach within 60 s.");
                     return;
                 }
 
@@ -278,6 +299,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     _host, surfaceTarget, textView, lsClient, registry,
                     PropertiesToolWindowHost.Current, documentUri, _outlineViewModel);
 
+                // Visual Studio's own Toolbox and Properties window (the .Native.cs half).
+                AttachNativeWindows(_selectionSync, registry);
+
                 // Initial Outline population (INTEGRATION.md §9 point 6: "Populate it ... once when the
                 // pane opens, and again on every debounced buffer change" - the second half is
                 // OnPushTimerTick's own job above, now that _viewsSelectionClient/_documentUri are set).
@@ -296,6 +320,28 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// polling interval, matching the general order of magnitude of every other poll in this package
         /// (<see cref="VsTextViewSelectionAdapter"/>'s own 150 ms caret poll).
         /// </summary>
+        /// <summary>Polls for the Kubuno Views language client's <c>JsonRpc</c> (250 ms steps, up to <paramref name="timeout"/>, 60 s by default); null when it never attaches or the pane closed meanwhile.</summary>
+        private async Task<JsonRpc?> WaitForLanguageClientRpcAsync(TimeSpan? timeout = null)
+        {
+            var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(60));
+            while (!_disposed)
+            {
+                if (_resolveLanguageClient()?.ReadyRpc is { } rpc)
+                {
+                    return rpc;
+                }
+
+                if (DateTime.UtcNow >= deadline)
+                {
+                    return null;
+                }
+
+                await Task.Delay(250).ConfigureAwait(true);
+            }
+
+            return null;
+        }
+
         private async Task<IVsTextView?> WaitForPrimaryViewAsync(TimeSpan? timeout = null)
         {
             var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(10));
@@ -347,7 +393,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             try
             {
                 var client = _resolveLanguageClient();
-                var rpc = client?.Rpc;
+                var rpc = client?.ReadyRpc;
                 if (rpc is null)
                 {
                     KubunoViewsLogHost.Current.WriteLine("[designer] kubuno/applyEdit skipped: the Kubuno Views language client is not attached yet.");
@@ -480,6 +526,14 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             _pushTimer.Stop();
             _pushTimer.Tick -= OnPushTimerTick;
             _host.EditRequested -= OnEditRequested;
+            if (_host is RustDesignSurfaceHost rustHost)
+            {
+                rustHost.DragDropEditRequested -= OnDragDropEditRequested;
+                rustHost.EditRequestsReceived -= OnEditRequestsReceived;
+                rustHost.UnhandledSurfaceKey -= OnUnhandledSurfaceKey;
+            }
+
+            _propertiesPublisher?.Dispose();
             _buffer.Changed -= OnBufferChanged;
             _selectionSync?.Dispose();
             _selectionTextView?.Dispose();

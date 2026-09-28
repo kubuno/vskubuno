@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **The `.kbview` designer now works like the Windows Forms designer, with Visual Studio's own tool
+  windows** (docs/DESIGNER.md section 11):
+  - **Toolbox**: while a `.kbview` designer is the active document, Visual Studio's Toolbox lists the
+    Kubuno components in tabs per family ("Contrôles communs", "Affichage", "Choix", "Texte",
+    "Conteneurs", "Données" - English names in an English Visual Studio), alphabetically, below the
+    usual "Pointer" entry; they are hidden for every other document. Drag a component onto the design
+    surface to insert it where it is dropped (on its own, indented line; one undo step; the new element
+    is selected), or double-click it to add it to the selected container.
+  - **New control icons**: one icon per Kubuno component, in the style of the Kubuno apps (Lucide
+    glyphs, Kubuno blue accent, light/dark/high-contrast variants), in the Toolbox and on the `.kbview`
+    element nodes of Solution Explorer. Rust symbols keep Visual Studio's own icons.
+  - **Properties window (F4)**: shows the selected element's properties, like a WinForms control's -
+    `(Name)`, every component property and the layout attributes, grouped in categories, with
+    descriptions, drop-downs for enum/boolean values, bold non-default values and "Reset"; `{Binding
+    ...}` values are shown and edited as text. Editing a value rewrites just that attribute in the XML
+    (one undo step) and the preview follows. The combo box at the top lists every element of the view
+    (name and type) and selects the one you pick.
+  - **Events tab (⚡)**: lists the element's events; double-click an event to create its handler
+    (attribute + Rust stub in the code-behind `.rs`, which opens at the new function) or to go to an
+    existing one; type a name to create a handler with that name.
+  - **Opening like a form**: in a `.rsproj`, double-clicking a `.kbview` opens `main_view.kbview
+    [Design]` (`[Conception]` in French); **F7** ("View Code") opens the XML in a code window and
+    **Shift+F7** ("View Designer") returns to the designer, also from Solution Explorer's context menu
+    and from the code-behind `.rs`. The Design/XML/Split tabs remain available in the designer.
+  - **Ctrl+Z / Ctrl+Y** undo and redo designer changes while the design surface has the focus.
+  The former "Kubuno Toolbox"/"Kubuno Properties" tool windows (Tools menu) remain available as
+  fallbacks.
+- `tools/generate-control-icons.ps1`: generates the control icons, their image manifest and review
+  sheets (`C:\kubuno-build\icons-preview\`).
+
+### Fixed
+
+- **The designer restored with a solution (or opened before the Kubuno Views language server had
+  started) had no selection sync, and could make kubuno-views-ls exit**: its first custom request was
+  sent before the server's `initialize` answer. The designer now waits for the language server to be
+  initialized.
+- **Toolbox drops, Flow reorders and move/resize drags on the design surface were never applied**
+  (their protocol lines were only logged as "unrecognised"): all design-surface messages are now
+  dispatched by a single listener, and a move/resize is applied as one undo step.
+- **Keys forwarded from the design surface never reached Visual Studio's accelerators** (the
+  `IVsFilterKeys2` service was not obtained from the package's own service provider).
+- **`.rs`/`.kbview` file icons in Open Folder**: the assembly holding the icon resources is now loaded
+  with the package (inside a `.rsproj` it always was, through the project system) - see
+  docs/RSPROJ.md lot 8 for what remains in Open Folder.
+
 ### Fixed
 
 - **Double-clicking a `.kbview` element node in Solution Explorer (e.g. `hello (Button)`) put the

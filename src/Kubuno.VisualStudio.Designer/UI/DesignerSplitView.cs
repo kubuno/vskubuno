@@ -31,6 +31,8 @@ namespace Kubuno.VisualStudio.Designer.UI
         private readonly IVsTextLines _textBuffer;
         private readonly OleInterop.IServiceProvider? _oleServiceProvider;
         private BufferLoadSink? _loadSink;
+        private readonly Func<Microsoft.VisualStudio.Shell.Interop.ITrackSelection?>? _trackSelection;
+        private readonly Action? _ensureActiveDesigner;
         private readonly ColumnDefinition _designColumn;
         private readonly ColumnDefinition _splitterColumn;
         private readonly ColumnDefinition _xmlColumn;
@@ -48,14 +50,14 @@ namespace Kubuno.VisualStudio.Designer.UI
         // KbviewEditorFactory.CreateEditorInstance, which already asserts ThrowIfNotOnUIThread() before
         // ever reaching here (see that method's own doc comment).
 #pragma warning disable VSTHRD010
-        public DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider)
-            : this(textBuffer, oleServiceProvider, DesignSurfaceHostFactoryHost.Current)
+        public DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, Func<Microsoft.VisualStudio.Shell.Interop.ITrackSelection?>? trackSelection = null, DesignerViewMode initialMode = DesignerViewMode.Design, Action? ensureActiveDesigner = null)
+            : this(textBuffer, oleServiceProvider, DesignSurfaceHostFactoryHost.Current, trackSelection, initialMode, ensureActiveDesigner)
         {
         }
 #pragma warning restore VSTHRD010
 
         /// <summary>Overload used by tests to inject a fake <see cref="IDesignSurfaceHostFactory"/> instead of the static gateway's current value.</summary>
-        internal DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, IDesignSurfaceHostFactory designSurfaceHostFactory)
+        internal DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, IDesignSurfaceHostFactory designSurfaceHostFactory, Func<Microsoft.VisualStudio.Shell.Interop.ITrackSelection?>? trackSelection = null, DesignerViewMode initialMode = DesignerViewMode.Design, Action? ensureActiveDesigner = null)
         {
             // See the public constructor's own comment above for why this is asserted rather than
             // proven to the analyzer across the ": this(...)" chain.
@@ -71,6 +73,9 @@ namespace Kubuno.VisualStudio.Designer.UI
                 throw new ArgumentNullException(nameof(designSurfaceHostFactory));
             }
 
+            _trackSelection = trackSelection;
+            _ensureActiveDesigner = ensureActiveDesigner;
+            _viewModel.Mode = initialMode;
             _codeWindowHost = new CodeWindowHost(textBuffer, oleServiceProvider);
             _designSurfaceHost = designSurfaceHostFactory.Create();
 
@@ -175,8 +180,11 @@ namespace Kubuno.VisualStudio.Designer.UI
                 // Best-effort: an empty buffer should not prevent the pane from opening.
             }
 
-            _editingCoordinator = DesignSurfaceEditingCoordinator.TryCreate(_designSurfaceHost, _textBuffer, _codeWindowHost, _oleServiceProvider);
+            _editingCoordinator = DesignSurfaceEditingCoordinator.TryCreate(_designSurfaceHost, _textBuffer, _codeWindowHost, _oleServiceProvider, _trackSelection, _ensureActiveDesigner);
         }
+
+        /// <summary>The per-pane editing/selection coordinator, once the document is loaded (null before, or when VS services were unavailable).</summary>
+        internal DesignSurfaceEditingCoordinator? EditingCoordinator => _editingCoordinator;
 
         /// <summary>The XML pane's primary text view, once its code window has been created.</summary>
         public IVsTextView? XmlTextView => _codeWindowHost.PrimaryView;

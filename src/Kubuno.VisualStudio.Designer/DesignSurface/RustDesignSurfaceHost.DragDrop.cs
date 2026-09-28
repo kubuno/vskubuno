@@ -29,19 +29,14 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// crash - the drag itself would already have ended from the user's perspective by the time a restart
     /// finishes, so there is nothing meaningful to replay.</para>
     ///
-    /// <para><b>Receiving (surface -&gt; host).</b> <see cref="OnDragDropProtocolLine"/> is a SECOND,
-    /// independent listener on the surface process's own <see cref="Process.OutputDataReceived"/> event -
-    /// not a change to <c>RustDesignSurfaceHost.Protocol.cs</c>'s own listener (`OnSurfaceProtocolLine`),
-    /// which keeps handling `selectionChanged` and a plain `editRequest` carrying `setAttribute`/
-    /// `removeElement` exactly as it already did. This file's own listener recognises only the shapes DSG-9
-    /// adds that the other one does NOT already parse: the batched `editRequests`, a single `editRequest`
-    /// whose `op.kind` is `moveElement`/`insertChild` (`TryParseEditRequest` in the other file returns
-    /// `false` for those two kinds, leaving the line otherwise unhandled - see that method's own doc), and
-    /// `dropTargetChanged`. The two listeners' recognised shapes are DISJOINT by construction, so a line
-    /// is never processed twice. Wiring this SECOND subscription without touching the constructor declared
-    /// in `RustDesignSurfaceHost.cs` is done LAZILY instead, from every `Notify*` entry point
-    /// (<see cref="EnsureDragDropListenerWired"/>'s own doc has the full reasoning, including why an
-    /// instance field initializer - the first thing tried - does not compile).</para>
+    /// <para><b>Receiving (surface -&gt; host).</b> <see cref="TryDispatchDragDropLine"/> recognises the shapes DSG-9
+    /// adds - the batched `editRequests`, a single `editRequest` whose `op.kind` is `moveElement`/`insertChild`
+    /// (`TryParseEditRequest` in the other file returns `false` for those two kinds) and `dropTargetChanged` -
+    /// and is called by <c>RustDesignSurfaceHost.Protocol.cs</c>'s one stdout listener for every line that
+    /// listener does not handle itself. (This file used to attach a SECOND <c>OutputDataReceived</c> listener
+    /// lazily, from <c>Notify*</c> and a <c>Loaded</c>/<c>ChildReady</c> class handler; found live
+    /// (docs/DESIGNER.md section 11) that a Toolbox drop inside Visual Studio still reached neither - the
+    /// line was only logged as "unrecognised" - so the second listener was replaced by this direct call.)</para>
     ///
     /// <para><b>Not this package's job</b> (same carve-out DSG-6's own doc already states for
     /// `EditRequested`): forwarding <see cref="EditRequestsReceived"/>/<see cref="DragDropEditRequested"/>
@@ -53,16 +48,6 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// </summary>
     public sealed partial class RustDesignSurfaceHost
     {
-        /// <summary>
-        /// The design-surface <see cref="Process"/> this half of the partial class has wired its OWN
-        /// <see cref="Process.OutputDataReceived"/> listener to (<see cref="OnDragDropProtocolLine"/>) -
-        /// tracked separately from whatever `RustDesignSurfaceHost.Protocol.cs`'s own subscription does,
-        /// so a crash restart (a FRESH <see cref="Process"/> instance - <see cref="ChildReady"/>'s own
-        /// doc: "Raised once Child exists after a (re)start") gets re-wired too, instead of silently
-        /// keeping a subscription to a dead process's event that will never fire again.
-        /// </summary>
-        private Process? _dragDropWiredSurface;
-
         /// <summary>
         /// Raised for the batched form of a DSG-9 move/resize drag's mouse-up
         /// (<c>{"type":"editRequests","ops":[...],"gesture":"move"|"resize"}</c>) - every op is a plain
@@ -94,122 +79,51 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// </summary>
         public event EventHandler<DesignSurfaceDropTargetChangedEventArgs>? DropTargetChanged;
 
+        /// <summary>
+        /// A key pressed on the surface that Visual Studio's own accelerator translation did not handle
+        /// (raised on the UI thread, after <c>IVsFilterKeys2.TranslateAcceleratorEx</c> reported "not
+        /// translated") - the designer pane handles the editing chords itself (Ctrl+Z / Ctrl+Y).
+        /// </summary>
+        public event EventHandler<DesignSurfaceKeyEventArgs>? UnhandledSurfaceKey;
+
         /// <summary>`kubuno/dragEnter {component}` - a VS Toolbox drag entered the surface's own window. `component` is a registry element name (`"Button"`).</summary>
         public void NotifyDragEnter(string component)
         {
-            EnsureDragDropListenerWired();
             SendLine(DesignSurfaceDragDropProtocol.EncodeDragEnter(component));
         }
 
         /// <summary>`kubuno/dragOver {x, y}` - the toolbox drag moved to `(x, y)`, surface-client DIP.</summary>
         public void NotifyDragOver(double x, double y)
         {
-            EnsureDragDropListenerWired();
             SendLine(DesignSurfaceDragDropProtocol.EncodeDragOver(x, y));
         }
 
         /// <summary>`kubuno/drop {x, y}` - the toolbox drag was released at `(x, y)`.</summary>
         public void NotifyDrop(double x, double y)
         {
-            EnsureDragDropListenerWired();
             SendLine(DesignSurfaceDragDropProtocol.EncodeDrop(x, y));
         }
 
         /// <summary>`kubuno/dragLeave` - the toolbox drag left the surface's own window.</summary>
         public void NotifyDragLeave()
         {
-            EnsureDragDropListenerWired();
             SendLine(DesignSurfaceDragDropProtocol.EncodeDragLeave());
         }
 
         /// <summary>
-        /// Wires <see cref="OnDragDropProtocolLine"/> to the CURRENT <see cref="Surface"/> process, once,
-        /// idempotently - called at the top of every <c>Notify*</c> method above rather than from the
-        /// constructor: a field initializer cannot call an instance method (C# CS0236 - confirmed live
-        /// while building this file), and this file must not touch `RustDesignSurfaceHost.cs`'s own
-        /// constructor body either (the orchestrating task's own scope for this package: "don't touch
-        /// other C# files"). Calling this from every `Notify*` entry point instead means the listener is
-        /// wired the moment ANY toolbox-drag traffic actually happens - and, just as importantly, RE-wired
-        /// after a crash restart: <see cref="ReferenceEquals(object, object)"/> against
-        /// <see cref="_dragDropWiredSurface"/> is `false` for a fresh <see cref="Process"/> instance
-        /// (`OnSurfaceExited`'s own restart-with-backoff, in `RustDesignSurfaceHost.cs`, reassigns the
-        /// process the NEXT time this runs), so the very next `Notify*` call after a mid-drag crash
-        /// re-attaches to the new process automatically, with no separate <see cref="ChildReady"/>
-        /// subscription needed at all.
+        /// Dispatches one line of the surface's stdout if it is one of DSG-9's shapes (returns <see langword="true"/>),
+        /// else returns <see langword="false"/> and leaves it to the caller. Runs on a .NET thread-pool thread (async
+        /// pipe read); raises on the UI thread via <see cref="System.Windows.Threading.Dispatcher.BeginInvoke(System.Delegate)"/>
+        /// because a subscriber may touch WPF/VS objects.
         /// </summary>
-        private void EnsureDragDropListenerWired()
+        private bool TryDispatchDragDropLine(string line)
         {
-            var proc = Surface;
-            if (proc == null || ReferenceEquals(proc, _dragDropWiredSurface))
-            {
-                return;
-            }
-
-            _dragDropWiredSurface = proc;
-            proc.OutputDataReceived += OnDragDropProtocolLine;
-        }
-
-        /// <summary>
-        /// FIX (found live in a DSG-9 visual check): calling <see cref="EnsureDragDropListenerWired"/>
-        /// only from the `Notify*` methods above left a real gap - a move/resize drag's batched
-        /// `editRequests`, and a Flow reorder's/toolbox drop's single `moveElement`/`insertChild`
-        /// `editRequest`, can all arrive from a REAL MOUSE gesture on the surface's own window with NO
-        /// toolbox interaction ever happening first. If the user's first gesture on a pane is a drag, not
-        /// a toolbox drop, no `Notify*` call had ever run, so this listener was never attached and
-        /// `EditRequestsReceived` never fired (the line was seen only by `RustDesignSurfaceHost.Protocol
-        /// .cs`'s OWN, unrelated listener, which correctly does not recognise it and logs it as
-        /// unrecognised - easy to mistake for a parsing bug, but the parsing was never reached at all).
-        ///
-        /// Wired instead via a STATIC class handler on <see cref="FrameworkElement.LoadedEvent"/> - not
-        /// constructor code (this file must not touch `RustDesignSurfaceHost.cs`'s own constructor) and
-        /// not an instance field initializer (cannot call an instance method - C# `CS0236`, confirmed live
-        /// while first building this file). `Loaded` fires for every instance of this type once it is part
-        /// of a rendered visual tree; at that point it subscribes to the (also existing) <see
-        /// cref="ChildReady"/> event, which fires once per (re)start with the surface `Process` already
-        /// live - covering the very first start AND every crash-restart, with no dependency on any toolbox
-        /// gesture ever happening.
-        /// </summary>
-        static RustDesignSurfaceHost()
-        {
-            EventManager.RegisterClassHandler(typeof(RustDesignSurfaceHost), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnLoadedWireDragDropListener));
-        }
-
-        private static void OnLoadedWireDragDropListener(object sender, RoutedEventArgs e)
-        {
-            if (sender is RustDesignSurfaceHost host)
-            {
-                host.EnsureDragDropListenerWired();
-                host.ChildReady += host.EnsureDragDropListenerWired;
-            }
-        }
-
-        /// <summary>
-        /// One line of the surface's stdout, DSG-9 shapes only (see the class doc for why this listener's
-        /// recognised set is disjoint from `RustDesignSurfaceHost.Protocol.cs`'s own
-        /// `OnSurfaceProtocolLine`). Runs on a .NET thread-pool thread (async pipe read, same as every
-        /// other listener on this process), raises on the UI thread via
-        /// <see cref="System.Windows.Threading.Dispatcher.BeginInvoke(System.Delegate)"/> for the same
-        /// reason `OnSurfaceExited`/`OnSurfaceProtocolLine` already do (a subscriber may touch WPF/VS
-        /// objects that require it). A line matching none of DSG-9's three shapes is silently ignored -
-        /// it either belongs to the OTHER listener, or is a malformed/unrecognised line neither
-        /// understands (already logged once by that listener; logging it again here would double the
-        /// noise for no benefit).
-        /// </summary>
-        private void OnDragDropProtocolLine(object? sender, DataReceivedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(e.Data))
-            {
-                return;
-            }
-
-            var line = e.Data;
-
             if (DesignSurfaceDragDropProtocol.TryParseEditRequestsBatch(line, out var ops, out var gesture))
             {
 #pragma warning disable VSTHRD001, VSTHRD110
                 Dispatcher.BeginInvoke(new Action(() => EditRequestsReceived?.Invoke(this, new DesignSurfaceEditRequestsReceivedEventArgs(ops, gesture))));
 #pragma warning restore VSTHRD001, VSTHRD110
-                return;
+                return true;
             }
 
             if (DesignSurfaceDragDropProtocol.TryParseDragDropEditRequest(line, out var dragDropOp) && dragDropOp != null)
@@ -217,7 +131,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 #pragma warning disable VSTHRD001, VSTHRD110
                 Dispatcher.BeginInvoke(new Action(() => DragDropEditRequested?.Invoke(this, new DesignSurfaceDragDropEditRequestedEventArgs(dragDropOp))));
 #pragma warning restore VSTHRD001, VSTHRD110
-                return;
+                return true;
             }
 
             if (DesignSurfaceDragDropProtocol.TryParseDropTargetChanged(line, out var target))
@@ -225,8 +139,37 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 #pragma warning disable VSTHRD001, VSTHRD110
                 Dispatcher.BeginInvoke(new Action(() => DropTargetChanged?.Invoke(this, new DesignSurfaceDropTargetChangedEventArgs(target))));
 #pragma warning restore VSTHRD001, VSTHRD110
+                return true;
             }
+
+            return false;
         }
+    }
+
+    /// <summary>See <see cref="RustDesignSurfaceHost.UnhandledSurfaceKey"/>.</summary>
+    public sealed class DesignSurfaceKeyEventArgs : EventArgs
+    {
+        public DesignSurfaceKeyEventArgs(int virtualKey, bool control, bool shift, bool alt)
+        {
+            VirtualKey = virtualKey;
+            Control = control;
+            Shift = shift;
+            Alt = alt;
+        }
+
+        public int VirtualKey { get; }
+
+        public bool Control { get; }
+
+        public bool Shift { get; }
+
+        public bool Alt { get; }
+
+        /// <summary>Ctrl+Z.</summary>
+        public bool IsUndo => Control && !Shift && !Alt && VirtualKey == 0x5A;
+
+        /// <summary>Ctrl+Y or Ctrl+Shift+Z.</summary>
+        public bool IsRedo => Control && !Alt && ((VirtualKey == 0x59 && !Shift) || (VirtualKey == 0x5A && Shift));
     }
 
     /// <summary>Which kind of gesture a batched <c>editRequests</c> carries - mirrors `kubuno_views::design::Gesture` field-for-field.</summary>

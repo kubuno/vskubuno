@@ -6,10 +6,11 @@ namespace Kubuno.VisualStudio.Designer.Selection
     /// <summary>One element's tag name and raw attribute values, as <see cref="ElementAttributeReader.Read"/> reads them off the current buffer text.</summary>
     public sealed class ElementAttributes
     {
-        public ElementAttributes(string tagName, IReadOnlyDictionary<string, string?> attributes)
+        public ElementAttributes(string tagName, IReadOnlyDictionary<string, string?> attributes, IReadOnlyList<string>? childTagNames = null)
         {
             TagName = tagName ?? throw new ArgumentNullException(nameof(tagName));
             Attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
+            ChildTagNames = childTagNames ?? Array.Empty<string>();
         }
 
         /// <summary>The element's tag name, e.g. <c>"Button"</c> - looked up against a <c>Registry.ComponentRegistry</c> to find its <c>ComponentMeta</c>.</summary>
@@ -24,5 +25,8 @@ namespace Kubuno.VisualStudio.Designer.Selection
         /// matching <c>Element::attribute</c>'s own <c>.find(...)</c> semantics.
         /// </summary>
         public IReadOnlyDictionary<string, string?> Attributes { get; }
+
+        /// <summary>The tag names of the element's child elements, in document order (what a Toolbox insertion needs to know about a container: how many children, which kinds).</summary>
+        public IReadOnlyList<string> ChildTagNames { get; }
     }
 }

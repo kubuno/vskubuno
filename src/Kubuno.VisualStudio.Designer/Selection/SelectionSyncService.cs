@@ -113,6 +113,31 @@ namespace Kubuno.VisualStudio.Designer.Selection
             _textView.CaretMoved += OnCaretMoved;
         }
 
+        /// <summary>
+        /// Raised after a selection change was applied to every participant (null: nothing selected) -
+        /// the designer pane publishes it to Visual Studio's native Properties window from here.
+        /// </summary>
+        public event EventHandler<string?>? SelectionApplied;
+
+        /// <summary>The currently selected element's stable id, or null.</summary>
+        public string? CurrentElementId => _currentElementId;
+
+        /// <summary>
+        /// Selects <paramref name="elementId"/> everywhere (surface, XML, Outline, Properties) - used by the
+        /// Properties window's element combo box and after a Toolbox insertion. <paramref name="force"/>
+        /// re-applies even when the id did not change (an insertion can shift a different element onto the
+        /// selected id).
+        /// </summary>
+        public Task SelectElementAsync(string? elementId, bool force = false)
+        {
+            if (force)
+            {
+                _currentElementId = null;
+            }
+
+            return RunGuardedAsync(() => ApplySelectionAsync(elementId, range: null, SelectionOrigin.External));
+        }
+
         /// <summary>The Document Outline's own entry point (docs/DESIGNER.md §1: "click -&gt; select in both views") - wired from <c>Outline.OutlineViewModel.NodeActivated</c>, see this library's own INTEGRATION.md.</summary>
         public Task SelectFromOutlineAsync(string? elementId) => RunGuardedAsync(() => ApplySelectionAsync(elementId, range: null, SelectionOrigin.Outline));
 
@@ -169,6 +194,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
                 }
 
                 _propertiesPanel.ClearSelection();
+                SelectionApplied?.Invoke(this, null);
                 return;
             }
 
@@ -216,6 +242,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
             }
 
             ApplyPropertiesPanel(elementId);
+            SelectionApplied?.Invoke(this, elementId);
         }
 
         /// <summary>
@@ -295,6 +322,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
             Surface,
             TextView,
             Outline,
+            External,
         }
     }
 }
