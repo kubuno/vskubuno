@@ -359,6 +359,18 @@ error in that repo's own `.cargo/config.toml`), `kubuno-desktop` set as the star
 launched it under the native debugger successfully. Also verified: a completely fresh NuGet package
 cache with *only* the bundled feed configured restores `Kubuno.Rust.Sdk` and builds a `.rsproj`.
 
+### "Create a new project" templates (lot 7)
+
+File > New > Project, filtered by Language = **Rust**, offers three project templates - **Rust
+Console Application**, **Rust Library**, **Kubuno Desktop Application** (a `kubuno_ui`/
+`kubuno_controls`/`kubuno_views` window with a starter view, path-dependent on your own
+`desktop/windows` checkout - see the generated `Cargo.toml`'s own comment to point it elsewhere) -
+plus three Add New Item templates: **Kubuno View** (`.kbview` + a same-stem `.rs` code-behind),
+**Rust Module**, **Rust Integration Test**. Project/crate names use VS's own `$safeprojectname$`
+directly (not guaranteed to be a valid Cargo package name for every possible input, e.g. one
+starting with a digit - adjust `Cargo.toml`/`<CargoPackage>` by hand if VS picks something Cargo
+rejects; see `docs/RSPROJ.md`'s lot 7 addendum for why an automatic sanitiser was tried and reverted).
+
 ## Third-party code
 
 `src/Kubuno.VisualStudio/Grammars/` ships a TextMate grammar for Rust vendored from Visual Studio

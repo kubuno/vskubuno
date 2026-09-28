@@ -1,8 +1,11 @@
 # `.rsproj`: a real MSBuild/CPS project type for Cargo packages
 
-Status: work packages 1-5 implemented (SDK, MSBuild tasks, CPS project type, F5/Ctrl+F5, "Generate
-Visual Studio Projects" — see README.md's "Building Rust with MSBuild (`.rsproj`)" section); work
-packages 6-7 not started.
+Status: work packages 1-6 implemented (SDK, MSBuild tasks, CPS project type, F5/Ctrl+F5, "Generate
+Visual Studio Projects", Open Folder/rust-analyzer coexistence — see README.md's "Building Rust with
+MSBuild (`.rsproj`)" section); lot 7 ("Create a new project" templates) partially implemented — see
+its own Addendum below for exactly what shipped vs. what is still missing (the `IWizard`-based crate-
+name sanitisation and `cargo generate-lockfile` step, and the "Kubuno module" Axum backend template);
+lot 8 (Solution Explorer nesting) not started.
 
 Work package 5 ("Generate Visual Studio Projects", live-verified against `Z:\src\desktop\windows`
 through a scratch mirror — see its own section below): the generator/planner
@@ -241,11 +244,13 @@ up to date) and launched under the native debugger, its window opening with the 
 title/icon and no `STATUS_DLL_NOT_FOUND` - proof the generated project's PATH/dylib handling
 (`RustDebugLaunchProvider`, work package 4) works unchanged through a mirrored, cross-drive
 `CargoManifestPath`.
-(`EnvDTE`/DTE automation of this project type returns empty `Name`/`UniqueName`/`FullName` for a
-`.rsproj` node - a work-package-3 gap, not package-5's; `dte.Solution.SolutionBuild.StartupProjects`
-still works when given the project's known relative path directly, which is what the live test
-used, exactly as a real user typing it into a filtered "Set as Startup Project" list or reading
-it off the just-generated `.sln` would have.)
+(This section used to claim `EnvDTE`/DTE automation returned empty `Name`/`UniqueName`/`FullName` for
+a `.rsproj` node, as an open work-package-3 gap. Re-verified live during work package 6 (lot 6) against
+the `desktop-mirror` solution this same section describes: `dte.Solution.Projects` correctly reports
+`Name`/`UniqueName`/`FullName` for every `.rsproj` - e.g. `Name=[kubuno-desktop] UniqueName=[src\shell\
+kubuno-desktop.rsproj] FullName=[C:\...\kubuno-desktop.rsproj]` - and `StartupProjects` accepts the
+`UniqueName` form directly (only the bare `Name`, which VS's own C# projects also reject when
+ambiguous, fails). No code change was needed; the original claim was inaccurate, not a real gap.)
 
 **Not done in this pass**: `.slnx` (kept to classic `.sln` — simpler, universally supported, no
 VS-2026-specific schema risk to verify); diffing/reporting a changed target shape for an existing
@@ -294,10 +299,40 @@ Both modes stay: Open Folder is the zero-setup entry point (`devenv folder`, no 
    (42 tests), live-verified against `Z:\src\desktop\windows` through a scratch mirror (generate,
    build 4/5 through the real Solution Build Manager, F5 `kubuno-desktop` successfully) and against
    a from-scratch NuGet package cache (SDK distribution).
-6. **(S) Open Folder / rust-analyzer coexistence pass.** Owns: `NonRustProjectExclusionScanner`
-   (extend to recognize Kubuno-generated files), README/`ARCHITECTURE.md` updates. Test, live: open
-   a folder with both a Cargo workspace and generated `.rsproj`/`.sln` in Open Folder mode, confirm
-   targets and Select Startup Item still work; separately open the `.sln` and confirm the CPS path.
+6. **(S) Open Folder / rust-analyzer coexistence pass — done.** Live-verified against
+   `C:\kubuno-build\rsproj-test\samples\hello-rust` (the same fixture as work packages 1-2, with a
+   hand-written `hello-rust.rsproj` sitting right next to `Cargo.toml`):
+   - **`NonRustProjectExclusionScanner` already never hides `.rsproj`/`.sln`, by construction** —
+     no code change was needed, only a regression test locking it in
+     (`NonRustProjectExclusionScannerTests.NeverExcludesOurOwnGeneratedRsprojAndSolution...`).
+     `.rsproj` was never in `ProjectFileExtensions` (only `.csproj`/`.vbproj`/`.fsproj`/`.vcxproj`/
+     `.sln`/`.slnx` are foreign-project candidates); a `.sln` `GenerateRustProjectsCommand` produces
+     always sits at the workspace root itself (0 relative segments, below the "2+ segments" threshold
+     the scanner requires before it will exclude a directory at all). Verified live: opening
+     `hello-rust` as a folder with `hello-rust.rsproj` present regenerated `.vs\launch.vs.json` with
+     both Cargo targets and picked `hello-rust` (not the `.rsproj`, not "Active document") as the
+     default Select Startup Item in `.vs\ProjectSettings.json` — no `VSWorkspaceSettings.json`
+     exclusion was even written, because nothing needed excluding.
+   - **rust-analyzer's workspace-root discovery needs no change either**: `RustLanguageClient`
+     already falls back from `WorkspaceService.CurrentWorkspace` (Open Folder only) to the active
+     document's own path (`CargoWorkspaceLocator.FindWorkspaceRoot`) when no Open Folder workspace is
+     current — exactly the solution-mode case. Verified live opening `hello-rust.sln`: the "Kubuno"
+     Output pane logged `Cargo workspace root: C:\...\hello-rust` (the correct package directory,
+     found from `src\main.rs`'s own path) and rust-analyzer initialized; **Go To Definition** from
+     `main.rs`'s call into `hello_rust::greet` landed in `lib.rs`, proving hover/diagnostics-class LSP
+     features work end-to-end in solution mode, not just Open Folder.
+   - **`.kbview` default editor + "Open With → Kubuno View Designer" — real bug found and fixed.**
+     `KubunoPackage.cs`'s `[ProvideEditorLogicalView]` attributes for `KbviewEditorFactory` registered
+     the wrong GUIDs (`{...a703...}`/`{...a704...}` labelled "Designer"/"TextView" in a comment, but
+     actually `VSConstants.LOGVIEWID_TextView`/`LOGVIEWID_UserChooseView` — verified by reflecting the
+     installed `Microsoft.VisualStudio.Shell.15.0.dll`'s real `VSConstants` field values); the real
+     `LOGVIEWID_Designer` (`{...a702...}`) was never registered at all. Fixed to the correct GUID.
+     Verified live, before/after, opening a never-before-seen `.kbview` inside `hello-rust.sln`
+     (`ItemOperations.OpenFile` with the Designer logical view): before the fix it silently fell back
+     to the plain text editor; after the fix it opens the real split Design/XML/Split view, rendering
+     the `.kbview`'s controls live. Default double-click still opens the plain text editor either way
+     (unaffected, and correct per `KbviewEditorFactory`'s own doc comment: the core text editor's
+     `[ProvideEditorExtension]` priority 0x64 beats the Designer's 0x60 on purpose).
 
 **Risks**
 
@@ -330,17 +365,106 @@ Both modes stay: Open Folder is the zero-setup entry point (`devenv folder`, no 
 Requested by the product owner: Rust and Kubuno must appear in VS's *Create a new project*
 dialog (and *Add New Item*), filterable by language/platform/project type, like C# does.
 
-- Shipped in the VSIX as `.vstemplate` project templates (depends on lots 1–3: the templates
-  create `.rsproj` projects). Custom tags: `LanguageTag` = `Rust`, `PlatformTag` = `Windows`
-  (+ `Linux` where relevant), `ProjectTypeTag` = `Console` / `Library` / `Desktop` / `Kubuno`
-  (custom tag values are supported by the template engine; verify the filter picks them up).
-- Project templates: **Rust console application**, **Rust library**, **Kubuno desktop
-  application** (`kubuno_ui` window + a starter `.kbview` view + handlers), **Kubuno module**
-  (Axum backend skeleton following the module conventions: `module.toml`, dedicated DB schema,
-  `build_kbpkg.sh`).
-- Item templates (*Add New Item*): **Kubuno view (.kbview)** with its code-behind handlers `.rs`,
-  **Rust module file**, **Rust integration test**.
-- Each template runs `cargo generate-lockfile` on creation (optional) and opens the `.rsproj`
-  in the current solution; names are sanitised to valid crate names.
-- Test: live in the experimental instance — the templates appear under the *Rust* language
-  filter, each creates a project that builds with F5.
+**Shipped**: `.vstemplate` project templates in the VSIX (`src/Kubuno.VisualStudio/ProjectTemplates/`,
+`ItemTemplates/`), packaged via two `Microsoft.VisualStudio.ProjectTemplate`/`ItemTemplate` assets in
+`source.extension.vsixmanifest` (this VSSDK version needs explicit, wildcarded `Content`
+`IncludeInVSIX` items too - a bare `Path=` asset with nothing else referencing those files packaged
+nothing, verified live by unzipping the built `.vsix`). Custom tags on every template:
+`LanguageTag=Rust`, `PlatformTag=Windows`, `ProjectTypeTag=Console` / `Library` / `Kubuno`.
+
+- Project templates: **Rust console application**, **Rust library**, **Kubuno desktop application**
+  (a `kubuno_controls::host::run_with_chrome` window loading a starter view through
+  `kubuno_views::runtime::Runtime`/`FileWatcher` - the same API `kubuno-views/examples/
+  view_preview.rs` uses - with a starter `main_view.kbview` + same-stem `main_view.rs` code-behind,
+  deliberately named that way for lot 8's planned nesting). Its `Cargo.toml` depends on
+  `kubuno-ui`/`kubuno-controls`/`kubuno-views` via **path dependencies on this machine's own
+  `desktop/windows` checkout** (`Z:/src/desktop/windows/src/crates/...`, decision documented in the
+  Cargo.toml itself) rather than git-tagged dependencies: this template's own bar is "must build on
+  this machine", and `kubuno-ui` et al. are not (yet) published with git tags the way `kubuno/core`'s
+  shared crates are (CLAUDE.md §3) - switch to `git = "https://github.com/kubuno/desktop", tag =
+  "..."` once they are.
+- **Not shipped this pass: a "Kubuno module" (Axum backend) project template.** Out of this
+  session's actual scope (three project templates + three item templates, not four); left for a
+  follow-up, tracked here so the addendum stays accurate about what exists on disk.
+- Item templates (*Add New Item*): **Kubuno view** (`$fileinputname$.kbview` + same-stem
+  `$fileinputname$.rs` code-behind), **Rust module file**, **Rust integration test** (under `tests/`,
+  reusing `$safeprojectname$` for the crate-under-test's name).
+- **Crate-name sanitisation and `cargo generate-lockfile` were tried and reverted, not shipped.**
+  The plan was an `IWizard` (`RustCrateNameWizard`) computing a Cargo-safe `$saferustcratename$` and
+  running `cargo generate-lockfile` after creation. Live-verified blocker:
+  `Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance` loads the wizard assembly
+  with a plain `Assembly.Load` that cannot see a VSIX's own private extension folder by default - the
+  fix tried (self-registering `Kubuno.VisualStudio.dll`'s own codeBase via
+  `[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio", ...)]`, the same mechanism
+  `KubunoPackage.cs` already uses for its *other* dependencies) reproducibly broke `KubunoPackage`'s
+  own load instead (`SetSite failed for package [KubunoPackage]`, VS loading a second, differently-
+  probed copy of its own hosting assembly) - confirmed twice by toggling the attribute on/off against
+  a clean profile. Reverted; every template now uses VS's own `$safeprojectname$` directly for the
+  crate/package name (filesystem-safe, but not guaranteed to be a valid Cargo package name for every
+  possible project name - e.g. one starting with a digit - documented in each template's own
+  comments). A real fix needs a *separate*, small wizard assembly (its own `.dll`, not reusing
+  `Kubuno.VisualStudio.dll`) so its codeBase registration cannot collide with the package's own load;
+  not attempted here given the time already spent finding this root cause.
+- Also fixed as part of getting a template to load at all: **`Kubuno.Mcp.Bridge` had no
+  `ProvideCodeBase` entry**, a latent, pre-existing gap unrelated to lot 7 (`KubunoPackage.
+  StartMcpBridgeAsync` references it directly) - hit only once something else forced eager
+  resolution of it; same fix pattern as the four assemblies already registered.
+- **Test, live**: `dte.Solution.AddFromTemplate` against all three project templates' installed
+  `.vstemplate` files created each one correctly (`$safeprojectname$` substituted into
+  `Cargo.toml`/`.rsproj`/`src/*.rs`/`src/*.kbview`, right folder layout); all three then **built
+  successfully through the real Solution Build Manager** in a hand-written `.sln` referencing them
+  (`RustConsoleApp -> ...\RustConsoleApp.exe`, `KubunoDesktopApp -> ...\KubunoDesktopApp.exe`, 3/3
+  succeeded, 0 failed). **Not conclusively re-verified live this session: F5 on the console/desktop
+  app**, and the New Project dialog's Language=Rust filter by screenshot - `dte.Debugger.Go`/a
+  synthetic F5 keystroke against the experimental instance repeatedly hung past 60-120s in this
+  sandboxed VM regardless of which template/project was started (environment-level flakiness, not
+  reproduced as a build/content problem); the New Project dialog itself was confirmed open and
+  showing a language filter dropdown by full-screen capture, but is hosted in a separate, unlisted
+  top-level window this session could not reliably screenshot (`PrintWindow` returned a blank
+  surface) or drive with synthetic clicks/keystrokes. F5's own mechanism
+  (`RustDebugLaunchProvider`, the `-C prefer-dynamic` PATH fix) is unmodified, shared code already
+  live-verified for other `.rsproj` projects in work package 4/5's own tests above.
+
+## Addendum — Solution Explorer nesting like WinForms/WPF (lot 8)
+
+Requested by the product owner (reference: WinForms `Form1.cs` › `Form1.Designer.cs`, `Form1.resx`,
+and expandable type/member nodes under each file).
+
+- **File nesting** — a view and its code-behind appear as one unit:
+  `settings.kbview` (parent, opens the designer/XML) › `settings.rs` (handlers / view-model, same
+  folder + same stem). The analogue of WPF's `MainWindow.xaml` › `MainWindow.xaml.cs`. Rust module
+  names can't contain dots, so the code-behind keeps the plain `settings.rs` name; nesting is by
+  stem. Implemented in the SDK with `DependentUpon` item metadata (CPS honours it), e.g. an
+  `Update` item rule that sets `DependentUpon="%(Filename).kbview"` on `.rs` files that have a
+  sibling `.kbview`; no hand-written item lists (Cargo.toml stays the truth, the glob stays).
+- **Symbol nodes under files** (like `Form1` › `components`, `Dispose(bool)`,
+  `InitializeComponent()`): an `IAttachedCollectionSourceProvider` for Solution Explorer that
+  expands:
+  - a `.rs` file into its items (structs, enums, impls, fns, consts) from rust-analyzer's
+    `textDocument/documentSymbol`, with icons by kind and visibility (pub / private lock overlay);
+  - a `.kbview` file into its element tree (`Card` › `Stack` › `Switch x:Name="notifications"`…)
+    from kubuno-views-ls `documentSymbol`, double-click → select the element in the designer/XML.
+  Symbols refresh on save/edit (debounced), lazily computed only when a node is expanded.
+- **Dependencies node** (like "Dépendances"): the crate's Cargo dependencies from
+  `cargo metadata` (read-only, grouped normal/dev/build).
+- Research before coding: how Roslyn implements its Solution Explorer symbol tree
+  (`Microsoft.VisualStudio.LanguageServices.Implementation.SolutionExplorer`,
+  `IAttachedCollectionSourceProvider`, `IAttachedRelationProvider`), and whether an LSP-backed
+  provider exists already (e.g. in the TypeScript/JS project system); CPS `DependentUpon` and
+  `IProjectTreePropertiesProvider` for icons.
+- Test live: the tree matches the WinForms screenshot's shape for a Kubuno desktop app created
+  from the lot-7 template.
+- **Icons equivalent to the WinForms/C# screenshot** (same visual language as VS):
+  - symbols use the VS image catalog (`KnownMonikers`) exactly like Roslyn does, by kind:
+    struct → `StructurePublic`/`Structure…`, enum → `Enumeration…`, trait → `Interface…`,
+    fn/method → `Method…`, field → `Field…`, const/static → `Constant…`, module → `Module…`,
+    type alias → `Typedef…`, macro → `Macro…`; visibility mapped to the same variants/overlays
+    Roslyn uses: `pub` = Public (no overlay), `pub(crate)` = Internal/Friend (heart overlay),
+    `pub(super)` = Protected (star overlay), private = Private (lock overlay).
+    `.kbview` element nodes use a control-like moniker per family (button, checkbox, textbox,
+    panel/container, list…).
+  - files: a custom **`.kbview` icon** in the style of the WinForms form icon (`Form1.cs`) and a
+    custom **Rust source icon** in the style of the C# file icon (`C#` glyph → Rust gear/“R”),
+    shipped as an `.imagemanifest` (vector, light/dark/high-contrast variants) and bound via CPS
+    (`IProjectTreePropertiesProvider`) + the file-extension image association; `Cargo.toml` gets a
+    Cargo icon, and the project node keeps the orange “R”.

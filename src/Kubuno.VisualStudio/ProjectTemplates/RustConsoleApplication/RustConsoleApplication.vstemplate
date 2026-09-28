@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  docs/RSPROJ.md Addendum (lot 7): "Rust console application" - a .rsproj + Cargo.toml + src/main.rs,
+  reusing Kubuno.Rust.Sdk (work packages 1-3) exactly like a hand-written or "Generate Visual Studio
+  Projects"-produced .rsproj (docs/RSPROJ.md §4). LanguageTag/PlatformTag/ProjectTypeTag are the
+  custom "Create a new project" dialog filter values the product owner asked for.
+-->
+<VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Rust Console Application</Name>
+    <Description>A command-line Rust application, built and debugged through Cargo as a real MSBuild/CPS project (.rsproj) - not an Open Folder workspace.</Description>
+    <ProjectType>Kubuno.Rust</ProjectType>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Console</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <ProjectSubType>
+    </ProjectSubType>
+    <SortOrder>10</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>RustConsoleApp</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Enabled</LocationField>
+    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+    <CreateInPlace>true</CreateInPlace>
+    <SupportsMasterPage>false</SupportsMasterPage>
+  </TemplateData>
+  <TemplateContent>
+    <Project TargetFileName="$safeprojectname$.rsproj" File="ProjectTemplate.rsproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true" TargetFileName="Cargo.toml">Cargo.toml</ProjectItem>
+      <Folder Name="src" TargetFolderName="src">
+        <ProjectItem ReplaceParameters="true" TargetFileName="main.rs">main.rs</ProjectItem>
+      </Folder>
+    </Project>
+  </TemplateContent>
+  <!-- No <WizardExtension>: Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance loads
+       a wizard assembly with a plain Assembly.Load that cannot see this VSIX's own private extension
+       folder, and the fix tried during docs/RSPROJ.md Addendum (lot 7) - self-registering this
+       package's own assembly as a codeBase - broke KubunoPackage's own load instead (see
+       KubunoPackage.cs's remarks). $safeprojectname$ (VS's own built-in, filesystem-safe
+       substitution) names the crate/package directly below instead of a wizard-computed
+       $saferustcratename$; it is not guaranteed to be a valid Cargo package name for every possible
+       project name (e.g. one starting with a digit), so adjust Cargo.toml/CargoPackage by hand if VS
+       picked something Cargo rejects. -->
+</VSTemplate>

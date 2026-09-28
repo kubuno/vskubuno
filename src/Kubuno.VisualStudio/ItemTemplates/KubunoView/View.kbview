@@ -1,0 +1,11 @@
+<!--
+  $fileinputname$.kbview - code-behind in the same folder: $fileinputname$.rs. Edit this XML freely:
+  kubuno-views-ls (installed with the desktop workspace) gives you IntelliSense/diagnostics for it,
+  and "Open With... > Kubuno View Designer" opens the live Design/XML split view.
+-->
+<Card Title="$fileinputname$">
+  <Stack Direction="TopDown" Gap="16" Padding="0">
+    <TextField x:Name="status" Text="{Binding Status}" Placeholder="Status" />
+    <Button x:Name="action" Text="Run" Variant="Primary" OnClick="action_clicked"/>
+  </Stack>
+</Card>

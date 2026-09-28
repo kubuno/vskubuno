@@ -29,6 +29,21 @@ using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 //   loads the CPS exports (RustDebugLaunchProvider) before this package ever runs, so nothing else has
 //   loaded them yet - verified live: F5 failed with "Could not load file or assembly 'Kubuno.Launch'".
 [assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.RustProjectSystem", CodeBase = @"$PackageFolder$\Kubuno.VisualStudio.RustProjectSystem.dll")]
+// Kubuno.Mcp.Bridge (docs/MCP.md "Integration"): KubunoPackage.StartMcpBridgeAsync references it
+// directly - same latent gap as the assemblies above, just not hit until this method actually runs
+// (verified live: "SetSite failed for package [KubunoPackage]" with a Kubuno.Mcp.Bridge
+// FileNotFoundException before this was added).
+[assembly: ProvideCodeBase(AssemblyName = "Kubuno.Mcp.Bridge", CodeBase = @"$PackageFolder$\Kubuno.Mcp.Bridge.dll")]
+// Deliberately NOT self-registering Kubuno.VisualStudio.dll (this package's own hosting assembly)
+// the same way: tried during docs/RSPROJ.md Addendum (lot 7) work to fix
+// Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance's plain Assembly.Load of it (a
+// "Create a new project" wizard names its own assembly, and that loader could not otherwise see this
+// VSIX's private folder) - verified live, reproducibly, that a self-referential codeBase entry here
+// instead broke this package's OWN load ("SetSite failed for package [KubunoPackage]" again, this
+// time from Visual Studio loading a second, differently-probed copy of its own hosting assembly).
+// Reverted; RustCrateNameWizard.cs was removed with it (see CHANGELOG.md) rather than ship a wizard
+// that reliably crashes "Create a new project" - a future fix needs a SEPARATE small wizard assembly
+// instead of reusing this package's own.
 [assembly: ProvideCodeBase(AssemblyName = "Kubuno.Launch", CodeBase = @"$PackageFolder$\Kubuno.Launch.dll")]
 [assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.Core", CodeBase = @"$PackageFolder$\Kubuno.VisualStudio.Core.dll")]
 [assembly: ProvideCodeBase(AssemblyName = "Kubuno.Cargo", CodeBase = @"$PackageFolder$\Kubuno.Cargo.dll")]
@@ -62,8 +77,15 @@ namespace Kubuno.VisualStudio
     // (that pkgdef entry's own comment: "the HIGHEST value wins the double-click default", 0x64 there
     // vs. DesignerConstants.EditorExtensionPriority's 0x60 here, so the plain editor stays default).
     [ProvideEditorFactory(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), 110)]
-    [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
-    [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a704-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
+    // Fixed 2026-09-28 (docs/RSPROJ.md work package 6): these two GUIDs were swapped one slot too far
+    // (7651a703/7651a704, actually LOGVIEWID_TextView/LOGVIEWID_UserChooseView) - VSConstants.LOGVIEWID_Designer
+    // is really {...a702...}, verified live by reflecting Microsoft.VisualStudio.Shell.15.0.dll's
+    // VSConstants fields. The mislabeled registration meant "Open With -> Kubuno View Designer" never
+    // actually reached KbviewEditorFactory for the real Designer logical view (confirmed live: even a
+    // never-opened .kbview opened with IVsUIShellOpenDocument.OpenSpecificEditor against the true
+    // LOGVIEWID_Designer fell back to the plain text editor before this fix).
+    [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a702-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
+    [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
     [ProvideEditorExtension(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), Kubuno.VisualStudio.Views.KbviewConstants.FileExtension, Kubuno.VisualStudio.Designer.DesignerConstants.EditorExtensionPriority)]
     [ProvideOptionPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true)]
     [ProvideProfile(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]

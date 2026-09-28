@@ -57,6 +57,38 @@ namespace Kubuno.VisualStudio.Tests
         }
 
         [TestMethod]
+        public void NeverExcludesOurOwnGeneratedRsprojAndSolution_ForAWorkspaceMatchingGenerateRustProjectsCommandsLayout()
+        {
+            // Regression for docs/RSPROJ.md §5 / work package 6: once "Kubuno: Generate Visual Studio
+            // Projects" (GenerateRustProjectsCommand) has run, the workspace root gains a `<folder>.sln`
+            // and each member directory gains a `<member>.rsproj` right next to its own Cargo.toml -
+            // exactly RsprojSolutionGenerator/RsprojTemplate's own output shape. None of that may ever
+            // end up in ExcludedItems: `.rsproj` is not a "foreign" extension at all (ProjectFileExtensions
+            // never lists it - Open Folder must keep navigating straight to it), and the generated `.sln`
+            // always sits at the workspace root itself (0 relative segments, below the "needs 2+ segments"
+            // threshold that makes a project file worth excluding a directory for in the first place).
+            var files = new[]
+            {
+                @"Z:\ws\Cargo.toml",
+                @"Z:\ws\ws.sln",
+                @"Z:\ws\drive-app\Cargo.toml",
+                @"Z:\ws\drive-app\drive-app.rsproj",
+                @"Z:\ws\kubuno-chat\Cargo.toml",
+                @"Z:\ws\kubuno-chat\kubuno-chat.rsproj",
+            };
+            var manifests = new[]
+            {
+                @"Z:\ws\Cargo.toml",
+                @"Z:\ws\drive-app\Cargo.toml",
+                @"Z:\ws\kubuno-chat\Cargo.toml",
+            };
+
+            var result = NonRustProjectExclusionScanner.FindDirectoriesToExclude(Root, files, manifests);
+
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
         public void DeduplicatesAndSorts_WhenMultipleMatchesShareTheSameTwoLevelDirectory()
         {
             var files = new[]

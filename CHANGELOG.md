@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **"Open With... > Kubuno View Designer" silently fell back to the plain text editor**: the
+  `[ProvideEditorLogicalView]` GUIDs registered for `KbviewEditorFactory` were mislabeled (the
+  "Designer" and "TextView" comments pointed at the real `LOGVIEWID_TextView`/`LOGVIEWID_
+  UserChooseView` values instead; the real `LOGVIEWID_Designer` was never registered at all).
+  Verified live: a `.kbview` opened via the Designer logical view now renders the real split
+  Design/XML/Split view instead of falling back to plain text.
+- **`KubunoPackage` could fail to load with `Kubuno.Mcp.Bridge` unresolvable**: a latent gap (no
+  `ProvideCodeBase` registration for that assembly, unlike its four siblings) that only surfaced
+  once something forced eager resolution of it.
 - **`.rsproj` Property Pages showed three debug-related entries instead of one**: the standalone
   "Debug" page (`Sdk/Rules/debug.xaml`) is removed, and its command-arguments/working-directory/
   environment properties now live directly on the "Rust Debugger" flavor rule
@@ -17,6 +26,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **"Create a new project"/"Add New Item" templates (`docs/RSPROJ.md`'s lot 7 addendum)**: File >
+  New > Project, filtered by Language = Rust, now offers **Rust Console Application**, **Rust
+  Library** and **Kubuno Desktop Application** (a `kubuno_ui`/`kubuno_controls`/`kubuno_views`
+  window with a starter `main_view.kbview` view and same-stem `main_view.rs` code-behind); Add New
+  Item offers **Kubuno View**, **Rust Module** and **Rust Integration Test**. Project/crate names
+  use VS's own `$safeprojectname$` directly - see the lot 7 addendum for why an `IWizard`-based
+  sanitiser and an automatic `cargo generate-lockfile` step were tried and reverted (a real,
+  reproducible `KubunoPackage` load regression). New `ProjectTemplates/`, `ItemTemplates/`.
+- **Open Folder / rust-analyzer coexistence pass (work package 6 of `docs/RSPROJ.md`) - verified,
+  no code change needed for two of its three concerns**: a folder containing generated `.rsproj`/
+  `.sln` still opens correctly in Open Folder mode (regression test added), and rust-analyzer still
+  finds the right workspace root - and Go To Definition works - when a `.rsproj` solution is opened
+  instead. The third concern (the `.kbview` Designer GUID bug above) was a real, fixed bug.
 - **"Kubuno: Generate Visual Studio Projects" (work package 5 of `docs/RSPROJ.md`)**: from the
   Tools menu, or a right-click on a workspace-root `Cargo.toml` (Solution Explorer/Open Folder),
   creates one `.rsproj` per workspace member with a `[[bin]]` target plus a `.sln` listing them -

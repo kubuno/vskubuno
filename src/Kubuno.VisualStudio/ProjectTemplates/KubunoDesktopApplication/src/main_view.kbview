@@ -1,0 +1,13 @@
+<!--
+  Starter view for $safeprojectname$, loaded by src/main.rs through kubuno_views::runtime::Runtime.
+  Its code-behind (view model + handlers) lives in the SAME folder, under the SAME stem:
+  main_view.rs - see that file. Edit this XML freely: kubuno-views-ls (installed with the desktop
+  workspace) gives you IntelliSense/diagnostics for it, and "Open With... > Kubuno View Designer"
+  opens the live Design/XML split view.
+-->
+<Card Title="$safeprojectname$" Subtitle="Kubuno desktop starter">
+  <Stack Direction="TopDown" Gap="16" Padding="0">
+    <TextField x:Name="status" Text="{Binding Status}" Placeholder="Status" />
+    <Button x:Name="hello" Text="Say hello" Variant="Primary" OnClick="say_hello_clicked"/>
+  </Stack>
+</Card>

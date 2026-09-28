@@ -183,6 +183,25 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Grammars\Kbview\THIRD-PARTY-NOTICES.md</Link>
     </Content>
+    <!--
+      docs/RSPROJ.md Addendum (lot 7): "Create a new project"/"Add New Item" templates. Unlike the
+      "Path"-only Asset entries a stock VSIX Project Template item adds by default, this VSSDK
+      version's packaging step (Microsoft.VsSDK.targets' CollectVSIXItems) only picks up files it
+      already knows about as project items - the two ProjectTemplate/ItemTemplate Asset entries in
+      source.extension.vsixmanifest do nothing on their own without these explicit, wildcarded
+      Content items (verified live: omitting them produced a .vsix with no template files at all).
+      %(RecursiveDir) preserves each template's own subfolder under ProjectTemplates/ItemTemplates.
+    -->
+    <Content Include="ProjectTemplates\**\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>ProjectTemplates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="ItemTemplates\**\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>ItemTemplates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
   </ItemGroup>
 
   <PropertyGroup>

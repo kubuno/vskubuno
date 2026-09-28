@@ -1,0 +1,17 @@
+[package]
+name = "$safeprojectname$"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# docs/RSPROJ.md Addendum (lot 7) decision: PATH dependencies on this machine's own `desktop/windows`
+# checkout (github.com/kubuno/desktop), not git-tagged dependencies. This template's own bar is "must
+# build on this machine" - a git dependency needs a reachable remote *and* a published tag, neither
+# verifiable from here; the local checkout is. If/when kubuno-ui/kubuno-controls/kubuno-views start
+# publishing tags the way kubuno/core's shared crates already do (CLAUDE.md §3), switch these three
+# to `git = "https://github.com/kubuno/desktop", tag = "..."` instead - everything else in this
+# Cargo.toml stays the same either way. Adjust the paths below if your `desktop` checkout is not at
+# the default `Z:\src\desktop\windows`.
+kubuno-ui       = { path = "Z:/src/desktop/windows/src/crates/kubuno-ui" }
+kubuno-controls = { path = "Z:/src/desktop/windows/src/crates/kubuno-controls" }
+kubuno-views    = { path = "Z:/src/desktop/windows/src/crates/kubuno-views" }

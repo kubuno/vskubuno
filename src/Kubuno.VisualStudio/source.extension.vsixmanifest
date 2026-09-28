@@ -67,5 +67,14 @@
         -->
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.TestAdapter" Path="|Kubuno.TestAdapter|" />
         <Asset Type="UnitTestExtension" d:Source="Project" d:ProjectName="Kubuno.TestAdapter" Path="|Kubuno.TestAdapter|" />
+        <!--
+          docs/RSPROJ.md Addendum (lot 7): "Create a new project"/"Add New Item" templates. Path is
+          relative to this manifest's own folder (d:Source defaults to "File" - unlike the
+          Project-sourced assets above); the VSSDK build zips each immediate subfolder containing a
+          .vstemplate into its own .zip under ProjectTemplates\/ItemTemplates\ in the built VSIX, the
+          same mechanism the stock "VSIX Project" C#/VB project template scaffolding uses.
+        -->
+        <Asset Type="Microsoft.VisualStudio.ProjectTemplate" Path="ProjectTemplates" />
+        <Asset Type="Microsoft.VisualStudio.ItemTemplate" Path="ItemTemplates" />
     </Assets>
 </PackageManifest>

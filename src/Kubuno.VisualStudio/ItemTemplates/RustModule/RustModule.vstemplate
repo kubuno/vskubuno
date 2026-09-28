@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/RSPROJ.md Addendum (lot 7): "Add New Item > Rust module file" - a plain .rs module skeleton.
+     Remember to add `mod $fileinputname$;` where you want it in the module tree - a .rsproj never
+     lists .rs files itself (Cargo.toml/the crate's own module tree stay the single source of truth,
+     docs/RSPROJ.md §1), so this template does not (and cannot) edit any other file for you. -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Rust Module</Name>
+    <Description>A new Rust module (.rs) file. Add "mod $fileinputname$;" where you want it in your module tree.</Description>
+    <ProjectType>Kubuno.Rust</ProjectType>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Console</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>20</SortOrder>
+    <DefaultName>module.rs</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">Module.rs</ProjectItem>
+  </TemplateContent>
+</VSTemplate>

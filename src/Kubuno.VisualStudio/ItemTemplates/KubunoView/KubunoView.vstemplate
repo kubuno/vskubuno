@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  docs/RSPROJ.md Addendum (lot 7): "Add New Item > Kubuno view" - a .kbview plus its code-behind
+  handlers .rs, SAME STEM ($fileinputname$.kbview / $fileinputname$.rs) so docs/RSPROJ.md's "lot 8"
+  addendum can nest one under the other in Solution Explorer later (do not rename one without the
+  other - see that addendum).
+-->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Kubuno View</Name>
+    <Description>A declarative Kubuno view (.kbview) with its code-behind (view model + handlers, same-named .rs file next to it).</Description>
+    <ProjectType>Kubuno.Rust</ProjectType>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>10</SortOrder>
+    <DefaultName>NewView.kbview</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.kbview">View.kbview</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">View.rs</ProjectItem>
+  </TemplateContent>
+</VSTemplate>

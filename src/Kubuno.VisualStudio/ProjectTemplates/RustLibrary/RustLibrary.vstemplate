@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/RSPROJ.md Addendum (lot 7): "Rust library" - a .rsproj + Cargo.toml ([lib], no [[bin]]) +
+     src/lib.rs. Note: GenerateRustProjectsCommand skips library-only workspace members by default
+     (RsprojGenerationOptions.IncludeLibraryOnlyMembers), but a hand-authored/templated .rsproj for a
+     library-only package is still a normal, buildable Kubuno.Rust.Sdk project - CoreCompile/cargo
+     build just produce an .rlib instead of an .exe, and Kubuno.Rust.Sdk's OutputType/TargetExt stay
+     as documented "one real artifact" defaults, harmlessly unused for `cargo test`/F5-less builds. -->
+<VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Rust Library</Name>
+    <Description>A Rust library crate (no binary), built through Cargo as a real MSBuild/CPS project (.rsproj).</Description>
+    <ProjectType>Kubuno.Rust</ProjectType>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Library</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>20</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>RustLibrary</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Enabled</LocationField>
+    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+    <CreateInPlace>true</CreateInPlace>
+  </TemplateData>
+  <TemplateContent>
+    <Project TargetFileName="$safeprojectname$.rsproj" File="ProjectTemplate.rsproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true" TargetFileName="Cargo.toml">Cargo.toml</ProjectItem>
+      <Folder Name="src" TargetFolderName="src">
+        <ProjectItem ReplaceParameters="true" TargetFileName="lib.rs">lib.rs</ProjectItem>
+      </Folder>
+    </Project>
+  </TemplateContent>
+  <!-- No <WizardExtension> - see RustConsoleApplication.vstemplate's own remarks for why. -->
+</VSTemplate>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/RSPROJ.md Addendum (lot 7): "Add New Item > Rust integration test" - a tests/*.rs file
+     (Cargo's own convention: everything under a crate's tests/ directory is a separate integration
+     test binary, discovered automatically - never listed in the .rsproj, matching docs/RSPROJ.md §1). -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Rust Integration Test</Name>
+    <Description>A Cargo integration test (tests/$fileinputname$.rs), testing your crate's public API through its own crate name.</Description>
+    <ProjectType>Kubuno.Rust</ProjectType>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Console</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>30</SortOrder>
+    <DefaultName>integration_test.rs</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <Folder Name="tests" TargetFolderName="tests">
+      <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">IntegrationTest.rs</ProjectItem>
+    </Folder>
+  </TemplateContent>
+  <!-- No <WizardExtension> - see RustConsoleApplication.vstemplate's own remarks for why;
+       $safeprojectname$ here is VS's own standard "name of the project this item is being added
+       to" substitution. -->
+</VSTemplate>
