@@ -169,6 +169,12 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 return;
             }
 
+            // Context menus and keyboard commands (docs/DESIGNER.md §12) - RustDesignSurfaceHost.ContextMenu.cs.
+            if (TryDispatchContextMenuLine(line))
+            {
+                return;
+            }
+
             // Neither recognised shape matched: a malformed line, or a `type` this version of the host
             // does not know about yet - logged, never thrown (see the class doc's own "never crash the
             // pane over one bad line" posture, already established by `ErrorDataReceived`'s handler).
@@ -246,7 +252,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         /// <summary>
         /// Parses a `selectionChanged` line: `elementIds` is an empty list for `id: null`/absent, a
-        /// single-element list for a string `id` - matching
+        /// single-element list for a string `id` (including `""`, the root element) - matching
         /// <see cref="DesignSurfaceSelectionChangedEventArgs"/>'s own multi-select-shaped constructor
         /// (that type's own doc: "the element-id scheme ... is therefore an opaque string list"). `false`
         /// (and an empty list) for a blank line, invalid JSON, a different `type`, or one with a non-string
@@ -260,13 +266,11 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 return false;
             }
 
-            if (root.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String)
+            // "" is a real id: the root element - the view itself, selected by a click on the design
+            // canvas or on the view frame's title bar (docs/DESIGNER.md §12).
+            if (root.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String && idProp.GetString() is { } id)
             {
-                var id = idProp.GetString();
-                if (!string.IsNullOrEmpty(id))
-                {
-                    elementIds = new[] { id! };
-                }
+                elementIds = new[] { id };
             }
 
             return true;

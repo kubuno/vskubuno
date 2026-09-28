@@ -8,6 +8,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Resizable design canvas in the `.kbview` designer, like the Windows Forms designer**: the view is
+  shown in a Kubuno window frame (its `Title` in the title bar) at its design size on a dark neutral
+  canvas, with three resize handles (right edge, bottom edge, corner), a live relayout and a size tooltip
+  while dragging, and scrollbars when it does not fit. Releasing writes the size in ONE undo unit - to
+  the root's `Width`/`Height` when it has them, else to the design-time `DesignWidth`/`DesignHeight`
+  (800×600 by default), together with the new place of the children its anchors moved. Clicking the
+  canvas or the title bar selects the view; the Properties window then lists `DesignWidth`/`DesignHeight`
+  under "Layout" ("Disposition").
+- **Right-click context menus on the design surface**, native Visual Studio menus (`KubunoCommands.vsct`)
+  in VS's language: on an element - View Code (F7), Create Handler › (the element's events), Cut, Copy,
+  Paste, Duplicate, Delete, Select › (its containers), Bring to Front, Send to Back, Wrap In › (Stack,
+  Panel, Card, GroupBox, ScrollArea - only those the registry allows), Remove Container, Properties; on
+  the canvas - Paste, View Code, View Properties, Design Size... (a small dialog). Right-click selects
+  first; Shift+F10 and the context-menu key open the selection's menu. Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+D
+  work directly on the surface. The clipboard holds the element's XML (a private format plus plain text,
+  so XML copied from an editor pastes too); a paste renames colliding `x:Name`s, and a paste or wrap
+  the registry forbids is refused with a status-bar message. Every action is one surgical edit through
+  `kubuno-views-ls` (new `insertFragment`/`wrapElement`/`unwrapElement` operations) - one undo unit.
+- **Dock and Anchor pickers in the Properties window (F4)**: the Windows Forms designer's own drop-down
+  editors (the five Dock regions plus None; four Anchor bars around a centre box) edit the attributes
+  (`Top, Left, Right`). Under a parent that does not lay out by Dock/Anchor (a `Stack`...), both rows
+  stay listed but greyed, with a description saying they only apply inside a `Panel` (as WinForms keeps
+  them for a control in a FlowLayoutPanel); the language server warns when they are set there.
+
 - **Extended "Ajouter" project-node submenu for `.rsproj`, matching the WinForms project system's
   own shape** (right-click a `.rsproj` project node > "Ajouter"): **"Référence de projet..."** lists
   every other `.rsproj` in the solution with a checkbox (like Reference Manager), applying whatever
@@ -46,6 +70,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **A `.kbview` designer restored with the solution (on its Design tab) no longer loses its selection
+  sync, Properties window and Toolbox wiring for good**: setup waited only 10 s for the XML view, which a
+  pane that has not shown its XML/Split tab never creates; it now waits for it for the pane's life, and
+  the context menus load the component registry on their own.
 - **No custom icons in Solution Explorer after a normal VSIX install** (the `.rsproj` project node,
   `.rs`, `.kbview`, `Cargo.toml` and the `.kbview` element nodes all showed blank), while everything
   worked in the experimental instance. Root cause: the package registered one

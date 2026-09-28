@@ -200,6 +200,54 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
             Assert.IsFalse(element.IsValid);
         }
 
+        [TestMethod]
+        public void DockAndAnchor_UnderAFlowParent_AreGreyedWithAnExplanation()
+        {
+            var properties = Create("0.1").Element.GetProperties();
+            foreach (var name in new[] { "Dock", "Anchor" })
+            {
+                Assert.IsTrue(properties.Find(name, false).IsReadOnly, name);
+                StringAssert.Contains(properties.Find(name, false).Description, "Panel");
+            }
+
+            Assert.IsFalse(properties.Find("Width", false).IsReadOnly);
+        }
+
+        [TestMethod]
+        public void DockAndAnchor_InAPanel_UseTheWinFormsPickers()
+        {
+            var host = new FakeHost("<Panel>\n  <Button Anchor=\"Top, Right\"/>\n</Panel>");
+            var properties = new KbviewElementObject(host, "0", Registry.Find("Button")!).GetProperties();
+
+            Assert.IsFalse(properties.Find("Dock", false).IsReadOnly);
+            Assert.IsInstanceOfType(properties.Find("Dock", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor)), typeof(KbviewDockEditor));
+            Assert.IsInstanceOfType(properties.Find("Anchor", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor)), typeof(KbviewAnchorEditor));
+            Assert.IsNull(properties.Find("Text", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
+        }
+
+        [TestMethod]
+        public void TheView_ShowsItsDesignTimeSize()
+        {
+            var properties = new KbviewElementObject(new FakeHost(View), "", Registry.Find("Card")!).GetProperties();
+            Assert.AreEqual(new CategoryAttribute("Layout").Category, properties.Find("DesignWidth", false).Category);
+            Assert.IsNotNull(properties.Find("DesignHeight", false));
+            Assert.IsNull(Create("0.1").Element.GetProperties().Find("DesignWidth", false), "only on the root");
+        }
+
+        [TestMethod]
+        public void LayoutAttributeText_RoundTripsWinFormsValues()
+        {
+            Assert.AreEqual(System.Windows.Forms.DockStyle.Fill, LayoutAttributeText.ParseDock("Fill"));
+            Assert.AreEqual(System.Windows.Forms.DockStyle.None, LayoutAttributeText.ParseDock("nonsense"));
+            Assert.AreEqual("Left", LayoutAttributeText.FormatDock(System.Windows.Forms.DockStyle.Left));
+
+            var anchor = LayoutAttributeText.ParseAnchor("Right,  Top ,Left");
+            Assert.AreEqual("Top, Left, Right", LayoutAttributeText.FormatAnchor(anchor));
+            Assert.AreEqual("Top, Left", LayoutAttributeText.FormatAnchor(LayoutAttributeText.ParseAnchor(null)), "the default anchor");
+            Assert.AreEqual("None", LayoutAttributeText.FormatAnchor(LayoutAttributeText.ParseAnchor("None")));
+            Assert.AreEqual("Top, Bottom, Left, Right", LayoutAttributeText.FormatAnchor(LayoutAttributeText.ParseAnchor("Bottom, Right, Left, Top")));
+        }
+
         private sealed class FakeHost : IKbviewElementHost
         {
             private string _text;

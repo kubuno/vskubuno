@@ -1365,3 +1365,89 @@ and naming a handler on an unbound event creates `on_button_click` in `main_view
 F7 opens `main_view.kbview`, Shift+F7 returns to the designer; "View Code" from Solution Explorer
 works through CPS. Synthetic input needs to run outside the agent sandbox (found live: injected
 mouse buttons are otherwise dropped).
+
+## 12. Design canvas, context menus, Dock/Anchor (WinForms parity)
+
+Product-owner requests (2026-09-28): a resizable design canvas like the Windows Forms designer's form,
+native right-click menus on the design surface, and Dock/Anchor that really behave like WinForms.
+
+### Design canvas (`kubuno_views::design`, `examples/view_embed.rs`)
+
+- The view is painted inside a Kubuno window frame (`FrameLayout`: title bar `FRAME_TITLE_HEIGHT` with the
+  root's literal `Title`, inert caption buttons) at its **design size**, `CANVAS_MARGIN` from the top-left
+  of a dark neutral canvas (`CANVAS_BACKGROUND`), clipped to the frame's client area. The design size
+  (`design_size`) is read per axis: the root's literal numeric `Width`/`Height`, else the design-time
+  `DesignWidth`/`DesignHeight` (`registry::DESIGN_TIME_ATTRIBUTES`: root element only - the validator
+  reports them elsewhere - and ignored at runtime), else 800×600.
+- Three handles (`FrameHandle::{Right, Bottom, Corner}`) resize it: the size follows the pointer every
+  frame (`FrameResize::size_at`, whole DIP, min 120×80), a "w × h" tooltip follows the pointer, Esc
+  cancels. The release sends ONE `editRequests {gesture: "resize"}` (one undo unit) with
+  `design_size_ops` (the attribute holding each axis) **plus `anchored_children_ops`**: each non-docked
+  child of a Dock/Anchor container gets its painted rect (relative to its container's box) as
+  `X`/`Y`(/`Width`/`Height` when written) - WinForms serializes the controls its anchors moved the same
+  way; without it the new design size would become the panels' anchoring reference and the children
+  would jump back. The new size is shown until the next `setText` (3 s at most).
+- Scrollbars (`scrollbar_thumb`, `scroll_for_thumb_drag`) appear when the canvas extent
+  (`FrameLayout::canvas_extent`) exceeds the pane; wheel scrolls (Shift = horizontal), the thumbs drag,
+  the tracks page.
+- The root element is "the view": clicking the canvas or the title bar selects `""` (Esc keeps it). The
+  selection id `""` is now a real selection on the C# side too (`TryParseSelectionChanged`), so the XML
+  pane selects the root and the Properties window shows it, with `DesignWidth`/`DesignHeight` under
+  Layout ("Disposition").
+
+### Context menus and keyboard commands
+
+Surface → host (new, `kubuno_views::protocol::SurfaceMessage`):
+
+| `type` | Fields | Meaning |
+|---|---|---|
+| `contextMenu` | `x, y` (client DIP), `screenX, screenY` (screen px), `elementId: string \| null` | Right-click (on `WM_RBUTTONUP`) or Shift+F10 / the context-menu key; the element is selected first (its `selectionChanged` is sent before). `null` = the view itself (canvas, title bar). |
+| `command` | `name: "copy"\|"cut"\|"paste"\|"duplicate"`, `elementId` | Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+D on the surface (taken by the surface, never forwarded to VS). |
+
+The host (`DesignSurfaceEditingCoordinator.Commands.cs`) shows `KubunoDesignerElementContextMenu` or
+`KubunoDesignerViewContextMenu` (`KubunoCommands.vsct`, ids in `DesignerCommandIds`) with
+`IVsUIShell.ShowContextMenu` and a `DesignerContextMenuCommandTarget` built from a pure
+`DesignerMenuModel` (registry rules in `Editing/DesignerStructurePlanner`: paste into the target or next
+to it, duplicate, wrap - the wrapper must accept the element and the container the wrapper -, unwrap -
+the parent must accept the children, the root only with one child -, z-order indices). Cut/Copy/Paste/
+Delete, View Code and Bring to Front/Send to Back are VS's **standard commands** placed in the menus
+(`CommandPlacements`), so they show VS's own localized text and shortcut; our own commands carry English
+`.vsct` text and get VS's language at run time (`TextChanges` + `OLECMDTEXT`). *Found live:* the items of
+a **cascading submenu** (Create Handler ›, Select ›, Wrap In ›) are not routed to the `ShowContextMenu`
+target but through the ordinary command chain - the active pane - so `DesignerWindowPane` re-implements
+`IOleCommandTarget` and forwards our command set to the last menu's target. Dynamic lists use
+`DynamicItemStart` (item `first + i` supported while in range). "Bring to Front" moves the element last
+in its container (painted on top), "Send to Back" first. Every action is one `kubuno/applyEdit` (or one
+batch) = one undo unit; a refused gesture writes a status-bar message.
+
+New `kubuno/applyEdit` ops (`kubuno-views-ls`, `kubuno_views::edit`): `insertFragment {parentId, index,
+xml}` (own indented line, fragment re-indented, colliding `x:Name`s renamed `name2`...), `wrapElement
+{elementId, wrapper}`, `unwrapElement {elementId}`. `move_child` now carries the moved element's leading
+whitespace, so a reorder keeps one element per line. The clipboard carries the element's XML
+(normalized to column 0) under `Kubuno.Views.Fragment` and as Unicode text; a paste also accepts plain
+text starting with an element.
+
+### Dock and Anchor
+
+- **Runtime** (`registry::families::containers::panel_child_rects`, unit-tested per case): the anchoring
+  reference of a `<Panel>` is its authored size - its own literal `Width`×`Height`, the view's design size
+  for the root panel, else its first layout (kept for the node's life) - instead of a reference re-created
+  every frame (anchors used to move nothing). Docking follows WinForms z-order: the document paints its
+  children in order, so the last child is the frontmost and is docked last (innermost) - the first `Top`
+  band takes the top edge and a `Fill` written after the bands takes the remainder. A child without
+  `Width`/`Height` uses its measured size. As in WinForms, `X`/`Y` are measured from the panel's box
+  origin (padding does not shift them; it insets the dock area and the anchor reference).
+- **Validator**: `validate::warnings` reports `Dock`/`Anchor` on an element whose parent is not a
+  Dock/Anchor container (Warning severity in the language server; the view still compiles).
+- **Properties window**: `Dock` and `Anchor` use the Windows Forms designer's own drop-down editors
+  (`System.Windows.Forms.Design.DockEditor`/`AnchorEditor`, wrapped by `KbviewDockEditor`/
+  `KbviewAnchorEditor` over the attribute text - `LayoutAttributeText`). Under a non-Dock/Anchor parent both
+  rows stay visible but read-only, with a description saying they only apply inside a Panel - WinForms'
+  own choice for a control in a FlowLayoutPanel.
+
+### Testing notes
+
+`PrintWindow` captures of Visual Studio (the `screenshot.ps1` helper) show **stale** WPF content (the
+Design/XML/Split tab, the Properties window, context menus): use screen captures of a DPI-aware process
+(`C:\kubuno-build\rsproj-test\screencap.ps1`) and DPI-aware input (`input.ps1`, with `-NoFocus` while a
+menu is open - `SetForegroundWindow` closes it).

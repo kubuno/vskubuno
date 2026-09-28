@@ -23,6 +23,8 @@
       projects do (see their own csproj <Reference> items); UseWPF is the SDK-style equivalent.
     -->
     <UseWPF>true</UseWPF>
+    <!-- The Dock/Anchor pickers (PropertyBrowser/LayoutAttributeEditors.cs) wrap the Windows Forms designer's own editors. -->
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,6 +46,8 @@
       project that pins a LOWER version than what flows in transitively.
     -->
     <PackageReference Include="System.Text.Json" Version="9.0.0" />
+    <!-- Same reason, for the OLE command types (IOleCommandTarget, OLECMD) the context-menu command target tests use. -->
+    <PackageReference Include="Microsoft.VisualStudio.Interop" Version="17.14.40260" />
   </ItemGroup>
 
   <ItemGroup>

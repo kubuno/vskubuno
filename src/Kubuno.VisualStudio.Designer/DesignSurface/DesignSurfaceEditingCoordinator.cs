@@ -118,6 +118,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 rustHost.DragDropEditRequested += OnDragDropEditRequested;
                 rustHost.EditRequestsReceived += OnEditRequestsReceived;
                 rustHost.UnhandledSurfaceKey += OnUnhandledSurfaceKey;
+                // Context menus and Ctrl+C/X/V/D (the .Commands.cs half, docs/DESIGNER.md §12).
+                rustHost.ContextMenuRequested += OnContextMenuRequested;
+                rustHost.SurfaceCommandRequested += OnSurfaceCommandRequested;
             }
 
             _buffer.Changed += OnBufferChanged;
@@ -342,10 +345,14 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             return null;
         }
 
+        /// <summary>No deadline by default: while the pane shows only its Design tab (e.g. a designer restored with the
+        /// solution), the XML code window is not laid out, so the view only appears once the XML/Split tab is
+        /// first shown - a 10 s deadline used to give up on selection sync (and the Properties window/Toolbox
+        /// wiring after it) for the pane's whole life.</summary>
         private async Task<IVsTextView?> WaitForPrimaryViewAsync(TimeSpan? timeout = null)
         {
-            var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(10));
-            while (DateTime.UtcNow < deadline)
+            var deadline = timeout is { } t ? DateTime.UtcNow + t : DateTime.MaxValue;
+            while (!_disposed && DateTime.UtcNow < deadline)
             {
                 if (_codeWindowHost.PrimaryView is { } view)
                 {
@@ -531,6 +538,8 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 rustHost.DragDropEditRequested -= OnDragDropEditRequested;
                 rustHost.EditRequestsReceived -= OnEditRequestsReceived;
                 rustHost.UnhandledSurfaceKey -= OnUnhandledSurfaceKey;
+                rustHost.ContextMenuRequested -= OnContextMenuRequested;
+                rustHost.SurfaceCommandRequested -= OnSurfaceCommandRequested;
             }
 
             _propertiesPublisher?.Dispose();

@@ -56,6 +56,72 @@ namespace Kubuno.VisualStudio.Designer
             }
         }
 
+        /// <summary>The description of a greyed-out Dock/Anchor row, under a parent that does not lay out by them.</summary>
+        public static string DockAnchorOnlyInPanel(string name) => T(
+            $"{name} applies only to a child of a Panel (a container that places its children by Dock and Anchor); this element's container ignores it.",
+            $"{name} ne s'applique qu'à un enfant d'un Panel (un conteneur qui place ses enfants par Dock et Anchor) ; le conteneur de cet élément l'ignore.");
+
+        /// <summary>User documentation of the design-time attributes shown for the view (the root element).</summary>
+        public static string DesignTimeAttributeDoc(string name) => name == "DesignWidth"
+            ? T("Width of the view in the designer, in pixels (design time only, ignored when the app runs).", "Largeur de la vue dans le concepteur, en pixels (conception uniquement, ignorée à l'exécution).")
+            : T("Height of the view in the designer, in pixels (design time only, ignored when the app runs).", "Hauteur de la vue dans le concepteur, en pixels (conception uniquement, ignorée à l'exécution).");
+
+        // ---- Design surface context menus (docs/DESIGNER.md §12) ----
+
+        public static string MenuCreateHandler => T("Create Handler", "Créer un gestionnaire");
+
+        public static string MenuDuplicate => T("Duplicate", "Dupliquer");
+
+        public static string MenuSelect => T("Select", "Sélectionner");
+
+        public static string MenuWrapIn => T("Wrap In", "Envelopper dans");
+
+        public static string MenuUnwrap => T("Remove Container", "Retirer le conteneur");
+
+        public static string MenuProperties => T("Properties", "Propriétés");
+
+        public static string MenuViewProperties => T("View Properties", "Propriétés de la vue");
+
+        public static string MenuDesignSize => T("Design Size...", "Taille de conception…");
+
+        public static string DesignSizeTitle => T("Design Size", "Taille de conception");
+
+        public static string DesignSizeWidth => T("Width:", "Largeur :");
+
+        public static string DesignSizeHeight => T("Height:", "Hauteur :");
+
+        public static string DesignSizeHint => T(
+            "Size of the view on the design canvas, in pixels. It is written to Width/Height when the view declares them, else to the design-time DesignWidth/DesignHeight.",
+            "Taille de la vue sur le canevas de conception, en pixels. Elle est écrite dans Width/Height si la vue les déclare, sinon dans DesignWidth/DesignHeight (conception uniquement).");
+
+        public static string Ok => "OK";
+
+        public static string Cancel => T("Cancel", "Annuler");
+
+        public static string InvalidDesignSize => T("Enter whole numbers of at least 120 × 80.", "Saisissez des nombres entiers d'au moins 120 × 80.");
+
+        public static string StatusClipboardEmpty => T("The clipboard holds no Kubuno view element to paste.", "Le Presse-papiers ne contient aucun élément de vue Kubuno à coller.");
+
+        public static string StatusPasteRefused(string tag) => T(
+            $"<{tag}> cannot be pasted here: neither the selection nor its container accepts it.",
+            $"<{tag}> ne peut pas être collé ici : ni la sélection ni son conteneur ne l'acceptent.");
+
+        public static string StatusDuplicateRefused(string tag) => T(
+            $"<{tag}> cannot be duplicated: its container does not accept another one.",
+            $"<{tag}> ne peut pas être dupliqué : son conteneur n'en accepte pas un autre.");
+
+        public static string StatusWrapRefused(string tag, string container) => T(
+            $"<{tag}> cannot be wrapped in a <{container}> here.",
+            $"<{tag}> ne peut pas être enveloppé dans un <{container}> ici.");
+
+        public static string StatusUnwrapRefused(string tag) => T(
+            $"The container <{tag}> cannot be removed: its parent does not accept its children.",
+            $"Le conteneur <{tag}> ne peut pas être retiré : son parent n'accepte pas ses enfants.");
+
+        public static string StatusRootNotRemovable => T(
+            "The view's root element cannot be cut or deleted.",
+            "L'élément racine de la vue ne peut pas être coupé ni supprimé.");
+
         public static string InvalidBool(string value) => T(
             $"'{value}' is not a valid value: expected true, false or a {{Binding ...}} expression.",
             $"« {value} » n'est pas une valeur valide : true, false ou une expression {{Binding ...}} est attendue.");

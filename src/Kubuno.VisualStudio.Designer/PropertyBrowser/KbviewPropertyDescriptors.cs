@@ -18,9 +18,16 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         private readonly string? _default;
         private readonly TypeConverter _converter;
 
-        public KbviewAttributePropertyDescriptor(string attributeName, string displayName, PropKind? kind, string? defaultValue, string? doc, PropertyCategoryMap.Category category)
+        private readonly System.Drawing.Design.UITypeEditor? _editor;
+        private readonly bool _readOnly;
+
+        /// <param name="editor">A drop-down editor for the row (the Dock/Anchor pickers), or null.</param>
+        /// <param name="readOnly">Greys the row out (e.g. Dock/Anchor under a parent that does not lay out by them).</param>
+        public KbviewAttributePropertyDescriptor(string attributeName, string displayName, PropKind? kind, string? defaultValue, string? doc, PropertyCategoryMap.Category category, System.Drawing.Design.UITypeEditor? editor = null, bool readOnly = false)
             : base(attributeName, BuildAttributes(attributeName, displayName, doc, category))
         {
+            _editor = editor;
+            _readOnly = readOnly;
             AttributeName = attributeName;
             Kind = kind;
             _default = defaultValue;
@@ -40,7 +47,10 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         public override Type ComponentType => typeof(KbviewElementObject);
 
-        public override bool IsReadOnly => false;
+        public override bool IsReadOnly => _readOnly;
+
+        public override object? GetEditor(Type editorBaseType) =>
+            _editor is not null && editorBaseType == typeof(System.Drawing.Design.UITypeEditor) ? _editor : base.GetEditor(editorBaseType);
 
         public override Type PropertyType => typeof(string);
 

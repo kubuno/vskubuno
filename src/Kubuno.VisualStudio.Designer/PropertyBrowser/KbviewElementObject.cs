@@ -33,13 +33,16 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         private static readonly (string Name, PropKind Kind)[] CommonAttributes =
         {
             // kubuno-views-ls/src/common_attrs.rs's COMMON_ATTRIBUTES, same order (user docs: DesignerText.CommonAttributeDoc).
-            ("Dock", PropKind.CreateEnum(new[] { "Top", "Bottom", "Left", "Right", "Fill" })),
+            ("Dock", PropKind.CreateEnum(new[] { "None", "Top", "Bottom", "Left", "Right", "Fill" })),
             ("Anchor", PropKind.String),
             ("X", PropKind.F32),
             ("Y", PropKind.F32),
             ("Width", PropKind.F32),
             ("Height", PropKind.F32),
         };
+
+        /// <summary><c>kubuno_views::registry::DESIGN_TIME_ATTRIBUTES</c>: the view's canvas size, root element only, ignored at runtime.</summary>
+        private static readonly string[] DesignTimeAttributes = { "DesignWidth", "DesignHeight" };
 
         private readonly IKbviewElementHost _host;
         private readonly Dictionary<string, (int Version, string? Value)> _pending = new Dictionary<string, (int, string?)>(StringComparer.Ordinal);
@@ -137,11 +140,30 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
                     }
                 }
 
+                // Dock/Anchor get the Windows Forms pickers; like WinForms (which keeps them visible for a control
+                // in a FlowLayoutPanel), they stay listed under a parent that does not lay out by them, but
+                // greyed out with a description saying so - the validator warns when they are set there.
+                var dockAnchorParent = ParentLaysOutByDockAnchor();
                 foreach (var (name, kind) in CommonAttributes)
                 {
                     if (seen.Add(name))
                     {
-                        list.Add(new KbviewAttributePropertyDescriptor(name, name, kind, defaultValue: null, DesignerText.CommonAttributeDoc(name), PropertyCategoryMap.Category.Layout));
+                        var isDockOrAnchor = name == "Dock" || name == "Anchor";
+                        System.Drawing.Design.UITypeEditor? editor = name == "Dock" ? new KbviewDockEditor() : name == "Anchor" ? new KbviewAnchorEditor() : null;
+                        var doc = isDockOrAnchor && !dockAnchorParent ? DesignerText.DockAnchorOnlyInPanel(name) : DesignerText.CommonAttributeDoc(name);
+                        list.Add(new KbviewAttributePropertyDescriptor(name, name, kind, defaultValue: null, doc, PropertyCategoryMap.Category.Layout, editor, readOnly: isDockOrAnchor && !dockAnchorParent));
+                    }
+                }
+
+                // The view itself (the root element): its design-time canvas size (docs/DESIGNER.md §12).
+                if (ElementId.Length == 0)
+                {
+                    foreach (var name in DesignTimeAttributes)
+                    {
+                        if (seen.Add(name))
+                        {
+                            list.Add(new KbviewAttributePropertyDescriptor(name, name, PropKind.F32, defaultValue: null, DesignerText.DesignTimeAttributeDoc(name), PropertyCategoryMap.Category.Layout));
+                        }
                     }
                 }
 
@@ -149,6 +171,18 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             }
 
             return _properties;
+        }
+
+        /// <summary>Whether this element's parent places its children by Dock/Anchor (a <c>Panel</c>); false for the root.</summary>
+        private bool ParentLaysOutByDockAnchor()
+        {
+            if (!Editing.DesignerStructurePlanner.TrySplit(ElementId, out var parentId, out _))
+            {
+                return false;
+            }
+
+            var parent = ElementAttributeReader.Read(_host.GetCurrentText(), parentId);
+            return parent is not null && _host.Registry.Find(parent.TagName)?.LayoutKind == LayoutKind.DockAnchor;
         }
 
         /// <summary>The Events tab's rows - one string-valued row per registry event (the <c>On*</c> attribute holding the handler name).</summary>

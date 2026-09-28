@@ -27,6 +27,52 @@
           <ButtonText>Kubuno Dependencies</ButtonText>
         </Strings>
       </Menu>
+
+      <!--
+        The .kbview design surface's context menus (docs/DESIGNER.md §12), shown by
+        DesignSurfaceEditingCoordinator.Commands.cs through IVsUIShell.ShowContextMenu with a
+        DesignerContextMenuCommandTarget (Kubuno.VisualStudio.Designer), which answers every item's
+        state and - for our own commands (TextChanges) - its text in VS's UI language; the English
+        texts below are the fallback. Ids MUST match DesignerCommandIds. Cut/Copy/Paste/Delete, View
+        Code and Bring to Front/Send to Back are VS's own standard commands (CommandPlacements below),
+        so they show VS's own localized text and shortcut, like in the Windows Forms designer.
+      -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Kubuno Designer Element</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Kubuno Designer View</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCreateHandlerMenu" priority="0x0100" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHandlerGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Create Handler</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSelectMenu" priority="0x0100" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSelectGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Select</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapMenu" priority="0x0100" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Wrap In</ButtonText>
+        </Strings>
+      </Menu>
     </Menus>
     <Groups>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" priority="0x0600">
@@ -49,6 +95,49 @@
       -->
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenuGroup" priority="0x0600">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenu" />
+      </Group>
+
+      <!-- The .kbview design surface's element menu, in WinForms order. -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCodeGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHandlerGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerClipboardGroup" priority="0x0300">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSelectGroup" priority="0x0400">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerOrderGroup" priority="0x0500">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapGroup" priority="0x0600">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerPropertiesGroup" priority="0x0700">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHandlerListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCreateHandlerMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSelectListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSelectMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapMenu" />
+      </Group>
+
+      <!-- The view menu (canvas background, frame title bar). -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewPasteGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewCodeGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewPropertiesGroup" priority="0x0300">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewContextMenu" />
       </Group>
     </Groups>
 
@@ -182,8 +271,133 @@
           <ButtonText>Supprimer</ButtonText>
         </Strings>
       </Button>
+
+      <!-- .kbview design surface context menus (see the Menus section). -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerCreateHandlerFirst" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerHandlerListGroup" />
+        <CommandFlag>DynamicItemStart</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Event</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerDuplicate" priority="0x0103" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerClipboardGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Duplicate</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerSelectFirst" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerSelectListGroup" />
+        <CommandFlag>DynamicItemStart</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Container</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerWrapStack" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapListGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Stack</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerWrapPanel" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapListGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Panel</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerWrapCard" priority="0x0102" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapListGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Card</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerWrapGroupBox" priority="0x0103" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapListGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>GroupBox</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerWrapScrollArea" priority="0x0104" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapListGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>ScrollArea</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerUnwrap" priority="0x0200" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerWrapGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Remove Container</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerProperties" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerPropertiesGroup" />
+        <Icon guid="ImageCatalogGuid" id="Property" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Properties</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerViewProperties" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewPropertiesGroup" />
+        <Icon guid="ImageCatalogGuid" id="Property" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>View Properties</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerDesignSize" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewPropertiesGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Design Size...</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
+
+  <!-- VS's own standard commands, placed in the .kbview design surface's context menus. -->
+  <CommandPlacements>
+    <CommandPlacement guid="guidVSStd97" id="cmdidViewCode" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCodeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidCut" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerClipboardGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidCopy" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerClipboardGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidPaste" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerClipboardGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidDelete" priority="0x0104">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerClipboardGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidBringToFront" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerOrderGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidSendToBack" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerOrderGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidPaste" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewPasteGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidViewCode" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewCodeGroup" />
+    </CommandPlacement>
+  </CommandPlacements>
 
   <Symbols>
     <GuidSymbol name="guidKubunoPackage" value="{5f3a9b2e-9e0c-4f0a-9a7a-6f0f3c9c9d10}" />
@@ -222,6 +436,38 @@
       <IDSymbol name="cmdidAddCargoDependency" value="0x010C" />
       <IDSymbol name="cmdidAddCargoDependencyFromNode" value="0x010D" />
       <IDSymbol name="cmdidRemoveCargoDependency" value="0x010E" />
+
+      <!-- .kbview design surface context menus - MUST match Kubuno.VisualStudio.Designer's DesignerCommandIds. -->
+      <IDSymbol name="KubunoDesignerElementContextMenu" value="0x1030" />
+      <IDSymbol name="KubunoDesignerViewContextMenu" value="0x1031" />
+      <IDSymbol name="KubunoDesignerCreateHandlerMenu" value="0x1032" />
+      <IDSymbol name="KubunoDesignerSelectMenu" value="0x1033" />
+      <IDSymbol name="KubunoDesignerWrapMenu" value="0x1034" />
+      <IDSymbol name="KubunoDesignerCodeGroup" value="0x1040" />
+      <IDSymbol name="KubunoDesignerHandlerGroup" value="0x1041" />
+      <IDSymbol name="KubunoDesignerClipboardGroup" value="0x1042" />
+      <IDSymbol name="KubunoDesignerSelectGroup" value="0x1043" />
+      <IDSymbol name="KubunoDesignerOrderGroup" value="0x1044" />
+      <IDSymbol name="KubunoDesignerWrapGroup" value="0x1045" />
+      <IDSymbol name="KubunoDesignerPropertiesGroup" value="0x1046" />
+      <IDSymbol name="KubunoDesignerHandlerListGroup" value="0x1047" />
+      <IDSymbol name="KubunoDesignerSelectListGroup" value="0x1048" />
+      <IDSymbol name="KubunoDesignerWrapListGroup" value="0x1049" />
+      <IDSymbol name="KubunoDesignerViewPasteGroup" value="0x104A" />
+      <IDSymbol name="KubunoDesignerViewCodeGroup" value="0x104B" />
+      <IDSymbol name="KubunoDesignerViewPropertiesGroup" value="0x104C" />
+      <IDSymbol name="cmdidDesignerDuplicate" value="0x0200" />
+      <IDSymbol name="cmdidDesignerProperties" value="0x0201" />
+      <IDSymbol name="cmdidDesignerUnwrap" value="0x0202" />
+      <IDSymbol name="cmdidDesignerViewProperties" value="0x0203" />
+      <IDSymbol name="cmdidDesignerDesignSize" value="0x0204" />
+      <IDSymbol name="cmdidDesignerWrapStack" value="0x0210" />
+      <IDSymbol name="cmdidDesignerWrapPanel" value="0x0211" />
+      <IDSymbol name="cmdidDesignerWrapCard" value="0x0212" />
+      <IDSymbol name="cmdidDesignerWrapGroupBox" value="0x0213" />
+      <IDSymbol name="cmdidDesignerWrapScrollArea" value="0x0214" />
+      <IDSymbol name="cmdidDesignerCreateHandlerFirst" value="0x0220" />
+      <IDSymbol name="cmdidDesignerSelectFirst" value="0x0240" />
     </GuidSymbol>
   </Symbols>
 

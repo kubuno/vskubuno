@@ -26,7 +26,7 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
     /// i.e. this pane's site) - where the selected element is published for the Properties window.</item>
     /// </list>
     /// </summary>
-    public sealed class DesignerWindowPane : WindowPane, IVsToolboxUser
+    public sealed class DesignerWindowPane : WindowPane, IVsToolboxUser, OleInterop.IOleCommandTarget
     {
         private readonly DesignerSplitView _view;
 
@@ -129,6 +129,39 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
                 command.Enabled = _view.EditingCoordinator is { } coordinator && canExecute(coordinator);
             };
             commands.AddCommand(command);
+        }
+
+        // ---- IOleCommandTarget: the design surface's context-menu command set ----
+
+        /// <summary>
+        /// Re-implemented so the items of the design surface's CASCADING context submenus reach the menu's own command
+        /// target: Visual Studio routes them through the ordinary command chain (this pane) instead of the target given
+        /// to <c>ShowContextMenu</c>. Everything else goes to the pane's own command service, as before.
+        /// </summary>
+        int OleInterop.IOleCommandTarget.QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OleInterop.OLECMD[] prgCmds, IntPtr pCmdText)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (pguidCmdGroup == DesignSurface.DesignerCommandIds.CommandSet && _view.EditingCoordinator?.ActiveMenuTarget is { } menu)
+            {
+                return menu.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
+            }
+
+            return GetService(typeof(System.ComponentModel.Design.IMenuCommandService)) is OleInterop.IOleCommandTarget commands
+                ? commands.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText)
+                : (int)OleInterop.Constants.OLECMDERR_E_NOTSUPPORTED;
+        }
+
+        int OleInterop.IOleCommandTarget.Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (pguidCmdGroup == DesignSurface.DesignerCommandIds.CommandSet && _view.EditingCoordinator?.ActiveMenuTarget is { } menu)
+            {
+                return menu.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+            }
+
+            return GetService(typeof(System.ComponentModel.Design.IMenuCommandService)) is OleInterop.IOleCommandTarget commands
+                ? commands.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut)
+                : (int)OleInterop.Constants.OLECMDERR_E_NOTSUPPORTED;
         }
 
         /// <summary>Hands <see cref="WindowPane.GetService"/> (protected) to the design surface as its parent provider.</summary>
