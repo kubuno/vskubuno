@@ -21,6 +21,10 @@
     <UseWPF>true</UseWPF>
     <!-- Resolved from the Visual Studio installation that runs this MSBuild (the VSIX solution
          already requires Visual Studio's MSBuild, see README.md). -->
+    <!-- Same benign MSB3277 unification notes as Kubuno.VisualStudio (see its csproj): Kubuno.Cargo's
+         System.Text.Json 8.x vs. the 10.x the VS-install assemblies reference - the running Visual
+         Studio resolves them to its own copies at load time. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
     <KubunoVsInstallDir Condition="'$(KubunoVsInstallDir)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildBinPath)\..\..\..'))\</KubunoVsInstallDir>
   </PropertyGroup>
 
@@ -35,6 +39,34 @@
       <HintPath>$(KubunoVsInstallDir)Common7\IDE\CommonExtensions\Microsoft\Project\Microsoft.VisualStudio.ProjectSystem.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <!-- CPS's VS-side debug seam (DebugLaunchProviderBase, DebugLaunchSettings - work package 4). -->
+    <Reference Include="Microsoft.VisualStudio.ProjectSystem.VS">
+      <HintPath>$(KubunoVsInstallDir)Common7\IDE\CommonExtensions\Microsoft\Project\Microsoft.VisualStudio.ProjectSystem.VS.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shell/interop types DebugLaunchProviderBase exposes (IVsHierarchy, SVsServiceProvider), taken
+         from the same Visual Studio install as CPS rather than from the Microsoft.VisualStudio.SDK
+         package, whose 17.x assemblies conflict (MSB3277) with the 18.x ones CPS was built against. -->
+    <Reference Include="Microsoft.VisualStudio.Interop">
+      <HintPath>$(KubunoVsInstallDir)Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Interop.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.15.0">
+      <HintPath>$(KubunoVsInstallDir)Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.15.0.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Framework">
+      <HintPath>$(KubunoVsInstallDir)Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kubuno.Launch\Kubuno.Launch.csproj" />
+    <ProjectReference Include="..\Kubuno.VisualStudio.Core\Kubuno.VisualStudio.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

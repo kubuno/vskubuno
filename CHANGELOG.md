@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **F5 / Ctrl+F5 on a `.rsproj` (work package 4 of `docs/RSPROJ.md`)**: set a Rust project as the
+  startup project and F5 builds it (cargo, through the normal solution build) then starts
+  `$(TargetPath)` under Visual Studio's native debugger - breakpoints bind, Rust locals show with
+  the toolchain's natvis (e.g. `String` as `"Hello, Kubuno!"`); Ctrl+F5 runs it without the
+  debugger. The executable's PATH gets the profile directory, its `deps` folder and the Rust
+  standard library directory first, so `-C prefer-dynamic` builds (the Kubuno desktop apps with
+  `kubuno_ui.dll` and `std-*.dll`) start without a missing-DLL error. A new "Debug" property page
+  sets the command arguments, working directory (default: the `Cargo.toml` folder) and extra
+  environment variables (one `NAME=value` per line), stored in the per-developer `.rsproj.user`.
 - **`.rsproj` opens in Visual Studio as a real project (work package 3 of `docs/RSPROJ.md`)**:
   Rust/Cargo packages can sit in a `.sln` as CPS projects, registered like the JavaScript
   project system's `.esproj`. Solution Explorer shows the project (with its own Rust icon) and the
@@ -17,7 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   (file/line/column/code); `.kbview` files open with their usual editor; a "Cargo" property page
   exposes the package/bin/manifest/target-dir/extra-args settings. New
   `src/Kubuno.VisualStudio.RustProjectSystem` (CPS exports) and `rsproj.pkgdef` (project type
-  registration) ship in the VSIX. F5 on a `.rsproj` is work package 4 (not available yet).
+  registration) ship in the VSIX.
 
 ### Changed
 
@@ -26,8 +35,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `Restore` instead of the SDK redefining Build/Rebuild/Clean, and the SDK now carries project
   configurations, capabilities, rule files (`Sdk/Rules/*.xaml`) and a default `None` item glob
   (all needed by Visual Studio; command-line builds behave as before).
+- **A `.rsproj` now has the `x64` platform** instead of "Any CPU" (a Rust executable is native
+  code; x64 maps to the `x86_64-pc-windows-msvc` host triple). Solutions listing a `.rsproj` should
+  use `Debug|x64`/`Release|x64` (the sample solution does).
 
 ### Fixed
+
+- **The `.rsproj` project node icon did not show in Solution Explorer**: Visual Studio could not
+  load the assembly holding the image by name; the extension now registers code bases for it and
+  for the assemblies the project system loads before the package itself.
+- "Manage NuGet Packages..." on a `.rsproj`: verified that NuGet itself rejects the project (it
+  declares none of the capabilities NuGet requires); the entry can only appear until the NuGet
+  package has loaded, a Visual Studio behavior shared by every non-NuGet project type.
 
 - **Rebuild/Clean of one configuration no longer deletes the other's build**: the SDK's clean step
   ran a bare `cargo clean` for Debug, which wipes the whole target directory (Release artifacts

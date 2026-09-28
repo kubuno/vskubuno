@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The rule CPS reads the active debugger from (DebuggerFlavor, set by Sdk.props to RustDebugger -
+     docs/RSPROJ.md work package 4). Same shape as the JS SDK's own debugger_general.xaml. -->
+<Rule Name="DebuggerGeneralProperties"
+      DisplayName="Debugger General Properties"
+      Description="General debugger options"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <Rule.DataSource>
+    <DataSource Persistence="UserFile" />
+  </Rule.DataSource>
+
+  <StringProperty Name="SymbolsPath" DisplayName="Symbol Search Path" Visible="False"
+                  Description="The search path used by the debugger to locate symbols." />
+
+  <StringProperty Name="DebuggerFlavor" Visible="False"
+                  Description="The debug rule selected as the active debugger." />
+
+  <EnumProperty Name="ImageClrType" Visible="False"
+                Description="Tells debuggers whether this is a managed project: a Rust executable is always native.">
+    <EnumProperty.DataSource>
+      <DataSource Persistence="UserFile" HasConfigurationCondition="False" PersistedName="_TargetImageClrType" />
+    </EnumProperty.DataSource>
+    <EnumValue Name="Native" DisplayName="Native Image" Description="The executable image to debug is a fully native application." />
+    <EnumValue Name="Mixed" DisplayName="Mixed Image" Description="The executable image to debug is a mixture of native and managed code." />
+    <EnumValue Name="Managed" DisplayName="Managed Image" Description="The executable image to debug is a fully managed application." />
+  </EnumProperty>
+</Rule>

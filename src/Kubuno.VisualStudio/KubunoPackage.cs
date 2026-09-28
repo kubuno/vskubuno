@@ -20,6 +20,18 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 
+// Code bases for assemblies that Visual Studio resolves by NAME rather than by path, which cannot see an
+// extension folder otherwise:
+// - Kubuno.VisualStudio.RustProjectSystem: RustProject.imagemanifest (the .rsproj project node icon)
+//   points at its WPF resources by assembly name, loaded by the image service with Assembly.Load;
+// - its own dependencies (Kubuno.Launch, Kubuno.VisualStudio.Core, Kubuno.Cargo): Visual Studio's MEF
+//   loads the CPS exports (RustDebugLaunchProvider) before this package ever runs, so nothing else has
+//   loaded them yet - verified live: F5 failed with "Could not load file or assembly 'Kubuno.Launch'".
+[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.RustProjectSystem", CodeBase = @"$PackageFolder$\Kubuno.VisualStudio.RustProjectSystem.dll")]
+[assembly: ProvideCodeBase(AssemblyName = "Kubuno.Launch", CodeBase = @"$PackageFolder$\Kubuno.Launch.dll")]
+[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.Core", CodeBase = @"$PackageFolder$\Kubuno.VisualStudio.Core.dll")]
+[assembly: ProvideCodeBase(AssemblyName = "Kubuno.Cargo", CodeBase = @"$PackageFolder$\Kubuno.Cargo.dll")]
+
 namespace Kubuno.VisualStudio
 {
     /// <summary>

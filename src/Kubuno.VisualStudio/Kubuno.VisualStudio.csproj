@@ -78,7 +78,6 @@
     <Compile Include="Workspace\CargoBuildMessageReporter.cs" />
     <Compile Include="Workspace\CargoWorkspaceSource.cs" />
     <Compile Include="Debugging\RustLaunchTargetsGenerator.cs" />
-    <Compile Include="Debugging\NatvisInstaller.cs" />
     <Compile Include="Debugging\NativeDebugLauncher.cs" />
     <Compile Include="Debugging\DebugRustTestAtCursorCommand.cs" />
     <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: shows its two package-registered tool windows. -->

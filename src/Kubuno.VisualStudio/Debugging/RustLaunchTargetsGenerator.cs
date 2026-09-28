@@ -89,7 +89,7 @@ namespace Kubuno.VisualStudio.Debugging
                 // See NatvisInstaller's remarks for why this - rather than PDB embedding or a
                 // VSIX asset - is the mechanism that actually gets std types (String, Vec,
                 // Option, ...) visualized under VS's native debugger.
-                NatvisInstaller.EnsureInstalled(RustToolchain.FindNatvisFiles(sysroot));
+                NatvisInstaller.EnsureInstalled(RustToolchain.FindNatvisFiles(sysroot), KubunoLog.WriteLine);
 
                 var entries = new List<(LaunchDescription Description, string ProjectPath)>();
                 foreach (var package in metadata.Packages)

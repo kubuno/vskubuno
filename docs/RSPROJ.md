@@ -1,11 +1,19 @@
 # `.rsproj`: a real MSBuild/CPS project type for Cargo packages
 
-Status: work packages 1-3 implemented (SDK, MSBuild tasks, CPS project type — see README.md's
-"Building Rust with MSBuild (`.rsproj`)" section); work packages 4-7 not started. Implementation
-notes that deviate from this design: the SDK now imports `Microsoft.Common.props`/`.targets` like
-the JS SDK (CPS needs that targets graph), and the project type is registered by a static
-`rsproj.pkgdef` mirroring the JS project system's own pkgdef (the JS package itself carries no
-`[ProjectTypeRegistration]` attribute — verified by reflection). Modeled on the JavaScript project type (`.esproj`,
+Status: work packages 1-4 implemented (SDK, MSBuild tasks, CPS project type, F5/Ctrl+F5 — see
+README.md's "Building Rust with MSBuild (`.rsproj`)" section); work packages 5-7 not started.
+Implementation notes that deviate from this design: the SDK now imports
+`Microsoft.Common.props`/`.targets` like the JS SDK (CPS needs that targets graph), and the project
+type is registered by a static `rsproj.pkgdef` mirroring the JS project system's own pkgdef (the
+JS package itself carries no `[ProjectTypeRegistration]` attribute — verified by reflection).
+Work package 4 (verified by reflection and live): `IDebugProfileLaunchTargetsProvider` belongs to
+the managed project system, not to CPS — the seam is CPS's `DebugLaunchProviderBase` +
+`[ExportDebugger(name)]`, picked by the `DebuggerFlavor` property (`debugger_general.xaml`), exactly
+as the JS project system's `LaunchJsonDebugLaunchProvider`; it lives in
+`Kubuno.VisualStudio.RustProjectSystem/RustDebugLaunchProvider.cs` (not `Debugging/`), with
+`Rules/debug.xaml` (args/working dir/env) and `Rules/rust_debugger.xaml`; there is no separate
+`Build.xaml` (the "Cargo" page already holds the build settings). Launch profiles
+(`LaunchProfiles` capability) were not needed. A `.rsproj` is `x64`-only (host triple). Modeled on the JavaScript project type (`.esproj`,
 `Microsoft.VisualStudio.JavaScript.Sdk` + `Microsoft.VisualStudio.JavaScript.ProjectSystem`), whose
 installed files in VS 2026 Community were read directly for this note. Facts checked against those
 files are marked "(verified)"; everything else is this note's own proposal, and anything that would

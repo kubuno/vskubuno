@@ -268,9 +268,9 @@ JavaScript project system registers `.esproj`:
   `.sln` records) with CPS as its project factory, key for key like the JS project system's own
   pkgdef.
 - **`src/Kubuno.VisualStudio.RustProjectSystem/`** is the CPS host part (MEF exports, shipped as a
-  `MefComponent` asset of the VSIX): today only the project node icon
-  (`RustProjectTreePropertiesProvider` + `RustProject.imagemanifest`), scoped to the
-  `RustProjectSystem` capability. It compiles against the running Visual Studio's own
+  `MefComponent` asset of the VSIX): the project node icon
+  (`RustProjectTreePropertiesProvider` + `RustProject.imagemanifest`) and the F5 launch provider
+  (below), scoped to the `RustProjectSystem` capability. It compiles against the running Visual Studio's own
   `Microsoft.VisualStudio.ProjectSystem.dll` (never shipped).
 - **Everything else comes from `Kubuno.Rust.Sdk`**, which now sits on `Microsoft.Common.props`/
   `.targets` exactly like the JS SDK (CPS drives a project through that standard targets graph):
@@ -291,9 +291,39 @@ Release build (and Rebuild) through the solution build, and a compile error show
 `main.rs(2,38) error E0425` in the Error List. Launch the instance with `CARGO_TARGET_DIR` set (or
 set `<CargoTargetDir>`) if the build outputs must land somewhere specific.
 
-**F5/Ctrl+F5 on a `.rsproj` is not implemented yet** (work package 4: CPS debug launch provider).
-The project is a valid startup project, but until that provider exists Visual Studio has nothing
-to launch; debug Rust through Open Folder mode meanwhile.
+A `.rsproj` has a single platform, **x64** (the `x86_64-pc-windows-msvc` host triple; cargo is
+not given a `--target`, so artifacts stay in `<target dir>\<profile>`): a solution listing one uses
+`Debug|x64`/`Release|x64`.
+
+### F5 / Ctrl+F5 on a `.rsproj` (work package 4)
+
+Set the project as the startup project and press F5: Visual Studio builds it through the solution
+build (cargo), then `RustDebugLaunchProvider` (`src/Kubuno.VisualStudio.RustProjectSystem`) starts
+`$(TargetPath)` under the native debugger. It plugs into CPS's own debug seam, the one the
+JavaScript project system uses (checked by reflection against the installed CPS assemblies: a
+`DebugLaunchProviderBase` exported with `[ExportDebugger("RustDebugger")]`, selected by the
+`DebuggerFlavor` property that `Kubuno.Rust.Sdk`'s `Sdk.props` sets, read through its
+`debugger_general.xaml` rule). Ctrl+F5 runs the same launch without the debugger.
+
+- **Environment**: PATH is prepended with the profile directory, its `deps` folder and the Rust
+  standard library directory (`Kubuno.Launch.RustDebugEnvironment`, the same logic Open Folder's
+  `launch.vs.json` uses), which is what `-C prefer-dynamic` builds need (`kubuno_ui.dll`,
+  `std-*.dll`); `RUST_BACKTRACE=1` is set; the toolchain's natvis files are installed as for Open
+  Folder.
+- **"Debug" property page** (`Sdk/Rules/debug.xaml`, stored in `<project>.rsproj.user`): command
+  arguments (verbatim), working directory (default: the folder of `Cargo.toml`; relative paths are
+  relative to the project folder) and environment variables, one `NAME=value` per line, applied
+  over Visual Studio's own environment (setting `PATH` there replaces the computed one).
+
+Verified live in the experimental instance: F5 on `samples\hello-rust.sln` builds, then stops at a
+breakpoint in `main` with `greeting : alloc::string::String = "Hello, Kubuno!"` in Locals; Ctrl+F5
+runs; a scratch `.rsproj` for the desktop shell (`CargoManifestPath` pointing at
+`Z:\src\desktop\windows\src\shell\Cargo.toml`) starts `kubuno-desktop` with F5 and Ctrl+F5 - the
+same executable exits with `STATUS_DLL_NOT_FOUND` (0xC0000135) when started without those PATH
+entries.
+
+Start Visual Studio with the environment you build with (`cargo` on PATH, `CARGO_TARGET_DIR` if
+you use one): the build and `$(TargetPath)` both follow it.
 
 Note: `$(TargetPath)`'s path-convention fallback (used for the incremental `CoreCompile` check
 before cargo has reported its artifact) assumes `<manifest dir>\target` when neither

@@ -20,15 +20,15 @@
 
   <!-- The two configurations Visual Studio's Configuration Manager/toolbar dropdown offer
        (capability ProjectConfigurationsDeclaredAsItems below), mapped to cargo's dev/release
-       profiles further down. -->
+       profiles further down. x64 only: see $(Platform) in Sdk.props. -->
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|AnyCPU">
+    <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
-      <Platform>AnyCPU</Platform>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|AnyCPU">
+    <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
-      <Platform>AnyCPU</Platform>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
 
@@ -81,6 +81,12 @@
       <Context>Project</Context>
     </PropertyPageSchema>
     <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\cargo.xaml">
+      <Context>Project</Context>
+    </PropertyPageSchema>
+    <!-- F5/Ctrl+F5 (work package 4): CPS reads DebuggerFlavor through debugger_general.xaml;
+         rust_debugger.xaml is the "debugger" rule named after it (the Start button's label),
+         debug.xaml the "Debug" page of the Properties editor. -->
+    <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\debugger_general.xaml;$(KubunoRustSdkRulesDirectory)\rust_debugger.xaml;$(KubunoRustSdkRulesDirectory)\debug.xaml">
       <Context>Project</Context>
     </PropertyPageSchema>
     <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\general_file.xaml">

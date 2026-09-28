@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The "debugger" rule named after DebuggerFlavor (docs/RSPROJ.md work package 4): its DisplayName is
+     the label of Visual Studio's Start button for a .rsproj. The launch itself is
+     Kubuno.VisualStudio.RustProjectSystem's RustDebugLaunchProvider (exported under the same name);
+     its settings are edited on the "Debug" page (debug.xaml). -->
+<Rule Name="RustDebugger"
+      DisplayName="Rust Debugger"
+      PageTemplate="debugger"
+      Description="Native debugger for a Rust executable"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <Rule.DataSource>
+    <DataSource Persistence="UserFile" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+</Rule>

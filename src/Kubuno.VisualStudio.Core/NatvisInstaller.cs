@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Kubuno.VisualStudio.Logging;
 
-namespace Kubuno.VisualStudio.Debugging
+namespace Kubuno.VisualStudio.Core
 {
     /// <summary>
     /// Makes the active Rust toolchain's standard-library <c>.natvis</c> files
-    /// (<see cref="Kubuno.Launch.RustToolchain.FindNatvisFiles"/> - <c>liballoc.natvis</c>,
+    /// (<c>Kubuno.Launch.RustToolchain.FindNatvisFiles</c> - <c>liballoc.natvis</c>,
     /// <c>libcore.natvis</c>, <c>libstd.natvis</c>, <c>intrinsic.natvis</c> on a current stable
     /// toolchain) visible to Visual Studio's native debugger, so <c>String</c>/<c>Vec</c>/
     /// <c>Option</c>/... show a readable value instead of raw struct fields.
@@ -42,7 +41,7 @@ namespace Kubuno.VisualStudio.Debugging
     /// can actually confirm which one loads (Natvis diagnostic messages set to Verbose, Tools >
     /// Options > Debugging > General, then read at a real breakpoint) and drop the other.
     /// </summary>
-    internal static class NatvisInstaller
+    public static class NatvisInstaller
     {
         private static readonly string[] PersonalVisualizersSubPaths =
         {
@@ -50,7 +49,9 @@ namespace Kubuno.VisualStudio.Debugging
             @"Visual Studio 18\Visualizers",
         };
 
-        public static void EnsureInstalled(IReadOnlyList<string> natvisFiles)
+        /// <param name="natvisFiles">The toolchain's natvis files.</param>
+        /// <param name="log">Receives one line per installed file or failure; <see langword="null"/> to stay silent.</param>
+        public static void EnsureInstalled(IReadOnlyList<string> natvisFiles, Action<string>? log = null)
         {
             if (natvisFiles.Count == 0)
             {
@@ -67,13 +68,13 @@ namespace Kubuno.VisualStudio.Debugging
 
                 foreach (var subPath in PersonalVisualizersSubPaths)
                 {
-                    InstallInto(Path.Combine(documents, subPath), natvisFiles);
+                    InstallInto(Path.Combine(documents, subPath), natvisFiles, log);
                 }
             }
             catch (Exception exception)
             {
                 // Natvis is a debugging nicety, not something that should block a build/launch.
-                KubunoLog.WriteException("Kubuno: failed to install toolchain natvis files", exception);
+                log?.Invoke($"Kubuno: failed to install toolchain natvis files: {exception}");
             }
         }
 
@@ -82,7 +83,7 @@ namespace Kubuno.VisualStudio.Debugging
         /// that is already an up-to-date copy, so calling this (twice, once per candidate folder)
         /// on every launch-target regeneration is cheap once both folders are populated.
         /// </summary>
-        private static void InstallInto(string destinationDirectory, IReadOnlyList<string> natvisFiles)
+        private static void InstallInto(string destinationDirectory, IReadOnlyList<string> natvisFiles, Action<string>? log)
         {
             Directory.CreateDirectory(destinationDirectory);
 
@@ -95,7 +96,7 @@ namespace Kubuno.VisualStudio.Debugging
                 }
 
                 File.Copy(sourcePath, destinationPath, overwrite: true);
-                KubunoLog.WriteLine($"Kubuno: installed natvis '{destinationPath}' for the native debugger.");
+                log?.Invoke($"Kubuno: installed natvis '{destinationPath}' for the native debugger.");
             }
         }
 
