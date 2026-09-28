@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Image manifest for the .rsproj project node icon (docs/RSPROJ.md §3). Shipped at the root of the
+  Image manifest for the .rsproj project node icon (docs/RSPROJ.md §3) and the .rs/.kbview/Cargo.toml file icons (lot 8). Shipped at the root of the
   Kubuno.VisualStudio VSIX, where Visual Studio's image service discovers *.imagemanifest files on
   its own (no registration needed). The PNGs are WPF resources of
   Kubuno.VisualStudio.RustProjectSystem.dll; the GUID/ID must match RustProjectImages.cs.
@@ -10,6 +10,9 @@
     <String Name="Resources" Value="/Kubuno.VisualStudio.RustProjectSystem;Component/Resources" />
     <Guid Name="RustProjectImagesGuid" Value="{7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57}" />
     <ID Name="RustProject" Value="1" />
+    <ID Name="RustFile" Value="2" />
+    <ID Name="KbviewFile" Value="3" />
+    <ID Name="CargoManifest" Value="4" />
   </Symbols>
   <Images>
     <Image Guid="$(RustProjectImagesGuid)" ID="$(RustProject)">
@@ -19,6 +22,24 @@
       <Source Uri="$(Resources)/RustProject32.png">
         <Size Value="32" />
       </Source>
+    </Image>
+    <!-- lot 8: vector file icon, one XAML per background (no colour inversion needed). -->
+    <Image Guid="$(RustProjectImagesGuid)" ID="$(RustFile)" AllowColorInversion="false">
+      <Source Uri="$(Resources)/Icons/RustFile.Light.xaml" Background="Light" />
+      <Source Uri="$(Resources)/Icons/RustFile.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Resources)/Icons/RustFile.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <!-- lot 8: vector file icon, one XAML per background (no colour inversion needed). -->
+    <Image Guid="$(RustProjectImagesGuid)" ID="$(KbviewFile)" AllowColorInversion="false">
+      <Source Uri="$(Resources)/Icons/KbviewFile.Light.xaml" Background="Light" />
+      <Source Uri="$(Resources)/Icons/KbviewFile.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Resources)/Icons/KbviewFile.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <!-- lot 8: vector file icon, one XAML per background (no colour inversion needed). -->
+    <Image Guid="$(RustProjectImagesGuid)" ID="$(CargoManifest)" AllowColorInversion="false">
+      <Source Uri="$(Resources)/Icons/CargoManifest.Light.xaml" Background="Light" />
+      <Source Uri="$(Resources)/Icons/CargoManifest.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Resources)/Icons/CargoManifest.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

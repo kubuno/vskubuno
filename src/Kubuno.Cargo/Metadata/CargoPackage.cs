@@ -28,6 +28,9 @@ namespace Kubuno.Cargo.Metadata
 
         public IReadOnlyList<CargoTarget> Targets { get; set; } = Array.Empty<CargoTarget>();
 
+        /// <summary>The dependencies the package's own Cargo.toml declares (normal, dev and build).</summary>
+        public IReadOnlyList<CargoDependency> Dependencies { get; set; } = Array.Empty<CargoDependency>();
+
         /// <summary>Feature name to the list of features/deps it enables.</summary>
         public IReadOnlyDictionary<string, IReadOnlyList<string>> Features { get; set; }
             = new Dictionary<string, IReadOnlyList<string>>();

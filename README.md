@@ -372,6 +372,26 @@ directly (not guaranteed to be a valid Cargo package name for every possible inp
 starting with a digit - adjust `Cargo.toml`/`<CargoPackage>` by hand if VS picks something Cargo
 rejects; see `docs/RSPROJ.md`'s lot 7 addendum for why an automatic sanitiser was tried and reverted).
 
+### Solution Explorer: views, code-behind, symbols and dependencies (lot 8)
+
+A `.rsproj` reads like a WinForms/WPF project in Solution Explorer:
+
+- `main_view.rs` is nested under `main_view.kbview` (same folder, same stem - the SDK adds
+  `DependentUpon`; set `<EnableKbviewCodeBehindNesting>false</EnableKbviewCodeBehindNesting>` to
+  turn it off).
+- Expanding a `.rs` file shows its items (structs, enums, traits, impl blocks, functions, fields,
+  constants, modules, macros) with Visual Studio's symbol icons; the accessibility overlay follows
+  the Rust visibility (`pub`, `pub(crate)` = internal, `pub(super)` = protected, private).
+  Expanding a `.kbview` shows its element tree (`x:Name` when set, else the tag). Double-click
+  jumps to the item; a view element opens the Kubuno View Designer with it selected.
+- A **Dependencies** node lists the crates `Cargo.toml` declares (read-only, from `cargo metadata
+  --no-deps`), grouped as crates / dev-dependencies / build-dependencies.
+
+Rust symbols come from `rust-analyzer symbols` (the same syntactic outline rust-analyzer returns
+for `textDocument/documentSymbol`, without starting a second language server); view elements come
+from a short-lived `kubuno-views-ls` run. Both are computed only when a node is expanded and
+refreshed when the file is saved (unsaved editor changes show up after saving).
+
 ## Third-party code
 
 `src/Kubuno.VisualStudio/Grammars/` ships a TextMate grammar for Rust vendored from Visual Studio

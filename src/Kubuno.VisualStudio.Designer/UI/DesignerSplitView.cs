@@ -178,6 +178,9 @@ namespace Kubuno.VisualStudio.Designer.UI
             _editingCoordinator = DesignSurfaceEditingCoordinator.TryCreate(_designSurfaceHost, _textBuffer, _codeWindowHost, _oleServiceProvider);
         }
 
+        /// <summary>The XML pane's primary text view, once its code window has been created.</summary>
+        public IVsTextView? XmlTextView => _codeWindowHost.PrimaryView;
+
         /// <summary>Current orientation - exposed for DSG-8's selection sync and for tests, not just the tab strip's own click handlers.</summary>
         public DesignerViewMode Mode
         {

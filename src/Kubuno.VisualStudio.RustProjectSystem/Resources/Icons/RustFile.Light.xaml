@@ -1,0 +1,10 @@
+﻿<!-- RustFile icon, Light background variant (docs/RSPROJ.md lot 8). Generated from one template per icon; keep the three variants in sync. -->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="16" Height="16">
+  <Canvas Width="16" Height="16">
+    <!-- A source page with the Rust badge, in the style of Visual Studio's C# file icon. -->
+    <Path Data="M4.5,0.5 L10.5,0.5 L14.5,4.5 L14.5,15.5 L4.5,15.5 Z" Fill="#FFFFFF" Stroke="#424242" StrokeThickness="1" />
+    <Path Data="M10.5,0.5 L10.5,4.5 L14.5,4.5" Stroke="#424242" StrokeThickness="1" />
+    <Ellipse Canvas.Left="0" Canvas.Top="6" Width="10" Height="10" Fill="#B7410E" />
+    <Path Data="M3.5,8.5 L3.5,13.5 M3.5,8.5 L5.6,8.5 C7.2,8.5 7.2,11 5.6,11 L3.5,11 M5.4,11 L6.9,13.5" Stroke="#FFFFFF" StrokeThickness="1.2" StrokeLineJoin="Round" />
+  </Canvas>
+</Viewbox>

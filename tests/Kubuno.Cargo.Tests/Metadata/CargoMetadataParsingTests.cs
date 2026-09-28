@@ -114,6 +114,23 @@ namespace Kubuno.Cargo.Tests.Metadata
         }
 
         [Fact]
+        public async Task Declared_dependencies_are_parsed_with_their_kind_and_path()
+        {
+            CargoMetadata metadata = await ReadFixtureAsync("workspace-metadata.json");
+
+            CargoPackage app = metadata.Packages.Single(p => p.Name == "app");
+            CargoDependency dependency = Assert.Single(app.Dependencies);
+            Assert.Equal("core-lib", dependency.Name);
+            Assert.Equal("*", dependency.Req);
+            Assert.Null(dependency.Kind);
+            Assert.False(dependency.Optional);
+            Assert.NotNull(dependency.Path);
+            Assert.EndsWith("core-lib", dependency.Path);
+
+            Assert.Empty(metadata.Packages.Single(p => p.Name == "core-lib").Dependencies);
+        }
+
+        [Fact]
         public async Task Unknown_fields_in_the_JSON_do_not_break_parsing()
         {
             // `cargo metadata` output carries many fields this model doesn't map (license,

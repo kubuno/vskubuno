@@ -67,6 +67,11 @@
     <Compile Include="KubunoPackage.cs" />
     <Compile Include="LanguageService\ContentDefinition.cs" />
     <Compile Include="LanguageService\RustLanguageClient.cs" />
+    <Compile Include="SolutionExplorer\CollectionSources.cs" />
+    <Compile Include="SolutionExplorer\SymbolNavigator.cs" />
+    <Compile Include="SolutionExplorer\SymbolQueries.cs" />
+    <Compile Include="SolutionExplorer\SymbolTreeProvider.cs" />
+    <Compile Include="SolutionExplorer\TreeItems.cs" />
     <Compile Include="Options\RustOptionsPage.cs" />
     <Compile Include="Options\LspTraceLevel.cs" />
     <Compile Include="Logging\KubunoLog.cs" />

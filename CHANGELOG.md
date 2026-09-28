@@ -39,6 +39,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Solution Explorer shows Rust projects like WinForms/WPF ones (`docs/RSPROJ.md`'s lot 8
+  addendum)**:
+  - a view's code-behind is nested under it: `main_view.rs` appears under `main_view.kbview` when
+    both sit in the same folder with the same stem (the `Kubuno.Rust.Sdk` sets `DependentUpon`;
+    opt out with `<EnableKbviewCodeBehindNesting>false</EnableKbviewCodeBehindNesting>`);
+  - expanding a `.rs` file lists its items (structs, enums, traits, impl blocks, functions,
+    methods, fields, constants, modules, macros), nested, with the Visual Studio symbol icons and
+    the C#-style accessibility variants (`pub` = public, `pub(crate)` = internal, `pub(super)` =
+    protected, private = lock); expanding a `.kbview` file lists its element tree with a
+    control-like icon per element family. Double-click jumps to the item; for a view element it
+    opens the Kubuno View Designer with that element selected. Symbols are computed only when a
+    node is expanded and refresh when the file is saved;
+  - a read-only **Dependencies** node under a `.rsproj` lists the crates declared in `Cargo.toml`,
+    grouped as crates / dev-dependencies / build-dependencies;
+  - new file icons: `.rs` (a source page with a Rust badge, like the C# file icon), `.kbview` (a
+    form window, like the Windows Forms form icon) and `Cargo.toml` (Cargo's crate), with light,
+    dark and high-contrast variants. `.rs`/`.kbview` get them in Open Folder too.
 - **"Create a new project"/"Add New Item" templates (`docs/RSPROJ.md`'s lot 7 addendum)**: ships
   **Rust Console Application**, **Rust Library** and **Kubuno Desktop Application** (a
   `kubuno_ui`/`kubuno_controls`/`kubuno_views` window with a starter `main_view.kbview` view and

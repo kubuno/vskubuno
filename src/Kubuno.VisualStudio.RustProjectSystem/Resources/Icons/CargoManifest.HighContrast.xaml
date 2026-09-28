@@ -1,0 +1,10 @@
+﻿<!-- CargoManifest icon, HighContrast background variant (docs/RSPROJ.md lot 8). Generated from one template per icon; keep the three variants in sync. -->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="16" Height="16">
+  <Canvas Width="16" Height="16">
+    <!-- Cargo's crate: an open-grain box. -->
+    <Path Data="M8,1 L15,4.5 L8,8 L1,4.5 Z" Fill="#FFFF00" Stroke="#FFFFFF" StrokeThickness="0.8" StrokeLineJoin="Round" />
+    <Path Data="M1,4.5 L8,8 L8,15 L1,11.5 Z" Fill="#000000" Stroke="#FFFFFF" StrokeThickness="0.8" StrokeLineJoin="Round" />
+    <Path Data="M15,4.5 L8,8 L8,15 L15,11.5 Z" Fill="#000000" Stroke="#FFFFFF" StrokeThickness="0.8" StrokeLineJoin="Round" />
+    <Path Data="M4.5,2.75 L11.5,6.25 L11.5,9" Stroke="#FFFFFF" StrokeThickness="0.8" />
+  </Canvas>
+</Viewbox>

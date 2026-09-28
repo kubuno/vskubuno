@@ -4,10 +4,11 @@ using Microsoft.VisualStudio.ProjectSystem;
 namespace Kubuno.VisualStudio.RustProjectSystem
 {
     /// <summary>
-    /// Gives the <c>.rsproj</c> project node in Solution Explorer its Rust icon. CPS asks every
-    /// exported <see cref="IProjectTreePropertiesProvider"/> whose <see cref="AppliesToAttribute"/>
-    /// expression matches the project's capabilities to adjust each tree node's properties; only
-    /// the project root is touched here (file icons keep coming from their extensions).
+    /// Gives <c>.rsproj</c> nodes in Solution Explorer their icons: the orange "R" on the project
+    /// node, and (docs/RSPROJ.md lot 8) the Rust source, Kubuno view and Cargo manifest file icons -
+    /// the counterparts of the C# file and Windows Forms form icons. CPS asks every exported
+    /// <see cref="IProjectTreePropertiesProvider"/> whose <see cref="AppliesToAttribute"/> expression
+    /// matches the project's capabilities to adjust each tree node's properties.
     /// </summary>
     [Export(typeof(IProjectTreePropertiesProvider))]
     [AppliesTo(RustProjectCapabilities.RustProjectSystem)]
@@ -20,6 +21,19 @@ namespace Kubuno.VisualStudio.RustProjectSystem
             {
                 propertyValues.Icon = RustProjectImages.RustProject;
                 propertyValues.ExpandedIcon = RustProjectImages.RustProject;
+                return;
+            }
+
+            if (propertyContext.IsFolder)
+            {
+                return;
+            }
+
+            var icon = RustProjectImages.ForFile(propertyContext.ItemName);
+            if (icon != null)
+            {
+                propertyValues.Icon = icon;
+                propertyValues.ExpandedIcon = icon;
             }
         }
     }

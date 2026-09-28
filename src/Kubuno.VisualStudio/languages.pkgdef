@@ -30,3 +30,14 @@
 ; Kubuno.VisualStudio.Designer/INTEGRATION.md).
 [$RootKey$\Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions]
 "kbview"=dword:00000064
+
+; docs/RSPROJ.md lot 8: file icons by extension, from Kubuno.VisualStudio.RustProjectSystem's
+; RustProject.imagemanifest (guid:id, the same format VS's own ModelBuilder icons.pkgdef uses). Used by
+; Solution Explorer wherever no project system sets an icon itself - notably Open Folder; .rsproj items
+; get the same monikers from RustProjectTreePropertiesProvider. Cargo.toml is not associated here: the
+; key is per extension, and every other .toml file would get the Cargo icon too.
+[$RootKey$\ShellFileAssociations\.rs]
+"DefaultIconMoniker"="7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57:2"
+
+[$RootKey$\ShellFileAssociations\.kbview]
+"DefaultIconMoniker"="7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57:3"

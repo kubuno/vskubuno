@@ -1,0 +1,10 @@
+﻿<!-- KbviewFile icon, Light background variant (docs/RSPROJ.md lot 8). Generated from one template per icon; keep the three variants in sync. -->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="16" Height="16">
+  <Canvas Width="16" Height="16">
+    <!-- A window with a title bar and two controls, in the style of the Windows Forms form icon. -->
+    <Rectangle Canvas.Left="0.5" Canvas.Top="1.5" Width="15" Height="13" Fill="#FFFFFF" Stroke="#424242" StrokeThickness="1" />
+    <Rectangle Canvas.Left="1" Canvas.Top="2" Width="14" Height="3" Fill="#005DBA" />
+    <Rectangle Canvas.Left="3" Canvas.Top="7" Width="10" Height="2" Fill="#717171" />
+    <Rectangle Canvas.Left="8.5" Canvas.Top="10.5" Width="5" Height="2" Fill="#FFFFFF" Stroke="#1BA1E2" StrokeThickness="1" />
+  </Canvas>
+</Viewbox>

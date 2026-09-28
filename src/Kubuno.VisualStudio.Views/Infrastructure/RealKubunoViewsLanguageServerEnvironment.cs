@@ -13,7 +13,7 @@ namespace Kubuno.VisualStudio.Views.Infrastructure
     /// <see cref="KubunoViewsLanguageServerLocator"/> so that locator's decision logic stays
     /// unit-testable against a fake instead of the real machine.
     /// </summary>
-    internal sealed class RealKubunoViewsLanguageServerEnvironment : IKubunoViewsLanguageServerEnvironment
+    public sealed class RealKubunoViewsLanguageServerEnvironment : IKubunoViewsLanguageServerEnvironment
     {
         private static readonly string[] FixedDevBuildDirectories =
         {

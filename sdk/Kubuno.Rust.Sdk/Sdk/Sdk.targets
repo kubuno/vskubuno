@@ -69,7 +69,23 @@
   </PropertyGroup>
 
   <!--
-    Rule files (docs/RSPROJ.md Â§3): what CPS uses to know the item types it displays, and the
+    View / code-behind nesting (docs/RSPROJ.md, lot 8): a `x.rs` sitting in the same folder as a
+    `x.kbview` is shown under it in Solution Explorer, like WPF's MainWindow.xaml > MainWindow.xaml.cs
+    (Rust module names cannot contain dots, so the pairing is by stem). Only DependentUpon metadata is
+    added to the items the default glob already produced - no hand-written item list, Cargo.toml stays
+    the truth. Opt out with <EnableKbviewCodeBehindNesting>false</EnableKbviewCodeBehindNesting>.
+  -->
+  <PropertyGroup>
+    <EnableKbviewCodeBehindNesting Condition="'$(EnableKbviewCodeBehindNesting)' == ''">true</EnableKbviewCodeBehindNesting>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(EnableKbviewCodeBehindNesting)' == 'true'">
+    <None Update="**/*.rs">
+      <DependentUpon Condition="'%(None.DependentUpon)' == '' and Exists('%(None.RootDir)%(None.Directory)%(None.Filename).kbview')">%(None.Filename).kbview</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <!--
+    Rule files (docs/RSPROJ.mdÂ§3): what CPS uses to know the item types it displays, and the
     project/file property pages. Neutral language only (no localized copies yet).
   -->
   <PropertyGroup>

@@ -5,7 +5,9 @@ namespace Kubuno.VisualStudio.RustProjectSystem
 {
     /// <summary>
     /// Image monikers declared by <c>Resources\RustProject.imagemanifest</c> (shipped in the VSIX,
-    /// discovered by Visual Studio's image service from the extension folder).
+    /// discovered by Visual Studio's image service from the extension folder). The ids must match
+    /// the manifest's <c>ID</c> symbols; languages.pkgdef's <c>ShellFileAssociations</c> keys repeat
+    /// them for Open Folder.
     /// </summary>
     public static class RustProjectImages
     {
@@ -15,7 +17,44 @@ namespace Kubuno.VisualStudio.RustProjectSystem
         /// <summary>The <c>RustProject</c> image id of the image manifest.</summary>
         public const int RustProjectId = 1;
 
+        /// <summary>The <c>RustFile</c> image id (a source page with the Rust badge).</summary>
+        public const int RustFileId = 2;
+
+        /// <summary>The <c>KbviewFile</c> image id (a form-like window).</summary>
+        public const int KbviewFileId = 3;
+
+        /// <summary>The <c>CargoManifest</c> image id (Cargo's crate).</summary>
+        public const int CargoManifestId = 4;
+
         /// <summary>The project node icon of a <c>.rsproj</c>.</summary>
         public static readonly ProjectImageMoniker RustProject = new ProjectImageMoniker(ImagesGuid, RustProjectId);
+
+        public static readonly ProjectImageMoniker RustFile = new ProjectImageMoniker(ImagesGuid, RustFileId);
+
+        public static readonly ProjectImageMoniker KbviewFile = new ProjectImageMoniker(ImagesGuid, KbviewFileId);
+
+        public static readonly ProjectImageMoniker CargoManifest = new ProjectImageMoniker(ImagesGuid, CargoManifestId);
+
+        /// <summary>The file icon for <paramref name="fileName"/>, or <see langword="null"/> to keep Visual Studio's own.</summary>
+        public static ProjectImageMoniker? ForFile(string? fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                return null;
+            }
+
+            if (string.Equals(fileName, "Cargo.toml", StringComparison.OrdinalIgnoreCase))
+            {
+                return CargoManifest;
+            }
+
+            var extension = System.IO.Path.GetExtension(fileName);
+            if (string.Equals(extension, ".rs", StringComparison.OrdinalIgnoreCase))
+            {
+                return RustFile;
+            }
+
+            return string.Equals(extension, ".kbview", StringComparison.OrdinalIgnoreCase) ? KbviewFile : null;
+        }
     }
 }

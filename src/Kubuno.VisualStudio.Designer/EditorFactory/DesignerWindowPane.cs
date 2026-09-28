@@ -22,6 +22,13 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
             Content = _view;
         }
 
+        /// <summary>
+        /// The XML pane's text view once it has been created (null before the pane is first laid out). Setting
+        /// its caret selects the element under it on the design surface, through the designer's own
+        /// selection sync - used by Solution Explorer's element nodes (docs/RSPROJ.md lot 8).
+        /// </summary>
+        public IVsTextView? XmlTextView => _view.XmlTextView;
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)

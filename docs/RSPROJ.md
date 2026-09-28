@@ -9,7 +9,8 @@ The templates are now **live-verified in the real dialogs**: "Create a new proje
 its language filter and lists the three project templates when searching "rust"; a Rust console
 project created through that dialog builds and runs under F5; "Add New Item" on a `.rsproj` shows a
 "Rust" category with the three item templates (root cause and fix in the addendum's "Root cause"
-section); lot 8 (Solution Explorer nesting) not started.
+section); lot 8 (Solution Explorer nesting, symbol nodes, icons, Dependencies node) implemented and
+live-verified - see its own addendum below.
 
 Work package 5 ("Generate Visual Studio Projects", live-verified against `Z:\src\desktop\windows`
 through a scratch mirror — see its own section below): the generator/planner
@@ -522,3 +523,87 @@ and expandable type/member nodes under each file).
     shipped as an `.imagemanifest` (vector, light/dark/high-contrast variants) and bound via CPS
     (`IProjectTreePropertiesProvider`) + the file-extension image association; `Cargo.toml` gets a
     Cargo icon, and the project node keeps the orange “R”.
+
+### Status (lot 8): implemented
+
+**Research first.** Roslyn's Solution Explorer symbol tree (`RootSymbolTreeItemSourceProvider`,
+`SymbolTreeItem`) is an exported `IAttachedCollectionSourceProvider` (Shell.15.0's
+`AttachedCollectionSourceProvider<T>`) answering the `KnownRelationships.Contains` relationship for
+`IVsHierarchyItem`s; its items implement `ITreeDisplayItem`/`ITreeDisplayItemWithImages`
+(`KnownMonikers` by kind + accessibility), `IInvocationPattern` (double-click) and act as their own
+`IAttachedCollectionSource`. Verified live: Solution Explorer only finds those patterns through
+`IInteractionPatternProvider.GetPattern<T>()` (Roslyn's `BaseItem` implements it) - without it
+double-click/Enter on a node did nothing. No LSP-backed provider exists in the installed VS (the
+JS/TS project system shows no symbol nodes), so there was nothing to reuse.
+
+**What shipped** (`src/Kubuno.VisualStudio/SolutionExplorer/`, pure parts in
+`Kubuno.VisualStudio.Core/SolutionExplorer/`, unit-tested):
+
+- **Nesting**: `Sdk.targets` adds `DependentUpon="%(Filename).kbview"` to the glob's `.rs` `None`
+  items that have a same-stem `.kbview` sibling (an evaluation-time `Update` with a metadata
+  condition - checked with MSBuild first); CPS honours it (`none.xaml` already declares
+  `DependentUpon`). Opt-out: `EnableKbviewCodeBehindNesting=false`.
+- **Symbol nodes, and how the language servers are reached** (the decision the lot asked for):
+  - `.rs`: **`rust-analyzer symbols`**, a one-shot process fed the file on stdin. rust-analyzer's
+    `documentSymbol` handler returns `Analysis::file_structure`, and `symbols` prints exactly that
+    list, so the tree equals the editor's outline without a second rust-analyzer *server* (which
+    would load the whole Cargo workspace again) and without depending on the editor's
+    `ILanguageClient` having started (it only exists once a `.rs` is open). One rust-analyzer server
+    per workspace remains the rule. The output is Rust `Debug` text, not an API: the parser is
+    tolerant (unknown kinds -> generic node, bad lines skipped with parent indices kept) and pinned
+    by a test on real rust-analyzer 1.98.1 output. Visibility is not in the symbol data: it is read
+    back from the source between the item's node start and its name (`pub`, `pub(crate)`/`pub(in
+    ..)` = Internal, `pub(super)` = Protected, else Private; trait members, trait-impl members and
+    enum variants inherit Public; `#[macro_export]` makes a macro public). `let` locals are dropped
+    (Roslyn stops at members too).
+  - `.kbview`: **kubuno-views-ls `documentSymbol`, from a private short-lived instance**
+    (initialize, didOpen, documentSymbol, shutdown). The server only answers for documents it got a
+    `didOpen` for, and a `didOpen`/`didClose` pair through the editor's own connection would replace
+    or drop the editor's copy of an open file, so its instance is not used.
+  - Lazy (nothing runs until a node's `Items` is asked for), refreshed through a debounced (500 ms)
+    `FileSystemWatcher` on save, merged in place so expanded nodes stay expanded. Unsaved edits show
+    after saving (not on every keystroke).
+  - Double-click: Rust items open the file at the item's name; a view element opens the designer
+    (Designer logical view) and sets the XML pane's caret on the element, which the designer's own
+    selection sync turns into a selection on the surface (`DesignerWindowPane.XmlTextView`, new).
+  - Order: the file symbols provider is ordered *after* the hierarchy's own children
+    (`HierarchyItemsProviderNames.Contains`), so `main_view.rs` comes before the `Card` element tree
+    under `main_view.kbview`, like `Form1.Designer.cs` before the `Form1` class; the Dependencies
+    provider is ordered *before*, so that node comes first like in a C# project.
+- **Icons**: symbols use `KnownMonikers` names from `SymbolMonikerNames` (family per kind + the
+  Public/Internal/Protected/Private variant; trait impl = `ImplementInterface`, inherent impl =
+  `Type`); a unit test checks every name against the installed `Microsoft.VisualStudio.ImageCatalog.dll`.
+  View elements get a control glyph per family (`Button`, `TextBox`, `CheckBoxChecked`,
+  `StackPanel`, `ListView`...). Files: three new vector images in `RustProject.imagemanifest`
+  (XAML, one source per `Background` - Light/Dark/HighContrast, `AllowColorInversion=false`): `.rs`
+  (page + Rust badge, C#-file style), `.kbview` (form window, WinForms style), `Cargo.toml` (crate).
+  Bound for `.rsproj` items by `RustProjectTreePropertiesProvider`, and for any `.rs`/`.kbview`
+  (Open Folder included) by `ShellFileAssociations\.ext\DefaultIconMoniker` in `languages.pkgdef`
+  (`Cargo.toml` is not associated there: the key is per extension and would hit every `.toml`).
+- **Dependencies node**: `cargo metadata --no-deps` (the package's declared `dependencies`, now
+  parsed into `CargoPackage.Dependencies`), package picked by `$(CargoPackage)` then
+  `$(CargoManifestPath)` (read through `IVsBuildPropertyStorage`, so a mirrored project pointing at a
+  manifest elsewhere works), grouped Crates / Dev-dependencies / Build-dependencies, refreshed when
+  `Cargo.toml` changes.
+
+**Live test** (experimental instance): a project created from **Kubuno Desktop Application** in the
+real *Create a new project* dialog (UI Automation) under `C:\kubuno-build\rsproj-test\lot8\`, then
+`samples\hello-rust.sln`. Solution Explorer tree read back through UI Automation:
+
+```
+KubunoLot8App
+  Dependencies > Crates > kubuno-controls (path), kubuno-ui (path), kubuno-views (path)
+  src
+    main.rs > main_view, VIEW_PATH: &str, main() -> std::process::ExitCode
+    main_view.kbview
+      main_view.rs > MainViewModel > status: String; impl Default for MainViewModel > default() -> Self;
+                     impl ViewModel for MainViewModel > get(..), set(..); handler_table() -> HandlerTable
+      Card > Stack > status (TextField), hello (Button)
+  Cargo.toml
+```
+
+Enter on `hello (Button)` opened `main_view.kbview` with the caret on line 11, column 6 (the
+`Button` tag); appending `pub(super) fn lot8_added(flag: bool) {}` to `main_view.rs` on disk added
+the node within the debounce, removing it removed the node. `hello-rust`: symbols under
+`lib.rs`/`main.rs`/`examples`/`tests`, an empty Dependencies node (the crate has none).
+Icons and dark theme: checked visually by the orchestrator (screenshot), not by UI Automation.
