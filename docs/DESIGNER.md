@@ -1253,18 +1253,23 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   `KnownMonikers`. The legacy toolbox API (`TBXITEMINFO`) only takes an `HBITMAP` plus a transparency
   colour; decompiled `Microsoft.VisualStudio.Toolbox.ItemInfo`: the HBITMAP goes through
   `Image.FromHbitmap` (alpha dropped) and the pixels equal to `clrTransparent` are made transparent -
-  a colour key is the only transparency it honours. So the icon is rendered by the image service
-  (`IVsImageService2.GetImage`, 16x16, background = the tool-window background, which picks the
-  Light/Dark/HighContrast variant), fully transparent pixels become the magenta key `0x00FF00FF`, and
-  anti-aliased edge pixels are blended onto the tool-window background. An opaque bitmap (no key)
-  showed as a square tile behind each glyph. Icons are re-rendered on `VSColorTheme.ThemeChanged`
-  (`IVsToolbox.SetItemInfo`). **DPI**: only 16x16 bitmaps are drawn - 28x28 and 32x32 were tried live
+  a colour key is the only transparency it honours. The icon's Light/Dark/HighContrast XAML (chosen from
+  the tool-window background, as the image service would) is rendered with WPF at 16x16 with strokes
+  widened to 1.5 px (the weight of VS's own toolbox glyphs); every covered pixel is pre-composited onto
+  `EnvironmentColors.ToolWindowBackground`, only uncovered pixels take the magenta key `0x00FF00FF`.
+  The bitmap carries VS's **image-theming opt-out pixel** (cyan `#00FFFF` top-right, see
+  `ImageThemingUtilities.IsOptOutPixelSet`): the Toolbox runs item bitmaps through `ThemeDIBits`, which
+  inverts the luminosity of a light-theme bitmap on a dark background - found live with a test pattern
+  (white became black): our already-dark-themed icons lost their light ink and looked dotted. Found
+  live too: the image service's own 16x16 raster of these stroked icons (`IVsImageService2.GetImage`)
+  is thin and mostly translucent, hence the WPF rendering. An opaque bitmap (no key) showed as a square
+  tile behind each glyph. Icons are re-rendered on `VSColorTheme.ThemeChanged`
+  (`IVsToolbox.SetItemInfo`); `C:\kubuno-build\icons-preview\toolbox-sim.ps1` renders the same pipeline
+  to `toolbox-16px-{dark,light}.png` (1:1, 175 %, x4). **DPI**: only 16x16 bitmaps are drawn - 28x28 and 32x32 were tried live
   at 175%: the Toolbox reserved the slot and drew nothing - and no moniker-based item API exists in the
   interop assemblies (`IVsToolbox`..`IVsToolbox7`), so at high DPI the Toolbox upscales the 16x16
-  icon (slightly soft, like the icons of every other `IVsToolbox` item). If the image service does not
-  resolve the Kubuno monikers yet (seen live on the first start after the extension's files changed:
-  the image library cache was rebuilt without the extension's manifests, which also blanked Solution
-  Explorer's Kubuno icons until the next start), the installer retries in the background for 30 s. (Do not preload the
+  icon (slightly soft, like the icons of every other `IVsToolbox` item). An icon that cannot be
+  rendered at install time is retried in the background for 30 s. (Do not preload the
   icons' resource assembly from the package: verified that it blanked every Kubuno icon - see
   docs/RSPROJ.md lot 8.)
 - **Double-click** a Toolbox item → `IVsToolboxUser.ItemPicked` → `ToolboxInsertionPlanner`: into the

@@ -30,10 +30,10 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
     /// from the live <c>kubuno/registry</c> in every session (the registry is the truth and may change
     /// with the Kubuno version), and never accumulate as stale duplicates in the persisted toolbox.</para>
     ///
-    /// <para><b>Icons</b>: the Solution Explorer element glyph of lot 8 (a <c>KnownMonikers</c> control
-    /// image per component, resolved by the VSIX through <see cref="IconMoniker"/>), rendered to a 16x16
-    /// bitmap by the image service (the legacy toolbox API only takes an <c>HBITMAP</c>) with a magenta
-    /// transparency key.</para>
+    /// <para><b>Icons</b>: the Kubuno control icon of each component (the same Lucide-based XAML as its
+    /// Solution Explorer element node, <c>KubunoControls.imagemanifest</c>), rendered to a 16x16 bitmap on a
+    /// magenta transparency key (the legacy toolbox API only takes an <c>HBITMAP</c>) - see
+    /// <see cref="CreateBitmap"/>.</para>
     /// </summary>
     public static class NativeToolboxInstaller
     {
@@ -43,8 +43,8 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
         // Items typed as object: a VS type in a static field initialiser would load the Shell assembly in unit tests (Layout).
         private static readonly List<(object Data, string Component)> s_items = new List<(object, string)>();
 
-        /// <summary>Set by the VSIX: the image moniker of a component's toolbox icon (null: no icon).</summary>
-        public static Func<string, ImageMoniker?>? IconMoniker { get; set; }
+        /// <summary>Set by the VSIX: the base name of a component's icon XAML (e.g. "Button", "Control" for an unknown component; null: no icon).</summary>
+        public static Func<string, string?>? IconName { get; set; }
 
         /// <summary>Whether the Kubuno items were added to the Toolbox in this session.</summary>
         public static bool IsInstalled => s_installed;
@@ -102,10 +102,8 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
         }
 
         /// <summary>
-        /// The image library loads the <c>.imagemanifest</c> files asynchronously after startup: a designer
-        /// restored with the solution asks for the Kubuno monikers before the manifest is in, and
-        /// <c>GetImage</c> returns null (observed live). Re-render the icons in the background until they
-        /// all resolve, instead of leaving the Toolbox's placeholder glyph.
+        /// Safety net: an icon that could not be rendered at install time (e.g. its resource assembly not
+        /// loadable yet) is retried in the background for 30 s instead of leaving the Toolbox's placeholder glyph.
         /// </summary>
         private static void RetryMissingIconsLater()
         {
@@ -161,83 +159,129 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
         /// <summary>
         /// The component's icon as the 16x16 HBITMAP the legacy toolbox API takes (28x28 and 32x32 bitmaps
         /// were tried live at 175%: the Toolbox reserves the slot but draws nothing, so at high DPI it
-        /// upscales the 16x16 bitmap - there is no moniker-based item API to avoid that), in the icon variant for
-        /// the current theme, on the magenta transparency key (<c>clrTransparent</c>). Checked by decompiling
-        /// the installed Toolbox (<c>Microsoft.VisualStudio.Toolbox.ItemInfo</c>): the Toolbox turns the
-        /// HBITMAP into a WPF bitmap with <c>Image.FromHbitmap</c>, which drops any alpha channel, and then
-        /// makes the pixels equal to the key transparent - so a colour key is the only transparency it
-        /// honours. Fully transparent pixels become the key; anti-aliased edge pixels are blended onto the
-        /// tool-window background (they cannot stay translucent). <see cref="IntPtr.Zero"/> when there is
-        /// no icon (the Toolbox then shows its generic glyph).
+        /// upscales the 16x16 bitmap - there is no moniker-based item API to avoid that), on the magenta
+        /// transparency key (<c>clrTransparent</c>). Checked by decompiling the installed Toolbox
+        /// (<c>Microsoft.VisualStudio.Toolbox.ItemInfo</c>): the HBITMAP goes through <c>Image.FromHbitmap</c>,
+        /// which drops any alpha channel, and the pixels equal to the key are made transparent - a colour key
+        /// is the only transparency it honours.
+        ///
+        /// <para>The vector icon (the Light/Dark/HighContrast XAML of <c>KubunoControls.imagemanifest</c>) is
+        /// rendered here with WPF rather than through <c>IVsImageService2.GetImage</c>: found live that the
+        /// image service's 16x16 raster of these stroked icons is thin and mostly translucent, so once the
+        /// translucent pixels were keyed out or blended the circles showed as rings of dots. Here the strokes
+        /// are widened to 1.5 px (<see cref="ToolboxStrokeScale"/>: the weight of Visual Studio's own toolbox
+        /// glyphs) and every covered pixel is pre-composited onto the tool-window background of the current
+        /// theme, so anti-aliased edges become solid blended colours; only fully uncovered pixels take the
+        /// key. <see cref="IntPtr.Zero"/> when there is no icon (the Toolbox then shows its generic glyph).</para>
         /// </summary>
         private static IntPtr CreateBitmap(string componentName)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             try
             {
-                if (IconMoniker?.Invoke(componentName) is not { } moniker ||
-                    Package.GetGlobalService(typeof(SVsImageService)) is not IVsImageService2 imageService)
+                if (IconName?.Invoke(componentName) is not { } iconName)
                 {
                     return IntPtr.Zero;
                 }
 
-                // The tool-window background: the image service picks the Light/Dark/HighContrast variant
-                // of the vector icon from it, and anti-aliased edges are blended onto it.
                 var background = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolWindowBackgroundColorKey);
-                var attributes = new VsImageAttributes
-                {
-                    StructSize = Marshal.SizeOf(typeof(VsImageAttributes)),
-                    Flags = unchecked((uint)(_ImageAttributesFlags.IAF_RequiredFlags | _ImageAttributesFlags.IAF_Background)),
-                    // RGBA packing (R in the low byte), as Microsoft.VisualStudio.PlatformUI's ToColorFromRgba decodes it.
-                    Background = 0xFF000000u | ((uint)background.B << 16) | ((uint)background.G << 8) | background.R,
-                    ImageType = (uint)_UIImageType.IT_Bitmap,
-                    Format = (uint)_UIDataFormat.DF_WinForms,
-                    LogicalWidth = 16,
-                    LogicalHeight = 16,
-                    Dpi = 96,
-                };
-
-                var uiObject = imageService.GetImage(moniker, attributes);
-                if (uiObject is null || ErrorHandler.Failed(uiObject.get_Data(out var data)) || data is not Bitmap source)
+                var pixels = RenderIcon(iconName, IconVariantFor(background));
+                if (pixels is null)
                 {
                     s_iconFailures++;
-                    if (s_iconFailures == 1)
-                    {
-                        KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: the image service returned no bitmap for '{componentName}' ({moniker.Guid}:{moniker.Id}; data={(uiObject is null ? "none" : "not a Bitmap")}).");
-                    }
-
                     return IntPtr.Zero;
                 }
 
-                using var keyed = new Bitmap(source.Width, source.Height, PixelFormat.Format24bppRgb);
-                for (var y = 0; y < source.Height; y++)
+                using var keyed = new Bitmap(IconSize, IconSize, PixelFormat.Format24bppRgb);
+                for (var y = 0; y < IconSize; y++)
                 {
-                    for (var x = 0; x < source.Width; x++)
+                    for (var x = 0; x < IconSize; x++)
                     {
-                        var pixel = source.GetPixel(x, y);
-                        if (pixel.A < 16)
-                        {
-                            keyed.SetPixel(x, y, Color.FromArgb(255, 0, 255));
-                            continue;
-                        }
-
-                        var alpha = pixel.A / 255.0;
-                        var blended = Color.FromArgb(
-                            (int)Math.Round((pixel.R * alpha) + (background.R * (1 - alpha))),
-                            (int)Math.Round((pixel.G * alpha) + (background.G * (1 - alpha))),
-                            (int)Math.Round((pixel.B * alpha) + (background.B * (1 - alpha))));
-                        // Never produce the key colour by accident inside the glyph.
-                        keyed.SetPixel(x, y, blended.R == 255 && blended.G == 0 && blended.B == 255 ? Color.FromArgb(254, 0, 255) : blended);
+                        var (r, g, b) = Composite(pixels, (y * IconSize) + x, background);
+                        keyed.SetPixel(x, y, r is null ? Color.FromArgb(255, 0, 255) : Color.FromArgb(r.Value, g, b));
                     }
                 }
+
+                // Opt out of Visual Studio's image theming (ImageThemingUtilities.ThemeDIBits, which the
+                // Toolbox applies to item bitmaps): it inverts the luminosity of a bitmap drawn for a light
+                // background, so our already-themed Dark icon had its light ink turned to near-background -
+                // found live with a test pattern (white became black), which is what made the strokes look
+                // dotted. The marker is a cyan top-right pixel; VS clears it to transparent afterwards.
+                keyed.SetPixel(IconSize - 1, 0, Color.FromArgb(0, 255, 255));
 
                 return keyed.GetHbitmap();
             }
-            catch (Exception ex) when (ex is COMException or ArgumentException or InvalidOperationException or ExternalException)
+            catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException or ExternalException or System.Windows.Markup.XamlParseException)
             {
                 s_iconFailures++;
                 KubunoViewsLogHost.Current.WriteException($"[designer] Toolbox: no icon for '{componentName}'", ex);
                 return IntPtr.Zero;
+            }
+        }
+
+        private const int IconSize = 16;
+
+        /// <summary>Stroke widening of the Toolbox rendering: Lucide's 2-unit stroke on a 24-unit canvas is 1.33 px at 16 px; x1.125 makes it 1.5 px.</summary>
+        internal const double ToolboxStrokeScale = 1.125;
+
+        /// <summary>The icon variant for a background, as the image service chooses it: HighContrast in a high-contrast theme, otherwise Dark on a dark background.</summary>
+        internal static string IconVariantFor(Color background) =>
+            System.Windows.SystemParameters.HighContrast ? "HighContrast"
+            : ((0.299 * background.R) + (0.587 * background.G) + (0.114 * background.B)) < 128 ? "Dark" : "Light";
+
+        /// <summary>
+        /// One pixel of the premultiplied BGRA render over <paramref name="background"/>: null red when the
+        /// pixel is (almost) uncovered, which becomes the transparency key; never the key colour itself.
+        /// </summary>
+        public static (int? R, int G, int B) Composite(byte[] premultipliedBgra, int index, Color background)
+        {
+            var o = index * 4;
+            var alpha = premultipliedBgra[o + 3];
+            if (alpha < 8)
+            {
+                return (null, 0, 0);
+            }
+
+            var rest = (255 - alpha) / 255.0;
+            var r = Math.Min(255, (int)Math.Round(premultipliedBgra[o + 2] + (background.R * rest)));
+            var g = Math.Min(255, (int)Math.Round(premultipliedBgra[o + 1] + (background.G * rest)));
+            var b = Math.Min(255, (int)Math.Round(premultipliedBgra[o] + (background.B * rest)));
+            return r == 255 && g == 0 && b == 255 ? (254, 0, 255) : (r, g, b);
+        }
+
+        /// <summary>Renders an icon's XAML (compiled into Kubuno.VisualStudio.RustProjectSystem) at 16x16, premultiplied BGRA; null when the resource is missing.</summary>
+        private static byte[]? RenderIcon(string iconName, string variant)
+        {
+            var uri = new Uri($"/Kubuno.VisualStudio.RustProjectSystem;component/Resources/Icons/Controls/{iconName}.{variant}.xaml", UriKind.Relative);
+            if (System.Windows.Application.LoadComponent(uri) is not System.Windows.FrameworkElement icon)
+            {
+                return null;
+            }
+
+            WidenStrokes(icon);
+            icon.Measure(new System.Windows.Size(IconSize, IconSize));
+            icon.Arrange(new System.Windows.Rect(0, 0, IconSize, IconSize));
+            icon.UpdateLayout();
+            var target = new System.Windows.Media.Imaging.RenderTargetBitmap(IconSize, IconSize, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            target.Render(icon);
+            var pixels = new byte[IconSize * IconSize * 4];
+            target.CopyPixels(pixels, IconSize * 4, 0);
+            return pixels;
+        }
+
+        private static void WidenStrokes(System.Windows.DependencyObject node)
+        {
+            if (node is System.Windows.Shapes.Shape shape)
+            {
+                shape.StrokeThickness *= ToolboxStrokeScale;
+            }
+
+            foreach (var child in System.Windows.LogicalTreeHelper.GetChildren(node))
+            {
+                if (child is System.Windows.DependencyObject dependencyObject)
+                {
+                    WidenStrokes(dependencyObject);
+                }
             }
         }
 

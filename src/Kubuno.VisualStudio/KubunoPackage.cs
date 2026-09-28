@@ -155,8 +155,8 @@ namespace Kubuno.VisualStudio
             // docs/DESIGNER.md §11 (WinForms-like designer): the native Toolbox shows each Kubuno component
             // with the same Kubuno control icon as its Solution Explorer element node (KubunoControls.imagemanifest), and F7/Shift+F7
             // switch between a .kbview's designer and its XML.
-            Kubuno.VisualStudio.Designer.Toolbox.NativeToolboxInstaller.IconMoniker =
-                tag => SolutionExplorer.KubunoTreeItem.ControlIcon(tag);
+            Kubuno.VisualStudio.Designer.Toolbox.NativeToolboxInstaller.IconName =
+                tag => Kubuno.VisualStudio.Core.SolutionExplorer.ControlIcons.IdFor(tag) == Kubuno.VisualStudio.Core.SolutionExplorer.ControlIcons.FallbackId ? "Control" : tag;
             // The Properties window resolves the IEventBindingService behind a double-click on an event
             // row through its own service chain, which ends at Visual Studio's global services - found
             // live that the chain does not always reach the active designer's surface (the row then did

@@ -19,8 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - **New control icons**: one icon per Kubuno component, in the style of the Kubuno apps (Lucide
     glyphs, Kubuno blue accent, light/dark/high-contrast variants), in the Toolbox and on the `.kbview`
     element nodes of Solution Explorer. Rust symbols keep Visual Studio's own icons. In the Toolbox
-    they are drawn on a transparent background in the variant of the current theme, and follow theme
-    changes.
+    they are drawn with solid 1.5 px strokes on a transparent background, in the variant of the current
+    theme, and follow theme changes.
   - **Properties window (F4)**: shows the selected element's properties, like a WinForms control's -
     `(Name)`, every component property and the layout attributes, grouped in categories, with
     descriptions, drop-downs for enum/boolean values, bold non-default values and "Reset"; `{Binding
