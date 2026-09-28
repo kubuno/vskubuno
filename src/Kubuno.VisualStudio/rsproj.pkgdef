@@ -1,0 +1,21 @@
+; Registers the .rsproj project type (docs/RSPROJ.md §3, work package 3), key for key the way the
+; JavaScript project system registers .esproj in its own Microsoft.VisualStudio.JavaScript.ProjectSystem.pkgdef:
+; the project factory itself is the Common Project System's ("ProjectFactoryPackage" = CPS's package),
+; "Package" is the package owning the project type (KubunoPackage), and "Capabilities" are the
+; capabilities known before the project is even evaluated (the evaluated ones come from
+; Kubuno.Rust.Sdk's ProjectCapability items). The GUID is Kubuno.Rust.Sdk's DefaultProjectTypeGuid,
+; which is also what a .sln records for a .rsproj.
+; A static pkgdef rather than [ProjectTypeRegistration] (Microsoft.VisualStudio.ProjectSystem.VS.dll)
+; because, like the JS project system, it keeps the VSIX's CreatePkgDef step free of loading CPS's
+; VS-install-only assemblies.
+[$RootKey$\Projects\{6C7C4CB5-6E36-4C6F-9C6F-9C6E9B4D4C13}]
+@="ProjectFactory"
+"ProjectFactoryPackage"="{3347bee8-d7a1-4082-95e4-38a439553cc2}"
+"Package"="{5f3a9b2e-9e0c-4f0a-9a7a-6f0f3c9c9d10}"
+"DisplayName"="Rust Project"
+"DisplayProjectFileExtensions"="Rust Project Files (*.rsproj);*.rsproj"
+"DefaultProjectExtension"="rsproj"
+"PossibleProjectExtensions"="rsproj"
+"Capabilities"="RustProjectSystem;OpenProjectFile;HandlesOwnReload;ProjectConfigurationsDeclaredAsItems;ProjectPropertiesEditor;ProjectPropertyInterception;ConfigurableFileNesting;DynamicFileNesting;DynamicFileNestingEnabled;DynamicDependentFile;NoGeneralDependentFileIcon"
+"Language(VsTemplate)"="Rust"
+"PrefetchFactory"="{3998970a-aee1-4216-a54f-0a99d20a1fab}"

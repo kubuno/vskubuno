@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Item types a .rsproj shows in Solution Explorer (docs/RSPROJ.md §3): only None — cargo compiles,
+     MSBuild only displays. -->
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <ItemType Name="None" DisplayName="Does not participate in build" />
+</ProjectSchemaDefinitions>

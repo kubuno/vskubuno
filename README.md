@@ -258,6 +258,49 @@ loaded from `Z:` - see above), introduce a compile error (e.g. reference an unde
 src\main.rs(4,20): error E0425: cannot find value `undefined_identifier` in this scope
 ```
 
+### Opening a `.rsproj` in Visual Studio (work package 3)
+
+The VSIX registers `.rsproj` as a Common Project System (CPS) project type, the same way the
+JavaScript project system registers `.esproj`:
+
+- **`src/Kubuno.VisualStudio/rsproj.pkgdef`** registers project type
+  `{6C7C4CB5-6E36-4C6F-9C6F-9C6E9B4D4C13}` (Kubuno.Rust.Sdk's `DefaultProjectTypeGuid`, what a
+  `.sln` records) with CPS as its project factory, key for key like the JS project system's own
+  pkgdef.
+- **`src/Kubuno.VisualStudio.RustProjectSystem/`** is the CPS host part (MEF exports, shipped as a
+  `MefComponent` asset of the VSIX): today only the project node icon
+  (`RustProjectTreePropertiesProvider` + `RustProject.imagemanifest`), scoped to the
+  `RustProjectSystem` capability. It compiles against the running Visual Studio's own
+  `Microsoft.VisualStudio.ProjectSystem.dll` (never shipped).
+- **Everything else comes from `Kubuno.Rust.Sdk`**, which now sits on `Microsoft.Common.props`/
+  `.targets` exactly like the JS SDK (CPS drives a project through that standard targets graph):
+  `ProjectConfiguration` items (Debug/Release in the configuration dropdown), `ProjectCapability`
+  items, `Sdk/Rules/*.xaml` (item types, a "Cargo" property page, file/folder properties), and a
+  `**/*` glob into `None` items for Solution Explorer, excluding `target/`, `bin/`, `obj/`,
+  dot-folders and project/solution files. Cargo still compiles: `CoreCompile` runs `CargoBuild`,
+  `cargo clean --profile <profile>` is hooked before Microsoft.Common's `Clean`, `cargo fetch` after
+  `Restore`; Build/Rebuild/Clean keep their standard definitions, so the project context menu,
+  Ctrl+Shift+B and solution builds all run them, with rustc errors in the Error List
+  (file/line/column/code). `.kbview` files in the project open with their usual editor (editor
+  dispatch is by extension).
+
+Verified live in the experimental instance (`samples\hello-rust.sln` and a scratch copy under
+`C:\`): the project loads with its Rust node, Solution Explorer lists `src/`, `examples/`,
+`tests/`, `Cargo.toml`, `Cargo.lock` (a `target/` folder inside the project stays hidden), Debug and
+Release build (and Rebuild) through the solution build, and a compile error shows as
+`main.rs(2,38) error E0425` in the Error List. Launch the instance with `CARGO_TARGET_DIR` set (or
+set `<CargoTargetDir>`) if the build outputs must land somewhere specific.
+
+**F5/Ctrl+F5 on a `.rsproj` is not implemented yet** (work package 4: CPS debug launch provider).
+The project is a valid startup project, but until that provider exists Visual Studio has nothing
+to launch; debug Rust through Open Folder mode meanwhile.
+
+Note: `$(TargetPath)`'s path-convention fallback (used for the incremental `CoreCompile` check
+before cargo has reported its artifact) assumes `<manifest dir>\target` when neither
+`<CargoTargetDir>` nor `CARGO_TARGET_DIR` is set; a global `build.target-dir` in
+`~/.cargo/config.toml` is not read, so the build then simply always calls cargo (which is itself
+incremental).
+
 ## Third-party code
 
 `src/Kubuno.VisualStudio/Grammars/` ships a TextMate grammar for Rust vendored from Visual Studio

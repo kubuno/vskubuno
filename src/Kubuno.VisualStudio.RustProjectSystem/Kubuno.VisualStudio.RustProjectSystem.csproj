@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The CPS (Common Project System) host part of the .rsproj project type (docs/RSPROJ.md §3, work
+    package 3) — the counterpart of Microsoft.VisualStudio.JavaScript.ProjectSystem.dll for .esproj.
+    A MEF class library shipped inside the Kubuno.VisualStudio VSIX (MefComponent asset in its
+    source.extension.vsixmanifest); the project type itself is registered by that VSIX's
+    rsproj.pkgdef, and everything MSBuild-side (capabilities, rules, item globs, cargo targets)
+    comes from Kubuno.Rust.Sdk. Every export here is scoped with [AppliesTo] to the
+    RustProjectSystem capability, so it never touches any other CPS project.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Kubuno.VisualStudio.RustProjectSystem</RootNamespace>
+    <AssemblyName>Kubuno.VisualStudio.RustProjectSystem</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <!-- WPF "Resource" build action, so Resources\*.png are reachable through the pack URI
+         Resources\RustProject.imagemanifest declares. -->
+    <UseWPF>true</UseWPF>
+    <!-- Resolved from the Visual Studio installation that runs this MSBuild (the VSIX solution
+         already requires Visual Studio's MSBuild, see README.md). -->
+    <KubunoVsInstallDir Condition="'$(KubunoVsInstallDir)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildBinPath)\..\..\..'))\</KubunoVsInstallDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ComponentModel.Composition" />
+    <!--
+      CPS is not published on NuGet in a version matching VS 2026; like the Open Folder assembly
+      Kubuno.VisualStudio references, it is compiled against the running Visual Studio's own copy
+      (assembly version 17.0.0.0, stable across 17.x/18.x) and never copied into the VSIX.
+    -->
+    <Reference Include="Microsoft.VisualStudio.ProjectSystem">
+      <HintPath>$(KubunoVsInstallDir)Common7\IDE\CommonExtensions\Microsoft\Project\Microsoft.VisualStudio.ProjectSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\RustProject16.png" />
+    <Resource Include="Resources\RustProject32.png" />
+    <None Include="Resources\RustProject.imagemanifest" />
+  </ItemGroup>
+
+</Project>

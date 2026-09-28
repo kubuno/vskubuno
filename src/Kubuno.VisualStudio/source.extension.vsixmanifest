@@ -53,6 +53,9 @@
           second MefComponent asset for it, exactly as that document anticipated.
         -->
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.VisualStudio.Views" Path="|Kubuno.VisualStudio.Views|" />
+        <!-- docs/RSPROJ.md work package 3: CPS exports of the .rsproj project type (the counterpart of
+             Microsoft.VisualStudio.JavaScript.ProjectSystem.dll's own MefComponent asset). -->
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.VisualStudio.RustProjectSystem" Path="|Kubuno.VisualStudio.RustProjectSystem|" />
         <!--
           Kubuno.TestAdapter's own INTEGRATION.md #3.2: two registrations for the SAME assembly
           (Kubuno.TestAdapter.dll, copied into this VSIX's output by the ProjectReference in

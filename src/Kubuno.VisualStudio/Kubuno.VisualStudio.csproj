@@ -119,6 +119,18 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- .rsproj project type registration (docs/RSPROJ.md work package 3) - see the file's own header. -->
+    <Content Include="rsproj.pkgdef">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- .rsproj project node icon: discovered by VS's image service from the extension folder; the
+         PNGs it references are WPF resources of Kubuno.VisualStudio.RustProjectSystem.dll. -->
+    <Content Include="..\Kubuno.VisualStudio.RustProjectSystem\Resources\RustProject.imagemanifest">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>RustProject.imagemanifest</Link>
+    </Content>
     <Content Include="Grammars\rust.tmLanguage.json">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -431,6 +443,8 @@
     <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
     <!-- DTE2 (EnvDTE80), needed for the MCP bridge start (docs/MCP.md "Integration") - same version as Kubuno.Mcp.Bridge.csproj's own net48 leg. -->
     <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" />
+    <!-- CPS itself (compiled against by Kubuno.VisualStudio.RustProjectSystem): always the running VS's own copy. -->
+    <SuppressFromVsix Include="Microsoft.VisualStudio.ProjectSystem.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.Extensions.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.Extensions.VS.dll" />
@@ -470,6 +484,13 @@
     <ProjectReference Include="..\Kubuno.VisualStudio.Views\Kubuno.VisualStudio.Views.csproj">
       <Project>{324405db-70e8-4fbb-b583-301706fc6c15}</Project>
       <Name>Kubuno.VisualStudio.Views</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- docs/RSPROJ.md work package 3: the CPS host part of the .rsproj project type (MEF exports). -->
+    <ProjectReference Include="..\Kubuno.VisualStudio.RustProjectSystem\Kubuno.VisualStudio.RustProjectSystem.csproj">
+      <Project>{0C294240-346F-488C-96E3-6B84144828DB}</Project>
+      <Name>Kubuno.VisualStudio.RustProjectSystem</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>

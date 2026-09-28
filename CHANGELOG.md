@@ -8,6 +8,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **`.rsproj` opens in Visual Studio as a real project (work package 3 of `docs/RSPROJ.md`)**:
+  Rust/Cargo packages can sit in a `.sln` as CPS projects, registered like the JavaScript
+  project system's `.esproj`. Solution Explorer shows the project (with its own Rust icon) and the
+  crate folder's files (`target/`, `bin/`, `obj/` and dot-folders hidden); the Debug/Release
+  dropdown maps to cargo's dev/release profiles; Build, Rebuild and Clean from the project context
+  menu, Ctrl+Shift+B and solution builds run cargo, with rustc errors in the Error List
+  (file/line/column/code); `.kbview` files open with their usual editor; a "Cargo" property page
+  exposes the package/bin/manifest/target-dir/extra-args settings. New
+  `src/Kubuno.VisualStudio.RustProjectSystem` (CPS exports) and `rsproj.pkgdef` (project type
+  registration) ship in the VSIX. F5 on a `.rsproj` is work package 4 (not available yet).
+
+### Changed
+
+- **Kubuno.Rust.Sdk now builds on `Microsoft.Common.props`/`.targets`**, like
+  `Microsoft.VisualStudio.JavaScript.SDK`: cargo is plugged into `CoreCompile`/`BeforeClean`/
+  `Restore` instead of the SDK redefining Build/Rebuild/Clean, and the SDK now carries project
+  configurations, capabilities, rule files (`Sdk/Rules/*.xaml`) and a default `None` item glob
+  (all needed by Visual Studio; command-line builds behave as before).
+
+### Fixed
+
+- **Rebuild/Clean of one configuration no longer deletes the other's build**: the SDK's clean step
+  ran a bare `cargo clean` for Debug, which wipes the whole target directory (Release artifacts
+  included, and other packages' with a shared `CARGO_TARGET_DIR`); it now runs
+  `cargo clean --profile dev`.
+- A nullable-analysis warning (CS8604) in `KubunoPackage`'s workspace-settings step.
+
+### Added (work packages 1-2)
+
 - **`.rsproj`: a real MSBuild project type for Cargo packages, work packages 1-2 of
   `docs/RSPROJ.md`** (`<Project Sdk="Kubuno.Rust.Sdk/1.0.0">` in a normal `.sln`, no CPS/VSIX code
   yet - see the README's new "Building Rust with MSBuild (`.rsproj`)" section):

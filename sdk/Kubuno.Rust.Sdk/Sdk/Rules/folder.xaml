@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Folder properties (same shape as the JS SDK's). -->
+<Rule Name="Folder"
+      DisplayName="General"
+      PageTemplate="generic"
+      Description="Folder Properties"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <Rule.DataSource>
+    <DataSource Persistence="ProjectFileFolderItems" HasConfigurationCondition="False" ItemType="Folder" />
+  </Rule.DataSource>
+  <StringProperty Name="Identity" Visible="False" ReadOnly="True" Category="Misc" />
+  <StringProperty Name="FullPath" DisplayName="Full Path" ReadOnly="True" Category="Misc" Description="Location of the folder" />
+  <StringProperty Name="FolderName" DisplayName="Folder Name" ReadOnly="True" Category="Misc" Description="Name of this folder" />
+</Rule>

@@ -1,109 +1,168 @@
-<Project>
+﻿<Project>
 
   <!--
-    Kubuno.Rust.Sdk's implicit BOTTOM import (docs/RSPROJ.md §2). Everything a .rsproj needs to
-    build/rebuild/clean/run/test through cargo, plus the property computations that depend on
-    values the project body may have set after Sdk.props ran.
+    Kubuno.Rust.Sdk's implicit BOTTOM import (docs/RSPROJ.md Â§2). Structured like
+    Microsoft.VisualStudio.JavaScript.SDK's own Sdk.targets: project configurations, capabilities
+    and rule files for Visual Studio's Common Project System (work package 3), the cargo-specific
+    overrides that must precede Microsoft.Common.targets (CoreCompile), the Microsoft.Common.targets
+    import itself, then the overrides that must follow it.
   -->
 
   <!--
-    Plain UsingTask, no Runtime/Architecture hints: those were a red herring chased while
-    diagnosing an MSB4061 "Type must be a type provided by the runtime." failure under
-    `dotnet build` — root-caused (confirmed live, with a minimal repro) to loading the task
-    assembly from Z: (this workspace's mapped network drive), the same class of loader-from-
-    remote-source restriction README.md's "Tests" section already documents for MSTest. The real
-    fix is distributing this SDK as a NuGet package (see Kubuno.Rust.Sdk.csproj's own comment):
-    NuGet restores it into the LOCAL machine's package cache regardless of where the referencing
-    .rsproj lives, so $(_KubunoCargoTasksAssembly) resolves to a local (C:) path and loads in
-    process, with no Runtime/Architecture override needed at all.
+    Plain UsingTask, no Runtime/Architecture hints: loading the task assembly from Z: (this
+    workspace's mapped network drive) fails under `dotnet build` (MSB4061) â€” the SDK is therefore
+    distributed as a NuGet package, restored into the LOCAL package cache, so
+    $(_KubunoCargoTasksAssembly) always resolves to a local (C:) path (see Kubuno.Rust.Sdk.csproj).
   -->
   <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.CargoBuild" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
   <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.CargoTest" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
   <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.CargoFetch" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
 
+  <!-- The two configurations Visual Studio's Configuration Manager/toolbar dropdown offer
+       (capability ProjectConfigurationsDeclaredAsItems below), mapped to cargo's dev/release
+       profiles further down. -->
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|AnyCPU">
+      <Configuration>Debug</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|AnyCPU">
+      <Configuration>Release</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <!--
+    Capabilities (docs/RSPROJ.md Â§3), copied from the JS SDK's own list, plus RustProjectSystem
+    (the JS SDK's JSProjectSystem counterpart) that the VSIX's CPS exports key their
+    [AppliesTo] off. Conditions must only ever depend on configuration/platform.
+  -->
+  <ItemGroup>
+    <ProjectCapability Include="RustProjectSystem" />
+    <ProjectCapability Include="UseFileGlobs" />
+    <ProjectCapability Include="OpenProjectFile" />
+    <ProjectCapability Include="HandlesOwnReload" />
+    <ProjectCapability Include="ProjectConfigurationsDeclaredAsItems" />
+    <ProjectCapability Include="ProjectPropertiesEditor" />
+    <ProjectCapability Include="ProjectPropertyInterception" />
+    <ProjectCapability Include="AvoidAddingProjectGuid" />
+    <ProjectCapability Include="ConfigurableFileNesting" />
+    <ProjectCapability Include="DynamicFileNesting" />
+    <ProjectCapability Include="DynamicFileNestingEnabled" />
+    <ProjectCapability Include="DynamicDependentFile" />
+    <ProjectCapability Include="NoGeneralDependentFileIcon" />
+  </ItemGroup>
+
+  <!-- Default item globbing switches (the glob itself is in Sdk.props), overridable by the project. -->
+  <PropertyGroup>
+    <EnableDefaultItems Condition="'$(EnableDefaultItems)' == ''">true</EnableDefaultItems>
+    <EnableDefaultNoneItems Condition="'$(EnableDefaultNoneItems)' == ''">true</EnableDefaultNoneItems>
+
+    <!-- MSBuild's own intermediate/output folders and cargo's default target dir. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**;target/**</DefaultItemExcludes>
+    <!-- Various files that should generally always be ignored (same list as the JS SDK). -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/*.user;**/*.*proj;**/*.sln;**/*.slnx;**/*.vssscc;**/*.rs.bk</DefaultItemExcludes>
+    <!-- Dot-folders (.git, .vs, .cargo, .idea, ...). As the JS SDK warns, this pattern would also
+         match items included with a relative path outside the project folder, so it is only ever
+         applied to the project-folder glob. -->
+    <DefaultExcludesInProjectFolder>$(DefaultExcludesInProjectFolder);**/.*/**</DefaultExcludesInProjectFolder>
+  </PropertyGroup>
+
+  <!--
+    Rule files (docs/RSPROJ.md Â§3): what CPS uses to know the item types it displays, and the
+    project/file property pages. Neutral language only (no localized copies yet).
+  -->
+  <PropertyGroup>
+    <KubunoRustSdkRulesDirectory Condition="'$(KubunoRustSdkRulesDirectory)' == ''">$(MSBuildThisFileDirectory)Rules</KubunoRustSdkRulesDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\ProjectItemsSchema.xaml" />
+    <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\general.xaml">
+      <Context>Project</Context>
+    </PropertyPageSchema>
+    <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\cargo.xaml">
+      <Context>Project</Context>
+    </PropertyPageSchema>
+    <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\general_file.xaml">
+      <Context>File</Context>
+    </PropertyPageSchema>
+    <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\scc.xaml">
+      <Context>Invisible</Context>
+    </PropertyPageSchema>
+    <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\folder.xaml;$(KubunoRustSdkRulesDirectory)\none.xaml">
+      <Context>File;BrowseObject</Context>
+    </PropertyPageSchema>
+    <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\general.browseobject.xaml">
+      <Context>BrowseObject</Context>
+    </PropertyPageSchema>
+  </ItemGroup>
+
   <PropertyGroup>
     <_KubunoManifestDir>$([System.IO.Path]::GetDirectoryName('$(CargoManifestPath)'))</_KubunoManifestDir>
 
     <!--
-      Debug/Release configurations map onto cargo's own two built-in profiles (docs/RSPROJ.md §2);
-      any other $(Configuration) (a solution configuration the developer named e.g. "Profiling")
-      is passed straight through as a custom cargo profile flag — see CargoCommand.WithProfile,
-      which already special-cases "debug" as "the default, no flag" and "release" as its own flag.
-      An explicit $(CargoProfile) set by the project/command line always wins.
+      Debug/Release map onto cargo's two built-in profiles (docs/RSPROJ.md Â§2); any other
+      $(Configuration) is passed straight through as a custom cargo profile name (see
+      CargoCommand.WithProfile). An explicit $(CargoProfile) always wins.
     -->
     <CargoProfile Condition="'$(CargoProfile)' == '' and '$(Configuration)' == 'Debug'">debug</CargoProfile>
     <CargoProfile Condition="'$(CargoProfile)' == '' and '$(Configuration)' == 'Release'">release</CargoProfile>
     <CargoProfile Condition="'$(CargoProfile)' == ''">$(Configuration.ToLowerInvariant())</CargoProfile>
 
-    <!-- Cargo's own on-disk profile directory name for $(CargoProfile) — "debug"/"release" are
-         already their own directory names (see Kubuno.Launch.CargoLayout.ResolveProfileDirectoryName,
-         which only remaps the "dev"/"test"/"bench" spellings this SDK never emits). -->
+    <!-- Cargo's own on-disk directory name for $(CargoProfile) ("debug"/"release" are already their
+         own directory names â€” see Kubuno.Launch.CargoLayout.ResolveProfileDirectoryName). -->
     <CargoProfileDirName>$(CargoProfile)</CargoProfileDirName>
 
-    <!-- Effective target dir for path-convention fallbacks (mirrors Kubuno.Launch.CargoLayout.ResolveTargetDir):
-         an explicit $(CargoTargetDir)/CARGO_TARGET_DIR wins outright, else "<manifest dir>/target". -->
+    <!-- Effective target dir (mirrors Kubuno.Launch.CargoLayout.ResolveTargetDir): an explicit
+         $(CargoTargetDir)/CARGO_TARGET_DIR wins outright, else "<manifest dir>/target". -->
     <_KubunoEffectiveTargetDir Condition="'$(CargoTargetDir)' != ''">$(CargoTargetDir)</_KubunoEffectiveTargetDir>
     <_KubunoEffectiveTargetDir Condition="'$(_KubunoEffectiveTargetDir)' == ''">$(_KubunoManifestDir)\target</_KubunoEffectiveTargetDir>
 
-    <!-- The bin target's own name: $(CargoBin) if the project restricts itself to one, else
-         $(CargoPackage) if set, else the .rsproj's own file name — a reasonable default since a
-         single-package .rsproj is conventionally named after its package (see samples/hello-rust). -->
+    <!-- The bin target's own name: $(CargoBin), else $(CargoPackage), else the .rsproj's own name. -->
     <_KubunoBinName Condition="'$(CargoBin)' != ''">$(CargoBin)</_KubunoBinName>
     <_KubunoBinName Condition="'$(_KubunoBinName)' == '' and '$(CargoPackage)' != ''">$(CargoPackage)</_KubunoBinName>
     <_KubunoBinName Condition="'$(_KubunoBinName)' == ''">$(MSBuildProjectName)</_KubunoBinName>
 
     <!--
-      TargetPath (docs/RSPROJ.md §2): the path-convention fallback, computed unconditionally so it
-      is always available (e.g. to a property read with no build having run yet). CoreCompile below
-      overwrites it with cargo's own authoritative `compiler-artifact` path whenever it actually
-      runs; when CoreCompile is skipped (Inputs/Outputs already up to date), this fallback is
-      already correct, since it is the exact same convention `Kubuno.Launch.ExecutableResolver`
-      itself falls back to.
+      Output location, expressed through Microsoft.Common's own properties so its TargetDir/
+      TargetPath computation lands on cargo's artifact (docs/RSPROJ.md Â§2: unlike the JS SDK, a
+      .rsproj has one real executable): <target dir>\<profile>\<bin>.exe â€” the same convention
+      Kubuno.Launch.ExecutableResolver falls back to. CoreCompile below still overwrites
+      $(TargetPath) with cargo's own authoritative compiler-artifact path whenever it runs.
     -->
-    <TargetPath Condition="'$(TargetPath)' == ''">$(_KubunoEffectiveTargetDir)\$(CargoProfileDirName)\$(_KubunoBinName).exe</TargetPath>
-    <TargetDir>$([System.IO.Path]::GetDirectoryName('$(TargetPath)'))\</TargetDir>
+    <OutputType Condition="'$(OutputType)' == ''">Exe</OutputType>
+    <OutputPath>$(_KubunoEffectiveTargetDir)\$(CargoProfileDirName)\</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>
+    <AssemblyName>$(_KubunoBinName)</AssemblyName>
+    <TargetName>$(_KubunoBinName)</TargetName>
+    <TargetExt>.exe</TargetExt>
+
+    <!-- Microsoft.Common only knows how to copy managed .dll/.exe outputs; cargo already put the
+         artifact where it belongs (the JS SDK sets the same switches for the same reason). -->
+    <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
+    <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+    <PublishableProject>false</PublishableProject>
+    <TargetRuntime>None</TargetRuntime>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Gate CoreCompile's own Inputs/Outputs check (see below) — Cargo itself still does the
-         fine-grained incremental work; this only decides whether to shell out to it at all
-         (docs/RSPROJ.md §2's "Incremental behaviour"). -->
+    <!-- Gate CoreCompile's own Inputs/Outputs check â€” cargo still does the fine-grained
+         incremental work; this only decides whether to shell out to it at all. -->
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.rs" Condition="Exists('$(_KubunoManifestDir)\src')" />
     <_KubunoCargoLockFile Include="$(_KubunoManifestDir)\Cargo.lock" Condition="Exists('$(_KubunoManifestDir)\Cargo.lock')" />
   </ItemGroup>
 
-  <!--
-    Build is deliberately the FIRST <Target> element in this file (its own dependencies —
-    CargoRestore/Restore/CoreCompile — are defined afterwards; DependsOnTargets resolution does
-    not care about textual order, only MSBuild's own "no target specified" default does): a
-    project with no explicit DefaultTargets attribute on its outer <Project> falls back to the
-    first target MSBuild encounters, imports included — and this SDK never sets DefaultTargets
-    (nothing to set it ON, since Sdk.props/Sdk.targets are imported files, not the entry project).
-    Confirmed live: with CargoRestore textually first instead, `dotnet build` (which invokes the
-    project with no explicit -t: for its own "default targets" build phase) silently ran
-    CargoRestore twice and never Build/CoreCompile at all.
-  -->
-  <Target Name="Build" DependsOnTargets="CargoRestore;CoreCompile">
-    <Message Text="$(MSBuildProjectName) -&gt; $(TargetPath)" Importance="High" Condition="Exists('$(TargetPath)')" />
-  </Target>
+  <Target Name="CreateManifestResourceNames" />
 
   <!--
-    CargoRestore (docs/RSPROJ.md §2): `cargo fetch`, a NuGet-free restore. Also named plain
-    "Restore" so both an explicit `msbuild -t:Restore` and `dotnet build`'s own implicit restore
-    step (which looks for that exact target name) find one — this project type has no NuGet
-    dependencies of its own, so there is nothing else for the a "Restore" target to do.
-  -->
-  <Target Name="CargoRestore">
-    <CargoFetch ManifestPath="$(CargoManifestPath)" TargetDir="$(CargoTargetDir)" WorkingDirectory="$(_KubunoManifestDir)" />
-  </Target>
-  <Target Name="Restore" DependsOnTargets="CargoRestore" />
-
-  <!--
-    CoreCompile (docs/RSPROJ.md §2): the load-bearing override. Runs cargo build with the
-    json-diagnostic-rendered-ansi message format, parsed by CargoBuild into clickable Error
-    List entries (Kubuno.Cargo.MSBuild.Tasks — work package 2), instead of a plain `csc`/`vbc` run.
+    CoreCompile (docs/RSPROJ.md Â§2): the load-bearing override, the same documented seam the JS SDK
+    uses â€” Microsoft.Common's Build/CoreBuild/Compile chain calls it but never defines it. Runs cargo
+    build with the json-diagnostic-rendered-ansi message format, parsed by CargoBuild into clickable
+    Error List entries (Kubuno.Cargo.MSBuild.Tasks â€” work package 2). Defined BEFORE the
+    Microsoft.Common.targets import on purpose (a later definition of the same name would win).
   -->
   <Target Name="CoreCompile"
+          DependsOnTargets="CargoRestore"
           Inputs="$(MSBuildProjectFullPath);$(CargoManifestPath);@(_KubunoCargoLockFile);@(_KubunoCargoSourceFiles)"
           Outputs="$(TargetPath)">
     <CargoBuild ManifestPath="$(CargoManifestPath)"
@@ -120,8 +179,30 @@
     </PropertyGroup>
   </Target>
 
-  <Target Name="Clean">
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+
+  <!--
+    CargoRestore (docs/RSPROJ.md Â§2): `cargo fetch`, a NuGet-free restore, hooked after NuGet's own
+    Restore target the same way the JS SDK hooks NPMRestore â€” so both `msbuild -t:Restore` and
+    `dotnet build`'s implicit restore run it. Also a dependency of CoreCompile.
+  -->
+  <Target Name="CargoRestore" AfterTargets="Restore">
+    <CargoFetch ManifestPath="$(CargoManifestPath)" TargetDir="$(CargoTargetDir)" WorkingDirectory="$(_KubunoManifestDir)" />
+  </Target>
+
+  <Target Name="_KubunoReportTargetPath" AfterTargets="CoreBuild" Condition="Exists('$(TargetPath)')">
+    <Message Text="$(MSBuildProjectName) -&gt; $(TargetPath)" Importance="High" />
+  </Target>
+
+  <!--
+    Clean: `cargo clean` for the current profile, hooked before Microsoft.Common's own Clean (the
+    JS SDK's _CleanBuildOutput pattern), so Build/Rebuild/Clean all keep their standard definitions.
+  -->
+  <Target Name="_KubunoCargoClean" BeforeTargets="BeforeClean">
     <PropertyGroup>
+      <!-- Always name the profile: a bare `cargo clean` wipes the WHOLE target dir, i.e. the other
+           configuration's (and, with a shared CARGO_TARGET_DIR, other packages') artifacts too. -->
+      <_KubunoCleanProfileArg Condition="'$(CargoProfile)' == 'debug'">--profile dev</_KubunoCleanProfileArg>
       <_KubunoCleanProfileArg Condition="'$(CargoProfile)' == 'release'">--release</_KubunoCleanProfileArg>
       <_KubunoCleanProfileArg Condition="'$(CargoProfile)' != 'release' and '$(CargoProfile)' != 'debug'">--profile $(CargoProfile)</_KubunoCleanProfileArg>
     </PropertyGroup>
@@ -134,12 +215,30 @@
           Condition="'$(CargoTargetDir)' == ''" />
   </Target>
 
-  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+  <!--
+    PrepareForBuild override (as in the JS SDK): Microsoft.Common's version creates the output
+    folders for a managed assembly; cargo creates its own, and a Common-created OutDir inside a
+    not-yet-existing CARGO_TARGET_DIR is pointless.
+  -->
+  <Target Name="PrepareForBuild" DependsOnTargets="$(PrepareForBuildDependsOn)" />
+
+  <!-- No managed references to resolve for a Rust project (docs/RSPROJ.md Â§2's "Stubs"). -->
+  <Target Name="ResolveAssemblyReferences" Returns="" DependsOnTargets="$(ResolveAssemblyReferencesDependsOn)" />
+  <Target Name="GetReferenceAssemblyPaths" />
+  <Target Name="GetFrameworkPaths" />
+  <PropertyGroup>
+    <_TargetFrameworkDirectories />
+    <FrameworkPathOverride />
+    <TargetFrameworkDirectory />
+  </PropertyGroup>
+
+  <!-- Design-time build (docs/RSPROJ.md Â§3/Â§6): never shells out to cargo â€” CPS only needs the
+       evaluated items/properties, so this is a well-formed no-op. -->
+  <Target Name="CompileDesignTime" />
 
   <!--
-    Run (docs/RSPROJ.md §2): `cargo run` — deliberately a plain Exec, not the diagnostics-aware
-    CargoBuild task: a running program's own stdout/stderr must reach the console byte-for-byte
-    (e.g. for a natvis/println!-driven manual check), not be reinterpreted as build diagnostics.
+    Run (docs/RSPROJ.md Â§2): `cargo run` â€” a plain Exec, not the diagnostics-aware CargoBuild task:
+    a running program's own stdout/stderr must reach the console byte-for-byte.
   -->
   <Target Name="Run">
     <PropertyGroup>
@@ -156,7 +255,7 @@
           Condition="'$(CargoTargetDir)' == ''" />
   </Target>
 
-  <!-- Test (Kubuno.Cargo.MSBuild.Tasks' CargoTest — work package 2): same diagnostics treatment as Build. -->
+  <!-- Test (Kubuno.Cargo.MSBuild.Tasks' CargoTest â€” work package 2): same diagnostics treatment as Build. -->
   <Target Name="Test">
     <CargoTest ManifestPath="$(CargoManifestPath)"
                Package="$(CargoPackage)"
@@ -165,18 +264,5 @@
                ExtraArgs="$(CargoExtraArgs)"
                WorkingDirectory="$(_KubunoManifestDir)" />
   </Target>
-
-  <!-- No managed references to resolve for a Rust project (docs/RSPROJ.md §2's "Stubs"). -->
-  <Target Name="ResolveAssemblyReferences" />
-  <Target Name="ResolveReferences" />
-  <Target Name="GetReferenceAssemblyPaths" />
-  <Target Name="GetFrameworkPaths" />
-
-  <!-- Minimal design-time-build-shaped no-ops, so a generic MSBuild host that probes for these
-       (e.g. a `dotnet build`/`dotnet run` sniff, or a future CPS design-time build) gets a
-       well-formed empty answer instead of a missing-target error. Never shells out to cargo
-       (docs/RSPROJ.md §3/§6 risk: "must never shell out to cargo metadata/build" at design time). -->
-  <Target Name="CompileDesignTime" />
-  <Target Name="GetTargetPath" Returns="$(TargetPath)" />
 
 </Project>

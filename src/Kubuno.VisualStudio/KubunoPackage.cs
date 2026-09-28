@@ -281,7 +281,9 @@ namespace Kubuno.VisualStudio
         private async Task EnsureWorkspaceSettingsExcludeNonRustProjectsAsync()
         {
             var workspaceRoot = _workspaceService?.CurrentWorkspace?.Location;
-            if (string.IsNullOrEmpty(workspaceRoot))
+            // Not string.IsNullOrEmpty: .NET Framework's copy carries no [NotNullWhen(false)], so the
+            // compiler would still flag workspaceRoot as maybe-null below (CS8604).
+            if (workspaceRoot is null || workspaceRoot.Length == 0)
             {
                 return;
             }

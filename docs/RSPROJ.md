@@ -1,6 +1,11 @@
 # `.rsproj`: a real MSBuild/CPS project type for Cargo packages
 
-Status: design note, no code yet. Modeled on the JavaScript project type (`.esproj`,
+Status: work packages 1-3 implemented (SDK, MSBuild tasks, CPS project type — see README.md's
+"Building Rust with MSBuild (`.rsproj`)" section); work packages 4-7 not started. Implementation
+notes that deviate from this design: the SDK now imports `Microsoft.Common.props`/`.targets` like
+the JS SDK (CPS needs that targets graph), and the project type is registered by a static
+`rsproj.pkgdef` mirroring the JS project system's own pkgdef (the JS package itself carries no
+`[ProjectTypeRegistration]` attribute — verified by reflection). Modeled on the JavaScript project type (`.esproj`,
 `Microsoft.VisualStudio.JavaScript.Sdk` + `Microsoft.VisualStudio.JavaScript.ProjectSystem`), whose
 installed files in VS 2026 Community were read directly for this note. Facts checked against those
 files are marked "(verified)"; everything else is this note's own proposal, and anything that would
