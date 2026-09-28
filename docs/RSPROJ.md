@@ -704,3 +704,150 @@ which a by-name pack URI cannot pick. Open Folder file icons therefore remain an
 Symbol expansion in Open Folder: unchanged - `SymbolTreeProvider.CreateForHierarchyItem` is never
 reached for an Open Folder file node; isolating why needs a debugger attached to the Folder View's
 attached-collection lookup (not attempted blind).
+
+## Addendum - Extended "Ajouter" project-node submenu (lot 9)
+
+Requested by the product owner (reference: the WinForms project system's own "Ajouter" submenu -
+"Référence de projet...", "Formulaire (Windows Forms)...", "Contrôle utilisateur...",
+"Composant...", "Classe...", right after "Nouvel élément.../Élément existant.../Nouveau dossier").
+
+**Placement, live-verified.** The real "Ajouter" flyout is not a distinct shell-defined `Menu` id
+visible in `vsshlids.h` - it is assembled by the shell from a handful of well-known **groups**
+inside `IDM_VS_CTXT_PROJNODE` that the WinForms/C# project system itself injects its own items into:
+`IDG_VS_CTXT_PROJECT_ADD_REFERENCES` ("Référence de projet..."), `IDG_VS_CTXT_PROJECT_ADD_FORMS`
+(the five item-template entries: "Vue Kubuno...", "Module Rust...", "Test d'intégration...",
+"Exemple...", "Binaire..."), `IDG_VS_CTXT_PROJECT_ADD_MISC` ("Dépendance Cargo (crate)..."). A first
+attempt parented three brand-new custom groups directly to `IDM_VS_CTXT_PROJNODE` instead - it built
+and ran, but live UI Automation on the real context menu showed all seven commands rendered as
+**flat top-level entries** next to "Ajouter", not nested inside its cascade. Fixed by re-parenting
+every `<Button>` directly onto those three existing shell groups (no custom `<Group>` needed for
+placement at all) and moving the `.rsproj`-only scoping from per-group `VisibilityConstraints` to
+per-*button* ones (the groups are shared with every other project type's own items).
+
+**Scoping**: a `[ProvideUIContextRule(..., expression: "RustProjectSystem", termValues: new[] {
+"ActiveProjectCapability:RustProjectSystem" })]` on `KubunoPackage`, referenced from
+`KubunoCommands.vsct`'s `VisibilityConstraints` (`guidRustProjectUIContext`) - the CPS-native way to
+scope a menu item to one project capability, instead of `DynamicVisibility`+`BeforeQueryStatus`
+(still used for the existing item-context-menu command, which targets a single-item *selection*
+rather than a project capability).
+
+**Item templates: not `IVsAddProjectItemDlg2` after all.** The original design reused the classic
+"Add New Item" browsable dialog (`IVsAddProjectItemDlg2.AddProjectItemDlg`, from
+`Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Interop.dll` - reflected live, this interface
+is not in any `Microsoft.VisualStudio.Shell.Interop*` assembly in this VS install, only in that
+consolidated one), preselecting the category (`"Rust"`, matching every `.vstemplate`'s own
+`<ProjectType>`) and template name. It compiles and the call succeeds (a real "Ajouter un nouvel
+élément" window opens, titled correctly), but **live-verified it never finishes loading its template
+list** - stuck on "Chargement des modèles..." indefinitely, reproduced across a cold template-cache
+rebuild (delete `Extensions\ExtensionMetadata{2.0,Cache}.mpack`, restart Exp once, restart again).
+Testing the *stock* "Ajouter > Nouvel élément..." command side by side in the same session revealed
+why: **Visual Studio 2026 itself no longer opens that classic dialog for this gesture either** - its
+own "Nouvel élément..." now opens a small single-line "Entrez un nom de fichier ou de dossier"
+prompt, not a browsable catalog. `IVsAddProjectItemDlg2` is evidently legacy infrastructure VS's own
+UI has moved off of; reviving it from a third-party extension hit exactly that abandonment.
+**Replaced with a themed equivalent** (`Commands\NewItemNameDialog.cs`, `DialogWindow` + `VsBrushes`,
+matching the current stock command's own single-field shape) that then calls
+`EnvDTE.ProjectItems.AddFromTemplate` directly against this extension's own installed, loose
+`ItemTemplates\<folder>\<folder>.vstemplate` file (`Path.GetDirectoryName(Assembly.
+GetExecutingAssembly().Location)`-relative, the same file the VSIX's packaged template catalog asset
+is built from - no separate copy to keep in sync). **Live-verified end to end**: "Vue Kubuno..." on
+a Kubuno Desktop Application project prompted for a name ("NewView"), created `NewView.kbview` +
+`NewView.rs` at the project root (right-clicking the *project node* itself, not a subfolder - matches
+real VS behavior for a project-node-level Add command), opened the new `.kbview` in the real
+Design/XML/Split designer rendering its default content correctly, and the solution then built with
+0 failures through the real Solution Build Manager (`dte.Solution.SolutionBuild.Build`).
+
+**Référence de projet..., live-verified.** With only one `.rsproj` in the test solution, the dialog
+correctly reported "Aucun autre projet .rsproj n'a été trouvé dans la solution." rather than opening
+an empty list. The add/remove-via-`cargo`-on-OK path itself is exercised by the same code the Cargo
+dependency dialog already proved live (below) - not separately re-verified with a second project in
+this pass, for lack of time; `CargoCommandTests` covers the exact argument shapes for both `cargo
+add --path`/`cargo remove` calls it builds.
+
+**Dépendance Cargo (crate)..., live-verified with a real crate.** Typing `anyhow` and clicking OK
+ran a real `cargo add anyhow`, appending `anyhow = "1.0.104"` to the target `Cargo.toml` - comments
+and existing formatting untouched (cargo's own edit, never a hand rewrite). The solution then built
+successfully with the new dependency present.
+
+**Dependencies node context menu ("Dépendance Cargo (crate)...", "Supprimer" on a crate)**:
+implemented via `Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuPattern` on
+`DependenciesTreeItem`/`DependencyTreeItem` (`SolutionExplorer\TreeItems.cs`), routed through a new
+floating `KubunoDependenciesNodeContextMenu` (`IVsUIShell.ShowContextMenu` against a private
+`IOleCommandTarget`, `SolutionExplorer\DependenciesNodeContextMenu.cs`) - neither synthetic node is a
+real `IVsHierarchy` item with a shell-registered context menu of its own. **Not live-verified this
+pass** (time-boxed out after the project-node submenu and both dialogs were already proven end to
+end) - the wiring reuses the exact same `AddCargoDependencyCommand.ShowDialogAndAddAsync`/
+`RemoveAsync` methods the project-node menu already exercised live, so the only genuinely untested
+surface is the `IContextMenuPattern`/`ShowContextMenu` plumbing itself; flagged here rather than
+silently left unmentioned, per this doc's own "say explicitly what wasn't possible" rule.
+
+**`CargoCommand` gained `Add`/`Remove` kinds** (`Kubuno.Cargo\Commands\CargoCommand.cs`/
+`CargoCommandKind.cs`) - the positional crate spec and `--path`/`--dev`/`--build` flags go through
+the existing `WithExtraArgs`, no new builder surface needed. Unit-tested
+(`CargoCommandTests.Add_with_path_and_features_emits_expected_arguments`/
+`Remove_emits_manifest_package_and_crate_name`).
+
+**Two more item templates**: **Rust Example** (`examples/$fileinputname$.rs`) and **Rust Binary**
+(`src/bin/$fileinputname$.rs`), alongside the three lot-7 ones - same shape as Rust Integration
+Test's own `tests/` folder wrapper. An XML-comment gotcha hit while writing them: a `.vstemplate`'s
+leading XML comment cannot contain two consecutive hyphens (`--example`/`--bin` broke the packaged
+template manifest generator with an `XmlException` at build time, not template-load time) - spelled
+out in prose instead ("the example flag") in the comment; the `<Description>` element text (not a
+comment) still shows the real flag.
+
+## Addendum - Toolbox/Solution Explorer icons bug report (real install, not lot 9's own scope)
+
+A product-owner bug report, unrelated to lot 9's own "Ajouter" work, came in mid-pass: in the user's
+real (non-Exp), regularly-installed Visual Studio, the fallback "Kubuno Toolbox" tool window stayed
+on its "Open a .kbview file to see its components here." placeholder despite a `.kbview` designer
+being active, and Solution Explorer showed no icons at all (project node, `.rs`/`.kbview`/`Cargo.toml`).
+
+**Toolbox: a real race found and fixed, but not the whole story.** `ToolboxToolWindow.
+OnToolWindowCreated` fetched `kubuno/registry` exactly once; if the tool window is recreated from a
+persisted layout before any `.kbview` document (and therefore the language client) exists for the
+session, that single attempt permanently sees `ComponentRegistry.Empty` with no retry. Fixed with a
+bounded retry loop (20 attempts, 1.5 s apart, mirroring `NativeToolboxInstaller`'s own precedent -
+`ToolWindows\ToolboxToolWindow.cs`). **Live-verified this did NOT fully fix the reported symptom**:
+reinstalled the rebuilt VSIX into the real hive (`VSIXInstaller.exe /q`), started Visual Studio twice
+(template/image cache warm-up), opened the user's own `KubunoDesktopApp1` project - `main_view.kbview`
+auto-opened in the designer (rendering correctly), yet "Kubuno Toolbox" still showed only its
+placeholder text after 45+ seconds, well past the new 30 s retry budget. `Get-Process` confirmed
+`kubuno-views-ls.exe` was genuinely running, launched from the correct newly-installed path
+(`Extensions\<random>\tools\...`), ruling out "the language server binary isn't found/doesn't start"
+as the cause. That narrows the real root cause to either the `initialize` handshake never completing
+(`KubunoViewsLanguageClient.IsInitialized` staying false) or the `kubuno/registry` RPC call itself
+failing silently once connected - **not isolated further this pass**: reading the "Kubuno" Output
+pane's own log (which would show exactly which of those it is, per `KubunoViewsLogHost`'s existing
+logging) needs either a live debugger attached or reliable UI automation against the Output tool
+window, and repeated attempts at the latter (`View.Output`/`View.SolutionExplorer` via both DTE
+`ExecuteCommand` and UI Automation `InvokePattern` on the real menu item) had no visible effect in
+this environment across many retries, for reasons not resolved either - possibly an artifact of this
+particular automation approach against this specific devenv session rather than a real "commands do
+nothing" bug (the exact same technique worked reliably earlier in this same investigation against a
+different, `/rootsuffix Exp` devenv instance). Tracked as a genuinely open issue, not shipped as
+fixed - the retry loop is kept because it is a real, independent improvement either way.
+
+**Icons: inconclusive, not re-confirmed either way.** Could not get Solution Explorer to render in
+this pass's screenshots at all (see the automation difficulty above), so file/project icons were not
+independently re-checked live against the real install. One positive, concrete data point: the
+window's own title-bar/taskbar icon (the Kubuno "K" logo) rendered correctly and consistently across
+every screenshot of the real install taken this pass, which at minimum confirms the VSIX's own
+top-level icon resource loads fine there - it does not confirm or rule out the separate
+`RustProject.imagemanifest`/`RustProjectImages` file-icon path `docs/RSPROJ.md`'s own earlier
+"Open Folder follow-up" addendum already flagged as fragile (by-name pack URI resolution breaking if
+a second copy of `Kubuno.VisualStudio.RustProjectSystem.dll` loads in another context). A dedicated
+investigation pass (`docs/RSPROJ.md` search "VSIXInstaller.exe /q :rootSuffix:Exp" for the fullest
+prior attempt) also could not reproduce a clean signal, for a different reason: it shared the same
+`/rootsuffix Exp` hive this session's own dev `Debug`-configuration builds were repeatedly deploying
+into and killing `devenv.exe` processes against, and that hive's dev-deploy folder was independently
+found genuinely broken (a `FileNotFoundException` on `Kubuno.VisualStudio.dll` itself, root-caused to
+a deploy race from repeated `Stop-Process`-based `devenv.exe` kills colliding with the VSSDK Deploy
+target's delete-then-copy step, fixed by a clean rebuild with no `devenv.exe` holding locks) at some
+point during that investigation - so its own "even a fresh VSIXInstaller install fails to load" finding
+is now suspected to be contaminated by that same shared-hive corruption rather than a genuine platform
+bug, and should be re-tried in an Exp hive not shared with any other concurrent dev-deploy activity
+before being trusted as a real finding. **Recommendation for whoever picks this up next**: reproduce
+with a debugger attached to `devenv.exe` (breakpoint in `KubunoViewsLanguageClient.
+OnServerInitializedAsync` and `JsonRpcRegistryClient.FetchAsync`) rather than more black-box live
+testing, which has now been tried at length across two separate passes without fully isolating either
+symptom's true root cause.

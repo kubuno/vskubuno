@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Add New Item > Rust Example" - a Cargo example (examples/$fileinputname$.rs), runnable with
+     Cargo's "run, example flag" form and discovered by Cargo automatically - a .rsproj never
+     lists .rs files itself (docs/RSPROJ.md §1), so this template does not (and cannot) edit any
+     other file for you. Note: an XML comment cannot contain two consecutive hyphens, so the actual
+     cargo flag is spelled out in the description below instead. -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Rust Example</Name>
+    <Description>A Cargo example (examples/$fileinputname$.rs), runnable with "cargo run --example $fileinputname$".</Description>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.RustExample</TemplateID>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Console</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>40</SortOrder>
+    <DefaultName>example.rs</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <Folder Name="examples" TargetFolderName="examples">
+      <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">Example.rs</ProjectItem>
+    </Folder>
+  </TemplateContent>
+</VSTemplate>

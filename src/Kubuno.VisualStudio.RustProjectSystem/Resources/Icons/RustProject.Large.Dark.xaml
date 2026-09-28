@@ -1,0 +1,53 @@
+<!-- RustProject icon (the .rsproj project node), Large (32px) variant: official Rust gear+R mark, full gear with its 32 cog teeth. Traced from assets/rust/rust-logo.svg (path#r + the gear group's ring and cogs), monochrome to match this file's other project/file icons. -->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="32" Height="32">
+  <Canvas Width="32" Height="32">
+    <Canvas.RenderTransform>
+      <TransformGroup>
+        <!-- Source is a 106x106 box centered at its own origin (rust-logo.svg's translate(53,53)); scale it down to 32px and recenter on this canvas. -->
+        <ScaleTransform ScaleX="0.3018868" ScaleY="0.3018868" />
+        <TranslateTransform X="16" Y="16" />
+      </TransformGroup>
+    </Canvas.RenderTransform>
+    <!-- Outer ring of the Rust gear mark. -->
+    <Ellipse Canvas.Left="-43" Canvas.Top="-43" Width="86" Height="86" Stroke="#C5C5C5" StrokeThickness="9" />
+    <!-- 32 cog teeth around the ring, one every 11.25 degrees (rust-logo.svg's cogs group). -->
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round" />
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="11.25" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="22.5" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="33.75" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="45" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="56.25" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="67.5" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="78.75" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="90" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="101.25" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="112.5" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="123.75" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="135" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="146.25" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="157.5" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="168.75" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="180" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="191.25" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="202.5" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="213.75" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="225" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="236.25" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="247.5" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="258.75" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="270" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="281.25" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="292.5" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="303.75" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="315" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="326.25" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="337.5" /></Polygon.RenderTransform></Polygon>
+      <Polygon Points="46,3 51,0 46,-3" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="3" StrokeLineJoin="Round"><Polygon.RenderTransform><RotateTransform Angle="348.75" /></Polygon.RenderTransform></Polygon>
+    <!-- The stylised "R" glyph, centered on the ring. -->
+    <Path Data="M -9,-15 H 4 C 12,-15 12,-7 4,-7 H -9 Z M -40,22 H 0 V 11 H -9 V 3 H 1 C 12,3 6,22 15,22 H 40 V 3 H 34 V 5 C 34,13 25,12 24,7 C 23,2 19,-2 18,-2 C 33,-10 24,-26 12,-26 H -35 V -15 H -25 V 11 H -40 Z" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="1" StrokeLineJoin="Round">
+      <Path.RenderTransform>
+        <TranslateTransform X="0.5" Y="0.5" />
+      </Path.RenderTransform>
+    </Path>
+  </Canvas>
+</Viewbox>

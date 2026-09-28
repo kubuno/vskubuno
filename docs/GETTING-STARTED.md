@@ -92,6 +92,27 @@ solution containing one uses `Debug|x64`/`Release|x64` configurations, matching 
 `dev`/`release` profiles (any other `$(Configuration)` name maps to a cargo profile of the same
 name too).
 
+### Adding items, references and dependencies
+
+Right-click a `.rsproj` project node and open **"Ajouter"** ("Add"): alongside the standard "Nouvel
+élément.../Élément existant.../Nouveau dossier", this extension adds the same kind of direct entries
+WinForms projects have for "Formulaire (Windows Forms)...":
+
+- **Vue Kubuno..., Module Rust..., Test d'intégration..., Exemple..., Binaire...** - each prompts for
+  a name and creates the matching file(s) (`.kbview` + code-behind, `src/*.rs`, `tests/*.rs`,
+  `examples/*.rs`, `src/bin/*.rs`).
+- **Référence de projet...** - a checkbox list of every other `.rsproj` in the solution (like
+  Reference Manager); checking/unchecking one adds or removes a path dependency with `cargo add
+  --path`/`cargo remove`.
+- **Dépendance Cargo (crate)...** - crate name, optional version/features, and Normal/Dev/Build,
+  applied with `cargo add`. The same entry (plus "Supprimer" on one crate) is also on the
+  Dependencies node's own right-click menu.
+
+All of these run real `cargo` commands - `Cargo.toml` is never hand-edited by the extension itself,
+matching the "single source of truth" rule above - and cargo's own output goes to the **"Kubuno"**
+Output pane. The Dependencies node picks up the change on its own within about half a second (it
+watches `Cargo.toml`), no manual refresh needed.
+
 ### For an existing Cargo workspace
 
 If you already have a multi-crate Cargo workspace (not created from the templates above), generate

@@ -15,6 +15,19 @@
   <Include href="KnownImageIds.vsct"/>
 
   <Commands package="guidKubunoPackage">
+    <Menus>
+      <!--
+        Floating context menu shown programmatically (IVsUIShell.ShowContextMenu) by
+        DependenciesTreeItem/DependencyTreeItem's IContextMenuPattern - never reached from any shell
+        menu, so its Parent/Priority never matter for placement (SolutionExplorer\DependenciesNodeContextMenu.cs).
+      -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Kubuno Dependencies</ButtonText>
+        </Strings>
+      </Menu>
+    </Menus>
     <Groups>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
@@ -28,6 +41,14 @@
       -->
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
+      </Group>
+
+      <!--
+        The Dependencies node's own floating context menu group (KubunoDependenciesNodeContextMenu
+        above, shown via IVsUIShell.ShowContextMenu - SolutionExplorer\DependenciesNodeContextMenu.cs).
+      -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenuGroup" priority="0x0600">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenu" />
       </Group>
     </Groups>
 
@@ -82,22 +103,160 @@
           <ButtonText>Kubuno: Generate Visual Studio Projects</ButtonText>
         </Strings>
       </Button>
+
+      <!--
+        Extended "Ajouter" CASCADING SUBMENU on a .rsproj project node (not the top-level project
+        context menu - the earlier revision of this file got that wrong, verified live: it rendered
+        these as flat top-level entries instead of nested under "Ajouter ›"). The real "Ajouter"
+        flyout is not a distinct shell-defined Menu id third parties can see in vsshlids.h - it is
+        assembled by the shell from a handful of well-known GROUPS inside IDM_VS_CTXT_PROJNODE, the
+        same ones the WinForms/C# project system itself injects "Référence...", "Formulaire (Windows
+        Forms)...", "Contrôle utilisateur...", "Composant...", "Classe..." into - so third-party
+        commands join that same flyout by using THOSE groups as their own Parent directly, not by
+        defining a competing Menu. Scoped to .rsproj only via per-Button VisibilityConstraints
+        (guidRustProjectUIContext, a ProvideUIContextRule on ActiveProjectCapability:RustProjectSystem
+        - see KubunoPackage.cs) since these groups are shared with every other project type.
+      -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddProjectReference" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_REFERENCES" />
+        <Icon guid="ImageCatalogGuid" id="Reference" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Référence de projet...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoView" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_FORMS" />
+        <Icon guid="guidRustProjectImages" id="RustFile" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Vue Kubuno...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustModule" priority="0x0101" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_FORMS" />
+        <Icon guid="guidRustProjectImages" id="RustFile" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Module Rust...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustIntegrationTest" priority="0x0102" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_FORMS" />
+        <Icon guid="ImageCatalogGuid" id="Test" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Test d'intégration...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustExample" priority="0x0103" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_FORMS" />
+        <Icon guid="guidRustProjectImages" id="RustFile" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Exemple...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustBinary" priority="0x0104" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_FORMS" />
+        <Icon guid="guidRustProjectImages" id="RustFile" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Binaire...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddCargoDependency" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_MISC" />
+        <Icon guid="guidRustProjectImages" id="CargoManifest" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Dépendance Cargo (crate)...</ButtonText>
+        </Strings>
+      </Button>
+
+      <!--
+        Same "Dépendance Cargo (crate)..." command, reachable from the Dependencies node's own
+        context menu (DependenciesTreeItem.IContextMenuPattern, SolutionExplorer/TreeItems.cs), and
+        "Supprimer" on one crate node (DependencyTreeItem). Both shown via IVsUIShell.ShowContextMenu
+        against KubunoDependenciesNodeContextMenuGroup (see the Groups section above) - not parented
+        under any shell menu, so no VisibilityConstraints are needed (nothing ever reaches them
+        except that explicit ShowContextMenu call).
+      -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddCargoDependencyFromNode" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenuGroup" />
+        <Icon guid="guidRustProjectImages" id="CargoManifest" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Dépendance Cargo (crate)...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidRemoveCargoDependency" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="Remove" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Supprimer</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
 
   <Symbols>
     <GuidSymbol name="guidKubunoPackage" value="{5f3a9b2e-9e0c-4f0a-9a7a-6f0f3c9c9d10}" />
 
+    <!--
+      The RustProjectSystem/RustProject.imagemanifest images (RustProjectImages.cs), reused here so
+      "Add" submenu buttons carry the Rust logo instead of a generic ImageCatalogGuid moniker.
+    -->
+    <GuidSymbol name="guidRustProjectImages" value="{7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57}">
+      <IDSymbol name="RustFile" value="2" />
+      <IDSymbol name="CargoManifest" value="4" />
+    </GuidSymbol>
+
+    <!--
+      UIContext for "the active project is a .rsproj" (ProvideUIContextRule on KubunoPackage,
+      expression ActiveProjectCapability:RustProjectSystem) - the CPS-native way to scope the
+      extended "Ajouter" submenu to Rust projects only, instead of DynamicVisibility+BeforeQueryStatus.
+    -->
+    <GuidSymbol name="guidRustProjectUIContext" value="{2e69f0d4-848f-4fc0-a7a1-0fdaefec0f1d}" />
+
     <GuidSymbol name="guidKubunoCommandsPackageCmdSet" value="{5A67B8C7-E9FD-4917-B844-F103C0485DE1}">
       <IDSymbol name="KubunoToolsMenuGroup" value="0x1020" />
       <IDSymbol name="KubunoItemContextMenuGroup" value="0x1021" />
+      <IDSymbol name="KubunoDependenciesNodeContextMenu" value="0x1025" />
+      <IDSymbol name="KubunoDependenciesNodeContextMenuGroup" value="0x1026" />
       <IDSymbol name="cmdidDebugRustTestAtCursor" value="0x0100" />
       <IDSymbol name="cmdidShowKubunoToolbox" value="0x0101" />
       <IDSymbol name="cmdidShowKubunoProperties" value="0x0102" />
       <IDSymbol name="cmdidShowKubunoOutline" value="0x0103" />
       <IDSymbol name="cmdidGenerateRustProjects" value="0x0104" />
       <IDSymbol name="cmdidGenerateRustProjectsContext" value="0x0105" />
+      <IDSymbol name="cmdidAddKubunoView" value="0x0106" />
+      <IDSymbol name="cmdidAddRustModule" value="0x0107" />
+      <IDSymbol name="cmdidAddRustIntegrationTest" value="0x0108" />
+      <IDSymbol name="cmdidAddRustExample" value="0x0109" />
+      <IDSymbol name="cmdidAddRustBinary" value="0x010A" />
+      <IDSymbol name="cmdidAddProjectReference" value="0x010B" />
+      <IDSymbol name="cmdidAddCargoDependency" value="0x010C" />
+      <IDSymbol name="cmdidAddCargoDependencyFromNode" value="0x010D" />
+      <IDSymbol name="cmdidRemoveCargoDependency" value="0x010E" />
     </GuidSymbol>
   </Symbols>
+
+  <VisibilityConstraints>
+    <!--
+      Per-button (not per-group): IDG_VS_CTXT_PROJECT_ADD_REFERENCES/_FORMS/_MISC are shell-owned
+      groups shared with every other project type (WinForms/C# inject their own items into the same
+      groups) - hiding the GROUP would hide those other systems' commands too. Each of ours is
+      individually hidden unless the active project is a .rsproj.
+    -->
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddProjectReference" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoView" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustModule" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustIntegrationTest" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustExample" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustBinary" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddCargoDependency" context="guidRustProjectUIContext" />
+  </VisibilityConstraints>
 
 </CommandTable>

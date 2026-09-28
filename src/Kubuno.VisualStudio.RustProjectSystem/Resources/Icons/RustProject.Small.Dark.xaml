@@ -1,0 +1,20 @@
+<!-- RustProject icon (the .rsproj project node), Small (16px) variant: official Rust gear+R mark, ring only (cog teeth are dropped at this size - illegible once rasterised at 16px). Traced from assets/rust/rust-logo.svg (path#r + the gear circle), monochrome to match this file's other project/file icons. -->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="16" Height="16">
+  <Canvas Width="16" Height="16">
+    <Canvas.RenderTransform>
+      <TransformGroup>
+        <!-- Source is a 106x106 box centered at its own origin (rust-logo.svg's translate(53,53)); scale it down to 16px and recenter on this canvas. -->
+        <ScaleTransform ScaleX="0.1509434" ScaleY="0.1509434" />
+        <TranslateTransform X="8" Y="8" />
+      </TransformGroup>
+    </Canvas.RenderTransform>
+    <!-- Outer ring of the Rust gear mark. -->
+    <Ellipse Canvas.Left="-43" Canvas.Top="-43" Width="86" Height="86" Stroke="#C5C5C5" StrokeThickness="9" />
+    <!-- The stylised "R" glyph, centered on the ring. -->
+    <Path Data="M -9,-15 H 4 C 12,-15 12,-7 4,-7 H -9 Z M -40,22 H 0 V 11 H -9 V 3 H 1 C 12,3 6,22 15,22 H 40 V 3 H 34 V 5 C 34,13 25,12 24,7 C 23,2 19,-2 18,-2 C 33,-10 24,-26 12,-26 H -35 V -15 H -25 V 11 H -40 Z" Fill="#C5C5C5" Stroke="#C5C5C5" StrokeThickness="1" StrokeLineJoin="Round">
+      <Path.RenderTransform>
+        <TranslateTransform X="0.5" Y="0.5" />
+      </Path.RenderTransform>
+    </Path>
+  </Canvas>
+</Viewbox>

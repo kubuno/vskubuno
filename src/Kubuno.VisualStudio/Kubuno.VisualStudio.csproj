@@ -87,6 +87,16 @@
     <Compile Include="Debugging\NativeDebugLauncher.cs" />
     <Compile Include="Debugging\DebugRustTestAtCursorCommand.cs" />
     <Compile Include="Commands\GenerateRustProjectsCommand.cs" />
+    <!-- Extended "Ajouter" submenu on a .rsproj project node (product request, see KubunoCommands.vsct's own comment). -->
+    <Compile Include="Commands\RsprojSelection.cs" />
+    <Compile Include="Commands\RsprojFileReader.cs" />
+    <Compile Include="Commands\AddProjectItemCommands.cs" />
+    <Compile Include="Commands\NewItemNameDialog.cs" />
+    <Compile Include="Commands\AddProjectReferenceCommand.cs" />
+    <Compile Include="Commands\ProjectReferenceDialog.cs" />
+    <Compile Include="Commands\AddCargoDependencyCommand.cs" />
+    <Compile Include="Commands\CargoDependencyDialog.cs" />
+    <Compile Include="SolutionExplorer\DependenciesNodeContextMenu.cs" />
     <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: shows its two package-registered tool windows. -->
     <Compile Include="Designer\DesignerToolWindowCommands.cs" />
     <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §6: resolves kubuno-views-surface.exe (DSG-7's embedded design surface). -->
@@ -490,6 +500,9 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
+    <!-- RsprojFileReader.cs: a plain XDocument read of another .rsproj's own <CargoManifestPath>. -->
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
     <!-- Package.GetDialogPage(...) (used for Kubuno.VisualStudio.Views' KbviewOptionsPage - see KubunoPackage.InitializeAsync) returns a DialogPage, which implements System.Windows.Forms.IWin32Window. -->
     <Reference Include="System.Windows.Forms" />
     <Reference Include="PresentationCore" />

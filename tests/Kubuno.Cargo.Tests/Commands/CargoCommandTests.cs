@@ -12,6 +12,8 @@ namespace Kubuno.Cargo.Tests.Commands
         [InlineData(CargoCommandKind.Clean, "clean")]
         [InlineData(CargoCommandKind.Run, "run")]
         [InlineData(CargoCommandKind.Fetch, "fetch")]
+        [InlineData(CargoCommandKind.Add, "add")]
+        [InlineData(CargoCommandKind.Remove, "remove")]
         public void Subcommand_name_matches_kind(CargoCommandKind kind, string expectedSubcommand)
         {
             var command = kind switch
@@ -22,12 +24,41 @@ namespace Kubuno.Cargo.Tests.Commands
                 CargoCommandKind.Clean => CargoCommand.Clean(),
                 CargoCommandKind.Run => CargoCommand.Run(),
                 CargoCommandKind.Fetch => CargoCommand.Fetch(),
+                CargoCommandKind.Add => CargoCommand.Add(),
+                CargoCommandKind.Remove => CargoCommand.Remove(),
                 _ => throw new System.NotSupportedException(),
             };
 
             CargoCommandLine line = command.ToCommandLine();
             Assert.Equal("cargo", line.FileName);
             Assert.Equal(expectedSubcommand, line.ArgumentList[0]);
+        }
+
+        [Fact]
+        public void Add_with_path_and_features_emits_expected_arguments()
+        {
+            // Commands\AddProjectReferenceCommand.cs's own shape: manifest path, positional crate
+            // spec and --path through WithExtraArgs, features through the built-in helper.
+            CargoCommandLine line = CargoCommand.Add()
+                .WithManifestPath(@"C:\app\Cargo.toml")
+                .WithPackage("app")
+                .WithFeatures(new[] { "serde", "json" })
+                .WithExtraArgs("other-crate", "--dev")
+                .ToCommandLine();
+
+            Assert.Equal("add --manifest-path C:\\app\\Cargo.toml -p app --features serde,json other-crate --dev", line.Arguments);
+        }
+
+        [Fact]
+        public void Remove_emits_manifest_package_and_crate_name()
+        {
+            CargoCommandLine line = CargoCommand.Remove()
+                .WithManifestPath(@"C:\app\Cargo.toml")
+                .WithPackage("app")
+                .WithExtraArgs("other-crate")
+                .ToCommandLine();
+
+            Assert.Equal("remove --manifest-path C:\\app\\Cargo.toml -p app other-crate", line.Arguments);
         }
 
         [Fact]

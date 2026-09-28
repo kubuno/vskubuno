@@ -11,6 +11,7 @@ using Microsoft.Internal.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Kubuno.VisualStudio.SolutionExplorer
 {
@@ -212,17 +213,26 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         }
     }
 
-    /// <summary>The read-only "Dependencies" node of a <c>.rsproj</c> (like the "Dependencies" node of an SDK-style C# project).</summary>
-    internal sealed class DependenciesTreeItem : KubunoTreeItem
+    /// <summary>
+    /// The "Dependencies" node of a <c>.rsproj</c> (like the "Dependencies" node of an SDK-style C#
+    /// project) - the tree itself is read-only (from <c>cargo metadata</c>), but its own context menu
+    /// ("Dépendance Cargo (crate)...") and a crate node's ("Supprimer") mutate <c>Cargo.toml</c>
+    /// through <c>cargo add</c>/<c>cargo remove</c> (<see cref="Commands.AddCargoDependencyCommand"/>),
+    /// never by hand - <see cref="DependenciesNodeContextMenu"/> is the
+    /// <see cref="Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuPattern"/> plumbing both use.
+    /// </summary>
+    internal sealed class DependenciesTreeItem : KubunoTreeItem, Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuPattern
     {
         private readonly ObservableCollection<DependencyGroupTreeItem> _groups = new ObservableCollection<DependencyGroupTreeItem>();
         private readonly Action _ensureLoaded;
+        private readonly IVsHierarchy _hierarchy;
         private bool _loaded;
 
-        public DependenciesTreeItem(Action ensureLoaded)
+        public DependenciesTreeItem(Action ensureLoaded, IVsHierarchy hierarchy)
             : base(order: -1)
         {
             _ensureLoaded = ensureLoaded;
+            _hierarchy = hierarchy;
         }
 
         public override string Text => "Dependencies";
@@ -244,6 +254,9 @@ namespace Kubuno.VisualStudio.SolutionExplorer
 
         public override int Priority => -1;
 
+        public Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuController ContextMenuController =>
+            DependenciesNodeContextMenu.ForAdd(_hierarchy);
+
         public void SetGroups(IReadOnlyList<CargoDependencyGroup> groups)
         {
             bool hadItems = HasItems;
@@ -251,7 +264,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
             _groups.Clear();
             for (int i = 0; i < groups.Count; i++)
             {
-                _groups.Add(new DependencyGroupTreeItem(groups[i], i));
+                _groups.Add(new DependencyGroupTreeItem(groups[i], i, _hierarchy));
             }
 
             if (hadItems != HasItems)
@@ -266,13 +279,13 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         private readonly List<DependencyTreeItem> _dependencies = new List<DependencyTreeItem>();
         private readonly CargoDependencyGroup _group;
 
-        public DependencyGroupTreeItem(CargoDependencyGroup group, int order)
+        public DependencyGroupTreeItem(CargoDependencyGroup group, int order, IVsHierarchy hierarchy)
             : base(order)
         {
             _group = group;
             for (int i = 0; i < group.Dependencies.Count; i++)
             {
-                _dependencies.Add(new DependencyTreeItem(group.Dependencies[i], i));
+                _dependencies.Add(new DependencyTreeItem(group.Dependencies[i], i, hierarchy));
             }
         }
 
@@ -287,14 +300,16 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         public override IEnumerable Items => _dependencies;
     }
 
-    internal sealed class DependencyTreeItem : KubunoTreeItem
+    internal sealed class DependencyTreeItem : KubunoTreeItem, Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuPattern
     {
         private readonly CargoDependency _dependency;
+        private readonly IVsHierarchy _hierarchy;
 
-        public DependencyTreeItem(CargoDependency dependency, int order)
+        public DependencyTreeItem(CargoDependency dependency, int order, IVsHierarchy hierarchy)
             : base(order)
         {
             _dependency = dependency;
+            _hierarchy = hierarchy;
         }
 
         public override string Text => CargoDependencyGroups.DisplayText(_dependency);
@@ -304,5 +319,8 @@ namespace Kubuno.VisualStudio.SolutionExplorer
             + (_dependency.Target != null ? " [" + _dependency.Target + "]" : string.Empty);
 
         public override ImageMoniker IconMoniker => _dependency.Path != null ? KnownMonikers.Reference : KnownMonikers.PackageReference;
+
+        public Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuController ContextMenuController =>
+            DependenciesNodeContextMenu.ForRemove(_hierarchy, _dependency.Rename ?? _dependency.Name);
     }
 }

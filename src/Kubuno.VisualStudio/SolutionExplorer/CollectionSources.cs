@@ -119,7 +119,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         {
             SourceItem = sourceItem;
             _project = project;
-            _node = new DependenciesTreeItem(EnsureLoaded);
+            _node = new DependenciesTreeItem(EnsureLoaded, project);
             Items = new[] { _node };
         }
 

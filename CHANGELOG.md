@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Extended "Ajouter" project-node submenu for `.rsproj`, matching the WinForms project system's
+  own shape** (right-click a `.rsproj` project node > "Ajouter"): **"Référence de projet..."** lists
+  every other `.rsproj` in the solution with a checkbox (like Reference Manager), applying whatever
+  changed with `cargo add --path`/`cargo remove` - never a hand-edited `Cargo.toml`; **"Vue
+  Kubuno...", "Module Rust...", "Test d'intégration...", "Exemple...", "Binaire..."** each prompt for
+  a name and add the corresponding item template (`.kbview`+code-behind, `src/*.rs`, `tests/*.rs`,
+  `examples/*.rs`, `src/bin/*.rs`) via `ProjectItems.AddFromTemplate` against this extension's own
+  installed template files; **"Dépendance Cargo (crate)..."** is a small VS-styled dialog (crate
+  name, optional version/features, Normal/Dev/Build) that runs `cargo add`, with cargo's own
+  output going to the "Kubuno" pane. All seven are scoped to `.rsproj` only via a
+  `ProvideUIContextRule` (`ActiveProjectCapability:RustProjectSystem`) on the shared, shell-owned
+  `IDG_VS_CTXT_PROJECT_ADD_REFERENCES`/`_FORMS`/`_MISC` groups the WinForms/C# project system itself
+  injects into - not a competing top-level menu. The Dependencies node gained the same "Dépendance
+  Cargo (crate)..." entry on its own context menu, plus "Supprimer" (`cargo remove`) on one crate
+  node, both via `IVsUIShell.ShowContextMenu` (`Microsoft.Internal.VisualStudio.PlatformUI.
+  IContextMenuPattern`) since neither node is a real `IVsHierarchy` item with a shell-registered
+  menu. `CargoCommand` gained `Add`/`Remove` kinds (`Kubuno.Cargo`) - never hand-rewriting
+  `Cargo.toml`, matching the platform `CLAUDE.md`'s own rule.
+- Two more item templates ("Add New Item"): **Rust Example** (`examples/$name$.rs`) and **Rust
+  Binary** (`src/bin/$name$.rs`), alongside the existing three.
 - **`docs/GETTING-STARTED.md`**: a step-by-step guide for a developer installing the extension for
   the first time - prerequisites, installing the VSIX, creating a project from the four templates,
   the `.rsproj` build/F5/Test Explorer workflow, the `.kbview` designer, Open Folder mode and its
@@ -16,6 +36,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   problem, SMB directory-cache races on a network drive, and more). Linked from `README.md`.
 
 ### Fixed
+
+- **"Kubuno Toolbox" (the fallback tool window) could get stuck forever on its "Open a .kbview file
+  to see its components here." placeholder even with a `.kbview` designer active**: `OnToolWindowCreated`
+  fetched the live `kubuno/registry` exactly once. If the tool window is recreated from a persisted
+  window layout (e.g. it was left docked open from a previous session) before any `.kbview` document
+  - and therefore the Kubuno Views language client - exists for the session, that one attempt finds
+  no client/no ready RPC, gets `ComponentRegistry.Empty` back, and nothing ever retries, even once a
+  `.kbview` is later opened and the language server initializes. `ToolboxToolWindow` now retries the
+  fetch (20 attempts, 1.5 s apart, mirroring `NativeToolboxInstaller`'s existing icon-retry pattern)
+  until the registry is non-empty, giving the language client time to attach and initialize.
+  **Not a full fix** - re-tested live against a real (non-Exp) install after this change shipped and
+  the placeholder still reproduces past the full 30 s retry window, even though the `kubuno-views-ls`
+  process is confirmed running from the correct installed path. So this race was real and worth
+  fixing, but it is not (or not the only) root cause of the reported symptom; see `docs/RSPROJ.md`'s
+  own addendum for the live evidence gathered and what remains open.
 
 - **The known pre-existing `NU1605` restore warning on `Kubuno.VisualStudio.csproj` is fixed**, not
   just documented: `Kubuno.Cargo.csproj`'s and `Kubuno.VisualStudio.csproj`'s own `System.Text.Json`

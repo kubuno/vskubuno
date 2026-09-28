@@ -2,7 +2,7 @@
 <!--
   Image manifest for the .rsproj project node icon (docs/RSPROJ.md §3) and the .rs/.kbview/Cargo.toml file icons (lot 8). Shipped at the root of the
   Kubuno.VisualStudio VSIX, where Visual Studio's image service discovers *.imagemanifest files on
-  its own (no registration needed). The PNGs are WPF resources of
+  its own (no registration needed). The XAML sources are WPF resources of
   Kubuno.VisualStudio.RustProjectSystem.dll; the GUID/ID must match RustProjectImages.cs.
 -->
 <ImageManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/VisualStudio/ImageManifestSchema/2014">
@@ -15,11 +15,25 @@
     <ID Name="CargoManifest" Value="4" />
   </Symbols>
   <Images>
-    <Image Guid="$(RustProjectImagesGuid)" ID="$(RustProject)">
-      <Source Uri="$(Resources)/RustProject16.png">
+    <!-- Official Rust gear+R mark, one XAML per background AND per size: the 16px variant drops the
+         32 cog teeth (illegible once rasterised that small), the 32px+ variant keeps the full gear. -->
+    <Image Guid="$(RustProjectImagesGuid)" ID="$(RustProject)" AllowColorInversion="false">
+      <Source Uri="$(Resources)/Icons/RustProject.Small.Light.xaml" Background="Light">
         <Size Value="16" />
       </Source>
-      <Source Uri="$(Resources)/RustProject32.png">
+      <Source Uri="$(Resources)/Icons/RustProject.Small.Dark.xaml" Background="Dark">
+        <Size Value="16" />
+      </Source>
+      <Source Uri="$(Resources)/Icons/RustProject.Small.HighContrast.xaml" Background="HighContrast">
+        <Size Value="16" />
+      </Source>
+      <Source Uri="$(Resources)/Icons/RustProject.Large.Light.xaml" Background="Light">
+        <Size Value="32" />
+      </Source>
+      <Source Uri="$(Resources)/Icons/RustProject.Large.Dark.xaml" Background="Dark">
+        <Size Value="32" />
+      </Source>
+      <Source Uri="$(Resources)/Icons/RustProject.Large.HighContrast.xaml" Background="HighContrast">
         <Size Value="32" />
       </Source>
     </Image>

@@ -70,8 +70,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\RustProject16.png" />
-    <Resource Include="Resources\RustProject32.png" />
     <None Include="Resources\RustProject.imagemanifest" />
     <None Include="Resources\KubunoControls.imagemanifest" />
   </ItemGroup>

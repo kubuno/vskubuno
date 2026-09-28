@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Add New Item > Rust Binary" - an extra Cargo binary target (src/bin/$fileinputname$.rs),
+     runnable with Cargo's "run, bin flag" form and discovered by Cargo automatically - a
+     .rsproj never lists .rs files itself (docs/RSPROJ.md §1), so this template does not (and
+     cannot) edit any other file for you. Note: an XML comment cannot contain two consecutive
+     hyphens, so the actual cargo flag is spelled out in the description below instead. -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Rust Binary</Name>
+    <Description>An extra Cargo binary target (src/bin/$fileinputname$.rs), runnable with "cargo run --bin $fileinputname$".</Description>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.RustBinary</TemplateID>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Console</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>50</SortOrder>
+    <DefaultName>tool.rs</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <Folder Name="src" TargetFolderName="src">
+      <Folder Name="bin" TargetFolderName="bin">
+        <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">Binary.rs</ProjectItem>
+      </Folder>
+    </Folder>
+  </TemplateContent>
+</VSTemplate>

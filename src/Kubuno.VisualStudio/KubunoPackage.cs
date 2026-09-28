@@ -99,6 +99,21 @@ namespace Kubuno.VisualStudio
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.PropertiesToolWindow))]
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow))]
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    // Extended "Ajouter" submenu on a .rsproj project node (KubunoCommands.vsct's
+    // VisibilityConstraints, guidRustProjectUIContext): the CPS-native way to scope a menu group to
+    // one project type, rather than DynamicVisibility+BeforeQueryStatus (already used for the
+    // Solution Explorer item-context menu above, but that pattern re-evaluates on every query and
+    // only fits a single-item selection check - a project-node submenu is better served by a rule
+    // the shell evaluates once per active-project-capability change). "RustProjectSystem" here is
+    // Kubuno.VisualStudio.RustProjectSystem.RustProjectCapabilities.RustProjectSystem's literal
+    // value (that assembly is MEF-composed, not project-referenced here - see the ProvideCodeBase
+    // remark above - so the string is repeated rather than shared via a type reference).
+    [ProvideUIContextRule(
+        PackageGuids.RustProjectUIContextString,
+        name: "RustProjectSystem",
+        expression: "RustProjectSystem",
+        termNames: new[] { "RustProjectSystem" },
+        termValues: new[] { "ActiveProjectCapability:RustProjectSystem" })]
     [Guid(PackageGuidStrings.Package)]
     public sealed class KubunoPackage : AsyncPackage
     {
@@ -230,6 +245,9 @@ namespace Kubuno.VisualStudio
                 DebugRustTestAtCursorCommand.Initialize(this, commandService);
                 DesignerToolWindowCommands.Initialize(this, commandService);
                 GenerateRustProjectsCommand.Initialize(this, commandService);
+                AddProjectItemCommands.Initialize(this, commandService);
+                AddProjectReferenceCommand.Initialize(this, commandService);
+                AddCargoDependencyCommand.Initialize(this, commandService);
             }
         }
 

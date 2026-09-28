@@ -16,6 +16,17 @@ namespace Kubuno.VisualStudio
         public static readonly Guid KubunoCommandSet = new("5A67B8C7-E9FD-4917-B844-F103C0485DE1");
 
         /// <summary>
+        /// UIContext for "the active project is a .rsproj" (<c>guidRustProjectUIContext</c> in
+        /// <c>KubunoCommands.vsct</c>'s <c>VisibilityConstraints</c>), matching the
+        /// <c>ProvideUIContextRuleAttribute</c> on <see cref="KubunoPackage"/>
+        /// (<c>ActiveProjectCapability:RustProjectSystem</c>) - the extended "Ajouter" submenu's
+        /// scoping mechanism.
+        /// </summary>
+        public const string RustProjectUIContextString = "2e69f0d4-848f-4fc0-a7a1-0fdaefec0f1d";
+
+        public static readonly Guid RustProjectUIContext = new(RustProjectUIContextString);
+
+        /// <summary>
         /// <c>providerType</c> for <see cref="Workspace.CargoBuildFileContextProviderFactory"/>
         /// (an <c>ExportFileContextProviderAttribute</c> string, and the <c>FileContext.ProviderType</c>
         /// every <see cref="Workspace.CargoBuildFileContextProvider"/> it creates carries).
@@ -47,5 +58,22 @@ namespace Kubuno.VisualStudio
 
         /// <summary>Solution Explorer/Open Folder item context menu entry for <see cref="Commands.GenerateRustProjectsCommand"/>, shown only on a workspace-root Cargo.toml.</summary>
         public const int GenerateRustProjectsContextCommand = 0x0105;
+
+        // Extended "Ajouter" submenu on a .rsproj project node (Commands\AddProjectItemCommands.cs,
+        // Commands\AddProjectReferenceCommand.cs, Commands\AddCargoDependencyCommand.cs), scoped to
+        // .rsproj only via guidRustProjectUIContext (KubunoCommands.vsct VisibilityConstraints).
+        public const int AddKubunoViewCommand = 0x0106;
+        public const int AddRustModuleCommand = 0x0107;
+        public const int AddRustIntegrationTestCommand = 0x0108;
+        public const int AddRustExampleCommand = 0x0109;
+        public const int AddRustBinaryCommand = 0x010A;
+        public const int AddProjectReferenceCommand = 0x010B;
+        public const int AddCargoDependencyCommand = 0x010C;
+
+        /// <summary>Dependencies node's own floating context menu (KubunoDependenciesNodeContextMenu in KubunoCommands.vsct).</summary>
+        public const int KubunoDependenciesNodeContextMenu = 0x1025;
+
+        public const int AddCargoDependencyFromNodeCommand = 0x010D;
+        public const int RemoveCargoDependencyCommand = 0x010E;
     }
 }

@@ -34,6 +34,17 @@ namespace Kubuno.Cargo.Commands
         /// <summary>`cargo fetch`: downloads dependencies without building — the MSBuild SDK's Restore hook.</summary>
         public static CargoCommand Fetch() => new CargoCommand(CargoCommandKind.Fetch);
 
+        /// <summary>
+        /// `cargo add`: never hand-edits `Cargo.toml` (docs/RSPROJ.md's own "single source of truth"
+        /// rule, echoed by the platform CLAUDE.md's "never hand-rewrite the TOML" for `Référence de
+        /// projet.../Dépendance Cargo (crate)...`). The positional package spec (e.g. `serde@1`) and
+        /// any `--path`/`--dev`/`--build` flags are passed through <see cref="WithExtraArgs"/>.
+        /// </summary>
+        public static CargoCommand Add() => new CargoCommand(CargoCommandKind.Add);
+
+        /// <summary>`cargo remove`: the positional crate name goes through <see cref="WithExtraArgs"/>.</summary>
+        public static CargoCommand Remove() => new CargoCommand(CargoCommandKind.Remove);
+
         /// <summary>Passed as <c>--manifest-path</c> when set (path to a specific Cargo.toml).</summary>
         public string? ManifestPath { get; set; }
 
@@ -230,6 +241,10 @@ namespace Kubuno.Cargo.Commands
                     return "run";
                 case CargoCommandKind.Fetch:
                     return "fetch";
+                case CargoCommandKind.Add:
+                    return "add";
+                case CargoCommandKind.Remove:
+                    return "remove";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Kind), Kind, "Unknown Cargo command kind.");
             }
