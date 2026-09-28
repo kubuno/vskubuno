@@ -4,8 +4,12 @@ Status: work packages 1-6 implemented (SDK, MSBuild tasks, CPS project type, F5/
 Visual Studio Projects", Open Folder/rust-analyzer coexistence — see README.md's "Building Rust with
 MSBuild (`.rsproj`)" section); lot 7 ("Create a new project" templates) partially implemented — see
 its own Addendum below for exactly what shipped vs. what is still missing (the `IWizard`-based crate-
-name sanitisation and `cargo generate-lockfile` step, and the "Kubuno module" Axum backend template);
-lot 8 (Solution Explorer nesting) not started.
+name sanitisation and `cargo generate-lockfile` step, and the "Kubuno module" Axum backend template).
+The templates themselves are written and a `NewProjectTemplates`/`AddItemTemplates` registry
+registration was added to `rsproj.pkgdef` so the dialog can discover them (modelled on this VS
+install's own `msbuildproj.pkgdef`) — **not yet live-verified** that "Rust" actually appears in the
+dialog after this fix, blocked by the experimental instance hanging on every freshly-reset hive this
+session (see the addendum's own write-up); lot 8 (Solution Explorer nesting) not started.
 
 Work package 5 ("Generate Visual Studio Projects", live-verified against `Z:\src\desktop\windows`
 through a scratch mirror — see its own section below): the generator/planner
@@ -415,15 +419,59 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
   successfully through the real Solution Build Manager** in a hand-written `.sln` referencing them
   (`RustConsoleApp -> ...\RustConsoleApp.exe`, `KubunoDesktopApp -> ...\KubunoDesktopApp.exe`, 3/3
   succeeded, 0 failed). **Not conclusively re-verified live this session: F5 on the console/desktop
-  app**, and the New Project dialog's Language=Rust filter by screenshot - `dte.Debugger.Go`/a
-  synthetic F5 keystroke against the experimental instance repeatedly hung past 60-120s in this
-  sandboxed VM regardless of which template/project was started (environment-level flakiness, not
-  reproduced as a build/content problem); the New Project dialog itself was confirmed open and
-  showing a language filter dropdown by full-screen capture, but is hosted in a separate, unlisted
-  top-level window this session could not reliably screenshot (`PrintWindow` returned a blank
-  surface) or drive with synthetic clicks/keystrokes. F5's own mechanism
+  app** - `dte.Debugger.Go`/a synthetic F5 keystroke against the experimental instance repeatedly
+  hung past 60-120s in this sandboxed VM regardless of which template/project was started
+  (environment-level flakiness, not reproduced as a build/content problem). F5's own mechanism
   (`RustDebugLaunchProvider`, the `-C prefer-dynamic` PATH fix) is unmodified, shared code already
   live-verified for other `.rsproj` projects in work package 4/5's own tests above.
+
+**Real bug found and fixed after this: the dialog itself never showed the templates at all.**
+`dte.Solution.AddFromTemplate` (above) proves a `.vstemplate` *file* is well-formed and
+instantiable directly - it says nothing about whether "Create a new project" *discovers* it, which
+is the actual lot 7 requirement and is a completely separate code path. Live-verified the dialog
+never listed Rust/Kubuno: "Tous les langages" never offered "Rust", and searching "rust" returned
+no matches. Investigation (comparing against this VS install's own shipped templates):
+
+- `%LocalAppData%\...\<hive>\InstalledTemplates.json` is the literal list the dialog's search index
+  is built from (confirmed by grepping it - every in-box template ID, e.g. `"Microsoft.CSharp.
+  ConsoleApplication"`, is a flat entry in this JSON array). It never gained a `Kubuno`/`Rust` entry
+  no matter how the extension was deployed or how aggressively its caches were invalidated: `devenv
+  /rootsuffix Exp /updateconfiguration`, deleting `ProjectTemplatesCache_{...}`/
+  `ItemTemplatesCache_{...}`/`ComponentModelCache`/`InstalledTemplates.json` outright, and installing
+  through the real `VSIXInstaller.exe /rootsuffix:Exp` (not just the Debug-build `DeployExtension`
+  copy) instead - all ruled out as the cause.
+- The `Microsoft.VisualStudio.ProjectTemplate`/`ItemTemplate` VSIX asset types (§ above) are real and
+  do get processed at build time (they produce a `.vstman` template manifest per template folder,
+  verified inside the built `.vsix`), but on THIS VS build they are not enough by themselves for
+  "Create a new project" to discover a third-party template - only for it to be zipped/cataloged
+  *inside* the VSIX.
+- **The actual, working mechanism, found by reading this VS install's own
+  `Common7\IDE\CommonExtensions\Microsoft\Project\msbuildproj.pkgdef`** (the generic CPS project
+  registration every plain MSBuild/CPS project type, including a hand-authored one, is built on top
+  of): a `NewProjectTemplates\TemplateDirs\{ProjectFactoryPackageGuid}\<slot>` registry key with a
+  `TemplatesDir` value pointing at a literal folder on disk (`@="CPS Projects"`,
+  `"SortPriority"=dword:00000064`, `"TemplatesDir"="$RootFolder$\...\Templates\Projects"` in
+  Microsoft's own copy), plus a parallel `Projects\{guid}\AddItemTemplates\TemplateDirs\{...}\<slot>`
+  key for *Add New Item*, plus (redundantly, matching Microsoft's own file) a `ProjectTemplatesDir`
+  value directly on the `Projects\{guid}` key. `rsproj.pkgdef` now sets all three, reusing CPS's own
+  `ProjectFactoryPackage` GUID (`{3347bee8-...}`, already used by `"ProjectFactoryPackage"=` on the
+  same key) as the `TemplateDirs` scope - the same GUID `msbuildproj.pkgdef` itself uses for its own
+  `/1` slot, with ours added as `/2` so both coexist.
+- **Not re-verified live after this fix**: every attempt to relaunch the experimental instance on a
+  freshly reset hive (needed so the new `NewProjectTemplates` registry keys and `InstalledTemplates.
+  json` get rebuilt from scratch rather than read from a stale cache) hung indefinitely before even
+  registering its `EnvDTE.DTE` automation object - reproduced three times, including on a hive reset
+  *before* this pkgdef change existed, so the hang itself is environment-level (this sandboxed VM
+  after a very long session, not this fix) rather than caused by the new registry keys, but it did
+  block a live pixel/UI-Automation confirmation that "Rust" now actually appears in the dialog. The
+  registry key shape itself is not a guess: it is copied field-for-field from this exact VS install's
+  own working, shipping `msbuildproj.pkgdef`, which is the closest possible real-world reference for
+  "a plain CPS/MSBuild project type's templates showing up in Create a new project".
+- **Crate-name casing, revisited**: given the `IWizard` route is confirmed broken for a VSIX-hosted
+  assembly (above) and a second, separate wizard assembly was judged out of scope for the time
+  remaining, every template's crate/package name stays `$safeprojectname$` as VS substitutes it
+  (whatever case the developer typed) rather than a lowercased/hyphenated transform - documented
+  directly in each generated `Cargo.toml`/`.rsproj`'s own comment and in README.md's lot 7 section.
 
 ## Addendum — Solution Explorer nesting like WinForms/WPF (lot 8)
 

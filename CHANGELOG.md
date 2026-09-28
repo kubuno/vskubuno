@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`KubunoPackage` could fail to load with `Kubuno.Mcp.Bridge` unresolvable**: a latent gap (no
   `ProvideCodeBase` registration for that assembly, unlike its four siblings) that only surfaced
   once something forced eager resolution of it.
+- **"Create a new project"/"Add New Item" never listed any Rust/Kubuno template**: the VSIX's
+  `Microsoft.VisualStudio.ProjectTemplate`/`ItemTemplate` asset declarations alone are not enough for
+  this VS build's dialog to discover a third-party template - `rsproj.pkgdef` now also registers
+  `NewProjectTemplates\TemplateDirs`/`AddItemTemplates\TemplateDirs` registry keys under CPS's own
+  `ProjectFactoryPackage`, the same mechanism this VS install's own `msbuildproj.pkgdef` (the generic
+  CPS project registration) uses. Not yet re-verified live in the dialog itself (see `docs/RSPROJ.md`'s
+  lot 7 addendum for why).
 - **`.rsproj` Property Pages showed three debug-related entries instead of one**: the standalone
   "Debug" page (`Sdk/Rules/debug.xaml`) is removed, and its command-arguments/working-directory/
   environment properties now live directly on the "Rust Debugger" flavor rule
@@ -26,13 +33,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- **"Create a new project"/"Add New Item" templates (`docs/RSPROJ.md`'s lot 7 addendum)**: File >
-  New > Project, filtered by Language = Rust, now offers **Rust Console Application**, **Rust
-  Library** and **Kubuno Desktop Application** (a `kubuno_ui`/`kubuno_controls`/`kubuno_views`
-  window with a starter `main_view.kbview` view and same-stem `main_view.rs` code-behind); Add New
-  Item offers **Kubuno View**, **Rust Module** and **Rust Integration Test**. Project/crate names
-  use VS's own `$safeprojectname$` directly - see the lot 7 addendum for why an `IWizard`-based
-  sanitiser and an automatic `cargo generate-lockfile` step were tried and reverted (a real,
+- **"Create a new project"/"Add New Item" templates (`docs/RSPROJ.md`'s lot 7 addendum)**: ships
+  **Rust Console Application**, **Rust Library** and **Kubuno Desktop Application** (a
+  `kubuno_ui`/`kubuno_controls`/`kubuno_views` window with a starter `main_view.kbview` view and
+  same-stem `main_view.rs` code-behind) project templates, and **Kubuno View**, **Rust Module** and
+  **Rust Integration Test** item templates, each instantiable and buildable (live-verified via
+  `dte.Solution.AddFromTemplate` + the real Solution Build Manager - see the addendum for the
+  registry registration this needed before the dialog would even discover them, not yet re-verified
+  live in the dialog itself). Project/crate names use VS's own `$safeprojectname$` directly - see the
+  lot 7 addendum for why an `IWizard`-based sanitiser and an automatic `cargo generate-lockfile` step
+  were tried and reverted (a real,
   reproducible `KubunoPackage` load regression). New `ProjectTemplates/`, `ItemTemplates/`.
 - **Open Folder / rust-analyzer coexistence pass (work package 6 of `docs/RSPROJ.md`) - verified,
   no code change needed for two of its three concerns**: a folder containing generated `.rsproj`/
