@@ -17,6 +17,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **"Kubuno: Generate Visual Studio Projects" (work package 5 of `docs/RSPROJ.md`)**: from the
+  Tools menu, or a right-click on a workspace-root `Cargo.toml` (Solution Explorer/Open Folder),
+  creates one `.rsproj` per workspace member with a `[[bin]]` target plus a `.sln` listing them -
+  idempotent (an existing `.rsproj` is never overwritten; an existing `.sln` is edited surgically,
+  preserving solution folders/other projects/formatting). The `Kubuno.Rust.Sdk` package a generated
+  project needs now ships inside the VSIX and self-registers as a local NuGet source on first load,
+  so no manual SDK setup is required. New `Kubuno.VisualStudio.Core/ProjectGeneration/` (pure,
+  unit-tested), `Commands/GenerateRustProjectsCommand.cs`, `Infrastructure/RustSdkFeedInstaller.cs`.
 - **F5 / Ctrl+F5 on a `.rsproj` (work package 4 of `docs/RSPROJ.md`)**: set a Rust project as the
   startup project and F5 builds it (cargo, through the normal solution build) then starts
   `$(TargetPath)` under Visual Studio's native debugger - breakpoints bind, Rust locals show with

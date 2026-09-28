@@ -1,7 +1,20 @@
 # `.rsproj`: a real MSBuild/CPS project type for Cargo packages
 
-Status: work packages 1-4 implemented (SDK, MSBuild tasks, CPS project type, F5/Ctrl+F5 — see
-README.md's "Building Rust with MSBuild (`.rsproj`)" section); work packages 5-7 not started.
+Status: work packages 1-5 implemented (SDK, MSBuild tasks, CPS project type, F5/Ctrl+F5, "Generate
+Visual Studio Projects" — see README.md's "Building Rust with MSBuild (`.rsproj`)" section); work
+packages 6-7 not started.
+
+Work package 5 ("Generate Visual Studio Projects", live-verified against `Z:\src\desktop\windows`
+through a scratch mirror — see its own section below): the generator/planner
+(`Kubuno.VisualStudio.Core/ProjectGeneration/`) is pure and unit-tested (87 tests total in
+`tests/Kubuno.VisualStudio.Tests`); the command
+(`Kubuno.VisualStudio/Commands/GenerateRustProjectsCommand.cs`) is reachable from the Tools menu
+and from Solution Explorer/Open Folder's item context menu on a workspace-root `Cargo.toml`
+(gated by `WorkspaceManifestScanner`). SDK distribution: the packed `Kubuno.Rust.Sdk` `.nupkg`
+ships inside the VSIX (`tools\SdkFeed\`, verified present in the deployed extension folder) and
+`RustSdkFeedInstaller` registers that folder as a NuGet source in the developer's own NuGet.Config
+on package load (surgical merge, `NuGetLocalFeedRegistration`, unit-tested) — see §4's own note for
+what was and wasn't exercised live.
 Implementation notes that deviate from this design: the SDK now imports
 `Microsoft.Common.props`/`.targets` like the JS SDK (CPS needs that targets graph), and the project
 type is registered by a static `rsproj.pkgdef` mirroring the JS project system's own pkgdef (the
@@ -165,21 +178,78 @@ split exactly:
   rust-analyzer over LSP, entirely outside MSBuild, so the design-time build only evaluates the
   file glob and property values. It must **never** shell out to `cargo metadata`/`build` (§6 risk).
 
-## 4. Generation: "Generate Visual Studio projects"
+## 4. Generation: "Generate Visual Studio projects" (implemented)
 
-A new command (Tools menu, or a right-click on a workspace-root `Cargo.toml`) runs `cargo metadata`
-(reusing `CargoMetadataReader` as-is) and, for a workspace, emits one `.rsproj` per member with a
-`[[bin]]` target (`<Project Sdk="Kubuno.Rust.Sdk/…"><PropertyGroup><CargoPackage>…</CargoPackage>
-</PropertyGroup></Project>`), plus a `.sln` (and, once VS 2026's `.slnx` is verified stable enough
-day-to-day, a `.slnx`) referencing them.
+**Command** (`Commands/GenerateRustProjectsCommand.cs`): Tools menu (auto-detects the workspace
+root from the active document, else the Open Folder root) and Solution Explorer/Open Folder's
+item-node context menu (`IDM_VS_CTXT_ITEMNODE`, shown only when the selection is a single
+`Cargo.toml` whose own text has a `[workspace]` table — `WorkspaceManifestScanner`, no full TOML
+parser needed). Runs `cargo metadata` (`CargoMetadataReader`, reused as-is) and, for a workspace,
+emits one `.rsproj` per member with a `[[bin]]` target
+(`<Project Sdk="Kubuno.Rust.Sdk/…"><PropertyGroup><CargoPackage>…</CargoPackage></PropertyGroup>
+</Project>`; `<CargoBin>` only when the package has more than one `[[bin]]`, picked by the same
+default-run/package-name/first-bin fallback `StartupItemSelector` already uses), plus a **`.sln`**
+(classic format — `.slnx` deferred, see below) at the workspace root listing all of them. A member
+with no `[[bin]]` (library-only) is skipped by default; `RsprojGenerationOptions.IncludeLibraryOnlyMembers`
+opts in.
 
-**Idempotency is the hard requirement**, matching `CLAUDE.md`'s "never regenerate what the
-developer owns" rule already applied to XML views, and the same discipline
-`EnsureStartupItemSelectedAsync` already follows for `ProjectSettings.json`: **only ever create a
-`.rsproj` that does not already exist.** A package whose targets changed shape (a `[[bin]]` added
-or removed) should be diffed and reported for the developer to accept, never silently rewritten.
-`.sln`/`.slnx` membership can regenerate more freely — it holds no per-project customization — but
-manual edits there (solution folders, extra projects) must still survive a re-run.
+**Pure/testable split** (`Kubuno.VisualStudio.Core/ProjectGeneration/`, unit-tested in
+`tests/Kubuno.VisualStudio.Tests/ProjectGeneration/` — 42 tests): `RsprojGenerationPlanner.Plan`
+takes an already-read `CargoMetadata` + a `projectFileExists` predicate and returns one
+`RsprojProjectPlanItem` per eligible member with `Action` = `Create`/`SkipExisting` — no file I/O.
+`RsprojTemplate` builds the `.rsproj` text; `RsprojSolutionGenerator` builds/merges the `.sln`. The
+VS command (impure) reads `cargo metadata`, calls the planner, writes files for `Create` items, and
+logs to the "Kubuno" Output pane.
+
+**Idempotency**, matching `CLAUDE.md`'s "never regenerate what the developer owns" rule already
+applied to XML views: `RsprojPlanAction.SkipExisting` is decided purely from whether a file already
+exists at the planned path — a `.rsproj` is **only ever created, never overwritten or diffed**
+against a changed target shape (unlike the original proposal below, this was simplified: the
+developer edits or deletes+regenerates by hand, matching `Kubuno.Rust.Sdk`'s own "outside VS is
+still the truth" philosophy). `.sln` membership regenerates more freely — `RsprojSolutionGenerator`
+edits an existing one **surgically** (only the missing `Project`/`EndProject` blocks and their 4
+`ProjectConfigurationPlatforms` lines are inserted, right down to preserving the original file's
+line-ending style byte-for-byte) so solution folders, other projects and manual edits survive a
+re-run; project GUIDs are deterministic (MD5 of the project path — `DeterministicGuid`) so a re-run
+proposes the same GUID for the same project. A workspace root with more than one existing `.sln` is
+left untouched (logged) rather than guessed at.
+
+**SDK distribution** (docs/RSPROJ.md §6's own risk): the packed `Kubuno.Rust.Sdk` `.nupkg` ships
+inside the VSIX (`Kubuno.VisualStudio.csproj`'s `tools\SdkFeed\Kubuno.Rust.Sdk.1.0.0.nupkg` Content
+item — verified present in the deployed extension folder after a build); `RustSdkFeedInstaller`
+(`Infrastructure/`), called from `KubunoPackage.InitializeAsync`, registers that folder as a NuGet
+package source in the developer's own `NuGet.Config` on package load
+(`NuGetLocalFeedRegistration` — a surgical XML merge, existing sources untouched, unit-tested).
+Verified live: a completely fresh, otherwise-empty NuGet package cache with a config containing
+*only* a source pointing at the local feed folder restores `Kubuno.Rust.Sdk` and builds a `.rsproj`
+successfully (§ below) — `RustSdkFeedInstaller`'s own write into the developer's *real* NuGet.Config
+was not separately exercised live in this session, since it mutates shared, machine-wide state; the
+merge logic it calls is unit-tested and the feed-resolution mechanism it depends on is the same one
+just verified.
+
+**Live test** (`Z:\src\desktop\windows`, a 13-member workspace): generated into a scratch mirror
+under `C:\kubuno-build\rsproj-test\desktop-mirror\` (never written into the desktop tree itself) —
+5 members have a `[[bin]]` target (`drive-app`, `kubuno-chat`, `kubuno-desktop`,
+`kubuno-documents`, `kubuno-views-ls`), each got a `.rsproj` with `<CargoManifestPath>` pointing
+back at the real manifest on `Z:` (the mirror's project directory differs from the manifest's own),
+plus a `windows.sln` listing all 5. Opened in the experimental instance, built through the real
+Solution Build Manager: 4/5 succeeded (`kubuno-desktop -> …\kubuno-desktop.exe` among them);
+`kubuno-chat` failed on a pre-existing, unrelated bug in the real repo's own
+`src\chat\.cargo\config.toml` (an unescaped backslash in a TOML string - Cargo itself rejects it),
+left untouched. Set `kubuno-desktop` as the startup project and pressed F5: it built (already
+up to date) and launched under the native debugger, its window opening with the correct
+title/icon and no `STATUS_DLL_NOT_FOUND` - proof the generated project's PATH/dylib handling
+(`RustDebugLaunchProvider`, work package 4) works unchanged through a mirrored, cross-drive
+`CargoManifestPath`.
+(`EnvDTE`/DTE automation of this project type returns empty `Name`/`UniqueName`/`FullName` for a
+`.rsproj` node - a work-package-3 gap, not package-5's; `dte.Solution.SolutionBuild.StartupProjects`
+still works when given the project's known relative path directly, which is what the live test
+used, exactly as a real user typing it into a filtered "Set as Startup Project" list or reading
+it off the just-generated `.sln` would have.)
+
+**Not done in this pass**: `.slnx` (kept to classic `.sln` — simpler, universally supported, no
+VS-2026-specific schema risk to verify); diffing/reporting a changed target shape for an existing
+`.rsproj` (see idempotency note above — deliberately simplified instead).
 
 ## 5. Coexistence with Open Folder and rust-analyzer
 
@@ -218,10 +288,12 @@ Both modes stay: Open Folder is the zero-setup entry point (`devenv folder`, no 
    checked before, given `RustLaunchTargetsGenerator`'s own history with undocumented debug APIs.
    Test, live: F5/Ctrl+F5 on a generated project, breakpoint in `main()`, confirm build-before-F5,
    confirm the `-C prefer-dynamic` PATH fix still holds (no `STATUS_DLL_NOT_FOUND`).
-5. **(S/M) Generation command + idempotency.** Owns: `Commands/GenerateRustProjectsCommand.cs`,
-   `ProjectGeneration/` (new, reusing `CargoMetadataReader`). Test: run twice against
-   `samples/hello-rust` and a real multi-member workspace (`Z:\src\desktop\windows`), confirm the
-   second run is a no-op; hand-edit a generated `.rsproj`, re-run, confirm the edit survives.
+5. **(S/M) Generation command + idempotency — done.** Owns: `Commands/GenerateRustProjectsCommand.cs`,
+   `Kubuno.VisualStudio.Core/ProjectGeneration/` (reusing `CargoMetadataReader`),
+   `Infrastructure/RustSdkFeedInstaller.cs`. See §4 above for the full writeup: unit-tested
+   (42 tests), live-verified against `Z:\src\desktop\windows` through a scratch mirror (generate,
+   build 4/5 through the real Solution Build Manager, F5 `kubuno-desktop` successfully) and against
+   a from-scratch NuGet package cache (SDK distribution).
 6. **(S) Open Folder / rust-analyzer coexistence pass.** Owns: `NonRustProjectExclusionScanner`
    (extend to recognize Kubuno-generated files), README/`ARCHITECTURE.md` updates. Test, live: open
    a folder with both a Cargo workspace and generated `.rsproj`/`.sln` in Open Folder mode, confirm
@@ -240,14 +312,18 @@ Both modes stay: Open Folder is the zero-setup entry point (`devenv folder`, no 
   project, repeatedly, over the network. Mitigate by keeping design-time builds to pure
   glob/property evaluation (never `cargo metadata`), and by caching workspace-wide data once per
   solution, mirroring `CargoWorkspaceSource`'s existing file-watcher cache.
-- **SDK distribution.** `Sdk="Kubuno.Rust.Sdk/1.0.0"` needs MSBuild to find that SDK. The JS model
-  resolves it through ordinary NuGet (the VSIX declares it as a dependency so VS's installer places
-  it in the shared NuGet packages folder — verified locally). A custom MSBuild `SdkResolver` (as
-  `Microsoft.VC.VcpkgSdkResolver` does, under `MSBuild\Current\Bin\SdkResolvers\`) would avoid a
-  NuGet/network dependency for a fully offline dev loop, but **whether a VSIX can register a
-  resolver there is unverified** — exactly the kind of "looks fine, undocumented in practice" risk
-  this project has already been burned by once. The lower-risk default is the JS model (NuGet
-  package, restored from a local/private feed) unless that is verified impractical.
+- **SDK distribution — resolved (work package 5).** `Sdk="Kubuno.Rust.Sdk/1.0.0"` needs MSBuild to
+  find that SDK. The JS model resolves it through ordinary NuGet, with VS *Setup* (not a VSIX)
+  placing the package in the shared NuGet packages folder — not available to a third-party VSIX,
+  which cannot participate in VS Setup's own component/workload manifest system. Adapted instead:
+  the packed `.nupkg` ships as VSIX **content** (`tools\SdkFeed\`, verified present in the deployed
+  extension folder) and the VSIX itself registers that folder as a NuGet source in the developer's
+  NuGet.Config on package load (`RustSdkFeedInstaller`/`NuGetLocalFeedRegistration` — §4's own
+  writeup). A custom MSBuild `SdkResolver` (as `Microsoft.VC.VcpkgSdkResolver` does, under
+  `MSBuild\Current\Bin\SdkResolvers\`) would avoid the NuGet dependency entirely for a fully offline
+  dev loop, but **whether a VSIX can register a resolver there remains unverified** — not needed
+  now that the NuGet-source route is proven to work, but worth revisiting if the extra restore step
+  ever proves too slow/fragile in practice.
 
 ## Addendum — "Create a new project" templates (lot 7)
 

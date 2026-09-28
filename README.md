@@ -79,6 +79,9 @@ Kubuno.VisualStudio.sln
   qualified name (module path + function name) is found by
   `Kubuno.VisualStudio.Core.RustTestLocator`, a small brace/string/comment-aware text scanner -
   no semantic model or rust-analyzer round-trip needed.
+- **"Kubuno: Generate Visual Studio Projects"** (Tools menu, or right-click a workspace-root
+  `Cargo.toml` in Solution Explorer/Open Folder): see "Building Rust with MSBuild (`.rsproj`)"
+  below.
 
 ### Options (Tools > Options > Kubuno > Rust)
 
@@ -332,6 +335,29 @@ before cargo has reported its artifact) assumes `<manifest dir>\target` when nei
 `<CargoTargetDir>` nor `CARGO_TARGET_DIR` is set; a global `build.target-dir` in
 `~/.cargo/config.toml` is not read, so the build then simply always calls cargo (which is itself
 incremental).
+
+### "Generate Visual Studio Projects" (work package 5)
+
+From the Tools menu, or a right-click on a workspace-root `Cargo.toml` (Solution Explorer/Open
+Folder), runs `cargo metadata` and creates one `.rsproj` next to each workspace member that has a
+`[[bin]]` target, plus a `.sln` at the workspace root listing all of them. **Idempotent**: an
+existing `.rsproj` is never overwritten (only ever created); an existing `.sln` is edited
+surgically - only the missing project entries are inserted, everything else (solution folders,
+other projects, formatting) is preserved. A member with no `[[bin]]` at all (library-only) is
+skipped by default.
+
+The SDK a generated `.rsproj` needs (`Sdk="Kubuno.Rust.Sdk/1.0.0"`) ships **inside the VSIX**
+(`tools\SdkFeed\Kubuno.Rust.Sdk.1.0.0.nupkg`) - on first package load, the extension registers that
+folder as a NuGet source in your own `NuGet.Config` (adding to it, never replacing your other
+sources), so the generated project restores/builds with no manual `dotnet pack`/`NuGet.config` setup.
+
+Verified live against `Z:\src\desktop\windows` (13 members, 5 with a `[[bin]]`), generated into a
+scratch mirror (never written into that workspace itself - `<CargoManifestPath>` in each generated
+`.rsproj` points back at the real manifest): opened in Visual Studio, built through the real
+Solution Build Manager (4/5 succeeded; the 5th failed on a pre-existing, unrelated TOML syntax
+error in that repo's own `.cargo/config.toml`), `kubuno-desktop` set as the startup project and F5
+launched it under the native debugger successfully. Also verified: a completely fresh NuGet package
+cache with *only* the bundled feed configured restores `Kubuno.Rust.Sdk` and builds a `.rsproj`.
 
 ## Third-party code
 

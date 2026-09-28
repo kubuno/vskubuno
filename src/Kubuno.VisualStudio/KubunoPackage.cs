@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
+using Kubuno.VisualStudio.Commands;
 using Kubuno.VisualStudio.Core;
 using Kubuno.VisualStudio.Debugging;
 using Kubuno.VisualStudio.DesignerIntegration;
@@ -124,6 +125,7 @@ namespace Kubuno.VisualStudio
                 (Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage)GetDialogPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage));
 
             var extensionInstallDirectory = GetExtensionInstallDirectory();
+            RustSdkFeedInstaller.EnsureRegistered(extensionInstallDirectory);
             var surfaceExePath = KubunoViewsSurfaceLocator.Locate(extensionInstallDirectory, devBuildDirectory: @"C:\kubuno-build\agent-dsgint\release\examples");
             if (surfaceExePath is not null)
             {
@@ -177,6 +179,7 @@ namespace Kubuno.VisualStudio
             {
                 DebugRustTestAtCursorCommand.Initialize(this, commandService);
                 DesignerToolWindowCommands.Initialize(this, commandService);
+                GenerateRustProjectsCommand.Initialize(this, commandService);
             }
         }
 

@@ -19,6 +19,16 @@
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
       </Group>
+      <!--
+        docs/RSPROJ.md work package 5: "Generate Visual Studio Projects" on the item-node context
+        menu - IDM_VS_CTXT_ITEMNODE is the standard "selected file" context menu, shared by
+        classic Solution Explorer project items and Open Folder's synthetic file nodes alike.
+        DynamicVisibility (see GenerateRustProjectsCommand.OnContextBeforeQueryStatus) hides it
+        unless the selection is a single workspace-root Cargo.toml.
+      -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
+      </Group>
     </Groups>
 
     <Buttons>
@@ -55,6 +65,23 @@
           <ButtonText>Kubuno View Outline</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidGenerateRustProjects" priority="0x0103" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="OpenProjectFolder" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno: Generate Visual Studio Projects</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidGenerateRustProjectsContext" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="OpenProjectFolder" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno: Generate Visual Studio Projects</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
 
@@ -63,10 +90,13 @@
 
     <GuidSymbol name="guidKubunoCommandsPackageCmdSet" value="{5A67B8C7-E9FD-4917-B844-F103C0485DE1}">
       <IDSymbol name="KubunoToolsMenuGroup" value="0x1020" />
+      <IDSymbol name="KubunoItemContextMenuGroup" value="0x1021" />
       <IDSymbol name="cmdidDebugRustTestAtCursor" value="0x0100" />
       <IDSymbol name="cmdidShowKubunoToolbox" value="0x0101" />
       <IDSymbol name="cmdidShowKubunoProperties" value="0x0102" />
       <IDSymbol name="cmdidShowKubunoOutline" value="0x0103" />
+      <IDSymbol name="cmdidGenerateRustProjects" value="0x0104" />
+      <IDSymbol name="cmdidGenerateRustProjectsContext" value="0x0105" />
     </GuidSymbol>
   </Symbols>
 

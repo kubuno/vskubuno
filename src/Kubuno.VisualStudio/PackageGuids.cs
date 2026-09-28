@@ -41,5 +41,11 @@ namespace Kubuno.VisualStudio
 
         /// <summary>Shows <see cref="Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow"/> (Kubuno.VisualStudio.Designer's own INTEGRATION.md §9).</summary>
         public const int ShowKubunoOutlineCommand = 0x0103;
+
+        /// <summary>Tools menu entry for <see cref="Commands.GenerateRustProjectsCommand"/> (docs/RSPROJ.md work package 5).</summary>
+        public const int GenerateRustProjectsCommand = 0x0104;
+
+        /// <summary>Solution Explorer/Open Folder item context menu entry for <see cref="Commands.GenerateRustProjectsCommand"/>, shown only on a workspace-root Cargo.toml.</summary>
+        public const int GenerateRustProjectsContextCommand = 0x0105;
     }
 }

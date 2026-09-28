@@ -73,6 +73,7 @@
     <Compile Include="Infrastructure\RealRustAnalyzerEnvironment.cs" />
     <Compile Include="Infrastructure\RustAnalyzerMissingInfoBar.cs" />
     <Compile Include="Infrastructure\FormatOnSaveDocumentEvents.cs" />
+    <Compile Include="Infrastructure\RustSdkFeedInstaller.cs" />
     <Compile Include="Workspace\CargoBuildFileContext.cs" />
     <Compile Include="Workspace\CargoBuildFileContextAction.cs" />
     <Compile Include="Workspace\CargoBuildMessageReporter.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="Debugging\RustLaunchTargetsGenerator.cs" />
     <Compile Include="Debugging\NativeDebugLauncher.cs" />
     <Compile Include="Debugging\DebugRustTestAtCursorCommand.cs" />
+    <Compile Include="Commands\GenerateRustProjectsCommand.cs" />
     <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: shows its two package-registered tool windows. -->
     <Compile Include="Designer\DesignerToolWindowCommands.cs" />
     <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §6: resolves kubuno-views-surface.exe (DSG-7's embedded design surface). -->
@@ -320,6 +322,33 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>tools\kubuno-vs-mcp\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+
+  <!--
+    docs/RSPROJ.md work package 5's SDK-distribution decision: `Kubuno.Rust.Sdk`'s packed .nupkg
+    (see README.md's "Building Rust with MSBuild (.rsproj)" for how pack-sdk.ps1/dotnet pack
+    produces it) ships INSIDE the VSIX under tools\SdkFeed\, exactly like kubuno-views-ls.exe or
+    kubuno-vs-mcp.exe above; KubunoPackage.InitializeAsync (Infrastructure\RustSdkFeedInstaller.cs)
+    registers that folder as a NuGet package source in the developer's own NuGet.Config on first
+    activation (NuGetLocalFeedRegistration - surgical merge, existing sources untouched), so a
+    `.rsproj`'s `Sdk="Kubuno.Rust.Sdk/…"` resolves on a machine that never ran this repository's own
+    pack-sdk.ps1/NuGet.config dance. Verified live (see docs/RSPROJ.md work package 5): a fresh,
+    otherwise-empty NuGet package cache + a NuGet.Config containing only this one source restores
+    and builds a `.rsproj` successfully.
+  -->
+  <PropertyGroup>
+    <KubunoRustSdkNupkgPath Condition="'$(KubunoRustSdkNupkgPath)' == ''">C:\kubuno-build\nuget-local-feed\Kubuno.Rust.Sdk.1.0.0.nupkg</KubunoRustSdkNupkgPath>
+  </PropertyGroup>
+  <Target Name="KubunoCheckSdkNupkg" BeforeTargets="Build">
+    <Error Condition="!Exists('$(KubunoRustSdkNupkgPath)')"
+           Text="Kubuno.Rust.Sdk.1.0.0.nupkg not found at '$(KubunoRustSdkNupkgPath)'. Pack it: dotnet pack sdk\Kubuno.Rust.Sdk\Kubuno.Rust.Sdk.csproj -c Release -o C:\kubuno-build\nuget-local-feed -- or pass /p:KubunoRustSdkNupkgPath=&lt;path to the .nupkg&gt;." />
+  </Target>
+  <ItemGroup>
+    <Content Include="$(KubunoRustSdkNupkgPath)">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\SdkFeed\Kubuno.Rust.Sdk.1.0.0.nupkg</Link>
     </Content>
   </ItemGroup>
   <ItemGroup>
