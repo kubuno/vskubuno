@@ -40,6 +40,8 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
         private const uint TransparentMagenta = 0x00FF00FF;
         private static bool s_installed;
         private static int s_iconFailures;
+        // Items typed as object: a VS type in a static field initialiser would load the Shell assembly in unit tests (Layout).
+        private static readonly List<(object Data, string Component)> s_items = new List<(object, string)>();
 
         /// <summary>Set by the VSIX: the image moniker of a component's toolbox icon (null: no icon).</summary>
         public static Func<string, ImageMoniker?>? IconMoniker { get; set; }
@@ -89,8 +91,43 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 }
             }
 
+            // Icons are rendered for the current theme; re-render them when it changes (like VS's own).
+            Microsoft.VisualStudio.PlatformUI.VSColorTheme.ThemeChanged += _ => RefreshIcons();
             toolbox.UpdateToolboxUI();
             KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: added {added} Kubuno component(s) in {registry.FamilyNames.Count} tab(s), {added - s_iconFailures} with their icon.");
+            if (s_iconFailures > 0)
+            {
+                RetryMissingIconsLater();
+            }
+        }
+
+        /// <summary>
+        /// The image library loads the <c>.imagemanifest</c> files asynchronously after startup: a designer
+        /// restored with the solution asks for the Kubuno monikers before the manifest is in, and
+        /// <c>GetImage</c> returns null (observed live). Re-render the icons in the background until they
+        /// all resolve, instead of leaving the Toolbox's placeholder glyph.
+        /// </summary>
+        private static void RetryMissingIconsLater()
+        {
+#pragma warning disable VSSDK007 // no package-owned JoinableTaskFactory reachable from this static installer - same precedent as DesignSurfaceEditingCoordinator.
+            ThreadHelper.JoinableTaskFactory.RunAsync(RetryMissingIconsAsync).FileAndForget("Kubuno/Designer/ToolboxIcons");
+#pragma warning restore VSSDK007
+        }
+
+        private static async System.Threading.Tasks.Task RetryMissingIconsAsync()
+        {
+            for (var attempt = 1; attempt <= 20; attempt++)
+            {
+                await System.Threading.Tasks.Task.Delay(1500).ConfigureAwait(false);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                if (RefreshIcons() == 0)
+                {
+                    KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: every icon resolved after {attempt} retry(ies).");
+                    return;
+                }
+            }
+
+            KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: {s_iconFailures} icon(s) still unresolved; the Toolbox keeps its placeholder glyph for them.");
         }
 
         private static bool AddItem(IVsToolbox toolbox, ComponentMeta component, string tabName)
@@ -116,10 +153,23 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 return false;
             }
 
+            s_items.Add((data, component.Name));
+
             return true;
         }
 
-        /// <summary>16x16 HBITMAP of the component's moniker on a magenta key, or <see cref="IntPtr.Zero"/> (the toolbox then shows its generic glyph).</summary>
+        /// <summary>
+        /// The component's icon as the 16x16 HBITMAP the legacy toolbox API takes (28x28 and 32x32 bitmaps
+        /// were tried live at 175%: the Toolbox reserves the slot but draws nothing, so at high DPI it
+        /// upscales the 16x16 bitmap - there is no moniker-based item API to avoid that), in the icon variant for
+        /// the current theme, on the magenta transparency key (<c>clrTransparent</c>). Checked by decompiling
+        /// the installed Toolbox (<c>Microsoft.VisualStudio.Toolbox.ItemInfo</c>): the Toolbox turns the
+        /// HBITMAP into a WPF bitmap with <c>Image.FromHbitmap</c>, which drops any alpha channel, and then
+        /// makes the pixels equal to the key transparent - so a colour key is the only transparency it
+        /// honours. Fully transparent pixels become the key; anti-aliased edge pixels are blended onto the
+        /// tool-window background (they cannot stay translucent). <see cref="IntPtr.Zero"/> when there is
+        /// no icon (the Toolbox then shows its generic glyph).
+        /// </summary>
         private static IntPtr CreateBitmap(string componentName)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -131,9 +181,9 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                     return IntPtr.Zero;
                 }
 
-                // The toolbox background: the image service picks the Light/Dark/HighContrast variant of the
-                // vector icon from it, and the icon is blended onto it below (anti-aliased edges, no halo).
-                var background = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolboxBackgroundColorKey);
+                // The tool-window background: the image service picks the Light/Dark/HighContrast variant
+                // of the vector icon from it, and anti-aliased edges are blended onto it.
+                var background = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolWindowBackgroundColorKey);
                 var attributes = new VsImageAttributes
                 {
                     StructSize = Marshal.SizeOf(typeof(VsImageAttributes)),
@@ -159,23 +209,29 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                     return IntPtr.Zero;
                 }
 
-                // The legacy toolbox API takes an opaque HBITMAP plus a transparency key: blend the anti-aliased
-                // icon onto the toolbox background instead of thresholding its alpha (which gave jagged edges).
-                using var opaque = new Bitmap(16, 16, PixelFormat.Format24bppRgb);
-                for (var y = 0; y < 16; y++)
+                using var keyed = new Bitmap(source.Width, source.Height, PixelFormat.Format24bppRgb);
+                for (var y = 0; y < source.Height; y++)
                 {
-                    for (var x = 0; x < 16; x++)
+                    for (var x = 0; x < source.Width; x++)
                     {
-                        var pixel = x < source.Width && y < source.Height ? source.GetPixel(x, y) : Color.Transparent;
+                        var pixel = source.GetPixel(x, y);
+                        if (pixel.A < 16)
+                        {
+                            keyed.SetPixel(x, y, Color.FromArgb(255, 0, 255));
+                            continue;
+                        }
+
                         var alpha = pixel.A / 255.0;
-                        opaque.SetPixel(x, y, Color.FromArgb(
+                        var blended = Color.FromArgb(
                             (int)Math.Round((pixel.R * alpha) + (background.R * (1 - alpha))),
                             (int)Math.Round((pixel.G * alpha) + (background.G * (1 - alpha))),
-                            (int)Math.Round((pixel.B * alpha) + (background.B * (1 - alpha)))));
+                            (int)Math.Round((pixel.B * alpha) + (background.B * (1 - alpha))));
+                        // Never produce the key colour by accident inside the glyph.
+                        keyed.SetPixel(x, y, blended.R == 255 && blended.G == 0 && blended.B == 255 ? Color.FromArgb(254, 0, 255) : blended);
                     }
                 }
 
-                return opaque.GetHbitmap();
+                return keyed.GetHbitmap();
             }
             catch (Exception ex) when (ex is COMException or ArgumentException or InvalidOperationException or ExternalException)
             {
@@ -183,6 +239,34 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 KubunoViewsLogHost.Current.WriteException($"[designer] Toolbox: no icon for '{componentName}'", ex);
                 return IntPtr.Zero;
             }
+        }
+
+        /// <summary>Re-renders every Kubuno item's icon for the current theme (<c>IVsToolbox.SetItemInfo</c>); returns how many icons could not be rendered.</summary>
+        private static int RefreshIcons()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (Package.GetGlobalService(typeof(SVsToolbox)) is not IVsToolbox toolbox)
+            {
+                return 0;
+            }
+
+            s_iconFailures = 0;
+
+            foreach (var (data, component) in s_items)
+            {
+                var bitmap = CreateBitmap(component);
+                var info = new TBXITEMINFO
+                {
+                    bstrText = component,
+                    hBmp = bitmap,
+                    clrTransparent = TransparentMagenta,
+                    dwFlags = (uint)(__TBXITEMINFOFLAGS.TBXIF_DONTPERSIST | (bitmap != IntPtr.Zero ? __TBXITEMINFOFLAGS.TBXIF_DELETEBITMAP : 0)),
+                };
+                toolbox.SetItemInfo((Microsoft.VisualStudio.OLE.Interop.IDataObject)data, new[] { info });
+            }
+
+            toolbox.UpdateToolboxUI();
+            return s_iconFailures;
         }
 
         /// <summary>Alphabetical inside a tab, like the WinForms Toolbox (Visual Studio adds the "Pointer" entry on top of each tab itself).</summary>
