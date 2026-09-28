@@ -119,7 +119,9 @@ namespace HwndHostSpike
             Width = 900; Height = 640;
             _before = new TextBox { Text = "WPF before", Margin = new Thickness(4) };
             _after = new TextBox { Text = "WPF after", Margin = new Thickness(4) };
-            _host = new RustDesignSurfaceHost(exe);
+            // --debug-probe: the probe line + Save/Menu demo buttons this harness's checks rely on
+            // (the production designer surface does not show them).
+            _host = new RustDesignSurfaceHost(exe, "--debug-probe");
             // DSG-6: `SetDocumentText` now sends a `setText` protocol message over the surface's own
             // stdin (see that method's own doc) instead of writing a temp file - nothing here needed to
             // change to pick that up.

@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   pane instead), and the Design half now waits for the document to finish loading before pushing its
   text and wiring the edit/selection pipeline (previously a newly opened document got no edit
   pipeline at all). See `src/Kubuno.VisualStudio.Designer/INTEGRATION.md` §10.
+- **Clicking an element in the designer's Design half now selects it.** The surface dropped any
+  click released before its next frame (see the desktop repo's `view_embed` fix); it no longer shows
+  the spike's probe line and Save/Menu test buttons either (`spikes/HwndHostSpike` now passes
+  `--debug-probe` to keep them for its own checks).
 
 - **View menu commands moved to the Tools menu.** "Kubuno Toolbox"/"Kubuno Properties"/"Kubuno View
   Outline" were originally placed under View > Other Windows

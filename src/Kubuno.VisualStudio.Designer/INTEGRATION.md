@@ -488,6 +488,16 @@ Designer", OK (driven through UI Automation + the Win32 list box of the dialog) 
 without crashing; the design surface starts, embeds (`ready hwnd=... parent=Some(...)`) and receives the
 loaded text (`setText (1614 bytes)`, `setDesignMode on=true`); kubuno-views-ls attaches to the buffer.
 
+**Follow-up, same pass - clicks on the surface did nothing.** Mouse input DID reach the surface's
+child window (traced: `WM_MOUSEACTIVATE`, `WM_LBUTTONDOWN`, `WM_SETFOCUS`, `WM_LBUTTONUP`) - no
+airspace/WS_DISABLED/activation problem. `view_embed` only detected a press as a `Frame::mouse_down`
+rising edge between two frames, so a click released before the next frame (a touchpad tap, a
+synthetic click) was lost. It now latches the press from `WM_LBUTTONDOWN`. Verified live after that:
+clicking the `TextField` in the Design half selects it and the XML selection jumps to its element;
+Delete removes it from the XML; Ctrl+Z restores the text byte-for-byte. The spike's probe line and
+Save/Menu demo buttons are now behind `view_embed --debug-probe` (passed only by
+`spikes/HwndHostSpike`).
+
 **Dev-build pitfall found on the way:** do NOT build `view_embed` and `kubuno-views-ls` into the SAME
 `CARGO_TARGET_DIR`. Cargo feature unification differs between the two builds, so the second one
 rewrites `release\kubuno_ui.dll` and the first exe then dies at startup with `0xC0000139`
