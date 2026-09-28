@@ -47,6 +47,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Cargo.MSBuild.Tasks.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.VisualStudio.RustProjectSystem", "src\Kubuno.VisualStudio.RustProjectSystem\Kubuno.VisualStudio.RustProjectSystem.csproj", "{0C294240-346F-488C-96E3-6B84144828DB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.VisualStudio.TemplateWizard", "src\Kubuno.VisualStudio.TemplateWizard\Kubuno.VisualStudio.TemplateWizard.csproj", "{13D74529-E7F0-4520-BC27-818544CD788B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -297,6 +299,18 @@ Global
 		{0C294240-346F-488C-96E3-6B84144828DB}.Release|x64.Build.0 = Release|Any CPU
 		{0C294240-346F-488C-96E3-6B84144828DB}.Release|x86.ActiveCfg = Release|Any CPU
 		{0C294240-346F-488C-96E3-6B84144828DB}.Release|x86.Build.0 = Release|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Debug|x64.Build.0 = Debug|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Debug|x86.Build.0 = Debug|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Release|x64.ActiveCfg = Release|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Release|x64.Build.0 = Release|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Release|x86.ActiveCfg = Release|Any CPU
+		{13D74529-E7F0-4520-BC27-818544CD788B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -321,5 +335,6 @@ Global
 		{E4CD7EF3-7F44-4BCB-8D65-ABF3505BF96F} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{A38398BD-C154-43AF-97E9-80D9641F6B52} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{0C294240-346F-488C-96E3-6B84144828DB} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{13D74529-E7F0-4520-BC27-818544CD788B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

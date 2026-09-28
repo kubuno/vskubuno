@@ -4,7 +4,7 @@
        docs/RSPROJ.md Addendum, lot 7). This file is yours: edit it freely, the same as a
        hand-written or "Generate Visual Studio Projects"-produced .rsproj (docs/RSPROJ.md section 4). -->
   <PropertyGroup>
-    <CargoPackage>$safeprojectname$</CargoPackage>
+    <CargoPackage>$cratename$</CargoPackage>
   </PropertyGroup>
 
 </Project>

@@ -1,0 +1,82 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    docs/RSPROJ.md Addendum (lot 7): a SEPARATE, small wizard assembly, deliberately not folded into
+    Kubuno.VisualStudio.dll. Root cause it fixes: Microsoft.VisualStudio.TemplateWizard.Wizard.
+    CreateManagedInstance ("Create a new project"'s own host for a <WizardExtension>) loads the
+    wizard assembly with a plain Assembly.Load, which cannot see a VSIX's own private extension
+    folder unless that assembly name has its own ProvideCodeBase registration. Registering
+    Kubuno.VisualStudio.dll's OWN name that way (tried first) is self-referential and broke
+    KubunoPackage's load instead (see KubunoPackage.cs's remarks on this exact assembly-level
+    attribute). A distinct assembly name has no such conflict: it is registered from
+    KubunoPackage.cs next to Kubuno.Launch/Kubuno.VisualStudio.Core/Kubuno.VisualStudio.RustProjectSystem,
+    the same working pattern, just for one more name.
+
+    net48 (not net8.0): devenv.exe is a .NET Framework process; a wizard assembly loaded in-proc by
+    Microsoft.VisualStudio.TemplateWizard.Wizard must target the same runtime.
+
+    References only Microsoft.VisualStudio.TemplateWizardInterface (IWizard's own assembly, via a
+    HintPath into this Visual Studio install - there is no NuGet package for it) plus EnvDTE/EnvDTE80
+    (IWizard's method signatures take EnvDTE.Project/EnvDTE.ProjectItem - unavoidable, not optional).
+    Nothing else: no Microsoft.VisualStudio.Shell, no reference to Kubuno.VisualStudio.dll itself -
+    keeping this assembly's own dependency closure minimal is what keeps its ProvideCodeBase
+    registration inert with respect to the package's own load.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Kubuno.VisualStudio.TemplateWizard</RootNamespace>
+    <AssemblyName>Kubuno.VisualStudio.TemplateWizard</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      HintPath rather than a PackageReference: no NuGet package ships this interop assembly, it only
+      exists inside a Visual Studio install (verified: absent from every restored package in this
+      repo's NuGet cache, including Microsoft.VisualStudio.SDK - present under
+      Common7\IDE\PublicAssemblies\, which is on devenv.exe's own default probing path, so
+      Private=False (never copied into this project's own output/the VSIX: devenv.exe already has
+      it loaded).
+    -->
+    <Reference Include="Microsoft.VisualStudio.TemplateWizardInterface">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.TemplateWizardInterface.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!--
+      Microsoft.VisualStudio.TemplateWizardInterface (VS 2026, v18.0.0.0) depends on
+      Microsoft.VisualStudio.Interop v18.0.0.0. The rest of this repo's net48 projects reference
+      EnvDTE/EnvDTE80 through NuGet (Kubuno.Mcp.Bridge, Kubuno.VisualStudio's own csproj), but those
+      packages only ship v17.0.0.0 of Interop, and mixing that with the v18 reference above is a hard
+      compile error (CS1705 "uses a higher version than the referenced assembly") that an explicit
+      higher-version Reference alone does not resolve, because NuGet-authored references keep
+      resolution priority over a plain Reference. Referencing EnvDTE/EnvDTE80/Interop all three
+      straight from this Visual Studio install instead (same HintPath/Private=False pattern as the
+      interface assembly above) keeps every interop assembly this project touches on the SAME v18
+      identity, with nothing left to conflict.
+    -->
+    <Reference Include="Microsoft.VisualStudio.Interop">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Interop.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="EnvDTE">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\envdte.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="EnvDTE80">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\envdte80.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!--
+      $(VsInstallRoot) is not defined outside an SDK-project build driven by Visual Studio itself;
+      resolve it the same way the rest of this repo's docs point at MSBuild.exe (docs/RSPROJ.md,
+      vskubuno/CLAUDE.md section 2) when building from the command line.
+    -->
+    <VsInstallRoot Condition="'$(VsInstallRoot)' == ''">C:\Program Files\Microsoft Visual Studio\18\Community</VsInstallRoot>
+  </PropertyGroup>
+
+</Project>

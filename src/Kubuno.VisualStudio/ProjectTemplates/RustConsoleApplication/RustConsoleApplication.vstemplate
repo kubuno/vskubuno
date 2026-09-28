@@ -34,13 +34,17 @@
       </Folder>
     </Project>
   </TemplateContent>
-  <!-- No <WizardExtension>: Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance loads
-       a wizard assembly with a plain Assembly.Load that cannot see this VSIX's own private extension
-       folder, and the fix tried during docs/RSPROJ.md Addendum (lot 7) - self-registering this
-       package's own assembly as a codeBase - broke KubunoPackage's own load instead (see
-       KubunoPackage.cs's remarks). $safeprojectname$ (VS's own built-in, filesystem-safe
-       substitution) names the crate/package directly below instead of a wizard-computed
-       $saferustcratename$; it is not guaranteed to be a valid Cargo package name for every possible
-       project name (e.g. one starting with a digit), so adjust Cargo.toml/CargoPackage by hand if VS
-       picked something Cargo rejects. -->
+  <!--
+    docs/RSPROJ.md Addendum (lot 7), "Crate-name casing, revisited": Kubuno.VisualStudio.TemplateWizard
+    (a SEPARATE assembly from Kubuno.VisualStudio.dll - see its own csproj header) adds $cratename$
+    (a Cargo-valid package name derived from $safeprojectname$: lower-cased, invalid characters
+    turned into '-', guaranteed to start with a letter) and $moduleid$ ($cratename$ with '-' -> '_')
+    to the replacements dictionary before Cargo.toml/the .rsproj below are expanded. The FIRST attempt
+    at this self-registered Kubuno.VisualStudio.dll's own codeBase and broke KubunoPackage's load;
+    this assembly's registration (KubunoPackage.cs) is not self-referential, so it does not.
+  -->
+  <WizardExtension>
+    <Assembly>Kubuno.VisualStudio.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>Kubuno.VisualStudio.TemplateWizard.CrateNameWizard</FullClassName>
+  </WizardExtension>
 </VSTemplate>

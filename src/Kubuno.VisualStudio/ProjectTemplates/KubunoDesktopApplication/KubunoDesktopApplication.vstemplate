@@ -35,5 +35,9 @@
       </Folder>
     </Project>
   </TemplateContent>
-  <!-- No <WizardExtension> - see RustConsoleApplication.vstemplate's own remarks for why. -->
+  <!-- Kubuno.VisualStudio.TemplateWizard/$cratename$ - see RustConsoleApplication.vstemplate's own remarks. -->
+  <WizardExtension>
+    <Assembly>Kubuno.VisualStudio.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>Kubuno.VisualStudio.TemplateWizard.CrateNameWizard</FullClassName>
+  </WizardExtension>
 </VSTemplate>

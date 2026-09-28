@@ -41,9 +41,10 @@ using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 // VSIX's private folder) - verified live, reproducibly, that a self-referential codeBase entry here
 // instead broke this package's OWN load ("SetSite failed for package [KubunoPackage]" again, this
 // time from Visual Studio loading a second, differently-probed copy of its own hosting assembly).
-// Reverted; RustCrateNameWizard.cs was removed with it (see CHANGELOG.md) rather than ship a wizard
-// that reliably crashes "Create a new project" - a future fix needs a SEPARATE small wizard assembly
-// instead of reusing this package's own.
+// Fixed properly in a follow-up pass with a SEPARATE, small wizard assembly instead of reusing this
+// package's own (Kubuno.VisualStudio.TemplateWizard - see its own csproj header): registering ITS
+// name below is not self-referential, so it does not reproduce the failure above.
+[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.TemplateWizard", CodeBase = @"$PackageFolder$\Kubuno.VisualStudio.TemplateWizard.dll")]
 [assembly: ProvideCodeBase(AssemblyName = "Kubuno.Launch", CodeBase = @"$PackageFolder$\Kubuno.Launch.dll")]
 [assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.Core", CodeBase = @"$PackageFolder$\Kubuno.VisualStudio.Core.dll")]
 [assembly: ProvideCodeBase(AssemblyName = "Kubuno.Cargo", CodeBase = @"$PackageFolder$\Kubuno.Cargo.dll")]
@@ -148,6 +149,7 @@ namespace Kubuno.VisualStudio
 
             var extensionInstallDirectory = GetExtensionInstallDirectory();
             RustSdkFeedInstaller.EnsureRegistered(extensionInstallDirectory);
+            PreloadTemplateWizardAssembly();
             var surfaceExePath = KubunoViewsSurfaceLocator.Locate(extensionInstallDirectory, devBuildDirectory: @"C:\kubuno-build\agent-dsgint\release\examples");
             if (surfaceExePath is not null)
             {
@@ -228,6 +230,34 @@ namespace Kubuno.VisualStudio
             catch (Exception)
             {
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Forces Kubuno.VisualStudio.TemplateWizard.dll into this AppDomain's assembly cache before
+        /// any "Create a new project"/"Add New Item" wizard can run. docs/RSPROJ.md Addendum (lot 7),
+        /// "Crate-name casing, revisited": its own ProvideCodeBase registration (see the
+        /// [assembly: ProvideCodeBase] attributes above) makes Visual Studio's package/MEF loaders
+        /// resolve that assembly correctly, but live-verified NOT to be consulted by
+        /// Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance's own plain
+        /// <c>Assembly.Load(AssemblyName)</c> call (still a FileNotFoundException there even with the
+        /// registration in place) - a separate, undocumented resolution path. Loading it here once,
+        /// eagerly, at package initialization, sidesteps that entirely: once an assembly of a given
+        /// identity is already loaded into the AppDomain, the CLR's own assembly-identity cache
+        /// satisfies any later <c>Assembly.Load</c> for the same identity without re-resolving it,
+        /// regardless of which subsystem asks. Never allowed to fail package load - a wizard that
+        /// cannot compute <c>$cratename$</c> still leaves every template usable via VS's own
+        /// <c>$safeprojectname$</c> fallback (see each .vstemplate's own remarks).
+        /// </summary>
+        private static void PreloadTemplateWizardAssembly()
+        {
+            try
+            {
+                _ = typeof(Kubuno.VisualStudio.TemplateWizard.CrateNameWizard).Assembly.GetName();
+            }
+            catch (Exception ex)
+            {
+                KubunoLog.WriteLine($"Kubuno: could not preload Kubuno.VisualStudio.TemplateWizard.dll - $cratename$/$moduleid$ template substitution will not be available ({ex.Message}).");
             }
         }
 

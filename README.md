@@ -362,15 +362,20 @@ cache with *only* the bundled feed configured restores `Kubuno.Rust.Sdk` and bui
 
 ### "Create a new project" templates (lot 7)
 
-File > New > Project, filtered by Language = **Rust**, offers three project templates - **Rust
+File > New > Project, filtered by Language = **Rust**, offers four project templates - **Rust
 Console Application**, **Rust Library**, **Kubuno Desktop Application** (a `kubuno_ui`/
 `kubuno_controls`/`kubuno_views` window with a starter view, path-dependent on your own
-`desktop/windows` checkout - see the generated `Cargo.toml`'s own comment to point it elsewhere) -
-plus three Add New Item templates: **Kubuno View** (`.kbview` + a same-stem `.rs` code-behind),
-**Rust Module**, **Rust Integration Test**. Project/crate names use VS's own `$safeprojectname$`
-directly (not guaranteed to be a valid Cargo package name for every possible input, e.g. one
-starting with a digit - adjust `Cargo.toml`/`<CargoPackage>` by hand if VS picks something Cargo
-rejects; see `docs/RSPROJ.md`'s lot 7 addendum for why an automatic sanitiser was tried and reverted).
+`desktop/windows` checkout - see the generated `Cargo.toml`'s own comment to point it elsewhere),
+**Kubuno Module** (an Axum/Tokio backend module skeleton - `/health` + `/internal/*`, a
+`sqlx::migrate!`-driven Postgres schema, `module.toml`, `build_kbpkg.sh` - following the module
+conventions the platform's own CLAUDE.md documents) - plus three Add New Item templates: **Kubuno
+View** (`.kbview` + a same-stem `.rs` code-behind), **Rust Module**, **Rust Integration Test**.
+Project/crate names go through a small wizard (`Kubuno.VisualStudio.TemplateWizard`) that computes a
+Cargo-valid `$cratename$` from whatever you typed (lower-cased, invalid characters folded to `-`,
+forced to start with a letter - e.g. `My App 2` -> `my-app-2`) and, for the Kubuno Module template, a
+matching `$moduleid$` (`$cratename$` with `-` -> `_`) for `module.toml`'s `id`/the Postgres schema
+name; see `docs/RSPROJ.md`'s lot 7 addendum for the root cause the first attempt at this hit and how
+the separate-assembly fix avoids it.
 
 ### Solution Explorer: views, code-behind, symbols and dependencies (lot 8)
 

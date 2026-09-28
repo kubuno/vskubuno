@@ -2,15 +2,19 @@
 
 Status: work packages 1-6 implemented (SDK, MSBuild tasks, CPS project type, F5/Ctrl+F5, "Generate
 Visual Studio Projects", Open Folder/rust-analyzer coexistence — see README.md's "Building Rust with
-MSBuild (`.rsproj`)" section); lot 7 ("Create a new project" templates) partially implemented — see
-its own Addendum below for exactly what shipped vs. what is still missing (the `IWizard`-based crate-
-name sanitisation and `cargo generate-lockfile` step, and the "Kubuno module" Axum backend template).
-The templates are now **live-verified in the real dialogs**: "Create a new project" offers "Rust" in
-its language filter and lists the three project templates when searching "rust"; a Rust console
-project created through that dialog builds and runs under F5; "Add New Item" on a `.rsproj` shows a
-"Rust" category with the three item templates (root cause and fix in the addendum's "Root cause"
-section); lot 8 (Solution Explorer nesting, symbol nodes, icons, Dependencies node) implemented and
-live-verified - see its own addendum below.
+MSBuild (`.rsproj`)" section); lot 7 ("Create a new project" templates) implemented, all four
+project templates shipped (Rust Console Application, Rust Library, Kubuno Desktop Application,
+Kubuno Module) — see its own Addendum below for the full history, including the crate-name
+sanitisation wizard's own root cause (now fixed with a separate assembly, see the addendum) and
+`cargo generate-lockfile` (still not shipped, out of scope). The templates are **live-verified in
+the real dialogs**: "Create a new project" offers "Rust" in its language filter and lists all four
+project templates when searching "rust"; a Rust Console Application created through that dialog with
+a project name containing spaces gets a Cargo-valid, sanitised crate name and builds; "Add New Item"
+on a `.rsproj` shows a "Rust" category with the three item templates (root cause and fix in the
+addendum's "Root cause" section); F5 itself is not conclusively re-verified live in this VM (see the
+addendum - pre-existing, environment-level flakiness, not a build/content problem). Lot 8 (Solution
+Explorer nesting, symbol nodes, icons, Dependencies node) implemented and live-verified - see its own
+addendum below.
 
 Work package 5 ("Generate Visual Studio Projects", live-verified against `Z:\src\desktop\windows`
 through a scratch mirror — see its own section below): the generator/planner
@@ -388,43 +392,94 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
   this machine", and `kubuno-ui` et al. are not (yet) published with git tags the way `kubuno/core`'s
   shared crates are (CLAUDE.md §3) - switch to `git = "https://github.com/kubuno/desktop", tag =
   "..."` once they are.
-- **Not shipped this pass: a "Kubuno module" (Axum backend) project template.** Out of this
-  session's actual scope (three project templates + three item templates, not four); left for a
-  follow-up, tracked here so the addendum stays accurate about what exists on disk.
+- **Kubuno Module** (a follow-up pass shipped this): an Axum/Tokio backend module skeleton
+  following the Kubuno module conventions (vskubuno's own CLAUDE.md, referencing the platform's
+  CLAUDE.md sections 4/7 - separate process, SQLx/PostgreSQL with a schema dedicated to this
+  module, `module.toml`, port allocation, `/internal/*` guarded by `X-Internal-Secret`, zero
+  `unwrap()`, tracing, security response headers), mirroring `notes`/`tasks`'s real layout trimmed
+  to a minimal, buildable-on-this-machine skeleton: `Cargo.toml` (a git-tagged `kubuno-seccomp`
+  dependency, exactly like a real module - `cargo build`/`cargo clippy -- -D warnings` verified
+  clean live), `module.toml`, `src/main.rs` (`/health` + `/internal/ping`), `migrations/postgres/`
+  (one `sqlx::migrate!`-compatible up/down pair creating the module's own schema),
+  `config.toml.example`, `build_kbpkg.sh` (copied byte-identical from a real module - see its own
+  `ReplaceParameters="false"` remark below), `CHANGELOG.md`, `README.md`. `ProjectTypeTag=Kubuno`,
+  same as the desktop application template.
 - Item templates (*Add New Item*): **Kubuno view** (`$fileinputname$.kbview` + same-stem
   `$fileinputname$.rs` code-behind), **Rust module file**, **Rust integration test** (under `tests/`,
   reusing `$safeprojectname$` for the crate-under-test's name).
-- **Crate-name sanitisation and `cargo generate-lockfile` were tried and reverted, not shipped.**
-  The plan was an `IWizard` (`RustCrateNameWizard`) computing a Cargo-safe `$saferustcratename$` and
-  running `cargo generate-lockfile` after creation. Live-verified blocker:
-  `Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance` loads the wizard assembly
-  with a plain `Assembly.Load` that cannot see a VSIX's own private extension folder by default - the
-  fix tried (self-registering `Kubuno.VisualStudio.dll`'s own codeBase via
-  `[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio", ...)]`, the same mechanism
-  `KubunoPackage.cs` already uses for its *other* dependencies) reproducibly broke `KubunoPackage`'s
-  own load instead (`SetSite failed for package [KubunoPackage]`, VS loading a second, differently-
-  probed copy of its own hosting assembly) - confirmed twice by toggling the attribute on/off against
-  a clean profile. Reverted; every template now uses VS's own `$safeprojectname$` directly for the
-  crate/package name (filesystem-safe, but not guaranteed to be a valid Cargo package name for every
-  possible project name - e.g. one starting with a digit - documented in each template's own
-  comments). A real fix needs a *separate*, small wizard assembly (its own `.dll`, not reusing
-  `Kubuno.VisualStudio.dll`) so its codeBase registration cannot collide with the package's own load;
-  not attempted here given the time already spent finding this root cause.
+- **Crate-name sanitisation: shipped in a follow-up pass, as a separate wizard assembly.**
+  `src/Kubuno.VisualStudio.TemplateWizard/` (net48, referencing only
+  `Microsoft.VisualStudio.TemplateWizardInterface` + `EnvDTE`/`EnvDTE80`/`Microsoft.VisualStudio.
+  Interop` - all three pinned to this VS install's own copies via `HintPath`, not NuGet packages,
+  to keep every interop assembly this project touches on the SAME v18 identity: mixing the
+  NuGet-packaged EnvDTE 17.x with `TemplateWizardInterface`'s own v18 `Microsoft.VisualStudio.
+  Interop` dependency is a hard `CS1705` compile error, not just an `MSB3277` warning). Its
+  `CrateNameWizard : IWizard` adds two tokens to every template's replacements dictionary before
+  content expansion: `$cratename$` (Cargo-valid: lower-cased, non-`[a-z0-9_-]` characters folded to
+  `-`, runs collapsed, forced to start with a letter - `"My App 2"` -> `my-app-2`, live-verified
+  through the real dialog) and `$moduleid$` (`$cratename$` with `-` -> `_`, used by the Kubuno
+  Module template's `module.toml`/schema name). All four project templates now use `$cratename$`
+  for `Cargo.toml`'s `[package] name` and the `.rsproj`'s `CargoPackage`, in place of the previous
+  plain `$safeprojectname$`.
+  - **The root cause the previous attempt hit (self-registering `Kubuno.VisualStudio.dll`'s own
+    codeBase, breaking `KubunoPackage`'s load) does not reproduce for a separate assembly** - its
+    own `[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.TemplateWizard", ...)]` in
+    `KubunoPackage.cs`, next to the others, is not self-referential.
+  - **A second, separate problem surfaced once that was fixed, live-verified**:
+    `Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance`'s own `Assembly.Load`
+    still could not find the wizard assembly even with the `ProvideCodeBase` registration correctly
+    merged into the registry (confirmed present; other assemblies' identical registrations do
+    resolve for MEF/package loads) - a `FileNotFoundException`, VS's own "ce modèle a tenté de
+    charger un assembly de composant" dialog. Whatever resolves `RuntimeConfiguration\
+    dependentAssembly\codeBase` for MEF/package loads is evidently not consulted on this
+    particular code path. Fixed by forcing the assembly into the AppDomain eagerly instead of
+    relying on that path at all: `KubunoPackage.InitializeAsync` now calls a new
+    `PreloadTemplateWizardAssembly()` (`typeof(CrateNameWizard).Assembly.GetName()`, wrapped in
+    try/catch, never allowed to fail package load) before any wizard can possibly run - once an
+    assembly of a given identity is already loaded, the CLR's own identity cache satisfies any
+    later `Assembly.Load` for that identity regardless of which subsystem asks.
+  - `cargo generate-lockfile` (the other half of the original, reverted attempt) is still not
+    shipped - out of this pass's scope, no `Cargo.lock` is generated by any template.
+  (History: the first attempt reused `Kubuno.VisualStudio.dll` itself as the wizard assembly and
+  was reverted for the `KubunoPackage`-breaking reason above; this pass's separate-assembly fix is
+  what that revert's own note called for.)
 - Also fixed as part of getting a template to load at all: **`Kubuno.Mcp.Bridge` had no
   `ProvideCodeBase` entry**, a latent, pre-existing gap unrelated to lot 7 (`KubunoPackage.
   StartMcpBridgeAsync` references it directly) - hit only once something else forced eager
   resolution of it; same fix pattern as the four assemblies already registered.
-- **Test, live**: `dte.Solution.AddFromTemplate` against all three project templates' installed
-  `.vstemplate` files created each one correctly (`$safeprojectname$` substituted into
-  `Cargo.toml`/`.rsproj`/`src/*.rs`/`src/*.kbview`, right folder layout); all three then **built
-  successfully through the real Solution Build Manager** in a hand-written `.sln` referencing them
-  (`RustConsoleApp -> ...\RustConsoleApp.exe`, `KubunoDesktopApp -> ...\KubunoDesktopApp.exe`, 3/3
-  succeeded, 0 failed). **Not conclusively re-verified live this session: F5 on the console/desktop
-  app** - `dte.Debugger.Go`/a synthetic F5 keystroke against the experimental instance repeatedly
-  hung past 60-120s in this sandboxed VM regardless of which template/project was started
-  (environment-level flakiness, not reproduced as a build/content problem). F5's own mechanism
-  (`RustDebugLaunchProvider`, the `-C prefer-dynamic` PATH fix) is unmodified, shared code already
-  live-verified for other `.rsproj` projects in work package 4/5's own tests above.
+- **Test, live**: `dte.Solution.AddFromTemplate` against all four project templates' installed
+  `.vstemplate` files created each one correctly (`$cratename$`/`$moduleid$`/`$safeprojectname$`
+  substituted into `Cargo.toml`/`.rsproj`/`module.toml`/`src/*.rs`/`src/*.kbview`/
+  `migrations/postgres/*.sql`, right folder layout, including a project named `My Module 2` ->
+  `Cargo.toml`'s `name = "my-module-2"`, `module.toml`'s `id = "my_module_2"`); all four then
+  **built successfully via `cargo build`** (Kubuno Module: 0 warnings, `cargo clippy -- -D
+  warnings` clean too) and **through the real Solution Build Manager** (`dte.Solution.SolutionBuild.
+  Build`, `LastBuildInfo = 0`, i.e. 0 failed).
+  - **Re-verified through the REAL "Create a new project" dialog this pass** (UI Automation on the
+    actual dialog, not `AddFromTemplate`): searching "rust" lists all **four** templates including
+    **Kubuno Module**; created a **Rust Console Application** named `My App 2` at a real location -
+    `Cargo.toml` came back with `name = "my-app-2"` (the crate-name sanitiser, live, through the
+    real wizard pipeline) - and it built with 0 failures through `dte.Solution.SolutionBuild.Build`.
+  - **F5 still not conclusively verified live** (same, pre-existing limitation this addendum
+    already documented, re-confirmed this pass): the Debug toolbar's target button went into its
+    launching/disabled state and never completed within the time this session waited, both via a
+    synthetic `F5` keystroke and via invoking the "Local Rust Debugger" split button directly (DTE's
+    `ExecuteCommand("Debug.Start")` itself returned `RPC_E_CALL_REJECTED` while a launch was already
+    in flight). `devenv`'s own DTE stayed responsive throughout (not a full hang), only the launch
+    itself never finished. F5's own mechanism (`RustDebugLaunchProvider`, the `-C prefer-dynamic`
+    PATH fix) is unmodified by this pass; `cargo build` producing a working `my-app-2.exe` at the
+    expected `$(CARGO_TARGET_DIR)` was confirmed directly.
+  - **Two unrelated environment gotchas hit and worked around while re-verifying live, worth
+    recording**: (1) the VSSDK `Deploy` target's copy of five specific assemblies (`Kubuno.Cargo`,
+    `Kubuno.Launch`, `Kubuno.Mcp.Bridge`, `Kubuno.TestAdapter`, `Kubuno.VisualStudio.Core`) into the
+    experimental extension folder is reproducibly racy in this VM - they land as 0-byte files with a
+    later timestamp than the rest, causing `KubunoPackage` to fail to load
+    (`FileNotFoundException` loading whichever one a given run needs first); the fix is to re-copy
+    those five from the project's own `bin\Debug\` after a deploy and before launching, or rebuild
+    again. (2) a `.sln`'s own `.vs\<name>\` cache remembers a "this project type is unsupported"
+    migration decision **per solution file**, independent of whether the underlying cause (here, a
+    not-yet-merged `rsproj.pkgdef` on a freshly reset experimental hive) is later fixed - reopening
+    the same `.sln` keeps replaying the same stale verdict until that `.vs\` folder is deleted.
 
 **Root cause of "the dialog never showed the templates" (fixed, live-verified).**
 `dte.Solution.AddFromTemplate` (above) proves a `.vstemplate` *file* is instantiable - it says
@@ -474,11 +529,9 @@ templates arrive through a plain `.vstman`/`ProjectTemplate` asset exactly like 
   code page, so a section sign or an em dash turned into mojibake in the generated `.rsproj`,
   `Cargo.toml` and `main.rs`. Those characters were replaced.
 
-- **Crate-name casing, revisited**: given the `IWizard` route is confirmed broken for a VSIX-hosted
-  assembly (above) and a second, separate wizard assembly was judged out of scope for the time
-  remaining, every template's crate/package name stays `$safeprojectname$` as VS substitutes it
-  (whatever case the developer typed) rather than a lowercased/hyphenated transform - documented
-  directly in each generated `Cargo.toml`/`.rsproj`'s own comment and in README.md's lot 7 section.
+- **Crate-name casing, revisited again**: shipped in a follow-up pass. Every project template's
+  crate/package name is now `$cratename$` (Cargo-valid, computed by `Kubuno.VisualStudio.
+  TemplateWizard`'s `CrateNameWizard` - see its own bullet above), not VS's raw `$safeprojectname$`.
 
 ## Addendum — Solution Explorer nesting like WinForms/WPF (lot 8)
 

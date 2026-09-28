@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **"Create a new project" crashed with "ce modèle a tenté de charger un assembly de composant"
+  when instantiating any project template**: `Microsoft.VisualStudio.TemplateWizard.Wizard.
+  CreateManagedInstance`'s own `Assembly.Load` does not resolve `Kubuno.VisualStudio.TemplateWizard`
+  through the same `ProvideCodeBase` registry mechanism MEF/package loads use (confirmed correctly
+  merged into the registry; still not found on this particular code path). `KubunoPackage.
+  InitializeAsync` now preloads that assembly eagerly at package activation
+  (`PreloadTemplateWizardAssembly`), so it is always already in the AppDomain's identity cache by
+  the time any wizard can run.
 - **"Open With... > Kubuno View Designer" silently fell back to the plain text editor**: the
   `[ProvideEditorLogicalView]` GUIDs registered for `KbviewEditorFactory` were mislabeled (the
   "Designer" and "TextView" comments pointed at the real `LOGVIEWID_TextView`/`LOGVIEWID_
@@ -39,6 +47,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **"Kubuno Module" project template** (`docs/RSPROJ.md`'s lot 7 addendum): a backend module
+  skeleton (Axum/Tokio, `/health` + `/internal/*` guarded by `X-Internal-Secret`, a
+  `sqlx::migrate!`-driven Postgres schema, `module.toml`, `config.toml.example`, `build_kbpkg.sh`,
+  `CHANGELOG.md`, `README.md`) following the Kubuno module conventions, mirroring a real module's
+  layout trimmed to a minimal, buildable-on-this-machine skeleton - `cargo build`/`cargo clippy --
+  -D warnings` verified clean. "Create a new project" now lists four Rust/Kubuno templates instead
+  of three.
+- **Crate-name sanitisation for every "Create a new project" Rust/Kubuno template**
+  (`docs/RSPROJ.md`'s lot 7 addendum, "Crate-name casing, revisited again"): a new, separate
+  `Kubuno.VisualStudio.TemplateWizard` assembly (net48, referencing only
+  `Microsoft.VisualStudio.TemplateWizardInterface`/`EnvDTE`/`EnvDTE80`/`Microsoft.VisualStudio.
+  Interop`) computes a Cargo-valid `$cratename$` from the project name (e.g. `My App 2` ->
+  `my-app-2`, live-verified through the real dialog) and, for the Kubuno Module template, a
+  matching `$moduleid$` for `module.toml`'s `id`/the Postgres schema name. Every project template's
+  `Cargo.toml`/`.rsproj` now uses `$cratename$` in place of VS's raw `$safeprojectname$`.
 - **Solution Explorer shows Rust projects like WinForms/WPF ones (`docs/RSPROJ.md`'s lot 8
   addendum)**:
   - a view's code-behind is nested under it: `main_view.rs` appears under `main_view.kbview` when

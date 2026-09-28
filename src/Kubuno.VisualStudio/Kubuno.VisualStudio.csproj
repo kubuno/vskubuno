@@ -553,6 +553,17 @@
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
+    <!--
+      docs/RSPROJ.md Addendum (lot 7), "Crate-name casing, revisited": the separate IWizard assembly
+      the "Create a new project" templates' <WizardExtension> load - see its own csproj header for
+      why it is a standalone project rather than folded into this one.
+    -->
+    <ProjectReference Include="..\Kubuno.VisualStudio.TemplateWizard\Kubuno.VisualStudio.TemplateWizard.csproj">
+      <Project>{13d74529-e7f0-4520-bc27-818544cd788b}</Project>
+      <Name>Kubuno.VisualStudio.TemplateWizard</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
     <!-- Kubuno.TestAdapter's own INTEGRATION.md #3.1: the Cargo Test Explorer adapter. -->
     <ProjectReference Include="..\Kubuno.TestAdapter\Kubuno.TestAdapter.csproj">
       <Project>{6bd0b996-c446-4040-a5a3-0052b5864ed6}</Project>
