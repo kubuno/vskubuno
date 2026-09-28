@@ -696,9 +696,11 @@ test for real" rule) - tracked as a known limitation rather than shipped as an u
 association itself is confirmed working - `IVsImageService2.GetImageMonikerForFile` in the
 experimental instance returns `7d2b8c4e-…:2` for `a.rs` and `…:3` for `b.kbview` (C# files return
 VS's own). The images live in XAML resources of `Kubuno.VisualStudio.RustProjectSystem.dll`, which
-the image service resolves by assembly NAME; inside a `.rsproj`, CPS has always loaded that assembly,
-but in Open Folder nothing did - the likely cause of the blank icons. `KubunoPackage` now preloads it
-(`PreloadImageResourceAssembly`); the Open Folder rendering itself still needs a visual check.
+the image service resolves by assembly NAME. Preloading that assembly from `KubunoPackage` (so Open
+Folder, where CPS never loads it, would find it) was tried and REVERTED: verified visually that it
+blanked every Kubuno icon, inside `.rsproj` projects too - the Toolbox showed the image service's grey
+"missing image" placeholder - most likely a second copy of the assembly loaded from another context,
+which a by-name pack URI cannot pick. Open Folder file icons therefore remain an open issue.
 Symbol expansion in Open Folder: unchanged - `SymbolTreeProvider.CreateForHierarchyItem` is never
 reached for an Open Folder file node; isolating why needs a debugger attached to the Folder View's
 attached-collection lookup (not attempted blind).

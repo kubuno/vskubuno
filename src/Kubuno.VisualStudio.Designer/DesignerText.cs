@@ -38,8 +38,23 @@ namespace Kubuno.VisualStudio.Designer
         public static string CategoryAction => T("Action", "Action");
 
         public static string NameDescription => T(
-            "The element's x:Name: a stable identity used by handlers and focus (not a generated field).",
-            "Le x:Name de l'élément : identité stable utilisée par les gestionnaires et le focus (pas un champ généré).");
+            "Name of the element, used to refer to it from the code (for example in handler names).",
+            "Nom de l'élément, utilisé pour y faire référence dans le code (par exemple dans les noms de gestionnaires).");
+
+        /// <summary>User documentation of the layout attributes every element accepts (Dock, Anchor, X, Y, Width, Height).</summary>
+        public static string CommonAttributeDoc(string name)
+        {
+            switch (name)
+            {
+                case "Dock": return T("Edge of the parent panel the element is docked to, or Fill to take the remaining space.", "Bord du panneau parent auquel l'élément est ancré, ou Fill pour occuper l'espace restant.");
+                case "Anchor": return T("Edges of the parent panel the element stays attached to when it is resized, for example Top, Left.", "Bords du panneau parent auxquels l'élément reste attaché quand il est redimensionné, par exemple Top, Left.");
+                case "X": return T("Distance from the left edge of the parent panel, in pixels.", "Distance depuis le bord gauche du panneau parent, en pixels.");
+                case "Y": return T("Distance from the top edge of the parent panel, in pixels.", "Distance depuis le bord supérieur du panneau parent, en pixels.");
+                case "Width": return T("Width of the element, in pixels.", "Largeur de l'élément, en pixels.");
+                case "Height": return T("Height of the element, in pixels.", "Hauteur de l'élément, en pixels.");
+                default: return string.Empty;
+            }
+        }
 
         public static string InvalidBool(string value) => T(
             $"'{value}' is not a valid value: expected true, false or a {{Binding ...}} expression.",

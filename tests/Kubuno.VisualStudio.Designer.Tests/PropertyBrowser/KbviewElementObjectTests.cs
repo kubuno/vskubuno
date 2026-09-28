@@ -42,7 +42,10 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
             var text = properties.Find("Text", false);
             // CategoryAttribute itself localizes the standard WinForms category names to the UI culture.
             Assert.AreEqual(new CategoryAttribute("Appearance").Category, text.Category);
-            StringAssert.StartsWith(text.Description, "The label");
+            StringAssert.StartsWith(text.Description, "Text displayed on the button");
+
+            DesignerText.ForceFrench = true;
+            Assert.AreEqual("Texte affiché sur le bouton.", Create("0.1").Element.GetProperties().Find("Text", false).Description);
 
             foreach (var layout in new[] { "Dock", "Anchor", "X", "Y", "Width", "Height" })
             {

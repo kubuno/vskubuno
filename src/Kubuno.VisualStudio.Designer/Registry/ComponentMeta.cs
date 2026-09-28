@@ -19,6 +19,12 @@ namespace Kubuno.VisualStudio.Designer.Registry
 
         public string? Doc { get; set; }
 
+        /// <summary>The French user documentation (<c>doc_fr</c>), or null.</summary>
+        public string? DocFr { get; set; }
+
+        /// <summary>The user documentation in Visual Studio's UI language (French when available, else English).</summary>
+        public string? LocalizedDoc => DesignerText.IsFrench && !string.IsNullOrEmpty(DocFr) ? DocFr : Doc;
+
         /// <summary>Toolbox grouping, e.g. <c>"core"</c>, <c>"choice"</c>, <c>"containers"</c>, <c>"data"</c>, <c>"display"</c>, <c>"text"</c> (§5: "family groups the toolbox exactly as registry::families::ALL_FAMILIES already groups the table internally").</summary>
         public string Family { get; set; } = string.Empty;
 

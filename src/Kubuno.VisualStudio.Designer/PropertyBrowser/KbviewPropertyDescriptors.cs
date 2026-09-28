@@ -145,7 +145,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             : base(@event?.Name ?? throw new ArgumentNullException(nameof(@event)), new Attribute[]
             {
                 new CategoryAttribute(DesignerText.CategoryAction),
-                new DescriptionAttribute(@event.Doc ?? string.Empty),
+                new DescriptionAttribute(@event.LocalizedDoc ?? string.Empty),
             })
         {
             Event = @event;
@@ -182,7 +182,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             : base(@event?.Name ?? throw new ArgumentNullException(nameof(@event)), new Attribute[]
             {
                 new CategoryAttribute(DesignerText.CategoryAction),
-                new DescriptionAttribute(@event.Event.Doc ?? string.Empty),
+                new DescriptionAttribute(@event.Event.LocalizedDoc ?? string.Empty),
                 new RefreshPropertiesAttribute(RefreshProperties.Repaint),
             })
         {

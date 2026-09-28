@@ -176,7 +176,6 @@ namespace Kubuno.VisualStudio
             var extensionInstallDirectory = GetExtensionInstallDirectory();
             RustSdkFeedInstaller.EnsureRegistered(extensionInstallDirectory);
             PreloadTemplateWizardAssembly();
-            PreloadImageResourceAssembly();
             var surfaceExePath = KubunoViewsSurfaceLocator.Locate(extensionInstallDirectory, devBuildDirectory: @"C:\kubuno-build\agent-dsgint\release\examples");
             if (surfaceExePath is not null)
             {
@@ -285,26 +284,6 @@ namespace Kubuno.VisualStudio
             catch (Exception ex)
             {
                 KubunoLog.WriteLine($"Kubuno: could not preload Kubuno.VisualStudio.TemplateWizard.dll - $cratename$/$moduleid$ template substitution will not be available ({ex.Message}).");
-            }
-        }
-
-        /// <summary>
-        /// Loads Kubuno.VisualStudio.RustProjectSystem.dll - the assembly whose WPF resources hold the file and
-        /// control icons of RustProject.imagemanifest / KubunoControls.imagemanifest - at package load. The image
-        /// service resolves those pack URIs by assembly NAME; inside a .rsproj, CPS has always loaded the assembly
-        /// already, but in Open Folder nothing does, which is the likely reason the .rs/.kbview file icons were
-        /// blank there (docs/RSPROJ.md lot 8). Same "identity cache" reasoning as <see cref="PreloadTemplateWizardAssembly"/>.
-        /// Never allowed to fail package load.
-        /// </summary>
-        private static void PreloadImageResourceAssembly()
-        {
-            try
-            {
-                _ = typeof(Kubuno.VisualStudio.RustProjectSystem.RustProjectCapabilities).Assembly.GetName();
-            }
-            catch (Exception ex)
-            {
-                KubunoLog.WriteLine($"Kubuno: could not preload Kubuno.VisualStudio.RustProjectSystem.dll - file icons may be missing outside .rsproj projects ({ex.Message}).");
             }
         }
 

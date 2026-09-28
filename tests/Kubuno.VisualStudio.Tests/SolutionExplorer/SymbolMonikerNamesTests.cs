@@ -60,7 +60,7 @@ namespace Kubuno.VisualStudio.Tests.SolutionExplorer
                 Assert.Inconclusive("registry fixture not found next to this test project: " + fixture);
             }
 
-            var names = System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(fixture), "^    \"name\": \"(\\w+)\"", System.Text.RegularExpressions.RegexOptions.Multiline);
+            var names = System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(fixture), "^    \"name\"\\s*:\\s*\"(\\w+)\"", System.Text.RegularExpressions.RegexOptions.Multiline);
             Assert.IsTrue(names.Count > 40);
             foreach (System.Text.RegularExpressions.Match name in names)
             {

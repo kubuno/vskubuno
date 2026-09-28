@@ -39,6 +39,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
     {
         private const uint TransparentMagenta = 0x00FF00FF;
         private static bool s_installed;
+        private static int s_iconFailures;
 
         /// <summary>Set by the VSIX: the image moniker of a component's toolbox icon (null: no icon).</summary>
         public static Func<string, ImageMoniker?>? IconMoniker { get; set; }
@@ -89,7 +90,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             }
 
             toolbox.UpdateToolboxUI();
-            KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: added {added} Kubuno component(s) in {registry.FamilyNames.Count} tab(s).");
+            KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: added {added} Kubuno component(s) in {registry.FamilyNames.Count} tab(s), {added - s_iconFailures} with their icon.");
         }
 
         private static bool AddItem(IVsToolbox toolbox, ComponentMeta component, string tabName)
@@ -149,6 +150,12 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 var uiObject = imageService.GetImage(moniker, attributes);
                 if (uiObject is null || ErrorHandler.Failed(uiObject.get_Data(out var data)) || data is not Bitmap source)
                 {
+                    s_iconFailures++;
+                    if (s_iconFailures == 1)
+                    {
+                        KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: the image service returned no bitmap for '{componentName}' ({moniker.Guid}:{moniker.Id}; data={(uiObject is null ? "none" : "not a Bitmap")}).");
+                    }
+
                     return IntPtr.Zero;
                 }
 
@@ -172,6 +179,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             }
             catch (Exception ex) when (ex is COMException or ArgumentException or InvalidOperationException or ExternalException)
             {
+                s_iconFailures++;
                 KubunoViewsLogHost.Current.WriteException($"[designer] Toolbox: no icon for '{componentName}'", ex);
                 return IntPtr.Zero;
             }

@@ -22,5 +22,11 @@ namespace Kubuno.VisualStudio.Designer.Registry
         public string? Default { get; set; }
 
         public string? Doc { get; set; }
+
+        /// <summary>The French user documentation (<c>doc_fr</c>), or null.</summary>
+        public string? DocFr { get; set; }
+
+        /// <summary>The user documentation in Visual Studio's UI language (French when available, else English).</summary>
+        public string? LocalizedDoc => DesignerText.IsFrench && !string.IsNullOrEmpty(DocFr) ? DocFr : Doc;
     }
 }

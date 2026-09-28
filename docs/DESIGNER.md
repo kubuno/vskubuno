@@ -1252,7 +1252,9 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   are used on the `.kbview` element nodes of Solution Explorer; Rust code symbols keep VS's own
   `KnownMonikers`. The legacy toolbox API only takes an opaque 16x16 `HBITMAP` plus a transparency key,
   so the icon is rendered by the image service against the toolbox background (which also picks the
-  right theme variant) and alpha-blended onto that background - no jagged key edges.
+  right theme variant) and alpha-blended onto that background - no jagged key edges. (Do not preload the
+  icons' resource assembly from the package: verified that it blanked every Kubuno icon - see
+  docs/RSPROJ.md lot 8.)
 - **Double-click** a Toolbox item → `IVsToolboxUser.ItemPicked` → `ToolboxInsertionPlanner`: into the
   selected element if it accepts the component, else its nearest ancestor that does (a port of
   `design::can_drop_component`), appended, `X/Y/Width/Height` only inside a `DockAnchor` container;
@@ -1280,7 +1282,8 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   registry, no CLR type per component. Rows: `(Name)` (= `x:Name`), every registry property, and the
   layout attributes every element accepts (`Dock`, `Anchor`, `X`, `Y`, `Width`, `Height`), in
   WinForms-like categories (`PropertyCategoryMap`; `CategoryAttribute` localizes the standard names),
-  with the registry doc as the description. Values are string-typed on purpose: a `{Binding ...}` is
+  with the registry doc as the description - short user sentences, the registry's `doc_fr` when
+  Visual Studio runs in French (implementation notes live in code comments of the registry). Values are string-typed on purpose: a `{Binding ...}` is
   shown and edited as-is for any kind; bool/enum get a non-exclusive dropdown of their variants;
   numbers/bools/enums are validated (`AttributeValueRules`, a bad value shows the grid's own "invalid
   property value" dialog). Bold = written and different from the registry default; "Reset" removes the
@@ -1328,6 +1331,10 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   untranslated, so an untranslated Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z is handled by the pane directly
   (`RustDesignSurfaceHost.UnhandledSurfaceKey`). (The filter-keys service is now taken from the global
   provider - the package's own `QueryService` did not hand it out, so no key ever reached VS before.)
+
+- **Selection on the surface** (kubuno-views `design::paint_adorners`): the selected element gets a frame
+  3 DIP outside its bounds (visible on an accent-coloured Button) with WinForms-style grab handles - filled
+  when it can be resized there (an Anchor child), hollow otherwise.
 
 ### Live verification (experimental instance, `KubunoLot8App.rsproj`)
 

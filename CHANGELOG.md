@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     ...}` values are shown and edited as text. Editing a value rewrites just that attribute in the XML
     (one undo step) and the preview follows. The combo box at the top lists every element of the view
     (name and type) and selects the one you pick.
+    Descriptions are short user-facing sentences, in French when Visual Studio runs in French (the
+    component registry now exports `doc_fr`).
   - **Events tab (⚡)**: lists the element's events; double-click an event to create its handler
     (attribute + Rust stub in the code-behind `.rs`, which opens at the new function) or to go to an
     existing one; type a name to create a handler with that name.
@@ -49,9 +51,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   dispatched by a single listener, and a move/resize is applied as one undo step.
 - **Keys forwarded from the design surface never reached Visual Studio's accelerators** (the
   `IVsFilterKeys2` service was not obtained from the package's own service provider).
-- **`.rs`/`.kbview` file icons in Open Folder**: the assembly holding the icon resources is now loaded
-  with the package (inside a `.rsproj` it always was, through the project system) - see
-  docs/RSPROJ.md lot 8 for what remains in Open Folder.
 
 ### Fixed
 

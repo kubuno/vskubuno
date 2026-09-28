@@ -17,6 +17,6 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
 
         public string? Icon => Component.Icon;
 
-        public string? Doc => Component.Doc;
+        public string? Doc => Component.LocalizedDoc;
     }
 }

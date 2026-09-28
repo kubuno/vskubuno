@@ -88,7 +88,7 @@ namespace Kubuno.VisualStudio.Designer.Properties
             {
                 Text = row.Name,
                 VerticalAlignment = VerticalAlignment.Center,
-                ToolTip = row.Property.Doc,
+                ToolTip = row.Property.LocalizedDoc,
                 Opacity = opacity,
             };
             label.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.ToolWindowTextBrushKey);
@@ -232,7 +232,7 @@ namespace Kubuno.VisualStudio.Designer.Properties
             {
                 Text = row.Name,
                 VerticalAlignment = VerticalAlignment.Center,
-                ToolTip = row.Event.Doc,
+                ToolTip = row.Event.LocalizedDoc,
             };
             label.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.ToolWindowTextBrushKey);
             Grid.SetColumn(label, 0);

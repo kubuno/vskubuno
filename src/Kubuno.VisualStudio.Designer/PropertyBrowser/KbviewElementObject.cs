@@ -30,15 +30,15 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
     /// </summary>
     public sealed class KbviewElementObject : ICustomTypeDescriptor, IComponent
     {
-        private static readonly (string Name, PropKind Kind, string Doc)[] CommonAttributes =
+        private static readonly (string Name, PropKind Kind)[] CommonAttributes =
         {
-            // kubuno-views-ls/src/common_attrs.rs's COMMON_ATTRIBUTES, same order.
-            ("Dock", PropKind.CreateEnum(new[] { "Top", "Bottom", "Left", "Right", "Fill" }), "Which band of the parent <Panel> this child occupies (Dock layout engine)."),
-            ("Anchor", PropKind.String, "A comma-combination of Top/Bottom/Left/Right - which edges of the parent this child stays pinned to (Anchor layout engine)."),
-            ("X", PropKind.F32, "The child's left offset in DIP (Anchor layout engine)."),
-            ("Y", PropKind.F32, "The child's top offset in DIP (Anchor layout engine)."),
-            ("Width", PropKind.F32, "The child's width in DIP."),
-            ("Height", PropKind.F32, "The child's height in DIP."),
+            // kubuno-views-ls/src/common_attrs.rs's COMMON_ATTRIBUTES, same order (user docs: DesignerText.CommonAttributeDoc).
+            ("Dock", PropKind.CreateEnum(new[] { "Top", "Bottom", "Left", "Right", "Fill" })),
+            ("Anchor", PropKind.String),
+            ("X", PropKind.F32),
+            ("Y", PropKind.F32),
+            ("Width", PropKind.F32),
+            ("Height", PropKind.F32),
         };
 
         private readonly IKbviewElementHost _host;
@@ -133,15 +133,15 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
                 {
                     if (seen.Add(property.Name))
                     {
-                        list.Add(new KbviewAttributePropertyDescriptor(property.Name, property.Name, property.Kind, property.Default, property.Doc, PropertyCategoryMap.For(property.Name, property.Kind)));
+                        list.Add(new KbviewAttributePropertyDescriptor(property.Name, property.Name, property.Kind, property.Default, property.LocalizedDoc, PropertyCategoryMap.For(property.Name, property.Kind)));
                     }
                 }
 
-                foreach (var (name, kind, doc) in CommonAttributes)
+                foreach (var (name, kind) in CommonAttributes)
                 {
                     if (seen.Add(name))
                     {
-                        list.Add(new KbviewAttributePropertyDescriptor(name, name, kind, defaultValue: null, doc, PropertyCategoryMap.Category.Layout));
+                        list.Add(new KbviewAttributePropertyDescriptor(name, name, kind, defaultValue: null, DesignerText.CommonAttributeDoc(name), PropertyCategoryMap.Category.Layout));
                     }
                 }
 
