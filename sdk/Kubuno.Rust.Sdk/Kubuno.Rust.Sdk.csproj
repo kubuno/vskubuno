@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Packages Kubuno.Rust.Sdk (docs/RSPROJ.md §2) as a NuGet MSBuildSdk package, mirroring
+    Microsoft.VisualStudio.JavaScript.SDK's own split: a pure-MSBuild SDK (Sdk/Sdk.props,
+    Sdk/Sdk.targets) plus its task assembly (tasks/<tfm>/Kubuno.Cargo.MSBuild.Tasks.dll — built
+    separately; see README.md's "Building Rust with MSBuild (.rsproj)" section for the exact
+    command), no dependency on any CPS/VSIX assembly.
+
+    Packaging (not just a bare `Sdk="…"` path import) matters for a reason specific to this
+    workspace, not just fidelity to the JS SDK's model: this repo lives on a mapped network drive
+    (Z:), and loading Kubuno.Cargo.MSBuild.Tasks.dll directly from Z: fails outright under
+    `dotnet build` ("Type must be a type provided by the runtime.") — the same class of
+    loader-from-remote-source restriction already documented for MSTest in README.md's "Tests"
+    section, confirmed live by isolating it to a minimal repro (identical assembly, only the source
+    drive changed). Restoring this SDK through ordinary NuGet lands its content in the LOCAL
+    machine's package cache (%userprofile%\.nuget\packages, always on C:) regardless of where the
+    referencing .rsproj sits, which sidesteps the problem entirely — see samples/NuGet.config for
+    the local feed this repo's own samples restore it from until it is ever published.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>Kubuno.Rust.Sdk</PackageId>
+    <Version>1.0.0</Version>
+    <PackageType>MSBuildSdk</PackageType>
+    <!-- This project compiles no code of its own; only Sdk/** and tasks/** (below) are packed. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <IncludeSymbols>false</IncludeSymbols>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <NoWarn>$(NoWarn);NU5128;NU5100</NoWarn>
+    <Authors>Kubuno</Authors>
+    <Description>Pure MSBuild SDK for building a Cargo package from a .rsproj (Build/Rebuild/Clean/Run/Test mapped to cargo).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Sdk\**" Pack="true" PackagePath="Sdk\" />
+    <None Include="tasks\**" Pack="true" PackagePath="tasks\" Condition="Exists('tasks')" />
+  </ItemGroup>
+
+</Project>

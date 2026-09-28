@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **`.rsproj`: a real MSBuild project type for Cargo packages, work packages 1-2 of
+  `docs/RSPROJ.md`** (`<Project Sdk="Kubuno.Rust.Sdk/1.0.0">` in a normal `.sln`, no CPS/VSIX code
+  yet - see the README's new "Building Rust with MSBuild (`.rsproj`)" section):
+  - **`sdk/Kubuno.Rust.Sdk/`** (work package 1): a pure MSBuild SDK (`Sdk/Sdk.props`,
+    `Sdk/Sdk.targets`, no CPS dependency, packaged as a NuGet `MSBuildSdk` package like
+    `Microsoft.VisualStudio.JavaScript.SDK`). Maps Build/Rebuild/Clean/Run/Test to cargo;
+    `$(Configuration)` (Debug/Release, or any other name) to a cargo profile; `<CargoTargetDir>` to
+    `CARGO_TARGET_DIR` (env var fallback, never overriding an explicit value); `<CargoManifestPath>`
+    (honoured everywhere as `--manifest-path`) defaulting to the sibling `Cargo.toml`; and exposes
+    `$(TargetPath)` as the built executable's path (authoritative once `CargoBuild` has run, a
+    `Kubuno.Launch.ExecutableResolver`-matching path-convention fallback otherwise).
+  - **`src/Kubuno.Cargo.MSBuild.Tasks/`** (work package 2): `CargoBuild`/`CargoTest`/`CargoFetch`
+    MSBuild tasks, reusing `Kubuno.Cargo`'s existing `CargoCommand`/`CargoMessageParser`/
+    `ProcessRunner` to run `cargo … --message-format=json-diagnostic-rendered-ansi` and turn each
+    diagnostic into a `Log.LogError`/`LogWarning` call with file/line/column/code (a clickable
+    Error List entry) plus the full rustc-rendered text as a plain message. Multi-targeted
+    `net472`/`net10.0`, selected by `$(MSBuildRuntimeType)`, so the same package loads under both
+    the classic, .NET Framework MSBuild.exe Visual Studio ships and `dotnet build`'s own MSBuild -
+    getting this to load in process under `dotnet build` surfaced that this workspace's own mapped
+    drive (`Z:`) cannot be the SDK's resolution source (confirmed live with a minimal repro:
+    `MSB4061: Type must be a type provided by the runtime.`, the same class of loader-from-remote-
+    source restriction already documented for MSTest), which is why the SDK is a real NuGet package
+    rather than a bare path import.
+  - `Kubuno.Cargo.Commands.CargoCommand`/`CargoCommandKind` gained a `Fetch` case (`cargo fetch`,
+    the SDK's NuGet-free `Restore` target).
+  - New `samples/hello-rust/hello-rust.rsproj` + `samples/hello-rust.sln` + `samples/NuGet.config`
+    (a local feed for the SDK) verify the whole thing end to end: `msbuild
+    samples\hello-rust\hello-rust.rsproj -t:Build -p:Configuration=Debug|Release` and `-t:Clean`,
+    `dotnet build` on the same `.rsproj`, a no-op rebuild correctly skipping `CoreCompile`, and a
+    deliberately introduced compile error surfacing as a clickable, correctly-positioned
+    `src\main.rs(4,20): error E0425` Error List entry - all verified live from the command line
+    (both MSBuild.exe and `dotnet build`).
+  - New `tests/Kubuno.Cargo.MSBuild.Tasks.Tests` (7 cases) pins `CargoDiagnosticLogging`'s mapping
+    from a parsed diagnostic to `Log.LogError`/`LogWarning`/`LogMessage`, against the same real
+    captured `cargo build` fixtures `Kubuno.Cargo.Tests` already parses.
+  - `Kubuno.Cargo.MSBuild.Tasks`, `Kubuno.Rust.Sdk` and their tests project are now part of
+    `Kubuno.VisualStudio.sln`.
+  - Not done yet (later `docs/RSPROJ.md` work packages, out of this change's scope): the CPS
+    project factory/capabilities/file glob in the VSIX (work package 3), the Debug launch provider
+    and Debug/Build rule pages (work package 4), the "Generate Visual Studio projects" command
+    (work package 5), and the Open Folder/rust-analyzer coexistence pass (work package 6).
+
 ### Fixed
 
 - **F5/Ctrl+F5 failed with a "std-*.dll est introuvable" dialog for every generated launch

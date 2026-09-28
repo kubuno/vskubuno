@@ -31,6 +31,9 @@ namespace Kubuno.Cargo.Commands
 
         public static CargoCommand Run() => new CargoCommand(CargoCommandKind.Run);
 
+        /// <summary>`cargo fetch`: downloads dependencies without building — the MSBuild SDK's Restore hook.</summary>
+        public static CargoCommand Fetch() => new CargoCommand(CargoCommandKind.Fetch);
+
         /// <summary>Passed as <c>--manifest-path</c> when set (path to a specific Cargo.toml).</summary>
         public string? ManifestPath { get; set; }
 
@@ -225,6 +228,8 @@ namespace Kubuno.Cargo.Commands
                     return "clean";
                 case CargoCommandKind.Run:
                     return "run";
+                case CargoCommandKind.Fetch:
+                    return "fetch";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Kind), Kind, "Unknown Cargo command kind.");
             }

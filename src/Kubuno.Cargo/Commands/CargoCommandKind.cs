@@ -8,5 +8,6 @@ namespace Kubuno.Cargo.Commands
         Test,
         Clean,
         Run,
+        Fetch,
     }
 }

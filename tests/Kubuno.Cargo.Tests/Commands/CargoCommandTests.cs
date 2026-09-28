@@ -11,6 +11,7 @@ namespace Kubuno.Cargo.Tests.Commands
         [InlineData(CargoCommandKind.Test, "test")]
         [InlineData(CargoCommandKind.Clean, "clean")]
         [InlineData(CargoCommandKind.Run, "run")]
+        [InlineData(CargoCommandKind.Fetch, "fetch")]
         public void Subcommand_name_matches_kind(CargoCommandKind kind, string expectedSubcommand)
         {
             var command = kind switch
@@ -20,6 +21,7 @@ namespace Kubuno.Cargo.Tests.Commands
                 CargoCommandKind.Test => CargoCommand.Test(),
                 CargoCommandKind.Clean => CargoCommand.Clean(),
                 CargoCommandKind.Run => CargoCommand.Run(),
+                CargoCommandKind.Fetch => CargoCommand.Fetch(),
                 _ => throw new System.NotSupportedException(),
             };
 

@@ -167,6 +167,97 @@ Debugging the extension's own C# code: open `Kubuno.VisualStudio.sln` in a norma
 Visual Studio instance and press F5 on the `Kubuno.VisualStudio` project - its debug settings
 already launch `devenv.exe /rootsuffix Exp`.
 
+## Building Rust with MSBuild (`.rsproj`)
+
+`docs/RSPROJ.md` designs a real MSBuild/CPS project type for Cargo packages, so a `.rsproj` can sit
+in a mixed `.sln` next to `.csproj`/`.vcxproj` with real Debug/Release configurations and
+build-before-F5, instead of Open Folder's workspace-only mode. This repository currently ships
+work packages 1-2 of that design (a pure MSBuild SDK, no CPS/VSIX code yet - see "Known
+limitations" below):
+
+- **`sdk/Kubuno.Rust.Sdk/`** (work package 1) - `Sdk/Sdk.props`/`Sdk/Sdk.targets`: `<Project
+  Sdk="Kubuno.Rust.Sdk/1.0.0">` with an optional `<CargoPackage>`/`<CargoBin>` maps
+  Build/Rebuild/Clean/Run/Test to cargo, `Debug`/`Release` (or any other `$(Configuration)`) to a
+  cargo profile, `<CargoTargetDir>` to `CARGO_TARGET_DIR` (falling back to the environment variable
+  of the same name, never overriding an explicit value), and exposes `$(TargetPath)` as the built
+  `.exe`'s path (the real `compiler-artifact` path once a build has actually run; a path-convention
+  fallback - the same one `Kubuno.Launch.ExecutableResolver` already uses - beforehand or when an
+  incremental build is skipped). `Kubuno.Rust.Sdk.csproj` packages it as a NuGet `MSBuildSdk`
+  package, mirroring `Microsoft.VisualStudio.JavaScript.SDK`'s own split (a pure-MSBuild SDK, no
+  CPS dependency).
+- **`src/Kubuno.Cargo.MSBuild.Tasks/`** (work package 2) - `CargoBuild`/`CargoTest`/`CargoFetch`
+  MSBuild tasks, reusing `Kubuno.Cargo`'s existing `CargoCommand`/`CargoMessageParser`/
+  `ProcessRunner` (the same code the Open Folder integration's `cargo build
+  --message-format=json-diagnostic-rendered-ansi` support already uses) to run cargo and turn each
+  parsed diagnostic into a `Log.LogError`/`LogWarning` call with file/line/column/code - a clickable
+  Visual Studio Error List entry - plus the full rustc-rendered text as a plain message. Multi-
+  targeted `net472`/`net10.0`, selected in `Sdk.targets` by `$(MSBuildRuntimeType)`, so the same
+  package loads under both the classic MSBuild.exe Visual Studio ships and `dotnet build`'s own
+  MSBuild.
+
+### Building and packaging the SDK
+
+```powershell
+$env:PATH = "$env:USERPROFILE\.cargo\bin;C:\Program Files\dotnet;$env:PATH"
+
+# 1. Build the task assembly (both TFMs) and stage it where Kubuno.Rust.Sdk.csproj expects it.
+dotnet build src\Kubuno.Cargo.MSBuild.Tasks\Kubuno.Cargo.MSBuild.Tasks.csproj -c Release
+New-Item -ItemType Directory -Force sdk\Kubuno.Rust.Sdk\tasks\net472, sdk\Kubuno.Rust.Sdk\tasks\net10.0
+Copy-Item src\Kubuno.Cargo.MSBuild.Tasks\bin\Release\net472\*.dll  sdk\Kubuno.Rust.Sdk\tasks\net472\
+Copy-Item src\Kubuno.Cargo.MSBuild.Tasks\bin\Release\net10.0\*.dll,*.deps.json sdk\Kubuno.Rust.Sdk\tasks\net10.0\
+
+# 2. Pack the SDK into a local feed (a real NuGet package, not just a path import - see below for why).
+dotnet pack sdk\Kubuno.Rust.Sdk\Kubuno.Rust.Sdk.csproj -c Release -o C:\kubuno-build\nuget-local-feed
+```
+
+`sdk\Kubuno.Rust.Sdk\tasks\` is a build output (gitignored), not source - rebuild it after any
+change to `Kubuno.Cargo.MSBuild.Tasks`. **This workspace's own mapped drive (`Z:`) cannot be the
+SDK's resolution source**: loading `Kubuno.Cargo.MSBuild.Tasks.dll` directly from `Z:` fails
+`dotnet build` outright (`MSB4061: Type must be a type provided by the runtime.` - the same class
+of loader-from-remote-source restriction already documented for MSTest under "Tests" below,
+confirmed live with a minimal repro assembly), which is why packaging through NuGet (restored into
+the local machine's package cache, always on `C:`) is the real fix, not just a fidelity choice
+matching `Microsoft.VisualStudio.JavaScript.SDK`.
+
+### Testing `samples/hello-rust.sln`
+
+`samples/hello-rust/hello-rust.rsproj` (`<Project Sdk="Kubuno.Rust.Sdk/1.0.0">`,
+`<CargoPackage>hello-rust</CargoPackage>`) and `samples/hello-rust.sln` exercise the SDK against
+this repository's existing manual-testing fixture. `samples/NuGet.config` points the `Sdk="…"`
+resolution at the local feed built above (once published, a real `nuget.org`/private-feed source
+replaces it - see `docs/RSPROJ.md`'s own "SDK distribution" risk note):
+
+```powershell
+$msbuild = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
+& $msbuild samples\hello-rust\hello-rust.rsproj -t:Restore -p:Configuration=Debug
+& $msbuild samples\hello-rust\hello-rust.rsproj -t:Build -p:Configuration=Debug   # -> $(TargetPath)
+& $msbuild samples\hello-rust\hello-rust.rsproj -t:Build -p:Configuration=Release
+& $msbuild samples\hello-rust\hello-rust.rsproj -t:Clean -p:Configuration=Debug
+
+# dotnet build works too (same SDK, same NuGet.config):
+dotnet build samples\hello-rust\hello-rust.rsproj -c Debug
+```
+
+Building the whole `.sln` (`& $msbuild samples\hello-rust.sln -t:Build ...` / `dotnet build
+samples\hello-rust.sln`) builds the `.rsproj` correctly, but its own solution-wide restore pass
+prints a benign `NU1503`/"project to restore not found" warning for it first - VS's/NuGet's
+solution restore graph generator does not know what to do with a project that has no
+`PackageReference`/`packages.config` of its own (only an `Sdk="…"` import, which is resolved by a
+separate MSBuild mechanism *before* restore ever runs); restoring the `.rsproj` directly, as shown
+above, is the reliable path and produces zero warnings.
+
+A second no-op `-t:Build` correctly logs `La cible est ignorée "CoreCompile"` (skipped, inputs/
+outputs up to date) - `CoreCompile`'s own `Inputs`/`Outputs` only decide whether to shell out to
+cargo at all; cargo still does its own fine-grained incremental work either way. To see a real
+compiler error surface as a clickable, correctly-positioned Error List entry, copy
+`samples\hello-rust` somewhere under `C:\` (never edit an exe/task assembly in place while it is
+loaded from `Z:` - see above), introduce a compile error (e.g. reference an undefined identifier in
+`src\main.rs`), and build:
+
+```
+src\main.rs(4,20): error E0425: cannot find value `undefined_identifier` in this scope
+```
+
 ## Third-party code
 
 `src/Kubuno.VisualStudio/Grammars/` ships a TextMate grammar for Rust vendored from Visual Studio

@@ -1,0 +1,78 @@
+<Project>
+
+  <!--
+    Kubuno.Rust.Sdk — pure MSBuild SDK for a .rsproj (docs/RSPROJ.md work package 1). Modeled on
+    Microsoft.VisualStudio.JavaScript.SDK: a project using this SDK never lists .rs files or
+    repeats [dependencies] — it names one Cargo package (<CargoPackage>) and otherwise defers to
+    Cargo itself. This file (the implicit TOP import of `<Project Sdk="Kubuno.Rust.Sdk/…">`) only
+    sets defaults; Sdk.targets (the implicit BOTTOM import) does the actual work, since several
+    defaults below (CargoProfile in particular) depend on properties (Configuration) the project
+    body may still set after this file runs.
+
+    No Microsoft.Common.props/.targets is imported here on purpose: this project type has no
+    managed compiler, no assembly references and no NuGet-restored dependencies of its own, so the
+    much larger C#/VB build graph would only need stubbing out again (docs/RSPROJ.md §2's own
+    "Stubs" list) for no benefit. Build/Rebuild/Clean/Run/Restore are defined directly in
+    Sdk.targets instead.
+  -->
+
+  <PropertyGroup>
+    <!-- Standard MSBuild defaults every project is expected to have, even a non-C#/VB one — a
+         .sln's ProjectConfigurationPlatforms section, and `-p:Configuration=Release`, both assume
+         these exist. -->
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
+
+    <!-- A fake, unused TargetFramework so `dotnet build`/`dotnet restore` recognize this as an
+         SDK-style project worth evaluating at all (mirrors the JS SDK's own documented trick —
+         see docs/RSPROJ.md §2). Never used to resolve any actual .NET reference (NoStdLib below). -->
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net6.0</TargetFramework>
+    <TargetFrameworks Condition="'$(TargetFrameworks)' == ''"></TargetFrameworks>
+
+    <!-- No managed compilation happens for a .rsproj: cargo is the only compiler. -->
+    <NoStdLib>true</NoStdLib>
+    <NoCompilerStandardLib>true</NoCompilerStandardLib>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+
+    <!-- New project-type GUID for `.rsproj` (docs/RSPROJ.md §3) — used by the VSIX-side CPS
+         project factory registration (work package 3, not part of this SDK). -->
+    <DefaultProjectTypeGuid Condition="'$(DefaultProjectTypeGuid)' == ''">{6C7C4CB5-6E36-4C6F-9C6F-9C6E9B4D4C13}</DefaultProjectTypeGuid>
+
+    <!-- Cargo.toml is the single source of truth (docs/RSPROJ.md §1): default to the manifest
+         sitting right next to the .rsproj, honoured everywhere as cargo's manifest-path flag
+         (§2). A workspace member project overrides this explicitly. -->
+    <CargoManifestPath Condition="'$(CargoManifestPath)' == ''">$(MSBuildProjectDirectory)\Cargo.toml</CargoManifestPath>
+
+    <!-- CARGO_TARGET_DIR convention (CLAUDE.md §5/§9): an explicit MSBuild property always wins;
+         otherwise fall back to the environment variable of the same name (the convention this
+         workspace already documents for CARGO_TARGET_DIR); when neither is set, leave it empty so
+         Sdk.targets/the CargoBuild task let Cargo resolve its own default (`<manifest dir>/target`
+         or `.cargo/config.toml`'s own `build.target-dir`) instead of guessing it here. -->
+    <CargoTargetDir Condition="'$(CargoTargetDir)' == '' and '$(CARGO_TARGET_DIR)' != ''">$(CARGO_TARGET_DIR)</CargoTargetDir>
+
+    <!-- Which [[bin]] to build/run when a package declares more than one; empty means "let cargo
+         decide" (its own default-run/only-bin/first-bin fallback chain). -->
+    <CargoBin Condition="'$(CargoBin)' == ''"></CargoBin>
+
+    <!-- Extra, verbatim cargo arguments a project can append (e.g. the locked/frozen flags). -->
+    <CargoExtraArgs Condition="'$(CargoExtraArgs)' == ''"></CargoExtraArgs>
+
+    <!--
+      The task assembly this SDK ships (work package 2) — resolved relative to this very file,
+      exactly like the JS SDK locates its own task DLL, so the SDK works whether it is restored
+      from NuGet (Sdk="Kubuno.Rust.Sdk/1.0.0") or resolved locally while developing this repo (see
+      README.md's "Building Rust with MSBuild (.rsproj)" section). Two TFMs are shipped side by
+      side, picked by $(MSBuildRuntimeType) ("Full" = the classic, .NET Framework MSBuild.exe VS
+      ships; anything else = the .NET (Core) host `dotnet build`/`dotnet msbuild` uses) — a plain
+      netstandard2.0 task assembly was tried first and does NOT load under the Core host without
+      this split (see Kubuno.Cargo.MSBuild.Tasks.csproj's own comment for what actually failed).
+    -->
+    <_KubunoCargoTasksTfm Condition="'$(_KubunoCargoTasksTfm)' == '' and '$(MSBuildRuntimeType)' == 'Full'">net472</_KubunoCargoTasksTfm>
+    <_KubunoCargoTasksTfm Condition="'$(_KubunoCargoTasksTfm)' == ''">net10.0</_KubunoCargoTasksTfm>
+    <_KubunoCargoTasksAssembly Condition="'$(_KubunoCargoTasksAssembly)' == ''">$(MSBuildThisFileDirectory)..\tasks\$(_KubunoCargoTasksTfm)\Kubuno.Cargo.MSBuild.Tasks.dll</_KubunoCargoTasksAssembly>
+  </PropertyGroup>
+
+</Project>

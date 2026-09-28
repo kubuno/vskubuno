@@ -19,3 +19,8 @@ target/
 **/*.rs.bk
 Cargo.lock
 !samples/**/Cargo.lock
+
+# Kubuno.Rust.Sdk's task assembly is a build output (Kubuno.Cargo.MSBuild.Tasks + its
+# dependency closure), not source — build it with the command in README.md's "Building Rust
+# with MSBuild (.rsproj)" section before using the SDK from a path/local feed.
+sdk/Kubuno.Rust.Sdk/tasks/
