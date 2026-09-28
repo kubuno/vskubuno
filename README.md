@@ -5,6 +5,11 @@ Rust + `kubuno_ui`) can be developed inside Visual Studio. See `docs/ARCHITECTUR
 full roadmap; this repository currently implements phase 1a: rust-analyzer over LSP, TextMate
 syntax coloring, and rustfmt (via Format Document / format-on-save).
 
+**New to this extension?** `docs/GETTING-STARTED.md` is a step-by-step guide: prerequisites,
+installing the VSIX, creating a project, the `.rsproj` build/F5/Test Explorer workflow, the
+`.kbview` view designer, Open Folder mode, the MCP bridge for Claude, and troubleshooting. This
+README is the full reference; the getting-started guide is the shorter path to a working setup.
+
 ## Repository layout
 
 ```

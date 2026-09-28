@@ -16,8 +16,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- netstandard2.0 has no built-in JSON support; the package ships its own implementation. -->
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <!--
+      netstandard2.0 has no built-in JSON support; the package ships its own implementation.
+      Pinned to 9.0.0 - not the latest 8.0.x - to match the version Microsoft.VisualStudio.SDK's
+      own net462 dependency closure already resolves to (see Kubuno.VisualStudio.csproj's own
+      PackageReference comment): pinning below that floor made NuGet's own version-unification
+      report a downgrade (NU1605) on every build of Kubuno.VisualStudio.csproj, a legacy-format
+      csproj where that is a warning rather than a build error, but still worth fixing at the
+      source rather than leaving standing.
+    -->
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
   </ItemGroup>
 
 </Project>

@@ -8,6 +8,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **`docs/GETTING-STARTED.md`**: a step-by-step guide for a developer installing the extension for
+  the first time - prerequisites, installing the VSIX, creating a project from the four templates,
+  the `.rsproj` build/F5/Test Explorer workflow, the `.kbview` designer, Open Folder mode and its
+  limitations, the MCP bridge for Claude, and troubleshooting (first-run screens, the template
+  cache needing a second Visual Studio start after install, a missing-DLL dialog meaning a PATH
+  problem, SMB directory-cache races on a network drive, and more). Linked from `README.md`.
+
+### Fixed
+
+- **The known pre-existing `NU1605` restore warning on `Kubuno.VisualStudio.csproj` is fixed**, not
+  just documented: `Kubuno.Cargo.csproj`'s and `Kubuno.VisualStudio.csproj`'s own `System.Text.Json`
+  `PackageReference` were pinned to `8.0.5`, below the `9.0.0` floor `Microsoft.VisualStudio.SDK`'s
+  own net462 dependency closure already resolves to - a plain version-alignment fix, both pins (and
+  the matching `Content` item path that ships `System.Text.Json.dll` inside the VSIX) now read
+  `9.0.0`. A clean `Restore` and `Build` of the whole solution now report 0 warnings.
+- **A clean build of the whole solution silently shipped a `Kubuno.VisualStudio.vsix` missing its
+  entire MCP bridge** (`tools\kubuno-vs-mcp\` - no `kubuno-vs-mcp.exe`, no dependency DLLs), with 0
+  build errors or warnings to say so. Root cause: `kubuno-vs-mcp.exe`'s own `Content` item was a
+  plain top-level `<ItemGroup>` wildcard glob (`$(KubunoMcpOutputDir)**\*.*`) - those are evaluated
+  once, at project EVALUATION time, before any target (including the `ReferenceOutputAssembly=false`
+  `ProjectReference` to `Kubuno.Mcp.csproj` that builds it) has run; on a from-clean checkout nothing
+  has built `kubuno-vs-mcp.exe` yet at that point, so the glob silently matched zero files - the
+  pre-existing `KubunoCheckToolExes` exists-check never caught it either, since by the time THAT
+  target ran (`BeforeTargets="Build"`), the exe already existed (built earlier, as a side effect of
+  `ResolveProjectReferences`), so the check passed while the file glob's own timing was still wrong.
+  Fixed by moving the glob into a new `KubunoAddMcpContent` target, `AfterTargets=
+  "ResolveProjectReferences"` (deliberately not ALSO `BeforeTargets="Build"` - found live, comparing
+  MSBuild diagnostic-verbosity target IDs, that combining the two instead pins a target right before
+  the outer `Build` target's own near-empty body, which for this VSSDK project only starts after
+  VSSDK's own `GetVsixSourceItems`/`CreateVsixContainer` - the steps that actually snapshot/package
+  `@(Content)` - have already run, always too late no matter how the target is otherwise triggered),
+  so the `Content` items are created dynamically once the exe is guaranteed to be on disk, ahead of
+  `GetVsixSourceItems`. Verified live end to end: a genuinely clean `Restore` then `Build` of
+  `Kubuno.VisualStudio.sln` (no manual pre-build of `Kubuno.Mcp.csproj`) now produces a VSIX whose
+  `tools\kubuno-vs-mcp\` holds `kubuno-vs-mcp.exe` and its full dependency closure.
+
 - **The `.kbview` designer now works like the Windows Forms designer, with Visual Studio's own tool
   windows** (docs/DESIGNER.md section 11):
   - **Toolbox**: while a `.kbview` designer is the active document, Visual Studio's Toolbox lists the

@@ -322,8 +322,6 @@
            Text="kubuno_ui.dll not found beside kubuno-views-ls.exe in '$(KubunoViewsLsDir)'. kubuno-views-ls.exe imports it (kubuno-ui is a Rust dylib) and must ship with the kubuno_ui.dll of the same cargo build." />
     <Error Condition="'@(KubunoRustStdDll)' == ''"
            Text="Rust's std-*.dll not found in '$(KubunoRustStdDir)'. kubuno-views-ls.exe imports it (-C prefer-dynamic); pass /p:KubunoRustStdDir=&lt;rustc --print sysroot&gt;\lib\rustlib\x86_64-pc-windows-msvc\lib\ for the toolchain that built it." />
-    <Error Condition="!Exists('$(KubunoMcpOutputDir)kubuno-vs-mcp.exe')"
-           Text="kubuno-vs-mcp.exe not found under '$(KubunoMcpOutputDir)'. It should have been built automatically as part of this solution (src\Kubuno.Mcp\Kubuno.Mcp.csproj) - build that project first, or pass /p:KubunoMcpOutputDir=&lt;its output folder&gt;." />
   </Target>
 
   <ItemGroup>
@@ -344,17 +342,54 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>tools\%(Filename)%(Extension)</Link>
     </Content>
-    <!--
-      Every file Kubuno.Mcp's own build produces (kubuno-vs-mcp.exe/.dll/.deps.json/.runtimeconfig.json
-      and its dependency DLLs, e.g. ModelContextProtocol*.dll) - it is a framework-dependent net8.0
-      exe, not self-contained, so all of these are required for it to actually run once shipped.
-    -->
-    <Content Include="$(KubunoMcpOutputDir)**\*.*">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>tools\kubuno-vs-mcp\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Content>
   </ItemGroup>
+
+  <!--
+    kubuno-vs-mcp.exe's own Content item CANNOT be a plain top-level <ItemGroup> glob like the ones
+    above: those are fine because their source files (kubuno-views-ls.exe, view_embed.exe) are built
+    OUTSIDE this solution, before this project is even opened, so they already exist on disk the
+    moment MSBuild evaluates this file's items - which happens once, during the static EVALUATION
+    pass, before any target (including this project's own ProjectReference-driven build of
+    Kubuno.Mcp) executes. kubuno-vs-mcp.exe, by contrast, is built AS PART of this same solution
+    build (the ReferenceOutputAssembly=false ProjectReference below) - on a clean checkout, nothing
+    has built it yet at evaluation time, so a static `Content Include="$(KubunoMcpOutputDir)**\*.*"`
+    silently matches ZERO files and the VSIX ships without the MCP bridge, with no error (found live:
+    a full clean build produced a Kubuno.VisualStudio.vsix missing tools\kubuno-vs-mcp\ entirely,
+    despite 0 build errors/warnings - KubunoCheckToolExes's own Error above never caught it either,
+    since by the time THAT target ran - BeforeTargets="Build" - Kubuno.Mcp had, by then, already been
+    built by ResolveProjectReferences, so the exists-check passed; only the item glob's own timing
+    was wrong). Fixed by moving the glob into a target - AfterTargets="ResolveProjectReferences" ONLY,
+    deliberately WITHOUT also pinning it BeforeTargets="Build": found live, by comparing MSBuild
+    diagnostic-verbosity target IDs, that combining the two pins a target right before the outer
+    "Build" target's own (near-empty) body, which for this VSSDK project only starts after its own
+    huge DependsOn chain - including VSSDK's GetVsixSourceItems (the target that actually snapshots
+    @(Content) with IncludeInVSIX=true for packaging) and CreateVsixContainer - has ALREADY run; a
+    target pinned that way is always too late to contribute Content items, no matter how it is
+    triggered. AfterTargets alone inserts right after ResolveProjectReferences's own, much earlier,
+    invocation (confirmed live: target id ~46 of ~1750, versus GetVsixSourceItems at id ~1711) - the
+    same target that actually builds a ReferenceOutputAssembly=false ProjectReference via its own
+    <MSBuild> task, so items are created dynamically at EXECUTION time, once the exe is guaranteed to
+    be on disk, well before GetVsixSourceItems collects them - not matched once at evaluation time
+    (too early, exe does not exist yet) and not added too late either (past GetVsixSourceItems).
+    Verified live end to end: a genuinely clean `msbuild Kubuno.VisualStudio.sln -t:Restore` then
+    `-t:Build` (no manual pre-build of Kubuno.Mcp.csproj) produced a Kubuno.VisualStudio.vsix whose
+    tools\kubuno-vs-mcp\ contains kubuno-vs-mcp.exe and its full dependency closure. Every file
+    Kubuno.Mcp's own build produces (kubuno-vs-mcp.exe/.dll/.deps.json/.runtimeconfig.json and its
+    dependency DLLs, e.g. ModelContextProtocol*.dll) - it is a framework-dependent net8.0 exe, not
+    self-contained, so all of these are required for it to actually run once shipped.
+  -->
+  <Target Name="KubunoAddMcpContent" AfterTargets="ResolveProjectReferences">
+    <Error Condition="!Exists('$(KubunoMcpOutputDir)kubuno-vs-mcp.exe')"
+           Text="kubuno-vs-mcp.exe not found under '$(KubunoMcpOutputDir)'. It should have been built automatically as part of this solution (src\Kubuno.Mcp\Kubuno.Mcp.csproj) - build that project first, or pass /p:KubunoMcpOutputDir=&lt;its output folder&gt;." />
+    <ItemGroup>
+      <KubunoMcpOutputFile Include="$(KubunoMcpOutputDir)**\*.*" />
+      <Content Include="@(KubunoMcpOutputFile)">
+        <IncludeInVSIX>true</IncludeInVSIX>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Link>tools\kubuno-vs-mcp\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      </Content>
+    </ItemGroup>
+  </Target>
 
   <!--
     docs/RSPROJ.md work package 5's SDK-distribution decision: `Kubuno.Rust.Sdk`'s packed .nupkg
@@ -384,7 +419,7 @@
   </ItemGroup>
   <ItemGroup>
     <!--
-      Kubuno.Cargo (netstandard2.0) depends on System.Text.Json 8.0.5, which - unlike
+      Kubuno.Cargo (netstandard2.0) depends on System.Text.Json 9.0.0, which - unlike
       Newtonsoft.Json - .NET Framework 4.8 does not ship, plus its own netstandard2.0 polyfill
       closure. These resolve and copy-local correctly into bin\Debug (proving the reference
       itself is fine), but - unlike a project's own direct <Reference>/<ProjectReference> output -
@@ -399,7 +434,7 @@
       pin above, and its dependencies' versions as resolved into obj\project.assets.json; bump
       these together if System.Text.Json's version ever changes).
     -->
-    <Content Include="$(NuGetPackageRoot)system.text.json\8.0.5\lib\net462\System.Text.Json.dll">
+    <Content Include="$(NuGetPackageRoot)system.text.json\9.0.0\lib\net462\System.Text.Json.dll">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>System.Text.Json.dll</Link>
@@ -489,16 +524,20 @@
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.14.60" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="17.12.19" ExcludeAssets="runtime" />
     <!--
-      Kubuno.Cargo (netstandard2.0) hard-depends on System.Text.Json 8.0.5, which - unlike
+      Kubuno.Cargo (netstandard2.0) hard-depends on System.Text.Json 9.0.0, which - unlike
       Newtonsoft.Json - .NET Framework 4.8 does not ship: referencing it directly here (rather
       than relying on it flowing transitively from the Kubuno.Cargo ProjectReference below) is
       what makes NuGet's own version-unification keep a runtime copy of it, and its netstandard2.0
       polyfill closure (System.Buffers/System.Memory/System.Numerics.Vectors/
       System.Runtime.CompilerServices.Unsafe/System.Threading.Tasks.Extensions/
       System.Text.Encodings.Web), actually inside this VSIX - verified by inspecting the built
-      .vsix's zip contents (see the phase 1b/1c report).
+      .vsix's zip contents (see the phase 1b/1c report). Pinned to 9.0.0, not a lower 8.0.x
+      version: Microsoft.VisualStudio.SDK's own net462 dependency closure already resolves
+      System.Text.Json to 9.0.0, and pinning this project's own reference below that floor made
+      NuGet's version-unification report a downgrade (NU1605) on every build - fixed at the
+      source (this pin, and Kubuno.Cargo.csproj's own matching one) rather than left standing.
     -->
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
     <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
     <!-- DTE2 (EnvDTE80), needed for the MCP bridge start (docs/MCP.md "Integration") - same version as Kubuno.Mcp.Bridge.csproj's own net48 leg. -->
     <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" />
