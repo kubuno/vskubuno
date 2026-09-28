@@ -1,7 +1,7 @@
 # Kubuno XML views — design note (Phase 2)
 
 > Scope: the declarative view format for `kubuno_ui`
-> (`Z:\projects\kubuno\desktop\windows\src\crates\kubuno-ui`), its runtime, its
+> (`Z:\src\desktop\windows\src\crates\kubuno-ui`), its runtime, its
 > metadata registry, and how it is edited surgically by the VS designer and by
 > Claude. This is the design that Phase 2 of `docs/ARCHITECTURE.md` (component
 > metadata registry, XML loader, hot reload) should implement. Nothing here has

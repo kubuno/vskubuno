@@ -132,7 +132,7 @@ skip this step, or kubuno-views-ls discovery/startup/errors will never appear an
 order: the options override (step 4), then
 `<extension install dir>\tools\kubuno-views-ls.exe`, then PATH, then the two local dev build
 folders. The VSIX must ship the built `kubuno-views-ls.exe` (from
-`Z:\projects\kubuno\desktop\windows\src\crates\kubuno-views-ls`, once that crate exists and builds -
+`Z:\src\desktop\windows\src\crates\kubuno-views-ls`, once that crate exists and builds -
 it is being written in parallel, see the task this library was produced for) under a `tools\`
 folder at the VSIX's own root, alongside `Grammars\`:
 

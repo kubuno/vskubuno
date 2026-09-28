@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Stale `Z:\projects\kubuno\...` paths updated to `Z:\src\...`** in comments/docs (`CLAUDE.md`,
+  `docs/MCP.md`, `docs/XML_VIEWS.md`, `src/Kubuno.VisualStudio.Views/INTEGRATION.md`,
+  `tests/Kubuno.VisualStudio.Tests/App.config`, `spikes/HwndHostSpike/Program.cs`) and in
+  `src/Kubuno.VisualStudio/Kubuno.VisualStudio.csproj`'s build-instruction comments/error messages,
+  after the workspace moved from `~/projects/kubuno/` to `~/src/` (the csproj's actual
+  `KubunoViewsLsExePath`/`KubunoViewsSurfaceExePath` defaults already pointed at the machine-local
+  `C:\kubuno-build\...` and did not need changing).
 - **"Open With... > Kubuno View Designer" no longer fails or crashes Visual Studio on a `.kbview`
   file that was not already open.** The designer created its text buffer and its embedded XML code
   window with `new VsTextBufferClass()`/`new VsCodeWindowClass()`, which fail inside Visual Studio

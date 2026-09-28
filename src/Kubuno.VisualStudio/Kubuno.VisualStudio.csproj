@@ -176,8 +176,8 @@
     <!--
       kubuno-views-ls.exe (Rust LSP server, Kubuno.VisualStudio.Views' INTEGRATION.md #6) - built
       out-of-band from the separate `desktop` repo
-      (Z:\projects\kubuno\desktop\windows, crate kubuno-views-ls):
-        cd Z:\projects\kubuno\desktop\windows
+      (Z:\src\desktop\windows, crate kubuno-views-ls):
+        cd Z:\src\desktop\windows
         $env:CARGO_TARGET_DIR = "C:\kubuno-build\desktop-target"   # this workspace's documented default (vskubuno/CLAUDE.md #5)
         cargo build -p kubuno-views-ls -r        (-r is cargo's short form of the "release" flag)
       Default matches that convention; override with /p:KubunoViewsLsExePath=<path> for a
@@ -212,7 +212,7 @@
       design surface): built out-of-band from the desktop repo, same workspace as kubuno-views-ls but a
       SEPARATE CARGO_TARGET_DIR (this crate is still examples-only, see kubuno-views/examples/view_embed.rs -
       built on its own rather than sharing desktop-target's in-flight build):
-        cd Z:\projects\kubuno\desktop\windows
+        cd Z:\src\desktop\windows
         $env:CARGO_TARGET_DIR = "C:\kubuno-build\agent-dsgint"
         cargo build -r -p kubuno-views -j 1 (plus the cargo "example" flag, spelled with two dashes,
         naming view_embed - omitted above only because a doubled dash is not valid inside an XML
@@ -241,7 +241,7 @@
 
   <Target Name="KubunoCheckSurfaceExe" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoViewsSurfaceExePath)')"
-           Text="kubuno-views-surface.exe (view_embed.exe) not found at '$(KubunoViewsSurfaceExePath)'. Build it: cd Z:\projects\kubuno\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-views -j 1 -- or pass /p:KubunoViewsSurfaceExePath=&lt;path&gt;." />
+           Text="kubuno-views-surface.exe (view_embed.exe) not found at '$(KubunoViewsSurfaceExePath)'. Build it: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-views -j 1 -- or pass /p:KubunoViewsSurfaceExePath=&lt;path&gt;." />
     <Error Condition="!Exists('$(KubunoViewsSurfaceProfileDir)kubuno_ui.dll')"
            Text="kubuno_ui.dll not found at '$(KubunoViewsSurfaceProfileDir)' (kubuno-views-surface.exe's own profile root). It must ship with the kubuno_ui.dll of the SAME cargo build (own CARGO_TARGET_DIR, do not reuse kubuno-views-ls's copy)." />
   </Target>
@@ -273,7 +273,7 @@
 
   <Target Name="KubunoCheckToolExes" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoViewsLsExePath)')"
-           Text="kubuno-views-ls.exe not found at '$(KubunoViewsLsExePath)'. Build it from the desktop repo: cd Z:\projects\kubuno\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -- or pass /p:KubunoViewsLsExePath=&lt;path to kubuno-views-ls.exe&gt;." />
+           Text="kubuno-views-ls.exe not found at '$(KubunoViewsLsExePath)'. Build it from the desktop repo: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -- or pass /p:KubunoViewsLsExePath=&lt;path to kubuno-views-ls.exe&gt;." />
     <Error Condition="!Exists('$(KubunoViewsLsDir)kubuno_ui.dll')"
            Text="kubuno_ui.dll not found beside kubuno-views-ls.exe in '$(KubunoViewsLsDir)'. kubuno-views-ls.exe imports it (kubuno-ui is a Rust dylib) and must ship with the kubuno_ui.dll of the same cargo build." />
     <Error Condition="'@(KubunoRustStdDll)' == ''"

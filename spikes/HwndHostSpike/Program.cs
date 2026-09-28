@@ -49,7 +49,7 @@ namespace HwndHostSpike
             // child process is started (see its EnsureErrorModeSet) - no need to duplicate it here.
             string Arg(string name, string dflt) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : dflt; }
             var exe = Arg("--exe", @"C:\kubuno-build\agent-dsg7b\debug\examples\view_embed.exe");
-            var view = Arg("--view", @"Z:\projects\kubuno\desktop\windows\src\crates\kubuno-views\examples\views\settings.kbview");
+            var view = Arg("--view", @"Z:\src\desktop\windows\src\crates\kubuno-views\examples\views\settings.kbview");
             var logPath = Arg("--log", Path.Combine(Path.GetTempPath(), "hwndhostspike.log"));
             var simulateToolbox = Arg("--simulate-toolbox", string.Empty);
             File.WriteAllText(logPath, "");

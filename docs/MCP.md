@@ -201,7 +201,7 @@ docs/MCP.md                        this file
 ## Testing
 
 ```bash
-# From the repo root (Z:\projects\kubuno\vskubuno). On Z: (a mapped drive), MSTest's test host
+# From the repo root (Z:\src\vskubuno). On Z: (a mapped drive), MSTest's test host
 # can hit .NET's "remote sources" block - set this first, same as the other test projects.
 COMPLUS_LoadFromRemoteSources=1 dotnet test tests/Kubuno.Mcp.Tests/Kubuno.Mcp.Tests.csproj
 ```
@@ -260,7 +260,7 @@ dotnet publish src/Kubuno.Mcp/Kubuno.Mcp.csproj -c Release -r win-x64 --self-con
 Once `kubuno-vs-mcp.exe` is built (or published as above), point Claude Code at it:
 
 ```bash
-claude mcp add kubuno-vs -- "Z:\projects\kubuno\vskubuno\src\Kubuno.Mcp\bin\Release\net8.0\kubuno-vs-mcp.exe"
+claude mcp add kubuno-vs -- "Z:\src\vskubuno\src\Kubuno.Mcp\bin\Release\net8.0\kubuno-vs-mcp.exe"
 ```
 
 or in `.mcp.json`:
