@@ -22,9 +22,9 @@ namespace Kubuno.VisualStudio.Designer.UI
     ///
     /// Modelled on the well-precedented "embed a second IVsCodeWindow inside a custom WPF pane"
     /// technique used by several real-world split-view VS editors (e.g. Markdown Editor's source pane);
-    /// <c>VsCodeWindowClass</c> is a COM coclass VS itself registers, so <c>new VsCodeWindowClass()</c>
-    /// resolves only inside a running <c>devenv.exe</c> - this type cannot be constructed, and this
-    /// class cannot be usefully unit-tested, outside a real VS process (see this project's
+    /// the code window comes from <c>IVsEditorAdaptersFactoryService.CreateVsCodeWindowAdapter</c>, which
+    /// only exists inside a running <c>devenv.exe</c> - this class cannot be usefully unit-tested
+    /// outside a real VS process (see this project's
     /// tests/Kubuno.VisualStudio.Designer.Tests for what IS covered without one).
     /// </summary>
     public sealed class CodeWindowHost : HwndHost
@@ -50,14 +50,16 @@ namespace Kubuno.VisualStudio.Designer.UI
             // expect around STA-affinitized COM interfaces like IVsWindowPane/IVsCodeWindow.
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            var codeWindow = new VsCodeWindowClass();
-            _codeWindow = (IVsCodeWindow)codeWindow;
+            // Created (and sited) through the editor adapters factory - `new VsCodeWindowClass()` fails
+            // with REGDB_E_CLASSNOTREG inside devenv (see KbviewEditorFactory.GetEditorAdapters).
+            _codeWindow = EditorFactory.KbviewEditorFactory.GetEditorAdapters(_oleServiceProvider).CreateVsCodeWindowAdapter(_oleServiceProvider);
 
+            // The buffer may still be unloaded here (a never-opened document is loaded by the shell
+            // only after CreateEditorInstance returns); the code window adapter supports that and
+            // creates its text view once the buffer is initialized.
             ErrorHandler.ThrowOnFailure(_codeWindow.SetBuffer(_textBuffer));
 
             var windowPane = (IVsWindowPane)_codeWindow;
-            ErrorHandler.ThrowOnFailure(windowPane.SetSite(_oleServiceProvider));
-
             ErrorHandler.ThrowOnFailure(windowPane.CreatePaneWindow(hwndParent.Handle, 0, 0, 0, 0, out var hwnd));
             _childHwnd = hwnd;
 

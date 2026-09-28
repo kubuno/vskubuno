@@ -1,6 +1,9 @@
 using System;
 using System.Runtime.InteropServices;
+using Kubuno.VisualStudio.Views.Logging;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
@@ -95,37 +98,76 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
                 return VSConstants.E_UNEXPECTED;
             }
 
-            object docDataObject;
-            if (punkDocDataExisting != IntPtr.Zero)
+            // Never let a managed exception escape into the shell: it arrives there as a bare failure
+            // HRESULT with no trace, and msenv.dll's own open-document error path is not robust to
+            // every failure (INTEGRATION.md §10). Log it and return its HRESULT instead.
+            DesignerWindowPane? pane = null;
+            try
             {
-                docDataObject = Marshal.GetObjectForIUnknown(punkDocDataExisting);
+                object docDataObject;
+                if (punkDocDataExisting != IntPtr.Zero)
+                {
+                    docDataObject = Marshal.GetObjectForIUnknown(punkDocDataExisting);
+                }
+                else
+                {
+                    docDataObject = CreateTextBuffer(oleServiceProvider);
+                }
+
+                if (docDataObject is not IVsTextLines textLines)
+                {
+                    // Some other editor's doc data (e.g. a binary/diff view) was passed in - we only know
+                    // how to co-edit a text buffer, so decline rather than silently failing later.
+                    return VSConstants.VS_E_INCOMPATIBLEDOCDATA;
+                }
+
+                pane = new DesignerWindowPane(textLines, oleServiceProvider);
+
+                ppunkDocView = Marshal.GetIUnknownForObject(pane);
+                ppunkDocData = Marshal.GetIUnknownForObject(textLines);
+                pbstrEditorCaption = string.Empty;
+                return VSConstants.S_OK;
             }
-            else
+            catch (Exception ex)
             {
-                docDataObject = CreateTextBuffer(oleServiceProvider);
+                KubunoViewsLogHost.Current.WriteException("[designer] CreateEditorInstance failed for '" + pszMkDocument + "'", ex);
+                pane?.Dispose();
+                ppunkDocView = IntPtr.Zero;
+                ppunkDocData = IntPtr.Zero;
+                return ex.HResult != 0 ? ex.HResult : VSConstants.E_FAIL;
             }
-
-            if (docDataObject is not IVsTextLines textLines)
-            {
-                // Some other editor's doc data (e.g. a binary/diff view) was passed in - we only know
-                // how to co-edit a text buffer, so decline rather than silently failing later.
-                return VSConstants.VS_E_INCOMPATIBLEDOCDATA;
-            }
-
-            var pane = new DesignerWindowPane(textLines, oleServiceProvider);
-
-            ppunkDocView = Marshal.GetIUnknownForObject(pane);
-            ppunkDocData = Marshal.GetIUnknownForObject(textLines);
-            pbstrEditorCaption = string.Empty;
-            return VSConstants.S_OK;
         }
 
         /// <summary>
-        /// A fresh, sited <c>IVsTextLines</c> with automatic language/content-type detection turned on
-        /// - the same mechanism the standard text editor relies on, which is what lets kubuno-views-ls's
-        /// MEF <c>ILanguageClient</c> (registered against the "kbview" content type by file extension,
-        /// see <c>Kubuno.VisualStudio.Views.LanguageService.ContentDefinition</c>) attach to this buffer
-        /// exactly as it would in the plain text editor.
+        /// The editor adapters bridge (<c>IVsEditorAdaptersFactoryService</c>, MEF) - the only supported
+        /// way to create the legacy <c>IVsTextLines</c>/<c>IVsCodeWindow</c> COM objects from an
+        /// extension. Do NOT <c>new VsTextBufferClass()</c>/<c>new VsCodeWindowClass()</c> instead: those
+        /// coclasses live in VS's private registry hive, so a plain <c>CoCreateInstance</c> fails with
+        /// <c>REGDB_E_CLASSNOTREG</c> (0x80040154) - which is exactly what made this factory's first
+        /// version fail every never-opened <c>.kbview</c> (see INTEGRATION.md §10).
+        /// </summary>
+        internal static IVsEditorAdaptersFactoryService GetEditorAdapters(OleInterop.IServiceProvider oleServiceProvider)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            var serviceProvider = new ServiceProvider(oleServiceProvider);
+            if (serviceProvider.GetService(typeof(SComponentModel)) is not IComponentModel componentModel)
+            {
+                throw new InvalidOperationException("SComponentModel is unavailable - cannot create editor adapters.");
+            }
+
+            return componentModel.GetService<IVsEditorAdaptersFactoryService>();
+        }
+
+        /// <summary>
+        /// A fresh, sited (by the adapters factory itself), not-yet-loaded <c>IVsTextLines</c> with
+        /// automatic language/content-type detection turned on - the same mechanism the standard text
+        /// editor relies on, which is what lets kubuno-views-ls's MEF <c>ILanguageClient</c> (registered
+        /// against the "kbview" content type by file extension, see
+        /// <c>Kubuno.VisualStudio.Views.LanguageService.ContentDefinition</c>) attach to this buffer
+        /// exactly as it would in the plain text editor. The shell loads the file into it
+        /// (<c>IVsPersistDocData.LoadDocData</c>) only AFTER <see cref="CreateEditorInstance"/> returns,
+        /// so nothing may read it before then - see <c>DesignerSplitView</c>'s deferred initialization.
         /// </summary>
         private static IVsTextLines CreateTextBuffer(OleInterop.IServiceProvider oleServiceProvider)
         {
@@ -133,12 +175,7 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
             // explicitly for the same reason as CodeWindowHost's Build/DestroyWindowCore.
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            var textLines = (IVsTextLines)new VsTextBufferClass();
-
-            if (textLines is OleInterop.IObjectWithSite objectWithSite)
-            {
-                objectWithSite.SetSite(oleServiceProvider);
-            }
+            var textLines = (IVsTextLines)GetEditorAdapters(oleServiceProvider).CreateVsTextBufferAdapter(oleServiceProvider);
 
             // Well-known "detect language service id from the document moniker's extension" flag - the
             // same GUID as VSConstants.VsTextBufferUserDataGuid.VsBufferDetectLangSid_guid. Setting it

@@ -26,7 +26,12 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
         {
             if (disposing)
             {
+                // Dispose(true) only comes from ClosePane, which the shell always calls on the UI thread
+                // (DesignerSplitView.Dispose asserts it); an unconditional assert here would also fire
+                // on a finalizer-driven Dispose(false), hence the suppression instead.
+#pragma warning disable VSTHRD010
                 _view.Dispose();
+#pragma warning restore VSTHRD010
             }
 
             base.Dispose(disposing);

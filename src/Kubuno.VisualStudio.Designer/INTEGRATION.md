@@ -432,8 +432,9 @@ suggestion - not edits to anything already here.
 ## 10. Designer integration — open issues (VSIX integration step, live testing)
 
 The VSIX-side wiring above (§1, §3, §4, §6, §7, §8, §9) is implemented, committed, and builds with
-0 warnings (Debug and Release). Live testing in the experimental instance found one **unresolved,
-severe** issue and fixed one registration issue; both are recorded here rather than left silent.
+0 warnings (Debug and Release). Live testing in the experimental instance found one severe issue
+(the "Open With" crash, **now fixed** - root cause below) and fixed one registration issue; both are
+recorded here rather than left silent.
 
 ### Confirmed working
 
@@ -452,7 +453,48 @@ severe** issue and fixed one registration issue; both are recorded here rather t
   registration/discovery itself is correct - the `.kbview` → editor-factory → logical-view wiring is
   not the problem.
 
-### Open issue: `CreateEditorInstance` crashes VS on a never-opened document
+### Fixed: `CreateEditorInstance` failed (and VS crashed) on a never-opened document
+
+**Root cause (found 2026-09-28 with a try/catch probe around `CreateEditorInstance`):**
+`KbviewEditorFactory.CreateTextBuffer` created the buffer with `new VsTextBufferClass()`, and
+`CodeWindowHost.BuildWindowCore` the code window with `new VsCodeWindowClass()`. Both are plain
+`CoCreateInstance` calls, and those coclasses are registered only in VS's private configuration hive, so
+inside `devenv.exe` they fail with **`REGDB_E_CLASSNOTREG` (0x80040154)**. The resulting
+`COMException` escaped `CreateEditorInstance` as a bare failure HRESULT for every never-opened
+document (an already-open document never reached `CreateTextBuffer`, hence "no crash" there). How the
+shell then reacted depended on the caller: with the old cross-process probe (`OpenSpecificEditor` with a
+null hierarchy/`VSITEMID_NIL`), msenv.dll's error path crashed with the 0xc0000005 access violation;
+with a real hierarchy (`OpenDocumentViaProjectWithSpecific`) it silently fell back. The probe's
+"entry log never reached" observation was a logging artefact (the log line sat after the
+`ThrowIfNotOnUIThread` call; `CreateEditorInstance` IS entered, on the UI thread, `grfCreateDoc=0x12`).
+No bisection of the pane content was needed - the pane was never even constructed.
+
+**Fix (the supported pattern):**
+- Buffer and code window both come from `IVsEditorAdaptersFactoryService`
+  (`CreateVsTextBufferAdapter` / `CreateVsCodeWindowAdapter`, see
+  `KbviewEditorFactory.GetEditorAdapters`), which also sites them.
+- A freshly created buffer is empty and unloaded until the shell calls `LoadDocData` AFTER
+  `CreateEditorInstance` returns: `DesignerSplitView` now defers the initial `setText` push and
+  `DesignSurfaceEditingCoordinator.TryCreate` (which needs the `ITextBuffer`) to
+  `IVsTextBufferDataEvents.OnLoadCompleted` (immediately if the buffer is already loaded, i.e. reused
+  doc data). Before, a never-opened document got no editing coordinator at all (`GetDataBuffer` was
+  null at construction time).
+- `CreateEditorInstance` now catches, logs (Kubuno output pane) and returns the HRESULT of any
+  exception instead of letting it escape into the shell.
+
+**Verified live (experimental instance, Open Folder on `C:\kubuno-build\vskubuno-live-test`):** the
+genuine UI path - Solution Explorer, right-click a never-opened `.kbview`, "Ouvrir avec...", "Kubuno View
+Designer", OK (driven through UI Automation + the Win32 list box of the dialog) - opens the split pane
+without crashing; the design surface starts, embeds (`ready hwnd=... parent=Some(...)`) and receives the
+loaded text (`setText (1614 bytes)`, `setDesignMode on=true`); kubuno-views-ls attaches to the buffer.
+
+**Dev-build pitfall found on the way:** do NOT build `view_embed` and `kubuno-views-ls` into the SAME
+`CARGO_TARGET_DIR`. Cargo feature unification differs between the two builds, so the second one
+rewrites `release\kubuno_ui.dll` and the first exe then dies at startup with `0xC0000139`
+(`STATUS_ENTRYPOINT_NOT_FOUND`, logged as "design surface exited unexpectedly (code -1073741511)").
+Keep the surface in its own target dir (`C:\kubuno-build\agent-dsgint`, the csproj default).
+
+The original investigation notes follow, kept for context.
 
 **Reproduced twice, consistently.** Calling `IVsUIShellOpenDocument.OpenSpecificEditor` with this
 factory's GUID against a `.kbview` file that has **never been opened in this VS session** (so

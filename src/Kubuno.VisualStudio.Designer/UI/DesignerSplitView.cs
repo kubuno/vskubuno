@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using Kubuno.VisualStudio.Designer.DesignSurface;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TextManager.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
@@ -26,7 +27,10 @@ namespace Kubuno.VisualStudio.Designer.UI
         // INTEGRATION.md §6/§8: EditRequested → kubuno/applyEdit → Editing/, and buffer changes →
         // debounced setText. See DesignSurfaceEditingCoordinator's own doc for why this wiring lives
         // there instead of inline here.
-        private readonly DesignSurfaceEditingCoordinator? _editingCoordinator;
+        private DesignSurfaceEditingCoordinator? _editingCoordinator;
+        private readonly IVsTextLines _textBuffer;
+        private readonly OleInterop.IServiceProvider? _oleServiceProvider;
+        private BufferLoadSink? _loadSink;
         private readonly ColumnDefinition _designColumn;
         private readonly ColumnDefinition _splitterColumn;
         private readonly ColumnDefinition _xmlColumn;
@@ -118,20 +122,60 @@ namespace Kubuno.VisualStudio.Designer.UI
             };
             ApplyViewMode();
 
-            // One-shot initial push (docs/DESIGNER.md §2's "the compiled preview always re-renders
-            // from buffer text ... pushed over IPC"). Continuous, debounced pushes on every
-            // ITextBuffer.Changed are wired by DSG-6/DSG-8/DSG-9 once there is a real render surface to
-            // push to - the placeholder ignores the text anyway.
+            _textBuffer = textBuffer;
+            _oleServiceProvider = oleServiceProvider;
+
+            // A never-opened document's buffer is created EMPTY and UNLOADED by the editor factory; the
+            // shell loads the file into it (IVsPersistDocData.LoadDocData) only after
+            // CreateEditorInstance returns. Reading it or asking for its ITextBuffer before that fails
+            // (no data buffer yet), so everything that needs the text waits for OnLoadCompleted.
+            if (IsBufferLoaded())
+            {
+                OnBufferLoaded();
+            }
+            else
+            {
+                _loadSink = BufferLoadSink.TryAdvise(textBuffer, OnBufferLoaded);
+            }
+        }
+
+        private bool IsBufferLoaded()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
             try
             {
-                _designSurfaceHost.SetDocumentText(VsTextLinesText.ReadAll(textBuffer));
+                return _oleServiceProvider is not null &&
+                    EditorFactory.KbviewEditorFactory.GetEditorAdapters(_oleServiceProvider).GetDataBuffer(_textBuffer) is not null;
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
+            {
+                return false;
+            }
+        }
+
+        private void OnBufferLoaded()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            _loadSink?.Dispose();
+            _loadSink = null;
+            if (_disposed || _editingCoordinator is not null)
+            {
+                return;
+            }
+
+            // One-shot initial push (docs/DESIGNER.md §2's "the compiled preview always re-renders
+            // from buffer text ... pushed over IPC"); the editing coordinator then keeps the surface in
+            // sync with a debounced push on every ITextBuffer.Changed.
+            try
+            {
+                _designSurfaceHost.SetDocumentText(VsTextLinesText.ReadAll(_textBuffer));
             }
             catch (System.Runtime.InteropServices.COMException)
             {
-                // Best-effort: an empty/uninitialized buffer should not prevent the pane from opening.
+                // Best-effort: an empty buffer should not prevent the pane from opening.
             }
 
-            _editingCoordinator = DesignSurfaceEditingCoordinator.TryCreate(_designSurfaceHost, textBuffer, _codeWindowHost, oleServiceProvider);
+            _editingCoordinator = DesignSurfaceEditingCoordinator.TryCreate(_designSurfaceHost, _textBuffer, _codeWindowHost, _oleServiceProvider);
         }
 
         /// <summary>Current orientation - exposed for DSG-8's selection sync and for tests, not just the tab strip's own click handlers.</summary>
@@ -183,9 +227,75 @@ namespace Kubuno.VisualStudio.Designer.UI
             }
 
             _disposed = true;
+            ThreadHelper.ThrowIfNotOnUIThread();
+            _loadSink?.Dispose();
+            _loadSink = null;
             _editingCoordinator?.Dispose();
             _designSurfaceHost.Dispose();
             _codeWindowHost.Dispose();
+        }
+
+        /// <summary>
+        /// One-shot <c>IVsTextBufferDataEvents</c> subscription: calls back once the shell has loaded the
+        /// document into a freshly created buffer (<c>OnLoadCompleted</c>), then unadvises on dispose.
+        /// </summary>
+        private sealed class BufferLoadSink : IVsTextBufferDataEvents, IDisposable
+        {
+            private readonly Action _onLoaded;
+            private OleInterop.IConnectionPoint? _connectionPoint;
+            private uint _cookie;
+
+            private BufferLoadSink(Action onLoaded) => _onLoaded = onLoaded;
+
+            internal static BufferLoadSink? TryAdvise(IVsTextLines buffer, Action onLoaded)
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                if (buffer is not OleInterop.IConnectionPointContainer container)
+                {
+                    return null;
+                }
+
+                var sink = new BufferLoadSink(onLoaded);
+                var iid = typeof(IVsTextBufferDataEvents).GUID;
+                container.FindConnectionPoint(ref iid, out var connectionPoint);
+                if (connectionPoint is null)
+                {
+                    return null;
+                }
+
+                connectionPoint.Advise(sink, out sink._cookie);
+                sink._connectionPoint = connectionPoint;
+                return sink;
+            }
+
+            public void OnFileChanged(uint grfChange, uint dwFileAttrs)
+            {
+            }
+
+            public int OnLoadCompleted(int fReload)
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                _onLoaded();
+                return VSConstants.S_OK;
+            }
+
+            public void Dispose()
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var connectionPoint = _connectionPoint;
+                _connectionPoint = null;
+                if (connectionPoint is not null)
+                {
+                    try
+                    {
+                        connectionPoint.Unadvise(_cookie);
+                    }
+                    catch (System.Runtime.InteropServices.COMException)
+                    {
+                        // Best-effort: the buffer may already be closed.
+                    }
+                }
+            }
         }
     }
 }

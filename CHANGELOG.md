@@ -6,20 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Known issues
-
-- **`Kubuno.VisualStudio.Designer`'s editor factory crashes `devenv.exe` when opening a `.kbview`
-  file that was never opened in the current session** through `IVsUIShellOpenDocument
-  .OpenSpecificEditor` (the API "Open With..." itself uses): Windows records an access violation
-  (`0xc0000005`) inside VS's own `msenv.dll`, not inside a `Kubuno.*` assembly. Reproduced twice via
-  a cross-process COM call (registration/discovery itself is confirmed correct - `MapLogicalView` is
-  reached, and the SAME call against an already-open document does not crash); not yet confirmed via
-  a genuine, in-process "Open With..." click. See `src/Kubuno.VisualStudio.Designer/INTEGRATION.md`
-  §10 for the full repro, the suspects (`UI\CodeWindowHost.BuildWindowCore`,
-  `DesignSurface\RustDesignSurfaceHost`), and next steps. `.kbview` files continue to open normally
-  in the plain text editor (the double-click default is unaffected).
-
 ### Fixed
+
+- **"Open With... > Kubuno View Designer" no longer fails or crashes Visual Studio on a `.kbview`
+  file that was not already open.** The designer created its text buffer and its embedded XML code
+  window with `new VsTextBufferClass()`/`new VsCodeWindowClass()`, which fail inside Visual Studio
+  with "class not registered" (`REGDB_E_CLASSNOTREG`); the error escaped the editor factory and, depending
+  on how the open was requested, Visual Studio either fell back silently or crashed in `msenv.dll`.
+  Both objects now come from the editor adapters service (`IVsEditorAdaptersFactoryService`), the
+  editor factory never lets an exception escape into the shell (it is logged to the Kubuno output
+  pane instead), and the Design half now waits for the document to finish loading before pushing its
+  text and wiring the edit/selection pipeline (previously a newly opened document got no edit
+  pipeline at all). See `src/Kubuno.VisualStudio.Designer/INTEGRATION.md` §10.
 
 - **View menu commands moved to the Tools menu.** "Kubuno Toolbox"/"Kubuno Properties"/"Kubuno View
   Outline" were originally placed under View > Other Windows
