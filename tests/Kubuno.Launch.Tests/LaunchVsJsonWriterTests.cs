@@ -44,23 +44,20 @@ namespace Kubuno.Launch.Tests
         }
 
         [TestMethod]
-        public void WriteConfigurationEntry_EmitsEnvAsNameValueObjectArray()
+        public void WriteConfigurationEntry_EmitsEnvAsAPlainVarToValueObject()
         {
+            // Not an array of {name, value} objects (that shape is for C++ Linux's `environment`
+            // property, and real-world CMake launch.vs.json files - but confirmed live that VS's
+            // native debug engine silently ignores it for a "type": "default" configuration's own
+            // `env`, which must be a plain object - see LaunchVsJsonWriter's own remarks).
             var text = LaunchVsJsonWriter.WriteConfigurationEntry(SampleDescription(), @"target\debug\examples\hello.exe");
 
             using var doc = JsonDocument.Parse(text);
             var env = doc.RootElement.GetProperty("env");
 
-            Assert.AreEqual(2, env.GetArrayLength());
-
-            var seen = new Dictionary<string, string>();
-            foreach (var entry in env.EnumerateArray())
-            {
-                seen[entry.GetProperty("name").GetString()!] = entry.GetProperty("value").GetString()!;
-            }
-
-            Assert.AreEqual("1", seen["RUST_BACKTRACE"]);
-            Assert.AreEqual(@"C:\kubuno-build\desktop-target\debug;C:\Windows\System32", seen["PATH"]);
+            Assert.AreEqual(JsonValueKind.Object, env.ValueKind);
+            Assert.AreEqual("1", env.GetProperty("RUST_BACKTRACE").GetString());
+            Assert.AreEqual(@"C:\kubuno-build\desktop-target\debug;C:\Windows\System32", env.GetProperty("PATH").GetString());
         }
 
         [TestMethod]

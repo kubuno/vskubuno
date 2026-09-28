@@ -19,15 +19,22 @@ namespace Kubuno.Launch
     ///   files", learn.microsoft.com/visualstudio/ide/customize-build-and-debug-tasks-in-visual-studio).
     /// - The "Default properties" table of the `launch.vs.json` schema reference documents
     ///   `args` (array), `currentDir` (string — local working directory; auto-detected
-    ///   unless set), `env` (key-value list), `name`, `project`, `projectTarget` (source:
+    ///   unless set), `env`, `name`, `project`, `projectTarget` (source:
     ///   learn.microsoft.com/cpp/build/launch-vs-schema-reference-cpp, "Default properties").
     ///   `cwd` is documented separately and is for *remote* debugging only, so this writer
     ///   uses `currentDir`, not `cwd`, for the local working directory.
-    /// - `env`'s shape isn't fully unambiguous in that table (it's typed "array" but shown
-    ///   inline as an object). This writer follows the format documented and exemplified
-    ///   elsewhere on the same schema page for the sibling `environment` property
-    ///   (C++ Linux properties: `[ { "name": "squid", "value": "clam" } ]`), which is also
-    ///   the shape real-world CMake `launch.vs.json` files use for `env`.
+    /// - `env` for a `"type": "default"` configuration is a plain `{ "VAR": "value", ... }`
+    ///   object, not an array - confirmed live the hard way: an earlier version of this writer
+    ///   emitted the array-of-`{name, value}` shape the same schema page's C++ Linux
+    ///   `environment` property (and real-world CMake `launch.vs.json` files) use, which VS's
+    ///   native debug engine silently ignores for `"type": "default"` (no error, no warning -
+    ///   the configuration parses fine, PATH is just never extended, and the launched exe dies
+    ///   immediately with a `STATUS_DLL_NOT_FOUND` dialog for `kubuno_ui.dll`'s own dependency,
+    ///   `std-*.dll`). `${env.VAR}` interpolation (e.g. `"PATH": "C:\\a;C:\\b;${env.PATH}"`) is
+    ///   how a value is appended to whatever the debuggee would otherwise inherit - see
+    ///   <see cref="RustDebugEnvironment"/>'s own remarks on why the VSIX's launch.vs.json
+    ///   generator passes that literal token as `existingPath` rather than a snapshot of the
+    ///   extension's own process environment.
     /// - No `natvisFile`/`visualizerFile`-equivalent field is documented for a local Windows
     ///   `"type": "default"` configuration: `visualizerFile` only appears in that schema
     ///   page's "C++ Linux properties" table (gdb/lldb remote debugging), not in "Default
@@ -119,16 +126,15 @@ namespace Kubuno.Launch
 
             if (description.EnvironmentVariables.Count > 0)
             {
-                sb.Append(",\n").Append(innerPad).Append("\"env\": [\n");
+                sb.Append(",\n").Append(innerPad).Append("\"env\": {\n");
                 var entries = description.EnvironmentVariables.ToList();
                 var entryPad = new string(' ', indent + 4);
                 for (var i = 0; i < entries.Count; i++)
                 {
-                    sb.Append(entryPad).Append("{ \"name\": ").Append(JsonString(entries[i].Key))
-                      .Append(", \"value\": ").Append(JsonString(entries[i].Value)).Append(" }");
+                    sb.Append(entryPad).Append(JsonString(entries[i].Key)).Append(": ").Append(JsonString(entries[i].Value));
                     sb.Append(i < entries.Count - 1 ? ",\n" : "\n");
                 }
-                sb.Append(innerPad).Append(']');
+                sb.Append(innerPad).Append('}');
             }
 
             sb.Append('\n').Append(pad).Append('}');

@@ -186,6 +186,35 @@ change made to the vendored copy.
 - `.vs\launch.vs.json` is regenerated on workspace open and after a successful Build/Rebuild, not
   on every `Cargo.toml`/source-file edit; if a target's name or kind changes without a build in
   between (e.g. editing `Cargo.toml` by hand), rerun Build (or Rebuild) to refresh it.
+- **Select Startup Item only lists targets whose executable already exists on disk** at the time
+  VS reads `launch.vs.json` - confirmed live: right after opening a folder where only one of many
+  `[[bin]]`/`[[example]]` targets had ever been built, the dropdown offered only that one. This is
+  VS's own behavior (a sensible one - it won't offer to run something that isn't there), not
+  something this extension controls; build the targets you want to see listed first.
+- **Automatic pre-selection of a default startup item does not reliably take live effect when the
+  opened folder's own `Cargo.toml` is a virtual `[workspace]`-only manifest** (a folder with
+  `[workspace] members = [...]` and no `[package]` of its own - very common for a multi-crate
+  desktop app). `RustLaunchTargetsGenerator` computes a sensible default in this case too (see
+  `StartupItemSelector.SelectDefaultBinTargetForWorkspace`'s own remarks: workspace
+  `default-members`, then a `shell/`-directory convention, then "the first bin") and writes it to
+  `.vs\ProjectSettings.json`, but confirmed live that VS's own toolbar still shows "Sélectionner un
+  élément de démarrage..." on open and rewrites that file back to its own "Aucune configuration"
+  placeholder - even editing the file by hand while the folder is already open, or changing window
+  focus, does not make `Debug.Start` available. The developer has to open the "Select Startup
+  Item" dropdown and pick the item once; after that, F5/Ctrl+F5 work normally and the file this
+  extension writes is exactly what shows up. Root cause not identified (no public documentation of
+  the toolbar's own refresh triggers for this Open-Folder scenario was found); a real fix would
+  most likely mean getting `IProjectConfigurationService.SetCurrentProject` (mechanism 1 in
+  `EnsureStartupItemSelectedAsync`'s own remarks) working live, which this project's time budget
+  has twice deferred as too high-risk to implement blind.
+- **A non-Rust project/solution file anywhere under the opened folder** (`.csproj`, `.vbproj`,
+  `.fsproj`, `.vcxproj`, `.sln`, `.slnx` - e.g. a vendored/reference tree) makes VS's own native
+  project-file discovery take over the "Select Startup Item" dropdown entirely, hiding every Cargo
+  target `launch.vs.json` offers. `KubunoPackage.EnsureWorkspaceSettingsExcludeNonRustProjectsAsync`
+  writes a `VSWorkspaceSettings.json` with `ExcludedItems` for exactly those directories - but only
+  when that file does not already exist, so a developer's own choices there are never overridden;
+  delete an unwanted auto-generated entry by hand if the heuristic (see
+  `NonRustProjectExclusionScanner`'s own remarks) got a directory wrong.
 - The debugger's expression evaluator speaks C++, not Rust (see `docs/ARCHITECTURE.md`'s "Known
   limits"): natvis views of `std` types work - the toolchain's own `.natvis` files (discovered via
   `Kubuno.Launch.RustToolchain.FindNatvisFiles`) are installed to the per-user Natvis directory

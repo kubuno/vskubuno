@@ -80,6 +80,12 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
         {
             _listPanel.Children.Clear();
 
+            if (_viewModel.Families.Count == 0)
+            {
+                _listPanel.Children.Add(BuildEmptyPlaceholder());
+                return;
+            }
+
             foreach (var family in _viewModel.Families)
             {
                 var header = new TextBlock
@@ -96,6 +102,26 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                     _listPanel.Children.Add(BuildItemRow(item));
                 }
             }
+        }
+
+        /// <summary>
+        /// Shown instead of an empty list when <see cref="ToolboxViewModel.Families"/> has nothing to
+        /// offer - either no <c>.kbview</c> file is active yet (the language server has no document to
+        /// query <c>kubuno/registry</c> against) or the search text matched nothing. A blank scroll area
+        /// looked broken/crashed rather than merely "nothing to show yet" (see this tool window's own
+        /// task history) - this tells the developer what to do next instead.
+        /// </summary>
+        private TextBlock BuildEmptyPlaceholder()
+        {
+            var text = new TextBlock
+            {
+                Text = "Open a .kbview file to see its components here.",
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(8, 16, 8, 8),
+                Opacity = 0.75,
+            };
+            text.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.ToolWindowTextBrushKey);
+            return text;
         }
 
         private Button BuildItemRow(ToolboxItemViewModel item)

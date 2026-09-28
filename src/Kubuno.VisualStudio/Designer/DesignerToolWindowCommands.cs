@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.Design;
 using Kubuno.VisualStudio.Designer.ToolWindows;
 using Kubuno.VisualStudio.Logging;
@@ -43,14 +44,28 @@ namespace Kubuno.VisualStudio.DesignerIntegration
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            var window = package.FindToolWindow(toolWindowType, 0, true);
-            if (window?.Frame is not IVsWindowFrame frame)
+            // Best-effort, like every other entry point in this VSIX (RustLaunchTargetsGenerator,
+            // the MCP bridge start, ToolboxToolWindow's own live-registry refresh): a tool window
+            // that fails to construct (e.g. FindToolWindow instantiating it) must not escape as an
+            // unhandled exception - that is what surfaces to the developer as VS's generic "this
+            // might be caused by an extension" info bar, which names no component and points at an
+            // ActivityLog.xml that a normal (non-/log) launch never even writes. Logging here at
+            // least says which of our own tool windows misbehaved.
+            try
             {
-                KubunoLog.WriteLine($"Kubuno: could not create the '{toolWindowType.Name}' tool window.");
-                return;
-            }
+                var window = package.FindToolWindow(toolWindowType, 0, true);
+                if (window?.Frame is not IVsWindowFrame frame)
+                {
+                    KubunoLog.WriteLine($"Kubuno: could not create the '{toolWindowType.Name}' tool window.");
+                    return;
+                }
 
-            ErrorHandler.ThrowOnFailure(frame.Show());
+                ErrorHandler.ThrowOnFailure(frame.Show());
+            }
+            catch (Exception exception)
+            {
+                KubunoLog.WriteException($"Kubuno: failed to show the '{toolWindowType.Name}' tool window", exception);
+            }
         }
     }
 }

@@ -73,7 +73,18 @@ namespace Kubuno.VisualStudio.Debugging
 
                 var sysroot = sysrootResult.Sysroot!;
                 var hostTriple = hostTripleResult.HostTriple!;
-                var existingPath = Environment.GetEnvironmentVariable("PATH");
+
+                // Not a snapshot of this process's (devenv's) own PATH: launch.vs.json is read by
+                // VS's own native debug engine, which supports `${env.VAR}` interpolation for a
+                // `"type": "default"` configuration's `env` object - VAR is resolved against
+                // whatever the debuggee would actually inherit at the moment it's launched, which
+                // is more correct (and more robust to PATH changes between generating this file and
+                // pressing F5) than baking in devenv's own PATH from generation time. Confirmed live
+                // that embedding a literal snapshot here still left the launched exe unable to find
+                // `kubuno_ui.dll`'s own `std-*.dll` dependency (STATUS_DLL_NOT_FOUND) - see
+                // LaunchVsJsonWriter's own remarks for the other half of that bug (the `env` shape
+                // itself, fixed independently of this).
+                const string existingPath = "${env.PATH}";
 
                 // See NatvisInstaller's remarks for why this - rather than PDB embedding or a
                 // VSIX asset - is the mechanism that actually gets std types (String, Vec,
@@ -141,6 +152,23 @@ namespace Kubuno.VisualStudio.Debugging
                         await EnsureStartupItemSelectedAsync(workspace, vsDirectory, manifestPath, defaultBinTarget, cancellationToken).ConfigureAwait(false);
                     }
                 }
+                else
+                {
+                    // manifestPath is a virtual `[workspace]`-only manifest (opening the workspace
+                    // root itself, e.g. this repo's own Z:\...\windows\Cargo.toml) - it never
+                    // appears in `packages` above (it is not a package), so there is no "primary
+                    // package" to ask SelectDefaultBinTarget about. Without this, F5 was never
+                    // pre-selected at all for a workspace root - see
+                    // StartupItemSelector.SelectDefaultBinTargetForWorkspace's own remarks for the
+                    // fallback chain (workspace default-members, then the shell-directory
+                    // convention, then "the first bin").
+                    var workspaceDefault = StartupItemSelector.SelectDefaultBinTargetForWorkspace(metadata);
+                    if (workspaceDefault is not null)
+                    {
+                        await EnsureStartupItemSelectedAsync(
+                            workspace, vsDirectory, workspaceDefault.Value.Package.ManifestPath, workspaceDefault.Value.BinTarget, cancellationToken).ConfigureAwait(false);
+                    }
+                }
             }
             catch (Exception exception)
             {
@@ -168,10 +196,20 @@ namespace Kubuno.VisualStudio.Debugging
         ///    couldn't be fully confirmed against a live instance in the time available, hence
         ///    mechanism 2 below as a verified fallback, not a replacement).
         /// 2. Writing <c>CurrentProjectSetting</c> into <c>.vs\ProjectSettings.json</c> directly -
-        ///    the actual on-disk state backing the toolbar dropdown for this exact scenario (a
-        ///    Cargo folder with no project system), confirmed live: editing this file by hand
-        ///    changes `Debug.Start`'s availability. Read-modify-write (not blind overwrite) so any
-        ///    other key VS itself might add to this file is preserved.
+        ///    the on-disk state behind the toolbar dropdown for this scenario (a Cargo folder with
+        ///    no project system). Read-modify-write (not blind overwrite) so any other key VS
+        ///    itself might add to this file is preserved.
+        ///
+        /// Known gap (see README's "Known limitations"): on a workspace-root open (this method's
+        /// own caller, the `else` branch for a virtual `[workspace]` manifest), neither mechanism
+        /// reliably makes the toolbar/`Debug.Start` reflect the write live - confirmed by hand that
+        /// even editing `ProjectSettings.json` directly while the folder was already open, or
+        /// changing window focus afterward, left `Debug.Start.IsAvailable` false and the toolbar
+        /// still reading its own "Aucune configuration" placeholder until the developer opened the
+        /// dropdown and picked the item themselves at least once. The file this method writes is
+        /// correct (and is what the dropdown eventually shows once nudged), so F5 works after that
+        /// one manual pick - it's only the very first, automatic pre-selection that doesn't take
+        /// live effect for this scenario.
         /// </summary>
         private static async Task EnsureStartupItemSelectedAsync(
             IWorkspace? workspace, string vsDirectory, string manifestPath, string binTargetName, CancellationToken cancellationToken)

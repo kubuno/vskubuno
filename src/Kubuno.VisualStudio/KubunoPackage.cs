@@ -1,11 +1,13 @@
 using System;
 using System.ComponentModel.Design;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
+using Kubuno.VisualStudio.Core;
 using Kubuno.VisualStudio.Debugging;
 using Kubuno.VisualStudio.DesignerIntegration;
 using Kubuno.VisualStudio.Infrastructure;
@@ -156,6 +158,7 @@ namespace Kubuno.VisualStudio
                 // The package can finish loading after a folder is already open (e.g. the user
                 // reopens the same folder next session): regenerate for whatever is open right now too.
                 await RegenerateLaunchTargetsForCurrentWorkspaceAsync();
+                await EnsureWorkspaceSettingsExcludeNonRustProjectsAsync();
             }
 
             if (await GetServiceAsync(typeof(IMenuCommandService)) is OleMenuCommandService commandService)
@@ -165,8 +168,11 @@ namespace Kubuno.VisualStudio
             }
         }
 
-        private async Task OnActiveWorkspaceChangedAsync(object? sender, EventArgs e) =>
+        private async Task OnActiveWorkspaceChangedAsync(object? sender, EventArgs e)
+        {
             await RegenerateLaunchTargetsForCurrentWorkspaceAsync();
+            await EnsureWorkspaceSettingsExcludeNonRustProjectsAsync();
+        }
 
         /// <summary>
         /// The directory this VSIX's own assembly is loaded from - the extension's install directory
@@ -256,6 +262,60 @@ namespace Kubuno.VisualStudio
 
             await TaskScheduler.Default;
             await RustLaunchTargetsGenerator.GenerateAsync(manifestPath, cargoToml, CancellationToken.None, _workspaceService?.CurrentWorkspace);
+        }
+
+        /// <summary>
+        /// Creates <c>VSWorkspaceSettings.json</c> at the Open Folder workspace root, excluding any
+        /// directory that contains a non-Rust project/solution file
+        /// (<see cref="NonRustProjectExclusionScanner"/>) - confirmed live that VS's own native
+        /// project-file discovery, once it finds even one such file anywhere in the tree, replaces
+        /// every Cargo bin/example target <c>launch.vs.json</c> offers in the "Select Startup Item"
+        /// dropdown with just that file (plus "Active document"). Only when the file does not
+        /// already exist: this is the developer's own file (source-controllable, human-editable),
+        /// never overwritten - the same "never override an existing choice" posture
+        /// <c>RustLaunchTargetsGenerator.EnsureStartupItemSelectedAsync</c> takes for
+        /// <c>ProjectSettings.json</c>. Best-effort, like every workspace-open step in this package:
+        /// a workspace with no Cargo project, or any I/O failure, simply results in no file being
+        /// written.
+        /// </summary>
+        private async Task EnsureWorkspaceSettingsExcludeNonRustProjectsAsync()
+        {
+            var workspaceRoot = _workspaceService?.CurrentWorkspace?.Location;
+            if (string.IsNullOrEmpty(workspaceRoot))
+            {
+                return;
+            }
+
+            var settingsPath = Path.Combine(workspaceRoot, "VSWorkspaceSettings.json");
+
+            await TaskScheduler.Default;
+
+            try
+            {
+                if (File.Exists(settingsPath))
+                {
+                    return;
+                }
+
+                var allFiles = Directory.EnumerateFiles(workspaceRoot, "*", SearchOption.AllDirectories);
+                var cargoManifests = Directory.EnumerateFiles(workspaceRoot, Constants.CargoManifestFileName, SearchOption.AllDirectories);
+                var excluded = NonRustProjectExclusionScanner.FindDirectoriesToExclude(workspaceRoot, allFiles, cargoManifests);
+
+                if (excluded.Count == 0)
+                {
+                    return;
+                }
+
+                var json = "{\n  \"ExcludedItems\": [\n" +
+                    string.Join(",\n", excluded.Select(item => $"    \"{item}\"")) +
+                    "\n  ]\n}\n";
+                File.WriteAllText(settingsPath, json);
+                KubunoLog.WriteLine($"Kubuno: wrote {settingsPath}, excluding {excluded.Count} non-Rust project director{(excluded.Count == 1 ? "y" : "ies")} from Folder View: {string.Join(", ", excluded)}.");
+            }
+            catch (Exception exception)
+            {
+                KubunoLog.WriteException("Kubuno: failed to generate VSWorkspaceSettings.json", exception);
+            }
         }
 
         protected override void Dispose(bool disposing)

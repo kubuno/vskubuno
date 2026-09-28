@@ -8,6 +8,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **F5/Ctrl+F5 failed with a "std-*.dll est introuvable" dialog for every generated launch
+  target.** `launch.vs.json`'s `"env"` was written as an array of `{ "name", "value" }` objects
+  (the C++ Linux `environment` shape); VS's native debug engine silently ignores that shape for a
+  `"type": "default"` configuration, so none of the PATH entries needed to find `kubuno_ui.dll`'s
+  own `std-*.dll` dependency were ever applied. `LaunchVsJsonWriter` now emits `env` as a plain
+  `{ "VAR": "value" }` object, and `RustLaunchTargetsGenerator` appends `${env.PATH}` (resolved by
+  VS at launch time) instead of a literal snapshot of devenv's own PATH. Verified live: Ctrl+F5
+  launches the shell with no dialog, and F5 stops at a breakpoint in `main` with a working Rust
+  call stack.
+- **No default "Select Startup Item" was ever pre-selected when the opened folder's own
+  `Cargo.toml` is a virtual `[workspace]`-only manifest** (no `[package]` of its own - the common
+  case for a multi-crate desktop app opened at its workspace root): `StartupItemSelector` only knew
+  how to pick a default `[[bin]]` for a single, already-identified package. Added
+  `SelectDefaultBinTargetForWorkspace` (workspace `default-members`, then a `shell/`-directory
+  convention, then "the first bin") and wired it into `RustLaunchTargetsGenerator.GenerateAsync`
+  for exactly this case. See "Known limitations" for the live-refresh gap this still has.
+- **A vendored/reference non-Rust project tree (e.g. `tools/winforms-ref/`'s WinForms parity
+  projects) made VS's own native project-file discovery take over the "Select Startup Item"
+  dropdown entirely**, hiding every Cargo target. Added `NonRustProjectExclusionScanner` (pure
+  logic, unit-tested) and `KubunoPackage.EnsureWorkspaceSettingsExcludeNonRustProjectsAsync`, which
+  writes a `VSWorkspaceSettings.json` `ExcludedItems` list for the offending directories - only
+  when that file does not already exist, never overriding a developer's own choices there.
+- **The Kubuno Toolbox tool window showed a blank scroll area** (no visual sign of anything wrong)
+  before a `.kbview` file was active/`kubuno-views-ls` had anything to report. It now shows a
+  placeholder ("Open a .kbview file to see its components here."). Also hardened
+  `DesignerToolWindowCommands.ShowToolWindow` (the one entry point in this VSIX with no try/catch
+  around a tool-window's construction/`Show()`) to log a failure to the Kubuno pane instead of
+  letting it escape as VS's generic "this might be caused by an extension" error info bar.
 - **Stale `Z:\projects\kubuno\...` paths updated to `Z:\src\...`** in comments/docs (`CLAUDE.md`,
   `docs/MCP.md`, `docs/XML_VIEWS.md`, `src/Kubuno.VisualStudio.Views/INTEGRATION.md`,
   `tests/Kubuno.VisualStudio.Tests/App.config`, `spikes/HwndHostSpike/Program.cs`) and in
