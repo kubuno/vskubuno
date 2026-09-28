@@ -35,22 +35,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   cache needing a second Visual Studio start after install, a missing-DLL dialog meaning a PATH
   problem, SMB directory-cache races on a network drive, and more). Linked from `README.md`.
 
+### Removed
+
+- **The fallback "Kubuno Toolbox" and "Kubuno Properties" tool windows** and their Tools-menu
+  commands. The `.kbview` designer fills Visual Studio's own Toolbox and Properties window
+  (`docs/DESIGNER.md` §11), so the fallbacks were redundant - and the "Kubuno Toolbox" one could stay
+  stuck on its "Open a .kbview file..." placeholder when restored from a saved window layout. Their
+  tool-window GUIDs are no longer registered, so a layout saved with them open does not bring them
+  back. The "Kubuno View Outline" window stays.
+
 ### Fixed
 
-- **"Kubuno Toolbox" (the fallback tool window) could get stuck forever on its "Open a .kbview file
-  to see its components here." placeholder even with a `.kbview` designer active**: `OnToolWindowCreated`
-  fetched the live `kubuno/registry` exactly once. If the tool window is recreated from a persisted
-  window layout (e.g. it was left docked open from a previous session) before any `.kbview` document
-  - and therefore the Kubuno Views language client - exists for the session, that one attempt finds
-  no client/no ready RPC, gets `ComponentRegistry.Empty` back, and nothing ever retries, even once a
-  `.kbview` is later opened and the language server initializes. `ToolboxToolWindow` now retries the
-  fetch (20 attempts, 1.5 s apart, mirroring `NativeToolboxInstaller`'s existing icon-retry pattern)
-  until the registry is non-empty, giving the language client time to attach and initialize.
-  **Not a full fix** - re-tested live against a real (non-Exp) install after this change shipped and
-  the placeholder still reproduces past the full 30 s retry window, even though the `kubuno-views-ls`
-  process is confirmed running from the correct installed path. So this race was real and worth
-  fixing, but it is not (or not the only) root cause of the reported symptom; see `docs/RSPROJ.md`'s
-  own addendum for the live evidence gathered and what remains open.
+- **No custom icons in Solution Explorer after a normal VSIX install** (the `.rsproj` project node,
+  `.rs`, `.kbview`, `Cargo.toml` and the `.kbview` element nodes all showed blank), while everything
+  worked in the experimental instance. Root cause: the package registered one
+  `[ProvideCodeBase]` per private assembly, and none of those assemblies is strong-named. When
+  VSIXInstaller regenerates the hive's `devenv.exe.config`, each registration becomes a `<codeBase>`
+  outside Visual Studio's application base for a `publicKeyToken=""` identity, which the .NET
+  Framework refuses: every by-name `Assembly.Load` of it then fails with `FileLoadException`
+  `0x80131041` ("private assembly located outside the appbase directory"), even while the same
+  assembly is already loaded, and without raising `AssemblyResolve`. Visual Studio's image service
+  loads the icons' XAML resources by assembly name, so every image-manifest moniker came out empty
+  (the Toolbox icons, rendered directly with WPF, were unaffected); the same error also appeared in
+  the MEF composition log for `Kubuno.Cargo`. The experimental instance hid it because MSBuild's
+  development deployment never regenerates `devenv.exe.config`. The per-assembly code bases are
+  replaced by a single `[ProvideBindingPath]` on the package, which writes nothing into
+  `devenv.exe.config` and lets Visual Studio's own resolver load our assemblies from the extension
+  folder.
 
 - **The known pre-existing `NU1605` restore warning on `Kubuno.VisualStudio.csproj` is fixed**, not
   just documented: `Kubuno.Cargo.csproj`'s and `Kubuno.VisualStudio.csproj`'s own `System.Text.Json`

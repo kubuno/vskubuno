@@ -9,10 +9,10 @@ using Microsoft.VisualStudio.Shell.Interop;
 namespace Kubuno.VisualStudio.DesignerIntegration
 {
     /// <summary>
-    /// "View &gt; Other Windows &gt; Kubuno Toolbox/Properties" (<c>KubunoCommands.vsct</c>) -
-    /// Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: shows the two package-registered
-    /// <see cref="ToolWindowPane"/>s (<see cref="ToolboxToolWindow"/>/<see cref="PropertiesToolWindow"/>)
-    /// that library ships but does not itself register (it must not reference this VSIX assembly - see
+    /// "Tools &gt; Kubuno View Outline" (<c>KubunoCommands.vsct</c>): shows the package-registered
+    /// <see cref="OutlineToolWindow"/> that Kubuno.VisualStudio.Designer ships but does not itself
+    /// register (the former "Kubuno Toolbox"/"Kubuno Properties" fallbacks were removed - the designer
+    /// uses Visual Studio's own Toolbox and Properties window, docs/DESIGNER.md §11) (it must not reference this VSIX assembly - see
     /// that library's own csproj top comment). Mirrors
     /// <see cref="Kubuno.VisualStudio.Debugging.DebugRustTestAtCursorCommand"/>'s own shape for wiring a
     /// command into <c>KubunoPackage.InitializeAsync</c>.
@@ -26,8 +26,6 @@ namespace Kubuno.VisualStudio.DesignerIntegration
             // otherwise inferred as UI-thread-affinitized by the analyzer, which then flags this caller too.
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            Add(commandService, package, PackageIds.ShowKubunoToolboxCommand, typeof(ToolboxToolWindow));
-            Add(commandService, package, PackageIds.ShowKubunoPropertiesCommand, typeof(PropertiesToolWindow));
             Add(commandService, package, PackageIds.ShowKubunoOutlineCommand, typeof(OutlineToolWindow));
         }
 
@@ -45,7 +43,7 @@ namespace Kubuno.VisualStudio.DesignerIntegration
             ThreadHelper.ThrowIfNotOnUIThread();
 
             // Best-effort, like every other entry point in this VSIX (RustLaunchTargetsGenerator,
-            // the MCP bridge start, ToolboxToolWindow's own live-registry refresh): a tool window
+            // the MCP bridge start, the design surface start): a tool window
             // that fails to construct (e.g. FindToolWindow instantiating it) must not escape as an
             // unhandled exception - that is what surfaces to the developer as VS's generic "this
             // might be caused by an extension" info bar, which names no component and points at an

@@ -205,8 +205,8 @@ Visual Studio's own tool windows, the same way the WinForms designer works:
   plain Open Folder mode (see `README.md`'s "Known limitations" - the file tree itself is correct
   there, only the expand-to-symbols affordance is missing).
 
-The former **"Kubuno Toolbox"** / **"Kubuno Properties"** tool windows (Tools menu) still exist as
-a fallback if the WinForms-style integration above ever misbehaves for you.
+The former **"Kubuno Toolbox"** / **"Kubuno Properties"** fallback tool windows were removed: use
+Visual Studio's own Toolbox (View > Toolbox) and Properties window (F4).
 
 ## 7. Open Folder mode and its limitations
 

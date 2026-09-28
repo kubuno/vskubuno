@@ -17,8 +17,8 @@ namespace Kubuno.VisualStudio.Designer.Registry
     /// as 'Bool'/'F32'/'String'/{'Enum': [...]}"): the three scalar variants are plain JSON strings, and
     /// <c>Enum</c> alone carries data (its variant list), so it round-trips as a one-key object. This is
     /// a Rust-style closed sum type reimplemented as a class with a <see cref="Tag"/> discriminant
-    /// because C# has no native tagged union - Properties/PropertyRowViewModel.cs and the per-kind
-    /// editors in Properties/PropertiesPanelView.cs switch on <see cref="Tag"/> exactly the way Rust code
+    /// because C# has no native tagged union - Properties/PropertyRowViewModel.cs and
+    /// PropertyBrowser/AttributeValueRules.cs switch on <see cref="Tag"/> exactly the way Rust code
     /// would <c>match</c> on the real enum. See <see cref="Serialization.PropKindJsonConverter"/> for the
     /// read/write logic.
     /// </summary>

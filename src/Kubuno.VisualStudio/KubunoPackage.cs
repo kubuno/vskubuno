@@ -21,33 +21,34 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 
-// Code bases for assemblies that Visual Studio resolves by NAME rather than by path, which cannot see an
-// extension folder otherwise:
-// - Kubuno.VisualStudio.RustProjectSystem: RustProject.imagemanifest (the .rsproj project node icon)
-//   points at its WPF resources by assembly name, loaded by the image service with Assembly.Load;
-// - its own dependencies (Kubuno.Launch, Kubuno.VisualStudio.Core, Kubuno.Cargo): Visual Studio's MEF
-//   loads the CPS exports (RustDebugLaunchProvider) before this package ever runs, so nothing else has
-//   loaded them yet - verified live: F5 failed with "Could not load file or assembly 'Kubuno.Launch'".
-[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.RustProjectSystem", CodeBase = @"$PackageFolder$\Kubuno.VisualStudio.RustProjectSystem.dll")]
-// Kubuno.Mcp.Bridge (docs/MCP.md "Integration"): KubunoPackage.StartMcpBridgeAsync references it
-// directly - same latent gap as the assemblies above, just not hit until this method actually runs
-// (verified live: "SetSite failed for package [KubunoPackage]" with a Kubuno.Mcp.Bridge
-// FileNotFoundException before this was added).
-[assembly: ProvideCodeBase(AssemblyName = "Kubuno.Mcp.Bridge", CodeBase = @"$PackageFolder$\Kubuno.Mcp.Bridge.dll")]
-// Deliberately NOT self-registering Kubuno.VisualStudio.dll (this package's own hosting assembly)
-// the same way: tried during docs/RSPROJ.md Addendum (lot 7) work to fix
-// Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance's plain Assembly.Load of it (a
-// "Create a new project" wizard names its own assembly, and that loader could not otherwise see this
-// VSIX's private folder) - verified live, reproducibly, that a self-referential codeBase entry here
-// instead broke this package's OWN load ("SetSite failed for package [KubunoPackage]" again, this
-// time from Visual Studio loading a second, differently-probed copy of its own hosting assembly).
-// Fixed properly in a follow-up pass with a SEPARATE, small wizard assembly instead of reusing this
-// package's own (Kubuno.VisualStudio.TemplateWizard - see its own csproj header): registering ITS
-// name below is not self-referential, so it does not reproduce the failure above.
-[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.TemplateWizard", CodeBase = @"$PackageFolder$\Kubuno.VisualStudio.TemplateWizard.dll")]
-[assembly: ProvideCodeBase(AssemblyName = "Kubuno.Launch", CodeBase = @"$PackageFolder$\Kubuno.Launch.dll")]
-[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.Core", CodeBase = @"$PackageFolder$\Kubuno.VisualStudio.Core.dll")]
-[assembly: ProvideCodeBase(AssemblyName = "Kubuno.Cargo", CodeBase = @"$PackageFolder$\Kubuno.Cargo.dll")]
+// Assembly resolution for this VSIX's private assemblies: ONE binding path ([ProvideBindingPath] on
+// KubunoPackage below), deliberately NOT one [assembly: ProvideCodeBase] per assembly.
+//
+// Several of our assemblies are resolved by NAME rather than by path, which cannot see an extension
+// folder on its own: Kubuno.VisualStudio.RustProjectSystem (RustProject.imagemanifest and
+// KubunoControls.imagemanifest point at its WPF resources by assembly name, and Visual Studio's image
+// service loads them with Assembly.Load), its dependencies Kubuno.Launch, Kubuno.VisualStudio.Core and
+// Kubuno.Cargo (MEF composes the CPS exports such as RustDebugLaunchProvider before this package ever
+// runs), Kubuno.Mcp.Bridge (StartMcpBridgeAsync) and Kubuno.VisualStudio.TemplateWizard (the
+// "Create a new project" wizard's own Assembly.Load).
+//
+// Why not ProvideCodeBase (docs/RSPROJ.md, addendum "Solution Explorer icons in a regular install"):
+// none of these assemblies is strong-named. When VSIXInstaller (or `devenv /updateconfiguration`)
+// regenerates the hive's devenv.exe.config, each ProvideCodeBase becomes a
+// <codeBase href="...\Extensions\<id>\X.dll"/> for a publicKeyToken="" identity, and the CLR refuses a
+// codeBase outside the application base for an assembly without a strong name: every by-name
+// Assembly.Load then fails hard with FileLoadException 0x80131041 ("the private assembly was located
+// outside the appbase directory") - even while the very same assembly is already loaded - and
+// AssemblyResolve is never raised, so no resolver can rescue it (reproduced standalone; also visible in
+// the regular hive's ComponentModelCache\*.err for Kubuno.Cargo). The image service's by-name load of
+// the icons' resource assembly failed that way, so every project/file/element icon went blank in a
+// normal install, while the Toolbox icons (WPF Application.LoadComponent, which first looks at the
+// assemblies already loaded) kept working. The experimental instance hid it: MSBuild's dev deployment
+// does not regenerate devenv.exe.config, so the entries never reached it.
+//
+// A binding path writes nothing into devenv.exe.config: the by-name load misses the application base,
+// AssemblyResolve is raised, and Visual Studio's own resolver loads the assembly from this folder - the
+// same file, hence the same loaded copy, that MEF and the package loader use.
 
 namespace Kubuno.VisualStudio
 {
@@ -65,6 +66,9 @@ namespace Kubuno.VisualStudio
     /// here, see KubunoLog.Initialize) should be active as early as possible.
     /// </summary>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
+    // Probes this VSIX's folder for by-name loads of our private assemblies - see the comment at the top
+    // of this file for why this replaces the former per-assembly ProvideCodeBase entries.
+    [ProvideBindingPath]
     [InstalledProductRegistration("Kubuno for Visual Studio", "Rust language support (rust-analyzer, TextMate coloring, rustfmt) for Kubuno development.", "1.0")]
     [ProvideAutoLoad(VSConstants.UICONTEXT.NoSolution_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
@@ -93,10 +97,10 @@ namespace Kubuno.VisualStudio
     [ProvideEditorExtension(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), Kubuno.VisualStudio.Views.KbviewConstants.FileExtension, Kubuno.VisualStudio.Designer.DesignerConstants.EditorExtensionPriority)]
     [ProvideOptionPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true)]
     [ProvideProfile(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
-    // Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: the Toolbox/Properties tool windows, shown
-    // via "View > Other Windows > Kubuno Toolbox/Properties" (KubunoCommands.vsct).
-    [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.ToolboxToolWindow))]
-    [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.PropertiesToolWindow))]
+    // The View Outline tool window (Tools menu, KubunoCommands.vsct). The former fallback "Kubuno
+    // Toolbox"/"Kubuno Properties" tool windows were removed: the designer fills Visual Studio's own
+    // Toolbox and Properties window (docs/DESIGNER.md §11). Their GUIDs are no longer registered, so a
+    // persisted window layout that still names them cannot recreate them.
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow))]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     // Extended "Ajouter" submenu on a .rsproj project node (KubunoCommands.vsct's
@@ -106,8 +110,8 @@ namespace Kubuno.VisualStudio
     // only fits a single-item selection check - a project-node submenu is better served by a rule
     // the shell evaluates once per active-project-capability change). "RustProjectSystem" here is
     // Kubuno.VisualStudio.RustProjectSystem.RustProjectCapabilities.RustProjectSystem's literal
-    // value (that assembly is MEF-composed, not project-referenced here - see the ProvideCodeBase
-    // remark above - so the string is repeated rather than shared via a type reference).
+    // value (that assembly is MEF-composed, not project-referenced here - see the assembly
+    // resolution remark at the top of this file - so the string is repeated rather than shared via a type reference).
     [ProvideUIContextRule(
         PackageGuids.RustProjectUIContextString,
         name: "RustProjectSystem",
@@ -280,13 +284,12 @@ namespace Kubuno.VisualStudio
         /// <summary>
         /// Forces Kubuno.VisualStudio.TemplateWizard.dll into this AppDomain's assembly cache before
         /// any "Create a new project"/"Add New Item" wizard can run. docs/RSPROJ.md Addendum (lot 7),
-        /// "Crate-name casing, revisited": its own ProvideCodeBase registration (see the
-        /// [assembly: ProvideCodeBase] attributes above) makes Visual Studio's package/MEF loaders
-        /// resolve that assembly correctly, but live-verified NOT to be consulted by
+        /// "Crate-name casing, revisited": live-verified that
         /// Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance's own plain
-        /// <c>Assembly.Load(AssemblyName)</c> call (still a FileNotFoundException there even with the
-        /// registration in place) - a separate, undocumented resolution path. Loading it here once,
-        /// eagerly, at package initialization, sidesteps that entirely: once an assembly of a given
+        /// <c>Assembly.Load(AssemblyName)</c> call could not find it even with the (since replaced, see
+        /// the comment at the top of this file) per-assembly code base registered - a separate,
+        /// undocumented resolution path. The package's binding path should now cover it too; loading
+        /// it eagerly, at package initialization, is kept as a belt-and-braces measure: once an assembly of a given
         /// identity is already loaded into the AppDomain, the CLR's own assembly-identity cache
         /// satisfies any later <c>Assembly.Load</c> for the same identity without re-resolving it,
         /// regardless of which subsystem asks. Never allowed to fail package load - a wizard that

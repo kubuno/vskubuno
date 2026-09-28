@@ -44,12 +44,6 @@ namespace Kubuno.VisualStudio
     {
         public const int DebugRustTestAtCursorCommand = 0x0100;
 
-        /// <summary>Shows <see cref="Kubuno.VisualStudio.Designer.ToolWindows.ToolboxToolWindow"/> (Kubuno.VisualStudio.Designer's own INTEGRATION.md §7).</summary>
-        public const int ShowKubunoToolboxCommand = 0x0101;
-
-        /// <summary>Shows <see cref="Kubuno.VisualStudio.Designer.ToolWindows.PropertiesToolWindow"/> (Kubuno.VisualStudio.Designer's own INTEGRATION.md §7).</summary>
-        public const int ShowKubunoPropertiesCommand = 0x0102;
-
         /// <summary>Shows <see cref="Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow"/> (Kubuno.VisualStudio.Designer's own INTEGRATION.md §9).</summary>
         public const int ShowKubunoOutlineCommand = 0x0103;
 

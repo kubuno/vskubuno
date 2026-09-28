@@ -9,10 +9,9 @@ namespace Kubuno.VisualStudio.Designer.Outline
     /// The Document Outline tool window's content: a plain <see cref="TreeView"/> over
     /// <see cref="OutlineViewModel.Roots"/> (docs/DESIGNER.md §1). No .xaml file, matching the rest of
     /// this repo (see the csproj's own top comment) - built entirely in code, themed via
-    /// <see cref="EnvironmentColors"/> the same way <see cref="Toolbox.ToolboxView"/> already is.
+    /// <see cref="EnvironmentColors"/>.
     ///
-    /// Not unit-tested (a live WPF visual tree, same reasoning <see cref="Toolbox.ToolboxView"/>/
-    /// <see cref="Properties.PropertiesPanelView"/> already give for staying out of
+    /// Not unit-tested (a live WPF visual tree, which stays out of
     /// tests/Kubuno.VisualStudio.Designer.Tests - only <see cref="OutlineViewModel"/>/
     /// <see cref="DocumentSymbolTreeBuilder"/> are).
     /// </summary>

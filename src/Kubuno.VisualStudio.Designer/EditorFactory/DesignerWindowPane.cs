@@ -175,7 +175,7 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
                 return VSConstants.S_FALSE;
             }
 
-#pragma warning disable VSSDK007 // no package-owned JoinableTaskFactory here - same precedent as ToolboxToolWindow.OnToolWindowCreated.
+#pragma warning disable VSSDK007 // no package-owned JoinableTaskFactory here - same reasoning as DesignSurfaceEditingCoordinator.
             ThreadHelper.JoinableTaskFactory.RunAsync(() => coordinator.InsertFromToolboxAsync(component)).FileAndForget("Kubuno/Designer/ToolboxItemPicked");
 #pragma warning restore VSSDK007
             if (Package.GetGlobalService(typeof(SVsToolbox)) is IVsToolbox toolbox)

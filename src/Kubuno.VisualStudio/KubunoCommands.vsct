@@ -62,22 +62,6 @@
           <ButtonText>Kubuno: Debug Rust Test at Cursor</ButtonText>
         </Strings>
       </Button>
-      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowKubunoToolbox" priority="0x0100" type="Button">
-        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
-        <Icon guid="ImageCatalogGuid" id="ToolWindow" />
-        <CommandFlag>IconIsMoniker</CommandFlag>
-        <Strings>
-          <ButtonText>Kubuno Toolbox</ButtonText>
-        </Strings>
-      </Button>
-      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowKubunoProperties" priority="0x0101" type="Button">
-        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
-        <Icon guid="ImageCatalogGuid" id="ToolWindow" />
-        <CommandFlag>IconIsMoniker</CommandFlag>
-        <Strings>
-          <ButtonText>Kubuno Properties</ButtonText>
-        </Strings>
-      </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowKubunoOutline" priority="0x0102" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Icon guid="ImageCatalogGuid" id="ToolWindow" />
@@ -226,8 +210,6 @@
       <IDSymbol name="KubunoDependenciesNodeContextMenu" value="0x1025" />
       <IDSymbol name="KubunoDependenciesNodeContextMenuGroup" value="0x1026" />
       <IDSymbol name="cmdidDebugRustTestAtCursor" value="0x0100" />
-      <IDSymbol name="cmdidShowKubunoToolbox" value="0x0101" />
-      <IDSymbol name="cmdidShowKubunoProperties" value="0x0102" />
       <IDSymbol name="cmdidShowKubunoOutline" value="0x0103" />
       <IDSymbol name="cmdidGenerateRustProjects" value="0x0104" />
       <IDSymbol name="cmdidGenerateRustProjectsContext" value="0x0105" />

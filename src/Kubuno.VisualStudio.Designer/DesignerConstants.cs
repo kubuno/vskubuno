@@ -43,14 +43,6 @@ namespace Kubuno.VisualStudio.Designer
         /// <summary>Tools &gt; Options page name for this library's own options (see <see cref="Options.KbviewDesignerOptionsPage"/>).</summary>
         public const string OptionsPageName = "Designer";
 
-        /// <summary>GUID of <see cref="ToolWindows.ToolboxToolWindow"/>, referenced by the VSIX's
-        /// <c>[ProvideToolWindow(typeof(ToolboxToolWindow))]</c> attribute (INTEGRATION.md §7).</summary>
-        public const string ToolboxToolWindowGuidString = "C6C9C6F1-6B7B-4B0A-9B7E-7D6E9B3A4C1F";
-
-        /// <summary>GUID of <see cref="ToolWindows.PropertiesToolWindow"/>, referenced by the VSIX's
-        /// <c>[ProvideToolWindow(typeof(PropertiesToolWindow))]</c> attribute (INTEGRATION.md §7).</summary>
-        public const string PropertiesToolWindowGuidString = "2F4E1E7E-6C8B-4A9E-9C3E-1B7F2A6D5E80";
-
         /// <summary>GUID of <see cref="ToolWindows.OutlineToolWindow"/>, referenced by the VSIX's
         /// <c>[ProvideToolWindow(typeof(OutlineToolWindow))]</c> attribute (INTEGRATION.md §9, point 6).</summary>
         public const string OutlineToolWindowGuidString = "9A3D2C10-4E71-4F6B-8E5C-2D6A8B1F3C90";

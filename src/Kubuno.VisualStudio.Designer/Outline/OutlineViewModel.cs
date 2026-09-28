@@ -9,8 +9,8 @@ namespace Kubuno.VisualStudio.Designer.Outline
     /// <summary>
     /// The Document Outline tool window's whole state (docs/DESIGNER.md §1: "a WPF tree view bound to
     /// the existing LSP response"; §6's DSG-8 row: "click -&gt; select in both views"). Kept free of any
-    /// WPF type so it is plain-unit-testable, the same shape as <c>Toolbox.ToolboxViewModel</c>/
-    /// <c>UI.DesignerSplitViewModel</c> in this library (see either's own doc comment); <see cref="OutlineView"/>
+    /// WPF type so it is plain-unit-testable, the same shape as
+    /// <c>UI.DesignerSplitViewModel</c> in this library (see its own doc comment); <see cref="OutlineView"/>
     /// is the only consumer.
     ///
     /// Implements <see cref="IOutlineSelectionTarget"/> so <see cref="Selection.SelectionSyncService"/>

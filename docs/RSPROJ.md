@@ -851,3 +851,48 @@ with a debugger attached to `devenv.exe` (breakpoint in `KubunoViewsLanguageClie
 OnServerInitializedAsync` and `JsonRpcRegistryClient.FetchAsync`) rather than more black-box live
 testing, which has now been tried at length across two separate passes without fully isolating either
 symptom's true root cause.
+
+## Addendum - Solution Explorer icons in a regular install: root cause and fix
+
+**Root cause (evidence, not guesswork).** The two installs were compared file by file: the release
+VSIX's installed folder and the experimental dev-deploy folder hold the same 148 files, the same
+`.pkgdef`/`.imagemanifest`/`catalog.json` layout, and the same MEF parts in each hive's
+`ComponentModelCache` (so neither packaging nor a Release/Debug difference was involved). What
+differs is the hive's generated **`devenv.exe.config`**: VSIXInstaller (like `devenv
+/updateconfiguration`) regenerates it from the pkgdefs, so in the regular hive it contained one
+`<dependentAssembly><assemblyIdentity publicKeyToken=""/><codeBase href="...\Extensions\<id>\X.dll"/>`
+per `[assembly: ProvideCodeBase]` of `KubunoPackage.cs` (six unsigned assemblies); MSBuild's dev
+deployment never regenerates it, so the experimental hive had none. The .NET Framework refuses a
+code base outside the application base (`Common7\IDE`) for an assembly without a strong name: a
+standalone repro (host exe + config with such an entry) shows that any by-name `Assembly.Load` then
+fails with `FileLoadException 0x80131041` ("private assembly located outside the appbase
+directory") **even though the same assembly is already loaded** (via `LoadFrom`) and **without
+raising `AssemblyResolve`** - whereas without the entry the load misses, `AssemblyResolve` fires and
+the loaded copy is returned. The regular hive's `ComponentModelCache\...Default.err` carried the
+same error for `Kubuno.Cargo`. Visual Studio's image service resolves the icons' pack URIs
+(`/Kubuno.VisualStudio.RustProjectSystem;component/...` in `RustProject.imagemanifest` and
+`KubunoControls.imagemanifest`) by assembly name, so every image-manifest moniker - project node,
+`.rs`/`.kbview`/`Cargo.toml` file icons, `.kbview` element nodes - came out blank, while the
+Toolbox icons kept working because `NativeToolboxInstaller` renders the same XAML through WPF's
+`Application.LoadComponent`, which first looks among already-loaded assemblies. It also explains
+earlier "a VSIXInstaller install into Exp fails too" observations, and why the dev loop never saw it.
+Hypotheses (a) caches and (c) Release/Debug were ruled out: the `ImageLibrary.cache` files of both
+hives differ only by the extension path length; clearing caches alone would not remove the config
+entries.
+
+**Fix.** The six `ProvideCodeBase` attributes are replaced by one `[ProvideBindingPath]` on
+`KubunoPackage` (`[$RootKey$\BindingPaths\{package guid}] "$PackageFolder$"=""`). A binding path
+writes nothing into `devenv.exe.config`; a by-name load misses the application base, and Visual
+Studio's own resolver loads the assembly from the extension folder - the same file, hence the same
+loaded copy, that MEF and the package loader use. (Strong-name signing every assembly would have been
+the other valid fix; the binding path needs no key management and no `InternalsVisibleTo` changes.)
+Verified on the regular hive after `VSIXInstaller /u` + `/q` of the rebuilt Release VSIX and two
+starts: `devenv.exe.config` has no Kubuno entry, the MEF `.err` has no Kubuno error, the design
+surface, language server and native Toolbox (49 components with icons) work.
+
+**Fallback tool windows removed.** With the native Toolbox confirmed populated in the regular
+instance, the "empty toolbox" reported there was the fallback "Kubuno Toolbox" window restored from
+a saved layout (its one-shot/bounded registry fetch ran before any `.kbview` existed). It and the
+"Kubuno Properties" fallback are removed (tool windows, commands, `ProvideToolWindow`
+registrations, GUID constants, their WPF views and the `ToolboxViewModel` tests); with their GUIDs
+unregistered, a persisted layout entry can no longer recreate them.

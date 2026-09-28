@@ -5,12 +5,10 @@
     Kubuno.VisualStudio.dll. Root cause it fixes: Microsoft.VisualStudio.TemplateWizard.Wizard.
     CreateManagedInstance ("Create a new project"'s own host for a <WizardExtension>) loads the
     wizard assembly with a plain Assembly.Load, which cannot see a VSIX's own private extension
-    folder unless that assembly name has its own ProvideCodeBase registration. Registering
-    Kubuno.VisualStudio.dll's OWN name that way (tried first) is self-referential and broke
-    KubunoPackage's load instead (see KubunoPackage.cs's remarks on this exact assembly-level
-    attribute). A distinct assembly name has no such conflict: it is registered from
-    KubunoPackage.cs next to Kubuno.Launch/Kubuno.VisualStudio.Core/Kubuno.VisualStudio.RustProjectSystem,
-    the same working pattern, just for one more name.
+    folder on its own. Registering Kubuno.VisualStudio.dll's OWN name with a code base (tried first)
+    broke KubunoPackage's load instead. The package now declares one binding path for its folder
+    (KubunoPackage.cs, top-of-file comment: per-assembly code bases for unsigned assemblies fail with
+    0x80131041 in a regular install), and additionally preloads this assembly at initialization.
 
     net48 (not net8.0): devenv.exe is a .NET Framework process; a wizard assembly loaded in-proc by
     Microsoft.VisualStudio.TemplateWizard.Wizard must target the same runtime.
@@ -19,8 +17,8 @@
     HintPath into this Visual Studio install - there is no NuGet package for it) plus EnvDTE/EnvDTE80
     (IWizard's method signatures take EnvDTE.Project/EnvDTE.ProjectItem - unavoidable, not optional).
     Nothing else: no Microsoft.VisualStudio.Shell, no reference to Kubuno.VisualStudio.dll itself -
-    keeping this assembly's own dependency closure minimal is what keeps its ProvideCodeBase
-    registration inert with respect to the package's own load.
+    keeping this assembly's own dependency closure minimal keeps loading it inert with respect to
+    the package's own load.
   -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>

@@ -7,10 +7,9 @@ namespace Kubuno.VisualStudio.Designer.Properties
     /// <summary>
     /// One row of the Properties tab: a <see cref="PropertyMeta"/> plus the selected element's current
     /// raw attribute value for it (docs/DESIGNER.md §1: "each PropertyMeta becomes one row, typed by
-    /// PropKind"). Kept free of any WPF type, like <see cref="Toolbox.ToolboxViewModel"/>;
-    /// <see cref="PropertiesPanelView"/> is the only consumer, and it is what actually turns a value
-    /// change here into a <c>kubuno/applyEdit</c> request (a later package's concern - see
-    /// docs/DESIGNER.md §3/§6; this row only tracks state and raises <see cref="ValueCommitted"/>).
+    /// PropKind"). Kept free of any WPF type. Its WPF consumer, the fallback "Kubuno Properties" tool
+    /// window, was removed - Visual Studio's own Properties window (<c>KbviewElementObject</c>,
+    /// docs/DESIGNER.md §11) took over; this row only tracks state and raises <see cref="ValueCommitted"/>.
     /// </summary>
     public sealed class PropertyRowViewModel : INotifyPropertyChanged
     {

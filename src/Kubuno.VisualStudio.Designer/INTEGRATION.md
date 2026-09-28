@@ -621,5 +621,6 @@ docs/DESIGNER.md section 11 has the design and the live findings; what the VSIX/
   (`mod ole_drop`) for Toolbox drags; DSG-9 lines are now dispatched by the one stdout listener
   (`TryDispatchDragDropLine`) - the lazily attached second listener missed a drop live.
 
-The custom "Kubuno Toolbox"/"Kubuno Properties" tool windows (Tools menu) are kept as fallbacks; they
-still work but are no longer needed.
+The custom "Kubuno Toolbox"/"Kubuno Properties" fallback tool windows (and their `ToolboxView`/
+`PropertiesPanelView` contents) were later removed: Visual Studio's own windows cover them. The
+historical integration notes above that describe them are kept for context only.

@@ -127,7 +127,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             // every live collaborator (IComponentModel, the language client's JsonRpc, the document URI)
             // that both the editing pipeline above and selection sync need - see that section's own
             // "Putting it together" snippet, which this method follows directly.
-#pragma warning disable VSSDK007 // no package-owned JoinableTaskFactory reachable from here - see ToolboxToolWindow.OnToolWindowCreated's own identical precedent/comment.
+#pragma warning disable VSSDK007 // no package-owned JoinableTaskFactory reachable from here - a static helper outside any package, so ThreadHelper.JoinableTaskFactory is the only one available.
             ThreadHelper.JoinableTaskFactory.RunAsync(SetupSelectionSyncAsync).FileAndForget("Kubuno/Designer/SelectionSync");
 #pragma warning restore VSSDK007
         }

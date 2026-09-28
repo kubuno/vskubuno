@@ -1226,7 +1226,7 @@ Product-owner requirement (2026-09-28): the `.kbview` designer behaves like the 
 designer of Visual Studio 2026 - components in VS's **own** Toolbox, the selected element in VS's
 **own** Properties window (F4, with the ⚡ Events tab), and a `main_view.kbview [Design]` document
 opened by a double-click in Solution Explorer, with F7 / Shift+F7 switching to and from the XML. The
-custom "Kubuno Toolbox/Properties" tool windows (Tools menu) stay as fallbacks. Every VS API below was
+former custom "Kubuno Toolbox/Properties" fallback tool windows were removed (redundant). Every VS API below was
 checked by reflection on the installed assemblies or by decompiling the installed Visual Studio 18
 implementation (`ilspycmd`) - the decisive facts are quoted.
 
