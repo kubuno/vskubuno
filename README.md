@@ -334,7 +334,8 @@ Note: `$(TargetPath)`'s path-convention fallback (used for the incremental `Core
 before cargo has reported its artifact) assumes `<manifest dir>\target` when neither
 `<CargoTargetDir>` nor `CARGO_TARGET_DIR` is set; a global `build.target-dir` in
 `~/.cargo/config.toml` is not read, so the build then simply always calls cargo (which is itself
-incremental).
+incremental). F5/Ctrl+F5 does handle that case: when the conventional executable path does not
+exist, the launch asks `cargo metadata` for the real target directory.
 
 ### "Generate Visual Studio Projects" (work package 5)
 

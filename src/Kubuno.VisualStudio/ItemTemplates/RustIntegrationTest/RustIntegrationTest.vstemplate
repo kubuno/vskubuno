@@ -6,7 +6,8 @@
   <TemplateData>
     <Name>Rust Integration Test</Name>
     <Description>A Cargo integration test (tests/$fileinputname$.rs), testing your crate's public API through its own crate name.</Description>
-    <ProjectType>Kubuno.Rust</ProjectType>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.RustIntegrationTest</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Console</ProjectTypeTag>

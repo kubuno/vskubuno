@@ -9,7 +9,8 @@
   <TemplateData>
     <Name>Rust Library</Name>
     <Description>A Rust library crate (no binary), built through Cargo as a real MSBuild/CPS project (.rsproj).</Description>
-    <ProjectType>Kubuno.Rust</ProjectType>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.RustLibrary</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Library</ProjectTypeTag>

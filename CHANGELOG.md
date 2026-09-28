@@ -17,13 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`KubunoPackage` could fail to load with `Kubuno.Mcp.Bridge` unresolvable**: a latent gap (no
   `ProvideCodeBase` registration for that assembly, unlike its four siblings) that only surfaced
   once something forced eager resolution of it.
-- **"Create a new project"/"Add New Item" never listed any Rust/Kubuno template**: the VSIX's
-  `Microsoft.VisualStudio.ProjectTemplate`/`ItemTemplate` asset declarations alone are not enough for
-  this VS build's dialog to discover a third-party template - `rsproj.pkgdef` now also registers
-  `NewProjectTemplates\TemplateDirs`/`AddItemTemplates\TemplateDirs` registry keys under CPS's own
-  `ProjectFactoryPackage`, the same mechanism this VS install's own `msbuildproj.pkgdef` (the generic
-  CPS project registration) uses. Not yet re-verified live in the dialog itself (see `docs/RSPROJ.md`'s
-  lot 7 addendum for why).
+- **"Create a new project"/"Add New Item" never listed any Rust/Kubuno template**: every template
+  declared `<ProjectType>Kubuno.Rust</ProjectType>`, but Visual Studio only shows a template whose
+  `<ProjectType>` matches the `Language(VsTemplate)` of a registered project type (`Rust` for
+  `.rsproj`). The templates now use `Rust` and have explicit template IDs. "Rust" now appears in the
+  dialog's language filter, searching "rust" lists the three project templates, and a `.rsproj`'s
+  *Add New Item* shows a "Rust" category with the three item templates (verified live). The
+  `NewProjectTemplates`/`AddItemTemplates` registry keys added earlier were removed: they made
+  the dialog show folder names without descriptions or tags.
+- **F5 on a `.rsproj` reported "The Rust executable ... does not exist" after a successful build**
+  when cargo's target directory comes from `build.target-dir` in a `.cargo/config.toml`. The launch
+  now asks `cargo metadata` for the real target directory when the conventional path is missing.
+- **Generated template files contained mojibake** (`Â§`, `â€”`) where the templates used non-ASCII
+  characters; the template content is now ASCII-only.
 - **`.rsproj` Property Pages showed three debug-related entries instead of one**: the standalone
   "Debug" page (`Sdk/Rules/debug.xaml`) is removed, and its command-arguments/working-directory/
   environment properties now live directly on the "Rust Debugger" flavor rule

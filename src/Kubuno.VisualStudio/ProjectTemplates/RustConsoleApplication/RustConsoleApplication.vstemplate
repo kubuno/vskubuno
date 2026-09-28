@@ -9,7 +9,8 @@
   <TemplateData>
     <Name>Rust Console Application</Name>
     <Description>A command-line Rust application, built and debugged through Cargo as a real MSBuild/CPS project (.rsproj) - not an Open Folder workspace.</Description>
-    <ProjectType>Kubuno.Rust</ProjectType>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.RustConsoleApplication</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Console</ProjectTypeTag>

@@ -11,7 +11,8 @@
   <TemplateData>
     <Name>Kubuno Desktop Application</Name>
     <Description>A native Kubuno desktop app (kubuno_ui/kubuno_controls/kubuno_views, no web view) with a starter view and code-behind, built through Cargo as a real MSBuild/CPS project (.rsproj).</Description>
-    <ProjectType>Kubuno.Rust</ProjectType>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.KubunoDesktopApplication</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>

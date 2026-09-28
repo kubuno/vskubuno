@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Threading.Tasks;
+using Kubuno.Cargo.Metadata;
+using Kubuno.Cargo.Processes;
 using Kubuno.Launch;
 using Kubuno.VisualStudio.Core;
 using Microsoft.VisualStudio.ProjectSystem;
@@ -52,6 +54,11 @@ namespace Kubuno.VisualStudio.RustProjectSystem
             var properties = ConfiguredProject.Services.ProjectPropertiesProvider!.GetCommonProperties();
 
             var targetPath = await properties.GetEvaluatedPropertyValueAsync("TargetPath").ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(targetPath) && !File.Exists(targetPath))
+            {
+                targetPath = await ResolveFromCargoTargetDirectoryAsync(properties, targetPath).ConfigureAwait(false) ?? targetPath;
+            }
+
             if (string.IsNullOrEmpty(targetPath) || !File.Exists(targetPath))
             {
                 // Surfaced by Visual Studio as the F5 error message.
@@ -108,6 +115,43 @@ namespace Kubuno.VisualStudio.RustProjectSystem
             }
 
             return new IDebugLaunchSettings[] { settings };
+        }
+
+        /// <summary>
+        /// The evaluated <c>$(TargetPath)</c> assumes <c>&lt;manifest dir&gt;\target</c> when neither
+        /// <c>&lt;CargoTargetDir&gt;</c> nor <c>CARGO_TARGET_DIR</c> is set, but cargo itself also honors
+        /// <c>build.target-dir</c> from any <c>.cargo/config.toml</c> (e.g. a per-user one that keeps build
+        /// outputs off a network share). Ask cargo where its target directory really is and rebuild
+        /// "&lt;target dir&gt;\&lt;profile dir&gt;\&lt;exe&gt;" from it; null when that does not exist either.
+        /// </summary>
+        private static async Task<string?> ResolveFromCargoTargetDirectoryAsync(IProjectProperties properties, string targetPath)
+        {
+            var explicitTargetDir = await properties.GetEvaluatedPropertyValueAsync("CargoTargetDir").ConfigureAwait(false);
+            var manifestPath = await properties.GetEvaluatedPropertyValueAsync("CargoManifestPath").ConfigureAwait(false);
+            var manifestDirectory = Path.GetDirectoryName(manifestPath);
+            if (!string.IsNullOrEmpty(explicitTargetDir) || string.IsNullOrEmpty(manifestDirectory))
+            {
+                return null;
+            }
+
+            try
+            {
+                var metadata = await new CargoMetadataReader(new ProcessRunner())
+                    .ReadAsync(manifestDirectory!, manifestPath)
+                    .ConfigureAwait(false);
+                if (string.IsNullOrEmpty(metadata.TargetDirectory))
+                {
+                    return null;
+                }
+
+                var profileDirectoryName = Path.GetFileName(Path.GetDirectoryName(targetPath));
+                var candidate = Path.Combine(metadata.TargetDirectory, profileDirectoryName, Path.GetFileName(targetPath));
+                return File.Exists(candidate) ? candidate : null;
+            }
+            catch (CargoMetadataException)
+            {
+                return null;
+            }
         }
 
         /// <summary>

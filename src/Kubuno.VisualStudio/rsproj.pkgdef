@@ -21,28 +21,10 @@
 "PrefetchFactory"="{3998970a-aee1-4216-a54f-0a99d20a1fab}"
 "ProjectTemplatesDir"="$PackageFolder$\ProjectTemplates"
 
-; docs/RSPROJ.md Addendum (lot 7): "Create a new project"/"Add New Item" templates. The
-; Microsoft.VisualStudio.ProjectTemplate/ItemTemplate VSIX asset types alone (source.extension.vsixmanifest)
-; get the .vstemplate files copied/cataloged into the VSIX and even generate a .vstman manifest at build
-; time, but do NOT make "Create a new project" discover them - verified live: InstalledTemplates.json
-; (%LocalAppData%\...\<hive>\InstalledTemplates.json, the actual list the dialog's search index is built
-; from) never gained a Kubuno/Rust entry no matter how many times the extension/template caches were
-; cleared and rebuilt (devenv /updateconfiguration, deleting ProjectTemplatesCache_.../
-; ItemTemplatesCache_.../ComponentModelCache, a real VSIXInstaller install instead of the debug
-; DeployExtension copy). What actually wires a template folder in is this NewProjectTemplates\TemplateDirs
-; registration (project templates) and the Projects\{guid}\AddItemTemplates\TemplateDirs one (item
-; templates) - the same mechanism msbuildproj.pkgdef (CommonExtensions\Microsoft\Project\msbuildproj.pkgdef,
-; installed VS 2026's own generic CPS project registration) uses for its own "CPS Projects"/"My Items"
-; buckets, read directly off disk from this VS install to find the exact key/value shape. Slot "/2" below
-; (msbuildproj.pkgdef's own generic CPS entry already occupies "/1" under the same ProjectFactoryPackage
-; GUID - both coexist); "ProjectTemplatesDir" above is kept too since it is the same value
-; msbuildproj.pkgdef itself sets redundantly alongside its own NewProjectTemplates entry.
-[$RootKey$\NewProjectTemplates\TemplateDirs\{3347bee8-d7a1-4082-95e4-38a439553cc2}\/2]
-@="Rust Projects"
-"SortPriority"=dword:00000064
-"TemplatesDir"="$PackageFolder$\ProjectTemplates"
-
-[$RootKey$\Projects\{6C7C4CB5-6E36-4C6F-9C6F-9C6E9B4D4C13}\AddItemTemplates\TemplateDirs\{3347bee8-d7a1-4082-95e4-38a439553cc2}\/1]
-@="Rust Items"
-"SortPriority"=dword:00000064
-"TemplatesDir"="$PackageFolder$\ItemTemplates"
+; docs/RSPROJ.md Addendum (lot 7): "Create a new project"/"Add New Item" discover the templates from the
+; VSIX's Microsoft.VisualStudio.ProjectTemplate/ItemTemplate assets (the build-generated .vstman
+; manifests) alone, exactly like the MSIX packaging project (DesktopBridge) does. The one hard
+; requirement: each .vstemplate's <ProjectType> must equal a "Language(VsTemplate)" value registered by
+; a project factory - "Rust" above. A <ProjectType> no project factory claims (the original
+; "Kubuno.Rust") makes the dialog silently drop the template; no NewProjectTemplates\TemplateDirs or
+; AddItemTemplates\TemplateDirs registration is needed on top of that.

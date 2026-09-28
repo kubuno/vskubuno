@@ -5,11 +5,11 @@ Visual Studio Projects", Open Folder/rust-analyzer coexistence — see README.md
 MSBuild (`.rsproj`)" section); lot 7 ("Create a new project" templates) partially implemented — see
 its own Addendum below for exactly what shipped vs. what is still missing (the `IWizard`-based crate-
 name sanitisation and `cargo generate-lockfile` step, and the "Kubuno module" Axum backend template).
-The templates themselves are written and a `NewProjectTemplates`/`AddItemTemplates` registry
-registration was added to `rsproj.pkgdef` so the dialog can discover them (modelled on this VS
-install's own `msbuildproj.pkgdef`) — **not yet live-verified** that "Rust" actually appears in the
-dialog after this fix, blocked by the experimental instance hanging on every freshly-reset hive this
-session (see the addendum's own write-up); lot 8 (Solution Explorer nesting) not started.
+The templates are now **live-verified in the real dialogs**: "Create a new project" offers "Rust" in
+its language filter and lists the three project templates when searching "rust"; a Rust console
+project created through that dialog builds and runs under F5; "Add New Item" on a `.rsproj` shows a
+"Rust" category with the three item templates (root cause and fix in the addendum's "Root cause"
+section); lot 8 (Solution Explorer nesting) not started.
 
 Work package 5 ("Generate Visual Studio Projects", live-verified against `Z:\src\desktop\windows`
 through a scratch mirror — see its own section below): the generator/planner
@@ -425,48 +425,54 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
   (`RustDebugLaunchProvider`, the `-C prefer-dynamic` PATH fix) is unmodified, shared code already
   live-verified for other `.rsproj` projects in work package 4/5's own tests above.
 
-**Real bug found and fixed after this: the dialog itself never showed the templates at all.**
-`dte.Solution.AddFromTemplate` (above) proves a `.vstemplate` *file* is well-formed and
-instantiable directly - it says nothing about whether "Create a new project" *discovers* it, which
-is the actual lot 7 requirement and is a completely separate code path. Live-verified the dialog
-never listed Rust/Kubuno: "Tous les langages" never offered "Rust", and searching "rust" returned
-no matches. Investigation (comparing against this VS install's own shipped templates):
+**Root cause of "the dialog never showed the templates" (fixed, live-verified).**
+`dte.Solution.AddFromTemplate` (above) proves a `.vstemplate` *file* is instantiable - it says
+nothing about whether "Create a new project" *discovers* it. The dialog silently drops any
+`.vstemplate` whose `<ProjectType>` is not the `"Language(VsTemplate)"` value of a registered project
+factory. `rsproj.pkgdef` registers `"Language(VsTemplate)"="Rust"` on `Projects\{6C7C4CB5-...}`, but
+every template declared `<ProjectType>Kubuno.Rust</ProjectType>` - a language no project factory
+claims, so all six templates were discarded. The same rule applies to *Add New Item*: its tree shows
+the item templates whose `<ProjectType>` matches the target project's `Language(VsTemplate)`.
+References: this VS install's own MSIX packaging project (`DesktopBridge\Microsoft.VisualStudio.
+DesktopBridge.ProjectSystem.pkgdef`, a CPS project type with `"Language(VsTemplate)"="MSIX"` whose
+templates arrive through a plain `.vstman`/`ProjectTemplate` asset exactly like ours), and the VSSDK
+"basic project system" walkthrough (`ProvideProjectFactory(languageVsTemplate: "SimpleProject")` +
+`<ProjectType>SimpleProject</ProjectType>`).
 
-- `%LocalAppData%\...\<hive>\InstalledTemplates.json` is the literal list the dialog's search index
-  is built from (confirmed by grepping it - every in-box template ID, e.g. `"Microsoft.CSharp.
-  ConsoleApplication"`, is a flat entry in this JSON array). It never gained a `Kubuno`/`Rust` entry
-  no matter how the extension was deployed or how aggressively its caches were invalidated: `devenv
-  /rootsuffix Exp /updateconfiguration`, deleting `ProjectTemplatesCache_{...}`/
-  `ItemTemplatesCache_{...}`/`ComponentModelCache`/`InstalledTemplates.json` outright, and installing
-  through the real `VSIXInstaller.exe /rootsuffix:Exp` (not just the Debug-build `DeployExtension`
-  copy) instead - all ruled out as the cause.
-- The `Microsoft.VisualStudio.ProjectTemplate`/`ItemTemplate` VSIX asset types (§ above) are real and
-  do get processed at build time (they produce a `.vstman` template manifest per template folder,
-  verified inside the built `.vsix`), but on THIS VS build they are not enough by themselves for
-  "Create a new project" to discover a third-party template - only for it to be zipped/cataloged
-  *inside* the VSIX.
-- **The actual, working mechanism, found by reading this VS install's own
-  `Common7\IDE\CommonExtensions\Microsoft\Project\msbuildproj.pkgdef`** (the generic CPS project
-  registration every plain MSBuild/CPS project type, including a hand-authored one, is built on top
-  of): a `NewProjectTemplates\TemplateDirs\{ProjectFactoryPackageGuid}\<slot>` registry key with a
-  `TemplatesDir` value pointing at a literal folder on disk (`@="CPS Projects"`,
-  `"SortPriority"=dword:00000064`, `"TemplatesDir"="$RootFolder$\...\Templates\Projects"` in
-  Microsoft's own copy), plus a parallel `Projects\{guid}\AddItemTemplates\TemplateDirs\{...}\<slot>`
-  key for *Add New Item*, plus (redundantly, matching Microsoft's own file) a `ProjectTemplatesDir`
-  value directly on the `Projects\{guid}` key. `rsproj.pkgdef` now sets all three, reusing CPS's own
-  `ProjectFactoryPackage` GUID (`{3347bee8-...}`, already used by `"ProjectFactoryPackage"=` on the
-  same key) as the `TemplateDirs` scope - the same GUID `msbuildproj.pkgdef` itself uses for its own
-  `/1` slot, with ours added as `/2` so both coexist.
-- **Not re-verified live after this fix**: every attempt to relaunch the experimental instance on a
-  freshly reset hive (needed so the new `NewProjectTemplates` registry keys and `InstalledTemplates.
-  json` get rebuilt from scratch rather than read from a stale cache) hung indefinitely before even
-  registering its `EnvDTE.DTE` automation object - reproduced three times, including on a hive reset
-  *before* this pkgdef change existed, so the hang itself is environment-level (this sandboxed VM
-  after a very long session, not this fix) rather than caused by the new registry keys, but it did
-  block a live pixel/UI-Automation confirmation that "Rust" now actually appears in the dialog. The
-  registry key shape itself is not a guess: it is copied field-for-field from this exact VS install's
-  own working, shipping `msbuildproj.pkgdef`, which is the closest possible real-world reference for
-  "a plain CPS/MSBuild project type's templates showing up in Create a new project".
+- **Fix**: `<ProjectType>Rust</ProjectType>` in all six `.vstemplate` files, plus an explicit
+  `<TemplateID>Kubuno.Rust.<TemplateFolder></TemplateID>` (the key the dialog's recent-templates
+  list uses). Nothing else is needed: the `Microsoft.VisualStudio.ProjectTemplate`/`ItemTemplate`
+  VSIX assets and their build-generated `.vstman` manifests are the discovery mechanism.
+- **Removed**: the `NewProjectTemplates\TemplateDirs` / `AddItemTemplates\TemplateDirs` keys added
+  earlier (copied from `msbuildproj.pkgdef`). Live-tested with the `<ProjectType>` fix in place: they
+  made the dialog read the template *folders* the legacy way, so each entry showed its folder name
+  ("RustConsoleApplication") with no description and no tags. Without them, the entries show the real
+  `<Name>`, `<Description>` and `Rust`/`Windows`/`Console` tags.
+- **`InstalledTemplates.json` is not the dialog's index.** It is a list of template IDs, and it holds
+  no JavaScript or Python entry either, although those languages appear in the filter. Do not use it
+  to check whether a template is visible.
+- **Live verification (experimental instance, UI Automation on the real dialogs)**: the language
+  filter lists "Rust" (between Python and TypeScript); searching "rust" lists **Rust Console
+  Application**, **Rust Library** and **Kubuno Desktop Application** with their descriptions and
+  tags. A Rust console project created *through the dialog* (not DTE) produced `HelloRsproj.slnx`,
+  `.rsproj`, `Cargo.toml` and `src/main.rs`, built through the Solution Build Manager (0 failed), and
+  F5 hit a breakpoint on `main.rs:2` in `HelloRsproj::main` under the native debugger. *Add New Item*
+  on that project shows a **Rust** category with **Kubuno View**, **Rust Module** and **Rust
+  Integration Test**.
+- **F5 fix found on the way**: the evaluated `$(TargetPath)` assumes `<manifest dir>\target` when
+  neither `<CargoTargetDir>` nor `CARGO_TARGET_DIR` is set, but cargo also honors `build.target-dir`
+  from a `.cargo/config.toml` (this machine has a per-user one). F5 then reported "The Rust
+  executable ... does not exist" right after a successful build. `RustDebugLaunchProvider` now falls
+  back to `cargo metadata`'s `target_directory` when `$(TargetPath)` is missing and no explicit
+  target dir is set.
+- **Environment notes**: after a hive reset, the experimental instance waits on the first-run screens
+  ("Connectez-vous à Visual Studio" -> "Ignorez et ajoutez des comptes ultérieurement", then
+  "Personnalisez votre expérience" -> "Démarrez Visual Studio"). That is why it looked hung earlier.
+  Start `devenv` with the user's full PATH (machine + user) so the build finds `cargo`.
+- **Template content is ASCII-only**: VS reads a template content file without a BOM in the ANSI
+  code page, so a section sign or an em dash turned into mojibake in the generated `.rsproj`,
+  `Cargo.toml` and `main.rs`. Those characters were replaced.
+
 - **Crate-name casing, revisited**: given the `IWizard` route is confirmed broken for a VSIX-hosted
   assembly (above) and a second, separate wizard assembly was judged out of scope for the time
   remaining, every template's crate/package name stays `$safeprojectname$` as VS substitutes it

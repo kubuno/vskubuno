@@ -7,7 +7,8 @@
   <TemplateData>
     <Name>Rust Module</Name>
     <Description>A new Rust module (.rs) file. Add "mod $fileinputname$;" where you want it in your module tree.</Description>
-    <ProjectType>Kubuno.Rust</ProjectType>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.RustModule</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Console</ProjectTypeTag>

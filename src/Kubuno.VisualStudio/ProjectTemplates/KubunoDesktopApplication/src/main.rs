@@ -1,4 +1,4 @@
-//! $safeprojectname$ — a Kubuno desktop application: a native window (no web view) that renders
+//! $safeprojectname$ - a Kubuno desktop application: a native window (no web view) that renders
 //! `main_view.kbview` through `kubuno_views`' runtime, the same way the Kubuno apps in
 //! `desktop/windows` do. Edit `main_view.kbview` (the view) and `main_view.rs` (its code-behind)
 //! to build your UI; both hot-reload on save while this is running (`FileWatcher`).
@@ -49,7 +49,7 @@ fn main() -> std::process::ExitCode {
             } else {
                 let theme = canvas.theme();
                 let format = &canvas.formats().body;
-                canvas.text("Waiting for main_view.kbview to compile…", &body, format, &theme.text_secondary, false);
+                canvas.text("Waiting for main_view.kbview to compile...", &body, format, &theme.text_secondary, false);
             }
         },
     );
