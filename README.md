@@ -310,7 +310,9 @@ JavaScript project system uses (checked by reflection against the installed CPS 
   `launch.vs.json` uses), which is what `-C prefer-dynamic` builds need (`kubuno_ui.dll`,
   `std-*.dll`); `RUST_BACKTRACE=1` is set; the toolchain's natvis files are installed as for Open
   Folder.
-- **"Debug" property page** (`Sdk/Rules/debug.xaml`, stored in `<project>.rsproj.user`): command
+- **"Debug" property page**: the generic "Débogueur à lancer" page, whose grid is the selected
+  debugger rule's own properties (`Sdk/Rules/rust_debugger.xaml`, `DisplayName="Local Rust
+  Debugger"`, stored in `<project>.rsproj.user` - there is no separate "Debug" page): command
   arguments (verbatim), working directory (default: the folder of `Cargo.toml`; relative paths are
   relative to the project folder) and environment variables, one `NAME=value` per line, applied
   over Visual Studio's own environment (setting `PATH` there replaces the computed one).

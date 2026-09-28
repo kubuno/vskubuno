@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`.rsproj` Property Pages showed three debug-related entries instead of one**: the standalone
+  "Debug" page (`Sdk/Rules/debug.xaml`) is removed, and its command-arguments/working-directory/
+  environment properties now live directly on the "Rust Debugger" flavor rule
+  (`Sdk/Rules/rust_debugger.xaml`), so "Débogage"/"Debug" shows them under "Débogueur à lancer" /
+  "Debugger to launch" like the JS and VSIX project systems do; the rule's `DisplayName` also
+  drives the Start button's text, now "Local Rust Debugger".
+
 ### Added
 
 - **F5 / Ctrl+F5 on a `.rsproj` (work package 4 of `docs/RSPROJ.md`)**: set a Rust project as the
@@ -14,9 +23,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the toolchain's natvis (e.g. `String` as `"Hello, Kubuno!"`); Ctrl+F5 runs it without the
   debugger. The executable's PATH gets the profile directory, its `deps` folder and the Rust
   standard library directory first, so `-C prefer-dynamic` builds (the Kubuno desktop apps with
-  `kubuno_ui.dll` and `std-*.dll`) start without a missing-DLL error. A new "Debug" property page
-  sets the command arguments, working directory (default: the `Cargo.toml` folder) and extra
-  environment variables (one `NAME=value` per line), stored in the per-developer `.rsproj.user`.
+  `kubuno_ui.dll` and `std-*.dll`) start without a missing-DLL error. The "Local Rust Debugger"
+  entry on the "Debug" property page sets the command arguments, working directory (default: the
+  `Cargo.toml` folder) and extra environment variables (one `NAME=value` per line), stored in the
+  per-developer `.rsproj.user`.
 - **`.rsproj` opens in Visual Studio as a real project (work package 3 of `docs/RSPROJ.md`)**:
   Rust/Cargo packages can sit in a `.sln` as CPS projects, registered like the JavaScript
   project system's `.esproj`. Solution Explorer shows the project (with its own Rust icon) and the

@@ -1,14 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The "debugger" rule named after DebuggerFlavor (docs/RSPROJ.md work package 4): its DisplayName is
-     the label of Visual Studio's Start button for a .rsproj. The launch itself is
-     Kubuno.VisualStudio.RustProjectSystem's RustDebugLaunchProvider (exported under the same name);
-     its settings are edited on the "Debug" page (debug.xaml). -->
+<!-- The "debugger" rule named after DebuggerFlavor (docs/RSPROJ.md work package 4): CPS's generic
+     "Debug" property page is the general debugger rule (debugger_general.xaml) plus whichever
+     PageTemplate="debugger" rule is currently selected, exactly like the installed VSIX project
+     system's own rule (verified on disk at
+     MSBuild\Microsoft\VisualStudio\VSSDK\VsixDebugger.xaml): a single Rule with
+     PageTemplate="debugger" carrying its own properties directly, no separate page. So the F5/Ctrl+F5
+     settings (arguments/working dir/env) live directly here, not on a standalone page - there is no
+     separate "Debug" page. DisplayName is also the label of the Start button and of this entry in
+     the debugger-flavor dropdown; the launch itself is
+     Kubuno.VisualStudio.RustProjectSystem's RustDebugLaunchProvider (exported under the same Name). -->
 <Rule Name="RustDebugger"
-      DisplayName="Rust Debugger"
+      DisplayName="Local Rust Debugger"
       PageTemplate="debugger"
       Description="Native debugger for a Rust executable"
       xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <Rule.Categories>
+    <Category Name="Debug" DisplayName="Debug" />
+  </Rule.Categories>
   <Rule.DataSource>
     <DataSource Persistence="UserFile" HasConfigurationCondition="False" />
   </Rule.DataSource>
+  <StringProperty Name="RustDebuggerCommandArguments" DisplayName="Command arguments" Category="Debug"
+                  Description="Command-line arguments passed to the executable, verbatim." />
+  <StringProperty Name="RustDebuggerWorkingDirectory" DisplayName="Working directory" Category="Debug" Subtype="folder"
+                  Description="The executable's working directory; relative paths are relative to the project folder. Default: the folder of Cargo.toml." />
+  <StringProperty Name="RustDebuggerEnvironment" DisplayName="Environment" Category="Debug"
+                  Description="Environment variables for the executable, one NAME=value per line, applied over Visual Studio's own environment. PATH already includes the profile directory, its deps and the Rust standard library (for -C prefer-dynamic builds); setting PATH here replaces all of it.">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="MultiLineString" />
+    </StringProperty.ValueEditors>
+  </StringProperty>
 </Rule>

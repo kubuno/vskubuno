@@ -10,10 +10,13 @@ Work package 4 (verified by reflection and live): `IDebugProfileLaunchTargetsPro
 the managed project system, not to CPS — the seam is CPS's `DebugLaunchProviderBase` +
 `[ExportDebugger(name)]`, picked by the `DebuggerFlavor` property (`debugger_general.xaml`), exactly
 as the JS project system's `LaunchJsonDebugLaunchProvider`; it lives in
-`Kubuno.VisualStudio.RustProjectSystem/RustDebugLaunchProvider.cs` (not `Debugging/`), with
-`Rules/debug.xaml` (args/working dir/env) and `Rules/rust_debugger.xaml`; there is no separate
-`Build.xaml` (the "Cargo" page already holds the build settings). Launch profiles
-(`LaunchProfiles` capability) were not needed. A `.rsproj` is `x64`-only (host triple). Modeled on the JavaScript project type (`.esproj`,
+`Kubuno.VisualStudio.RustProjectSystem/RustDebugLaunchProvider.cs` (not `Debugging/`). The
+"Débogage" property page's grid is the selected debugger flavor's own rule (`Rules/rust_debugger.xaml`,
+`DisplayName="Local Rust Debugger"`, carrying the args/working dir/env properties directly — the
+same shape as the installed VSIX project system's `VsixDebugger.xaml`, checked on disk); there is
+no separate "Debug" page and no separate `Build.xaml` (the "Cargo" page already holds the build
+settings). Launch profiles (`LaunchProfiles` capability) were not needed. A `.rsproj` is
+`x64`-only (host triple). Modeled on the JavaScript project type (`.esproj`,
 `Microsoft.VisualStudio.JavaScript.Sdk` + `Microsoft.VisualStudio.JavaScript.ProjectSystem`), whose
 installed files in VS 2026 Community were read directly for this note. Facts checked against those
 files are marked "(verified)"; everything else is this note's own proposal, and anything that would

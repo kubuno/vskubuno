@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- "Cargo" project property page (docs/RSPROJ.md §3): the Kubuno.Rust.Sdk properties a .rsproj may
-     set. F5/Ctrl+F5 settings are on the "Debug" page (debug.xaml). -->
+     set. F5/Ctrl+F5 settings are on the "Debug" page, driven by the selected debugger rule
+     (rust_debugger.xaml). -->
 <Rule Name="CargoProperties"
       DisplayName="Cargo"
       PageTemplate="generic"
