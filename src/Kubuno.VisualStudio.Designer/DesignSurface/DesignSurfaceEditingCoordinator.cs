@@ -260,7 +260,16 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 var registry = await JsonRpcRegistryClient.FetchAsync(rpc, CancellationToken.None);
                 var lsClient = new JsonRpcViewsSelectionLanguageServerClient(rpc);
                 var textView = new VsTextViewSelectionAdapter(primaryView);
-                var surfaceTarget = new DesignSurfaceSelectionTarget(rustHost);
+                // FlushBeforeSelectTarget (below), not DesignSurfaceSelectionTarget directly: a `select`
+                // this triggers is resolved against kubuno-views-ls's own, UNDEBOUNCED parse of the buffer
+                // (ElementAtOffsetAsync/RangeOfElementAsync - always current), while the design surface's
+                // own text only follows the SAME buffer through OnBufferChanged's 200ms-debounced
+                // OnPushTimerTick. A caret move (or an Outline click) landing inside that 200ms window would
+                // otherwise send `select {id}` while the surface is still rendering the PREVIOUS text - an
+                // id that is only valid post-edit can resolve to nothing, or worse, to whatever element now
+                // occupies that same ordinal position in the stale tree (e.g. the moved-to element's own
+                // parent) - see this pane's own INTEGRATION.md/report for the live symptom this fixes.
+                var surfaceTarget = new FlushBeforeSelectTarget(new DesignSurfaceSelectionTarget(rustHost), this);
 
                 _viewsSelectionClient = lsClient;
                 _documentUri = documentUri;
@@ -306,6 +315,24 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private void OnEditRequested(object? sender, DesignSurfaceEditRequestedEventArgs e)
         {
             _ = ApplyAsync(e.Op);
+        }
+
+        /// <summary>
+        /// Synchronously fires <see cref="OnPushTimerTick"/> right now (and stops the timer, exactly as
+        /// that handler's own first line already does) when a push is pending - a no-op otherwise. See
+        /// <see cref="FlushBeforeSelectTarget"/>'s own doc for why <c>select</c> needs this: it guarantees
+        /// the surface's text is never more than one already-in-flight edit behind the id a `select` names,
+        /// closing the debounce-vs-immediate-selection gap without adding a second debounce or reworking
+        /// <see cref="OnBufferChanged"/>'s own timer.
+        /// </summary>
+        internal void FlushPendingPush()
+        {
+            if (!_pushTimer.IsEnabled)
+            {
+                return;
+            }
+
+            OnPushTimerTick(this, EventArgs.Empty);
         }
 
         private async Task ApplyAsync(DesignSurfaceEditOp op)
@@ -456,6 +483,39 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             _buffer.Changed -= OnBufferChanged;
             _selectionSync?.Dispose();
             _selectionTextView?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Wraps a real <see cref="Selection.IDesignSurfaceSelectionTarget"/> to flush the owning
+    /// <see cref="DesignSurfaceEditingCoordinator"/>'s pending, debounced buffer-text push (if any)
+    /// immediately BEFORE forwarding a <c>select</c> - see <see cref="DesignSurfaceEditingCoordinator
+    /// .SetupSelectionSyncAsync"/>'s own comment on why this ordering matters (a `select` id is always
+    /// resolved against kubuno-views-ls's undebounced parse, but the surface's own text only follows the
+    /// buffer through a 200ms debounce - without this, the two can name "the same id" against two
+    /// different document versions). <see langword="null"/> (clearing the selection) is forwarded
+    /// unchanged - it never depends on which element is at a given position, so there is nothing to
+    /// flush for.
+    /// </summary>
+    internal sealed class FlushBeforeSelectTarget : Selection.IDesignSurfaceSelectionTarget
+    {
+        private readonly Selection.IDesignSurfaceSelectionTarget _inner;
+        private readonly DesignSurfaceEditingCoordinator _owner;
+
+        public FlushBeforeSelectTarget(Selection.IDesignSurfaceSelectionTarget inner, DesignSurfaceEditingCoordinator owner)
+        {
+            _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+            _owner = owner ?? throw new ArgumentNullException(nameof(owner));
+        }
+
+        public void Select(string? elementId)
+        {
+            if (elementId != null)
+            {
+                _owner.FlushPendingPush();
+            }
+
+            _inner.Select(elementId);
         }
     }
 }

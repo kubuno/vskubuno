@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Double-clicking a `.kbview` element node in Solution Explorer (e.g. `hello (Button)`) put the
+  design surface's selection on the wrong element** (its parent container) instead of the
+  double-clicked one, even though the XML pane's caret landed correctly. Two independent timing
+  races in DSG-8's selection sync, both confirmed live:
+  - `VsTextViewSelectionAdapter` (the caret-move poller) seeded its "last known caret position"
+    from the CURRENT caret position at construction time - but Solution Explorer's own navigation
+    (`SymbolNavigator`) can move the caret before this adapter is even constructed (it is built at
+    the end of an async chain: a laid-out XML view, a resolved language-server `JsonRpc`, a fetched
+    component registry), so the very first poll tick saw "no change" and never raised the selection
+    sync's `CaretMoved` event for that navigation at all. The poller now starts from an impossible
+    sentinel position so its first tick always synchronizes to wherever the caret already is.
+  - A `select` sent to the design surface (from a caret move or an Outline click) could reach it
+    BEFORE the buffer edit it was computed against had been pushed as `setText`: `kubuno-views-ls`
+    resolves an element id against its own always-current parse, but the design surface's own text
+    only follows the same buffer through a 200ms-debounced push. `select` now flushes any pending
+    debounced push first, so the two are never out of sync.
+  Verified live (experimental instance, UI Automation): double-click/Enter on `hello (Button)` now
+  shows the Button's own properties (Text/Variant/Size/Icon/Loading) in the Properties tool window,
+  not the parent Stack's; double-click/Enter on a `.rs` symbol node still navigates to it correctly.
 - **"Create a new project" crashed with "ce modèle a tenté de charger un assembly de composant"
   when instantiating any project template**: `Microsoft.VisualStudio.TemplateWizard.Wizard.
   CreateManagedInstance`'s own `Assembly.Load` does not resolve `Kubuno.VisualStudio.TemplateWizard`
@@ -44,6 +63,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   (`Sdk/Rules/rust_debugger.xaml`), so "Débogage"/"Debug" shows them under "Débogueur à lancer" /
   "Debugger to launch" like the JS and VSIX project systems do; the rule's `DisplayName` also
   drives the Start button's text, now "Local Rust Debugger".
+
+### Changed
+
+- **`docs/RSPROJ.md`'s lot 8 addendum corrected: Solution Explorer symbol expansion (`.rs`/
+  `.kbview` element/item nodes under a file) is NOT confirmed working in Open Folder mode**, only
+  in a `.rsproj`. Live-verified against `Z:\src\desktop\windows` opened directly as a folder: every
+  `.rs`/`.kbview` file node reports no expand affordance at all (not "found the symbol query came
+  back empty" - the tree-attachment itself never seems to run for an Open Folder file node), even
+  though the plain file/folder tree and the (correctly absent, capability-gated) missing
+  Dependencies node are both right. Root cause not yet isolated; tracked as a known limitation
+  rather than shipped as an unverified fix - see that document's own "Open Folder, live-verified"
+  note and `SymbolTreeProvider`'s updated doc comment for the detail.
 
 ### Added
 

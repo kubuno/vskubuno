@@ -48,7 +48,19 @@ namespace Kubuno.VisualStudio.Designer.Selection.Infrastructure
             _textView = textView ?? throw new ArgumentNullException(nameof(textView));
             ErrorHandler.ThrowOnFailure(_textView.GetBuffer(out _textLines));
 
-            (_lastLine, _lastColumn) = TryGetCaretPos();
+            // Deliberately NOT initialized from TryGetCaretPos(): this constructor runs at the end of
+            // DesignSurfaceEditingCoordinator.SetupSelectionSyncAsync's own async chain (a laid-out
+            // PrimaryView + a resolved JsonRpc + a fetched ComponentRegistry, all awaited first) - a caller
+            // that moved the caret programmatically BEFORE that chain finished (e.g. Solution Explorer's
+            // SymbolNavigator, whose own poll for a laid-out XmlTextView is much cheaper and typically wins
+            // the race against the RPC round trip above) would otherwise have that first position baked in
+            // as "no change yet", and OnTimerTick's very first tick would see the caret already sitting
+            // there and never raise CaretMoved for it - silently dropping that navigation's selection sync
+            // (docs/RSPROJ.md lot 8: "double-click a .kbview element node ... puts the XML caret on the
+            // element", but the design surface never gets told). An impossible sentinel forces the first
+            // poll tick to always treat wherever the caret already is as a change, exactly like a caller
+            // that only started polling after the fact should.
+            (_lastLine, _lastColumn) = (-1, -1);
 
             _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = PollInterval };
             _timer.Tick += OnTimerTick;

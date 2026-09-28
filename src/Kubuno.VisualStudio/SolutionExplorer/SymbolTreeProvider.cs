@@ -81,10 +81,19 @@ namespace Kubuno.VisualStudio.SolutionExplorer
 
     /// <summary>
     /// A <c>.rs</c> file gets its Rust items (<see cref="RustSymbolQuery"/>), a <c>.kbview</c> file its
-    /// element tree (<see cref="KbviewSymbolQuery"/>) - in a <c>.rsproj</c> as well as in Open Folder,
-    /// since both hand out <see cref="IVsHierarchyItem"/>s. Ordered after the hierarchy's own
-    /// children, so a nested code-behind file comes first (like <c>Form1.Designer.cs</c> above the
-    /// <c>Form1</c> class node). Also the children source of every node this extension creates.
+    /// element tree (<see cref="KbviewSymbolQuery"/>) - in a <c>.rsproj</c>. Ordered after the
+    /// hierarchy's own children, so a nested code-behind file comes first (like
+    /// <c>Form1.Designer.cs</c> above the <c>Form1</c> class node). Also the children source of every
+    /// node this extension creates.
+    /// <b>Not confirmed working in Open Folder</b> (docs/RSPROJ.md lot 8's own "Open Folder,
+    /// live-verified" note): a plain-file <c>.rs</c>/<c>.kbview</c> node under an Open Folder workspace
+    /// reports <c>ExpandCollapseState.LeafNode</c> immediately (not "Collapsed", would-expand-if-asked)
+    /// even after several seconds, which - given <see cref="FileSymbolsSource.HasItems"/> starts
+    /// <see langword="true"/> until its first (lazy) query completes - points at
+    /// <see cref="CreateForHierarchyItem"/> never being reached for those nodes at all, not at the query
+    /// itself coming back empty. Root cause not yet isolated (needs a live debugger attached to see what
+    /// Open Folder's Folder View actually calls <c>CreateCollectionSource</c> with for a plain file, if
+    /// anything) - do not assume this method runs for an Open Folder file node without re-verifying live.
     /// </summary>
     [Export(typeof(IAttachedCollectionSourceProvider))]
     [Name(nameof(SymbolTreeProvider))]

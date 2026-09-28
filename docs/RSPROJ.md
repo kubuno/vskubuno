@@ -631,8 +631,12 @@ JS/TS project system shows no symbol nodes), so there was nothing to reuse.
   (XAML, one source per `Background` - Light/Dark/HighContrast, `AllowColorInversion=false`): `.rs`
   (page + Rust badge, C#-file style), `.kbview` (form window, WinForms style), `Cargo.toml` (crate).
   Bound for `.rsproj` items by `RustProjectTreePropertiesProvider`, and for any `.rs`/`.kbview`
-  (Open Folder included) by `ShellFileAssociations\.ext\DefaultIconMoniker` in `languages.pkgdef`
-  (`Cargo.toml` is not associated there: the key is per extension and would hit every `.toml`).
+  by `ShellFileAssociations\.ext\DefaultIconMoniker` in `languages.pkgdef` - a plain per-extension
+  registry association, independent of the project/hierarchy type, so it should cover Open Folder
+  too, but (see the "Open Folder, live-verified" note below, which found the SYMBOL EXPANSION half
+  of lot 8 broken there) this specific claim has not itself been visually re-confirmed live in Open
+  Folder this session. (`Cargo.toml` is not associated there: the key is per extension and would
+  hit every `.toml`.)
 - **Dependencies node**: `cargo metadata --no-deps` (the package's declared `dependencies`, now
   parsed into `CargoPackage.Dependencies`), package picked by `$(CargoPackage)` then
   `$(CargoManifestPath)` (read through `IVsBuildPropertyStorage`, so a mirrored project pointing at a
@@ -660,3 +664,30 @@ Enter on `hello (Button)` opened `main_view.kbview` with the caret on line 11, c
 the node within the debounce, removing it removed the node. `hello-rust`: symbols under
 `lib.rs`/`main.rs`/`examples`/`tests`, an empty Dependencies node (the crate has none).
 Icons and dark theme: checked visually by the orchestrator (screenshot), not by UI Automation.
+
+**Open Folder, live-verified (correction to `SymbolTreeProvider`'s own doc comment, which claims
+"in a .rsproj as well as in Open Folder, since both hand out `IVsHierarchyItem`s"): symbol
+expansion does NOT currently work.** Opened `Z:\src\desktop\windows` (a plain Cargo
+workspace, no `.rsproj`) directly with `devenv "Z:\src\desktop\windows"` and read Solution
+Explorer - "Affichage des dossiers" (Folder View) - back through UI Automation: the tree itself is
+correct (`src\crates\kubuno-views\examples\views\settings.kbview`/`showcase.kbview`,
+`src\crates\kubuno-views-ls\src\symbols.rs` and its siblings all listed with the right names), but
+every `.rs`/`.kbview` file node reports `ExpandCollapseState.LeafNode` - not "Collapsed" (would-
+expand-if-asked) - both right after the node appears and after an 8+ second wait (ruling out the
+debounced/lazy load itself just being slow: `FileSymbolsSource.HasItems` is `true`, i.e. the node
+should show as expandable, from construction until the first `ReloadAsync` completes and finds
+nothing - `LeafNode` from the very first read means `SymbolTreeProvider.CreateForHierarchyItem`
+is never being reached for an Open Folder file item at all, not that the query ran and returned
+zero symbols). The **Dependencies** node correctly stays absent in Open Folder (gated on
+`RustProjectCapability`, which an Open Folder workspace never has - working as designed, not a
+bug). File **icons** were not independently re-confirmed visually this session (`devenv` kept
+exiting under concurrent multi-agent load on the same experimental hive before a screenshot could
+be taken) - the wiring itself (`ShellFileAssociations\.rs\.kbview\DefaultIconMoniker` in
+`languages.pkgdef`, matched against `RustProject.imagemanifest`'s `RustFile`/`KbviewFile` ids) is a
+plain per-extension registry association independent of `IAttachedCollectionSourceProvider`, so
+there is no structural reason to expect it shares the symbol-expansion gap above, but this is not
+yet a live-confirmed fact for Open Folder specifically. Root cause of the symbol-expansion gap not
+yet isolated (needs a live `devenv` with a debugger attached to `Kubuno.VisualStudio.dll` to see
+what type/relationship Open Folder's Folder View actually calls `CreateCollectionSource` with, if
+it calls it at all, for a plain file node - not attempted blind here per this repo's own "always
+test for real" rule) - tracked as a known limitation rather than shipped as an unverified fix.
