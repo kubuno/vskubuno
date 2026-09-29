@@ -23,6 +23,8 @@
   <ItemGroup>
     <!-- Real `cargo metadata` captures shared with Kubuno.Cargo.Tests (Dependencies node mapping). -->
     <None Include="..\Kubuno.Cargo.Tests\Fixtures\Metadata\dependencies-*.json" Link="Fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Real rust-analyzer 1.98 textDocument/hover markdown (QuickInfo conversion tests). -->
+    <None Update="Fixtures\Hover\*.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

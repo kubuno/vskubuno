@@ -68,6 +68,9 @@
     <Compile Include="LanguageService\ContentDefinition.cs" />
     <Compile Include="LanguageService\RustLanguageClient.cs" />
     <Compile Include="LanguageService\RustAnalyzerMiddleLayer.cs" />
+    <Compile Include="LanguageService\QuickInfo\LspQuickInfoSource.cs" />
+    <Compile Include="LanguageService\QuickInfo\QuickInfoElementFactory.cs" />
+    <Compile Include="LanguageService\QuickInfo\QuickInfoSourceProviders.cs" />
     <Compile Include="SolutionExplorer\CollectionSources.cs" />
     <Compile Include="SolutionExplorer\SymbolNavigator.cs" />
     <Compile Include="SolutionExplorer\SymbolQueries.cs" />

@@ -38,6 +38,15 @@ namespace Kubuno.VisualStudio.Views.LanguageService
     public sealed class KubunoViewsLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
     {
         private readonly IKubunoViewsLanguageServerEnvironment _environment = new RealKubunoViewsLanguageServerEnvironment();
+        private readonly HoverSuppressionMiddleLayer _middleLayer = new HoverSuppressionMiddleLayer();
+
+        public KubunoViewsLanguageClient()
+        {
+            Current = this;
+        }
+
+        /// <summary>The MEF-created instance (null until a .kbview file activated the client), for the VSIX's QuickInfo source.</summary>
+        public static KubunoViewsLanguageClient? Current { get; private set; }
 
         [Import]
         internal IVsFolderWorkspaceService? WorkspaceService { get; set; }
@@ -53,7 +62,7 @@ namespace Kubuno.VisualStudio.Views.LanguageService
 
         public IEnumerable<string>? FilesToWatch => null;
 
-        public object? MiddleLayer => null;
+        public object? MiddleLayer => _middleLayer;
 
         public object? CustomMessageTarget => null;
 

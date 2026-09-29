@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Hover tooltips (Quick Info) that look like C#'s**, for Rust and for `.kbview` files. Hovering a Rust
+  symbol now shows Visual Studio's own symbol icon (method, struct, trait, field, constant, macro, module...,
+  with the lock/heart overlay for private/`pub(crate)` items, the same as in Solution Explorer), the
+  declaration on one colored line (`pub fn new(x: f64, y: f64) -> Self`, keywords, types, traits, generics,
+  lifetimes and parameters in the C# editor colors), the containing path in grey below it
+  (`kubuno_views::events::args::MouseEventArgs`), then the documentation as readable text: paragraphs,
+  inline code in the code font, bullet lists, clickable links, code examples as colored monospace lines.
+  Only the summary and the *Panics*/*Errors*/*Safety* sections are shown, long documentation ends with "…".
+  Memory layout and generic substitutions (`K = String`) appear as small grey notes. Hovering a `.kbview`
+  element shows its Kubuno control icon, its name and its description; an attribute shows
+  `Text: String = ""`, `event OnClick(MouseEventArgs)` or `Variant: enum = "Primary"` with its valid values,
+  and descriptions are in French when Visual Studio is in French. Errors under the mouse are still shown
+  below, separated by a line, as for C#. Previously the tooltip showed rust-analyzer's raw markdown
+  (code fences, `---` separators).
+
 - **Typed event handlers, like a Windows Forms form's**: a new *Kubuno Desktop Application* (and a new
   *Kubuno View* item) now declares its handlers as methods of the view model, in an impl marked
   `#[kubuno_views::event_handlers]` - `fn on_hello_click(&mut self, sender: &Sender<Button>, e:
