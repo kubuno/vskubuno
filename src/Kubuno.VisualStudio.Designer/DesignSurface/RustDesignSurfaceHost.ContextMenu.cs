@@ -18,6 +18,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// <summary>A clipboard/duplicate keyboard command on the surface (raised on the UI thread).</summary>
         public event EventHandler<DesignSurfaceCommandEventArgs>? SurfaceCommandRequested;
 
+        /// <summary>A double-click on an element of the surface (raised on the UI thread): create or open its default event handler (docs/EVENTS.md §5.2).</summary>
+        public event EventHandler<DesignSurfaceDoubleClickEventArgs>? ElementDoubleClicked;
+
         /// <summary>Dispatches a <c>contextMenu</c>/<c>command</c> line (true), or leaves the line to the caller (false).</summary>
         private bool TryDispatchContextMenuLine(string line)
         {
@@ -33,6 +36,14 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             {
 #pragma warning disable VSTHRD001, VSTHRD110
                 Dispatcher.BeginInvoke(new Action(() => SurfaceCommandRequested?.Invoke(this, command)));
+#pragma warning restore VSTHRD001, VSTHRD110
+                return true;
+            }
+
+            if (DesignSurfaceContextMenuProtocol.TryParseDoubleClick(line, out var doubleClick) && doubleClick is not null)
+            {
+#pragma warning disable VSTHRD001, VSTHRD110
+                Dispatcher.BeginInvoke(new Action(() => ElementDoubleClicked?.Invoke(this, doubleClick)));
 #pragma warning restore VSTHRD001, VSTHRD110
                 return true;
             }
@@ -91,9 +102,35 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         public string? ElementId { get; }
     }
 
+    /// <summary>See <see cref="RustDesignSurfaceHost.ElementDoubleClicked"/>.</summary>
+    public sealed class DesignSurfaceDoubleClickEventArgs : EventArgs
+    {
+        public DesignSurfaceDoubleClickEventArgs(string elementId)
+        {
+            ElementId = elementId ?? throw new ArgumentNullException(nameof(elementId));
+        }
+
+        /// <summary>The double-clicked element (<c>""</c> = the view's root element).</summary>
+        public string ElementId { get; }
+    }
+
     /// <summary>The pure parse half of <c>contextMenu</c>/<c>command</c> (unit-tested with no live process).</summary>
     public static class DesignSurfaceContextMenuProtocol
     {
+        /// <summary>Parses <c>{"type":"doubleClick","elementId":"1"}</c> (<c>kubuno_views::protocol::SurfaceMessage::DoubleClick</c>).</summary>
+        public static bool TryParseDoubleClick(string line, out DesignSurfaceDoubleClickEventArgs? doubleClick)
+        {
+            doubleClick = null;
+            if (!TryParse(line, "doubleClick", out var root) ||
+                !root.TryGetProperty("elementId", out var idProp) || idProp.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            doubleClick = new DesignSurfaceDoubleClickEventArgs(idProp.GetString() ?? string.Empty);
+            return true;
+        }
+
         public static bool TryParseContextMenu(string line, out DesignSurfaceContextMenuEventArgs? menu)
         {
             menu = null;

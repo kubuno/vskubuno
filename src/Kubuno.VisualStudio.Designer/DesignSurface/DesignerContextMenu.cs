@@ -133,7 +133,20 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             }
 
             model.TagName = element.TagName;
-            model.Events = registry.Find(element.TagName)?.Events.Select(e => e.Name).ToList() ?? (IReadOnlyList<string>)Array.Empty<string>();
+            // Create Handler ›: the default event first, then the component's own events - the events every control
+            // raises (mouse, keys, focus...) stay in the Properties window's Events tab, which lists them by category.
+            var component = registry.Find(element.TagName);
+            var isRoot = string.IsNullOrEmpty(elementId);
+            var defaultEvent = component?.DefaultEventFor(isRoot);
+            model.Events = component is null
+                ? Array.Empty<string>()
+                : new[] { defaultEvent }
+                    .Concat(component.Events.Where(e => e.Browsable && !e.Common && (isRoot || !e.RootOnly)))
+                    .Where(e => e is not null)
+                    .Select(e => e!.Name)
+                    .Distinct(StringComparer.Ordinal)
+                    .Take(DesignerCommandIds.MaxDynamicItems)
+                    .ToList();
             model.Ancestors = DesignerStructurePlanner.Ancestors(text, elementId);
             model.WrapOptions = DesignerStructurePlanner.WrapContainers
                 .Where(c => registry.Find(c) is not null)

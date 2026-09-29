@@ -6,8 +6,8 @@
 > server) and `vskubuno` (Visual Studio designer). It builds on
 > `docs/XML_VIEWS.md` §2/§4/§7 and `docs/DESIGNER.md` §11 (Properties window, ⚡ tab).
 >
-> **Status (2026-09-29):** EVT-1 is **done** (see §9, "EVT-1 as built"); EVT-2 to EVT-8 are not
-> started.
+> **Status (2026-09-29):** EVT-1, EVT-2 and EVT-3 are **done** (see §9, "EVT-1 as built", and §10,
+> "EVT-2 and EVT-3 as built"); EVT-4 to EVT-8 are not started.
 
 ## 0. Where we are today
 
@@ -448,8 +448,8 @@ instead of `&mut dyn ViewModel`.
 | # | Package | Owns | Depends on | Size | Tests / live verification |
 |---|---|---|---|---|---|
 | EVT-1 ✅ done (§9) | Args, traits, `Event<A>`/`Subscription`, `ElementRef`/`Sender` | new `kubuno-views/src/events/{mod,args,multicast,sender}.rs`, `#[derive(EventArgs)]` in new `kubuno-views-macros` | — | M | Unit tests: order, drop = unsubscribe, add/remove during raise, re-entrancy skip, depth cap, `Handled` short-circuit, `Cancelable` visibility |
-| EVT-2 | Input router and ordered synthesis (mouse, hover, keys, focus, validation) | `events/router.rs`, `node.rs` `fire` (typed), every `families/*.rs` call site | EVT-1 | L | Scripted `Frame` sequences asserting exact WinForms orders (§3); legacy `ViewEvent` tests unchanged; live: `view_preview` with an event log overlay |
-| EVT-3 | Registry metadata and catalogue | `registry/{mod,export,docs_fr}.rs`, families' `EventMeta` tables, aliases, `validate.rs` alias hint; C# `Registry/EventMeta.cs`, `KbviewElementObject` categories and default event | EVT-1 | M | Registry test: every `default_event` exists; alias parse tests; C# JSON round-trip; live: ⚡ tab grouped with descriptions in VS experimental instance |
+| EVT-2 ✅ done (§10) | Input router and ordered synthesis (mouse, hover, keys, focus, validation) | `events/router.rs`, `node.rs` `fire` (typed), every `families/*.rs` call site | EVT-1 | L | Scripted `Frame` sequences asserting exact WinForms orders (§3); legacy `ViewEvent` tests unchanged; live: `view_preview` with an event log overlay |
+| EVT-3 ✅ done (§10) | Registry metadata and catalogue | `registry/{mod,export,docs_fr}.rs`, families' `EventMeta` tables, aliases, `validate.rs` alias hint; C# `Registry/EventMeta.cs`, `KbviewElementObject` categories and default event | EVT-1 | M | Registry test: every `default_event` exists; alias parse tests; C# JSON round-trip; live: ⚡ tab grouped with descriptions in VS experimental instance |
 | EVT-4 | Typed handlers and migration | `kubuno-views-macros` `#[handlers]`, `EventSink`, `Runtime::frame_typed`, legacy adapter; `handler_insert.rs` typed stub | EVT-1, EVT-2 | L | `trybuild` pass/fail tests (bad signature, async + Handled); existing `handlers!` tests untouched; live: `KubunoLot8App` old and new style both click through |
 | EVT-5 | Designer/LS commands | LS `compatibleHandlers`, `renameHandler`, remove-empty-stub, missing-handler diagnostic, convert code action; C# `GetCompatibleMethods`, surface double-click → default event, rename menu | EVT-3, EVT-4 | M | LS unit tests on temp workspaces; live: dropdown lists handlers, rename updates XML + Rust in one undo per file |
 | EVT-6 | View lifecycle, window events, threading | `runtime.rs` lifecycle hooks, host close/activation plumbing, `UiDispatcher`, `spawn_local` executor | EVT-2 | M | Unit tests with a fake host; live: FormClosing cancel keeps the window, background thread `begin_invoke` updates a label |
@@ -573,6 +573,137 @@ cap and its exact limit, panic-safe depth counter, `Handled` short-circuit, `Can
 three-level chains, generic and unit derives, legacy values, downcasts), 11 doctests in `kubuno-views`,
 4 in `kubuno-views-macros` (1 example + 3 `compile_fail`). The existing 401 unit tests of `kubuno-views`
 still pass; `cargo clippy --all-targets -D warnings` is clean for both crates.
+
+## 10. EVT-2 and EVT-3 as built (2026-09-29)
+
+In `Z:\src\desktop\windows` (uncommitted there) and in this repository. Existing `.kbview` files and
+`handlers!` projects are unchanged: old attribute names are aliases, legacy handlers receive the same values.
+
+### EVT-2 — input router and typed `fire`
+
+- **`kubuno_ui` (scope note)**: `FocusRing` records every focus move with its cause
+  (`take_changes() -> Vec<FocusChange { from, to, cause }>`, `FocusCause::{Pointer, Keyboard, Program,
+  Removed}`, capped at 64 unread) and can put the focus back silently (`restore`) — the only kubuno_ui change;
+  every exe was rebuilt (`tools/build-all.ps1`) and restaged. `kubuno-controls` was not changed: the
+  latched buttons, `click_count`, wheel and the key/text queue of `Frame`/`host::events()` were enough.
+- **`kubuno-views/src/events/router.rs`**: `SlotEvents` (per compiled element: stable id, element name,
+  `x:Name`/focus id, the handler of each `On*` attribute resolved to its canonical event — aliases and, on the
+  root, view events —, `native_click`, `keyboard_click` for Button/IconButton/LinkLabel,
+  `standard_double_click = !native_click`), `InputRouter` (owned by `Runtime`, state keyed by element id so it
+  survives hot reloads), `Dispatch { vm, handlers, events }`, `raise()`.
+- **How a frame runs**: `DesignSlot` (the wrapper `compile::build_node` puts around every element) registers
+  its `SlotEvents` and bounds with the router while painting, and sets the *current element* (the sender of
+  the events its node raises). `Runtime::frame_with_design` calls `router.begin_frame` right after
+  `FocusRing::begin_frame` — routed against the PREVIOUS frame's geometry, like the focus ring: Load →
+  Activated (first frame), window focus edges, focus moves, MouseLeave/MouseEnter (the deepest element under
+  the pointer; the parent gets MouseLeave when the pointer enters a child), MouseMove (to the capturing element
+  while a button is held), MouseHover (400 ms at rest, `request_repaint_after` for the rest), MouseDown
+  (captures), MouseWheel, then KeyDown/KeyPress/KeyUp to the focused element in queue order (Space/Enter →
+  Click on a button). A release queues the tail. The tree paints (a `<Button>` raises its own Click there), then
+  `router.end_frame` raises the queued [Click if the node has none] → MouseClick (or DoubleClick →
+  MouseDoubleClick) → MouseUp, Resize → SizeChanged / Move → LocationChanged for moved elements, Shown after
+  the first frame. The designer (a layout map is recorded) runs no router: design mode never raises
+  application events.
+- **Focus**: keyboard/program: Enter (containers, outermost first) → GotFocus, then old Leave (innermost
+  first) → Validating → Validated → LostFocus; pointer: Enter → GotFocus, old LostFocus → Leave → Validating →
+  Validated (a press focuses before MouseDown). A cancelled Validating restores the focus
+  (`FocusRing::restore`) and balances the new side (its LostFocus and Leave; for the pointer the old element's
+  Enter and GotFocus again). Removal: LostFocus/Leave, no validation.
+- **Dispatch**: an event reaches only the handler its element names, through the new
+  `HandlerTable::dispatch_args` — a typed handler (`insert_typed`, `TypedHandler = FnMut(&mut dyn ViewModel,
+  &ElementRef, &mut dyn EventArgs)`, can set `handled`/`cancel`) wins, else the legacy handler gets
+  `args.legacy_value()`. A handled KeyDown/KeyPress/KeyUp is consumed from the host queue; `suppress_key_press`
+  drops the following KeyPress. Router events are returned as `ViewEventKind::Other { name, args: Rc<dyn
+  EventArgs> }` (manual `Debug`/`PartialEq`) only when the element names a handler for them.
+- **Typed `fire`**: `PaintCx::fire`/`InteractCx::fire` take `&mut dyn EventArgs` instead of a `Value`; every
+  call site (node.rs and the five families) passes the typed args whose legacy value is exactly what it passed
+  before (`EmptyEventArgs`, `CheckedChangedEventArgs`, `TextChangedEventArgs`, `NumericValueChangedEventArgs`,
+  `SelectionChangedEventArgs`, and three new ones: `ItemEventArgs { index }` — toolbar/breadcrumb items,
+  `ItemActivateEventArgs { item: Value }` — row/node activation, `ItemCheckEventArgs { index, checked }`). The
+  `ViewEventKind` each site reports is unchanged. `PaintCx` gained `router`/`sender` (`pub(crate)`) and
+  `with_surface(canvas, frame)` (the scroll area and tab page paths used to rebuild it field by field).
+- **Deviations / not built**: within a phase, Leave is raised before Enter rather than strictly in paint
+  order; `KeyPreview`, wheel bubbling and `CausesValidation` (§3) are not built; FormClosing/FormClosed stay
+  EVT-6; Click is synthesized for the left button only (MouseClick for any); the old value of a few
+  `*Changed` args is not tracked (lists, sort, calendar: `None`/empty).
+- **Tests**: 18 router tests (`events::router::tests`: Load → Activated → Shown once, Deactivate/Activated
+  edges; MouseDown → Click → MouseClick → MouseUp; a native Click between MouseDown and MouseClick; release
+  outside = MouseLeave/MouseMove (captured)/MouseUp only; the double-click sequence; a button's second Click;
+  hover Enter → Move* → Hover once (with the repaint delay) → Leave; deepest element + parent MouseLeave;
+  wheel; keys in order; handled KeyDown consumed + suppressed KeyPress; Space/Enter Click on a button; focus by
+  keyboard, by mouse, focus before MouseDown, cancelled Validating; Resize/Move; `SlotEvents` from XML
+  incl. aliases and root-only view events; legacy value), plus a node test with a real `ButtonNode`
+  (`ok_down → ok_click → ok_mouse_click → ok_up`, legacy `Bool(true)`), and `FocusRing`'s change log test in
+  kubuno-ui. All previous `ViewEvent` tests unchanged.
+
+### EVT-3 — registry metadata
+
+- **`EventMeta`** = `{ name, doc, category: EventCategory, args_type, args_chain, cancelable, routing:
+  Routing, aliases, browsable }` built with `const` methods (`EventMeta::new(..).category(..).args::<A>()
+  .aliases(&[..]).routing(..).hidden()`; `args::<A>()` reads `ArgsChain` and sets `cancelable` when the chain
+  contains `CancelEventArgs`). `display_name()`, `matches(attr)`.
+- **Catalogue**: `COMMON_EVENTS` (24: Click, DoubleClick, MouseClick, MouseDoubleClick, the 7 mouse, 3 key, 6
+  focus/validation, Resize, Move, SizeChanged, LocationChanged) on every control — not on the gated
+  structural elements (`is_gated`: Item, Column, TabItem, Option, Step, AccordionSection, BreadcrumbItem,
+  ToolbarItem) — a component's own entry of the same name wins (Button's OnClick doc). `VIEW_EVENTS` (OnLoad,
+  OnShown, OnActivated, OnDeactivate) are accepted on the root element only (validator, LS, `SlotEvents`).
+  `ComponentMeta::{event (own by name or alias, then common), all_events, has_common_events, default_event,
+  alias_target}`.
+- **Renames with aliases**: Switch `OnToggled` → `OnCheckedChanged`; TextField/TextArea/SearchField/
+  MaskedField `OnChanged` → `OnTextChanged`; Dropdown/ComboBox `OnChanged` → `OnSelectedValueChanged`
+  (deviation: the payload is the value, so WinForms' SelectedValueChanged rather than SelectedIndexChanged);
+  DatePicker `OnChanged` → `OnValueChanged`; ListView/TreeView `OnActivate` → `OnItemActivate`. `Props::event`
+  reads an event under its canonical name, then its aliases, whichever name the build closure asks for, so
+  the families' build code is unchanged. `validate::hints` reports "`OnToggled` is an older name for
+  `OnCheckedChanged`" (the LS publishes it as a HINT; the quick fix is left to EVT-5).
+- **Default events** (`component!`'s new optional `default_event:`, fallback OnClick, else the first own
+  event): Button/IconButton/LinkLabel/ColorField and containers → OnClick; Switch/CheckBox/RadioButton →
+  OnCheckedChanged; text fields → OnTextChanged; Dropdown/ComboBox → OnSelectedValueChanged; Slider/
+  NumericField/DatePicker → OnValueChanged; ListBox/CheckedListBox/ListView/TreeView/DataTable/Tabs →
+  OnSelectionChanged; Splitter → OnDistanceChanged; Stepper → OnStepSelected; MonthCalendar → OnDateSelected;
+  the view root → OnLoad (chosen by the designer).
+- **Export** (`kubuno/registry`): each event `{ name, display_name, doc, doc_fr, category, args_type,
+  args_chain, cancelable, routing, aliases, browsable, root_only, common }`; a control's list is its own events,
+  then the common ones, then the view events flagged `root_only`; each component gets `default_event`. French
+  docs for the common and view events (`docs_fr`: `*.OnMouseDown`, `View.OnLoad`, `event_french`). The C#
+  fixture `registry.sample.json` is regenerated from the real export (ignored test `write_registry_fixture`).
+- **Language server**: completion offers own + common (+ view on the root) events with `category (args)`
+  detail; hover shows category/args and "older name for"; go-to-definition and `kubuno/createHandler` accept
+  common and root view events, and createHandler finds a handler already written under an alias (no second
+  attribute); a request is written under the attribute name it asks for.
+- **C#**: `EventMeta` gained the fields (+ `EffectiveDisplayName`, `LocalizedCategory` through
+  `DesignerText.EventCategory` — Action, Comportement, Focus, Touche, Souris, Glisser-déplacer, Disposition,
+  Propriété modifiée —, `Matches`, `AttributeNames`); `ComponentMeta.DefaultEvent`, `DefaultEventFor(isRoot)`,
+  `FindEvent`. The ⚡ tab rows carry the event's category, display name (`Click`, not `OnClick`) and
+  description; non-browsable and (off the root) root-only events are hidden; `DefaultEventAttribute`/
+  `GetDefaultEvent` come from the registry (root: OnLoad); a row reads and edits its handler under an alias
+  when the file uses one. The context menu's *Create Handler ›* lists the default event then the component's
+  own events (the common ones stay in the ⚡ tab).
+- **Double-click on the surface (§5.2)**: `view_embed` sends `{"type":"doubleClick","elementId":…}` when a
+  press has `click_count >= 2` (the element under the pointer, `""` for the frame's title bar), after
+  `selectionChanged`, and cancels the move drag the second press started; the coordinator resolves the
+  element's default event and calls the same `CreateOrShowHandler` as the ⚡ tab.
+- **Tests**: Rust — registry (every default event exists, design-note defaults, aliases, common vs own,
+  unique names/aliases), props alias reading, validator (common/alias/root-only, alias hint), export (metadata
+  and key set), docs_fr (common/view French docs), protocol (`doubleClick`), LS (alias-wired handler found,
+  common + root view event handlers). C# — fixture round-trip of the new fields and an old-shape export,
+  default events, ⚡ categories/display names/descriptions (English and French), root events, alias rows,
+  `doubleClick` parsing, the short *Create Handler* list (290 Designer tests pass).
+
+### Live verification (regular Visual Studio, 2026-09-29)
+
+A new *Kubuno Desktop Application* (`EvtApp`, created through DTE from the installed template) with the
+template's button extended by `OnMouseDown`/`OnMouseClick`/`OnMouseUp` handlers appending to the status field.
+The designer ran on the project's own `kubuno_ui.dll` (§15 of DESIGNER.md). The ⚡ tab of the selected button
+listed the events grouped by category in French (Action, Disposition, Focus, Propriété modifiée, Souris,
+Touche). A real double-click on a button without handler wrote `OnClick="on_second_click"`, the `fn
+on_second_click` stub and its `handlers!` entry, and opened the code at the stub. **Found live**: that entry
+(`"x" => |vm, value| x(vm, value),`) did not compile — `handlers!` only accepted a block body — a
+pre-existing `createHandler`/macro mismatch; the macro now takes any expression. F5 (no console window, see
+GETTING-STARTED "Console window"), then a real click on the button: VS's Output ▸ Debug pane showed the
+application's `tracing` lines `event MouseDown`, `event Click`, `event MouseClick`, `event MouseUp`, in that
+order, followed by the returned `ViewEvent`s (`Other { name: "MouseDown", args: "MouseEventArgs" }`, `Clicked`,
+`MouseClick`, `MouseUp`).
 
 ## Scope note (product owner, 2026-09-29)
 

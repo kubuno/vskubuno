@@ -120,8 +120,58 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
             var registry = LoadFixture();
             var button = registry.Find("Button")!;
 
-            Assert.AreEqual(1, button.Events.Count);
+            // The button's own OnClick first, then the events every control raises, then the view's own
+            // (root-only) events - the real export (EVENTS.md EVT-3).
             Assert.AreEqual("OnClick", button.Events[0].Name);
+            Assert.IsFalse(button.Events[0].Common);
+            Assert.AreEqual(1, button.Events.Count(e => e.Name == "OnClick"));
+            Assert.AreEqual("OnClick", button.DefaultEvent);
+            var down = button.Events.Single(e => e.Name == "OnMouseDown");
+            Assert.IsTrue(down.Common);
+            Assert.AreEqual("MouseDown", down.EffectiveDisplayName);
+            Assert.AreEqual("Mouse", down.Category);
+            Assert.AreEqual("MouseEventArgs", down.ArgsType);
+            CollectionAssert.AreEqual(new[] { "MouseEventArgs", "EventArgs" }, down.ArgsChain);
+            Assert.IsTrue(button.Events.Single(e => e.Name == "OnValidating").Cancelable);
+            Assert.IsTrue(button.Events.Single(e => e.Name == "OnLoad").RootOnly);
+        }
+
+        [TestMethod]
+        public void FromJson_ParsesAliasesAndDefaultEvents()
+        {
+            var registry = LoadFixture();
+            var @switch = registry.Find("Switch")!;
+            Assert.AreEqual("OnCheckedChanged", @switch.DefaultEvent);
+            var checkedChanged = @switch.FindEvent("OnToggled");
+            Assert.IsNotNull(checkedChanged, "an older attribute name finds its event");
+            Assert.AreEqual("OnCheckedChanged", checkedChanged!.Name);
+            CollectionAssert.AreEqual(new[] { "OnToggled" }, checkedChanged.Aliases);
+            Assert.AreEqual("Property Changed", checkedChanged.Category);
+            Assert.AreEqual("OnCheckedChanged", @switch.DefaultEventFor(isRoot: false)?.Name);
+            Assert.AreEqual("OnLoad", @switch.DefaultEventFor(isRoot: true)?.Name);
+            Assert.AreEqual("OnTextChanged", registry.Find("TextField")!.DefaultEvent);
+            Assert.AreEqual("OnSelectedValueChanged", registry.Find("ComboBox")!.DefaultEvent);
+        }
+
+        [TestMethod]
+        public void EventMeta_WithoutTheNewFields_StillWorks()
+        {
+            // An export from before EVT-3: only name/doc - displayed as before, browsable, category Action.
+            var registry = ComponentRegistry.FromJson(@"[{""name"":""Old"",""doc"":null,""family"":""core"",""children"":""None"",""properties"":[],""events"":[{""name"":""OnClick"",""doc"":""x""}]}]");
+            var click = registry.Find("Old")!.Events[0];
+            Assert.AreEqual("Click", click.EffectiveDisplayName);
+            Assert.IsTrue(click.Browsable);
+            DesignerText.ForceFrench = false;
+            try
+            {
+                Assert.AreEqual("Action", click.LocalizedCategory);
+            }
+            finally
+            {
+                DesignerText.ForceFrench = null;
+            }
+
+            Assert.AreEqual("OnClick", registry.Find("Old")!.DefaultEventFor(isRoot: false)?.Name);
         }
 
         [TestMethod]

@@ -56,5 +56,32 @@ namespace Kubuno.VisualStudio.Designer.Registry
         public List<PropertyMeta> Properties { get; set; } = new List<PropertyMeta>();
 
         public List<EventMeta> Events { get; set; } = new List<EventMeta>();
+
+        /// <summary>
+        /// The event a double-click on the element creates a handler for (WinForms' <c>DefaultEvent</c>;
+        /// docs/EVENTS.md §3/§5.2): <c>OnClick</c> for a <c>Button</c>, <c>OnCheckedChanged</c> for a
+        /// <c>Switch</c>... Null for an element without events. The view's root element uses
+        /// <c>OnLoad</c> instead (<see cref="DefaultEventFor"/>).
+        /// </summary>
+        public string? DefaultEvent { get; set; }
+
+        /// <summary>The element's default event: <c>OnLoad</c> for the view's root element when it has it, else <see cref="DefaultEvent"/>, else its first listed event.</summary>
+        public EventMeta? DefaultEventFor(bool isRoot)
+        {
+            if (isRoot)
+            {
+                var load = Events.Find(e => e.RootOnly && e.Name == "OnLoad");
+                if (load is not null)
+                {
+                    return load;
+                }
+            }
+
+            return (DefaultEvent is null ? null : Events.Find(e => e.Matches(DefaultEvent)))
+                ?? Events.Find(e => e.Browsable && (isRoot || !e.RootOnly));
+        }
+
+        /// <summary>The event whose attribute (or older alias) is <paramref name="attributeName"/>.</summary>
+        public EventMeta? FindEvent(string attributeName) => Events.Find(e => e.Matches(attributeName));
     }
 }

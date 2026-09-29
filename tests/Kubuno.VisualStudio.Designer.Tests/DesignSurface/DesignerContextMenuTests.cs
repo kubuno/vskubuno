@@ -55,6 +55,26 @@ namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
         }
 
         [TestMethod]
+        public void DoubleClick_MatchesTheRustWireShape()
+        {
+            Assert.IsTrue(DesignSurfaceContextMenuProtocol.TryParseDoubleClick(@"{""type"":""doubleClick"",""elementId"":""0.1""}", out var element));
+            Assert.AreEqual("0.1", element!.ElementId);
+            Assert.IsTrue(DesignSurfaceContextMenuProtocol.TryParseDoubleClick(@"{""type"":""doubleClick"",""elementId"":""""}", out var root));
+            Assert.AreEqual(string.Empty, root!.ElementId);
+            Assert.IsFalse(DesignSurfaceContextMenuProtocol.TryParseDoubleClick(@"{""type"":""doubleClick"",""elementId"":null}", out _));
+            Assert.IsFalse(DesignSurfaceContextMenuProtocol.TryParseDoubleClick(@"{""type"":""command"",""name"":""copy"",""elementId"":null}", out _));
+        }
+
+        [TestMethod]
+        public void CreateHandlerMenu_ListsTheDefaultEventFirst_ThenTheComponentsOwnEvents()
+        {
+            var switchModel = DesignerMenuModel.Build("<Stack><Switch/><TextField/></Stack>", "0", Registry, clipboardTag: null);
+            CollectionAssert.AreEqual(new[] { "OnCheckedChanged" }, switchModel.Events.ToArray(), "no mouse/key/focus events in the short menu");
+            var rootModel = DesignerMenuModel.Build(View, "", Registry, clipboardTag: null);
+            Assert.AreEqual("OnLoad", rootModel.Events.FirstOrDefault());
+        }
+
+        [TestMethod]
         public void SelectionChanged_KeepsTheRootIdAsARealSelection()
         {
             Assert.IsTrue(DesignSurfaceProtocol.TryParseSelectionChanged(@"{""type"":""selectionChanged"",""id"":"""",""bounds"":null}", out var ids));

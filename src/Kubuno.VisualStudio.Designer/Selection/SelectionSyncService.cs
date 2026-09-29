@@ -310,7 +310,10 @@ namespace Kubuno.VisualStudio.Designer.Selection
             var eventHandlers = new Dictionary<string, string?>(StringComparer.Ordinal);
             foreach (var @event in component.Events)
             {
-                eventHandlers[@event.Name] = attributes.Attributes.TryGetValue(@event.Name, out var value) ? value : null;
+                // The handler may be written under an older alias of the event (OnToggled for OnCheckedChanged).
+                eventHandlers[@event.Name] = @event.AttributeNames
+                    .Select(n => attributes.Attributes.TryGetValue(n, out var value) ? value : null)
+                    .FirstOrDefault(v => v is not null);
             }
 
             // "Available handler names" enumeration is Events-tab/DSG-10's own concern

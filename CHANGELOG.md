@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The Properties window's Events tab (⚡) lists every Windows Forms event of a `.kbview` control, grouped
+  by category**: Action, Mouse, Key, Focus, Behavior, Layout, Property Changed..., with the event's
+  description (in French when Visual Studio is in French) in the description pane and Windows Forms names
+  (Click, MouseDown, KeyPress, GotFocus, Validating, CheckedChanged...). The view's root element also lists
+  Load, Shown, Activated and Deactivate. A handler written under an older event name (`OnToggled` on a
+  switch, now CheckedChanged) shows in the new row and is edited in place, so existing views keep their
+  spelling.
+- **Double-clicking a control on the design surface creates its default event handler**, like the Windows
+  Forms designer: Click for a button, CheckedChanged for a switch or a check box, TextChanged for a text
+  field, SelectedValueChanged for a combo box, Load for the view itself (double-click its title bar or empty
+  area)... If the control already has one, its code opens at it. The design surface's context menu *Create
+  Handler* lists the default event first, then the control's own events.
+- **A handler created by the designer now compiles**: the entry it adds to a `handlers!` table was refused
+  by the macro until the fix in `kubuno-views` (desktop changelog); rebuild the project to pick it up.
+- **The running application raises those events in the Windows Forms order** (from `kubuno-views`, see the
+  desktop changelog): MouseDown, Click, MouseClick, MouseUp for a click, and so on.
+
 - **The `.kbview` designer renders with the project's own `kubuno_ui.dll`**: once the project has been
   built, the designer's preview is compiled against the project's dependency graph and loads exactly the
   `kubuno_ui.dll` the application loads, so a change to the Kubuno controls or styles the project uses
@@ -84,6 +101,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   pixel grid - 1-pixel strokes on whole pixels, symmetric pixel circles, a 1-pixel margin - like the Windows
   Forms toolbox icons, which Visual Studio's scaling keeps sharp.
 ### Changed
+
+- **A new Kubuno Desktop Application opens no console window**, in Debug too, like a Windows Forms
+  application: the template's `main.rs` starts with `#![windows_subsystem = "windows"]` and logs with
+  `tracing`. Under F5 the log lines (and any `println!`) appear in Visual Studio's Output window; without the
+  debugger they go to `%LOCALAPPDATA%\Kubuno\logs\<app>.log`; a crash shows an error dialog. To get a console
+  back, change that first line to `#![windows_subsystem = "console"]` (see *Console window* in
+  GETTING-STARTED, which also gives the one-line change for existing projects). Console applications and
+  Kubuno modules keep their console. If the application crashes, a Kubuno-styled window names it, shows the
+  error with its details, and offers to open the log or copy the report before it closes.
+- `tools/test-templates.ps1` checks the executable of each template: GUI subsystem (no console) for the
+  desktop application, console for the console application.
 
 - **Anchor/Dock in the Properties window show their default value like WinForms**: an absent `Anchor`
   reads `Top, Left` and an absent `Dock` `None`, in normal (non-bold) type; `Anchor` written as the

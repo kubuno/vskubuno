@@ -2,12 +2,18 @@
 //! `main_view.kbview` through `kubuno_views`' runtime, the same way the Kubuno apps in
 //! `desktop/windows` do. Edit `main_view.kbview` (the view) and `main_view.rs` (its code-behind)
 //! to build your UI; both hot-reload on save while this is running (`FileWatcher`).
+//!
+//! Like a Windows Forms application (`OutputType=WinExe`), it opens no console window, not even in
+//! Debug: log with `tracing` (`tracing::info!`, `tracing::debug!`...) - under the debugger (F5) the lines
+//! appear in Visual Studio's Output window, otherwise in `%LOCALAPPDATA%\Kubuno\logs\<exe>.log`; a panic
+//! shows an error dialog. To get a console back, change the line below to
+//! `#![windows_subsystem = "console"]`.
+#![windows_subsystem = "windows"]
 
 mod main_view;
 
 use kubuno_controls::host::{self, Chrome, Frame, HostOptions};
 use kubuno_ui::{Rect, Theme};
-use kubuno_views::node::ViewEventKind;
 use kubuno_views::runtime::{FileWatcher, Runtime};
 
 use main_view::{handler_table, MainViewModel};
@@ -45,9 +51,7 @@ fn main() -> std::process::ExitCode {
             if runtime.has_view() {
                 let events = runtime.frame(canvas, frame, &mut view_model, &mut handlers, body);
                 for event in &events {
-                    if matches!(event.kind, ViewEventKind::Clicked | ViewEventKind::Toggled(_) | ViewEventKind::Changed(_)) {
-                        eprintln!("[$safeprojectname$] event: {event:?}");
-                    }
+                    tracing::debug!("event: {event:?}");
                 }
             } else {
                 let theme = canvas.theme();
@@ -61,7 +65,7 @@ fn main() -> std::process::ExitCode {
     match result {
         Ok(()) => std::process::ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("$safeprojectname$: {error}");
+            tracing::error!("$safeprojectname$: {error}");
             std::process::ExitCode::FAILURE
         }
     }

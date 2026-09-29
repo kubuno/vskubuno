@@ -159,6 +159,35 @@ already has `cargo` on PATH, make sure `cargo`'s directory (normally
 Studio inherits the PATH of the process that launched it, and a build that can't find `cargo` fails
 immediately and clearly (not what "missing DLL" below is about).
 
+### Console window
+
+A **Kubuno Desktop Application** opens **no console window** - in Debug too, like a Windows Forms
+application (`OutputType=WinExe`): its `src/main.rs` starts with `#![windows_subsystem = "windows"]`.
+Its diagnostics go where a .NET developer expects them:
+
+- **Log with `tracing`** (`tracing::info!("saved {path}")`, `tracing::debug!(...)`): under F5 the lines
+  appear in Visual Studio's **Output** window (*Show output from: Debug*); started without the debugger
+  (Ctrl+F5, Explorer), they go to `%LOCALAPPDATA%\Kubuno\logs\<exe>.log` (rotated at 1 MiB, the previous
+  file kept as `<exe>.1.log`). The level is `debug` in Debug builds and `info` in Release; set
+  `KUBUNO_LOG=trace|debug|info|warn|error` (Debug property page, environment) to change it. `log` crate
+  records are routed the same way.
+- **`println!`/`eprintln!`** still work and end up in the same place (when the program has no console of
+  its own), but `tracing` is the better habit: levels, and one line per event.
+- **A panic** of the UI thread is written there with its location and backtrace, and the application
+  shows a Kubuno crash window (its name, the error, *Show details* with the backtrace, *Open log*, *Copy*,
+  *Close*) before closing - never a silent exit. A panic on a background thread is only logged.
+
+The Kubuno host installs this when its window opens (`kubuno_controls::host::diagnostics`; opt out with
+`HostOptions::diagnostics = false`, or call `diagnostics::disable()` first). An application with its own
+window loop calls `kubuno_ui::diagnostics::install(&kubuno_ui::diagnostics::exe_name(), true)` at the start
+of `main`.
+
+**Want a console anyway** (a tool that prints, or while porting old code)? Change the first line of
+`main.rs` to `#![windows_subsystem = "console"]` (or remove it): the application then opens a console
+window next to its own, and `println!` writes there. A **Rust Console Application** and a **Kubuno
+Module** (a server process) keep their console, as they should. An older Kubuno desktop project gets the
+new behavior by adding `#![windows_subsystem = "windows"]` as the first line of its `src/main.rs`.
+
 ## 5. Test Explorer
 
 Cargo tests (`#[test]` functions) show up in Visual Studio's own **Test Explorer** automatically

@@ -69,6 +69,28 @@ namespace Kubuno.VisualStudio.Designer
 
         public static string CategoryAction => T("Action", "Action");
 
+        /// <summary>
+        /// An event category of the registry export (English, <c>kubuno_views::registry::EventCategory::name</c>) in
+        /// Visual Studio's UI language - the Windows Forms designer's own names (Action, Comportement, Focus,
+        /// Touche, Souris, Glisser-déplacer, Disposition, Propriété modifiée...). Unknown or missing = Action.
+        /// </summary>
+        public static string EventCategory(string? category)
+        {
+            switch (category)
+            {
+                case "Behavior": return CategoryBehavior;
+                case "Data": return CategoryData;
+                case "Drag Drop": return T("Drag Drop", "Glisser-déplacer");
+                case "Focus": return T("Focus", "Focus");
+                case "Key": return T("Key", "Touche");
+                case "Layout": return CategoryLayout;
+                case "Mouse": return T("Mouse", "Souris");
+                case "Property Changed": return T("Property Changed", "Propriété modifiée");
+                case "Appearance": return CategoryAppearance;
+                default: return CategoryAction;
+            }
+        }
+
         public static string NameDescription => T(
             "Name of the element, used to refer to it from the code (for example in handler names).",
             "Nom de l'élément, utilisé pour y faire référence dans le code (par exemple dans les noms de gestionnaires).");

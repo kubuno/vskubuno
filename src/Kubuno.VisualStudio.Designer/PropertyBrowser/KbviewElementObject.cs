@@ -204,16 +204,27 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         {
             if (_events is null)
             {
+                // Browsable events only; the view's own events (Load, Shown...) on its root element only.
                 _events = new EventDescriptorCollection(
-                    Component.Events.Select(e => (EventDescriptor)new KbviewEventDescriptor(e)).ToArray(),
+                    Component.Events.Where(e => e.Browsable && (IsRoot || !e.RootOnly)).Select(e => (EventDescriptor)new KbviewEventDescriptor(e)).ToArray(),
                     readOnly: true);
             }
 
             return _events;
         }
 
-        /// <summary>The Events tab's default row (the component's first event, e.g. <c>OnClick</c> for a <c>Button</c>).</summary>
-        public PropertyDescriptor? DefaultEventProperty => GetEventProperties().Count > 0 ? GetEventProperties()[0] : null;
+        /// <summary>Whether this is the view's root element (it alone has the view events: Load, Shown...).</summary>
+        public bool IsRoot => ElementId.Length == 0;
+
+        /// <summary>
+        /// The element's default event (docs/EVENTS.md §3, WinForms' <c>DefaultEvent</c>): the registry's
+        /// <c>default_event</c> (<c>OnClick</c> for a <c>Button</c>, <c>OnCheckedChanged</c> for a <c>Switch</c>...),
+        /// <c>OnLoad</c> for the view's root element. What a double-click on the element in the designer creates.
+        /// </summary>
+        public EventMeta? DefaultEventMeta => Component.DefaultEventFor(IsRoot);
+
+        /// <summary>The Events tab's default row (see <see cref="DefaultEventMeta"/>).</summary>
+        public PropertyDescriptor? DefaultEventProperty => DefaultEventMeta is { } e ? GetEventProperties().Find(e.Name, ignoreCase: false) : null;
 
         public override string ToString() => XName is { Length: > 0 } name ? $"{name} ({Component.Name})" : Component.Name;
 
@@ -221,7 +232,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         public AttributeCollection GetAttributes() => new AttributeCollection(
             new DefaultPropertyAttribute(Component.Properties.Count > 0 ? Component.Properties[0].Name : "x:Name"),
-            new DefaultEventAttribute(Component.Events.Count > 0 ? Component.Events[0].Name : null));
+            new DefaultEventAttribute(DefaultEventMeta?.Name));
 
         public string GetClassName() => Component.Name;
 
@@ -229,7 +240,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         public TypeConverter GetConverter() => new TypeConverter();
 
-        public EventDescriptor? GetDefaultEvent() => GetEvents().Count > 0 ? GetEvents()[0] : null;
+        public EventDescriptor? GetDefaultEvent() => DefaultEventMeta is { } e ? GetEvents().Find(e.Name, ignoreCase: false) : null;
 
         public PropertyDescriptor? GetDefaultProperty()
         {

@@ -74,6 +74,33 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             }
         }
 
+        /// <summary>
+        /// A double-click on an element (docs/EVENTS.md §5.2, like the WinForms designer): creates its DEFAULT event
+        /// handler - <c>OnClick</c> for a <c>Button</c>, <c>OnCheckedChanged</c> for a <c>Switch</c>, <c>OnLoad</c> for the
+        /// view's root element... - or opens it when the element already has one, through the same
+        /// <c>kubuno/createHandler</c> path as the Events tab.
+        /// </summary>
+        private void OnElementDoubleClicked(object? sender, DesignSurfaceDoubleClickEventArgs e) =>
+            Run(async () =>
+            {
+                await EnsureRegistryAsync();
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                if (_disposed)
+                {
+                    return;
+                }
+
+                var tag = ElementAttributeReader.Read(GetCurrentText(), e.ElementId)?.TagName;
+                var defaultEvent = tag is null ? null : Registry.Find(tag)?.DefaultEventFor(e.ElementId.Length == 0);
+                if (defaultEvent is null)
+                {
+                    return;
+                }
+
+                KubunoViewsLogHost.Current.WriteLine($"[designer] double-click on '{e.ElementId}' <{tag}>: default event {defaultEvent.Name}");
+                CreateOrShowHandler(e.ElementId, defaultEvent.Name, suggestedName: null);
+            }, "DoubleClick");
+
         private void OnSurfaceCommandRequested(object? sender, DesignSurfaceCommandEventArgs e) =>
             Run(async () =>
             {

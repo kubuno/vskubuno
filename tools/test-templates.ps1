@@ -135,6 +135,15 @@ function Invoke-Logged([string]$file, [string]$arguments, [string]$workingDir, [
     return $proc.ExitCode
 }
 
+# The Subsystem field of a PE image's optional header: 2 = WINDOWS_GUI (no console), 3 = WINDOWS_CUI.
+function Get-PeSubsystem([string]$path) {
+    $bytes = [IO.File]::ReadAllBytes($path)
+    $pe = [BitConverter]::ToInt32($bytes, 0x3C)
+    if ([BitConverter]::ToUInt32($bytes, $pe) -ne 0x00004550) { throw "$path is not a PE image" }
+    # PE signature (4) + COFF file header (20), then the optional header; Subsystem is at offset 68 in both PE32 and PE32+.
+    return [BitConverter]::ToUInt16($bytes, $pe + 4 + 20 + 68)
+}
+
 function Find-MSBuild {
     $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
     if (Test-Path $vswhere) {
@@ -191,6 +200,18 @@ foreach ($dir in Get-ChildItem $templatesRoot -Directory) {
         if ($code -ne 0) { $failures += "cargo build failed (exit $code, see $log)" }
         elseif ($warnings.Count) { $failures += "cargo build: $($warnings.Count) warning(s) (see $log)" }
         else { "   cargo build: OK" }
+
+        # 1b. A GUI application opens no console window, in Debug too (like a Windows Forms WinExe): its exe's
+        #     PE subsystem must be WINDOWS_GUI (2); a console application's stays WINDOWS_CUI (3).
+        if (-not $failures) {
+            $expected = @{ 'KubunoDesktopApplication' = 2; 'RustConsoleApplication' = 3 }[$dir.Name]
+            if ($expected) {
+                $built = Join-Path $cargoTarget "debug\$($p.Crate).exe"
+                $subsystem = Get-PeSubsystem $built
+                if ($subsystem -ne $expected) { $failures += "PE subsystem of $built is $subsystem, expected $expected ($(if ($expected -eq 2) { 'GUI: no console window' } else { 'console' }))" }
+                else { "   PE subsystem: $subsystem ($(if ($expected -eq 2) { 'GUI, no console window' } else { 'console' }))" }
+            }
+        }
 
         # 2. Run what the template produces.
         if ($Run -and -not $failures) {

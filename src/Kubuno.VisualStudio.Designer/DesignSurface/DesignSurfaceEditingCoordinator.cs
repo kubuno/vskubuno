@@ -120,6 +120,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 rustHost.UnhandledSurfaceKey += OnUnhandledSurfaceKey;
                 // Context menus and Ctrl+C/X/V/D (the .Commands.cs half, docs/DESIGNER.md §12).
                 rustHost.ContextMenuRequested += OnContextMenuRequested;
+                rustHost.ElementDoubleClicked += OnElementDoubleClicked;
                 rustHost.SurfaceCommandRequested += OnSurfaceCommandRequested;
             }
 
@@ -539,6 +540,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 rustHost.EditRequestsReceived -= OnEditRequestsReceived;
                 rustHost.UnhandledSurfaceKey -= OnUnhandledSurfaceKey;
                 rustHost.ContextMenuRequested -= OnContextMenuRequested;
+                rustHost.ElementDoubleClicked -= OnElementDoubleClicked;
                 rustHost.SurfaceCommandRequested -= OnSurfaceCommandRequested;
             }
 

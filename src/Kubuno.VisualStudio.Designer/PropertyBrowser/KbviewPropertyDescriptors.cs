@@ -164,7 +164,8 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         public KbviewEventDescriptor(EventMeta @event)
             : base(@event?.Name ?? throw new ArgumentNullException(nameof(@event)), new Attribute[]
             {
-                new CategoryAttribute(DesignerText.CategoryAction),
+                new CategoryAttribute(@event.LocalizedCategory),
+                new DisplayNameAttribute(@event.EffectiveDisplayName),
                 new DescriptionAttribute(@event.LocalizedDoc ?? string.Empty),
             })
         {
@@ -201,7 +202,8 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         public KbviewEventPropertyDescriptor(KbviewEventDescriptor @event)
             : base(@event?.Name ?? throw new ArgumentNullException(nameof(@event)), new Attribute[]
             {
-                new CategoryAttribute(DesignerText.CategoryAction),
+                new CategoryAttribute(@event.Event.LocalizedCategory),
+                new DisplayNameAttribute(@event.Event.EffectiveDisplayName),
                 new DescriptionAttribute(@event.Event.LocalizedDoc ?? string.Empty),
                 new RefreshPropertiesAttribute(RefreshProperties.Repaint),
             })
@@ -219,15 +221,23 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         public override TypeConverter Converter => new StringConverter();
 
-        public override bool CanResetValue(object component) => (component as KbviewElementObject)?.GetRawValue(Name) is not null;
+        /// <summary>
+        /// The attribute holding this event's handler on <paramref name="element"/>: the canonical one, or an older
+        /// alias an existing view still uses (<c>OnToggled="x"</c> shows in the CheckedChanged row, and is edited
+        /// in place - the file keeps its spelling). The canonical name when neither is written.
+        /// </summary>
+        private string AttributeOf(KbviewElementObject element) =>
+            EventDescriptor.Event.AttributeNames.FirstOrDefault(a => element.GetRawValue(a) is not null) ?? Name;
 
-        public override object GetValue(object? component) => (component as KbviewElementObject)?.GetRawValue(Name) ?? string.Empty;
+        public override bool CanResetValue(object component) => component is KbviewElementObject element && element.GetRawValue(AttributeOf(element)) is not null;
+
+        public override object GetValue(object? component) => component is KbviewElementObject element ? element.GetRawValue(AttributeOf(element)) ?? string.Empty : string.Empty;
 
         public override void ResetValue(object component)
         {
-            if (component is KbviewElementObject element && element.GetRawValue(Name) is not null)
+            if (component is KbviewElementObject element && element.GetRawValue(AttributeOf(element)) is not null)
             {
-                element.RemoveAttribute(Name);
+                element.RemoveAttribute(AttributeOf(element));
             }
         }
 
@@ -239,12 +249,13 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             }
 
             var text = (value as string ?? string.Empty).Trim();
-            var current = element.GetRawValue(Name);
+            var attribute = AttributeOf(element);
+            var current = element.GetRawValue(attribute);
             if (text.Length == 0)
             {
                 if (current is not null)
                 {
-                    element.RemoveAttribute(Name);
+                    element.RemoveAttribute(attribute);
                 }
 
                 return;
@@ -264,10 +275,10 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             }
             else
             {
-                element.SetAttribute(Name, name);
+                element.SetAttribute(attribute, name);
             }
         }
 
-        public override bool ShouldSerializeValue(object component) => !string.IsNullOrEmpty((component as KbviewElementObject)?.GetRawValue(Name));
+        public override bool ShouldSerializeValue(object component) => component is KbviewElementObject element && !string.IsNullOrEmpty(element.GetRawValue(AttributeOf(element)));
     }
 }

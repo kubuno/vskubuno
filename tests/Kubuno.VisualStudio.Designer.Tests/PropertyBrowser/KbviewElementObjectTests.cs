@@ -281,6 +281,64 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
             Assert.AreEqual("Top, Bottom, Left, Right", LayoutAttributeText.FormatAnchor(LayoutAttributeText.ParseAnchor("Bottom, Right, Left, Top")));
         }
 
+        [TestMethod]
+        public void Events_AreGroupedByCategory_WithDisplayNamesAndDescriptions()
+        {
+            var (element, _) = Create("0.1");
+            var events = element.GetEventProperties();
+
+            var down = events.Find("OnMouseDown", false);
+            Assert.IsNotNull(down, "the events every control raises are listed");
+            Assert.AreEqual("MouseDown", down.DisplayName);
+            Assert.AreEqual(new CategoryAttribute("Mouse").Category, down.Category);
+            StringAssert.StartsWith(down.Description, "Occurs when a mouse button is pressed");
+            Assert.AreEqual("Click", events.Find("OnClick", false).DisplayName);
+            Assert.AreEqual(new CategoryAttribute("Action").Category, events.Find("OnClick", false).Category);
+            Assert.AreEqual(new CategoryAttribute("Focus").Category, events.Find("OnValidating", false).Category);
+            Assert.AreEqual(new CategoryAttribute("Key").Category, events.Find("OnKeyPress", false).Category);
+            Assert.IsNull(events.Find("OnLoad", false), "the view's own events belong to its root element");
+
+            DesignerText.ForceFrench = true;
+            var french = Create("0.1").Element.GetEventProperties().Find("OnMouseDown", false);
+            Assert.AreEqual("Souris", french.Category);
+            StringAssert.StartsWith(french.Description, "Se produit quand un bouton de la souris");
+        }
+
+        [TestMethod]
+        public void DefaultEvent_ComesFromTheRegistry_AndIsLoadForTheRoot()
+        {
+            var (button, _) = Create("0.1");
+            Assert.AreEqual("OnClick", button.GetDefaultEvent()?.Name);
+            Assert.AreEqual("OnClick", ((DefaultEventAttribute)button.GetAttributes()[typeof(DefaultEventAttribute)]!).Name);
+
+            var (field, _) = Create("0.0", "TextField");
+            Assert.AreEqual("OnTextChanged", field.DefaultEventMeta?.Name);
+
+            var (root, _) = Create(string.Empty, "Card");
+            Assert.IsTrue(root.IsRoot);
+            Assert.AreEqual("OnLoad", root.GetDefaultEvent()?.Name);
+            Assert.IsNotNull(root.GetEventProperties().Find("OnShown", false));
+            Assert.AreEqual("OnLoad", root.DefaultEventProperty?.Name);
+        }
+
+        [TestMethod]
+        public void AnEventWrittenUnderAnOlderAlias_ShowsInItsRow_AndIsEditedInPlace()
+        {
+            var host = new FakeHost("<Stack>\n  <Switch x:Name=\"dark\" OnToggled=\"dark_toggled\"/>\n</Stack>");
+            var element = new KbviewElementObject(host, "0", Registry.Find("Switch")!);
+            var row = element.GetEventProperties().Find("OnCheckedChanged", false);
+
+            Assert.AreEqual("CheckedChanged", row.DisplayName);
+            Assert.AreEqual("dark_toggled", row.GetValue(element));
+            Assert.IsTrue(row.ShouldSerializeValue(element));
+            Assert.IsNull(element.GetEventProperties().Find("OnToggled", false), "the alias is not a second row");
+
+            row.SetValue(element, "dark_changed");
+            row.ResetValue(element);
+            CollectionAssert.AreEqual(new[] { "set 0 OnToggled=dark_changed", "remove 0 OnToggled" }, host.Calls);
+            Assert.IsTrue(KbviewEventBindingService.Instance.ShowCode(element, element.GetEvents()["OnCheckedChanged"]!));
+        }
+
         private sealed class FakeHost : IKbviewElementHost
         {
             private string _text;

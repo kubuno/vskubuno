@@ -66,7 +66,9 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             // The row's SetValue (just before this call) already created the handler / navigated to it;
             // a second request while that one is in flight would create a SECOND handler (the attribute is
             // not written yet, so the server would see an unbound event again).
-            if (!element.Host.IsHandlerRequestRecent(element.ElementId, e.Name) && !string.IsNullOrEmpty(element.GetRawValue(e.Name)))
+            // Bound under the event's attribute or an older alias of it (OnToggled for CheckedChanged).
+            var names = (e as KbviewEventDescriptor)?.Event.AttributeNames ?? new[] { e.Name };
+            if (!element.Host.IsHandlerRequestRecent(element.ElementId, e.Name) && names.Any(n => !string.IsNullOrEmpty(element.GetRawValue(n))))
             {
                 element.Host.CreateOrShowHandler(element.ElementId, e.Name, null);
             }

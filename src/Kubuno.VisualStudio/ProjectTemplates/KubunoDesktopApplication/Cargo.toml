@@ -16,3 +16,6 @@ edition = "2021"
 kubuno-ui       = { path = "$kubunodesktopsrc$/src/crates/kubuno-ui" }
 kubuno-controls = { path = "$kubunodesktopsrc$/src/crates/kubuno-controls" }
 kubuno-views    = { path = "$kubunodesktopsrc$/src/crates/kubuno-views" }
+# Logging: without a console window, `tracing` output goes to Visual Studio's Output window (F5) or to
+# %LOCALAPPDATA%\Kubuno\logs\<exe>.log (installed by the Kubuno host when the window opens).
+tracing = "0.1"
