@@ -36,7 +36,13 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             var lease = document is not null && _runtimeProvider is not null
                 ? _runtimeProvider.Acquire(document)
                 : new DesignSurfaceRuntimeLease(new FixedDesignSurfaceRuntimeSource(new DesignSurfaceRuntime(_bundledExePath, isProjectRuntime: false, expectedUiDllSha256: null), DesignSurfaceRuntimeState.NotApplicable), null);
-            return new RustDesignSurfaceHost(lease, _extraArgs, _oleServiceProvider);
+            var host = new RustDesignSurfaceHost(lease, _extraArgs, _oleServiceProvider);
+            if (document is not null && !string.IsNullOrEmpty(document.Path))
+            {
+                try { host.BaseDirectory = System.IO.Path.GetDirectoryName(document.Path); }
+                catch (ArgumentException) { }
+            }
+            return host;
         }
     }
 }

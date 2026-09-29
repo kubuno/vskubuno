@@ -1,0 +1,218 @@
+[
+  {
+    "dark": "#8AB4F8",
+    "doc": "The main accent colour (primary buttons, links, selection).",
+    "doc_fr": "Couleur d'accent principale (boutons principaux, liens, sélection).",
+    "high_contrast": "Highlight",
+    "light": "#1A73E8",
+    "name": "Primary"
+  },
+  {
+    "dark": "#AECBFA",
+    "doc": "The accent colour under the mouse.",
+    "doc_fr": "Couleur d'accent sous la souris.",
+    "high_contrast": "Highlight",
+    "light": "#1557B0",
+    "name": "PrimaryHover"
+  },
+  {
+    "dark": "#1A3A5C",
+    "doc": "A pale tint of the accent colour, for backgrounds.",
+    "doc_fr": "Teinte pâle de la couleur d'accent, pour les fonds.",
+    "high_contrast": "Window",
+    "light": "#D3E3FD",
+    "name": "PrimaryLight"
+  },
+  {
+    "dark": "#202124",
+    "doc": "Text and icons shown on the accent colour.",
+    "doc_fr": "Texte et icônes affichés sur la couleur d'accent.",
+    "high_contrast": "HighlightText",
+    "light": "#FFFFFF",
+    "name": "OnPrimary"
+  },
+  {
+    "dark": "#17181B",
+    "doc": "The window background.",
+    "doc_fr": "Fond de la fenêtre.",
+    "high_contrast": "Window",
+    "light": "#F8FAFD",
+    "name": "Background"
+  },
+  {
+    "dark": "#202124",
+    "doc": "The main content surface.",
+    "doc_fr": "Surface principale du contenu.",
+    "high_contrast": "Window",
+    "light": "#FFFFFF",
+    "name": "Surface"
+  },
+  {
+    "dark": "#292A2D",
+    "doc": "A raised surface (cards, secondary buttons).",
+    "doc_fr": "Surface surélevée (cartes, boutons secondaires).",
+    "high_contrast": "Window",
+    "light": "#F8F9FA",
+    "name": "Surface1"
+  },
+  {
+    "dark": "#35363A",
+    "doc": "A darker surface step (hover of light buttons).",
+    "doc_fr": "Surface un cran plus foncée (survol des boutons clairs).",
+    "high_contrast": "Window",
+    "light": "#F1F3F4",
+    "name": "Surface2"
+  },
+  {
+    "dark": "#444746",
+    "doc": "The darkest surface step (pressed light buttons).",
+    "doc_fr": "Surface la plus foncée (boutons clairs enfoncés).",
+    "high_contrast": "Window",
+    "light": "#E8EAED",
+    "name": "Surface3"
+  },
+  {
+    "dark": "#E8EAED",
+    "doc": "The main text colour.",
+    "doc_fr": "Couleur principale du texte.",
+    "high_contrast": "WindowText",
+    "light": "#202124",
+    "name": "TextPrimary"
+  },
+  {
+    "dark": "#9AA0A6",
+    "doc": "Secondary text (descriptions, hints).",
+    "doc_fr": "Texte secondaire (descriptions, indications).",
+    "high_contrast": "WindowText",
+    "light": "#5F6368",
+    "name": "TextSecondary"
+  },
+  {
+    "dark": "#80868B",
+    "doc": "Subtle text (column headers, captions).",
+    "doc_fr": "Texte discret (en-têtes de colonnes, légendes).",
+    "high_contrast": "WindowText",
+    "light": "#80868B",
+    "name": "TextTertiary"
+  },
+  {
+    "dark": "#5F6368",
+    "doc": "The usual border colour.",
+    "doc_fr": "Couleur habituelle des bordures.",
+    "high_contrast": "WindowText",
+    "light": "#E0E0E0",
+    "name": "Border"
+  },
+  {
+    "dark": "#80868B",
+    "doc": "A stronger border (under the mouse).",
+    "doc_fr": "Bordure plus marquée (sous la souris).",
+    "high_contrast": "WindowText",
+    "light": "#BDC1C6",
+    "name": "BorderStrong"
+  },
+  {
+    "dark": "#5F63688C",
+    "doc": "Separator lines.",
+    "doc_fr": "Lignes de séparation.",
+    "high_contrast": "WindowText",
+    "light": "#E0E0E0",
+    "name": "Divider"
+  },
+  {
+    "dark": "#F28B82",
+    "doc": "Errors and destructive actions.",
+    "doc_fr": "Erreurs et actions destructrices.",
+    "high_contrast": "WindowText",
+    "light": "#D93025",
+    "name": "Danger"
+  },
+  {
+    "dark": "#3D1C1C",
+    "doc": "A pale background for errors.",
+    "doc_fr": "Fond pâle pour les erreurs.",
+    "high_contrast": "Window",
+    "light": "#FCE8E6",
+    "name": "DangerLight"
+  },
+  {
+    "dark": "#81C995",
+    "doc": "Success and confirmation.",
+    "doc_fr": "Réussite et confirmation.",
+    "high_contrast": "WindowText",
+    "light": "#1E8E3E",
+    "name": "Success"
+  },
+  {
+    "dark": "#1A3A27",
+    "doc": "A pale background for successes.",
+    "doc_fr": "Fond pâle pour les réussites.",
+    "high_contrast": "Window",
+    "light": "#E6F4EA",
+    "name": "SuccessLight"
+  },
+  {
+    "dark": "#FDD663",
+    "doc": "Warnings.",
+    "doc_fr": "Avertissements.",
+    "high_contrast": "WindowText",
+    "light": "#F9AB00",
+    "name": "Warning"
+  },
+  {
+    "dark": "#3D3218",
+    "doc": "A pale background for warnings.",
+    "doc_fr": "Fond pâle pour les avertissements.",
+    "high_contrast": "Window",
+    "light": "#FEF7E0",
+    "name": "WarningLight"
+  },
+  {
+    "dark": "#FDD663",
+    "doc": "Warning text, readable on light backgrounds.",
+    "doc_fr": "Texte d'avertissement, lisible sur fond clair.",
+    "high_contrast": "WindowText",
+    "light": "#9D5D00",
+    "name": "Caution"
+  },
+  {
+    "dark": "#C5A0E8",
+    "doc": "A link that was already followed.",
+    "doc_fr": "Lien déjà visité.",
+    "high_contrast": "HotTrack",
+    "light": "#663399",
+    "name": "LinkVisited"
+  },
+  {
+    "dark": "#22344D",
+    "doc": "The background of a selected row.",
+    "doc_fr": "Fond d'une ligne sélectionnée.",
+    "high_contrast": "Highlight",
+    "light": "#E8F0FE",
+    "name": "Selection"
+  },
+  {
+    "dark": "#2B2C30",
+    "doc": "The background of a row under the mouse.",
+    "doc_fr": "Fond d'une ligne sous la souris.",
+    "high_contrast": "Window",
+    "light": "#E4ECF7",
+    "name": "Hover"
+  },
+  {
+    "dark": "#3C4043F2",
+    "doc": "The background of tooltips.",
+    "doc_fr": "Fond des info-bulles.",
+    "high_contrast": "Info",
+    "light": "#3C4043F2",
+    "name": "TooltipBackground"
+  },
+  {
+    "dark": "#FFFFFF",
+    "doc": "The text of tooltips.",
+    "doc_fr": "Texte des info-bulles.",
+    "high_contrast": "InfoText",
+    "light": "#FFFFFF",
+    "name": "TooltipForeground"
+  }
+]

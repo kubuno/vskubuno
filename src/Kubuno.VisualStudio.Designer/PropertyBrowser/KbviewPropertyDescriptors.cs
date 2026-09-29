@@ -21,24 +21,41 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         private readonly System.Drawing.Design.UITypeEditor? _editor;
         private readonly bool _readOnly;
 
+        private readonly IReadOnlyList<string> _aliases;
+
         /// <param name="editor">A drop-down editor for the row (the Dock/Anchor pickers), or null.</param>
         /// <param name="readOnly">Greys the row out (e.g. Dock/Anchor under a parent that does not lay out by them).</param>
         /// <param name="customCategory">A project control's own <c>#[category("…")]</c> (docs/EVENTS.md EVT-7b), which wins over <paramref name="category"/>.</param>
-        public KbviewAttributePropertyDescriptor(string attributeName, string displayName, PropKind? kind, string? defaultValue, string? doc, PropertyCategoryMap.Category category, System.Drawing.Design.UITypeEditor? editor = null, bool readOnly = false, string? customCategory = null)
-            : base(attributeName, BuildAttributes(attributeName, displayName, doc, category, customCategory))
+        /// <param name="meta">The registry property, when the row shows one: its older names, its editor and its converter.</param>
+        /// <param name="browsable">False keeps the row reachable (TypeDescriptor, multi-selection edits) but not listed.</param>
+        public KbviewAttributePropertyDescriptor(string attributeName, string displayName, PropKind? kind, string? defaultValue, string? doc, PropertyCategoryMap.Category category, System.Drawing.Design.UITypeEditor? editor = null, bool readOnly = false, string? customCategory = null, PropertyMeta? meta = null, bool browsable = true)
+            : base(attributeName, BuildAttributes(attributeName, displayName, doc, category, customCategory, browsable))
         {
-            _editor = editor;
+            Meta = meta;
+            _aliases = meta?.Aliases ?? (IReadOnlyList<string>)Array.Empty<string>();
+            _editor = editor ?? RichEditors.EditorFor(meta);
             _readOnly = readOnly;
             AttributeName = attributeName;
             Kind = kind;
             _default = defaultValue;
-            _converter = kind?.Tag switch
+            _converter = RichEditors.ConverterFor(meta) ?? kind?.Tag switch
             {
                 PropKindTag.Bool => new AttributeValuesConverter(new[] { "true", "false" }),
                 PropKindTag.Enum => new AttributeValuesConverter(kind.EnumVariants),
                 _ => new StringConverter(),
             };
         }
+
+        /// <summary>The registry property the row shows, when it shows one.</summary>
+        public PropertyMeta? Meta { get; }
+
+        /// <summary>
+        /// The attribute holding the value on <paramref name="element"/>: the canonical one, or an older alias the file
+        /// still uses (<c>Max="10"</c> shows in the Maximum row and is edited in place). The canonical name when neither
+        /// is written.
+        /// </summary>
+        public string AttributeOf(KbviewElementObject element) =>
+            _aliases.Count == 0 ? AttributeName : new[] { AttributeName }.Concat(_aliases).FirstOrDefault(a => element.GetRawValue(a) is not null) ?? AttributeName;
 
         /// <summary>The XML attribute name (<c>x:Name</c>, <c>Text</c>, <c>Dock</c>...).</summary>
         public string AttributeName { get; }
@@ -57,16 +74,16 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         public override TypeConverter Converter => _converter;
 
-        public override bool CanResetValue(object component) => Element(component)?.GetRawValue(AttributeName) is not null;
+        public override bool CanResetValue(object component) => Element(component) is { } element && element.GetRawValue(AttributeOf(element)) is not null;
 
-        public override object GetValue(object? component) => Element(component)?.GetRawValue(AttributeName) ?? _default ?? string.Empty;
+        public override object GetValue(object? component) => (Element(component) is { } element ? element.GetRawValue(AttributeOf(element)) : null) ?? _default ?? string.Empty;
 
         public override void ResetValue(object component)
         {
             var element = Element(component);
-            if (element?.GetRawValue(AttributeName) is not null)
+            if (element is not null && element.GetRawValue(AttributeOf(element)) is not null)
             {
-                element.RemoveAttribute(AttributeName);
+                element.RemoveAttribute(AttributeOf(element));
             }
         }
 
@@ -79,13 +96,14 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             }
 
             var text = value as string ?? Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
-            var current = element.GetRawValue(AttributeName);
+            var attribute = AttributeOf(element);
+            var current = element.GetRawValue(attribute);
             if (text.Length == 0)
             {
                 // Clearing a value removes the attribute (back to the component default).
                 if (current is not null)
                 {
-                    element.RemoveAttribute(AttributeName);
+                    element.RemoveAttribute(attribute);
                 }
 
                 return;
@@ -93,19 +111,30 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
             var normalized = Kind is null ? AttributeValueRules.NormalizeName(text)
                 : IsAnchor ? LayoutAttributeText.NormalizeAnchor(text)
-                : AttributeValueRules.Normalize(Kind, text);
+                : RichEditors.Normalize(Meta, Kind, text);
+            if (normalized.Length == 0)
+            {
+                if (current is not null)
+                {
+                    element.RemoveAttribute(attribute);
+                }
+
+                return;
+            }
+
             if (string.Equals(normalized, current, StringComparison.Ordinal))
             {
                 return;
             }
 
-            element.SetAttribute(AttributeName, normalized);
+            element.SetAttribute(attribute, normalized);
+            RichEditors.AfterSet(element, AttributeName, normalized);
         }
 
         /// <summary>Bold in the grid (WinForms' "non-default value") when the attribute is written and differs from the registry default.</summary>
         public override bool ShouldSerializeValue(object component)
         {
-            var raw = Element(component)?.GetRawValue(AttributeName);
+            var raw = Element(component) is { } element ? element.GetRawValue(AttributeOf(element)) : null;
             if (raw is null)
             {
                 return false;
@@ -119,7 +148,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         private static KbviewElementObject? Element(object? component) => component as KbviewElementObject;
 
-        private static Attribute[] BuildAttributes(string attributeName, string displayName, string? doc, PropertyCategoryMap.Category category, string? customCategory = null)
+        private static Attribute[] BuildAttributes(string attributeName, string displayName, string? doc, PropertyCategoryMap.Category category, string? customCategory = null, bool browsable = true)
         {
             var attributes = new List<Attribute>
             {
@@ -128,6 +157,11 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
                 new DisplayNameAttribute(displayName),
                 new RefreshPropertiesAttribute(RefreshProperties.Repaint),
             };
+
+            if (!browsable)
+            {
+                attributes.Add(BrowsableAttribute.No);
+            }
 
             if (string.Equals(attributeName, "x:Name", StringComparison.Ordinal))
             {

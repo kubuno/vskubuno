@@ -19,9 +19,9 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
             // The fixture is now the real `kubuno-views` registry export (DSG-1,
             // `kubuno-views/src/registry/export.rs`), regenerated straight from
             // `cargo test -p kubuno-views`'s own component table rather than
-            // hand-written - 51 components: the 5 phase-2a examples plus every
-            // enabled family (choice 5, containers 15 with UserControl, data 8, display 9, text 8, components 1: Timer).
-            Assert.AreEqual(51, registry.Components.Count);
+            // hand-written - 54 components: the 5 phase-2a examples plus every
+            // enabled family (choice 5, containers 15 with UserControl, data 8, display 9, text 8, components 4: Timer, ToolTip, ContextMenu, MenuItem).
+            Assert.AreEqual(54, registry.Components.Count);
             Assert.IsNotNull(registry.Find("Button"));
             Assert.IsNull(registry.Find("DoesNotExist"));
         }
@@ -45,7 +45,7 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
             Assert.AreEqual(8, registry.Families["data"].Count);
             Assert.AreEqual(9, registry.Families["display"].Count);
             Assert.AreEqual(8, registry.Families["text"].Count);
-            Assert.AreEqual(1, registry.Families["components"].Count);
+            Assert.AreEqual(4, registry.Families["components"].Count);
         }
 
         [TestMethod]

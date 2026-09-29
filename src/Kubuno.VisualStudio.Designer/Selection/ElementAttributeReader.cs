@@ -286,8 +286,8 @@ namespace Kubuno.VisualStudio.Designer.Selection
             }
 
             /// <summary>
-            /// Reads a <c>"value"</c>/<c>'value'</c> token at the current position (quotes stripped, no
-            /// entity decoding - see this file's own class doc); <see langword="null"/> (with <see cref="_pos"/>
+            /// Reads a <c>"value"</c>/<c>'value'</c> token at the current position (quotes stripped, character
+            /// references decoded like the runtime reads them); <see langword="null"/> (with <see cref="_pos"/>
             /// advanced to end of input) for an unterminated string, mirroring
             /// <c>kubuno_views::ast::Attribute::value</c>'s own "None when malformed" contract.
             /// </summary>
@@ -307,7 +307,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
                     return null;
                 }
 
-                var value = _text.Substring(valueStart, closing - valueStart);
+                var value = XmlCharacterReferences.Decode(_text.Substring(valueStart, closing - valueStart));
                 _pos = closing + 1;
                 return value;
             }

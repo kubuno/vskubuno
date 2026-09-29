@@ -72,7 +72,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private void SendSetText(string text)
         {
             _lastSentText = text;
-            SendLine(DesignSurfaceProtocol.EncodeSetText(text));
+            SendLine(DesignSurfaceProtocol.EncodeSetText(text, BaseDirectory));
         }
 
         private void SendSetDesignMode(bool on)
@@ -306,6 +306,10 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private static readonly JsonSerializerOptions WireOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
         public static string EncodeSetText(string text) => JsonSerializer.Serialize(new { type = "setText", text }, WireOptions);
+
+        /// <summary>`setText` with the folder of the view file (`baseDir`), against which the surface resolves the relative image paths the view names.</summary>
+        public static string EncodeSetText(string text, string? baseDir) =>
+            string.IsNullOrEmpty(baseDir) ? EncodeSetText(text) : JsonSerializer.Serialize(new { type = "setText", text, baseDir }, WireOptions);
 
         public static string EncodeSetDesignMode(bool on) => JsonSerializer.Serialize(new { type = "setDesignMode", on }, WireOptions);
 

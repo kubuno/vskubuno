@@ -183,6 +183,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// </summary>
         public void SetDocumentText(string xmlText) => SendSetText(xmlText ?? string.Empty);
 
+        /// <summary>The folder of the view file, sent with every `setText` so the surface finds the images the view names by relative path.</summary>
+        public string? BaseDirectory { get; set; }
+
         /// <summary>
         /// Raised when the design surface reports a new selection (a click, or Esc-to-parent) - the
         /// DSG-6 `selectionChanged` protocol message, handled in

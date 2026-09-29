@@ -1463,3 +1463,116 @@ chain's members (Control → Component) with signatures and French descriptions;
 inserted with their base calls; the project rebuilds and the design build follows. F5: the app runs, the `Timer` ticks
 every 500 ms in the debug output. Solution closed and reopened in the same session: Visual Studio restarts the server,
 the restored designer gets its selection sync, Toolbox project tab and registry again.
+
+## 16. EVT-7c as built — WinForms-rich property sets (2026-09-29)
+
+The requirement above ("WinForms-rich property sets on every control"), implemented in `desktop/windows`
+(`kubuno_controls`, `kubuno_ui`, `kubuno-views`, `kubuno-views-ls`) and in the Designer.
+
+### Metadata (`kubuno_views::registry`)
+
+- Each level of the hierarchy carries its property table (`LevelMeta::properties`, `registry/common.rs`): `Control`
+  (Accessibilité, Apparence, Comportement, Données, Design, Focus, Disposition), `ButtonBase`, `LabelBase`,
+  `TextBoxBase`, `ListControl` (`Sorted`), `ScrollableControl` (`AutoScroll`), `ContainerBase` (`BorderStyle`), and
+  `VIEW_PROPERTIES` for the root element (the window: *Style de fenêtre*, plus `Title`/`FormBorderStyle` in Apparence,
+  `StartPosition`/`WindowState` in Disposition, `AcceptButton`/`CancelButton`/`KeyPreview` in Divers, as in Windows
+  Forms). `ComponentMeta::property` resolves own, then inherited properties, then aliases; `all_properties` lists them
+  with their level.
+- `PropertyMeta` gains `aliases` (older names accepted and reported as hints: `Label.Align` → `TextAlign`,
+  `Min`/`Max` → `Minimum`/`Maximum`, `Step` → `SmallChange`/`Increment`, `LargeStep` → `LargeChange`) and
+  `design_time`. The export writes `inheritedFrom`, `rootOnly`, `designTime`, `aliases` and always a category (a
+  default one by name and kind when a table gives none; the language server's source scan applies the same default).
+- Every property has an English and a French description (`docs_fr::property_french`, level entries such as
+  `Control.BackColor`); the tests check both and the "no developer jargon" rule.
+- New components `ToolTip`, `ContextMenu` (children `MenuItem`) and `MenuItem`; event `OnDragDrop` on `Control`.
+- The registry snapshot uses a generation counter (a registration racing a rebuild could be lost with the old flag).
+
+### Colours, fonts, contrast (`kubuno_views::style`)
+
+- `ColorValue`: a theme token (27 tokens = `Theme` fields, each with its light and dark values, EN/FR doc and its
+  high-contrast system colour), `#RRGGBB(AA)`, a .NET web colour name or a `SystemColors` name. Tokens follow the
+  theme and high contrast at paint time; free colours are fixed.
+- `contrast_warnings(fore, back, size, bold)`: WCAG relative luminance, AA = 4.5:1 (3:1 for large text), computed for
+  the light and the dark theme; `validate::contrast_warnings` reports an element whose own free `ForeColor`/`BackColor`
+  fails (against the ambient colours of its ancestors) as a **warning** only.
+- `FontSpec` (`Segoe UI, 12pt, style=Bold, Italic, Underline, Strikeout`), `parse_padding` (`l, t, r, b` or one
+  number), `parse_size`, `cursor(name)`.
+- Attribute values decode XML character references (`&amp;` → `&`, `&#10;` → line break), and the designer's edits
+  escape `&`, `<`, the quote, line breaks and tabs, so any text round-trips (tests in `edit.rs`, and in C# for the
+  Properties window's reader and the collection planners).
+
+### Runtime
+
+- `DesignSlot` applies `CommonProps` (`common.rs`) around every element: visibility (not painted, routed, focusable
+  nor announced; still shown in the designer), `Margin` (flow parents), `Padding` (a leaf grows its measure, a
+  container insets its content), `MinimumSize`/`MaximumSize`, `AutoSize`/`AutoSizeMode` (`Width`/`Height` ignored, or
+  a floor with `GrowOnly`), `AutoScroll` (`AutoScrollNode`: the content laid out at its measured size in a Kubuno
+  `ScrollArea`), `BackColor`/`ForeColor`/`Font`/`RightToLeft` through `kubuno_controls::styled::StyledCanvas` (the
+  control paints with an overridden theme and text formats; a button's own face, a fill behind other controls;
+  `UseVisualStyleBackColor="true"` keeps the theme face), `BackgroundImage`/`BackgroundImageLayout`, `BorderStyle`,
+  `Enabled` (ambient: disables the whole subtree, unregistered from focus and hit tests), `TabIndex`/`TabStop`
+  (nested Tab keys in `FocusRing`, missing = 0), and per-frame offers (`FrameServices`): cursor
+  (`Cursor`/`UseWaitCursor`), tooltip, accessibility node, mnemonic, context menu, drop target.
+- Level properties read by the nodes: `ButtonBaseProps` (`TextAlign`, `Image`/`ImageAlign`/`TextImageRelation` via
+  `kubuno_ui::buttons::aligned_face`, `UseMnemonic`), `LabelBase` on `Label`/`LinkLabel` (`TextAlign`, `Image`,
+  `UseMnemonic`), `TextBoxProps` (`ReadOnly` bindable, `MaxLength`, `AcceptsTab`, `PasswordChar`, `CharacterCasing`,
+  `HideSelection`, `TextAlign`, `AcceptsReturn`, `WordWrap`), CheckBox `CheckState`/`AutoCheck`/`ThreeState`,
+  RadioButton `AutoCheck`, the Slider/NumericField/ProgressBar ranges, NumericField `DecimalPlaces`/
+  `ThousandsSeparator`, `Sorted` on ListBox/CheckedListBox/Dropdown/ComboBox (static and bound items).
+- Window services (`window.rs`, `Runtime::window_input`/`window_output`): mnemonics (Alt+letter activates the element
+  or, for a label, focuses the next control; the letter is underlined while Alt is held, always in the designer),
+  `AcceptButton` (Enter, and Enter in a single-line field) / `CancelButton` (Escape), `KeyPreview` (the view's key
+  events first), `CausesValidation="false"` (the focus moves in without validating the element left), tooltips
+  (`<ToolTip>` delays), context menus (right click → `OnOpening` → Kubuno menu, `MenuItem.OnClick`, shortcut text),
+  file drops (`AllowDrop` → `OnDragDrop` with `DragEventArgs`), the cursor, the accessibility tree, and `FormSpec` →
+  `host::set_form` every frame.
+- Host (`kubuno_controls::host`): `FormOptions` (title, icon file, `StartPosition`, `FormBorderStyle` incl. `None` and
+  tool windows, caption buttons shown or greyed in the Kubuno caption, `ShowInTaskbar`, `TopMost`, `Opacity` through
+  `WS_EX_LAYERED`, `WindowState`, `WM_GETMINMAXINFO` limits), applied at creation (`HostOptions::form`, so the window
+  opens right) and live. Accessibility: `host::access` builds an AccessKit tree (roles from `AccessibleRole` or the
+  control class, name/description/value/states/bounds/access key, focus) behind a lazily created
+  `accesskit_windows::Adapter` answering `WM_GETOBJECT`; Click and Focus actions come back to the elements. Files:
+  `DragAcceptFiles` + `WM_DROPFILES`.
+- Logging: `diagnostics` starts at `INFO` in every build (`KUBUNO_LOG` or `diagnostics::set_max_level` change it); the
+  template's per-event `tracing::debug!` is silent unless asked for, and its `main.rs` passes
+  `runtime.form_options(..)` to the host.
+
+### Language server and designer
+
+- Completion and hover offer inherited properties (with their level) and the view's own on the root, the enum values
+  of both, and alias notes; contrast warnings are published as warnings; `kubuno/bindingPaths { uri, openFiles } →
+  { paths }` reads the `match` patterns of the code-behind's `fn get`. A notification the server cannot read is logged
+  instead of ending the server.
+- Designer surface: the window frame shows `Title` and the caption buttons as `FormBorderStyle`/`ControlBox`/
+  `MinimizeBox`/`MaximizeBox` set them; `setText` carries `baseDir` (relative images); `Locked` elements are selected
+  but never moved, resized or nudged.
+- Properties window (C#): composite `Location`/`Size` (shown as *Dimensions* when the control has its own `Size`)/
+  `Margin`/`Padding`/`MinimumSize`/`MaximumSize` rows, bold non-default values, Reset, multi-selection; editors:
+  colour (Theme tab first with light|dark swatches, Custom with Windows' colour dialog, Web, System, and the contrast
+  line), font (Windows' font dialog, owned by Visual Studio), image (project images, preview, copy next to the view),
+  cursor, collection (`Item`/`Column`/`TabItem`...), string list, binding. The drop-downs use Visual Studio's
+  combo-popup theme colours and scale with the DPI; the dialogs are `DialogWindow`s with `ThemedDialogColors`, the
+  default themed-dialog styles and the `VsResourceKeys` control styles (`ThemedEditorDialog`, to be rebased on the
+  shared `ThemedDialog` once it is committed), message boxes through `VsShellUtilities.ShowMessageBox`.
+
+### Deviations and limits
+
+- CheckBox/RadioButton `TextAlign`/`Image` are not drawn, nor the mnemonic underline on their label (Alt+letter works).
+- `AllowDrop` covers files dropped from Explorer (`OnDragDrop`), not in-app drag and drop of data.
+- `Modifiers`/`GenerateMember` are design-time metadata only (no generated accessor yet).
+- A container's own `Padding` (`Stack`, `Panel`, `Card`, `GroupBox`) stays its single-number property; the inherited
+  four-sided `Padding` applies to the other controls.
+- The designer's selection sync keeps a language-server connection that Visual Studio replaced (seen once when the
+  server was restarted during solution load): reopening the view reconnects it.
+
+### Tests
+
+`kubuno-views` 572 unit + integration and doc tests (common properties, styles and contrast, form/tooltip/menu
+reading, runtime → host form and accessibility tree, validation of formats/view properties/contrast warnings,
+`Locked`, `setText.baseDir`, attribute entities and escaping); `kubuno_controls` 391 (form styles, caption buttons,
+access tree, styled formats); `kubuno_ui` 728 (Tab indexes, disabled parts, aligned faces, mnemonic underline);
+`kubuno-views-ls` 124 + golden + round trip (inherited/view completion and hover, binding paths). `cargo clippy
+--all-targets -D warnings` clean on the five crates. `tools/build-all.ps1` + restage: gallery, shell, drive,
+documents and chat start. `tools/test-templates.ps1 -Run`: all four templates build and run. C#: Designer 341 (colour/
+font/composite converters, category map, multi-selection, entity round trip, the theme-tokens fixture generated from
+the runtime).

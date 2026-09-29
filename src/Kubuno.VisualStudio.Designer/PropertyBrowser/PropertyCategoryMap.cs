@@ -24,6 +24,9 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             Behavior,
             Data,
             Misc,
+            Accessibility,
+            Focus,
+            WindowStyle,
         }
 
         private static readonly Dictionary<string, Category> ByName = new Dictionary<string, Category>(StringComparer.Ordinal)
@@ -120,13 +123,13 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         {
             foreach (Category known in Enum.GetValues(typeof(Category)))
             {
-                if (string.Equals(known.ToString(), category, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(known.ToString(), (category ?? string.Empty).Replace(" ", string.Empty), StringComparison.OrdinalIgnoreCase))
                 {
                     return DisplayName(known);
                 }
             }
 
-            return category;
+            return category ?? string.Empty;
         }
 
         /// <summary>Localized display name of <paramref name="category"/> (see <see cref="DesignerText"/>).</summary>
@@ -139,6 +142,9 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
                 case Category.Appearance: return DesignerText.CategoryAppearance;
                 case Category.Behavior: return DesignerText.CategoryBehavior;
                 case Category.Data: return DesignerText.CategoryData;
+                case Category.Accessibility: return DesignerText.CategoryAccessibility;
+                case Category.Focus: return DesignerText.CategoryFocus;
+                case Category.WindowStyle: return DesignerText.CategoryWindowStyle;
                 default: return DesignerText.CategoryMisc;
             }
         }

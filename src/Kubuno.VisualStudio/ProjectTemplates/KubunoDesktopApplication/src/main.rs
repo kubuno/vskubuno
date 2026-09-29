@@ -4,9 +4,11 @@
 //! to build your UI; both hot-reload on save while this is running (`FileWatcher`).
 //!
 //! Like a Windows Forms application (`OutputType=WinExe`), it opens no console window, not even in
-//! Debug: log with `tracing` (`tracing::info!`, `tracing::debug!`...) - under the debugger (F5) the lines
+//! Debug: log with `tracing` (`tracing::info!`, `tracing::warn!`...) - under the debugger (F5) the lines
 //! appear in Visual Studio's Output window, otherwise in `%LOCALAPPDATA%\Kubuno\logs\<exe>.log`; a panic
-//! shows an error dialog. To get a console back, change the line below to
+//! shows an error dialog. The level is `info`: set the environment variable `KUBUNO_LOG=debug` (or call
+//! `host::diagnostics::set_max_level(tracing::Level::DEBUG)`) to also see the `tracing::debug!` lines,
+//! such as every event the view raises. To get a console back, change the line below to
 //! `#![windows_subsystem = "console"]`.
 #![windows_subsystem = "windows"]
 
@@ -38,6 +40,9 @@ fn main() -> std::process::ExitCode {
     options.chrome = Chrome::Kubuno;
     options.client_size = true;
     options.fit_work_area = true;
+    // The view's window properties (the root's Title, Icon, StartPosition, FormBorderStyle, Opacity...,
+    // set in the Properties window with the view selected); without a Title, the project's name.
+    options.form = runtime.form_options(&view_model).unwrap_or_default();
 
     let result = host::run_with_options(
         options,
@@ -51,6 +56,7 @@ fn main() -> std::process::ExitCode {
                 // Runs the `#[kubuno_views::event_handlers]` methods of `MainViewModel` the view names.
                 let events = runtime.frame_typed(canvas, frame, &mut view_model, body);
                 for event in &events {
+                    // Shown with KUBUNO_LOG=debug only (see the top of this file).
                     tracing::debug!("event: {event:?}");
                 }
             } else {

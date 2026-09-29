@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Kubuno.VisualStudio.Designer.Registry
 {
     /// <summary>
@@ -48,5 +52,25 @@ namespace Kubuno.VisualStudio.Designer.Registry
         public string? Editor { get; set; }
 
         public string? TypeConverter { get; set; }
+
+        // ---- The control hierarchy's properties (docs/EVENTS.md, "WinForms-rich property sets") ----
+
+        /// <summary>The level of the class hierarchy declaring the property when the element inherits it (<c>"Control"</c>, <c>"ButtonBase"</c>, <c>"View"</c>...), null for the component's own.</summary>
+        public string? InheritedFrom { get; set; }
+
+        /// <summary>A property of the view itself (the form: <c>Title</c>, <c>StartPosition</c>...): only the view's root element has it.</summary>
+        public bool RootOnly { get; set; }
+
+        /// <summary>Read by the designer only, ignored when the application runs (<c>Locked</c>, <c>Modifiers</c>...).</summary>
+        public bool DesignTime { get; set; }
+
+        /// <summary>Older attribute names still accepted for this property (<c>Max</c> for <c>Maximum</c>).</summary>
+        public List<string> Aliases { get; set; } = new List<string>();
+
+        /// <summary>The canonical attribute name followed by the aliases - where an element's value may be written.</summary>
+        public IEnumerable<string> AttributeNames => new[] { Name }.Concat(Aliases ?? new List<string>());
+
+        /// <summary>Whether <paramref name="attributeName"/> is this property's attribute or one of its older aliases.</summary>
+        public bool Matches(string attributeName) => AttributeNames.Contains(attributeName, StringComparer.Ordinal);
     }
 }

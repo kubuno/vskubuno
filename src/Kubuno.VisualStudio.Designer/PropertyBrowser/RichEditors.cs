@@ -1,0 +1,318 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Drawing.Design;
+using System.Globalization;
+using System.Linq;
+using System.Windows.Forms.Design;
+using Kubuno.VisualStudio.Designer.Properties;
+using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.VisualStudio.Designer.Selection;
+using Microsoft.VisualStudio.Shell;
+
+namespace Kubuno.VisualStudio.Designer.PropertyBrowser
+{
+    /// <summary>
+    /// Which editor and converter a registry property gets in the Properties window (its <c>editor</c> /
+    /// <c>type_converter</c>), how a typed value is normalized for it, and the WinForms side effects of an edit.
+    /// </summary>
+    public static class RichEditors
+    {
+        public static UITypeEditor? EditorFor(PropertyMeta? meta) => meta?.Editor switch
+        {
+            "color" => new KbviewColorEditor(),
+            "font" => new KbviewFontEditor(),
+            "image" => new KbviewImageEditor(),
+            "cursor" => new KbviewCursorEditor(),
+            _ => null,
+        };
+
+        public static TypeConverter? ConverterFor(PropertyMeta? meta)
+        {
+            if (meta?.Editor is { } editor && editor.StartsWith("reference:", StringComparison.Ordinal))
+            {
+                return new ReferenceNamesConverter(editor.Substring("reference:".Length));
+            }
+
+            return meta?.TypeConverter == "Opacity" ? new OpacityConverter() : null;
+        }
+
+        /// <summary>The text written for <paramref name="text"/> typed in the row (empty = remove the attribute); throws <see cref="ArgumentException"/> when invalid.</summary>
+        public static string Normalize(PropertyMeta? meta, PropKind kind, string text)
+        {
+            if (BindingExpressionParser.IsBindingExpression(text))
+            {
+                return text;
+            }
+
+            switch (meta?.Editor)
+            {
+                case "color":
+                    return ColorText.Normalize(text);
+                case "font":
+                    return FontText.Normalize(text);
+                case "image":
+                    return text.Trim().Replace('\\', '/');
+            }
+
+            if (meta?.TypeConverter == "Opacity")
+            {
+                return CompositeText.ParseOpacity(text) is { } percent ? CompositeText.Number(percent) : throw new ArgumentException(DesignerText.InvalidOpacity(text));
+            }
+
+            return AttributeValueRules.Normalize(kind, text);
+        }
+
+        /// <summary>
+        /// What WinForms' designer does next to an edit: a <c>BackColor</c> set on a button (<c>ButtonBase</c>) also sets
+        /// <c>UseVisualStyleBackColor</c> to false, otherwise the button keeps the theme's face and ignores the colour.
+        /// </summary>
+        public static void AfterSet(KbviewElementObject element, string attribute, string value)
+        {
+            if (attribute == "BackColor" && value.Length > 0 && element.Component.IsA("ButtonBase")
+                && element.Component.Properties.Any(p => p.Name == "UseVisualStyleBackColor")
+                && element.GetRawValue("UseVisualStyleBackColor") != "false")
+            {
+                element.SetAttribute("UseVisualStyleBackColor", "false");
+            }
+        }
+
+        /// <summary>Shows a modal editor dialog (a themed Visual Studio dialog over the IDE); true on OK.</summary>
+        internal static bool ShowDialog(IServiceProvider? provider, UI.ThemedEditorDialog dialog)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            _ = provider; // The dialog is a themed Visual Studio window, parented by Visual Studio itself.
+            return dialog.Ask();
+        }
+
+        /// <summary>The element(s) a grid context edits: one, or every one of a multi-selection.</summary>
+        public static IReadOnlyList<KbviewElementObject> Elements(ITypeDescriptorContext? context) => context?.Instance switch
+        {
+            KbviewElementObject element => new[] { element },
+            object[] many => many.OfType<KbviewElementObject>().ToArray(),
+            KbviewCompositeValue { Owner: { } owner } => new[] { owner },
+            KbviewBindingsValue { Owner: { } owner } => new[] { owner },
+            _ => Array.Empty<KbviewElementObject>(),
+        };
+    }
+
+    /// <summary>
+    /// A reference to another element of the view by its <c>x:Name</c> (<c>ContextMenu</c>, <c>AcceptButton</c>...): the
+    /// dropdown lists the matching names found in the current text - elements named <paramref name="kind"/> or whose class
+    /// derives from it. Not exclusive (a name can be typed before its element exists).
+    /// </summary>
+    public sealed class ReferenceNamesConverter : StringConverter
+    {
+        public ReferenceNamesConverter(string kind)
+        {
+            Kind = kind;
+        }
+
+        public string Kind { get; }
+
+        public override bool GetStandardValuesSupported(ITypeDescriptorContext? context) => RichEditors.Elements(context).Count > 0;
+
+        public override bool GetStandardValuesExclusive(ITypeDescriptorContext? context) => false;
+
+        public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext? context)
+        {
+            var element = RichEditors.Elements(context).FirstOrDefault();
+            return new StandardValuesCollection(element is null ? Array.Empty<string>() : Names(element.Host.GetCurrentText(), element.Host.Registry, Kind).ToArray());
+        }
+
+        /// <summary>The <c>x:Name</c>s of the elements of <paramref name="text"/> that are a <paramref name="kind"/>.</summary>
+        public static IReadOnlyList<string> Names(string text, ComponentRegistry registry, string kind) =>
+            ViewDocument.Parse(text)?.DescendantsAndSelf()
+                .Where(n => n.Name == kind || registry.Find(n.Name)?.IsA(kind) == true)
+                .Select(n => n.Attribute("x:Name"))
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Select(n => n!)
+                .Distinct(StringComparer.Ordinal)
+                .ToList()
+            ?? (IReadOnlyList<string>)Array.Empty<string>();
+    }
+
+    /// <summary>An opacity: the attribute holds a percentage (<c>80</c>), shown <c>80 %</c> like WinForms' <c>OpacityConverter</c>.</summary>
+    public sealed class OpacityConverter : StringConverter
+    {
+        public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType) => destinationType == typeof(string);
+
+        public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType)
+        {
+            var text = value as string ?? string.Empty;
+            return destinationType == typeof(string) && !BindingExpressionParser.IsBindingExpression(text) && CompositeText.ParseNumber(text) is { } v
+                ? CompositeText.FormatOpacity(v)
+                : text;
+        }
+
+        public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+        {
+            var text = (value as string ?? string.Empty).Trim();
+            if (text.Length == 0 || BindingExpressionParser.IsBindingExpression(text))
+            {
+                return text;
+            }
+
+            return CompositeText.ParseOpacity(text) is { } percent ? CompositeText.Number(percent) : throw new ArgumentException(DesignerText.InvalidOpacity(text));
+        }
+    }
+
+    /// <summary>The WCAG contrast the colour editor shows next to a colour (docs/EVENTS.md's colour policy). Pure.</summary>
+    public static class ColorContrast
+    {
+        /// <summary>
+        /// The colour <paramref name="attribute"/> (<c>ForeColor</c> or <c>BackColor</c>) is read against on <paramref name="element"/>:
+        /// a ForeColor against the element's BackColor (else the Background theme colour), a BackColor against its ForeColor
+        /// (else TextPrimary). Null for another attribute.
+        /// </summary>
+        public static ColorValue? Counterpart(string attribute, Func<string, string?> read)
+        {
+            string other, fallback;
+            switch (attribute)
+            {
+                case "ForeColor": other = "BackColor"; fallback = "Background"; break;
+                case "BackColor": other = "ForeColor"; fallback = "TextPrimary"; break;
+                default: return null;
+            }
+
+            return ColorText.TryParse(read(other), out var value) && value.Kind != ColorValueKind.Empty ? value : ColorText.TryParse(fallback, out var token) ? token : null;
+        }
+
+        /// <summary>The contrast (light theme, dark theme) of <paramref name="chosen"/> set as <paramref name="attribute"/> against its counterpart; null when it does not apply.</summary>
+        public static (double Light, double Dark)? Of(string attribute, ColorValue chosen, ColorValue? counterpart)
+        {
+            if (counterpart is null || chosen.Kind == ColorValueKind.Empty)
+            {
+                return null;
+            }
+
+            var (fg, bg) = attribute == "BackColor" ? (counterpart, chosen) : (chosen, counterpart);
+            return (ColorText.ContrastRatio(fg.Light, bg.Light), ColorText.ContrastRatio(fg.Dark, bg.Dark));
+        }
+    }
+
+    /// <summary>The colour row's editor: a drop-down like WinForms' colour editor, Theme tab first (see <see cref="UI.ColorPickerControl"/>), and a swatch in the cell.</summary>
+    public sealed class KbviewColorEditor : UITypeEditor
+    {
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext? context) => UITypeEditorEditStyle.DropDown;
+
+        public override object? EditValue(ITypeDescriptorContext? context, IServiceProvider? provider, object? value)
+        {
+            if (provider?.GetService(typeof(IWindowsFormsEditorService)) is not IWindowsFormsEditorService service)
+            {
+                return value;
+            }
+
+            var attribute = context?.PropertyDescriptor?.Name ?? string.Empty;
+            var element = RichEditors.Elements(context).FirstOrDefault();
+            var counterpart = element is null ? null : ColorContrast.Counterpart(attribute, name => element.GetRawValue(name));
+            using var picker = new UI.ColorPickerControl(value as string, attribute, counterpart, service);
+            service.DropDownControl(picker);
+            return picker.Result ?? value;
+        }
+
+        public override bool GetPaintValueSupported(ITypeDescriptorContext? context) => true;
+
+        public override void PaintValue(PaintValueEventArgs e)
+        {
+            if (e.Value is string text && ColorText.TryParse(text, out var color) && color.Kind != ColorValueKind.Empty)
+            {
+                UI.Swatches.Paint(e.Graphics, e.Bounds, color.Light, color.Kind == ColorValueKind.Token ? color.Dark : (Color?)null);
+            }
+        }
+    }
+
+    /// <summary>The font row's editor: Windows' font dialog, written like WinForms' font text (<c>Segoe UI, 12pt, style=Bold</c>).</summary>
+    public sealed class KbviewFontEditor : UITypeEditor
+    {
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext? context) => UITypeEditorEditStyle.Modal;
+
+        public override object? EditValue(ITypeDescriptorContext? context, IServiceProvider? provider, object? value)
+        {
+            using var dialog = new System.Windows.Forms.FontDialog { ShowEffects = true, FontMustExist = true, AllowVerticalFonts = false };
+            if (FontText.ToDrawingFont(value as string) is { } font)
+            {
+                dialog.Font = font;
+            }
+
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return dialog.ShowDialog(UI.VsDialogOwner.Current()) == System.Windows.Forms.DialogResult.OK ? FontText.FromDrawingFont(dialog.Font) : value;
+        }
+    }
+
+    /// <summary>The image row's editor: the project's images and a file picker (see <see cref="UI.ImagePickerDialog"/>).</summary>
+    public sealed class KbviewImageEditor : UITypeEditor
+    {
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext? context) => UITypeEditorEditStyle.Modal;
+
+        public override object? EditValue(ITypeDescriptorContext? context, IServiceProvider? provider, object? value)
+        {
+            var element = RichEditors.Elements(context).FirstOrDefault();
+            var viewFile = (element?.Host as IKbviewDesignServices)?.ViewFilePath;
+            var dialog = new UI.ImagePickerDialog(viewFile, value as string);
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return RichEditors.ShowDialog(provider, dialog) ? dialog.Result : value;
+        }
+
+        public override bool GetPaintValueSupported(ITypeDescriptorContext? context) => true;
+
+        public override void PaintValue(PaintValueEventArgs e)
+        {
+            var element = RichEditors.Elements(e.Context).FirstOrDefault();
+            var viewFile = (element?.Host as IKbviewDesignServices)?.ViewFilePath;
+            if (e.Value is string path && ImageResources.Resolve(viewFile, path) is { } full)
+            {
+                UI.Swatches.PaintImage(e.Graphics, e.Bounds, full);
+            }
+        }
+    }
+
+    /// <summary>The cursor row's editor: the list of cursors, each drawn next to its name, like WinForms' cursor editor.</summary>
+    public sealed class KbviewCursorEditor : UITypeEditor
+    {
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext? context) => UITypeEditorEditStyle.DropDown;
+
+        public override object? EditValue(ITypeDescriptorContext? context, IServiceProvider? provider, object? value)
+        {
+            if (provider?.GetService(typeof(IWindowsFormsEditorService)) is not IWindowsFormsEditorService service)
+            {
+                return value;
+            }
+
+            var names = (context?.PropertyDescriptor as KbviewAttributePropertyDescriptor)?.Kind?.EnumVariants ?? CursorNames.All;
+            using var list = new UI.CursorListControl(names, value as string, service);
+            service.DropDownControl(list);
+            return list.Result ?? value;
+        }
+    }
+
+    /// <summary>The cursor names a view may use and the Windows cursor each one shows.</summary>
+    public static class CursorNames
+    {
+        public static IReadOnlyList<string> All { get; } = new[]
+        {
+            "Default", "Arrow", "IBeam", "Hand", "Wait", "No", "SizeAll", "SizeNS", "SizeWE", "SizeNWSE", "SizeNESW", "Cross", "Help", "AppStarting", "UpArrow",
+        };
+
+        /// <summary>The Windows cursor drawn for <paramref name="name"/> (<c>Default</c> is the arrow).</summary>
+        public static System.Windows.Forms.Cursor? CursorOf(string name) => name switch
+        {
+            "Default" or "Arrow" => System.Windows.Forms.Cursors.Arrow,
+            "IBeam" => System.Windows.Forms.Cursors.IBeam,
+            "Hand" => System.Windows.Forms.Cursors.Hand,
+            "Wait" => System.Windows.Forms.Cursors.WaitCursor,
+            "No" => System.Windows.Forms.Cursors.No,
+            "SizeAll" => System.Windows.Forms.Cursors.SizeAll,
+            "SizeNS" => System.Windows.Forms.Cursors.SizeNS,
+            "SizeWE" => System.Windows.Forms.Cursors.SizeWE,
+            "SizeNWSE" => System.Windows.Forms.Cursors.SizeNWSE,
+            "SizeNESW" => System.Windows.Forms.Cursors.SizeNESW,
+            "Cross" => System.Windows.Forms.Cursors.Cross,
+            "Help" => System.Windows.Forms.Cursors.Help,
+            "AppStarting" => System.Windows.Forms.Cursors.AppStarting,
+            "UpArrow" => System.Windows.Forms.Cursors.UpArrow,
+            _ => null,
+        };
+    }
+}

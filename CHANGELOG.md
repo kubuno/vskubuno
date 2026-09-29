@@ -36,6 +36,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     one undo step of the file. Invalid values are refused with a message under the field.
 - **Kubuno: Dialog Gallery** (Tools menu, experimental instance only): opens every dialog of the extension with
   sample data, to check them in each Visual Studio theme.
+- **Windows Forms-rich Properties window for every control of a view (EVT-7c of `docs/EVENTS.md`)**: each control
+  now lists the properties it inherits, sorted into the Windows Forms categories (Accessibilité, Apparence,
+  Comportement, Données, Design, Focus, Disposition, and Fenêtre for the view itself), each with a French or English
+  description, and the running application really honours them:
+  - *Apparence*: `BackColor`/`ForeColor` (theme colours by default, which follow light, dark and high contrast; free
+    colours allowed), `Font`, `Cursor`, `RightToLeft`, `BackgroundImage`/`BackgroundImageLayout`, `BorderStyle`, and on
+    buttons and labels `TextAlign`, `Image`, `ImageAlign`, `TextImageRelation`, `UseMnemonic` (`&Save` underlines the
+    S while Alt is held and Alt+S clicks the button; on a label it moves to the next control).
+  - *Comportement*: `Enabled`, `Visible`, `TabIndex`/`TabStop`, `ToolTip` (with a `<ToolTip>` component for the
+    delays, like Windows Forms' extender), `ContextMenu` (a `<ContextMenu>` of `<MenuItem>`s opened by a right click),
+    `AllowDrop` (files dropped on the control raise `OnDragDrop`), `UseWaitCursor`, and per control `ReadOnly`,
+    `MaxLength`, `AcceptsTab`/`AcceptsReturn`, `PasswordChar`, `CharacterCasing`, `HideSelection`, `WordWrap`,
+    `AutoCheck`, `ThreeState`/`CheckState`, `Sorted`, `Minimum`/`Maximum`/`SmallChange`/`LargeChange`, `Increment`,
+    `DecimalPlaces`, `ThousandsSeparator`.
+  - *Accessibilité*: `AccessibleName`, `AccessibleDescription`, `AccessibleRole` reach screen readers and UI
+    Automation (Narrator, Accessibility Insights) through a real accessibility tree of the window.
+  - *Disposition*: `Location` and `Size` as expandable rows (X/Y, Width/Height), `Margin`, `Padding`, `MinimumSize`,
+    `MaximumSize`, `AutoSize`/`AutoSizeMode`, `AutoScroll`; *Design*: `Locked` (the designer no longer moves or
+    resizes the control), `Modifiers`, `GenerateMember`; *Focus*: `CausesValidation`.
+  - The view (the window): `Title`, `Icon`, `StartPosition`, `FormBorderStyle`, `ControlBox`/`MinimizeBox`/`MaximizeBox`,
+    `ShowInTaskbar`, `TopMost`, `Opacity`, `WindowState`, `AcceptButton`/`CancelButton` (Enter/Escape), `KeyPreview`,
+    `MinimumSize`/`MaximumSize`; the design surface draws the window frame accordingly.
+- **Property editors like Windows Forms'**: a colour editor with the Kubuno theme colours first (each shown in its
+  light and dark variants), then Custom, Web and System tabs and the contrast of the colour against its counterpart;
+  the font dialog; an image picker listing the project's images (a file from elsewhere can be copied next to the view);
+  a cursor list; a collection editor (items, columns, tabs...) and a string list editor; a binding editor listing the
+  view model's fields. They follow the Visual Studio theme (dark, light, blue, high contrast).
+- **Bold values, Reset and multi-selection** in the Properties window: a value that differs from its default is bold,
+  Reset restores the default by removing the attribute, and several selected controls are edited together.
+- **Contrast warnings**: a free colour whose text would not stand out enough from its background (WCAG AA) in the light
+  or the dark theme is underlined in the `.kbview` with the measured ratio; the view still builds and runs.
+- **IntelliSense for the inherited properties**: completion and hover in `.kbview` files now offer every inherited
+  property (and the view's own on the root element), say which level it comes from, and note older names.
+
+### Changed
+
+- **The application log no longer shows every event**: a new *Kubuno Desktop Application* logs at the `info` level,
+  also in Debug; set `KUBUNO_LOG=debug` (or call `host::diagnostics::set_max_level`) to see the per-event lines again.
+  The template's window now takes its title, position, border and other window properties from the view.
+- Text with `&`, quotes, `<` or line breaks is shown and edited as typed in the Properties window (`&Save`, not
+  `&amp;Save`) and escaped when written to the `.kbview`; the collection editors escape it the same way.
+- Older property names keep working and are shown as hints: `Align` → `TextAlign` (Label), `Min`/`Max` →
+  `Minimum`/`Maximum`, `Step` → `SmallChange`/`Increment`, `LargeStep` → `LargeChange`.
+
 - **Your own controls in the designer (EVT-7b of `docs/EVENTS.md`)**: custom controls (`#[derive(Component)]`, drawn
   by their own `on_paint`), user controls (a `.kbview` with `<UserControl x:Class="…">` and its code-behind) and
   non-visual components written in your project are usable as elements of its views. The views' IntelliSense knows

@@ -132,31 +132,44 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
                 };
 
                 var seen = new HashSet<string>(StringComparer.Ordinal) { "x:Name" };
+                var dockAnchorParent = ParentLaysOutByDockAnchor();
+                var toolTipProvider = ToolTipProviderName();
                 foreach (var property in Component.Properties)
                 {
-                    // A project control's `#[browsable(false)]` property stays settable in XML but is not listed (EVT-7b).
-                    if (property.Browsable && seen.Add(property.Name))
+                    // A project control's `#[browsable(false)]` property stays settable in XML but is not listed (EVT-7b);
+                    // the view's own (form) properties belong to its root element only.
+                    if (!property.Browsable || (property.RootOnly && !IsRoot) || !seen.Add(property.Name))
                     {
-                        list.Add(new KbviewAttributePropertyDescriptor(property.Name, property.Name, property.Kind, property.Default, property.LocalizedDoc, PropertyCategoryMap.For(property.Name, property.Kind), customCategory: property.Category));
+                        continue;
                     }
+
+                    list.Add(DescriptorFor(property.Name, property.Kind, property, dockAnchorParent, toolTipProvider));
                 }
 
-                // Dock/Anchor get the Windows Forms pickers; like WinForms (which keeps them visible for a control
-                // in a FlowLayoutPanel), they stay listed under a parent that does not lay out by them, but
-                // greyed out with a description saying so - the validator warns when they are set there.
-                var dockAnchorParent = ParentLaysOutByDockAnchor();
+                // An older export without the Control level's properties: the layout attributes every element accepts.
                 foreach (var (name, kind) in CommonAttributes)
                 {
                     if (seen.Add(name))
                     {
-                        var isDockOrAnchor = name == "Dock" || name == "Anchor";
-                        System.Drawing.Design.UITypeEditor? editor = name == "Dock" ? new KbviewDockEditor() : name == "Anchor" ? new KbviewAnchorEditor() : null;
-                        var doc = isDockOrAnchor && !dockAnchorParent ? DesignerText.DockAnchorOnlyInPanel(name) : DesignerText.CommonAttributeDoc(name);
-                        // Like WinForms, an absent Dock/Anchor shows its default value ("None" / "Top, Left"), non-bold.
-                        var defaultValue = name == "Dock" ? LayoutAttributeText.DefaultDock : name == "Anchor" ? LayoutAttributeText.DefaultAnchor : null;
-                        list.Add(new KbviewAttributePropertyDescriptor(name, name, kind, defaultValue, doc, PropertyCategoryMap.Category.Layout, editor, readOnly: isDockOrAnchor && !dockAnchorParent));
+                        list.Add(DescriptorFor(name, kind, null, dockAnchorParent, toolTipProvider));
                     }
                 }
+
+                // Location and Size, expandable like WinForms', over X/Y and Width/Height (whose own rows are not listed).
+                var ownSize = Component.Properties.Exists(p => p.Name == "Size" && p.InheritedFrom is null);
+                var ownLocation = Component.Properties.Exists(p => p.Name == "Location" && p.InheritedFrom is null);
+                var layout = PropertyCategoryMap.DisplayName(PropertyCategoryMap.Category.Layout);
+                list.Add(new KbviewCompositePropertyDescriptor(new TwoAttributeSpec(LocationRow, "X", "Y", autoWhenAbsent: false), ownLocation ? DesignerText.PositionName : "Location", DesignerText.LocationDoc, layout));
+                list.Add(new KbviewCompositePropertyDescriptor(new TwoAttributeSpec(SizeRow, "Width", "Height", autoWhenAbsent: true), ownSize ? DesignerText.DimensionsName : "Size", DesignerText.SizeDoc, layout));
+
+                // (DataBindings), and the children collections (Columns, TabPages, Items...).
+                var visible = Component.Properties.Where(p => p.Browsable && (!p.RootOnly || IsRoot)).ToList();
+                if (visible.Count > 0)
+                {
+                    list.Add(new KbviewBindingsPropertyDescriptor(KbviewBindingsPropertyDescriptor.BindableOf(visible), visible));
+                }
+
+                list.AddRange(KbviewChildrenPropertyDescriptor.RowsFor(Component));
 
                 // The view itself (the root element): its design-time canvas size (docs/DESIGNER.md §12).
                 if (ElementId.Length == 0)
@@ -175,6 +188,54 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
             return _properties;
         }
+
+        /// <summary>The internal name of the expandable Location row (never clashes with a component's own property).</summary>
+        public const string LocationRow = "Bounds.Location";
+
+        /// <summary>The internal name of the expandable Size row (a Button has its own <c>Size</c>).</summary>
+        public const string SizeRow = "Bounds.Size";
+
+        private static readonly HashSet<string> BoundsAttributes = new HashSet<string>(StringComparer.Ordinal) { "X", "Y", "Width", "Height" };
+
+        /// <summary>The row of attribute <paramref name="name"/>: the Dock/Anchor pickers, the expandable rows, or a plain one.</summary>
+        private PropertyDescriptor DescriptorFor(string name, PropKind kind, PropertyMeta? property, bool dockAnchorParent, string? toolTipProvider)
+        {
+            var category = PropertyCategoryMap.For(name, kind);
+            var doc = property?.LocalizedDoc is { Length: > 0 } registryDoc ? registryDoc : DesignerText.CommonAttributeDoc(name);
+            if (name == "Dock" || name == "Anchor")
+            {
+                // Dock/Anchor get the Windows Forms pickers; like WinForms (which keeps them visible for a control in a
+                // FlowLayoutPanel), they stay listed under a parent that does not lay out by them, but greyed out with a
+                // description saying so - the validator warns when they are set there. An absent value shows its default
+                // ("None" / "Top, Left"), non-bold.
+                System.Drawing.Design.UITypeEditor editor = name == "Dock" ? new KbviewDockEditor() : new KbviewAnchorEditor();
+                var defaultValue = name == "Dock" ? LayoutAttributeText.DefaultDock : LayoutAttributeText.DefaultAnchor;
+                return new KbviewAttributePropertyDescriptor(name, name, kind, defaultValue, dockAnchorParent ? doc : DesignerText.DockAnchorOnlyInPanel(name), PropertyCategoryMap.Category.Layout, editor, readOnly: !dockAnchorParent, customCategory: property?.Category, meta: property);
+            }
+
+            if (BoundsAttributes.Contains(name))
+            {
+                // Shown through Location / Size; still reachable by name (a multi-selection edit, the tests).
+                return new KbviewAttributePropertyDescriptor(name, name, kind, property?.Default, doc, PropertyCategoryMap.Category.Layout, customCategory: property?.Category, meta: property, browsable: false);
+            }
+
+            var displayCategory = property?.Category is { Length: > 0 } c ? PropertyCategoryMap.DisplayName(c) : PropertyCategoryMap.DisplayName(category);
+            switch (property?.TypeConverter)
+            {
+                case "Padding":
+                    return new KbviewCompositePropertyDescriptor(NumberListSpec.Padding(name, property.Default), name, doc, displayCategory);
+                case "Size":
+                    return new KbviewCompositePropertyDescriptor(NumberListSpec.Size(name, property.Default), name, doc, displayCategory);
+            }
+
+            var display = name == "ToolTip" ? DesignerText.ToolTipOn(toolTipProvider) : name;
+            var shownDefault = property?.Editor == "font" && string.IsNullOrEmpty(property.Default) ? FontText.AmbientDefault : property?.Default;
+            return new KbviewAttributePropertyDescriptor(name, display, kind, shownDefault, doc, category, customCategory: property?.Category, meta: property);
+        }
+
+        /// <summary>The <c>x:Name</c> of the view's first <c>&lt;ToolTip&gt;</c> component (the WinForms "ToolTip on toolTip1" extender), or null.</summary>
+        private string? ToolTipProviderName() =>
+            Selection.ViewDocument.Parse(_host.GetCurrentText())?.DescendantsAndSelf().FirstOrDefault(n => n.Name == "ToolTip" && !string.IsNullOrEmpty(n.Attribute("x:Name")))?.Attribute("x:Name");
 
         /// <summary>Whether this element's parent places its children by Dock/Anchor (a <c>Panel</c>); false for the root.</summary>
         private bool ParentLaysOutByDockAnchor()

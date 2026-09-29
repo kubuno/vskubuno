@@ -48,6 +48,32 @@ namespace Kubuno.VisualStudio.Designer.Editing
             return offset + character;
         }
 
+        /// <summary>
+        /// The inverse of <see cref="ToOffset"/>: the position (line, UTF-16 column) of <paramref name="offset"/> in
+        /// <paramref name="text"/>, a <c>\r\n</c> counting as one line break. Clamped to the text.
+        /// </summary>
+        public static LspPosition FromOffset(string text, int offset)
+        {
+            if (text is null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+
+            offset = Math.Max(0, Math.Min(offset, text.Length));
+            int line = 0, lineStart = 0;
+            for (var i = 0; i < offset; i++)
+            {
+                var loneCr = text[i] == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n');
+                if (text[i] == '\n' || loneCr)
+                {
+                    line++;
+                    lineStart = i + 1;
+                }
+            }
+
+            return new LspPosition(line, offset - lineStart);
+        }
+
         public static (int Start, int End) ToOffsetRange(string text, LspRange range)
         {
             int start = ToOffset(text, range.Start);

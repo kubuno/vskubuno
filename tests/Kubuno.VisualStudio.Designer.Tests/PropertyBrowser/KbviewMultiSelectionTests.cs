@@ -42,14 +42,14 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
             var cancel = new KbviewElementObject(host, "1", Registry.Find("Button")!);
 
             var rows = CommonRows(ok, cancel);
-            CollectionAssert.IsSubsetOf(new[] { "x:Name", "Text", "X", "Width", "Dock", "Anchor" }, rows.ToArray());
+            CollectionAssert.IsSubsetOf(new[] { "x:Name", "Text", KbviewElementObject.LocationRow, KbviewElementObject.SizeRow, "Dock", "Anchor" }, rows.ToArray());
 
             // What the grid compares to blank a differing value.
             var text = TypeDescriptor.GetProperties(ok).Find("Text", false)!;
             Assert.AreEqual("OK", text.GetValue(ok));
             Assert.AreEqual("Cancel", text.GetValue(cancel));
-            // Every row is string-typed: the grid merges rows by name AND type, so a Button's X merges with a Stack's X.
-            Assert.IsTrue(TypeDescriptor.GetProperties(ok).Cast<PropertyDescriptor>().All(p => p.PropertyType == typeof(string)));
+            // The grid merges rows by name AND type: every plain row is string-typed, the expandable ones share one value type.
+            Assert.IsTrue(TypeDescriptor.GetProperties(ok).Cast<PropertyDescriptor>().All(p => p.PropertyType == typeof(string) || p.PropertyType == typeof(KbviewCompositeValue) || p.PropertyType == typeof(KbviewBindingsValue)));
         }
 
         [TestMethod]
@@ -60,7 +60,7 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
             var stack = new KbviewElementObject(host, "2", Registry.Find("Stack")!);
 
             var rows = CommonRows(button, stack);
-            CollectionAssert.Contains(rows.ToArray(), "X");
+            CollectionAssert.Contains(rows.ToArray(), KbviewElementObject.LocationRow);
             CollectionAssert.Contains(rows.ToArray(), "x:Name");
             CollectionAssert.DoesNotContain(rows.ToArray(), "Text", "a Stack has no Text");
         }

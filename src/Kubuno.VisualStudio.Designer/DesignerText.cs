@@ -69,6 +69,178 @@ namespace Kubuno.VisualStudio.Designer
 
         public static string CategoryAction => T("Action", "Action");
 
+        public static string CategoryAccessibility => T("Accessibility", "Accessibilité");
+
+        public static string CategoryFocus => T("Focus", "Focus");
+
+        /// <summary>The view's window properties (the "Vue/Form" category: ControlBox, TopMost, Opacity...).</summary>
+        public static string CategoryWindowStyle => T("Window Style", "Style de fenêtre");
+
+        // ---- Rich property editors (docs/EVENTS.md, "WinForms-rich property sets") ----
+
+        public static string InvalidColor(string value) => T(
+            $"'{value}' is not a colour: use a theme colour (Primary, Surface...), #RRGGBB, #RRGGBBAA, a colour name (Red, CornflowerBlue) or a Windows colour (Control, WindowText).",
+            $"« {value} » n'est pas une couleur : utilisez une couleur du thème (Primary, Surface…), #RRGGBB, #RRGGBBAA, un nom de couleur (Red, CornflowerBlue) ou une couleur Windows (Control, WindowText).");
+
+        public static string InvalidFont(string value) => T(
+            $"'{value}' is not a font: write it like 'Segoe UI, 12pt' or 'Segoe UI, 12pt, style=Bold, Italic'.",
+            $"« {value} » n'est pas une police : écrivez-la comme « Segoe UI, 12pt » ou « Segoe UI, 12pt, style=Bold, Italic ».");
+
+        public static string InvalidComposite(string value, string example) => T(
+            $"'{value}' is not valid here: write it like '{example}'.",
+            $"« {value} » n'est pas valide ici : écrivez-la comme « {example} ».");
+
+        public static string InvalidOpacity(string value) => T(
+            $"'{value}' is not an opacity: write a percentage between 0 % and 100 %.",
+            $"« {value} » n'est pas une opacité : écrivez un pourcentage entre 0 % et 100 %.");
+
+        /// <summary>The description of a sub-property of an expandable row (X under Location, Left under Padding...).</summary>
+        public static string CompositePartDoc(string row, string part)
+        {
+            switch (part)
+            {
+                case "X": return T("Distance from the left edge of the container, in pixels.", "Distance depuis le bord gauche du conteneur, en pixels.");
+                case "Y": return T("Distance from the top edge of the container, in pixels.", "Distance depuis le bord supérieur du conteneur, en pixels.");
+                case "Width": return row == PropertyBrowser.KbviewElementObject.SizeRow
+                    ? T("Width of the element, in pixels. auto: its natural width.", "Largeur de l'élément, en pixels. auto : sa largeur naturelle.")
+                    : T("Width, in pixels. 0 means no limit.", "Largeur, en pixels. 0 signifie aucune limite.");
+                case "Height": return row == PropertyBrowser.KbviewElementObject.SizeRow
+                    ? T("Height of the element, in pixels. auto: its natural height.", "Hauteur de l'élément, en pixels. auto : sa hauteur naturelle.")
+                    : T("Height, in pixels. 0 means no limit.", "Hauteur, en pixels. 0 signifie aucune limite.");
+                case "All": return T("The same space on the four sides, in pixels (empty when the sides differ).", "Le même espace sur les quatre côtés, en pixels (vide quand les côtés diffèrent).");
+                case "Left": return T("Space on the left side, in pixels.", "Espace du côté gauche, en pixels.");
+                case "Top": return T("Space on the top side, in pixels.", "Espace du côté haut, en pixels.");
+                case "Right": return T("Space on the right side, in pixels.", "Espace du côté droit, en pixels.");
+                case "Bottom": return T("Space on the bottom side, in pixels.", "Espace du côté bas, en pixels.");
+                default: return string.Empty;
+            }
+        }
+
+        /// <summary>The Size row's name for a component that has a Size property of its own (a button's size).</summary>
+        public static string DimensionsName => T("Dimensions", "Dimensions");
+
+        /// <summary>The Location row's name for a component that has a Location property of its own.</summary>
+        public static string PositionName => T("Position", "Position");
+
+        public static string LocationDoc => T(
+            "Position of the element's top-left corner in its container, in pixels (X, Y).",
+            "Position du coin supérieur gauche de l'élément dans son conteneur, en pixels (X, Y).");
+
+        public static string SizeDoc => T(
+            "Size of the element, in pixels (width, height). auto keeps its natural size.",
+            "Taille de l'élément, en pixels (largeur, hauteur). auto garde sa taille naturelle.");
+
+        public static string DataBindingsDoc => T(
+            "Values of this element taken from the view model: expand to link a property to a field of the view model.",
+            "Valeurs de cet élément prises dans le modèle de vue : développez pour lier une propriété à un champ du modèle de vue.");
+
+        public static string AdvancedBindingsName => T("(Advanced)", "(Avancé)");
+
+        public static string AdvancedBindingsDoc => T(
+            "Opens the list of every property of the element, to link any of them to the view model.",
+            "Ouvre la liste de toutes les propriétés de l'élément, pour lier n'importe laquelle au modèle de vue.");
+
+        public static string BindingPartDoc(string property) => T(
+            $"The view model field {property} is linked to. Empty: {property} keeps the value written in the view.",
+            $"Champ du modèle de vue auquel {property} est lié. Vide : {property} garde la valeur écrite dans la vue.");
+
+        public static string CollectionValue => T("(Collection)", "(Collection)");
+
+        /// <summary>The description of a collection row (Columns, TabPages, Items...).</summary>
+        public static string CollectionDoc(string row, string childTag) => row switch
+        {
+            "Columns" => T("The columns of the list. Click ... to add, remove, reorder or change them.", "Colonnes de la liste. Cliquez sur ... pour les ajouter, les supprimer, les réordonner ou les modifier."),
+            "TabPages" => T("The tabs. Click ... to add, remove, reorder or rename them.", "Onglets. Cliquez sur ... pour les ajouter, les supprimer, les réordonner ou les renommer."),
+            "Steps" => T("The steps. Click ... to add, remove, reorder or change them.", "Étapes. Cliquez sur ... pour les ajouter, les supprimer, les réordonner ou les modifier."),
+            "Sections" => T("The sections. Click ... to add, remove, reorder or change them.", "Sections. Cliquez sur ... pour les ajouter, les supprimer, les réordonner ou les modifier."),
+            _ => T($"The {childTag} elements it contains. Click ... to add, remove, reorder or change them.", $"Éléments {childTag} qu'il contient. Cliquez sur ... pour les ajouter, les supprimer, les réordonner ou les modifier."),
+        };
+
+        public static string StringListDoc => T(
+            "The items of the list, one per line. Click ... to edit them.",
+            "Éléments de la liste, un par ligne. Cliquez sur ... pour les modifier.");
+
+        public static string StringListTitle => T("String Collection Editor", "Éditeur de collections de chaînes");
+
+        public static string StringListHint => T("Enter the items, one per line:", "Entrez les éléments, un par ligne :");
+
+        public static string CollectionEditorTitle(string row) => T($"{row} Collection Editor", $"Éditeur de collections {row}");
+
+        public static string CollectionMembers => T("Members:", "Membres :");
+
+        public static string MoveUp => T("Move up", "Monter");
+
+        public static string MoveDown => T("Move down", "Descendre");
+
+        public static string CollectionProperties(string item) => T($"{item} properties:", $"Propriétés de {item} :");
+
+        public static string Add => T("Add", "Ajouter");
+
+        public static string Remove => T("Remove", "Supprimer");
+
+        public static string Browse => T("Browse...", "Parcourir…");
+
+        public static string ToolTipOn(string? component) => string.IsNullOrEmpty(component) ? "ToolTip" : T($"ToolTip on {component}", $"ToolTip sur {component}");
+
+        public static string ToolTipDoc => T(
+            "Text of the tooltip shown when the mouse pointer rests on the element.",
+            "Texte de l'info-bulle affichée quand le pointeur de la souris s'arrête sur l'élément.");
+
+        // Colour editor.
+        public static string ColorTabTheme => T("Theme", "Thème");
+
+        public static string ColorTabCustom => T("Custom", "Personnalisée");
+
+        public static string ColorTabWeb => T("Web", "Web");
+
+        public static string ColorTabSystem => T("System", "Système");
+
+        public static string ColorDefine => T("Define colors...", "Définir les couleurs…");
+
+        public static string ColorLightDark => T("light / dark", "clair / sombre");
+
+        /// <summary>The contrast line of the colour editor: <c>✓ 7.2:1 light · ⚠ 3.1:1 dark</c>.</summary>
+        public static string ContrastLine(double light, double dark)
+        {
+            string Part(double ratio, string theme) => (ratio >= PropertyBrowser.ColorText.MinimumContrast ? "✓ " : "⚠ ") + ratio.ToString("0.0", CultureInfo.InvariantCulture) + ":1 " + theme;
+            return T("Contrast: ", "Contraste : ") + Part(light, T("light", "clair")) + " · " + Part(dark, T("dark", "sombre"));
+        }
+
+        public static string ContrastWarning => T(
+            "Hard to read in a theme: at least 4.5:1 is recommended.",
+            "Difficile à lire dans un thème : au moins 4,5:1 est recommandé.");
+
+        // Image editor.
+        public static string ImageEditorTitle => T("Select Resource", "Sélectionner la ressource");
+
+        public static string ImageProjectResources => T("Images of the project:", "Images du projet :");
+
+        public static string ImageNone => T("(none)", "(aucune)");
+
+        public static string ImageCopyPrompt(string file, string folder) => T(
+            $"{file} is outside the view's folder. Copy it into {folder} so the application finds it?",
+            $"{file} est en dehors du dossier de la vue. Le copier dans {folder} pour que l'application le trouve ?");
+
+        public static string ImageFilter => T("Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.ico|All files|*.*", "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.ico|Tous les fichiers|*.*");
+
+        // Binding editor.
+        public static string BindingEditorTitle => T("Data Binding", "Liaison de données");
+
+        public static string BindingPath => T("View model field:", "Champ du modèle de vue :");
+
+        public static string BindingMode => T("Mode:", "Mode :");
+
+        public static string BindingModeDoc(string mode) => mode switch
+        {
+            "TwoWay" => T("TwoWay: the element also updates the field (a text typed, a box checked).", "TwoWay : l'élément met aussi à jour le champ (texte saisi, case cochée)."),
+            "OneTime" => T("OneTime: the field is read once, when the view opens.", "OneTime : le champ n'est lu qu'une fois, à l'ouverture de la vue."),
+            _ => T("OneWay: the element shows the field and follows its changes.", "OneWay : l'élément affiche le champ et suit ses changements."),
+        };
+
+        public static string BindingNone => T("(none)", "(aucune)");
+
+        public static string BindingsAdvancedTitle => T("Advanced Binding", "Liaison avancée");
+
         /// <summary>
         /// An event category of the registry export (English, <c>kubuno_views::registry::EventCategory::name</c>) in
         /// Visual Studio's UI language - the Windows Forms designer's own names (Action, Comportement, Focus,
