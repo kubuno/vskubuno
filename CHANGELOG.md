@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Your own controls in the designer (EVT-7b of `docs/EVENTS.md`)**: custom controls (`#[derive(Component)]`, drawn
+  by their own `on_paint`), user controls (a `.kbview` with `<UserControl x:Class="…">` and its code-behind) and
+  non-visual components written in your project are usable as elements of its views. The views' IntelliSense knows
+  them as soon as you save (completion, validation, hover, go to definition - no build needed); after a build, the
+  designer renders them with your real code, the Toolbox shows a "*Project* Composants" tab with them, and the
+  Properties window lists their properties with the categories and descriptions of your `#[category]` /
+  `#[description]` attributes. "Choisir des éléments…" (designer context menu) adds controls from other crates.
+- **Component tray** under the design surface for the view's non-visual components (`<Timer>`, your own components):
+  select, double-click for the default event handler, Delete.
+- **"Substituer des membres…"** (light bulb in a Rust control's `impl Control for …` or on its struct): pick the
+  overridable members of the control's class chain in a checklist; each is inserted with its exact signature and a
+  body calling the base behaviour. Snippets `onpaint`, `event`, `handler` and `prop` in Rust files.
+- **Item templates** *Contrôle personnalisé Kubuno*, *Contrôle utilisateur Kubuno*, *Contrôle hérité Kubuno* (the base
+  control is picked in a small dialog) and *Composant Kubuno*, in Add New Item and in the project's "Ajouter" menu: the
+  file is named after the Rust module (`RoundButton` → `srcound_button.rs`) and the module is declared in
+  `main.rs`/`lib.rs` for you.
+
 - **The Events tab (⚡) works like Windows Forms' for existing handlers**: the value cell of an event is now a
   dropdown of the code-behind's handlers that can take that event (a method whose sender and argument types fit,
   or one that takes none, or `&dyn EventArgs`, plus the entries of a `handlers!` table); picking one binds the
@@ -130,6 +147,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `Anchor="Top, Left"`; a Toolbox double-click does the same.
 
 ### Fixed
+
+- **Empty Properties window after reopening a solution**: closing a solution and opening one (or the same one) again
+  in the same Visual Studio session left the designer's Properties window, selection sync and Toolbox updates dead
+  until Visual Studio was restarted (the designer talked to the restarted Kubuno views language server before it was
+  initialized, which stopped it). The designer now waits for the new server, and asks Visual Studio to start it when
+  nothing did.
 
 - **Empty Kubuno tabs in the Toolbox for other documents**: with a code file or any other non-`.kbview`
   document active, the Toolbox showed the Kubuno tabs (*Display*, *Choice*, *Text*...) each with its

@@ -142,6 +142,8 @@ namespace Kubuno.VisualStudio.Designer
 
         public static string MenuConvertHandlers => T("Convert to Typed Handlers", "Convertir en gestionnaires typés");
 
+        public static string MenuChooseToolboxItems => T("Choose Toolbox Items...", "Choisir des éléments...");
+
         /// <summary>The server refused a handler command (<paramref name="reason"/> is its English explanation).</summary>
         public static string HandlerCommandRefused(string action, string reason) => T($"{action}: {reason}.", $"{action} : {reason}.");
 
@@ -230,8 +232,11 @@ namespace Kubuno.VisualStudio.Designer
         public static string[] AllToolboxTabNames() => new[]
         {
             "Common Controls", "Contrôles communs", "Display", "Affichage", "Choice", "Choix", "Text", "Texte",
-            "Containers", "Conteneurs", "Data", "Données",
+            "Containers", "Conteneurs", "Data", "Données", "Components", "Composants",
         };
+
+        /// <summary>The Toolbox tab of a project's own controls (docs/EVENTS.md EVT-7b), like WinForms' "&lt;Project&gt; Components".</summary>
+        public static string ProjectToolboxTabName(string project) => T(project + " Components", project + " Composants");
 
         public static string ToolboxTabName(string family)
         {
@@ -243,6 +248,7 @@ namespace Kubuno.VisualStudio.Designer
                 case "text": return T("Text", "Texte");
                 case "containers": return T("Containers", "Conteneurs");
                 case "data": return T("Data", "Données");
+                case "components": return T("Components", "Composants");
                 default:
                     return family is null || family.Length == 0 ? "Kubuno" : char.ToUpperInvariant(family[0]) + family.Substring(1);
             }

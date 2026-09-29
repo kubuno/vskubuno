@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/EVENTS.md EVT-7b: "Add New Item > Kubuno User Control" - a composite control designed as a view of its own
+     (root <UserControl x:Class="...">) with its code-behind (the same-stem .rs, nested under it in Solution
+     Explorer), usable as an element of the project's other views. -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Kubuno User Control</Name>
+    <Description>A reusable control designed as a view of its own (.kbview) with its code-behind: its properties and events are those of the element it becomes in the project's other views.</Description>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.KubunoUserControl</TemplateID>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>12</SortOrder>
+    <DefaultName>UserControl.kbview</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.kbview">UserControl.kbview</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">UserControl.rs</ProjectItem>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>Kubuno.VisualStudio.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>Kubuno.VisualStudio.TemplateWizard.ControlItemWizard</FullClassName>
+  </WizardExtension>
+</VSTemplate>

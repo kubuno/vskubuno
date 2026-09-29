@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/EVENTS.md EVT-7b: "Add New Item > Kubuno Inherited Control" - a class extending a built-in control (the
+     wizard asks which one), inheriting its properties and events, whose behaviour it overrides. -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Kubuno Inherited Control</Name>
+    <Description>A control extending a built-in Kubuno control (a Button, a Label...): it keeps everything its base does and overrides its behaviour.</Description>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.KubunoInheritedControl</TemplateID>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>13</SortOrder>
+    <DefaultName>InheritedControl.rs</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">InheritedControl.rs</ProjectItem>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>Kubuno.VisualStudio.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>Kubuno.VisualStudio.TemplateWizard.ControlItemWizard</FullClassName>
+  </WizardExtension>
+  <WizardData>
+    <KubunoControl kind="inherited" />
+  </WizardData>
+</VSTemplate>

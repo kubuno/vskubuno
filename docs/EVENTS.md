@@ -8,7 +8,9 @@
 >
 > **Status (2026-09-29):** EVT-1 to EVT-5 are **done** (see §9, "EVT-1 as built", §10,
 > "EVT-2 and EVT-3 as built", §11, "EVT-4 as built" — the attribute is `#[kubuno_views::event_handlers]`,
-> see there —, and §12, "EVT-5 as built"); EVT-6: see §13; EVT-7 and EVT-8 are not started.
+> see there —, and §12, "EVT-5 as built"); EVT-6: see §13; EVT-7 is split in two: **EVT-7a** (the control
+> hierarchy and the overridable `on_…` methods) is done, see §14; EVT-7b (custom controls and user controls
+> in XML, tooling) is done, see §15; EVT-8 is not started.
 
 ## 0. Where we are today
 
@@ -454,7 +456,8 @@ instead of `&mut dyn ViewModel`.
 | EVT-4 ✅ done (§11) | Typed handlers and migration | `kubuno-views-macros` `#[handlers]`, `EventSink`, `Runtime::frame_typed`, legacy adapter; `handler_insert.rs` typed stub | EVT-1, EVT-2 | L | `trybuild` pass/fail tests (bad signature, async + Handled); existing `handlers!` tests untouched; live: `KubunoLot8App` old and new style both click through |
 | EVT-5 ✅ done (§12) | Designer/LS commands | LS `compatibleHandlers`, `renameHandler`, remove-empty-stub, missing-handler diagnostic, convert code action; C# `GetCompatibleMethods`, surface double-click → default event, rename menu | EVT-3, EVT-4 | M | LS unit tests on temp workspaces; live: dropdown lists handlers, rename updates XML + Rust in one undo per file |
 | EVT-6 | View lifecycle, window events, threading | `runtime.rs` lifecycle hooks, host close/activation plumbing, `UiDispatcher`, `spawn_local` executor | EVT-2 | M | Unit tests with a fake host; live: FormClosing cancel keeps the window, background thread `begin_invoke` updates a label |
-| EVT-7 | Custom controls and user controls | `kubuno-views-meta` (shared grammar), `#[derive(Component/UserControl)]`, extensible registry (`inventory`), `<UserControl x:Class>`, LS `syn` scan, project Toolbox tab, per-project design host | EVT-3, EVT-4 | L | Macro and LS produce identical `ComponentMeta` (shared golden tests); live: a `RatingBar` user control appears in the Toolbox, is dropped, its event bound and raised |
+| EVT-7a ✅ done (§14) | Control hierarchy and overridable `on_…` methods | `kubuno-views/src/component/`, `controls.rs` (classes), `#[derive(Component)]` in `kubuno-views-macros`, router/nodes/`DesignSlot` delivering through the classes, registry base chain, `ControlHost` | EVT-2, EVT-4 | L | Upcast/downcast, override + event order, router through a control, `compile_fail` macro misuse; live: a `RoundButton` (extends `Button`) in a template app |
+| EVT-7b ✅ done (§15) | Custom controls and user controls | `kubuno-views-meta` (shared grammar), `#[derive(Component/UserControl)]`, extensible registry (static constructors, not `inventory`: §15), `<UserControl x:Class>`, LS `syn` scan, project Toolbox tab, per-project design host | EVT-3, EVT-4 | L | Macro and LS produce identical `ComponentMeta` (shared golden tests); live: a `RatingBar` user control appears in the Toolbox, is dropped, its event bound and raised |
 | EVT-8 | Paint, scroll, drag and drop | `PaintEventArgs` for `<Canvas>`/custom controls, `ScrollEventArgs`, OLE drop target in the host, `DragEventArgs` | EVT-2, EVT-6 | L | Unit tests on synthetic drag sequences (Enter → Over* → Drop/Leave); live: drop a file from Explorer onto a list |
 
 Suggested order: EVT-1 → (EVT-2 ∥ EVT-3) → EVT-4 → (EVT-5 ∥ EVT-6) → EVT-7 → EVT-8. EVT-1 to EVT-4
@@ -1137,3 +1140,326 @@ Mirror the WinForms hierarchy (System.ComponentModel.Component → System.Window
 - User code extends any level: `#[kubuno(extends = Button)] struct RoundButton` overriding `on_paint`, inheriting all Button props/events.
 - Metadata inheritance: the registry records the base chain; properties/events/default event are inherited and overridable; the Properties window shows inherited members, the Object Browser/Class View shows the hierarchy, `.kbview` validation accepts inherited attributes, and the Toolbox/`is`-checks (e.g. "any ButtonBase") use it.
 - `kubuno_ui` widgets are refactored onto this hierarchy (they execute it); the XML views layer and the designer consume the same chain. Planned as part of EVT-7 (before custom controls), with a compatibility layer so current views keep working.
+
+## 14. EVT-7a as built (2026-09-29)
+
+The first half of EVT-7: the cascading control hierarchy of the requirement above ("rooted in Component/Control
+equivalents") and the WinForms-style overridable methods ("OnPaint family"), in `Z:\src\desktop\windows`
+(uncommitted there): `kubuno-views` (new `component/` module, `controls.rs`, router, nodes, `DesignSlot`, registry)
+and `kubuno-views-macros` (`#[derive(Component)]`). `kubuno_ui` and `kubuno-controls` are **unchanged** (see
+"Deviations"). Existing `.kbview` files, `handlers!` and typed-handler projects behave identically (pixel comparison
+and the full test suite below). XML usage of custom controls, `<UserControl>`, the tooling and owner-draw are EVT-7b
+and EVT-8.
+
+### The hierarchy (`kubuno_views::component`)
+
+```text
+Component                (ComponentCore)          site, design_mode, dispose / Disposed
+└─ Control               (ControlCore)            WinForms property replica (kubuno_controls::ControlBase), styles,
+   │                                                focus, invalidation, every on_… override + event accessors
+   ├─ ButtonBase         (ButtonBaseCore)         Button, IconButton, CheckBox, RadioButton, Switch
+   ├─ TextBoxBase        (TextBoxBaseCore)        TextField, TextArea, MaskedField, SearchField
+   ├─ ListControl        (ListControlCore)        ListBox, CheckedListBox, ComboBox, Dropdown
+   ├─ LabelBase          (LabelBaseCore)          Label, LinkLabel, Badge
+   ├─ RangeBase          (RangeBaseCore)          Slider, ProgressBar, NumericField   (the note's ScrollBarBase)
+   └─ ScrollableControl  (ScrollableControlCore)  ScrollArea
+      ├─ ContainerBase   (ContainerBaseCore)      Panel, GroupBox, Card, Stack, Tabs, Splitter, Accordion
+      └─ ContainerControl (ContainerControlCore)
+         ├─ UserControl  (UserControlCore)        (EVT-7b)
+         └─ View         (ViewCore)               the Form: on_load/shown/activated/deactivate/form_closing/form_closed
+```
+
+The other controls (`Icon`, `Separator`, `Spinner`, `Callout`, `EmptyState`, `Toolbar`, `Breadcrumb`, `Stepper`,
+`ListView`, `TreeView`, `DataTable`, `MonthCalendar`, `DatePicker`, `ColorField`) derive `Control` directly; the eight
+structural elements (`Item`, `Column`, `TabItem`, `Option`, `Step`, `AccordionSection`, `BreadcrumbItem`, `ToolbarItem`)
+are non-visual `Component`s (`controls::items`, not in the prelude: one is named `Option`).
+
+- **Each level = a trait with default methods + a core struct.** The cores nest (`ButtonBaseCore { control: ControlCore
+  }`, `ControlCore { component, props: ControlBase, … }`) and `Deref` down (`core.text`, `core.bounds` are the
+  replica's fields). Each **core is itself an object of its level** (it implements the level's traits with their
+  defaults): it is the abstract base, so a class extending a level calls `self.base_mut().on_click(e)` like one
+  extending a class.
+- **`#[derive(Component)]` + `#[kubuno(extends = X, overrides(…), levels(…))]`** generates the hidden plumbing traits
+  (`ComponentLink`: `as_any`, class name and chain, the base object, one upcast per level `as_button_base()`…;
+  `Has<Level>Core` and `<Level>Link` per level: the shared core, the base object), `base()` / `base_mut()`,
+  `Lineage::CHAIN` (built at compile time from the base's), `ClassInfo`, `ElementType` (so `Sender<RoundButton>`
+  works), and an empty `impl` of each level trait of the chain except those in `overrides(…)`, which the class writes
+  with its overrides. `extends` names a built-in class (the macro knows their levels) or a level (the base field is
+  then the level's core); a class of your own as the base needs `levels(ButtonBase)`. The base field is `base` or the
+  one marked `#[kubuno(base)]`; a check makes it the type `extends` names.
+- **Delegation = virtual behaviour.** Every default method first delegates to the base object (`RoundButton` →
+  its `Button` → the `ButtonBaseCore`); the root behaviour raises the event. So a method a class does not override
+  runs its base's, an override that calls `self.base_mut().on_x(e)` raises the event (WinForms `base.OnX(e)`), and one
+  that does not suppresses it. The hosts call every `on_…` on the outermost object, so overrides are virtual; a base
+  reached by delegation calls its own methods on itself (the classic delegation limit): behaviour that must reach an
+  override is a provided trait method called on the outer object (`perform_click`, `set_text`, `set_value`…).
+- **Upcasts / downcasts**: trait upcasting (`&dyn ButtonBase` → `&dyn Control` → `&dyn Component`), `downcast_ref` /
+  `downcast_mut` / `is::<T>` / `is_a("ButtonBase")` on every level's trait object, `find_base::<Button>()` (the object or
+  its embedded base of that class, WinForms' `(Button)control`).
+
+### The overridable methods (`Control`, and per level)
+
+- **Argument shape.** `fn on_click(&mut self, e: &mut EventCx<'_, MouseEventArgs>)`: `EventCx` derefs to the args
+  (`e.x`, `e.handled = true`) and carries the `RaiseSink` the caller lends for the call (the router's, a node's: the
+  element's `.kbview` handler) — so an override stays one argument and `base_mut().on_click(e)` works. Raising order:
+  the sink (the XML handler, WinForms' designer-generated subscription) then the control's Rust subscribers
+  (`button.click().subscribe(…)`, held in the core's `EventMap`, created on first use); a sink handler that sets
+  `handled` stops the Rust subscribers. `on_paint(&mut self, e: &mut PaintEventCx<'_>)`: `e.graphics` (the Kubuno
+  `ControlCanvas`), `e.clip_rectangle`, `e.state` (hover/pressed/focus/disabled); it raises `Paint`
+  (`PaintEventArgs { clip }`); the richer `Graphics` surface is EVT-8.
+- **Control**: `on_paint`, `on_paint_background`, `on_click`, `on_double_click`, `on_mouse_click`,
+  `on_mouse_double_click`, `on_mouse_down/up/move/enter/leave/hover/wheel`, `on_key_down/up/press`, `on_enter`,
+  `on_leave`, `on_got_focus`, `on_lost_focus`, `on_validating`, `on_validated`, `on_resize` (raises Resize, then
+  invalidates under `RESIZE_REDRAW`), `on_move`, `on_size_changed`, `on_location_changed`, `on_layout`,
+  `on_visible_changed`, `on_enabled_changed`, `on_text_changed`, `on_handle_created`, `on_handle_destroyed`,
+  `on_create_control`, `get_preferred_size`, `set_bounds_core` (honours `BoundsSpecified`), `is_input_key`,
+  `is_input_char`, `process_cmd_key`, `process_dialog_key`, `wnd_proc`, `create_params`, and `on_event` (an event the
+  level has no method for: `ItemActivate`, `StepSelected`…). Levels: `ButtonBase::on_checked_changed` (+
+  `perform_click`), `ListControl::on_selection_changed` / `on_selected_value_changed`, `RangeBase::on_value_changed` /
+  `on_scroll`, `ScrollableControl::on_scroll`, `TextBoxBase::on_read_only_changed`, `UserControl::on_load`,
+  `View::on_load/on_shown/on_activated/on_deactivate/on_form_closing/on_form_closed`; `Component::dispose` /
+  `dispose_core(disposing)`.
+- **`Control::dispatch_event(name, e)`** delivers an event by attribute name to its method (the level methods through
+  the class's upcasts), else `on_event`; args of another type than the method's (a `RadioButton`'s `CheckedChanged` is
+  a `TextChangedEventArgs`) take `on_event` too. What the router, the nodes and `ControlHost` call.
+- **Operations** (provided, not overridden): `name`/`set_name`, `text`/`set_text` (TextChanged, source Code), `bounds`/
+  `set_bounds`, `visible`/`set_visible`, `enabled`/`set_enabled`, `focus()` (a request the host applies next frame),
+  `can_focus`, `can_select`, `get_style`/`set_style`, `invalidate`/`invalidate_rect` (accumulated)/`update`/`refresh`,
+  `create_control` (once: `on_create_control` then HandleCreated), `suspend_layout`/`resume_layout`/`perform_layout`,
+  per level `set_selected_index`, `set_value` (clamped), `set_read_only`, `set_auto_scroll_position`… Event
+  accessors: `click()`, `key_down()`, `validating()`, `paint()`, `checked_changed()`, `form_closing()`…
+- **`ControlStyles`** (WinForms values): `Control` sets `USER_PAINT | STANDARD_CLICK | STANDARD_DOUBLE_CLICK |
+  SELECTABLE | ALL_PAINTING_IN_WM_PAINT | USE_TEXT_FOR_ACCESSIBILITY | OPTIMIZED_DOUBLE_BUFFER` (Kubuno always paints
+  double-buffered); `ButtonBase` clears `STANDARD_DOUBLE_CLICK` (a second quick click is a second Click) and adds
+  `RESIZE_REDRAW`…; `LabelBase` and `ContainerBase` are not `SELECTABLE` (no tab stop), `LinkLabel` and `Tabs` are.
+  Honoured by the hosts: `SELECTABLE`, `STANDARD_CLICK`, `STANDARD_DOUBLE_CLICK`, `RESIZE_REDRAW`, `OPAQUE`.
+- **`DesignMode`**: `Component::design_mode()` from the `Site` (name, design mode, container); the view runtime sites
+  every element (design mode when the frame records a layout map, i.e. in the designer).
+- **`wnd_proc`** is a platform-neutral pre-filter: the router shows the target control Win32-shaped `Message`s
+  (`WM_KEYDOWN/KEYUP/CHAR`, `WM_MOUSEMOVE`, `WM_xBUTTONDOWN/UP`, `WM_MOUSEWHEEL`; point in DIP relative to the control)
+  before turning them into events; `true` consumes the message (a consumed press starts no capture and no Click).
+- **Keys** (router, WinForms order): on a KeyDown, `wnd_proc`, then `process_cmd_key` on the focused control and each
+  ancestor control; then, for a dialog key (Tab, arrows, Enter, Escape) the control does not take
+  (`is_input_key`), `process_dialog_key` up the same chain. A `true` consumes the key (and its character): no KeyDown,
+  no KeyPress. `is_input_char` false skips a character's KeyPress. Tab itself is consumed by the focus ring before the
+  router; a hosted control that takes it (`is_input_key(Tab)`) is registered with `FocusOpts::wants_tab`.
+
+### Where it runs
+
+- **Views.** `compile::build_node` gives every element's `DesignSlot` an instance of its class
+  (`controls::class_of(name).create`). Each paint the slot syncs the class's core (site with `x:Name` and design mode,
+  name, bounds, focus id, focused), calls `create_control` once, lends the instance to the node's context
+  (`PaintCx::control`) and registers it with the router (`register_with_control`). The router's raises
+  (`raise_to`) and the nodes' own `fire` (which now names its event: `"OnClick"`, `"OnSelectionChanged"`,
+  `"OnItemClicked"` for a toolbar/breadcrumb item…) go through `dispatch_event` with a sink that dispatches the
+  element's handler and reports the `ViewEvent` exactly as before; the router reports a routed event after the
+  override ran, only when a handler ran (unchanged). `<Button>`'s node syncs its resolved properties into its
+  `controls::Button` (found with `find_base_mut`, so a class extending `Button` works in EVT-7b) and paints through
+  the class's `on_paint` (which paints the same `kubuno_ui` button); the other nodes paint their widgets as before. A
+  slot disposes its instance when dropped (hot reload, view closed).
+- **Rust code.** `ControlHost` hosts controls built in Rust outside any view: `host.add(control) -> HostedControl<C>`
+  (sited under its name, or a generated `label2`), then `host.frame(canvas, frame)` each frame — the same router
+  (with `report_all`: every raised event is returned), its own focus ring (`SELECTABLE`, `tab_stop`,
+  `is_input_key(Tab)`), `focus()` requests, hover/pressed state, `on_paint_background` (unless `OPAQUE`) and `on_paint`,
+  a repaint when a control invalidated. `Button` and `Label` paint themselves standalone (`widget()` builds the
+  `kubuno_ui` widget from the class's properties); the other classes paint nothing outside a view yet (EVT-7b).
+- **Sender typing.** `events::Component` (the trait `Sender<C>` is typed with) is renamed **`ElementType`** (the name
+  `Component` is the hierarchy's root); the `controls::*` zero-sized types became the real classes, so
+  `Sender<Button>`, the templates and the LS stubs are unchanged; `#[event_handlers]` emits `ElementType`.
+
+### Registry and export
+
+- `ComponentMeta::base_chain()` (from the class table: `["Button", "ButtonBase", "Control", "Component"]`), `is_a`,
+  `levels()`, `inherited_event(name)`; `registry::LEVELS` (`LevelMeta { name, doc, events, default_event }`):
+  `Control` declares `COMMON_EVENTS` and the default `OnClick`, `TextBoxBase` `OnTextChanged`, `ListControl`
+  `OnSelectionChanged`, `RangeBase` `OnValueChanged`, `View` the view events. `event`, `all_events`,
+  `has_common_events` and `default_event` now flow from the chain (declared default, else the nearest level's that
+  the element has, else its first own event); a test checks the old rules give the same answers for every element.
+- Export (`kubuno/registry`): each component gains `base_chain`, each event `inherited_from` (`"Control"` for the
+  common events, `"View"` for the root-only ones, null for its own). Everything else is identical to the previous
+  export (checked by comparing the JSON with the new keys removed). The C# fixture was regenerated; the C# side is
+  unchanged (unknown keys are ignored).
+
+### Deviations
+
+- **`kubuno_ui` is not changed.** Its widgets are immediate-mode painters without an event layer (built every frame,
+  painted with a caller-supplied state); the hierarchy's classes own the state and events and execute the widgets
+  (`controls::Button::widget().paint(…)`). Nothing required a `kubuno_ui` change (the focus ring's `wants_tab` and
+  change log were enough), so no dylib/ABI change, and the apps (shell, drive, documents, chat) and the gallery do not
+  depend on `kubuno-views`; the workspace was nevertheless rebuilt and restaged (`build-all`).
+- `ScrollBarBase` is **`RangeBase`** (the base of every value-in-a-range control; Kubuno has no standalone scroll bar
+  element); `LabelBase` also holds `Badge`; `ContainerBase` derives `ScrollableControl` (WinForms `Panel`).
+- The event methods take `EventCx<A>` / `PaintEventCx` rather than the bare args (the sink must travel with the call).
+- Button-family Click is synthesized by the host from `STANDARD_CLICK` rather than raised by `Button::on_mouse_up`
+  (WinForms internals): with delegation, a base raising Click itself would bypass a derived `on_click`. Same events,
+  same order.
+- `ControlCore` keeps a single replica (`kubuno_controls::ControlBase`); the level cores hold only the few fields their
+  level adds (the family replicas also embed a `ControlBase` and would duplicate it).
+- A `ControlHost` has its own focus ring; next to a view in the same window, Tab stays within the view's ring (the
+  view's ring takes Tab first). Hosting Rust controls inside a view (and `<RoundButton>` in XML) is EVT-7b.
+- While a hosted control's event runs, the control is borrowed: its own subscribers must not `borrow_mut()` its
+  `HostedControl` (use the args, or an override).
+
+### Tests
+
+`kubuno-views` (530 unit tests pass, all previous ones unchanged): `component::tests` (21: upcasts/downcasts/chains, one
+shared core for every level, an override around its base raise, sink before Rust subscribers, a suppressing override,
+`handled` in the sink, un-overridden methods reaching the base through a two-level user chain, level methods
+dispatched virtually and a mismatched args type taking `on_event`, `on_event` for unknown events, property setters
+raising their events, dispose once, styles/bounds/invalidation/creation/layout suspension, key and message packing,
+`EventMap` typing, text classes' input keys; through the real router: MouseDown → override → XML Click → Rust Click →
+override end → MouseClick → MouseUp with the reported events, a suppressed Click neither handled nor reported,
+`process_cmd_key` consuming Ctrl+S and its character, `wnd_proc` eating a press; a real `ButtonNode` click delivered
+through a control), `component::host` (sites, names, focus ids, styles → click behaviour, design mode), `controls` (one
+class per element, chains per family, WinForms styles), `registry` (metadata flows from the chain), `export` (chain and
+`inherited_from`). `kubuno-views-macros`: 6 expansion unit tests, 1 passing doctest (a class extending `Button`, a
+non-visual component, a `Control`-level class, a user class as a base) and **9 `compile_fail` doctests** (no
+`extends`, wrong base field type, an `impl Control` without `overrides(Control)`, `overrides(Control)` without the impl,
+a level not in the chain, a user base without `levels`, a tuple struct, a generic struct). `cargo clippy --all-targets
+-D warnings` clean on both crates, no `unwrap` outside tests. `kubuno-views-ls` 117 + 17 tests pass. C# Designer tests:
+298 pass with the regenerated fixture.
+
+### Live verification (2026-09-29)
+
+- **Pixel comparison.** `view_preview` on `settings.kbview` and on the five tabs of `showcase.kbview` (one copy per
+  selected tab), and `showcase`: captured with the binaries of before the change (saved aside) and after the final
+  build and restage: **0 differing pixels** on every capture except the animated `<Spinner>` of the Display tab (84–86 px, which also differ between two captures of the same binary); a first run showed a list row highlighted, the real pointer resting over it — identical once the pointer was moved away. The gallery, drive, documents and chat start and close on `WM_CLOSE` with the rebuilt runtime.
+- **Scratch app** `C:\kubuno-build\evt7a` (the *Kubuno Desktop Application* template's files, built with cargo): the
+  template's view (its `<Button>` now painted through `controls::Button`) and, under it, a `ControlHost` with
+  `#[kubuno(extends = Button, overrides(Control))] struct RoundButton` (a pill drawn in `on_paint` with the current
+  Canvas; `on_click` logs, calls `self.base_mut().on_click(e)`, counts, invalidates), a plain `Button` and a `Label`.
+  Real mouse clicks and Space/Enter: the log shows, for every click, `on_click: before base` → the Rust `Click`
+  subscriber (sender `round`, element `RoundButton`) → `on_click: after base`; the pill shows the count; the plain
+  button counts its own clicks; the XML "Say hello" button still runs its typed handler.
+
+## Requirement — WinForms-rich property sets on every control (product owner, 2026-09-29)
+
+Each control must expose (and the runtime must really honour) a property set as rich as its WinForms counterpart, organised in the same categories, inherited through the Component/Control hierarchy:
+- **Accessibilité**: AccessibleName, AccessibleDescription, AccessibleRole (→ UIA / AccessKit).
+- **Apparence**: BackColor/ForeColor (see colour policy below), Font (family/size/style), Cursor, TextAlign, ImageAlign/TextImageRelation, Image/BackgroundImage/BackgroundImageLayout, FlatStyle-like Variant, BorderStyle, RightToLeft, UseMnemonic (`&` access keys), UseVisualStyleBackColor-like flag.
+- **Comportement**: Enabled, Visible, TabIndex, TabStop, ContextMenu (menu element reference), AllowDrop, UseWaitCursor, ToolTip text (extender-provider style, like WinForms' ToolTip component), control-specific (AutoCheck, ThreeState, ReadOnly, MaxLength, Multiline, WordWrap, AcceptsReturn/AcceptsTab, PasswordChar, CharacterCasing, SelectionMode, Sorted, DropDownStyle, Minimum/Maximum/SmallChange/LargeChange, Increment, DecimalPlaces, ThousandsSeparator, Format/CustomFormat, ShowCheckBox, MultiSelect, FullRowSelect, GridLines, HideSelection, LabelEdit, View…).
+- **Données**: Tag, (DataBindings) — binding editor for any property (`{Binding …}`), DataSource/DisplayMember/ValueMember for list controls.
+- **Design**: (Name), Locked, GenerateMember/Modifiers-equivalent (visibility of the generated accessor on the view model).
+- **Focus**: CausesValidation.
+- **Disposition**: Location (X, Y) and Size (Width, Height) as expandable composite properties, MinimumSize/MaximumSize, Margin/Padding (expandable All/Left/Top/Right/Bottom), AutoSize/AutoSizeMode, Anchor, Dock.
+- **View (Form equivalent)**: Text/Title, Icon, StartPosition, FormBorderStyle, ControlBox/MinimizeBox/MaximizeBox, ShowInTaskbar, TopMost, Opacity, WindowState, AcceptButton/CancelButton, KeyPreview, AutoScroll, MinimumSize/MaximumSize.
+Composite/expandable properties, reset to default, bold when non-default, rich editors (colour, font, image, cursor, collection), multi-selection editing — as in WinForms. Runtime support lands in kubuno-views/kubuno_ui (per control class of the hierarchy), not metadata only; each property gets a French/English description.
+Colour policy (decided 2026-09-29): **theme tokens by default + free colours allowed**. The colour editor offers Kubuno theme tokens first (Primary, Surface, Danger… — follow light/dark/high-contrast automatically), then free `#RRGGBB(AA)` / system colours like WinForms; a free colour triggers a non-blocking designer warning when it breaks contrast (WCAG) in one of the themes.
+
+## 15. EVT-7b as built (2026-09-29)
+
+The second half of EVT-7: custom controls, user controls and non-visual components written in the application's own
+crate, usable as XML elements of its views, and the tooling around them. Rust in `Z:\src\desktop\windows` (uncommitted
+there): new crate `kubuno-views-meta`, `kubuno-views-macros`, `kubuno-views`, `kubuno-views-ls`. `kubuno_ui` and
+`kubuno-controls` are **unchanged** (no dylib/ABI change: the apps and the gallery are untouched).
+
+### Declaring a control (`kubuno-views-meta`, `kubuno-views-macros`)
+
+- **One grammar, two readers.** `kubuno-views-meta` parses the derive input with `syn` (`parse_decl` →
+  `ComponentDecl`: class, level chain, properties, events, design-time attributes, doc comments). The proc macro expands
+  from it; the language server scans the project's `.rs` files with the same function (`scan_source`), **without
+  building**. A golden test (`kubuno-views-ls/tests/golden.rs`) checks that what the macro registers and what the scan
+  declares are identical for the same source.
+- `#[derive(Component)]` (EVT-7a) now also accepts the design-time attributes `#[category("…")]`,
+  `#[description("…")]` (else the `///` doc), `#[default_value(…)]`, `#[browsable(false)]`, `#[default_event("…")]`,
+  `#[default_property("…")]`, `#[toolbox(icon = "…", category = "…")]`, `#[localizable]`,
+  `#[designer_serialization_visibility(…)]`, `#[editor("…")]`, `#[type_converter("…")]`. `#[property]` fields are XML
+  attributes (PascalCase of the field: `corner_radius` → `CornerRadius`), their Rust type decides the value kind
+  (`PropertyValue`: `String`, `bool`, integers, `f32`/`f64`, `#[derive(PropertyValue)]` enums → enum values).
+  `#[event] pub x: Event<A>` fields are events (`OnX` attributes, ⚡ tab) with a generated `raise_x(args)`.
+- `#[derive(UserControl)]` + `#[user_control(view = "rating_bar.kbview", default_event = "…")]`: a class of the
+  `UserControl` level (`base: UserControlCore`, default `extends = UserControl`) that is **its own view model**: its
+  view's `{Binding}`s read/write its properties, its `#[kubuno_views::event_handlers]` impl runs its view's `On*`
+  handlers, and a handler re-raises an inner event as the user control's own (`self.raise_action_clicked(…)`). The
+  view's root is `<UserControl x:Class="RatingBar" DesignWidth DesignHeight>`.
+- `Timer` is the built-in non-visual component (family `components`: `Interval`, `Enabled`, `OnTick`), and
+  `#[kubuno(extends = Component)]` classes are the user's own non-visual components.
+
+### Registry (`kubuno-views`)
+
+- **Registration without `inventory`:** each derive emits a static constructor (`#[used]` in `.CRT$XCU`, Windows —
+  the only desktop target) calling `registry::register_class`, so a linked class registers before `main`, even from an
+  rlib nothing references (the binary names it with `extern crate app as _;`). Verified experimentally before building
+  on it. The macro skips it inside `kubuno_views` itself.
+- Three tiers, merged into one snapshot rebuilt when dirty: **built-ins** → **linked** classes (real factory, custom
+  properties applied through `kubuno_set_property`/`kubuno_get_property`) → **declared** classes (from the language
+  server's scan or the designer's `projectComponents` message: metadata only). The export gains `origin`, `kind`,
+  `linked`, `crate_name`, `extends`, `toolbox_category`/`toolbox_icon`, `browsable`, `default_property`, `view_path`,
+  `source_file`/`line`, and per property `category`, `browsable`, `bindable`, `localizable`, `serialization`, `editor`,
+  `type_converter`.
+- **Rendering:** a linked custom control is a `CustomControlNode` painted by its own `on_paint` (and receiving the
+  router's events through its overrides); a user control is a `UserControlNode` that compiles and renders its view with
+  the instance as view model (nesting guarded at depth 8, `on_load` once); a declared-but-not-linked class is a
+  **placeholder** box showing its name (before the first build); non-visual components render nothing and a `Timer`
+  ticks at run time. `DesignMode` is true at design time (no ticks, no handlers run).
+
+### Language server (`kubuno-views-ls`)
+
+`ProjectScanner` scans the package of each open view (and its path dependencies that are control libraries),
+incrementally (per file stamp, keeping a file being typed that does not parse yet), and declares the classes found:
+completion, validation (no more "unknown element"), hover ("Control of `crate`, extends `Button`") and go to
+definition (the struct) for `<RoundButton>`, `<RatingBar>`, `<Heartbeat>`, and their attributes and events. New
+requests: `kubuno/registryVersion` (what the designer polls) and `kubuno/crateComponents`.
+
+### Designer and Visual Studio
+
+- **Design build (docs/DESIGNER.md §15) now includes the project crate:** the crate root is compiled as an rlib against
+  the project's own build artifacts, and the design surface is compiled with `--cfg kubuno_design_project --extern
+  <crate>=…` and a generated `project.rs` (`extern crate <crate> as _;`), so the project's controls are linked into
+  the surface and render with their real `on_paint`; `--export-registry` then writes `registry.json` next to it.
+- **Toolbox:** after a build, a "*&lt;Project&gt;* Composants" tab lists the project's linked controls with an icon
+  (their `#[toolbox(icon)]` when it names a known icon, else the custom control / user control / component icon).
+  "Choisir des éléments…" (designer context menu) adds controls of the other crates linked into the project.
+- **Properties window:** custom properties with their categories (Apparence, Comportement… mapped from the English
+  names) and descriptions; `#[browsable(false)]` hides one; the default property/event follow the attributes.
+- **Component tray** under the design surface: the view's non-visual elements (`<Timer>`, user components) — select
+  (Properties window), double-click (default event handler), Delete.
+- **Overrides without rust-analyzer:** "Substituer des membres…" (light bulb on an `impl Control for X` / on the
+  struct) opens a checkbox list of the members of the class's chain (57 members: 13 hooks, 29 event methods, 15 level
+  members, from a table generated from `component::overrides`), with their exact signatures; each inserted body calls
+  the base (`self.base_mut().on_x(e);`). Snippets in Rust files: `onpaint`, `event`, `handler`, `prop`.
+- **Item templates** (Add New Item, and "Ajouter ›" on a Rust project): *Contrôle personnalisé Kubuno*, *Contrôle
+  utilisateur Kubuno* (`.kbview` + nested code-behind), *Contrôle hérité Kubuno* (base class picked in a small
+  dialog), *Composant Kubuno*. The wizard names the struct in PascalCase and declares the module in the crate root (a
+  file not named after its module gets a `#[path]`); the "Ajouter ›" commands name the files after the module
+  (`RoundButton` → `src\round_button.rs`) and put them in `src`. (Found live: a template whose target file name differs
+  from the entered name makes Visual Studio's project system fail to find the new item.)
+- **Fixed — Properties window empty after reopening a solution.** Visual Studio stops `kubuno-views-ls` itself when a
+  solution closes and starts a new one for the next; the client kept `IsInitialized = true` from the first server, so
+  the designer of the reopened solution could send its first requests on the new connection *before* `initialize` —
+  `kubuno-views-ls` rejects that and exits, and nothing (Properties window, selection sync, registry) worked until
+  Visual Studio restarted. The client now resets the state on every new connection and when a connection drops
+  (`ReadyRpc` never returns a disposed connection), and a designer that waits too long asks Visual Studio to start the
+  server again.
+
+### Deviations and limits
+
+- Registration is Windows-only (`.CRT$XCU`); other targets would need their own section (`.init_array`).
+- A project control appears in the Toolbox and renders for real only after a build (design build); before that it is a
+  named placeholder — completion and validation work at once (scan).
+- Snippets are offered by the extension's own completion source in `.rs` files, not through the VS snippet manager.
+
+### Tests
+
+`kubuno-views-meta` 4; `kubuno-views-macros` 18 unit + 27 doctests (incl. `compile_fail` misuse and a user control
+with its `.kbview` fixture); `kubuno-views` 540 unit + `tests/custom_controls.rs` 4 (a linked custom control painted by
+its `on_paint`, custom properties applied, a user control rendering its own view with bindings and re-raising its
+event, a declared class drawn as a placeholder) + the existing integration tests; `kubuno-views-ls` 119 unit +
+golden 1 + round trip 18 (incl. project controls declared by the scan; the round-trip tests now run one at a time, the
+registry being process-wide). `cargo clippy --all-targets -D warnings` clean. C#: Designer 304, Core 209 (override
+assistant, snippets, wizard naming/module declaration), Cargo design surface 13. `tools/test-templates.ps1 -Run`: the
+desktop application template gets the four control items (custom, user, inherited, component) used in its view,
+builds with 0 warnings, passes `cargo test` and runs.
+
+### Live verification (regular Visual Studio, 2026-09-29)
+
+New *Kubuno Desktop Application* `Evt7bApp` → Ajouter › Contrôle personnalisé Kubuno "RoundButton" (real command and
+name dialog: `src\round_button.rs`, `mod round_button;` added to `main.rs`) → Ajouter › Contrôle utilisateur Kubuno
+"RatingBar" (`rating_bar.kbview` + `rating_bar.rs`) → Générer: the design build links `evt7bapp`
+(`registry.json`: `RoundButton` and `RatingBar` linked) and the Toolbox gets "Evt7bApp Composants" with both.
+`<RoundButton>`, `<RatingBar>` and `<Timer>` in `main_view.kbview`: no diagnostic; the surface renders with the
+project runtime. "Substituer des membres…" from the light bulb in `impl Control for RoundButton`: the dialog lists the
+chain's members (Control → Component) with signatures and French descriptions; `on_click` and `on_mouse_enter`
+inserted with their base calls; the project rebuilds and the design build follows. F5: the app runs, the `Timer` ticks
+every 500 ms in the debug output. Solution closed and reopened in the same session: Visual Studio restarts the server,
+the restored designer gets its selection sync, Toolbox project tab and registry again.

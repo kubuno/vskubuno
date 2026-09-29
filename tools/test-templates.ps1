@@ -115,6 +115,79 @@ function New-FromTemplate([string]$vstemplatePath, [string]$projectName, [string
     return [pscustomobject]@{ Dir = $projectDir; Rsproj = $rsproj; Crate = $crate }
 }
 
+# ---- Item templates (docs/EVENTS.md EVT-7b): the Kubuno control templates, instantiated into the desktop
+#      application the way ControlItemWizard does it (struct name, file name, `mod` in main.rs), used in its view,
+#      and checked by a test of the generated crate that compiles the view against the registered controls ----
+
+$itemTemplatesRoot = Join-Path $repo 'src\Kubuno.VisualStudio\ItemTemplates'
+
+# Same rules as Kubuno.VisualStudio.TemplateWizard.ControlItemNames.
+function Get-ItemWords([string]$name) {
+    $stem = [IO.Path]::GetFileNameWithoutExtension($name)
+    $spaced = [regex]::Replace($stem, '([a-z0-9])([A-Z])', '$1 $2')
+    $spaced = [regex]::Replace($spaced, '([A-Z]+)([A-Z][a-z])', '$1 $2')
+    return @([regex]::Split($spaced, '[^A-Za-z0-9]+') | Where-Object { $_.Length -gt 0 })
+}
+function Get-ClassName([string]$name) { (Get-ItemWords $name | ForEach-Object { $_.Substring(0, 1).ToUpperInvariant() + $_.Substring(1) }) -join '' }
+function Get-ModuleName([string]$name) { (Get-ItemWords $name | ForEach-Object { $_.ToLowerInvariant() }) -join '_' }
+
+function Add-ModuleDeclaration([string]$mainRs, [string]$module) {
+    $text = [IO.File]::ReadAllText($mainRs)
+    $nl = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+    $mods = [regex]::Matches($text, '(?m)^(pub(\([^)]*\))?\s+)?mod\s+\w+\s*;[^\n]*$')
+    if ($mods.Count -eq 0) { throw "no mod declaration in $mainRs to add `mod $module;` after" }
+    $last = $mods[$mods.Count - 1]
+    $lineEnd = $text.IndexOf("`n", $last.Index + $last.Length)
+    [IO.File]::WriteAllText($mainRs, $text.Substring(0, $lineEnd + 1) + "mod $module;" + $nl + $text.Substring($lineEnd + 1))
+}
+
+function Add-ControlItems($p) {
+    $src = Join-Path $p.Dir 'src'
+    $items = @(
+        @{ Template = 'KubunoCustomControl'; Name = 'RoundButton'; Xml = '<RoundButton x:Name="round" Text="Round" CornerRadius="18" X="24" Y="84" Width="160" Height="40" Anchor="Top, Left"/>' },
+        @{ Template = 'KubunoUserControl'; Name = 'RatingPanel'; Xml = '<RatingPanel x:Name="panel" Caption="Rate this" X="24" Y="140" Width="320" Height="48" Anchor="Top, Left"/>' },
+        @{ Template = 'KubunoInheritedControl'; Name = 'CountingButton'; Base = 'Button'; Xml = '<CountingButton x:Name="counting" Text="Count" Variant="Secondary" X="200" Y="84" Width="120" Height="36" Anchor="Top, Left"/>' },
+        @{ Template = 'KubunoComponent'; Name = 'Heartbeat'; Xml = '<Heartbeat x:Name="beat" Enabled="true"/>' }
+    )
+    $xml = @()
+    foreach ($item in $items) {
+        $dir = Join-Path $itemTemplatesRoot $item.Template
+        [xml]$vst = Get-Content -Raw (Get-ChildItem $dir -Filter '*.vstemplate' | Select-Object -First 1).FullName
+        $first = $vst.VSTemplate.TemplateContent.ProjectItem | Select-Object -First 1
+        $ext = [IO.Path]::GetExtension($first.GetAttribute('TargetFileName'))
+        $tokens = @{
+            # The "Ajouter" commands pass the Rust module name as the file name (RoundButton -> round_button.rs).
+            '$fileinputname$' = Get-ModuleName $item.Name
+            '$rootname$'      = (Get-ModuleName $item.Name) + $ext
+            '$safeitemname$'  = $item.Name
+            '$classname$'     = Get-ClassName $item.Name
+            '$modulename$'    = Get-ModuleName $item.Name
+            '$baseclass$'     = $(if ($item.ContainsKey('Base')) { $item['Base'] } else { 'Button' })
+        }
+        foreach ($pi in $vst.VSTemplate.TemplateContent.ProjectItem) {
+            $target = Join-Path $src (Expand-Tokens $pi.GetAttribute('TargetFileName') $tokens)
+            Copy-TemplateFile (Join-Path $dir $pi.InnerText.Trim()) $target ($pi.GetAttribute('ReplaceParameters') -eq 'true') $tokens
+            if ($target.EndsWith('.rs')) { Add-ModuleDeclaration (Join-Path $src 'main.rs') ([IO.Path]::GetFileNameWithoutExtension($target)) }
+        }
+        $xml += '  ' + $item.Xml
+        "   item template $($item.Template): $($tokens['$classname$']) ($($tokens['$modulename$']))"
+    }
+
+    # The controls in the starter view, and a test compiling it (their derives registered them).
+    $view = Join-Path $src 'main_view.kbview'
+    $text = [IO.File]::ReadAllText($view)
+    $nl = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+    [IO.File]::WriteAllText($view, $text.Replace('</Panel>', ($xml -join $nl) + $nl + '</Panel>'))
+    $code = Join-Path $src 'main_view.rs'
+    $check = @(
+        '', '#[cfg(test)]', 'mod kubuno_template_check {', '    #[test]', '    fn the_view_compiles_with_the_project_controls() {',
+        '        if let Err(diagnostics) = kubuno_views::compile::compile(include_str!("main_view.kbview")) {',
+        '            panic!("main_view.kbview does not compile: {diagnostics:?}");', '        }',
+        '        for name in ["RoundButton", "RatingPanel", "CountingButton", "Heartbeat"] {',
+        '            assert!(kubuno_views::registry::project_info(name).is_some(), "{name} is not registered");', '        }', '    }', '}')
+    [IO.File]::AppendAllText($code, ($check -join $nl) + $nl)
+}
+
 # ---- Build/run helpers ----
 
 function Invoke-Logged([string]$file, [string]$arguments, [string]$workingDir, [string]$log, [hashtable]$environment) {
@@ -191,6 +264,8 @@ foreach ($dir in Get-ChildItem $templatesRoot -Directory) {
     Write-Host "== $($dir.Name)" -ForegroundColor Cyan
     try {
         $p = New-FromTemplate $vstemplate.FullName $name $solutionDir
+        # The item templates go into the desktop application (EVT-7b).
+        if ($dir.Name -eq 'KubunoDesktopApplication') { Add-ControlItems $p }
 
         # 1. cargo build, own target directory, no warning allowed.
         $cargoTarget = Join-Path $runRoot "target-$($dir.Name)"
@@ -211,6 +286,14 @@ foreach ($dir in Get-ChildItem $templatesRoot -Directory) {
                 if ($subsystem -ne $expected) { $failures += "PE subsystem of $built is $subsystem, expected $expected ($(if ($expected -eq 2) { 'GUI: no console window' } else { 'console' }))" }
                 else { "   PE subsystem: $subsystem ($(if ($expected -eq 2) { 'GUI, no console window' } else { 'console' }))" }
             }
+        }
+
+        # 1c. The item templates' controls register themselves and the view using them compiles (EVT-7b).
+        if (-not $failures -and $dir.Name -eq 'KubunoDesktopApplication') {
+            $log = Join-Path $solutionDir 'cargo-test.log'
+            $code = Invoke-Logged 'cargo' 'test' $p.Dir $log @{ CARGO_TARGET_DIR = $cargoTarget }
+            if ($code -ne 0) { $failures += "cargo test (the view using the item templates' controls) failed (exit $code, see $log)" }
+            else { "   cargo test: the item templates' controls compile, register and are used by the view" }
         }
 
         # 2. Run what the template produces.

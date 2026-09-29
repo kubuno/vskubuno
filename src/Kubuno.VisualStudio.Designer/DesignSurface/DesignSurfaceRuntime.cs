@@ -26,6 +26,18 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// </summary>
         public string? ExpectedUiDllSha256 { get; }
 
+        /// <summary>EVT-7b: the registry the project surface exported after its design build (its linked project controls), when known.</summary>
+        public string? RegistryPath { get; set; }
+
+        /// <summary>EVT-7b: the project crate the surface links (its controls render for real), when it does.</summary>
+        public string? ProjectCrate { get; set; }
+
+        /// <summary>The project's name (its <c>.rsproj</c>), for the Toolbox's "&lt;Project&gt; Composants" tab.</summary>
+        public string? ProjectName { get; set; }
+
+        /// <summary>A stable key of the project (its manifest), under which its Toolbox choices are kept.</summary>
+        public string? ProjectKey { get; set; }
+
         public bool IsSameAs(DesignSurfaceRuntime? other) =>
             other is not null && string.Equals(ExePath, other.ExePath, StringComparison.OrdinalIgnoreCase)
             && string.Equals(ExpectedUiDllSha256, other.ExpectedUiDllSha256, StringComparison.Ordinal);

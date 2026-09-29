@@ -23,8 +23,9 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         /// <param name="editor">A drop-down editor for the row (the Dock/Anchor pickers), or null.</param>
         /// <param name="readOnly">Greys the row out (e.g. Dock/Anchor under a parent that does not lay out by them).</param>
-        public KbviewAttributePropertyDescriptor(string attributeName, string displayName, PropKind? kind, string? defaultValue, string? doc, PropertyCategoryMap.Category category, System.Drawing.Design.UITypeEditor? editor = null, bool readOnly = false)
-            : base(attributeName, BuildAttributes(attributeName, displayName, doc, category))
+        /// <param name="customCategory">A project control's own <c>#[category("…")]</c> (docs/EVENTS.md EVT-7b), which wins over <paramref name="category"/>.</param>
+        public KbviewAttributePropertyDescriptor(string attributeName, string displayName, PropKind? kind, string? defaultValue, string? doc, PropertyCategoryMap.Category category, System.Drawing.Design.UITypeEditor? editor = null, bool readOnly = false, string? customCategory = null)
+            : base(attributeName, BuildAttributes(attributeName, displayName, doc, category, customCategory))
         {
             _editor = editor;
             _readOnly = readOnly;
@@ -118,11 +119,11 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         private static KbviewElementObject? Element(object? component) => component as KbviewElementObject;
 
-        private static Attribute[] BuildAttributes(string attributeName, string displayName, string? doc, PropertyCategoryMap.Category category)
+        private static Attribute[] BuildAttributes(string attributeName, string displayName, string? doc, PropertyCategoryMap.Category category, string? customCategory = null)
         {
             var attributes = new List<Attribute>
             {
-                new CategoryAttribute(PropertyCategoryMap.DisplayName(category)),
+                new CategoryAttribute(customCategory is { Length: > 0 } custom ? PropertyCategoryMap.DisplayName(custom) : PropertyCategoryMap.DisplayName(category)),
                 new DescriptionAttribute(doc ?? string.Empty),
                 new DisplayNameAttribute(displayName),
                 new RefreshPropertiesAttribute(RefreshProperties.Repaint),

@@ -52,6 +52,20 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// </summary>
         private IReadOnlyList<string>? _lastSelectionIds;
 
+        /// <summary>The last project controls sent (<see cref="SetProjectComponents"/>), resent to a restarted surface before its text.</summary>
+        private string? _lastProjectComponents;
+
+        /// <summary>
+        /// Tells the surface which controls the project declares (docs/EVENTS.md EVT-7b: the language server's
+        /// <c>origin: "project"</c> registry entries, a JSON array): it registers those it does not link as
+        /// labelled placeholders and reloads the view, which then compiles instead of failing on an unknown element.
+        /// </summary>
+        public void SetProjectComponents(string componentsJsonArray)
+        {
+            _lastProjectComponents = componentsJsonArray;
+            SendLine(DesignSurfaceProtocol.EncodeProjectComponents(componentsJsonArray));
+        }
+
         /// <summary>Asks the surface to apply a Layout toolbar / Format menu command to its selection (<c>format</c>); it answers with one <c>editRequests</c> batch.</summary>
         public void Format(string command) => SendLine(DesignSurfaceProtocol.EncodeFormat(command));
 
@@ -130,6 +144,12 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
             proc.OutputDataReceived += OnSurfaceProtocolLine;
             proc.BeginOutputReadLine();
+
+            // The project's controls first: the text then compiles against them.
+            if (_lastProjectComponents != null)
+            {
+                SendLine(DesignSurfaceProtocol.EncodeProjectComponents(_lastProjectComponents));
+            }
 
             if (_lastSentText != null)
             {
@@ -296,6 +316,13 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
         /// <summary><c>format {command}</c>: a Layout toolbar / Format menu command, by its surface name (docs/DESIGNER.md §13).</summary>
         public static string EncodeFormat(string command) => JsonSerializer.Serialize(new { type = "format", command }, WireOptions);
+
+        /// <summary><c>{"type":"projectComponents","components":[…]}</c> (EVT-7b) - the array is the language server's export entries, passed through verbatim.</summary>
+        public static string EncodeProjectComponents(string componentsJsonArray)
+        {
+            var array = string.IsNullOrWhiteSpace(componentsJsonArray) ? "[]" : componentsJsonArray.Trim();
+            return "{\"type\":\"projectComponents\",\"components\":" + array + "}";
+        }
 
         /// <summary>
         /// Parses a `selectionChanged` line: `elementIds` is an empty list for `id: null`/absent, a

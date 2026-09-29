@@ -17,6 +17,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- docs/EVENTS.md EVT-7b: the overridable members of the control hierarchy, generated from kubuno-views
+         (the ignored Rust test kubuno-views component::overrides::tests::write_overrides_fixture). -->
+    <EmbeddedResource Include="Overrides\OverridableMembers.json" LogicalName="Kubuno.OverridableMembers.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- StartupItemSelector needs Kubuno.Cargo's CargoPackage/CargoTarget metadata model - still no VS SDK dependency, so plain `dotnet test` keeps working. -->
     <ProjectReference Include="..\Kubuno.Cargo\Kubuno.Cargo.csproj" />
   </ItemGroup>

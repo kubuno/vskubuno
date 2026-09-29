@@ -353,6 +353,8 @@ namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
             public void RunLayoutCommand(DesignerLayoutCommand command) => Calls.Add("Layout " + command);
 
             public void ConvertHandlers() => Calls.Add("ConvertHandlers");
+
+            public void ChooseToolboxItems() => Calls.Add("ChooseToolboxItems");
         }
     }
 }

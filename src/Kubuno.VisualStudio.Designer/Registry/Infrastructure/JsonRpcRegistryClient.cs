@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kubuno.VisualStudio.Views.Logging;
@@ -26,6 +27,25 @@ namespace Kubuno.VisualStudio.Designer.Registry.Infrastructure
     {
         private const string MethodName = "kubuno/registry";
 
+        /// <summary><c>kubuno/registryVersion</c> (EVT-7b): the registry's version only, polled to notice the project's controls changing; null on failure.</summary>
+        public static async Task<string?> FetchVersionAsync(JsonRpc? rpc, CancellationToken cancellationToken)
+        {
+            if (rpc is null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var result = await rpc.InvokeWithParameterObjectAsync<JToken?>("kubuno/registryVersion", new { }, cancellationToken).ConfigureAwait(false);
+                return result?["version"]?.ToString();
+            }
+            catch (Exception ex) when (ex is RemoteInvocationException or ConnectionLostException or OperationCanceledException or ObjectDisposedException)
+            {
+                return null;
+            }
+        }
+
         public static async Task<ComponentRegistry> FetchAsync(JsonRpc? rpc, CancellationToken cancellationToken)
         {
             if (rpc is null)
@@ -42,7 +62,11 @@ namespace Kubuno.VisualStudio.Designer.Registry.Infrastructure
                     return ComponentRegistry.Empty;
                 }
 
-                return ComponentRegistry.FromJson(componentsToken.ToString(Newtonsoft.Json.Formatting.None));
+                var registry = ComponentRegistry.FromJson(componentsToken.ToString(Newtonsoft.Json.Formatting.None));
+                registry.Version = result?["version"]?.ToString();
+                // EVT-7b: the project's own controls, as exported - what the design surface registers as placeholders.
+                registry.ProjectComponentsJson = new JArray(componentsToken.Where(c => (string?)c["origin"] == "project")).ToString(Newtonsoft.Json.Formatting.None);
+                return registry;
             }
             catch (Exception ex) when (ex is RemoteInvocationException or ConnectionLostException or OperationCanceledException)
             {

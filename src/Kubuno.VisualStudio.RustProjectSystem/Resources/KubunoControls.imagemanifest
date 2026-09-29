@@ -59,6 +59,14 @@
     <ID Name="NumericField" Value="48" />
     <ID Name="RadioButton" Value="49" />
     <ID Name="Slider" Value="50" />
+    <ID Name="UserControl" Value="51" />
+    <ID Name="Timer" Value="52" />
+    <ID Name="CustomControl" Value="53" />
+    <ID Name="Component" Value="54" />
+    <ID Name="Circle" Value="55" />
+    <ID Name="Star" Value="56" />
+    <ID Name="Gauge" Value="57" />
+    <ID Name="Shapes" Value="58" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -310,6 +318,46 @@
       <Source Uri="$(Controls)/Slider.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/Slider.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/Slider.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(UserControl)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/UserControl.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/UserControl.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/UserControl.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Timer)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Timer.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Timer.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Timer.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(CustomControl)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/CustomControl.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/CustomControl.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/CustomControl.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Component)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Component.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Component.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Component.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Circle)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Circle.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Circle.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Circle.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Star)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Star.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Star.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Star.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Gauge)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Gauge.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Gauge.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Gauge.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Shapes)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Shapes.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Shapes.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Shapes.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

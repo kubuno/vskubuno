@@ -58,6 +58,15 @@ namespace Kubuno.VisualStudio.Designer.Registry
 
         public ComponentMeta? Find(string name) => _byName.TryGetValue(name, out var component) ? component : null;
 
+        /// <summary>The export's <c>version</c> (a hash of its content), when known.</summary>
+        public string? Version { get; set; }
+
+        /// <summary>The export entries of the project's own controls (EVT-7b) as a JSON array, sent to the design surface (<c>projectComponents</c>).</summary>
+        public string ProjectComponentsJson { get; set; } = "[]";
+
+        /// <summary>The project's own controls (EVT-7b).</summary>
+        public IEnumerable<ComponentMeta> ProjectComponents => Components.Where(c => c.IsProject);
+
         public static ComponentRegistry FromJson(string json)
         {
             if (json is null)

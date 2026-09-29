@@ -31,6 +31,9 @@ namespace Kubuno.Cargo.DesignSurface
 
         public List<DesignSurfaceStampInput> Inputs { get; set; } = new List<DesignSurfaceStampInput>();
 
+        /// <summary>The project crate linked into the surface (EVT-7b), null when none was.</summary>
+        public string? ProjectCrate { get; set; }
+
         private static readonly JsonSerializerOptions Options = new JsonSerializerOptions { WriteIndented = true };
 
         public string ToJson() => JsonSerializer.Serialize(this, Options);

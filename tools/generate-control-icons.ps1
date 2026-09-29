@@ -86,6 +86,15 @@ $table = @(
     @{ Name = 'NumericField';     Icon = 'chevrons-up-down';     Accent = 0 }
     @{ Name = 'RadioButton';      Icon = 'circle-dot' }
     @{ Name = 'Slider';           Icon = 'sliders-horizontal';   Accent = 0 }
+    # EVT-7b: the project's own controls (Toolbox project tab, #[toolbox(icon = "…")]) and the non-visual components.
+    @{ Name = 'UserControl';      Icon = 'layout-template';      Accent = 0 }
+    @{ Name = 'Timer';            Icon = 'timer';                Accent = 1 }
+    @{ Name = 'CustomControl';    Icon = 'pencil-ruler';         Accent = 0 }
+    @{ Name = 'Component';        Icon = 'box';                  Accent = 1 }
+    @{ Name = 'Circle';           Icon = 'circle';               Accent = 0 }
+    @{ Name = 'Star';             Icon = 'star';                 Accent = 0 }
+    @{ Name = 'Gauge';            Icon = 'gauge';                Accent = 0 }
+    @{ Name = 'Shapes';           Icon = 'shapes';               Accent = 0 }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS

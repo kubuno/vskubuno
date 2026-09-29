@@ -82,7 +82,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
         private readonly IDesignSurfaceSelectionTarget _surfaceTarget;
         private readonly ITextViewSelectionAdapter _textView;
         private readonly IViewsSelectionLanguageServerClient _languageClient;
-        private readonly ComponentRegistry _registry;
+        private ComponentRegistry _registry;
         private readonly PropertiesPanelViewModel _propertiesPanel;
         private readonly IOutlineSelectionTarget? _outline;
         private readonly string _documentUri;
@@ -120,6 +120,9 @@ namespace Kubuno.VisualStudio.Designer.Selection
         /// the designer pane publishes it to Visual Studio's native Properties window from here.
         /// </summary>
         public event EventHandler<string?>? SelectionApplied;
+
+        /// <summary>Uses <paramref name="registry"/> from now on (the project's controls changed, docs/EVENTS.md EVT-7b).</summary>
+        public void UpdateRegistry(ComponentRegistry registry) => _registry = registry ?? throw new ArgumentNullException(nameof(registry));
 
         /// <summary>The currently selected element's stable id, or null.</summary>
         public string? CurrentElementId => _currentElementId;

@@ -371,6 +371,49 @@
           <ButtonText>Binaire...</ButtonText>
         </Strings>
       </Button>
+      <!-- docs/EVENTS.md EVT-7b: the control item templates (Commands\AddProjectItemCommands.cs). -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoCustomControl" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_FORMS" />
+        <Icon guid="guidRustProjectImages" id="RustFile" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Contrôle personnalisé Kubuno...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoUserControl" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_FORMS" />
+        <Icon guid="guidRustProjectImages" id="RustFile" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Contrôle utilisateur Kubuno...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoInheritedControl" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_FORMS" />
+        <Icon guid="guidRustProjectImages" id="RustFile" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Contrôle hérité Kubuno...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoComponent" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_FORMS" />
+        <Icon guid="guidRustProjectImages" id="RustFile" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Composant Kubuno...</ButtonText>
+        </Strings>
+      </Button>
+      <!-- docs/EVENTS.md EVT-7b: the designer view menu's "Choose Toolbox Items" (controls of other crates). -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerChooseToolboxItems" priority="0x0201" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewCodeGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Choose Toolbox Items...</ButtonText>
+        </Strings>
+      </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddCargoDependency" priority="0x0100" type="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD_MISC" />
         <Icon guid="guidRustProjectImages" id="CargoManifest" />
@@ -839,6 +882,10 @@
       <IDSymbol name="cmdidAddRustBinary" value="0x010A" />
       <IDSymbol name="cmdidAddProjectReference" value="0x010B" />
       <IDSymbol name="cmdidAddCargoDependency" value="0x010C" />
+      <IDSymbol name="cmdidAddKubunoCustomControl" value="0x0130" />
+      <IDSymbol name="cmdidAddKubunoUserControl" value="0x0131" />
+      <IDSymbol name="cmdidAddKubunoInheritedControl" value="0x0132" />
+      <IDSymbol name="cmdidAddKubunoComponent" value="0x0133" />
       <IDSymbol name="cmdidRemoveCargoDependency" value="0x010E" />
       <IDSymbol name="cmdidRestartRustAnalyzer" value="0x010F" />
 
@@ -867,6 +914,7 @@
       <IDSymbol name="cmdidDesignerViewProperties" value="0x0203" />
       <IDSymbol name="cmdidDesignerDesignSize" value="0x0204" />
       <IDSymbol name="cmdidDesignerConvertHandlers" value="0x0205" />
+      <IDSymbol name="cmdidDesignerChooseToolboxItems" value="0x0206" />
       <IDSymbol name="cmdidDesignerWrapStack" value="0x0210" />
       <IDSymbol name="cmdidDesignerWrapPanel" value="0x0211" />
       <IDSymbol name="cmdidDesignerWrapCard" value="0x0212" />
@@ -909,6 +957,10 @@
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustIntegrationTest" context="guidRustProjectUIContext" />
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustExample" context="guidRustProjectUIContext" />
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustBinary" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoCustomControl" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoUserControl" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoInheritedControl" context="guidRustProjectUIContext" />
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoComponent" context="guidRustProjectUIContext" />
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddCargoDependency" context="guidRustProjectUIContext" />
     <!-- The designer Layout toolbar (docs/DESIGNER.md §13): shown while a .kbview designer is the active document. -->
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" context="guidKubunoDesignerCmdUI" />

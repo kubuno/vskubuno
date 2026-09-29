@@ -1,0 +1,85 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using Kubuno.VisualStudio.Designer.Registry;
+using Microsoft.VisualStudio.PlatformUI;
+using Microsoft.VisualStudio.Shell;
+
+namespace Kubuno.VisualStudio.Designer.UI
+{
+    /// <summary>
+    /// "Choisir des éléments…" (docs/EVENTS.md EVT-7b, WinForms' "Choose Toolbox Items"): the controls the project's
+    /// other crates declare (compiled into its last design build), each with a check box; the checked ones join the
+    /// Toolbox's "&lt;Project&gt; Composants" tab.
+    /// </summary>
+    internal sealed class ChooseToolboxItemsDialog : DialogWindow
+    {
+        private readonly List<(CheckBox Box, string Key)> _boxes = new List<(CheckBox, string)>();
+
+        public ChooseToolboxItemsDialog(IReadOnlyList<ComponentMeta> components, ISet<string> chosen)
+        {
+            var french = DesignerText.IsFrench;
+            Title = french ? "Choisir des éléments de la boîte à outils" : "Choose Toolbox Items";
+            Width = 560;
+            Height = 460;
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            SetResourceReference(BackgroundProperty, VsBrushes.WindowKey);
+            SetResourceReference(ForegroundProperty, VsBrushes.WindowTextKey);
+
+            var root = new DockPanel { Margin = new Thickness(12) };
+            var header = new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 8),
+                Text = components.Count == 0
+                    ? (french
+                        ? "Aucun contrôle d'une autre crate du projet : ajoutez une crate de contrôles à ses dépendances (Cargo.toml), puis générez le projet."
+                        : "No control from another crate of the project: add a control crate to its dependencies (Cargo.toml), then build the project.")
+                    : (french
+                        ? "Contrôles des autres crates du projet (après sa dernière génération). Les éléments cochés apparaissent dans l'onglet du projet de la boîte à outils ; l'application doit lier leur crate (use <crate> as _;)."
+                        : "Controls of the project's other crates (as of its last build). The checked ones appear in the project's Toolbox tab; the application must link their crate (use <crate> as _;)."),
+            };
+            header.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.WindowTextKey);
+            DockPanel.SetDock(header, Dock.Top);
+            root.Children.Add(header);
+
+            var ok = new Button { Content = "OK", IsDefault = true, MinWidth = 80, Margin = new Thickness(0, 0, 6, 0) };
+            var cancel = new Button { Content = french ? "Annuler" : "Cancel", IsCancel = true, MinWidth = 80 };
+            ok.Click += (_, _) => DialogResult = true;
+            cancel.Click += (_, _) => DialogResult = false;
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
+            buttons.Children.Add(ok);
+            buttons.Children.Add(cancel);
+            DockPanel.SetDock(buttons, Dock.Bottom);
+            root.Children.Add(buttons);
+
+            var list = new StackPanel();
+            foreach (var group in components.GroupBy(c => c.CrateName ?? "?").OrderBy(g => g.Key))
+            {
+                var crate = new TextBlock { Text = group.Key, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 2) };
+                crate.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.WindowTextKey);
+                list.Children.Add(crate);
+                foreach (var component in group.OrderBy(c => c.Name))
+                {
+                    var key = ProjectComponentsFile.ChoiceKey(component);
+                    var box = new CheckBox
+                    {
+                        Content = component.Name + (string.IsNullOrEmpty(component.LocalizedDoc) ? string.Empty : "  —  " + component.LocalizedDoc),
+                        IsChecked = chosen.Contains(key),
+                        Margin = new Thickness(8, 2, 0, 2),
+                    };
+                    box.SetResourceReference(ForegroundProperty, VsBrushes.WindowTextKey);
+                    _boxes.Add((box, key));
+                    list.Children.Add(box);
+                }
+            }
+
+            root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list });
+            Content = root;
+        }
+
+        /// <summary>The checked controls' keys (<c>crate::Name</c>).</summary>
+        public IReadOnlyList<string> Chosen => _boxes.Where(b => b.Box.IsChecked == true).Select(b => b.Key).ToList();
+    }
+}

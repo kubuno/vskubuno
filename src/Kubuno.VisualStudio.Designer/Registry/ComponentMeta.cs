@@ -83,5 +83,54 @@ namespace Kubuno.VisualStudio.Designer.Registry
 
         /// <summary>The event whose attribute (or older alias) is <paramref name="attributeName"/>.</summary>
         public EventMeta? FindEvent(string attributeName) => Events.Find(e => e.Matches(attributeName));
+
+        // ---- EVT-7b (docs/EVENTS.md): the class hierarchy and the project's own controls ----
+
+        /// <summary>The element's class followed by its ancestors, <c>"Component"</c> last (<c>["Button", "ButtonBase", "Control", "Component"]</c>).</summary>
+        public List<string> BaseChain { get; set; } = new List<string>();
+
+        /// <summary><c>"builtin"</c>, or <c>"project"</c> for a control of the application (<c>#[derive(Component)]</c>, <c>#[derive(UserControl)]</c>).</summary>
+        public string Origin { get; set; } = "builtin";
+
+        /// <summary><c>"control"</c>, <c>"user_control"</c> or <c>"component"</c> (non-visual: the component tray).</summary>
+        public string Kind { get; set; } = "control";
+
+        /// <summary>A non-visual component (a <c>Timer</c>): listed in the component tray under the design surface, not drawn on it.</summary>
+        public bool NonVisual { get; set; }
+
+        /// <summary>A project control compiled into the program that exported the registry (the design surface after a build), not only known from its source.</summary>
+        public bool Linked { get; set; }
+
+        /// <summary>A project control's base (a built-in class, a level such as <c>Control</c>, or another project class).</summary>
+        public string? Extends { get; set; }
+
+        /// <summary>The crate declaring a project control.</summary>
+        public string? CrateName { get; set; }
+
+        /// <summary><c>#[category("…")]</c> of a project control: its Toolbox group.</summary>
+        public string? ToolboxCategory { get; set; }
+
+        /// <summary><c>#[toolbox(icon = "…")]</c> of a project control.</summary>
+        public string? ToolboxIcon { get; set; }
+
+        /// <summary>Offered in the Toolbox (<c>#[browsable(false)]</c> hides a project control).</summary>
+        public bool Browsable { get; set; } = true;
+
+        /// <summary><c>#[default_property("…")]</c>: the property the Properties window selects first.</summary>
+        public string? DefaultProperty { get; set; }
+
+        /// <summary>A user control's view, relative to its source file.</summary>
+        public string? ViewPath { get; set; }
+
+        /// <summary>The file declaring a project control, and its line.</summary>
+        public string? SourceFile { get; set; }
+
+        public int? SourceLine { get; set; }
+
+        /// <summary>Whether this is a control of the application.</summary>
+        public bool IsProject => string.Equals(Origin, "project", System.StringComparison.Ordinal);
+
+        /// <summary>Whether the class is <paramref name="name"/> or derives from it.</summary>
+        public bool IsA(string name) => BaseChain.Contains(name);
     }
 }

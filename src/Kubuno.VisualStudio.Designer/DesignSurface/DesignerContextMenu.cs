@@ -45,6 +45,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// <summary>"Convert to Typed Handlers" (docs/EVENTS.md §5.4, EVT-5): the view menu's <c>kubuno/convertHandlers</c>.</summary>
         public const int ConvertHandlers = 0x0205;
 
+        /// <summary>"Choose Toolbox Items" (docs/EVENTS.md EVT-7b): the view menu's choice of other crates' controls for the Toolbox's project tab.</summary>
+        public const int ChooseToolboxItems = 0x0206;
+
         /// <summary>"Wrap in" › Stack, Panel, Card, GroupBox, ScrollArea (<see cref="DesignerStructurePlanner.WrapContainers"/> order).</summary>
         public const int WrapFirst = 0x0210;
 
@@ -199,6 +202,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// <summary>Converts the view's <c>handlers!</c> table to typed handlers (EVT-5, <c>kubuno/convertHandlers</c>).</summary>
         void ConvertHandlers();
 
+        /// <summary>"Choose Toolbox Items" (EVT-7b): which controls of the project's other crates its Toolbox tab lists.</summary>
+        void ChooseToolboxItems();
+
         /// <summary>A Layout toolbar / Format menu command on the current selection (docs/DESIGNER.md §13).</summary>
         void RunLayoutCommand(DesignerLayoutCommand command);
     }
@@ -316,6 +322,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 case DesignerCommandIds.ViewProperties: _actions.ShowProperties(null); break;
                 case DesignerCommandIds.DesignSize: _actions.EditDesignSize(); break;
                 case DesignerCommandIds.ConvertHandlers: _actions.ConvertHandlers(); break;
+                case DesignerCommandIds.ChooseToolboxItems: _actions.ChooseToolboxItems(); break;
                 default:
                     if (Index(cmd, DesignerCommandIds.WrapFirst, DesignerStructurePlanner.WrapContainers.Count) is { } wrap)
                     {
@@ -368,6 +375,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 case DesignerCommandIds.ViewProperties: return new CommandState(true, true, DesignerText.MenuViewProperties);
                 case DesignerCommandIds.DesignSize: return new CommandState(true, true, DesignerText.MenuDesignSize);
                 case DesignerCommandIds.ConvertHandlers: return new CommandState(true, _model.IsView, DesignerText.MenuConvertHandlers);
+                case DesignerCommandIds.ChooseToolboxItems: return new CommandState(true, _model.IsView, DesignerText.MenuChooseToolboxItems);
                 case DesignerCommandIds.AlignMenu: return LayoutMenu(DesignerText.MenuAlign, DesignerLayoutCommand.AlignLefts, DesignerLayoutCommand.AlignBottoms);
                 case DesignerCommandIds.SizeMenu: return LayoutMenu(DesignerText.MenuMakeSameSize, DesignerLayoutCommand.MakeSameWidth, DesignerLayoutCommand.MakeSameSize);
                 case DesignerCommandIds.HorizontalSpacingMenu: return LayoutMenu(DesignerText.MenuHorizontalSpacing, DesignerLayoutCommand.HorizontalSpacingEqual, DesignerLayoutCommand.HorizontalSpacingRemove);

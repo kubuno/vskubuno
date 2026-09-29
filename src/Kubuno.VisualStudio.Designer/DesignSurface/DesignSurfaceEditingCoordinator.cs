@@ -142,7 +142,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// are unavailable - logged, never thrown, since a half-available host must still let the pane
         /// open (docs/DESIGNER.md's own "degrade to no-op" posture, mirrored here on the C# side).
         /// </summary>
-        internal static DesignSurfaceEditingCoordinator? TryCreate(IDesignSurfaceHost host, IVsTextLines textLines, CodeWindowHost codeWindowHost, OleInterop.IServiceProvider? oleServiceProvider, Func<ITrackSelection?>? trackSelection = null, Action? ensureActiveDesigner = null)
+        internal static DesignSurfaceEditingCoordinator? TryCreate(IDesignSurfaceHost host, IVsTextLines textLines, CodeWindowHost codeWindowHost, OleInterop.IServiceProvider? oleServiceProvider, Func<ITrackSelection?>? trackSelection = null, Action? ensureActiveDesigner = null, UI.ComponentTray? componentTray = null)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -171,7 +171,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 KubunoViewsLanguageClient? ResolveClient() =>
                     componentModel.DefaultExportProvider.GetExportedValues<ILanguageClient>().OfType<KubunoViewsLanguageClient>().FirstOrDefault();
 
-                return new DesignSurfaceEditingCoordinator(host, dataBuffer, textLines, codeWindowHost, ResolveClient, trackSelection, oleServiceProvider, ensureActiveDesigner);
+                var coordinator = new DesignSurfaceEditingCoordinator(host, dataBuffer, textLines, codeWindowHost, ResolveClient, trackSelection, oleServiceProvider, ensureActiveDesigner);
+                coordinator.AttachComponentTray(componentTray);
+                return coordinator;
             }
             catch (Exception ex) when (ex is InvalidOperationException or COMException)
             {
@@ -305,6 +307,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
                 // Visual Studio's own Toolbox and Properties window (the .Native.cs half).
                 AttachNativeWindows(_selectionSync, registry);
+                KubunoViewsLogHost.Current.WriteLine($"[designer] selection sync ready ({documentUri}).");
 
                 // Initial Outline population (INTEGRATION.md §9 point 6: "Populate it ... once when the
                 // pane opens, and again on every debounced buffer change" - the second half is
@@ -328,11 +331,28 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private async Task<JsonRpc?> WaitForLanguageClientRpcAsync(TimeSpan? timeout = null)
         {
             var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(60));
+            // A server Visual Studio stopped with the previous solution is not always restarted for a designer restored
+            // with the next one (docs/EVENTS.md EVT-7b): ask for it when nothing started it within 15 s, then every 20 s.
+            var nextStart = DateTime.UtcNow + TimeSpan.FromSeconds(15);
             while (!_disposed)
             {
-                if (_resolveLanguageClient()?.ReadyRpc is { } rpc)
+                var client = _resolveLanguageClient();
+                if (client?.ReadyRpc is { } rpc)
                 {
                     return rpc;
+                }
+
+                if (client is not null && DateTime.UtcNow >= nextStart)
+                {
+                    nextStart = DateTime.UtcNow + TimeSpan.FromSeconds(20);
+                    try
+                    {
+                        await client.EnsureStartedAsync().ConfigureAwait(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        KubunoViewsLogHost.Current.WriteException("[designer] restarting the Kubuno Views language server failed", ex);
+                    }
                 }
 
                 if (DateTime.UtcNow >= deadline)
@@ -544,6 +564,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 rustHost.SurfaceCommandRequested -= OnSurfaceCommandRequested;
             }
 
+            StopProjectComponentSync();
             _propertiesPublisher?.Dispose();
             _buffer.Changed -= OnBufferChanged;
             _selectionSync?.Dispose();

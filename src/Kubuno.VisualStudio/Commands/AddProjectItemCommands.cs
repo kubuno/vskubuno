@@ -32,6 +32,11 @@ namespace Kubuno.VisualStudio.Commands
         private static readonly ItemTemplate[] Templates =
         {
             new ItemTemplate(PackageIds.AddKubunoViewCommand, "KubunoView", "Vue Kubuno", "Nom de la vue :", "NewView", ".kbview"),
+            // docs/EVENTS.md EVT-7b: the control templates (the wizard names the struct and the file, and declares the module).
+            new ItemTemplate(PackageIds.AddKubunoCustomControlCommand, "KubunoCustomControl", "Contrôle personnalisé Kubuno", "Nom du contrôle :", "CustomControl", ".rs", controlItem: true),
+            new ItemTemplate(PackageIds.AddKubunoUserControlCommand, "KubunoUserControl", "Contrôle utilisateur Kubuno", "Nom du contrôle utilisateur :", "UserControl", ".kbview", controlItem: true),
+            new ItemTemplate(PackageIds.AddKubunoInheritedControlCommand, "KubunoInheritedControl", "Contrôle hérité Kubuno", "Nom du contrôle :", "InheritedControl", ".rs", controlItem: true),
+            new ItemTemplate(PackageIds.AddKubunoComponentCommand, "KubunoComponent", "Composant Kubuno", "Nom du composant :", "Component", ".rs", controlItem: true),
             new ItemTemplate(PackageIds.AddRustModuleCommand, "RustModule", "Module Rust", "Nom du module :", "module", ".rs"),
             new ItemTemplate(PackageIds.AddRustIntegrationTestCommand, "RustIntegrationTest", "Test d'intégration", "Nom du test :", "integration_test", ".rs"),
             new ItemTemplate(PackageIds.AddRustExampleCommand, "RustExample", "Exemple", "Nom de l'exemple :", "example", ".rs"),
@@ -97,13 +102,16 @@ namespace Kubuno.VisualStudio.Commands
                 return;
             }
 
-            var fileName = dialog.EnteredName.EndsWith(template.PrimaryExtension, StringComparison.OrdinalIgnoreCase)
-                ? dialog.EnteredName
-                : dialog.EnteredName + template.PrimaryExtension;
+            var fileName = template.ControlItem
+                ? Kubuno.VisualStudio.TemplateWizard.ControlItemNames.ModuleName(dialog.EnteredName) + template.PrimaryExtension
+                : dialog.EnteredName.EndsWith(template.PrimaryExtension, StringComparison.OrdinalIgnoreCase)
+                    ? dialog.EnteredName
+                    : dialog.EnteredName + template.PrimaryExtension;
 
             try
             {
-                context.Project.ProjectItems.AddFromTemplate(templatePath, fileName);
+                var items = template.ControlItem ? SourceFolderItems(context.Project) ?? context.Project.ProjectItems : context.Project.ProjectItems;
+                items.AddFromTemplate(templatePath, fileName);
             }
             catch (Exception exception)
             {
@@ -124,6 +132,28 @@ namespace Kubuno.VisualStudio.Commands
         /// <c>Microsoft.VisualStudio.ItemTemplate</c> catalog asset is built from at build time -
         /// verified present post-deploy in docs/RSPROJ.md's own addendum).
         /// </summary>
+        /// <summary>The items of the project's <c>src</c> folder (the crate root's folder), when it has one.</summary>
+        private static EnvDTE.ProjectItems? SourceFolderItems(EnvDTE.Project project)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            try
+            {
+                foreach (EnvDTE.ProjectItem item in project.ProjectItems)
+                {
+                    if (string.Equals(item.Name, "src", StringComparison.OrdinalIgnoreCase) && item.ProjectItems is { } children)
+                    {
+                        return children;
+                    }
+                }
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+                // No folder list: the project root.
+            }
+
+            return null;
+        }
+
         private static string? TryResolveTemplatePath(string folderName)
         {
             try
@@ -145,8 +175,9 @@ namespace Kubuno.VisualStudio.Commands
 
         private readonly struct ItemTemplate
         {
-            public ItemTemplate(int commandId, string folderName, string displayName, string promptLabel, string defaultName, string primaryExtension)
+            public ItemTemplate(int commandId, string folderName, string displayName, string promptLabel, string defaultName, string primaryExtension, bool controlItem = false)
             {
+                ControlItem = controlItem;
                 CommandId = commandId;
                 FolderName = folderName;
                 DisplayName = displayName;
@@ -173,6 +204,12 @@ namespace Kubuno.VisualStudio.Commands
             /// this one file name).
             /// </summary>
             public string PrimaryExtension { get; }
+
+            /// <summary>
+            /// A control template (docs/EVENTS.md EVT-7b): its files are named after the Rust module (<c>RoundButton</c> →
+            /// <c>round_button.rs</c>) and go to the crate's <c>src</c> folder, where the wizard declares the module.
+            /// </summary>
+            public bool ControlItem { get; }
         }
     }
 }

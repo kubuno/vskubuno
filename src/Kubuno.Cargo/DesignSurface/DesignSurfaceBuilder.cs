@@ -39,6 +39,12 @@ namespace Kubuno.Cargo.DesignSurface
             UiDllSource = uiDllSource;
         }
 
+        /// <summary>The project crate linked into the surface (EVT-7b: its controls render for real), null when it could not be.</summary>
+        public string? ProjectCrate { get; set; }
+
+        /// <summary>The registry the surface exported (<see cref="DesignSurfaceBuilder.RegistryFileName"/>), null when it did not.</summary>
+        public string? RegistryPath => File.Exists(Path.Combine(Directory, DesignSurfaceBuilder.RegistryFileName)) ? Path.Combine(Directory, DesignSurfaceBuilder.RegistryFileName) : null;
+
         public string ExePath { get; }
 
         public string Directory => Path.GetDirectoryName(ExePath) ?? ExePath;
@@ -94,6 +100,15 @@ namespace Kubuno.Cargo.DesignSurface
         /// <summary>The compile-time variable <c>view_embed.rs</c>'s <c>surfaceInfo</c> handshake embeds.</summary>
         public const string UiDllShaVariable = "KUBUNO_DESIGN_UI_DLL_SHA256";
 
+        /// <summary>The compile-time variable naming the generated file that links the project crate (EVT-7b, <c>view_embed.rs</c>'s <c>mod project</c>).</summary>
+        public const string ProjectIncludeVariable = "KUBUNO_DESIGN_PROJECT_RS";
+
+        /// <summary>That generated file, in the design folder.</summary>
+        public const string ProjectIncludeFileName = "project.rs";
+
+        /// <summary>The registry the surface exports (<c>--export-registry</c>), saved next to it after a design build.</summary>
+        public const string RegistryFileName = "registry.json";
+
         private readonly IProcessRunner _runner;
 
         public DesignSurfaceBuilder(IProcessRunner runner)
@@ -129,7 +144,7 @@ namespace Kubuno.Cargo.DesignSurface
             var exe = Path.Combine(folder, ExeName);
             return File.Exists(exe) && File.Exists(Path.Combine(folder, UiDllName)) && File.Exists(Path.Combine(folder, DesignSurfaceStamp.FileName))
                 && stamp.InputsUnchanged(DesignSurfaceStamp.DescribeFile)
-                ? new DesignSurfaceBuild(exe, stamp.UiDllSha256, stamp.UiDllSource)
+                ? new DesignSurfaceBuild(exe, stamp.UiDllSha256, stamp.UiDllSource) { ProjectCrate = stamp.ProjectCrate }
                 : null;
         }
 
@@ -191,7 +206,37 @@ namespace Kubuno.Cargo.DesignSurface
         /// folder by the crate hashes recorded in them; <c>-C prefer-dynamic</c> like every Kubuno app
         /// (one <c>std</c> shared with <c>kubuno_ui.dll</c>). Optimized for a release profile only.
         /// </summary>
-        public static IReadOnlyList<string> RustcArgumentsFor(DesignSurfaceInputs inputs, string outputExe, string profile)
+        public static IReadOnlyList<string> RustcArgumentsFor(DesignSurfaceInputs inputs, string outputExe, string profile) =>
+            RustcArgumentsFor(inputs, outputExe, profile, null, null);
+
+        /// <summary>
+        /// <see cref="RustcArgumentsFor(DesignSurfaceInputs, string, string)"/>, linking the project crate compiled
+        /// at <paramref name="projectRlib"/> too (EVT-7b): <c>--cfg kubuno_design_project</c> turns on the surface's
+        /// <c>mod project</c>, whose generated file (<see cref="ProjectIncludeVariable"/>) names the crate and its
+        /// libraries.
+        /// </summary>
+        public static IReadOnlyList<string> RustcArgumentsFor(DesignSurfaceInputs inputs, string outputExe, string profile, DesignProjectCrate? project, string? projectRlib)
+        {
+            var args = BaseRustcArguments(inputs, outputExe, profile).ToList();
+            if (project is null || projectRlib is null)
+            {
+                return args;
+            }
+
+            var output = args.Count - 2;
+            var extra = new List<string> { "--cfg", "kubuno_design_project", "--extern", project.CrateName + "=" + projectRlib };
+            foreach (var dependency in project.LinkedDependencies)
+            {
+                var path = project.Externs.First(e => e.Key == dependency).Value;
+                extra.Add("--extern");
+                extra.Add(dependency + "=" + path);
+            }
+
+            args.InsertRange(output, extra);
+            return args;
+        }
+
+        private static IReadOnlyList<string> BaseRustcArguments(DesignSurfaceInputs inputs, string outputExe, string profile)
         {
             var args = new List<string>
             {
@@ -336,8 +381,12 @@ namespace Kubuno.Cargo.DesignSurface
                 return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Failed, null, "rustc could not be run");
             }
 
+            // EVT-7b: the project's own crate (its controls), linked into the surface when it was built.
+            var projectCrate = await ReadProjectCrateAsync(project, snapshot, log, cancellationToken).ConfigureAwait(false);
+
             var uiSha = Sha256OfFile(inputs.UiDll);
             var stampInputs = new[] { inputs.UiDll, inputs.ViewsRlib, inputs.ControlsRlib, inputs.SurfaceSource }
+                .Concat(projectCrate is null ? Array.Empty<string>() : new[] { projectCrate.StampFile })
                 .Select(path => DesignSurfaceStamp.DescribeFile(path) is { } d
                     ? new DesignSurfaceStampInput { Path = path, Length = d.Length, LastWriteUtcTicks = d.LastWriteUtcTicks }
                     : throw new IOException($"'{path}' disappeared during the design build"))
@@ -354,6 +403,7 @@ namespace Kubuno.Cargo.DesignSurface
                 && string.Equals(Sha256OfFile(Path.Combine(folder, UiDllName)), uiSha, StringComparison.Ordinal))
             {
                 log?.Report($"[design build] up to date: {folder}");
+                stamp.ProjectCrate = ReadStamp(Path.Combine(folder, DesignSurfaceStamp.FileName))?.ProjectCrate;
             }
             else
             {
@@ -364,12 +414,26 @@ namespace Kubuno.Cargo.DesignSurface
                 try
                 {
                     var scratchExe = Path.Combine(scratch, ExeName);
-                    var rustcLine = new CargoCommandLine(rustc, RustcArgumentsFor(inputs, scratchExe, project.Profile));
+                    var surfaceEnvironment = new Dictionary<string, string> { [UiDllShaVariable] = uiSha };
+                    string? projectRlib = null;
+                    if (projectCrate is not null)
+                    {
+                        projectRlib = await CompileProjectCrateAsync(rustc, projectCrate, inputs, scratch, project.Profile, log, cancellationToken).ConfigureAwait(false);
+                        if (projectRlib is not null)
+                        {
+                            var include = Path.Combine(scratch, ProjectIncludeFileName);
+                            File.WriteAllText(include, projectCrate.SurfaceIncludeSource());
+                            surfaceEnvironment[ProjectIncludeVariable] = include;
+                            stamp.ProjectCrate = projectCrate.CrateName;
+                        }
+                    }
+
+                    var rustcLine = new CargoCommandLine(rustc, RustcArgumentsFor(inputs, scratchExe, project.Profile, projectRlib is null ? null : projectCrate, projectRlib));
                     log?.Report("[design build] " + rustcLine);
                     var rustcRequest = new ProcessRunRequest(rustcLine.FileName, rustcLine.Arguments)
                     {
                         WorkingDirectory = project.ManifestDirectory,
-                        EnvironmentVariables = new Dictionary<string, string> { [UiDllShaVariable] = uiSha },
+                        EnvironmentVariables = surfaceEnvironment,
                     };
                     var rustcResult = await _runner.RunAsync(rustcRequest, new SynchronousProgress<ProcessOutputLine>(line => log?.Report(line.Text)), cancellationToken).ConfigureAwait(false);
                     if (!rustcResult.Succeeded || !File.Exists(scratchExe))
@@ -389,6 +453,9 @@ namespace Kubuno.Cargo.DesignSurface
                         File.Copy(std, Path.Combine(scratch, Path.GetFileName(std)), overwrite: true);
                     }
 
+                    // The registry the surface knows (its linked project controls included): the Toolbox's project tab.
+                    await ExportRegistryAsync(scratchExe, scratch, log, cancellationToken).ConfigureAwait(false);
+
                     File.WriteAllText(Path.Combine(scratch, DesignSurfaceStamp.FileName), stamp.ToJson());
                     if (Directory.Exists(folder))
                     {
@@ -406,7 +473,77 @@ namespace Kubuno.Cargo.DesignSurface
             File.WriteAllText(Path.Combine(designDirectory, CurrentFileName), stamp.ToJson());
             RemoveStaleFolders(designDirectory, key, log);
             log?.Report($"[design build] design surface ready: {exe} (kubuno_ui.dll {uiSha.Substring(0, 12)}...)");
-            return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Ready, new DesignSurfaceBuild(exe, uiSha, inputs.UiDll), "ready");
+            return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Ready, new DesignSurfaceBuild(exe, uiSha, inputs.UiDll) { ProjectCrate = stamp.ProjectCrate }, "ready");
+        }
+
+        /// <summary>
+        /// The project crate to link into the surface (EVT-7b), from <c>cargo metadata</c> (offline: the build just
+        /// resolved everything) and this build's artifacts; null when it cannot be (logged) - the surface then
+        /// renders the project's controls as placeholders.
+        /// </summary>
+        private async Task<DesignProjectCrate?> ReadProjectCrateAsync(DesignSurfaceProject project, IReadOnlyList<CargoArtifact> artifacts, IProgress<string>? log, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var environment = string.IsNullOrEmpty(project.TargetDirectory) ? null : new Dictionary<string, string> { ["CARGO_TARGET_DIR"] = project.TargetDirectory! };
+                var metadata = await new Metadata.CargoMetadataReader(_runner).ReadAsync(
+                    project.ManifestDirectory,
+                    project.ManifestPath,
+                    Metadata.CargoMetadataReadOptions.IncludeDependencies | Metadata.CargoMetadataReadOptions.Offline,
+                    environment,
+                    cancellationToken).ConfigureAwait(false);
+                var crate = DesignProjectCrate.From(metadata, artifacts, project.ManifestPath, project.Bin, out var reason);
+                if (crate is null)
+                {
+                    log?.Report("[design build] the project's controls are not linked into the preview: " + reason);
+                }
+
+                return crate;
+            }
+            catch (Exception ex) when (ex is Metadata.CargoMetadataException or IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
+            {
+                log?.Report("[design build] the project's controls are not linked into the preview: cargo metadata failed (" + ex.Message + ")");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Compiles the project crate as an rlib into <paramref name="folder"/>; its path, or null when rustc failed
+        /// (the project's code does not compile yet: logged, the surface is built without it).
+        /// </summary>
+        private async Task<string?> CompileProjectCrateAsync(string rustc, DesignProjectCrate crate, DesignSurfaceInputs inputs, string folder, string profile, IProgress<string>? log, CancellationToken cancellationToken)
+        {
+            var rlib = Path.Combine(folder, crate.RlibFileName);
+            var line = new CargoCommandLine(rustc, crate.RustcArguments(inputs, rlib, profile));
+            log?.Report("[design build] " + line);
+            var request = new ProcessRunRequest(line.FileName, line.Arguments)
+            {
+                WorkingDirectory = crate.ManifestDirectory,
+                EnvironmentVariables = new Dictionary<string, string>(crate.Environment().ToDictionary(kv => kv.Key, kv => kv.Value)),
+            };
+            var result = await _runner.RunAsync(request, new SynchronousProgress<ProcessOutputLine>(l => log?.Report(l.Text)), cancellationToken).ConfigureAwait(false);
+            if (result.Succeeded && File.Exists(rlib))
+            {
+                return rlib;
+            }
+
+            log?.Report($"[design build] the project crate did not compile for the preview (exit code {result.ExitCode}): its controls show as placeholders.");
+            return null;
+        }
+
+        /// <summary>Runs the fresh surface with <c>--export-registry</c> and saves what it prints (<see cref="RegistryFileName"/>); best-effort.</summary>
+        private async Task ExportRegistryAsync(string exe, string folder, IProgress<string>? log, CancellationToken cancellationToken)
+        {
+            var result = await _runner.RunAsync(new ProcessRunRequest(exe, "--export-registry") { WorkingDirectory = folder }, null, cancellationToken).ConfigureAwait(false);
+            var json = string.Join("\n", result.StandardOutputLines).Trim();
+            if (result.Succeeded && json.StartsWith("{", StringComparison.Ordinal))
+            {
+                File.WriteAllText(Path.Combine(folder, RegistryFileName), json);
+            }
+            else
+            {
+                log?.Report($"[design build] the preview did not export its registry (exit code {result.ExitCode}).");
+            }
         }
 
         private async Task<string> RunSimpleAsync(string fileName, string arguments, string workingDirectory, CancellationToken cancellationToken)

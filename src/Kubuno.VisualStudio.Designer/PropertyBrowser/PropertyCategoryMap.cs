@@ -111,6 +111,24 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             return kind?.Tag == PropKindTag.Bool ? Category.Behavior : Category.Misc;
         }
 
+        /// <summary>
+        /// The display name of a category a project control names (<c>#[category("Appearance")]</c>, EVT-7b): a standard
+        /// one is localized like WinForms' <c>CategoryAttribute</c> ("Appearance" shows "Apparence" in a French Visual
+        /// Studio), any other is shown as written.
+        /// </summary>
+        public static string DisplayName(string category)
+        {
+            foreach (Category known in Enum.GetValues(typeof(Category)))
+            {
+                if (string.Equals(known.ToString(), category, StringComparison.OrdinalIgnoreCase))
+                {
+                    return DisplayName(known);
+                }
+            }
+
+            return category;
+        }
+
         /// <summary>Localized display name of <paramref name="category"/> (see <see cref="DesignerText"/>).</summary>
         public static string DisplayName(Category category)
         {

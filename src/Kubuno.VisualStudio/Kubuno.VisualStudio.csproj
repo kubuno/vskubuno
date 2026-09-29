@@ -71,6 +71,9 @@
     <Compile Include="LanguageService\QuickInfo\LspQuickInfoSource.cs" />
     <Compile Include="LanguageService\QuickInfo\QuickInfoElementFactory.cs" />
     <Compile Include="LanguageService\QuickInfo\QuickInfoSourceProviders.cs" />
+    <Compile Include="LanguageService\Overrides\OverrideMembersDialog.cs" />
+    <Compile Include="LanguageService\Overrides\OverrideSuggestedActions.cs" />
+    <Compile Include="LanguageService\Overrides\KubunoRustCompletion.cs" />
     <Compile Include="SolutionExplorer\CollectionSources.cs" />
     <Compile Include="SolutionExplorer\SymbolNavigator.cs" />
     <Compile Include="SolutionExplorer\SymbolQueries.cs" />

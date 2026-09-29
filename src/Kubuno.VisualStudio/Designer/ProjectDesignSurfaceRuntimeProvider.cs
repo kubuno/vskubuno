@@ -304,7 +304,18 @@ namespace Kubuno.VisualStudio.DesignerIntegration
             private void SetProject(DesignSurfaceBuild build)
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
-                Set(new DesignSurfaceRuntime(build.ExePath, isProjectRuntime: true, expectedUiDllSha256: build.UiDllSha256), DesignSurfaceRuntimeState.Project, null);
+                // EVT-7b: the project's linked controls (the Toolbox's project tab) come with the runtime.
+                var name = ErrorHandler.Succeeded(_hierarchy.GetProperty((uint)VSConstants.VSITEMID.Root, (int)__VSHPROPID.VSHPROPID_Name, out var value)) ? value as string : null;
+                Set(
+                    new DesignSurfaceRuntime(build.ExePath, isProjectRuntime: true, expectedUiDllSha256: build.UiDllSha256)
+                    {
+                        RegistryPath = build.RegistryPath,
+                        ProjectCrate = build.ProjectCrate,
+                        ProjectName = name,
+                        ProjectKey = _project.ManifestPath,
+                    },
+                    DesignSurfaceRuntimeState.Project,
+                    null);
             }
 
             private void Set(DesignSurfaceRuntime runtime, DesignSurfaceRuntimeState state, string? detail)

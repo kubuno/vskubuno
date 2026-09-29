@@ -67,6 +67,12 @@ namespace Kubuno.VisualStudio
         public const int AddProjectReferenceCommand = 0x010B;
         public const int AddCargoDependencyCommand = 0x010C;
 
+        // docs/EVENTS.md EVT-7b: the control item templates in the same "Ajouter" submenu.
+        public const int AddKubunoCustomControlCommand = 0x0130;
+        public const int AddKubunoUserControlCommand = 0x0131;
+        public const int AddKubunoInheritedControlCommand = 0x0132;
+        public const int AddKubunoComponentCommand = 0x0133;
+
         /// <summary>Floating context menu of the Dependencies node and its category nodes (KubunoCommands.vsct).</summary>
         public const int KubunoDependenciesNodeContextMenu = 0x1025;
 

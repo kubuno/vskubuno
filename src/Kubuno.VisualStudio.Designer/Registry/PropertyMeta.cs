@@ -28,5 +28,25 @@ namespace Kubuno.VisualStudio.Designer.Registry
 
         /// <summary>The user documentation in Visual Studio's UI language (French when available, else English).</summary>
         public string? LocalizedDoc => DesignerText.IsFrench && !string.IsNullOrEmpty(DocFr) ? DocFr : Doc;
+
+        // ---- Design-time attributes of a project control's property (EVT-7b, WinForms `System.ComponentModel`) ----
+
+        /// <summary><c>#[category("…")]</c>: the Properties window group (the designer's own table groups the built-in properties).</summary>
+        public string? Category { get; set; }
+
+        /// <summary>Listed in the Properties window (<c>#[browsable(false)]</c> hides it; still valid in XML).</summary>
+        public bool Browsable { get; set; } = true;
+
+        public bool Bindable { get; set; }
+
+        public bool Localizable { get; set; }
+
+        /// <summary><c>"Visible"</c>, <c>"Hidden"</c> or <c>"Content"</c>.</summary>
+        public string? Serialization { get; set; }
+
+        /// <summary><c>#[editor("color")]</c>: the editor the Properties window uses.</summary>
+        public string? Editor { get; set; }
+
+        public string? TypeConverter { get; set; }
     }
 }

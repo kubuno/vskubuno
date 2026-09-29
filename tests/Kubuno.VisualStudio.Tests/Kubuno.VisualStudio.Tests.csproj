@@ -21,6 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The item-template wizard's pure naming and module logic (docs/EVENTS.md EVT-7b), compiled here on its own:
+         the wizard assembly itself references Visual Studio install assemblies. -->
+    <Compile Include="..\..\src\Kubuno.VisualStudio.TemplateWizard\ControlItemNames.cs" Link="Wizard\ControlItemNames.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Real `cargo metadata` captures shared with Kubuno.Cargo.Tests (Dependencies node mapping). -->
     <None Include="..\Kubuno.Cargo.Tests\Fixtures\Metadata\dependencies-*.json" Link="Fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <!-- Real rust-analyzer 1.98 textDocument/hover markdown (QuickInfo conversion tests). -->

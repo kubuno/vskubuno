@@ -78,14 +78,50 @@ namespace Kubuno.VisualStudio.Views.LanguageService
         /// </summary>
         public bool IsInitialized { get; private set; }
 
-        /// <summary><see cref="Rpc"/> once the server is initialized, otherwise null.</summary>
-        public JsonRpc? ReadyRpc => IsInitialized ? Rpc : null;
+        /// <summary>
+        /// <see cref="Rpc"/> once the server is initialized and its connection still open, otherwise null. Visual Studio
+        /// stops the server itself when the solution closes (never through <see cref="StopServerAsync"/>): the old
+        /// connection must not be handed out after that (docs/EVENTS.md EVT-7b: the designer of a reopened solution
+        /// kept the dead connection and its Properties window stayed empty until Visual Studio restarted).
+        /// </summary>
+        public JsonRpc? ReadyRpc => IsInitialized && Rpc is { IsDisposed: false } rpc ? rpc : null;
+
+        /// <summary>True while Visual Studio is activating the server (inside <see cref="ActivateAsync"/>).</summary>
+        public bool IsActivating { get; private set; }
 
         public event AsyncEventHandler<EventArgs>? StartAsync;
 
         public event AsyncEventHandler<EventArgs>? StopAsync;
 
+        /// <summary>
+        /// Asks Visual Studio to (re)start the server when it is neither running nor starting: once a solution was
+        /// closed and another opened, a designer restored with it would otherwise wait for a server nobody starts.
+        /// </summary>
+        public async Task EnsureStartedAsync()
+        {
+            if (ReadyRpc is not null || IsActivating || Rpc is { IsDisposed: false } || StartAsync is null)
+            {
+                return;
+            }
+
+            KubunoViewsLogHost.Current.WriteLine("kubuno-views-ls is not running: asking Visual Studio to start it.");
+            await StartAsync.InvokeAsync(this, EventArgs.Empty);
+        }
+
         public async Task<Connection?> ActivateAsync(CancellationToken token)
+        {
+            IsActivating = true;
+            try
+            {
+                return await ActivateCoreAsync();
+            }
+            finally
+            {
+                IsActivating = false;
+            }
+        }
+
+        private async Task<Connection?> ActivateCoreAsync()
         {
             await TaskScheduler.Default;
 
@@ -173,7 +209,18 @@ namespace Kubuno.VisualStudio.Views.LanguageService
 
         public Task AttachForCustomMessageAsync(JsonRpc rpc)
         {
+            // A new connection is not initialized yet, and a dropped one must stop being handed out (see ReadyRpc).
+            IsInitialized = false;
             Rpc = rpc;
+            rpc.Disconnected += (_, e) =>
+            {
+                if (ReferenceEquals(Rpc, rpc))
+                {
+                    IsInitialized = false;
+                    Rpc = null;
+                    KubunoViewsLogHost.Current.WriteLine($"kubuno-views-ls disconnected ({e.Reason}).");
+                }
+            };
 
             // Unlike RustLanguageClient, there is no per-user trace-level option here yet (see
             // INTEGRATION.md/this library's own scope note): errors and the startup/shutdown lines

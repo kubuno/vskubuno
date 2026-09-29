@@ -106,6 +106,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
 
             selectionSync.SelectionApplied += (_, id) => PublishSelection(id);
             PublishSelection(selectionSync.CurrentElementId);
+            StartProjectComponentSync();
         }
 
         /// <summary>Shows <paramref name="elementId"/> (the root element when nothing is selected, like WinForms shows the form) in the Properties window.</summary>
@@ -134,6 +135,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 .Cast<KbviewElementObject>()
                 .ToList();
             _propertiesPublisher.Publish(selected, selectable);
+            _componentTray?.SetSelection(ids);
         }
 
         private KbviewElementObject? CreateElementObject(string elementId, string? knownTag = null)
@@ -157,6 +159,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             }
 
             Walk(roots);
+            UpdateComponentTray(roots);
             var changed = !flat.SequenceEqual(_outlineElements);
             _outlineElements = flat;
             if (changed)

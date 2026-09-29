@@ -72,6 +72,14 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
             ["NumericField"] = 48, // Lucide "chevrons-up-down"
             ["RadioButton"] = 49, // Lucide "circle-dot"
             ["Slider"] = 50, // Lucide "sliders-horizontal"
+            ["UserControl"] = 51, // Lucide "layout-template"
+            ["Timer"] = 52, // Lucide "timer"
+            ["CustomControl"] = 53, // Lucide "pencil-ruler"
+            ["Component"] = 54, // Lucide "box"
+            ["Circle"] = 55, // Lucide "circle"
+            ["Star"] = 56, // Lucide "star"
+            ["Gauge"] = 57, // Lucide "gauge"
+            ["Shapes"] = 58, // Lucide "shapes"
         };
 
         /// <summary>The image id for element <paramref name="tag"/> (<see cref="FallbackId"/> when unknown).</summary>

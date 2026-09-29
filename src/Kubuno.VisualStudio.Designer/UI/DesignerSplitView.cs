@@ -25,6 +25,7 @@ namespace Kubuno.VisualStudio.Designer.UI
         private readonly DesignerSplitViewModel _viewModel = new();
         private readonly CodeWindowHost _codeWindowHost;
         private readonly IDesignSurfaceHost _designSurfaceHost;
+        private readonly ComponentTray _componentTray;
         // INTEGRATION.md §6/§8: EditRequested → kubuno/applyEdit → Editing/, and buffer changes →
         // debounced setText. See DesignSurfaceEditingCoordinator's own doc for why this wiring lives
         // there instead of inline here.
@@ -109,7 +110,13 @@ namespace Kubuno.VisualStudio.Designer.UI
             contentGrid.ColumnDefinitions.Add(_splitterColumn);
             contentGrid.ColumnDefinitions.Add(_xmlColumn);
 
-            var designPane = new Border { Child = _designSurfaceHost.Content };
+            // EVT-7b: the component tray (non-visual components) under the surface, like WinForms'.
+            _componentTray = new ComponentTray { IconFactory = Toolbox.NativeToolboxInstaller.LoadIconElement };
+            var designStack = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(_componentTray, Dock.Bottom);
+            designStack.Children.Add(_componentTray);
+            designStack.Children.Add(new Border { Child = _designSurfaceHost.Content });
+            var designPane = new Border { Child = designStack };
             Grid.SetColumn(designPane, 0);
             contentGrid.Children.Add(designPane);
 
@@ -202,7 +209,7 @@ namespace Kubuno.VisualStudio.Designer.UI
                 // Best-effort: an empty buffer should not prevent the pane from opening.
             }
 
-            _editingCoordinator = DesignSurfaceEditingCoordinator.TryCreate(_designSurfaceHost, _textBuffer, _codeWindowHost, _oleServiceProvider, _trackSelection, _ensureActiveDesigner);
+            _editingCoordinator = DesignSurfaceEditingCoordinator.TryCreate(_designSurfaceHost, _textBuffer, _codeWindowHost, _oleServiceProvider, _trackSelection, _ensureActiveDesigner, _componentTray);
         }
 
         /// <summary>The per-pane editing/selection coordinator, once the document is loaded (null before, or when VS services were unavailable).</summary>

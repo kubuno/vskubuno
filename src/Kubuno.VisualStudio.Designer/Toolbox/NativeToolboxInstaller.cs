@@ -40,7 +40,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
         private static bool s_installed;
         private static int s_iconFailures;
         // Items typed as object: a VS type in a static field initialiser would load the Shell assembly in unit tests (Layout).
-        private static readonly List<(object Data, string Component)> s_items = new List<(object, string)>();
+        private static readonly List<(object Data, string Component, string Icon, bool Project)> s_items = new List<(object, string, string, bool)>();
 
         /// <summary>Set by the VSIX: the base name of a component's icon XAML (e.g. "Button", "Control" for an unknown component; null: no icon).</summary>
         public static Func<string, string?>? IconName { get; set; }
@@ -50,6 +50,132 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
 
         private static ComponentRegistry? s_registry;
         private static bool s_subscribed;
+
+        // EVT-7b: the "<Project> Composants" tab (docs/EVENTS.md): the project's own controls compiled into its last
+        // design build (WinForms' AutoToolboxPopulate), plus those chosen from other crates ("Choisir des éléments…").
+        private static string? s_projectTab;
+        private static IReadOnlyList<ComponentMeta> s_projectComponents = Array.Empty<ComponentMeta>();
+        private static string? s_installedProjectTab;
+
+        /// <summary>
+        /// Sets the project tab (<paramref name="tabName"/>, e.g. "RoundApp Composants") and its controls, and updates
+        /// the Toolbox when the Kubuno items are shown. Null or no component: no project tab.
+        /// </summary>
+        public static void SetProjectComponents(string? tabName, IReadOnlyList<ComponentMeta> components)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var list = components?.Where(c => c.Browsable && !string.IsNullOrEmpty(c.Name)).ToList() ?? new List<ComponentMeta>();
+            string Describe(ComponentMeta c) => c.Name + "|" + c.ToolboxIcon + "|" + c.Kind;
+            if (string.Equals(list.Count == 0 ? null : tabName, s_projectTab, StringComparison.Ordinal) && list.Select(Describe).SequenceEqual(s_projectComponents.Select(Describe)))
+            {
+                return;
+            }
+
+            s_projectTab = list.Count == 0 ? null : tabName;
+            s_projectComponents = list;
+            if (s_installed && Package.GetGlobalService(typeof(SVsToolbox)) is IVsToolbox toolbox)
+            {
+                RemoveProjectItems(toolbox);
+                AddProjectItems(toolbox);
+                toolbox.UpdateToolboxUI();
+            }
+        }
+
+        /// <summary>
+        /// The Kubuno control icon of element <paramref name="tag"/> as a WPF element (its vector XAML, for the current
+        /// theme), for the designer's own UI (the component tray); null when it has none.
+        /// </summary>
+        public static System.Windows.FrameworkElement? LoadIconElement(string tag)
+        {
+            try
+            {
+                if (IconName?.Invoke(tag) is not { } iconName)
+                {
+                    return null;
+                }
+
+                var background = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolWindowBackgroundColorKey);
+                var uri = new Uri($"/Kubuno.VisualStudio.RustProjectSystem;component/Resources/Icons/Controls/{iconName}.{IconVariantFor(background)}.xaml", UriKind.Relative);
+                return System.Windows.Application.LoadComponent(uri) as System.Windows.FrameworkElement;
+            }
+            catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException or System.Windows.Markup.XamlParseException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>The project tab's current content (tests / diagnostics).</summary>
+        public static (string? Tab, IReadOnlyList<string> Components) ProjectLayout =>
+            (s_projectTab, SortedForToolbox(s_projectComponents).Select(c => c.Name).ToList());
+
+        /// <summary>
+        /// The icon of a project control: its <c>#[toolbox(icon = …)]</c> when it names a known icon (<c>"circle"</c>,
+        /// <c>"Button"</c>, <c>"star"</c>), else the icon of its kind (custom control, user control, component).
+        /// </summary>
+        public static string ProjectIconKey(ComponentMeta component)
+        {
+            if (!string.IsNullOrWhiteSpace(component.ToolboxIcon))
+            {
+                var pascal = string.Concat(component.ToolboxIcon!.Split(new[] { '-', '_', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => char.ToUpperInvariant(p[0]) + p.Substring(1)));
+                if (IconName?.Invoke(pascal) is { } known && known != "Control")
+                {
+                    return pascal;
+                }
+            }
+
+            return component.Kind switch
+            {
+                "user_control" => "UserControl",
+                "component" => "Component",
+                _ => "CustomControl",
+            };
+        }
+
+        private static void AddProjectItems(IVsToolbox toolbox)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (s_projectTab is null || s_projectComponents.Count == 0)
+            {
+                return;
+            }
+
+            if (!ListTabs(toolbox).Contains(s_projectTab))
+            {
+                toolbox.AddTab(s_projectTab);
+            }
+
+            s_installedProjectTab = s_projectTab;
+            foreach (var component in SortedForToolbox(s_projectComponents))
+            {
+                try
+                {
+                    AddItem(toolbox, component, s_projectTab, ProjectIconKey(component), project: true);
+                }
+                catch (Exception ex) when (ex is COMException or ArgumentException or ExternalException)
+                {
+                    KubunoViewsLogHost.Current.WriteException($"[designer] Toolbox: could not add '{component.Name}'", ex);
+                }
+            }
+
+            KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: {s_projectComponents.Count} project control(s) in '{s_projectTab}'.");
+        }
+
+        private static void RemoveProjectItems(IVsToolbox toolbox)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            foreach (var item in s_items.Where(i => i.Project).ToList())
+            {
+                toolbox.RemoveItem((Microsoft.VisualStudio.OLE.Interop.IDataObject)item.Data);
+                s_items.Remove(item);
+            }
+
+            if (s_installedProjectTab is { } tab && ListTabs(toolbox).Contains(tab) && IsEmpty(toolbox, tab))
+            {
+                toolbox.RemoveTab(tab);
+            }
+
+            s_installedProjectTab = null;
+        }
 
         /// <summary>
         /// Shows the Kubuno components in the Toolbox while a <c>.kbview</c> designer is the active document,
@@ -107,14 +233,21 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
 
             try
             {
-                foreach (var (data, _) in s_items)
+                foreach (var item in s_items)
                 {
-                    toolbox.RemoveItem((Microsoft.VisualStudio.OLE.Interop.IDataObject)data);
+                    toolbox.RemoveItem((Microsoft.VisualStudio.OLE.Interop.IDataObject)item.Data);
                 }
 
                 s_items.Clear();
                 var existing = ListTabs(toolbox);
-                foreach (var tab in DesignerText.AllToolboxTabNames())
+                var kubunoTabs = DesignerText.AllToolboxTabNames().ToList();
+                if (s_installedProjectTab is { } projectTab)
+                {
+                    kubunoTabs.Add(projectTab);
+                    s_installedProjectTab = null;
+                }
+
+                foreach (var tab in kubunoTabs)
                 {
                     // A shared tab (e.g. WinForms' "Conteneurs") keeps its own items: only an empty one goes.
                     if (existing.Contains(tab) && IsEmpty(toolbox, tab))
@@ -184,7 +317,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             s_iconFailures = 0;
             var added = 0;
             var existing = ListTabs(toolbox);
-            foreach (var family in registry.FamilyNames)
+            foreach (var family in registry.FamilyNames.Where(f => f != "project"))
             {
                 var tabName = DesignerText.ToolboxTabName(family);
 
@@ -212,6 +345,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 }
             }
 
+            AddProjectItems(toolbox);
             toolbox.UpdateToolboxUI();
             KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: added {added} Kubuno component(s) in {registry.FamilyNames.Count} tab(s), {added - s_iconFailures} with their icon.");
             if (s_iconFailures > 0)
@@ -247,13 +381,14 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: {s_iconFailures} icon(s) still unresolved; the Toolbox keeps its placeholder glyph for them.");
         }
 
-        private static bool AddItem(IVsToolbox toolbox, ComponentMeta component, string tabName)
+        private static bool AddItem(IVsToolbox toolbox, ComponentMeta component, string tabName, string? iconKey = null, bool project = false)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var data = new OleDataObject();
             data.SetData(ToolboxItemFormat.FormatName, new MemoryStream(ToolboxItemFormat.Encode(component.Name)));
 
-            var bitmap = CreateBitmap(component.Name);
+            var icon = iconKey ?? component.Name;
+            var bitmap = CreateBitmap(icon);
             var info = new TBXITEMINFO
             {
                 bstrText = component.Name,
@@ -270,7 +405,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 return false;
             }
 
-            s_items.Add((data, component.Name));
+            s_items.Add((data, component.Name, icon, project));
 
             return true;
         }
@@ -409,9 +544,9 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
 
             s_iconFailures = 0;
 
-            foreach (var (data, component) in s_items)
+            foreach (var (data, component, icon, _) in s_items)
             {
-                var bitmap = CreateBitmap(component);
+                var bitmap = CreateBitmap(icon);
                 var info = new TBXITEMINFO
                 {
                     bstrText = component,
@@ -433,7 +568,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
         /// <summary>The component names of <paramref name="registry"/> in toolbox order (tests / diagnostics).</summary>
         public static IEnumerable<(string Tab, string Component)> Layout(ComponentRegistry registry)
         {
-            foreach (var family in registry.FamilyNames)
+            foreach (var family in registry.FamilyNames.Where(f => f != "project"))
             {
                 foreach (var component in SortedForToolbox(registry.Families[family]))
                 {

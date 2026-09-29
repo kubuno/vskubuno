@@ -30,6 +30,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- EVT-7b: ControlItemWizard's base-class picker (an inherited control) is a small WPF window. -->
+    <Reference Include="PresentationFramework" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!--
       HintPath rather than a PackageReference: no NuGet package ships this interop assembly, it only
       exists inside a Visual Studio install (verified: absent from every restored package in this

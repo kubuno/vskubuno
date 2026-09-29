@@ -134,9 +134,10 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
                 var seen = new HashSet<string>(StringComparer.Ordinal) { "x:Name" };
                 foreach (var property in Component.Properties)
                 {
-                    if (seen.Add(property.Name))
+                    // A project control's `#[browsable(false)]` property stays settable in XML but is not listed (EVT-7b).
+                    if (property.Browsable && seen.Add(property.Name))
                     {
-                        list.Add(new KbviewAttributePropertyDescriptor(property.Name, property.Name, property.Kind, property.Default, property.LocalizedDoc, PropertyCategoryMap.For(property.Name, property.Kind)));
+                        list.Add(new KbviewAttributePropertyDescriptor(property.Name, property.Name, property.Kind, property.Default, property.LocalizedDoc, PropertyCategoryMap.For(property.Name, property.Kind), customCategory: property.Category));
                     }
                 }
 
@@ -231,8 +232,13 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         // ---- ICustomTypeDescriptor ----
 
         public AttributeCollection GetAttributes() => new AttributeCollection(
-            new DefaultPropertyAttribute(Component.Properties.Count > 0 ? Component.Properties[0].Name : "x:Name"),
+            new DefaultPropertyAttribute(DefaultPropertyName),
             new DefaultEventAttribute(DefaultEventMeta?.Name));
+
+        /// <summary>The property the Properties window selects first: a project control's <c>#[default_property]</c> (EVT-7b), else the first one.</summary>
+        private string DefaultPropertyName => Component.DefaultProperty is { Length: > 0 } declared && Component.Properties.Exists(p => p.Name == declared)
+            ? declared
+            : Component.Properties.Count > 0 ? Component.Properties[0].Name : "x:Name";
 
         public string GetClassName() => Component.Name;
 
@@ -245,7 +251,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         public PropertyDescriptor? GetDefaultProperty()
         {
             var properties = GetAttributeProperties();
-            return Component.Properties.Count > 0 ? properties.Find(Component.Properties[0].Name, ignoreCase: false) : properties[0];
+            return properties.Find(DefaultPropertyName, ignoreCase: false) ?? properties[0];
         }
 
         public object? GetEditor(Type editorBaseType) => null;
