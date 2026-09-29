@@ -65,4 +65,9 @@
     <None Include="INTEGRATION.md" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The themed dialog base shared as source by every assembly that shows a dialog (docs/ARCHITECTURE.md, "Themed dialogs"). -->
+    <Compile Include="..\Shared\UI\*.cs" Link="UI\Shared\%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>
