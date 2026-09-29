@@ -69,5 +69,8 @@ namespace Kubuno.VisualStudio
 
         public const int AddCargoDependencyFromNodeCommand = 0x010D;
         public const int RemoveCargoDependencyCommand = 0x010E;
+
+        /// <summary>Tools menu entry for <see cref="Commands.RestartRustAnalyzerCommand"/>.</summary>
+        public const int RestartRustAnalyzerCommand = 0x010F;
     }
 }

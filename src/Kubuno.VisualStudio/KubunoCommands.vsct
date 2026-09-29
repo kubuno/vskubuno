@@ -261,6 +261,16 @@
           <ButtonText>Kubuno: Generate Visual Studio Projects</ButtonText>
         </Strings>
       </Button>
+      <!-- Recovery tool: restarts the Rust language server (RestartRustAnalyzerCommand; French text set at run time). -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidRestartRustAnalyzer" priority="0x0104" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="Restart" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno: Restart rust-analyzer</ButtonText>
+        </Strings>
+      </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidGenerateRustProjectsContext" priority="0x0100" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup" />
         <Icon guid="ImageCatalogGuid" id="OpenProjectFolder" />
@@ -654,6 +664,7 @@
       <IDSymbol name="cmdidAddCargoDependency" value="0x010C" />
       <IDSymbol name="cmdidAddCargoDependencyFromNode" value="0x010D" />
       <IDSymbol name="cmdidRemoveCargoDependency" value="0x010E" />
+      <IDSymbol name="cmdidRestartRustAnalyzer" value="0x010F" />
 
       <!-- .kbview design surface context menus - MUST match Kubuno.VisualStudio.Designer's DesignerCommandIds. -->
       <IDSymbol name="KubunoDesignerElementContextMenu" value="0x1030" />

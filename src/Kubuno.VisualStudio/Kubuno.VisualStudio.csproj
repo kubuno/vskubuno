@@ -67,6 +67,7 @@
     <Compile Include="KubunoPackage.cs" />
     <Compile Include="LanguageService\ContentDefinition.cs" />
     <Compile Include="LanguageService\RustLanguageClient.cs" />
+    <Compile Include="LanguageService\RustAnalyzerMiddleLayer.cs" />
     <Compile Include="SolutionExplorer\CollectionSources.cs" />
     <Compile Include="SolutionExplorer\SymbolNavigator.cs" />
     <Compile Include="SolutionExplorer\SymbolQueries.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Debugging\NativeDebugLauncher.cs" />
     <Compile Include="Debugging\DebugRustTestAtCursorCommand.cs" />
     <Compile Include="Commands\GenerateRustProjectsCommand.cs" />
+    <Compile Include="Commands\RestartRustAnalyzerCommand.cs" />
     <!-- Extended "Ajouter" submenu on a .rsproj project node (product request, see KubunoCommands.vsct's own comment). -->
     <Compile Include="Commands\RsprojSelection.cs" />
     <Compile Include="Commands\RsprojFileReader.cs" />

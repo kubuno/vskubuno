@@ -31,6 +31,16 @@ namespace Kubuno.VisualStudio.LanguageService
     public sealed class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
     {
         private readonly RealRustAnalyzerEnvironment _environment = new();
+        private readonly RustAnalyzerMiddleLayer _middleLayer = new();
+        private Process? _process;
+
+        public RustLanguageClient()
+        {
+            Instance = this;
+        }
+
+        /// <summary>The MEF-created instance, for <see cref="Commands.RestartRustAnalyzerCommand"/> (null until a .rs file activated the client).</summary>
+        internal static RustLanguageClient? Instance { get; private set; }
 
         [Import]
         internal IVsFolderWorkspaceService? WorkspaceService { get; set; }
@@ -46,7 +56,7 @@ namespace Kubuno.VisualStudio.LanguageService
 
         public IEnumerable<string>? FilesToWatch => null;
 
-        public object? MiddleLayer => null;
+        public object? MiddleLayer => _middleLayer;
 
         public object? CustomMessageTarget => null;
 
@@ -118,7 +128,43 @@ namespace Kubuno.VisualStudio.LanguageService
             process.BeginErrorReadLine();
 
             KubunoLog.WriteLine($"rust-analyzer started (PID {process.Id}).");
+            _process = process;
             return new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream);
+        }
+
+        /// <summary>
+        /// Tools &gt; "Kubuno: Restart rust-analyzer": stops the server (Visual Studio sends shutdown/exit and
+        /// drops the server's diagnostics), makes sure the old process is gone, then starts a fresh one, which
+        /// gets every open .rs document again through didOpen. A recovery tool for any server-side state that
+        /// went wrong, without closing the solution.
+        /// </summary>
+        internal async Task RestartAsync()
+        {
+            KubunoLog.WriteLine("Restarting rust-analyzer (Tools > Kubuno: Restart rust-analyzer).");
+            var old = _process;
+            if (StopAsync is not null)
+            {
+                await StopAsync.InvokeAsync(this, EventArgs.Empty);
+            }
+
+            await TaskScheduler.Default;
+            try
+            {
+                if (old is not null && !old.HasExited && !old.WaitForExit(5000))
+                {
+                    KubunoLog.WriteLine($"rust-analyzer (PID {old.Id}) did not exit after shutdown; killing it.");
+                    old.Kill();
+                }
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
+            {
+                // Already gone between the check and the kill: nothing left to stop.
+            }
+
+            if (StartAsync is not null)
+            {
+                await StartAsync.InvokeAsync(this, EventArgs.Empty);
+            }
         }
 
         public Task OnLoadedAsync() => StartAsync?.InvokeAsync(this, EventArgs.Empty) ?? Task.CompletedTask;

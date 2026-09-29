@@ -249,6 +249,7 @@ namespace Kubuno.VisualStudio
                 DebugRustTestAtCursorCommand.Initialize(this, commandService);
                 DesignerToolWindowCommands.Initialize(this, commandService);
                 GenerateRustProjectsCommand.Initialize(this, commandService);
+                RestartRustAnalyzerCommand.Initialize(this, commandService);
                 AddProjectItemCommands.Initialize(this, commandService);
                 AddProjectReferenceCommand.Initialize(this, commandService);
                 AddCargoDependencyCommand.Initialize(this, commandService);

@@ -104,6 +104,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`KUBUNO_DESKTOP_SRC`**: the environment variable naming your `github.com/kubuno/desktop` checkout;
   a new Kubuno Desktop Application points at it (default `Z:\src\desktop\windows`), and its build stops
   with a clear `KUBUNO0001` error when that folder is missing.
+- **Tools > "Kubuno: Restart rust-analyzer"** ("Kubuno : Redémarrer rust-analyzer" in a French Visual
+  Studio): restarts the Rust language server without closing the solution - a recovery tool when
+  IntelliSense for Rust looks wrong. The open `.rs` files are sent to the new server again.
 
 ### Removed
 
@@ -116,6 +119,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Rust errors no longer stay in the editor and the Error List after they are fixed.** While typing
+  (for example `vm.set(` before its arguments), rust-analyzer reports errors such as `E0107 expected 2
+  arguments, found 0` or `unmatched '}'`; once the code was complete again, the red squiggles and the
+  Error List entries stayed until the file was closed, although `cargo check` was clean. rust-analyzer
+  gives every diagnostics report the same identifier, and Visual Studio ignores an empty report whose
+  identifier did not change, so the "no more errors" report was never applied. Each report now gets its
+  own identifier, so fixed errors disappear as soon as rust-analyzer has re-checked the file.
+- **Creating an event handler from the designer keeps the code-behind's formatting**: the new entry in the
+  `handlers!` table is added on its own line with the same indentation as the existing entries, and the
+  table's closing brace keeps its indentation (it used to lose it, with the new entry over-indented). A
+  missing comma after the last existing entry is added, and a CRLF file stays CRLF. (Fix in
+  `kubuno-views-ls`, desktop repository.)
 - **A new Kubuno Desktop Application builds and runs with F5 out of the box**: it failed with
   `E0463 can't find crate for 'kubuno_ui'` when `CARGO_TARGET_DIR` was set machine-wide, because it
   then built into the same target directory as the Kubuno desktop apps, where each build overwrote the
