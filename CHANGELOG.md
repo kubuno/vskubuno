@@ -77,6 +77,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   limitations, the MCP bridge for Claude, and troubleshooting (first-run screens, the template
   cache needing a second Visual Studio start after install, a missing-DLL dialog meaning a PATH
   problem, SMB directory-cache races on a network drive, and more). Linked from `README.md`.
+- **`tools/test-templates.ps1`, a pre-release check of the "Create a new project" templates**: creates
+  each project template in a temporary folder the way Visual Studio does, builds it with `cargo build`
+  (no warning allowed) and with MSBuild through its `.rsproj`, and with `-Run` starts the result.
+- **`KUBUNO_DESKTOP_SRC`**: the environment variable naming your `github.com/kubuno/desktop` checkout;
+  a new Kubuno Desktop Application points at it (default `Z:\src\desktop\windows`), and its build stops
+  with a clear `KUBUNO0001` error when that folder is missing.
 
 ### Removed
 
@@ -89,6 +95,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **A new Kubuno Desktop Application builds and runs with F5 out of the box**: it failed with
+  `E0463 can't find crate for 'kubuno_ui'` when `CARGO_TARGET_DIR` was set machine-wide, because it
+  then built into the same target directory as the Kubuno desktop apps, where each build overwrote the
+  other's `kubuno_ui.dll`. The project now builds into a directory of its own
+  (`$(CARGO_TARGET_DIR)\rsproj\<crate>`, or `<project>\target`). Existing projects: see
+  `docs/GETTING-STARTED.md`, Troubleshooting.
 - **A `.kbview` designer restored with the solution (on its Design tab) no longer loses its selection
   sync, Properties window and Toolbox wiring for good**: setup waited only 10 s for the XML view, which a
   pane that has not shown its XML/Split tab never creates; it now waits for it for the pane's life, and

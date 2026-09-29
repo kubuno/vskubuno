@@ -4,6 +4,27 @@
        docs/RSPROJ.md Addendum, lot 7). This file is yours: edit it freely. -->
   <PropertyGroup>
     <CargoPackage>$cratename$</CargoPackage>
+
+    <!-- The Kubuno desktop Cargo workspace this project's Cargo.toml path dependencies point at
+         (keep both in sync). Resolved at project creation from KUBUNO_DESKTOP_SRC. -->
+    <KubunoDesktopSrc Condition="'$(KubunoDesktopSrc)' == ''">$kubunodesktopsrc$</KubunoDesktopSrc>
+
+    <!-- This project's OWN cargo target directory. kubuno-ui is a Rust dylib, and cargo names a dylib
+         without a hash (`deps\kubuno_ui.dll`): two cargo workspaces sharing one target directory (e.g.
+         a machine-wide CARGO_TARGET_DIR that the desktop workspace also builds into) overwrite each
+         other's kubuno_ui.dll, and the next build fails with "E0463: can't find crate for kubuno_ui".
+         When CARGO_TARGET_DIR is set (a local disk for sources on a network share), this project gets
+         a subfolder of it; otherwise cargo's usual <project>\target. -->
+    <CargoTargetDir Condition="'$(CARGO_TARGET_DIR)' != ''">$(CARGO_TARGET_DIR)\rsproj\$(CargoPackage)</CargoTargetDir>
+    <CargoTargetDir Condition="'$(CARGO_TARGET_DIR)' == ''">$(MSBuildProjectDirectory)\target</CargoTargetDir>
   </PropertyGroup>
+
+  <!-- Stops early, with a message that says what to do, when the desktop sources are missing
+       (instead of cargo's "failed to read ...\Cargo.toml"). -->
+  <Target Name="KubunoCheckDesktopSources" BeforeTargets="CargoRestore;CoreCompile">
+    <Error Condition="!Exists('$(KubunoDesktopSrc)/src/crates/kubuno-ui/Cargo.toml')"
+           Code="KUBUNO0001"
+           Text="The Kubuno desktop sources were not found at '$(KubunoDesktopSrc)'. This project builds against a local checkout of github.com/kubuno/desktop (its 'windows' folder). Clone it, then either set the KUBUNO_DESKTOP_SRC environment variable to that folder before creating a project, or point &lt;KubunoDesktopSrc&gt; in this .rsproj and the three kubuno-* paths in Cargo.toml at it." />
+  </Target>
 
 </Project>

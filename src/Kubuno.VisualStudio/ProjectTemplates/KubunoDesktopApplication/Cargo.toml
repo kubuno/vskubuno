@@ -4,14 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# docs/RSPROJ.md Addendum (lot 7) decision: PATH dependencies on this machine's own `desktop/windows`
-# checkout (github.com/kubuno/desktop), not git-tagged dependencies. This template's own bar is "must
-# build on this machine" - a git dependency needs a reachable remote *and* a published tag, neither
-# verifiable from here; the local checkout is. If/when kubuno-ui/kubuno-controls/kubuno-views start
-# publishing tags the way kubuno/core's shared crates already do (CLAUDE.md section 3), switch these three
-# to `git = "https://github.com/kubuno/desktop", tag = "..."` instead - everything else in this
-# Cargo.toml stays the same either way. Adjust the paths below if your `desktop` checkout is not at
-# the default `Z:\src\desktop\windows`.
-kubuno-ui       = { path = "Z:/src/desktop/windows/src/crates/kubuno-ui" }
-kubuno-controls = { path = "Z:/src/desktop/windows/src/crates/kubuno-controls" }
-kubuno-views    = { path = "Z:/src/desktop/windows/src/crates/kubuno-views" }
+# The Kubuno desktop crates, taken from a local checkout of github.com/kubuno/desktop (its `windows`
+# Cargo workspace). The path below was resolved when this project was created: the
+# KUBUNO_DESKTOP_SRC environment variable if it was set, else the default `Z:\src\desktop\windows`.
+# To use another checkout, change the three paths below AND <KubunoDesktopSrc> in the .rsproj (the
+# .rsproj checks that folder before building and stops with a clear message if it is missing).
+# Once these crates publish git tags, they become `git = "https://github.com/kubuno/desktop", tag = "..."`.
+#
+# `kubuno-ui` is a Rust dylib (`kubuno_ui.dll`): this project must build into its OWN target directory,
+# never into the desktop workspace's (the .rsproj takes care of it - see its comment).
+kubuno-ui       = { path = "$kubunodesktopsrc$/src/crates/kubuno-ui" }
+kubuno-controls = { path = "$kubunodesktopsrc$/src/crates/kubuno-controls" }
+kubuno-views    = { path = "$kubunodesktopsrc$/src/crates/kubuno-views" }

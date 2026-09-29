@@ -896,3 +896,54 @@ a saved layout (its one-shot/bounded registry fetch ran before any `.kbview` exi
 "Kubuno Properties" fallback are removed (tool windows, commands, `ProvideToolWindow`
 registrations, GUID constants, their WPF views and the `ToolboxViewModel` tests); with their GUIDs
 unregistered, a persisted layout entry can no longer recreate them.
+
+## Addendum - Template build fix: E0463 in a new Kubuno Desktop Application
+
+**Report** (product owner, regular Visual Studio): a project freshly created from *Kubuno Desktop
+Application* (`KubunoDesktopApp1`) failed on its first build/F5 with `error[E0463]: can't find crate
+for 'kubuno_ui'` at `kubuno-views\src\runtime.rs:25`.
+
+**Root cause (reproduced with `cargo build -v`).** The user environment sets
+`CARGO_TARGET_DIR=C:\kubuno-build\desktop-target` - the target directory the `desktop` workspace
+itself builds into - and the SDK passes it on (`Sdk.props`), so the new project built into the
+desktop workspace's own target directory. `kubuno-ui` is `crate-type = ["dylib"]`, and cargo gives a
+dylib no hash suffix: every build of it, whatever its flags, features or lock file, is written to the
+same `debug\deps\kubuno_ui.dll` (twelve different `kubuno-ui-<hash>` fingerprints shared that one file
+on this machine). The project's `kubuno-ui` fingerprint was still "fresh" while the DLL on disk had
+since been rewritten by a desktop-workspace build (different metadata), so rustc, given
+`--extern kubuno_ui=...\deps\kubuno_ui.dll` when compiling `kubuno-views`, rejected it: E0463. The
+same project built from scratch into a directory of its own succeeds - neither the missing
+`.cargo/config.toml` (`-C prefer-dynamic`) nor the crate type is the cause: rustc already links std
+dynamically when a dylib dependency needs it (the exe imports `kubuno_ui.dll` and
+`std-<hash>.dll`, verified with `dumpbin /dependents`). The clobbering also works the other way (a
+template project build can break the next desktop-workspace build).
+
+**Fix (template, no SDK change).**
+- The template's `.rsproj` sets `<CargoTargetDir>`: `$(CARGO_TARGET_DIR)\rsproj\$(CargoPackage)` when
+  `CARGO_TARGET_DIR` is set (keeps the build on the local disk that variable was chosen for), else
+  `$(MSBuildProjectDirectory)\target` (also ignores a shared `build.target-dir` from a user-wide
+  `.cargo/config.toml`). `$(TargetPath)`, `CargoFetch`/`CargoBuild` and F5 all follow that property;
+  F5's PATH (profile directory, `deps`, the toolchain's std directory) already covers
+  `kubuno_ui.dll` built there.
+- The desktop checkout is no longer hardcoded: `CrateNameWizard` adds `$kubunodesktopsrc$`, resolved
+  at creation from `KUBUNO_DESKTOP_SRC` (the `windows` workspace or the repository root), default
+  `Z:\src\desktop\windows`, written with forward slashes into `Cargo.toml`'s three path dependencies
+  and the `.rsproj`'s `<KubunoDesktopSrc>`. A git dependency on `github.com/kubuno/desktop` is not
+  possible yet (its `windows/` tree is not published). A `KubunoCheckDesktopSources` target (before
+  `CargoRestore`/`CoreCompile`) fails with `KUBUNO0001` and instructions when that folder is missing.
+- Considered and rejected: `crate-type = ["rlib", "dylib"]` on `kubuno-ui` (it is dylib-only on
+  purpose, see its `Cargo.toml`: the component gallery must exercise the DLL the apps load) and a
+  `.cargo/config.toml` in the template (not needed - see above - and it cannot override the
+  `CARGO_TARGET_DIR` environment variable, which is what caused the collision).
+- The other three templates have no dylib dependency (hashed rlibs only), so a shared target
+  directory is harmless for them; they are unchanged.
+
+**Template build check: `tools/test-templates.ps1`.** Run before every release. It instantiates each
+project template into `C:\kubuno-build\template-tests\<timestamp>` exactly as Visual Studio does (same
+files, same token values as `CrateNameWizard`, fails on any unreplaced `$token$`), then per template:
+`cargo build` in an own target directory (fails on any warning), with `-Run` runs the result (console
+exit code; desktop app window up for 6 s with F5's PATH), and `MSBuild -restore` on the `.rsproj` with
+`CARGO_TARGET_DIR` pointing at a shared directory, failing if `kubuno_ui.dll` lands in it. Verified to
+fail on the previous template (`kubuno_ui.dll` in the shared directory) and on a missing desktop
+checkout (`KUBUNO0001`), and to pass on all four templates. Target directories are deleted as it goes
+(a desktop build is over a gigabyte) unless `-Keep`.

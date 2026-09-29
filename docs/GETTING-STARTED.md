@@ -59,8 +59,16 @@ TypeScript in the language dropdown) or just search "rust". Four project templat
 - **Kubuno Desktop Application** - a `kubuno_ui`/`kubuno_controls`/`kubuno_views` window with a
   starter `.kbview` view (see "The view designer" below). Its generated `Cargo.toml` depends on
   those crates as **path dependencies pointing at a `desktop/windows` checkout on your own
-  machine** - open the generated `Cargo.toml` and adjust the path in its own comment if your
-  checkout is not at the conventional location.
+  machine**. **Single prerequisite**: a checkout of `github.com/kubuno/desktop`, and - unless it
+  is at the default `Z:\src\desktop\windows` - the `KUBUNO_DESKTOP_SRC` environment variable set
+  to its `windows` folder (or to the repository root) **before** you create the project, e.g.
+  `setx KUBUNO_DESKTOP_SRC D:\src\desktop\windows`, then restart Visual Studio. The path is written
+  into the new project once, at creation (`Cargo.toml`'s three `kubuno-*` paths and the `.rsproj`'s
+  `<KubunoDesktopSrc>`, to be changed together if you move the checkout later); a build with that
+  folder missing stops with error `KUBUNO0001` saying exactly this. The project then builds and
+  runs with F5 as created, with no other step: its `.rsproj` gives it its own cargo target
+  directory (see "E0463" in Troubleshooting) and F5 puts `kubuno_ui.dll` and Rust's `std-*.dll` on
+  the program's PATH.
 - **Kubuno Module** - an Axum/Tokio backend module skeleton (`/health` + `/internal/*` guarded by
   `X-Internal-Secret`, a `sqlx::migrate!`-driven Postgres schema, `module.toml`,
   `build_kbpkg.sh`), following the platform's own module conventions.
@@ -293,6 +301,17 @@ full tool list and the transport/discovery mechanism.
   dialog, check whether your own "Debug" property page / `launch.vs.json` environment entry
   *replaces* `PATH` instead of extending it (setting `PATH` directly there overrides the computed
   value rather than adding to it).
+- **`error[E0463]: can't find crate for 'kubuno_ui'`** (reported in `kubuno-views`' own sources)
+  when building a Kubuno Desktop Application created before this was fixed. `kubuno-ui` is a Rust
+  dylib, and cargo names a dylib without a hash (`deps\kubuno_ui.dll`): when two cargo workspaces
+  build into the SAME target directory - typically a machine-wide `CARGO_TARGET_DIR` that the
+  `desktop` workspace also builds into - each overwrites the other's `kubuno_ui.dll`, and the next
+  compile of a crate that uses it rejects the foreign DLL. Projects created from the current
+  template are not affected: their `.rsproj` builds into `$(CARGO_TARGET_DIR)\rsproj\<crate>` (or
+  `<project>\target` when `CARGO_TARGET_DIR` is not set). For an older project, add the two
+  `<CargoTargetDir>` lines of the current template to its `.rsproj`. Running plain `cargo build`
+  in such a project from a terminal where `CARGO_TARGET_DIR` points at a shared directory has the
+  same problem - set `CARGO_TARGET_DIR` to a directory of its own for that shell.
 - **A one-time "would you like to create a browse database" / IntelliSense database prompt**
   the first time Visual Studio's C++ tooling touches files on a network drive (relevant here
   because the C++ workload backs the native debug engine): this is standard Visual Studio behavior

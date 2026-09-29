@@ -370,7 +370,9 @@ cache with *only* the bundled feed configured restores `Kubuno.Rust.Sdk` and bui
 File > New > Project, filtered by Language = **Rust**, offers four project templates - **Rust
 Console Application**, **Rust Library**, **Kubuno Desktop Application** (a `kubuno_ui`/
 `kubuno_controls`/`kubuno_views` window with a starter view, path-dependent on your own
-`desktop/windows` checkout - see the generated `Cargo.toml`'s own comment to point it elsewhere),
+`desktop/windows` checkout found at creation through `KUBUNO_DESKTOP_SRC`, default
+`Z:\src\desktop\windows`, and built into a cargo target directory of its own - see
+`docs/GETTING-STARTED.md`),
 **Kubuno Module** (an Axum/Tokio backend module skeleton - `/health` + `/internal/*`, a
 `sqlx::migrate!`-driven Postgres schema, `module.toml`, `build_kbpkg.sh` - following the module
 conventions the platform's own CLAUDE.md documents) - plus three Add New Item templates: **Kubuno
@@ -381,6 +383,17 @@ forced to start with a letter - e.g. `My App 2` -> `my-app-2`) and, for the Kubu
 matching `$moduleid$` (`$cratename$` with `-` -> `_`) for `module.toml`'s `id`/the Postgres schema
 name; see `docs/RSPROJ.md`'s lot 7 addendum for the root cause the first attempt at this hit and how
 the separate-assembly fix avoids it.
+
+**Before every release**, check that every project template builds (and runs) out of the box:
+
+```powershell
+powershell -NoProfile -File tools\test-templates.ps1 -Run
+```
+
+It instantiates each template into `C:\kubuno-build\template-tests` the way Visual Studio does, then
+runs `cargo build` (no warning allowed), the program itself (`-Run`), and `MSBuild -restore` on the
+generated `.rsproj` with a shared `CARGO_TARGET_DIR` (the setup of the E0463 bug documented in
+`docs/RSPROJ.md`). Exit code 1 on any failure; logs are kept only then.
 
 ### Solution Explorer: views, code-behind, symbols and dependencies (lot 8)
 

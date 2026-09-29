@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   docs/RSPROJ.md Addendum (lot 7): "Kubuno desktop application" - a .rsproj + Cargo.toml depending on
-  kubuno-ui/kubuno-controls/kubuno-views (path dependencies on this machine's desktop/windows checkout
-  - see the Cargo.toml comment for why, and the alternative once those crates publish tags), a window
+  kubuno-ui/kubuno-controls/kubuno-views (path dependencies on a local desktop/windows checkout, found
+  at creation time through KUBUNO_DESKTOP_SRC by the wizard's $kubunodesktopsrc$ token - see the
+  Cargo.toml and .rsproj comments; the .rsproj also gives the project its own cargo target directory,
+  required by the kubuno_ui dylib, docs/RSPROJ.md "Template build fix"), a window
   hosting a starter .kbview view (main_view.kbview) with its code-behind (main_view.rs, same stem/
   folder on purpose - docs/RSPROJ.md's "lot 8" addendum plans to nest one under the other in Solution
   Explorer, WPF .xaml/.xaml.cs-style).

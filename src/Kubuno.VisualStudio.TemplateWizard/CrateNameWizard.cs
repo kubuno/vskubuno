@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using EnvDTE;
 using Microsoft.VisualStudio.TemplateWizard;
@@ -9,7 +10,7 @@ namespace Kubuno.VisualStudio.TemplateWizard
     /// <summary>
     /// "Create a new project" wizard shared by every Rust/Kubuno project template
     /// (<c>&lt;WizardExtension&gt;</c> in each .vstemplate). It does not generate or
-    /// touch any file itself - it only ADDS two replacement tokens before the template
+    /// touch any file itself - it only ADDS three replacement tokens before the template
     /// content is expanded, computed from VS's own <c>$safeprojectname$</c>:
     ///
     /// - <c>$cratename$</c>: a Cargo-valid package name (crates.io/Cargo's own rule:
@@ -20,6 +21,9 @@ namespace Kubuno.VisualStudio.TemplateWizard
     /// - <c>$moduleid$</c>: $cratename$ with every '-' turned into '_' - a valid
     ///   Postgres schema identifier / module.toml `id`, for the Kubuno Module template
     ///   (CLAUDE.md section 7: "Schéma &lt;module&gt; uniquement").
+    /// - <c>$kubunodesktopsrc$</c>: the Kubuno desktop Cargo workspace (the <c>windows</c> folder of
+    ///   a github.com/kubuno/desktop checkout) the Kubuno Desktop Application template's path
+    ///   dependencies point at - see <see cref="ResolveDesktopSource"/>.
     ///
     /// Deliberately minimal: no file generation, no Cargo invocation (cargo
     /// generate-lockfile was tried in the same lot 7 pass and reverted together with
@@ -46,7 +50,42 @@ namespace Kubuno.VisualStudio.TemplateWizard
             string crateName = SanitizeCrateName(safeProjectName);
             replacementsDictionary["$cratename$"] = crateName;
             replacementsDictionary["$moduleid$"] = crateName.Replace('-', '_');
+            replacementsDictionary["$kubunodesktopsrc$"] = ResolveDesktopSource(
+                Environment.GetEnvironmentVariable(DesktopSourceVariable),
+                File.Exists);
         }
+
+        /// <summary>The environment variable naming the Kubuno desktop checkout (docs/GETTING-STARTED.md).</summary>
+        internal const string DesktopSourceVariable = "KUBUNO_DESKTOP_SRC";
+
+        /// <summary>Where the desktop checkout lives when <see cref="DesktopSourceVariable"/> is not set.</summary>
+        internal const string DefaultDesktopSource = @"Z:\src\desktop\windows";
+
+        /// <summary>
+        /// The desktop Cargo workspace a new Kubuno Desktop Application depends on, resolved once, at
+        /// project creation: <c>KUBUNO_DESKTOP_SRC</c> when set (either the workspace itself or the
+        /// repository root holding it in <c>windows\</c>), else <see cref="DefaultDesktopSource"/>.
+        /// A value that does not contain <c>src\crates\kubuno-ui\Cargo.toml</c> is still returned as
+        /// given: the generated project's build then stops on a clear error naming this path (the
+        /// .rsproj's KubunoCheckDesktopSources target) rather than the wizard failing silently.
+        /// Returned with forward slashes and no trailing separator (valid in Cargo.toml and MSBuild).
+        /// </summary>
+        internal static string ResolveDesktopSource(string? configured, Func<string, bool> fileExists)
+        {
+            string root = string.IsNullOrWhiteSpace(configured)
+                ? DefaultDesktopSource
+                : configured!.Trim().Trim('"').TrimEnd('\\', '/');
+
+            if (!IsDesktopWorkspace(root, fileExists) && IsDesktopWorkspace(Path.Combine(root, "windows"), fileExists))
+            {
+                root = Path.Combine(root, "windows");
+            }
+
+            return root.Replace('\\', '/');
+        }
+
+        private static bool IsDesktopWorkspace(string root, Func<string, bool> fileExists)
+            => fileExists(Path.Combine(root, "src", "crates", "kubuno-ui", "Cargo.toml"));
 
         /// <summary>
         /// Lower-cases, replaces every character outside [a-z0-9_-] with '-', collapses
