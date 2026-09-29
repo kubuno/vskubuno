@@ -244,6 +244,25 @@ namespace Kubuno.VisualStudio
                 });
             _formatOnSaveEvents.Advise();
 
+            // The Project Properties editor's "Manage crates..." / "Reference Manager..." links
+            // (Application page, Dependencies category) open this package's own UIs.
+            Kubuno.VisualStudio.RustProjectSystem.ProjectProperties.RustProjectPropertiesHost.OpenCrateManagerAsync = async hierarchy =>
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+                if (RsprojProjectContext.TryCreate((IVsHierarchy)hierarchy) is { } context)
+                {
+                    await Kubuno.VisualStudio.CrateManager.CrateManagerToolWindow.ShowAsync(context, crateName: null);
+                }
+            };
+            Kubuno.VisualStudio.RustProjectSystem.ProjectProperties.RustProjectPropertiesHost.OpenReferenceManagerAsync = async hierarchy =>
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+                if (RsprojProjectContext.TryCreate((IVsHierarchy)hierarchy) is { } context)
+                {
+                    await AddProjectReferenceCommand.ShowReferenceManagerAsync(context);
+                }
+            };
+
             if (await GetServiceAsync(typeof(SComponentModel)) is IComponentModel componentModel)
             {
                 _workspaceService = componentModel.GetService<IVsFolderWorkspaceService>();
@@ -264,6 +283,7 @@ namespace Kubuno.VisualStudio
                 DesignerToolWindowCommands.Initialize(this, commandService);
                 GenerateRustProjectsCommand.Initialize(this, commandService);
                 RestartRustAnalyzerCommand.Initialize(this, commandService);
+                DialogGalleryCommand.Initialize(commandService);
                 AddProjectItemCommands.Initialize(this, commandService);
                 AddProjectReferenceCommand.Initialize(this, commandService);
                 AddCargoDependencyCommand.Initialize(this, commandService);

@@ -8,6 +8,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Project properties like .NET for `.rsproj` projects (lot 11 of `docs/RSPROJ.md`)**: Properties on a Rust project
+  now opens a searchable document tab like a .NET project's, with Application (General, Win32 resources,
+  Dependencies), Build, Package, Code Analysis, Debug, Resources and Settings pages - each property with a title, a
+  description, a help link to the Cargo/rustc documentation and a proper editor (drop-downs, check boxes, checklists,
+  file and folder pickers, name/value lists, links), in French or English like Visual Studio:
+  - *Application*: crate name (renaming it also updates `CargoPackage`), Rust edition, output type, library crate
+    types, default binary, binary to build and debug, **Windows subsystem** (console / no console / no console in
+    Release only - the `#![windows_subsystem]` line of `main.rs`), target platform with *Install other targets...*
+    (a `rustup target` checklist), target OS, minimum Windows version, minimum supported Rust version, Kubuno desktop
+    sources; *Dependencies*: a summary with links to the crate manager and the Reference Manager.
+  - *Win32 resources*: an icon, an application manifest (DPI awareness, UAC level, long paths, visual styles, or a
+    file of your own) and version information (file version, product, description, company, copyright) embedded in
+    the executable by the SDK - no build script or crate dependency; empty fields come from `Cargo.toml`.
+  - *Build*, per configuration: the `[profile.dev]` / `[profile.release]` settings (opt-level, debug info,
+    incremental, LTO, codegen units, panic strategy, overflow checks, debug assertions, strip), features (default
+    features, a checklist of the crate's features, all features), treat warnings as errors, cfg flags, rustc flags,
+    target directory.
+  - *Package*: version, authors, description, readme, links, license (common licenses to pick or any SPDX
+    expression), keywords, crates.io categories, publish, include/exclude.
+  - *Code Analysis*: run Clippy on build (its lints in the Error List), the Clippy lint groups, `unsafe_code` and
+    `missing_docs` levels (`[lints]`), rustfmt settings (`rustfmt.toml`) and format on save per project.
+  - *Debug*: arguments, working directory, environment variables and backtraces on panic, also in a launch-profile
+    dialog.
+  - Values are written to `Cargo.toml`, `rustfmt.toml` and `main.rs` **surgically**: only the edited line changes,
+    comments and order are kept, fields inherited from the workspace show the inherited value, and each change is
+    one undo step of the file. Invalid values are refused with a message under the field.
+- **Kubuno: Dialog Gallery** (Tools menu, experimental instance only): opens every dialog of the extension with
+  sample data, to check them in each Visual Studio theme.
 - **Your own controls in the designer (EVT-7b of `docs/EVENTS.md`)**: custom controls (`#[derive(Component)]`, drawn
   by their own `on_paint`), user controls (a `.kbview` with `<UserControl x:Class="…">` and its code-behind) and
   non-visual components written in your project are usable as elements of its views. The views' IntelliSense knows
@@ -148,6 +176,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Dialogs look like Visual Studio's own in every theme**: the Rust targets, Reference Manager, Remove Unused
+  Dependencies, "Ajouter" name, Override Members, Choose Toolbox Items, Design Size, inherited control and launch
+  profile dialogs, and the crate manager, now use Visual Studio's themed dialog colors and controls (buttons, text
+  boxes, lists with readable selection, check boxes), search boxes with placeholder text, and a dark title bar in
+  dark themes - no more white windows or default WPF controls.
 - **Empty Properties window after reopening a solution**: closing a solution and opening one (or the same one) again
   in the same Visual Studio session left the designer's Properties window, selection sync and Toolbox updates dead
   until Visual Studio was restarted (the designer talked to the restarted Kubuno views language server before it was

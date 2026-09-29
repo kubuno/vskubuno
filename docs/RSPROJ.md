@@ -14,7 +14,10 @@ on a `.rsproj` shows a "Rust" category with the three item templates (root cause
 addendum's "Root cause" section); F5 itself is not conclusively re-verified live in this VM (see the
 addendum - pre-existing, environment-level flakiness, not a build/content problem). Lot 8 (Solution
 Explorer nesting, symbol nodes, icons, Dependencies node) implemented and live-verified - see its own
-addendum below.
+addendum below. Lot 11 (Project Properties as a searchable document tab like .NET's, with Application / Build /
+Package / Code Analysis / Debug / Resources / Settings pages, Cargo.toml edited surgically, Win32 resources) - see
+"Addendum - Project properties like .NET (lot 11)"; it replaces the former "Cargo" page and the legacy modal
+property-page dialog.
 
 Work package 5 ("Generate Visual Studio Projects", live-verified against `Z:\src\desktop\windows`
 through a scratch mirror — see its own section below): the generator/planner
@@ -36,11 +39,12 @@ the managed project system, not to CPS — the seam is CPS's `DebugLaunchProvide
 `[ExportDebugger(name)]`, picked by the `DebuggerFlavor` property (`debugger_general.xaml`), exactly
 as the JS project system's `LaunchJsonDebugLaunchProvider`; it lives in
 `Kubuno.VisualStudio.RustProjectSystem/RustDebugLaunchProvider.cs` (not `Debugging/`). The
-"Débogage" property page's grid is the selected debugger flavor's own rule (`Rules/rust_debugger.xaml`,
-`DisplayName="Local Rust Debugger"`, carrying the args/working dir/env properties directly — the
-same shape as the installed VSIX project system's `VsixDebugger.xaml`, checked on disk); there is
-no separate "Debug" page and no separate `Build.xaml` (the "Cargo" page already holds the build
-settings). Launch profiles (`LaunchProfiles` capability) were not needed. A `.rsproj` is
+debugger flavor's own rule (`Rules/rust_debugger.xaml`, `DisplayName="Local Rust Debugger"`, carrying the
+args/working dir/env properties directly — the same shape as the installed VSIX project system's
+`VsixDebugger.xaml`, checked on disk) still names the Start button; since lot 11 the same user-file properties are
+edited on the Project Properties editor's "Debug" page (`rust_debug.xaml`) and its launch-profile dialog, and the
+former "Cargo" page is gone (its properties moved to the Application and Build pages). Launch profiles
+(`LaunchProfiles` capability) were not needed. A `.rsproj` is
 `x64`-only (host triple). Modeled on the JavaScript project type (`.esproj`,
 `Microsoft.VisualStudio.JavaScript.Sdk` + `Microsoft.VisualStudio.JavaScript.ProjectSystem`), whose
 installed files in VS 2026 Community were read directly for this note. Facts checked against those
@@ -1027,3 +1031,120 @@ Reference Manager (swap two projects, Browse... to a crate outside the solution)
 (Browse search + install as dev with a feature, feature change on an installed crate = remove + add,
 Updates tab with an outdated crate, Update, Uninstall). Not simulated: crates.io unreachable (the code
 paths show the message and keep Installed working, unit-tested parsing only).
+
+## Addendum - Project properties like .NET (lot 11)
+
+Requested by the product owner (screenshot of a WinForms project's properties): "Properties" on a `.rsproj` opens a
+**document tab** exactly like the .NET SDK's Project Properties editor - search box, navigation tree of pages and
+categories, each property with a bold title, a description, a help link and its editor - as rich as .NET's, adapted
+to Rust/Cargo/Kubuno.
+
+**Research (decompiled from the installed Visual Studio 2026, not guessed).**
+- The editor is CPS's own (`Microsoft.VisualStudio.ProjectSystem.VS.Implementation.dll`,
+  `PropertyPages.Designer.ProjectPropertiesEditorFactory`, `{990036EB-F67A-4B8A-93D4-4663DB2A1033}`), not the managed
+  project system's. "Properties" opens the editor the hierarchy reports for `VSHPROPID_ProjectDesignerEditor`; CPS's
+  `ProjectNode` reports the App Designer only when **at least one `IVsProjectDesignerPageProvider` applies to the
+  project** (`VsProjectDesignerPageService.IsProjectDesignerSupported`), and the App Designer's factory
+  (`Microsoft.VisualStudio.AppDesigner.dll`, `ApplicationDesignerEditorFactory`) forwards to the new editor when the
+  project has the **`ProjectPropertiesEditor` capability** (declared by Kubuno.Rust.Sdk since lot 3). So the whole
+  opt-in is `RustProjectDesignerPageProvider`, an empty page provider exported for `RustProjectSystem`.
+- The editor lists every **`PageTemplate="generic"`** rule of the project context through the Project Query API
+  (`ProjectPropertyDataAccess`); `PropertyPagesHidden="true"` keeps a rule out (needed for `ConfigurationGeneral`,
+  whose per-configuration `TargetPath` otherwise breaks the page). Its configuration matrix comes from the
+  project's **`IProjectConfigurationDimensionsProvider`** exports: CPS's own applies only to
+  `ProjectConfigurationsInferredFromUsage` projects and .NET's only to .NET ones, so without
+  `RustConfigurationDimensionsProvider` every per-configuration property failed with "Expected 1 values ... but
+  got 2".
+- Rule metadata the editor reads: `VisibilityCondition` / `DependsOn` / `IsReadOnlyCondition` (the
+  `(has-evaluated-value "Page" "Property" value)`, `(and ...)`, `(not ...)` language), `SearchTerms`, `HelpUrl`;
+  editors `String`, `MultiLineString`, `Bool`, `Enum`, `Int`, `FilePath` (+ `FileTypeFilter`), `DirectoryPath`,
+  `MultiStringSelector` (on a `DynamicEnumProperty` with `MultipleValuesAllowed`; value encoded as
+  `name=False,name2=False` with `/` escapes), `NameValueList` (same encoding), `Description`, `LinkAction`
+  (`Action` = `URL` / `Command` / `Focus`; a `Command` link calls the `ILinkActionHandler` exported with that
+  `CommandName`), and inline validation `EvaluatedValueValidationRegex` + `EvaluatedValueFailedValidationMessage`.
+  In XAML, an `EnumValue` name starting with `{` must be escaped as `{}{...}` (it is parsed as a markup extension
+  otherwise, and the whole rule silently disappears from the editor).
+- Values stored outside MSBuild: a rule's `DataSource Persistence="X"` is resolved to the
+  `IProjectPropertiesProvider` exported with `Name` metadata `X` (`PropertyPagesDataModelProvider`). .NET's
+  `IInterceptingPropertyValueProvider` is the managed project system's extension of that same seam; the `.rsproj`
+  uses its own provider, `KubunoRust`, instead of depending on managed internals.
+- `SetPropertyValueAsync` runs **inside a CPS project write lock**, sometimes once per configuration in parallel
+  forks of it: reading an MSBuild property from there fails ("dangerous read lock request from a fork of a write
+  lock", seen live), and touching text buffers under the lock risks deadlocks. Writes are therefore queued
+  (`PropertyWriteQueue`, execution context not flowing) and applied right after, on the UI thread, with the manifest
+  path and bin name the editor has just read. The editor refreshes when `ConfiguredProject.ProjectVersion` changes
+  (`ProjectQueryUtilities.GetQueryDataVersion`), which only an evaluation moves: after a file write the provider
+  marks the MSBuild project dirty under a write lock (`ProjectReevaluation`), which re-evaluates it without touching
+  the project file.
+
+**Pages** (`sdk/Kubuno.Rust.Sdk/Sdk/Rules/rust_*.xaml`; French copies in `Rules/fr/`, picked from Visual Studio's
+`LangName` like .NET's own pages, structure checked by `LocalizedRulesTests`):
+
+| Page | Categories | Stored in |
+|---|---|---|
+| Application | General (crate name, edition, output type, library crate types, default binary, binary to build and debug, **Windows subsystem**, target platform + *Install other targets...*, target OS, minimum Windows version, MSRV, Kubuno desktop sources, manifest, package); Win32 resources (embed, icon, manifest default/custom/none, DPI awareness, UAC level, long paths, Common Controls 6, file version, product, description, company, copyright, trademarks); Dependencies (summary, *Manage crates...*, *Reference Manager...*) | Cargo.toml `[package]` / `[lib]`, `src/main.rs` `#![windows_subsystem]`, `.rsproj` |
+| Build (per configuration) | General (Cargo profile, extra cargo arguments); Optimization and code generation (opt-level, debug, incremental, lto, codegen-units, panic, overflow-checks, debug-assertions, strip); Features (default features, features checklist, all features); Errors and warnings (warnings as errors, cfg flags, rustc flags); Output (target directory, output file) | Cargo.toml `[profile.dev]` / `[profile.release]` (of the workspace root for a member), `.rsproj` per configuration |
+| Package | General (version, authors, description, readme, homepage, repository, documentation); License (preset picker, SPDX expression, license file); Discovery (keywords, crates.io categories); Publishing (publish, registries, include, exclude) | Cargo.toml `[package]` |
+| Code Analysis | Clippy (run on build); Lint levels (the 8 Clippy groups, `unsafe_code`, `missing_docs`); Formatting (format on save, rustfmt edition, max_width, hard_tabs, tab_spaces, newline_style, reorder_imports, use_field_init_shorthand, config file) | `.rsproj`, Cargo.toml `[lints]` (groups written with `priority = -1`), `rustfmt.toml` (created on first change; an existing `.rustfmt.toml` is used) |
+| Debug | description, *Open debug launch profile UI*, arguments, working directory, environment (name/value list), backtraces on panic | `.rsproj.user` (the `RustDebugger*` properties F5 reads) |
+| Resources | description, *Create or open application resources* (`.kbres`), link to the Win32 resources | - |
+| Settings | description and a link to the design note below | - |
+
+**Cargo.toml is never regenerated.** `Kubuno.Cargo.Toml.TomlDocument` is a lossless TOML reader/editor (253 unit
+tests: round trips of real manifests including CRLF, a BOM and comments everywhere, dotted keys, inline tables,
+arrays of tables, `field.workspace = true`; every edit is ONE minimal contiguous replacement). The pure property
+model (`Kubuno.VisualStudio.Core.ProjectProperties.RustManifestProperties`, unit-tested with an in-memory file system)
+turns a value into those edits; the VS layer applies each through the document's text buffer (the open editor's,
+else an invisible editor's), so it is **one undo unit of Cargo.toml** (open it, Ctrl+Z), and saves the document if
+it had no unsaved changes of the developer. A value equal to Cargo's default is not written when the key is
+absent; Reset removes the key and prunes a table left empty. A field inherited from the workspace shows
+`{ workspace = true }` with the inherited value as its evaluated preview; typing `{ workspace = true }` restores it.
+
+**Validation.** Invalid input (crate name, SemVer, MSRV, URLs, SPDX expression, keywords, crates.io categories,
+numbers out of range...) is never written: the provider keeps the typed value as an overlay whose evaluated form
+ends with an invisible U+200B, and each such property's `EvaluatedValueValidationRegex` (`^[^\u200B]*$`) makes the
+editor show its message under the field until a valid value is typed.
+
+**Build.** Kubuno.Rust.Sdk turns the Build page into cargo arguments: `--features`, `--no-default-features`,
+`--all-features`, `--target` (output under `<target dir>\<triple>\<profile>`), and one
+`--config build.rustflags=[...]` for the rustc flags, `-D warnings` and the cfg flags (a command-line config array
+is merged with the config files' `build.rustflags`; a `RUSTFLAGS` variable or a `target.<triple>.rustflags` still
+wins, as Cargo documents). *Run Clippy on build* runs `cargo clippy` after the compile (lints in the Error List).
+**Win32 resources** need no build script or crate dependency: the `KubunoWin32Resources` task writes a `.res`
+(icon group, `VS_VERSION_INFO` - the root key really is `VS_VERSION_INFO`: `VS_VERSIONINFO` made Windows reject the
+whole block -, the generated or custom manifest; empty version fields default from Cargo.toml) named after a hash
+of its content, and `CoreCompile` builds with `cargo rustc --bin <bin> ... -- -C link-arg=<res>`, so only the
+executable's link changes (a new hash means new arguments, so cargo relinks). Limitation: with Win32 resources,
+Build builds that one binary target only (`CargoBin`, else the package's binary).
+
+**Other seams.** `KubunoFormatOnSave` overrides Tools > Options' format-on-save per project; the Debug page's
+"Backtraces on panic" (on by default, like before lot 11) sets `RUST_BACKTRACE=1` at F5 unless the environment list sets it, and off omits the variable; renaming the crate also
+updates `<CargoPackage>` when it named the old package. Link commands: `KubunoInstallRustTargets` (a themed
+`rustup target add/remove` checklist), `KubunoOpenCrateManager` / `KubunoOpenReferenceManager` (the lot 10 UIs,
+reached through `RustProjectPropertiesHost` since Kubuno.VisualStudio references this assembly, not the reverse),
+`KubunoOpenRustLaunchProfile`, `KubunoCreateOrOpenKbres`. Diagnostics: `KUBUNO_PROPERTIES_LOG=1` logs every read
+and write to `%TEMP%\kubuno-properties.log`.
+
+### Settings page design note
+
+.NET's Settings page edits typed application settings (`Settings.settings` plus generated accessors). The Kubuno
+equivalent will be a `.kbsettings` file per project: a list of settings (name, type among the view property types,
+scope user or application, default value), edited in a designer grid like `.kbview` properties, and compiled at
+build time (never checked in, per this repository's rule) into a typed `settings` module -
+`settings::get().theme()`, `settings::get_mut().set_theme(...)`, `save()` - persisted per user under
+`%APPDATA%\<company>\<app>\settings.toml` with the file's defaults, and reachable from views by binding
+(`{Setting Theme}`). Until then the page only describes it.
+
+**Live test** (experimental instance, UI Automation; fixture `C:\kubuno-build\rsproj-test\props` = `hello-rust` in a
+local git repository for diffs, with the SDK imported from a staged copy so the shared NuGet cache stayed
+untouched): Properties opens the tab (Application, Build, Package, Code Analysis, Debug, Resources, Settings; the
+search filters across them); edited the edition, MSRV, description, Windows subsystem, the Release opt-level, LTO
+(both profiles), a Clippy group, the rustfmt max width, features (Debug), warnings as errors, "Embed Win32
+resources", the icon, the file version and the company - `git diff` showed only the edited lines of Cargo.toml,
+src/main.rs and rustfmt.toml, and the `.rsproj` properties; an invalid version showed "Invalid version: expected a
+SemVer version..." under the field and left Cargo.toml untouched; Ctrl+Z in Cargo.toml undid a property change in
+one step; the solution then built in Visual Studio, and the executable had PE subsystem 2 (GUI) after "Windows
+application", the icon, and version information 2.3.4 / "Kubuno SAS" in its file properties. Not automatable here
+(left to the visual check): ticking a feature checkbox with the mouse (UI Automation's Toggle does not commit it,
+the Add box does) and rows below the first category of a long page (not exposed to UI Automation until scrolled into
+view by a real wheel or keyboard).

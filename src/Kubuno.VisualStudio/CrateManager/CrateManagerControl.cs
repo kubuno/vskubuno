@@ -17,6 +17,7 @@ using Kubuno.VisualStudio.Commands;
 using Kubuno.VisualStudio.Core.SolutionExplorer;
 using Kubuno.VisualStudio.Logging;
 using Kubuno.VisualStudio.SolutionExplorer;
+using Kubuno.VisualStudio.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
@@ -59,10 +60,14 @@ namespace Kubuno.VisualStudio.CrateManager
         private string? _searchError;
         private string? _pendingSelection;
         private bool _busy;
+        private readonly TextBlock _searchHint;
 
         public CrateManagerControl()
         {
             ThemedDialogStyleLoader.SetUseDefaultThemedDialogStyles(this, true);
+            // Visual Studio's themed control styles for everything below, template-generated items included
+            // (docs/ARCHITECTURE.md, "Themed dialogs").
+            ThemedControls.AddImplicitStyles(Resources);
             SetResourceReference(BackgroundProperty, EnvironmentColors.ToolWindowBackgroundBrushKey);
             SetResourceReference(ForegroundProperty, EnvironmentColors.ToolWindowTextBrushKey);
 
@@ -95,8 +100,7 @@ namespace Kubuno.VisualStudio.CrateManager
             _updateAll.Click += (_, _) => RunUi(UpdateAllAsync);
             DockPanel.SetDock(_updateAll, Dock.Right);
             searchRow.Children.Add(_updateAll);
-            _search = new TextBox { Width = 320, VerticalContentAlignment = VerticalAlignment.Center, ToolTip = DependenciesText.SearchCratesIo };
-            System.Windows.Automation.AutomationProperties.SetName(_search, DependenciesText.SearchCratesIo);
+            _search = new TextBox { VerticalContentAlignment = VerticalAlignment.Center, ToolTip = DependenciesText.SearchCratesIo };
             _search.TextChanged += (_, _) => { _searchDebounce!.Stop(); _searchDebounce.Start(); };
             _search.KeyDown += (_, e) =>
             {
@@ -106,7 +110,10 @@ namespace Kubuno.VisualStudio.CrateManager
                     RunUi(SearchAsync);
                 }
             };
-            searchRow.Children.Add(_search);
+            Grid searchBox = ThemedControls.WithPlaceholder(_search, DependenciesText.SearchCratesIo);
+            searchBox.Width = 320;
+            _searchHint = (TextBlock)searchBox.Children[1];
+            searchRow.Children.Add(searchBox);
             searchRow.Children.Add(refresh);
             searchRow.Children.Add(_prerelease);
             searchRow.Children.Add(new Border());
@@ -235,6 +242,8 @@ namespace Kubuno.VisualStudio.CrateManager
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             _search.ToolTip = CurrentTab == CrateTab.Browse ? DependenciesText.SearchCratesIo : DependenciesText.SearchPlaceholder;
+            _searchHint.Text = (string)_search.ToolTip;
+            System.Windows.Automation.AutomationProperties.SetName(_search, _searchHint.Text);
             if (CurrentTab == CrateTab.Browse && _searchResults.Count == 0 && _searchError is null)
             {
                 RunUi(SearchAsync);

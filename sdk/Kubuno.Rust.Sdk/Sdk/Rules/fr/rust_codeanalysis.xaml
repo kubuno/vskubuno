@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  French copy of ../rust_codeanalysis.xaml (same schema; only DisplayName, Description and messages are translated).
+  "Code Analysis" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties
+  like .NET"): the counterpart of the .NET SDK's CodeAnalysisPropertyPage.xaml. Clippy lint levels
+  live in Cargo.toml's [lints.clippy] / [lints.rust] tables (lint groups are written with
+  priority = -1 so individual lints still override them), rustfmt settings in rustfmt.toml next to
+  Cargo.toml (created on first change), all edited surgically by the KubunoRust persistence.
+-->
+<Rule Name="RustCodeAnalysis"
+      DisplayName="Analyse du code"
+      Description="Règles Clippy et paramètres de mise en forme rustfmt."
+      PageTemplate="generic"
+      Order="500"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="Clippy" DisplayName="Clippy" Description="Le linter de Rust, exécuté avec cargo clippy." />
+    <Category Name="LintLevels" DisplayName="Niveaux de lint" Description="Cargo.toml [lints] : niveau de signalement de chaque groupe de lints, pour le compilateur, Clippy et rust-analyzer." />
+    <Category Name="Formatting" DisplayName="Mise en forme (rustfmt)" Description="rustfmt.toml : façon dont Mettre en forme le document et cargo fmt présentent le code." />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="KubunoRust" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+
+  <!-- ===================== Clippy ===================== -->
+
+  <BoolProperty Name="KubunoClippyOnBuild"
+                DisplayName="Exécuter Clippy lors de la build"
+                Description="Exécute cargo clippy après chaque build réussie et signale ses avertissements dans la Liste d’erreurs."
+                HelpUrl="https://doc.rust-lang.org/clippy/usage.html"
+                Category="Clippy">
+    <BoolProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </BoolProperty.DataSource>
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="clippy;analyzers;run code analysis on build;lint" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <!-- ===================== Lint levels (Cargo.toml [lints]) ===================== -->
+
+  <EnumProperty Name="ClippyCorrectness" DisplayName="clippy::correctness"
+                Description="Code manifestement erroné ou inutile (refusé par défaut)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=correctness"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippySuspicious" DisplayName="clippy::suspicious"
+                Description="Code très probablement erroné ou inutile (avertissement par défaut)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=suspicious"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyStyle" DisplayName="clippy::style"
+                Description="Code qui devrait être écrit de façon plus idiomatique (avertissement par défaut)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=style"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyComplexity" DisplayName="clippy::complexity"
+                Description="Code qui fait quelque chose de simple de manière complexe (avertissement par défaut)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=complexity"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyPerf" DisplayName="clippy::perf"
+                Description="Code qui peut être écrit pour s’exécuter plus vite (avertissement par défaut)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=perf"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyPedantic" DisplayName="clippy::pedantic"
+                Description="Lints plus stricts avec de rares faux positifs (autorisés par défaut)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=pedantic"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyNursery" DisplayName="clippy::nursery"
+                Description="Nouveaux lints encore en cours de développement (autorisés par défaut)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=nursery"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyCargo" DisplayName="clippy::cargo"
+                Description="Lints portant sur le manifeste Cargo lui-même (autorisés par défaut)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=cargo"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <EnumProperty Name="RustLintUnsafeCode" DisplayName="unsafe_code"
+                Description="Utilisation de code unsafe (lint du compilateur, autorisé par défaut). Interdisez-le pour garantir une crate 100 % sûre."
+                HelpUrl="https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html#unsafe-code"
+                Category="LintLevels">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="unsafe;forbid unsafe" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <EnumProperty Name="RustLintMissingDocs" DisplayName="missing_docs"
+                Description="Éléments publics sans commentaires de documentation (lint du compilateur, autorisé par défaut) ; équivalent des avertissements de fichier de documentation de .NET."
+                HelpUrl="https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html#missing-docs"
+                Category="LintLevels">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="documentation;xml documentation;docs" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="allow" DisplayName="Autoriser" />
+    <EnumValue Name="warn" DisplayName="Avertir" />
+    <EnumValue Name="deny" DisplayName="Refuser" />
+    <EnumValue Name="forbid" DisplayName="Interdire" />
+  </EnumProperty>
+
+  <!-- ===================== Formatting (rustfmt.toml) ===================== -->
+
+  <EnumProperty Name="KubunoFormatOnSave"
+                DisplayName="Mettre en forme à l’enregistrement"
+                Description="Exécute Mettre en forme le document (rustfmt) sur chaque fichier .rs de ce projet avant son enregistrement."
+                HelpUrl="https://rust-lang.github.io/rustfmt/"
+                Category="Formatting">
+    <EnumProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </EnumProperty.DataSource>
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="format on save;rustfmt;formatting;mise en forme;formater Ã  lâ€™enregistrement" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="global" DisplayName="Utiliser le paramètre Outils › Options" IsDefault="True" />
+    <EnumValue Name="true" DisplayName="Activée" />
+    <EnumValue Name="false" DisplayName="Désactivée" />
+  </EnumProperty>
+
+  <EnumProperty Name="RustfmtEdition" DisplayName="Édition"
+                Description="Édition de Rust avec laquelle rustfmt analyse le code (edition). Par défaut : l’édition de la crate lorsqu’il est exécuté par cargo fmt."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#edition"
+                Category="Formatting">
+    <EnumValue Name="default" DisplayName="Par défaut" />
+    <EnumValue Name="2015" DisplayName="Rust 2015" />
+    <EnumValue Name="2018" DisplayName="Rust 2018" />
+    <EnumValue Name="2021" DisplayName="Rust 2021" />
+    <EnumValue Name="2024" DisplayName="Rust 2024" />
+  </EnumProperty>
+
+  <IntProperty Name="RustfmtMaxWidth" DisplayName="Largeur maximale de ligne"
+               Description="max_width : largeur maximale de chaque ligne (100 par défaut)."
+               HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#max_width"
+               Category="Formatting">
+    <IntProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Largeur non valide : un nombre entier compris entre 10 et 1000 est attendu." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </IntProperty.ValueEditors>
+    <IntProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="line length;width;wrap;longueur de ligne;largeur" />
+    </IntProperty.Metadata>
+  </IntProperty>
+
+  <BoolProperty Name="RustfmtHardTabs" DisplayName="Indenter avec des tabulations"
+                Description="hard_tabs : indente avec des tabulations au lieu d’espaces."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#hard_tabs"
+                Category="Formatting">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="tabs;indentation;tabulations;indentation;retrait" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <IntProperty Name="RustfmtTabSpaces" DisplayName="Taille du retrait"
+               Description="tab_spaces : nombre d’espaces par niveau de retrait (4 par défaut)."
+               HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#tab_spaces"
+               Category="Formatting">
+    <IntProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Taille de retrait non valide : un nombre entier compris entre 1 et 16 est attendu." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </IntProperty.ValueEditors>
+    <IntProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="indentation;spaces" />
+    </IntProperty.Metadata>
+  </IntProperty>
+
+  <EnumProperty Name="RustfmtNewlineStyle" DisplayName="Fins de ligne"
+                Description="newline_style : fins de ligne écrites par rustfmt."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#newline_style"
+                Category="Formatting">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="crlf;lf;newline;end of line;fin de ligne;saut de ligne" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="Auto" DisplayName="Automatique (d’après le fichier)" />
+    <EnumValue Name="Native" DisplayName="Natives (CRLF sous Windows)" />
+    <EnumValue Name="Unix" DisplayName="Unix (LF)" />
+    <EnumValue Name="Windows" DisplayName="Windows (CRLF)" />
+  </EnumProperty>
+
+  <BoolProperty Name="RustfmtReorderImports" DisplayName="Trier les importations"
+                Description="reorder_imports : trie les déclarations use par ordre alphabétique dans chaque groupe."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#reorder_imports"
+                Category="Formatting">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="using;imports;sort;importations;trier" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <BoolProperty Name="RustfmtUseFieldInitShorthand" DisplayName="Utiliser l’initialisation abrégée des champs"
+                Description="use_field_init_shorthand : écrit Point { x, y } au lieu de Point { x: x, y: y }."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#use_field_init_shorthand"
+                Category="Formatting" />
+
+  <StringProperty Name="RustfmtConfigPath"
+                  DisplayName="Fichier de configuration"
+                  Description="Fichier de configuration rustfmt dans lequel ces paramètres sont écrits."
+                  HelpUrl="https://rust-lang.github.io/rustfmt/"
+                  Category="Formatting"
+                  ReadOnly="True" />
+
+</Rule>

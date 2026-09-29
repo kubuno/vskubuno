@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The CPS (Common Project System) host part of the .rsproj project type (docs/RSPROJ.md §3, work
-    package 3) — the counterpart of Microsoft.VisualStudio.JavaScript.ProjectSystem.dll for .esproj.
+    The CPS (Common Project System) host part of the .rsproj project type (docs/RSPROJ.md Â§3, work
+    package 3) â€” the counterpart of Microsoft.VisualStudio.JavaScript.ProjectSystem.dll for .esproj.
     A MEF class library shipped inside the Kubuno.VisualStudio VSIX (MefComponent asset in its
     source.extension.vsixmanifest); the project type itself is registered by that VSIX's
     rsproj.pkgdef, and everything MSBuild-side (capabilities, rules, item globs, cargo targets)
@@ -62,11 +62,39 @@
       <HintPath>$(KubunoVsInstallDir)Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <!-- Project Properties editor (docs/RSPROJ.md, "Project properties like .NET"): rule enum values
+         (Microsoft.Build.Framework.XamlTypes), the evaluated project re-evaluation (Microsoft.Build) and
+         JoinableTaskFactory - all loaded from the running Visual Studio, never shipped. -->
+    <Reference Include="Microsoft.Build.Framework">
+      <HintPath>$(KubunoVsInstallDir)MSBuild\Current\Bin\Microsoft.Build.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Build">
+      <HintPath>$(KubunoVsInstallDir)MSBuild\Current\Bin\Microsoft.Build.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>$(KubunoVsInstallDir)Common7\IDE\PublicAssemblies\System.Collections.Immutable.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+      <HintPath>$(KubunoVsInstallDir)Common7\IDE\PublicAssemblies\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Threading">
+      <HintPath>$(KubunoVsInstallDir)Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Threading.17.x\Microsoft.VisualStudio.Threading.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kubuno.Launch\Kubuno.Launch.csproj" />
     <ProjectReference Include="..\Kubuno.VisualStudio.Core\Kubuno.VisualStudio.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The themed dialog base shared as source by every assembly that shows a dialog (docs/ARCHITECTURE.md, "Themed dialogs"). -->
+    <Compile Include="..\Shared\UI\*.cs" Link="UI\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

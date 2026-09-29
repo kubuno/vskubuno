@@ -3,15 +3,16 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.VisualStudio.UI;
 using Microsoft.VisualStudio.PlatformUI;
 
 namespace Kubuno.VisualStudio.Commands
 {
     /// <summary>
     /// "Remove Unused Dependencies" - the checked list .NET's "Remove Unused References" dialog shows,
-    /// filled from cargo-machete/cargo-udeps. VS-themed (<see cref="ThemedDialogStyleLoader"/>).
+    /// filled from cargo-machete/cargo-udeps. VS-themed (<see cref="ThemedDialog"/>).
     /// </summary>
-    internal sealed class UnusedDependenciesDialog : DialogWindow
+    internal sealed class UnusedDependenciesDialog : ThemedDialog
     {
         private readonly List<CheckBox> _boxes = new List<CheckBox>();
 
@@ -20,11 +21,8 @@ namespace Kubuno.VisualStudio.Commands
             Title = DependenciesText.RemoveUnusedTitle;
             Width = 480;
             Height = 400;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResizeWithGrip;
-            HasMinimizeButton = false;
             HasMaximizeButton = false;
-            ThemedDialogStyleLoader.SetUseDefaultThemedDialogStyles(this, true);
 
             var root = new DockPanel { Margin = new Thickness(12) };
 
@@ -32,12 +30,10 @@ namespace Kubuno.VisualStudio.Commands
             DockPanel.SetDock(caption, Dock.Top);
             root.Children.Add(caption);
 
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
-            var ok = new Button { Content = DependenciesText.Remove, IsDefault = true, MinWidth = 86, Margin = new Thickness(0, 0, 6, 0) };
-            var cancel = new Button { Content = DependenciesText.Cancel, IsCancel = true, MinWidth = 86 };
+            var ok = new Button { Content = DependenciesText.Remove, IsDefault = true };
+            var cancel = new Button { Content = DependenciesText.Cancel, IsCancel = true };
             ok.Click += (_, _) => DialogResult = true;
-            buttons.Children.Add(ok);
-            buttons.Children.Add(cancel);
+            StackPanel buttons = ThemedControls.ButtonRow(ok, cancel);
             DockPanel.SetDock(buttons, Dock.Bottom);
             root.Children.Add(buttons);
 
@@ -49,7 +45,10 @@ namespace Kubuno.VisualStudio.Commands
                 list.Children.Add(box);
             }
 
-            root.Children.Add(new ScrollViewer { Content = list, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, BorderThickness = new Thickness(1) });
+            var frame = new Border { BorderThickness = new Thickness(1), Child = new ScrollViewer { Content = list, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
+            frame.SetResourceReference(Border.BorderBrushProperty, ThemedDialogColors.ListBoxBorderBrushKey);
+            frame.SetResourceReference(Border.BackgroundProperty, ThemedDialogColors.ListBoxBrushKey);
+            root.Children.Add(frame);
             Content = root;
         }
 

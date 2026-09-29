@@ -300,6 +300,18 @@
           <ButtonText>Kubuno: Restart rust-analyzer</ButtonText>
         </Strings>
       </Button>
+      <!-- Developer tool: every dialog with sample data, to re-check their theming (DialogGalleryCommand; shown
+           only in an instance started with /rootsuffix). -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDialogGallery" priority="0x0105" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno: Dialog Gallery</ButtonText>
+          <CanonicalName>.Kubuno.DialogGallery</CanonicalName>
+          <LocCanonicalName>.Kubuno.DialogGallery</LocCanonicalName>
+        </Strings>
+      </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidGenerateRustProjectsContext" priority="0x0100" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup" />
         <Icon guid="ImageCatalogGuid" id="OpenProjectFolder" />
@@ -888,6 +900,7 @@
       <IDSymbol name="cmdidAddKubunoComponent" value="0x0133" />
       <IDSymbol name="cmdidRemoveCargoDependency" value="0x010E" />
       <IDSymbol name="cmdidRestartRustAnalyzer" value="0x010F" />
+      <IDSymbol name="cmdidDialogGallery" value="0x0250" />
 
       <!-- .kbview design surface context menus - MUST match Kubuno.VisualStudio.Designer's DesignerCommandIds. -->
       <IDSymbol name="KubunoDesignerElementContextMenu" value="0x1030" />

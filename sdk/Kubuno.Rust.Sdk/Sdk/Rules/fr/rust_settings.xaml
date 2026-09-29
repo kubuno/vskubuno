@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  French copy of ../rust_settings.xaml (same schema; only DisplayName, Description and messages are translated).
+  "Settings" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties like
+  .NET", section "Settings page"), the counterpart of the .NET SDK's SettingsPropertyPage.xaml.
+  Typed application settings (.kbsettings) are designed but not implemented yet: the page states it
+  and links to the design note.
+-->
+<Rule Name="RustSettings"
+      DisplayName="Paramètres"
+      Description="Paramètres"
+      PageTemplate="generic"
+      Order="1200"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="General" DisplayName="Général" />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="KubunoRust" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+
+  <StringProperty Name="RustSettingsPageDescription"
+                  DisplayName="Ignoré"
+                  Description="Les paramètres d’application permettent à une application de stocker des valeurs typées (par utilisateur ou par application) avec des valeurs par défaut déclarées au moment de la conception. Pour les applications Kubuno, ils seront déclarés dans un fichier .kbsettings, modifiés dans un concepteur de paramètres et lus depuis Rust via des accesseurs typés générés. Pas encore disponible."
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="Description" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="settings;app settings;kbsettings;configuration;paramÃ¨tres;paramÃ¨tres dâ€™application" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="RustSettingsDesignNote"
+                  DisplayName="Lire la note de conception"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="LinkAction">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="Action" Value="URL" />
+          <NameValuePair Name="URL" Value="https://github.com/kubuno/vskubuno/blob/main/docs/RSPROJ.md#settings-page-design-note" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+  </StringProperty>
+
+</Rule>

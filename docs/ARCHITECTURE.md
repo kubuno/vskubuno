@@ -32,6 +32,34 @@ Classic VSSDK (in-process, .NET Framework 4.8, `AsyncPackage`), because phase 1 
 The out-of-process `VisualStudio.Extensibility` model has no workspace/debug providers and
 cannot host a foreign native window, so it is not used.
 
+## Themed dialogs
+
+Every dialog and WPF surface the extension shows must look like Visual Studio's own in the dark, light, blue and
+high-contrast themes (no white window, no default WPF buttons or selection colors). The rule for contributors:
+
+- **Derive every modal dialog from `Kubuno.VisualStudio.UI.ThemedDialog`** (`src/Shared/UI/ThemedDialog.cs`), never
+  from `Window` or a bare `DialogWindow`, and show it with `ShowModal()` (owned by the IDE). It sets the themed
+  dialog panel colors (`ThemedDialogColors.WindowPanelBrushKey` / `WindowPanelTextBrushKey`), switches the title bar
+  to Windows' dark mode when the theme is dark (and back when the theme changes), and registers Visual Studio's
+  themed-dialog styles (`VsResourceKeys.ThemedDialog*StyleKey`: button, text box, check box, radio button, combo
+  box, list box, list view and items, grid column headers, tree view, label, hyperlink, toggle button) as implicit
+  styles, so controls - including ones generated later by data templates - are themed without any per-control code.
+- Use `ThemedControls` for what an implicit style cannot do: `GridListView` (a `ListView` with a `GridView` needs the
+  grid-row item style for readable selection), `WithPlaceholder` (a search/filter box with gray placeholder text,
+  also its accessible name), `SecondaryText` (gray descriptions and statuses), `ButtonRow` (right-aligned OK/Cancel
+  row with Visual Studio's sizes and spacing). For bordered lists built from panels, use
+  `ThemedDialogColors.ListBoxBorderBrushKey` / `ListBoxBrushKey`.
+- Tool-window and document content (e.g. the crate manager) calls `ThemedControls.AddImplicitStyles(Resources)` and
+  uses `EnvironmentColors` brushes for its own surfaces.
+- Only theme resource keys, never literal colors; message boxes go through `VsShellUtilities.ShowMessageBox`.
+- The file is shared as **source**, linked by each assembly that shows a dialog (`Kubuno.VisualStudio`,
+  `Kubuno.VisualStudio.Designer`, `Kubuno.VisualStudio.RustProjectSystem`, `Kubuno.VisualStudio.TemplateWizard`):
+  they compile against different Visual Studio SDK builds (NuGet 17.x vs the installed 18.x assemblies), so a
+  shared assembly would bring binding conflicts.
+- Re-check: in the experimental instance, Tools > "Kubuno: Dialog Gallery" (shown only when Visual Studio was started
+  with `/rootsuffix`; DTE command `Kubuno.DialogGallery`) lists every dialog with sample data - switch the theme and
+  open them again. A new dialog adds itself to its assembly's `*DialogGallery.Entries`.
+
 ## Phases
 
 1. **Rust + Cargo + debug** (no dependency on XML views)

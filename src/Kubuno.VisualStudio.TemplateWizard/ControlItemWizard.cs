@@ -93,15 +93,14 @@ namespace Kubuno.VisualStudio.TemplateWizard
         public static string? Ask(string className)
         {
             var french = string.Equals(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, "fr", StringComparison.OrdinalIgnoreCase);
-            var window = new System.Windows.Window
+            // Themed like Visual Studio's own dialogs (docs/ARCHITECTURE.md, "Themed dialogs"); owned by the IDE's main
+            // window through DialogWindow.ShowModal, so it no longer needs Topmost.
+            var window = new Kubuno.VisualStudio.UI.ThemedDialog
             {
                 Title = french ? "Contrôle hérité Kubuno" : "Kubuno Inherited Control",
                 Width = 360,
                 Height = 420,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 ResizeMode = ResizeMode.NoResize,
-                ShowInTaskbar = false,
-                Topmost = true,
             };
             var list = new ListBox { Margin = new Thickness(0, 6, 0, 10) };
             foreach (var name in ControlItemNames.BaseClasses)
@@ -110,13 +109,11 @@ namespace Kubuno.VisualStudio.TemplateWizard
             }
 
             list.SelectedIndex = 0;
-            var ok = new Button { Content = "OK", IsDefault = true, MinWidth = 80, Margin = new Thickness(0, 0, 6, 0) };
-            var cancel = new Button { Content = french ? "Annuler" : "Cancel", IsCancel = true, MinWidth = 80 };
+            var ok = new Button { Content = "OK", IsDefault = true };
+            var cancel = new Button { Content = french ? "Annuler" : "Cancel", IsCancel = true };
             ok.Click += (_, _) => window.DialogResult = true;
             list.MouseDoubleClick += (_, _) => window.DialogResult = true;
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            buttons.Children.Add(ok);
-            buttons.Children.Add(cancel);
+            StackPanel buttons = Kubuno.VisualStudio.UI.ThemedControls.ButtonRow(ok, cancel);
             var root = new DockPanel { Margin = new Thickness(12) };
             var label = new TextBlock { Text = french ? $"Contrôle de base de {className} :" : $"Base control of {className}:" };
             DockPanel.SetDock(label, Dock.Top);
@@ -125,7 +122,7 @@ namespace Kubuno.VisualStudio.TemplateWizard
             root.Children.Add(buttons);
             root.Children.Add(list);
             window.Content = root;
-            return window.ShowDialog() == true ? list.SelectedItem as string : null;
+            return window.ShowModal() == true ? list.SelectedItem as string : null;
         }
     }
 }

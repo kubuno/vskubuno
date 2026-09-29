@@ -283,7 +283,7 @@ JavaScript project system registers `.esproj`:
 - **Everything else comes from `Kubuno.Rust.Sdk`**, which now sits on `Microsoft.Common.props`/
   `.targets` exactly like the JS SDK (CPS drives a project through that standard targets graph):
   `ProjectConfiguration` items (Debug/Release in the configuration dropdown), `ProjectCapability`
-  items, `Sdk/Rules/*.xaml` (item types, a "Cargo" property page, file/folder properties), and a
+  items, `Sdk/Rules/*.xaml` (item types, the Project Properties pages - see docs/RSPROJ.md lot 11 -, file/folder properties), and a
   `**/*` glob into `None` items for Solution Explorer, excluding `target/`, `bin/`, `obj/`,
   dot-folders and project/solution files. Cargo still compiles: `CoreCompile` runs `CargoBuild`,
   `cargo clean --profile <profile>` is hooked before Microsoft.Common's `Clean`, `cargo fetch` after
@@ -318,9 +318,9 @@ JavaScript project system uses (checked by reflection against the installed CPS 
   `launch.vs.json` uses), which is what `-C prefer-dynamic` builds need (`kubuno_ui.dll`,
   `std-*.dll`); `RUST_BACKTRACE=1` is set; the toolchain's natvis files are installed as for Open
   Folder.
-- **"Debug" property page**: the generic "Débogueur à lancer" page, whose grid is the selected
-  debugger rule's own properties (`Sdk/Rules/rust_debugger.xaml`, `DisplayName="Local Rust
-  Debugger"`, stored in `<project>.rsproj.user` - there is no separate "Debug" page): command
+- **Debug settings**: the Project Properties editor's Debug page (`Sdk/Rules/rust_debug.xaml`) and its
+  "Open debug launch profile UI" dialog edit the selected debugger rule's properties
+  (`Sdk/Rules/rust_debugger.xaml`, `DisplayName="Local Rust Debugger"`, stored in `<project>.rsproj.user`): command
   arguments (verbatim), working directory (default: the folder of `Cargo.toml`; relative paths are
   relative to the project folder) and environment variables, one `NAME=value` per line, applied
   over Visual Studio's own environment (setting `PATH` there replaces the computed one).

@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  French copy of ../rust_build.xaml (same schema; only DisplayName, Description and messages are translated).
+  "Build" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties like
+  .NET"). Per configuration: Debug maps to Cargo's "dev" profile and Release to "release", so the
+  Optimization category edits Cargo.toml's [profile.dev] / [profile.release] tables (through the
+  KubunoRust persistence, surgically); features, rustflags and warnings are MSBuild properties of
+  the .rsproj, conditioned on the configuration like any .NET build property.
+-->
+<Rule Name="RustBuild"
+      DisplayName="Build"
+      Description="Spécifie les propriétés qui contrôlent la façon dont la crate est générée."
+      PageTemplate="generic"
+      Order="300"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="General" DisplayName="Général" />
+    <Category Name="Optimization" DisplayName="Optimisation et génération de code" Description="Paramètres de profil Cargo ([profile.dev] pour Debug, [profile.release] pour Release)." />
+    <Category Name="Features" DisplayName="Fonctionnalités" Description="Fonctionnalités Cargo activées pour cette configuration." />
+    <Category Name="ErrorsAndWarnings" DisplayName="Erreurs et avertissements" />
+    <Category Name="Output" DisplayName="Sortie" />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="KubunoRust" HasConfigurationCondition="True" />
+  </Rule.DataSource>
+
+  <!-- ===================== General ===================== -->
+
+  <StringProperty Name="CargoProfileName"
+                  DisplayName="Profil Cargo"
+                  Description="Profil Cargo avec lequel cette configuration est générée : Debug utilise 'dev' (cargo build), Release utilise 'release' (cargo build --release) ; tout autre nom de configuration est utilisé comme profil personnalisé."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html"
+                  Category="General"
+                  ReadOnly="True">
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="profile;configuration;debug;release;profil;configuration" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="CargoExtraArgs"
+                  DisplayName="Arguments Cargo supplémentaires"
+                  Description="Arguments ajoutés tels quels à cargo build, test et run (par exemple --locked). Séparez plusieurs arguments par ';'."
+                  HelpUrl="https://doc.rust-lang.org/cargo/commands/cargo-build.html"
+                  Category="General">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </StringProperty.DataSource>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="command line;arguments;locked;frozen;offline;ligne de commande;arguments" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <!-- ===================== Optimization (Cargo.toml [profile.<name>]) ===================== -->
+
+  <EnumProperty Name="ProfileOptLevel"
+                DisplayName="Niveau d’optimisation"
+                Description="opt-level : degré d’optimisation du compilateur. 0 compile le plus vite et se débogue le mieux ; 3 produit le code le plus rapide ; s et z optimisent la taille."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#opt-level"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="optimize;optimization;opt-level;size;speed;optimiser;optimisation;taille;vitesse" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="0" DisplayName="0 - Aucune optimisation" />
+    <EnumValue Name="1" DisplayName="1 - Optimisations de base" />
+    <EnumValue Name="2" DisplayName="2 - Quelques optimisations" />
+    <EnumValue Name="3" DisplayName="3 - Toutes les optimisations" />
+    <EnumValue Name="s" DisplayName="s - Optimiser la taille" />
+    <EnumValue Name="z" DisplayName="z - Optimiser la taille, sans vectorisation des boucles" />
+  </EnumProperty>
+
+  <EnumProperty Name="ProfileDebug"
+                DisplayName="Informations de débogage"
+                Description="debug : quantité d’informations de débogage (PDB) émise par le compilateur. Le niveau complet est nécessaire pour inspecter les variables dans le débogueur."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#debug"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="debug symbols;pdb;debuginfo;debug type;symboles de dÃ©bogage;informations de dÃ©bogage" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="none" DisplayName="Aucun" />
+    <EnumValue Name="line-directives-only" DisplayName="Directives de ligne uniquement" />
+    <EnumValue Name="line-tables-only" DisplayName="Tables de lignes uniquement (traces d’appels)" />
+    <EnumValue Name="limited" DisplayName="Limitées (sans variables ni types)" />
+    <EnumValue Name="full" DisplayName="Complètes" />
+  </EnumProperty>
+
+  <BoolProperty Name="ProfileIncremental"
+                DisplayName="Compilation incrémentielle"
+                Description="incremental : réutilise les résultats des compilations précédentes de cette crate pour accélérer les régénérations."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#incremental"
+                Category="Optimization">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="incremental;rebuild;incrÃ©mentielle;rÃ©gÃ©nÃ©rer" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <EnumProperty Name="ProfileLto"
+                DisplayName="Optimisation au moment de la liaison"
+                Description="lto : optimise entre les crates au moment de la liaison. Produit des binaires plus rapides et plus petits, mais la liaison est plus lente."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#lto"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="lto;link time;whole program" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="false" DisplayName="Thin local (par défaut)" />
+    <EnumValue Name="thin" DisplayName="Thin" />
+    <EnumValue Name="fat" DisplayName="Fat (programme entier)" />
+    <EnumValue Name="off" DisplayName="Désactivée" />
+  </EnumProperty>
+
+  <IntProperty Name="ProfileCodegenUnits"
+               DisplayName="Unités de génération de code"
+               Description="codegen-units : nombre d’unités en lesquelles une crate est découpée pour la génération de code en parallèle. Plus d’unités compilent plus vite ; moins d’unités produisent du code plus rapide."
+               HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#codegen-units"
+               Category="Optimization">
+    <IntProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Nombre d’unités de génération de code non valide : un nombre entier compris entre 1 et 65536 est attendu." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </IntProperty.ValueEditors>
+    <IntProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="codegen-units;parallel" />
+    </IntProperty.Metadata>
+  </IntProperty>
+
+  <EnumProperty Name="ProfilePanic"
+                DisplayName="Stratégie de panique"
+                Description="panic : effet d’une panique. Unwind exécute les destructeurs et peut être interceptée ; abort termine immédiatement le processus (binaire plus petit)."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#panic"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="panic;unwind;abort" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="unwind" DisplayName="Unwind (déroulement)" />
+    <EnumValue Name="abort" DisplayName="Abort (arrêt)" />
+  </EnumProperty>
+
+  <BoolProperty Name="ProfileOverflowChecks"
+                DisplayName="Rechercher un dépassement arithmétique"
+                Description="overflow-checks : provoque une panique en cas de dépassement d’entier au lieu de boucler."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#overflow-checks"
+                Category="Optimization">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="overflow;checked;arithmetic" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <BoolProperty Name="ProfileDebugAssertions"
+                DisplayName="Assertions de débogage"
+                Description="debug-assertions : active debug_assert! et le code cfg(debug_assertions)."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#debug-assertions"
+                Category="Optimization">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="debug_assert;define constants;DEBUG" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <EnumProperty Name="ProfileStrip"
+                DisplayName="Suppression (strip)"
+                Description="strip : supprime les informations de débogage ou les symboles du binaire produit."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#strip"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="strip;symbols" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="none" DisplayName="Aucun" />
+    <EnumValue Name="debuginfo" DisplayName="Informations de débogage" />
+    <EnumValue Name="symbols" DisplayName="Symboles" />
+  </EnumProperty>
+
+  <!-- ===================== Features ===================== -->
+
+  <BoolProperty Name="CargoDefaultFeatures"
+                DisplayName="Fonctionnalités par défaut"
+                Description="Active l’ensemble de fonctionnalités 'default' du package. Le décocher transmet --no-default-features."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/features.html#the-default-feature"
+                Category="Features">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="no-default-features;features" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <DynamicEnumProperty Name="CargoFeatures"
+                       DisplayName="Fonctionnalités"
+                       Description="Fonctionnalités supplémentaires activées pour cette configuration (cargo --features), issues de la table [features] de Cargo.toml et des dépendances facultatives."
+                       HelpUrl="https://doc.rust-lang.org/cargo/reference/features.html"
+                       Category="Features"
+                       EnumProvider="KubunoRustFeatures"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Fonctionnalités" />
+          <NameValuePair Name="AllowsCustomStrings" Value="True" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="features;cfg;conditional compilation;fonctionnalitÃ©s;compilation conditionnelle" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <BoolProperty Name="CargoAllFeatures"
+                DisplayName="Toutes les fonctionnalités"
+                Description="Active toutes les fonctionnalités du package (cargo --all-features)."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/features.html#command-line-feature-options"
+                Category="Features">
+    <BoolProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </BoolProperty.DataSource>
+  </BoolProperty>
+
+  <!-- ===================== Errors and warnings ===================== -->
+
+  <BoolProperty Name="RustWarningsAsErrors"
+                DisplayName="Traiter les avertissements comme des erreurs"
+                Description="Fait échouer la build à chaque avertissement du compilateur (rustc -D warnings)."
+                HelpUrl="https://doc.rust-lang.org/rustc/lints/levels.html#deny"
+                Category="ErrorsAndWarnings">
+    <BoolProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </BoolProperty.DataSource>
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="warnings as errors;deny warnings;TreatWarningsAsErrors;avertissements comme erreurs" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <DynamicEnumProperty Name="RustCfg"
+                       DisplayName="Indicateurs de compilation conditionnelle"
+                       Description="Indicateurs cfg définis pour la crate (rustc --cfg), testés dans le code avec #[cfg(nom)]."
+                       HelpUrl="https://doc.rust-lang.org/rustc/command-line-arguments.html#--cfg-configure-the-compilation-environment"
+                       Category="ErrorsAndWarnings"
+                       EnumProvider="KubunoRustEmpty"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Indicateurs cfg" />
+          <NameValuePair Name="AllowsCustomStrings" Value="True" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="define constants;conditional compilation symbols;cfg;symboles de compilation conditionnelle;constantes" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <StringProperty Name="RustFlags"
+                  DisplayName="Indicateurs rustc supplémentaires"
+                  Description="Indicateurs transmis à chaque appel de rustc (build.rustflags de Cargo, séparés par des espaces), par exemple -C target-cpu=native."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags"
+                  Category="ErrorsAndWarnings">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </StringProperty.DataSource>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="rustflags;RUSTFLAGS;compiler options;target-cpu" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <!-- ===================== Output ===================== -->
+
+  <StringProperty Name="CargoTargetDir"
+                  DisplayName="Répertoire cible"
+                  Description="Emplacement où Cargo écrit les sorties de build. Par défaut : la variable d’environnement CARGO_TARGET_DIR, sinon la valeur par défaut de Cargo (target à côté de Cargo.toml)."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/build-cache.html"
+                  Category="Output">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="DirectoryPath" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="output path;base output path;CARGO_TARGET_DIR;chemin de sortie;rÃ©pertoire de sortie" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="TargetPath"
+                  DisplayName="Fichier de sortie"
+                  Description="Exécutable produit par cette configuration."
+                  Category="Output"
+                  ReadOnly="True">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </StringProperty.DataSource>
+  </StringProperty>
+
+</Rule>

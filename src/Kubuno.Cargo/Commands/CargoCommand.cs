@@ -13,6 +13,8 @@ namespace Kubuno.Cargo.Commands
         private readonly List<string> _features = new List<string>();
         private readonly List<string> _extraArgs = new List<string>();
         private readonly List<string> _runArgs = new List<string>();
+        private readonly List<string> _rustcArgs = new List<string>();
+        private readonly List<string> _configValues = new List<string>();
 
         private CargoCommand(CargoCommandKind kind)
         {
@@ -51,6 +53,12 @@ namespace Kubuno.Cargo.Commands
         /// <summary>`cargo doc`: builds (and with <c>--open</c> opens) the documentation.</summary>
         public static CargoCommand Doc() => new CargoCommand(CargoCommandKind.Doc);
 
+        /// <summary>`cargo rustc`: like build, plus <see cref="WithRustcArgs"/> passed to the final crate only (after "--").</summary>
+        public static CargoCommand Rustc() => new CargoCommand(CargoCommandKind.Rustc);
+
+        /// <summary>`cargo clippy`: runs the Clippy linter over the package.</summary>
+        public static CargoCommand Clippy() => new CargoCommand(CargoCommandKind.Clippy);
+
         /// <summary>Passed as <c>--manifest-path</c> when set (path to a specific Cargo.toml).</summary>
         public string? ManifestPath { get; set; }
 
@@ -73,6 +81,9 @@ namespace Kubuno.Cargo.Commands
 
         public bool NoDefaultFeatures { get; set; }
 
+        /// <summary>Passed as <c>--target &lt;triple&gt;</c> when set (cross-compilation).</summary>
+        public string? TargetTriple { get; set; }
+
         /// <summary>e.g. "json" or "json-diagnostic-rendered-ansi", emitted as <c>--message-format &lt;value&gt;</c>.</summary>
         public string? MessageFormat { get; set; }
 
@@ -82,6 +93,12 @@ namespace Kubuno.Cargo.Commands
 
         /// <summary>Arguments forwarded to the built binary after "--" (only meaningful for <c>Run</c>).</summary>
         public IReadOnlyList<string> RunArgs => _runArgs;
+
+        /// <summary>Arguments passed to the final crate's rustc invocation after "--" (only meaningful for <c>Rustc</c>).</summary>
+        public IReadOnlyList<string> RustcArgs => _rustcArgs;
+
+        /// <summary>Configuration overrides, each emitted as <c>--config &lt;KEY=VALUE&gt;</c> (TOML syntax).</summary>
+        public IReadOnlyList<string> ConfigValues => _configValues;
 
         public CargoCommand WithManifestPath(string manifestPath)
         {
@@ -137,6 +154,26 @@ namespace Kubuno.Cargo.Commands
             return this;
         }
 
+        public CargoCommand WithTargetTriple(string targetTriple)
+        {
+            TargetTriple = targetTriple;
+            return this;
+        }
+
+        /// <summary>Adds a <c>--config KEY=VALUE</c> override; the value is TOML (strings quoted, arrays in brackets).</summary>
+        public CargoCommand WithConfig(string keyEqualsValue)
+        {
+            _configValues.Add(keyEqualsValue);
+            return this;
+        }
+
+        /// <summary>Only meaningful for <see cref="CargoCommandKind.Rustc"/>: appended after "--", applied to the final crate only.</summary>
+        public CargoCommand WithRustcArgs(params string[] args)
+        {
+            _rustcArgs.AddRange(args);
+            return this;
+        }
+
         public CargoCommand WithMessageFormat(string messageFormat)
         {
             MessageFormat = messageFormat;
@@ -179,6 +216,12 @@ namespace Kubuno.Cargo.Commands
 
             TargetSelector?.AppendTo(args);
 
+            if (TargetTriple is not null)
+            {
+                args.Add("--target");
+                args.Add(TargetTriple);
+            }
+
             AppendProfile(args);
 
             if (_features.Count > 0)
@@ -203,12 +246,23 @@ namespace Kubuno.Cargo.Commands
                 args.Add(MessageFormat);
             }
 
+            foreach (string config in _configValues)
+            {
+                args.Add("--config");
+                args.Add(config);
+            }
+
             args.AddRange(_extraArgs);
 
             if (Kind == CargoCommandKind.Run && _runArgs.Count > 0)
             {
                 args.Add("--");
                 args.AddRange(_runArgs);
+            }
+            else if (Kind == CargoCommandKind.Rustc && _rustcArgs.Count > 0)
+            {
+                args.Add("--");
+                args.AddRange(_rustcArgs);
             }
 
             return new CargoCommandLine("cargo", args);
@@ -255,6 +309,10 @@ namespace Kubuno.Cargo.Commands
                     return "update";
                 case CargoCommandKind.Doc:
                     return "doc";
+                case CargoCommandKind.Rustc:
+                    return "rustc";
+                case CargoCommandKind.Clippy:
+                    return "clippy";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Kind), Kind, "Unknown Cargo command kind.");
             }

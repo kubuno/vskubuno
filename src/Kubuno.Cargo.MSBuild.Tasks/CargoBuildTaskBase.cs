@@ -39,6 +39,23 @@ namespace Kubuno.Cargo.MSBuild.Tasks
         /// <summary>Feature names, comma-joined into <c>--features</c>.</summary>
         public ITaskItem[] Features { get; set; } = Array.Empty<ITaskItem>();
 
+        /// <summary>Emits <c>--no-default-features</c> when true.</summary>
+        public bool NoDefaultFeatures { get; set; }
+
+        /// <summary>Emits <c>--all-features</c> when true.</summary>
+        public bool AllFeatures { get; set; }
+
+        /// <summary>Passed as <c>--target &lt;triple&gt;</c> when set (output then goes to <c>&lt;target dir&gt;&lt;triple&gt;&lt;profile&gt;</c>).</summary>
+        public string? TargetTriple { get; set; }
+
+        /// <summary>
+        /// rustc flags for every crate of the build, whitespace-separated exactly like Cargo splits a string <c>build.rustflags</c> (e.g. <c>-D warnings --cfg foo</c>), passed as
+        /// <c>--config build.rustflags=[...]</c>: Cargo merges that array with the <c>build.rustflags</c> of its config
+        /// files (a <c>RUSTFLAGS</c> environment variable or a <c>target.&lt;triple&gt;.rustflags</c> entry still takes precedence
+        /// over <c>build.rustflags</c> altogether, as documented by Cargo).
+        /// </summary>
+        public string? RustFlags { get; set; }
+
         /// <summary>Extra, verbatim arguments appended after every other flag.</summary>
         public string[] ExtraArgs { get; set; } = Array.Empty<string>();
 
@@ -90,6 +107,23 @@ namespace Kubuno.Cargo.MSBuild.Tasks
             foreach (ITaskItem feature in Features)
             {
                 command.WithFeature(feature.ItemSpec);
+            }
+            if (NoDefaultFeatures)
+            {
+                command.WithNoDefaultFeatures();
+            }
+            if (AllFeatures)
+            {
+                command.WithAllFeatures();
+            }
+            if (!string.IsNullOrEmpty(TargetTriple))
+            {
+                command.WithTargetTriple(TargetTriple!);
+            }
+            string? rustFlagsConfig = RustFlagsConfig.Format(RustFlags);
+            if (rustFlagsConfig is not null)
+            {
+                command.WithConfig(rustFlagsConfig);
             }
             if (ExtraArgs.Length > 0)
             {

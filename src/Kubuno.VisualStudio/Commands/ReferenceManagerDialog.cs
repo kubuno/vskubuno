@@ -10,7 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using Kubuno.VisualStudio.Core.SolutionExplorer;
-using Microsoft.VisualStudio.PlatformUI;
+using Kubuno.VisualStudio.UI;
 using Microsoft.VisualStudio.Shell;
 
 namespace Kubuno.VisualStudio.Commands
@@ -101,7 +101,7 @@ namespace Kubuno.VisualStudio.Commands
     /// changed checkboxes into <c>cargo add --path</c>/<c>cargo remove</c>
     /// (<see cref="AddProjectReferenceCommand"/>).
     /// </summary>
-    internal sealed class ReferenceManagerDialog : DialogWindow
+    internal sealed class ReferenceManagerDialog : ThemedDialog
     {
         /// <summary>Crate folders picked with "Browse..." during this session (VS's "Recent" list).</summary>
         private static readonly List<string> RecentManifests = new List<string>();
@@ -129,11 +129,8 @@ namespace Kubuno.VisualStudio.Commands
             Height = 520;
             MinWidth = 560;
             MinHeight = 360;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResizeWithGrip;
-            HasMinimizeButton = false;
             HasMaximizeButton = false;
-            ThemedDialogStyleLoader.SetUseDefaultThemedDialogStyles(this, true);
 
             var root = new Grid { Margin = new Thickness(10) };
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -144,13 +141,10 @@ namespace Kubuno.VisualStudio.Commands
             root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(210) });
 
             // Search box, top right (like VS's "Search (Ctrl+E)").
-            _search = new TextBox { Margin = new Thickness(8, 0, 0, 6), ToolTip = DependenciesText.SearchPlaceholder };
+            _search = new TextBox();
             _search.TextChanged += (_, _) => ApplyFilter();
-            var searchPanel = new DockPanel();
-            var searchLabel = new TextBlock { Text = DependenciesText.SearchPlaceholder + " :", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 6) };
-            DockPanel.SetDock(searchLabel, Dock.Left);
-            searchPanel.Children.Add(searchLabel);
-            searchPanel.Children.Add(_search);
+            Grid searchPanel = ThemedControls.WithPlaceholder(_search, DependenciesText.SearchPlaceholder);
+            searchPanel.Margin = new Thickness(8, 0, 0, 6);
             Grid.SetRow(searchPanel, 0);
             Grid.SetColumn(searchPanel, 2);
             root.Children.Add(searchPanel);
@@ -178,14 +172,14 @@ namespace Kubuno.VisualStudio.Commands
             root.Children.Add(tree);
 
             // Checked list: [x] Name | Path.
-            _list = new ListView { SelectionMode = SelectionMode.Single };
             var view = new GridView();
+            _list = ThemedControls.GridListView(view);
+            _list.SelectionMode = SelectionMode.Single;
             var check = new FrameworkElementFactory(typeof(CheckBox));
             check.SetBinding(ToggleButtonIsCheckedProperty, new Binding(nameof(ReferenceCandidate.IsChecked)) { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
             view.Columns.Add(new GridViewColumn { Width = 30, CellTemplate = new DataTemplate { VisualTree = check } });
             view.Columns.Add(new GridViewColumn { Header = DependenciesText.NameColumn, Width = 170, DisplayMemberBinding = new Binding(nameof(ReferenceCandidate.CrateName)) });
             view.Columns.Add(new GridViewColumn { Header = DependenciesText.PathColumn, Width = 260, DisplayMemberBinding = new Binding(nameof(ReferenceCandidate.ProjectDirectory)) });
-            _list.View = view;
             _list.ItemsSource = _all;
             _list.SelectionChanged += (_, _) => UpdateDetails();
             _list.KeyDown += (_, e) =>
@@ -196,7 +190,10 @@ namespace Kubuno.VisualStudio.Commands
                     e.Handled = true;
                 }
             };
-            _empty = new TextBlock { Text = DependenciesText.NoItemsFound, Margin = new Thickness(12), Visibility = Visibility.Collapsed, IsHitTestVisible = false };
+            _empty = ThemedControls.SecondaryText(DependenciesText.NoItemsFound);
+            _empty.Margin = new Thickness(12, 30, 12, 12);
+            _empty.Visibility = Visibility.Collapsed;
+            _empty.IsHitTestVisible = false;
             var center = new Grid();
             center.Children.Add(_list);
             center.Children.Add(_empty);
@@ -211,19 +208,17 @@ namespace Kubuno.VisualStudio.Commands
             root.Children.Add(_details);
 
             // Browse... / OK / Cancel.
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
-            var browseButton = new Button { Content = DependenciesText.BrowseButton, MinWidth = 90, Margin = new Thickness(0, 0, 18, 0) };
+            var browseButton = new Button { Content = DependenciesText.BrowseButton };
             browseButton.Click += (_, _) =>
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
                 BrowseForCrate(recent);
             };
-            var ok = new Button { Content = DependenciesText.Ok, IsDefault = true, MinWidth = 86, Margin = new Thickness(0, 0, 6, 0) };
+            var ok = new Button { Content = DependenciesText.Ok, IsDefault = true };
             ok.Click += (_, _) => DialogResult = true;
-            var cancel = new Button { Content = DependenciesText.Cancel, IsCancel = true, MinWidth = 86 };
-            buttons.Children.Add(browseButton);
-            buttons.Children.Add(ok);
-            buttons.Children.Add(cancel);
+            var cancel = new Button { Content = DependenciesText.Cancel, IsCancel = true };
+            StackPanel buttons = ThemedControls.ButtonRow(browseButton, ok, cancel);
+            browseButton.Margin = new Thickness(0, 0, 11, 0);
             Grid.SetRow(buttons, 2);
             Grid.SetColumn(buttons, 0);
             Grid.SetColumnSpan(buttons, 3);

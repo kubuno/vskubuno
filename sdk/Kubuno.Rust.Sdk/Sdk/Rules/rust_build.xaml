@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "Build" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties like
+  .NET"). Per configuration: Debug maps to Cargo's "dev" profile and Release to "release", so the
+  Optimization category edits Cargo.toml's [profile.dev] / [profile.release] tables (through the
+  KubunoRust persistence, surgically); features, rustflags and warnings are MSBuild properties of
+  the .rsproj, conditioned on the configuration like any .NET build property.
+-->
+<Rule Name="RustBuild"
+      DisplayName="Build"
+      Description="Specifies properties that control how the crate is built."
+      PageTemplate="generic"
+      Order="300"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="General" DisplayName="General" />
+    <Category Name="Optimization" DisplayName="Optimization and code generation" Description="Cargo profile settings ([profile.dev] for Debug, [profile.release] for Release)." />
+    <Category Name="Features" DisplayName="Features" Description="Cargo features enabled for this configuration." />
+    <Category Name="ErrorsAndWarnings" DisplayName="Errors and warnings" />
+    <Category Name="Output" DisplayName="Output" />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="KubunoRust" HasConfigurationCondition="True" />
+  </Rule.DataSource>
+
+  <!-- ===================== General ===================== -->
+
+  <StringProperty Name="CargoProfileName"
+                  DisplayName="Cargo profile"
+                  Description="The Cargo profile this configuration builds with: Debug uses 'dev' (cargo build), Release uses 'release' (cargo build --release); any other configuration name is used as a custom profile."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html"
+                  Category="General"
+                  ReadOnly="True">
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="profile;configuration;debug;release" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="CargoExtraArgs"
+                  DisplayName="Additional Cargo arguments"
+                  Description="Arguments appended verbatim to cargo build, test and run (for example --locked). Separate several arguments with ';'."
+                  HelpUrl="https://doc.rust-lang.org/cargo/commands/cargo-build.html"
+                  Category="General">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </StringProperty.DataSource>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="command line;arguments;locked;frozen;offline" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <!-- ===================== Optimization (Cargo.toml [profile.<name>]) ===================== -->
+
+  <EnumProperty Name="ProfileOptLevel"
+                DisplayName="Optimization level"
+                Description="opt-level: how much the compiler optimizes. 0 compiles fastest and debugs best; 3 produces the fastest code; s and z optimize for size."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#opt-level"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="optimize;optimization;opt-level;size;speed" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="0" DisplayName="0 - No optimization" />
+    <EnumValue Name="1" DisplayName="1 - Basic optimizations" />
+    <EnumValue Name="2" DisplayName="2 - Some optimizations" />
+    <EnumValue Name="3" DisplayName="3 - All optimizations" />
+    <EnumValue Name="s" DisplayName="s - Optimize for size" />
+    <EnumValue Name="z" DisplayName="z - Optimize for size, no loop vectorization" />
+  </EnumProperty>
+
+  <EnumProperty Name="ProfileDebug"
+                DisplayName="Debug information"
+                Description="debug: how much debug information (PDB) the compiler emits. Full is needed to inspect variables in the debugger."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#debug"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="debug symbols;pdb;debuginfo;debug type" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="none" DisplayName="None" />
+    <EnumValue Name="line-directives-only" DisplayName="Line directives only" />
+    <EnumValue Name="line-tables-only" DisplayName="Line tables only (backtraces)" />
+    <EnumValue Name="limited" DisplayName="Limited (no variables or types)" />
+    <EnumValue Name="full" DisplayName="Full" />
+  </EnumProperty>
+
+  <BoolProperty Name="ProfileIncremental"
+                DisplayName="Incremental compilation"
+                Description="incremental: reuses results of previous compilations of this crate to speed up rebuilds."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#incremental"
+                Category="Optimization">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="incremental;rebuild" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <EnumProperty Name="ProfileLto"
+                DisplayName="Link-time optimization"
+                Description="lto: optimizes across crates at link time. Produces faster, smaller binaries but links more slowly."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#lto"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="lto;link time;whole program" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="false" DisplayName="Thin local (default)" />
+    <EnumValue Name="thin" DisplayName="Thin" />
+    <EnumValue Name="fat" DisplayName="Fat (whole program)" />
+    <EnumValue Name="off" DisplayName="Off" />
+  </EnumProperty>
+
+  <IntProperty Name="ProfileCodegenUnits"
+               DisplayName="Codegen units"
+               Description="codegen-units: how many units a crate is split into for parallel code generation. More units compile faster; fewer units produce faster code."
+               HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#codegen-units"
+               Category="Optimization">
+    <IntProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Invalid number of codegen units: expected a whole number between 1 and 65536." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </IntProperty.ValueEditors>
+    <IntProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="codegen-units;parallel" />
+    </IntProperty.Metadata>
+  </IntProperty>
+
+  <EnumProperty Name="ProfilePanic"
+                DisplayName="Panic strategy"
+                Description="panic: what a panic does. Unwind runs destructors and can be caught; abort terminates the process immediately (smaller binary)."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#panic"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="panic;unwind;abort" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="unwind" DisplayName="Unwind" />
+    <EnumValue Name="abort" DisplayName="Abort" />
+  </EnumProperty>
+
+  <BoolProperty Name="ProfileOverflowChecks"
+                DisplayName="Check for arithmetic overflow"
+                Description="overflow-checks: panics on integer overflow instead of wrapping."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#overflow-checks"
+                Category="Optimization">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="overflow;checked;arithmetic" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <BoolProperty Name="ProfileDebugAssertions"
+                DisplayName="Debug assertions"
+                Description="debug-assertions: enables debug_assert! and cfg(debug_assertions) code."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#debug-assertions"
+                Category="Optimization">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="debug_assert;define constants;DEBUG" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <EnumProperty Name="ProfileStrip"
+                DisplayName="Strip"
+                Description="strip: removes debug information or symbols from the produced binary."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/profiles.html#strip"
+                Category="Optimization">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="strip;symbols" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="none" DisplayName="None" />
+    <EnumValue Name="debuginfo" DisplayName="Debug information" />
+    <EnumValue Name="symbols" DisplayName="Symbols" />
+  </EnumProperty>
+
+  <!-- ===================== Features ===================== -->
+
+  <BoolProperty Name="CargoDefaultFeatures"
+                DisplayName="Default features"
+                Description="Enables the package's 'default' feature set. Clearing it passes --no-default-features."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/features.html#the-default-feature"
+                Category="Features">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="no-default-features;features" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <DynamicEnumProperty Name="CargoFeatures"
+                       DisplayName="Features"
+                       Description="Additional features enabled for this configuration (cargo --features), from Cargo.toml's [features] table and optional dependencies."
+                       HelpUrl="https://doc.rust-lang.org/cargo/reference/features.html"
+                       Category="Features"
+                       EnumProvider="KubunoRustFeatures"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Features" />
+          <NameValuePair Name="AllowsCustomStrings" Value="True" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="features;cfg;conditional compilation" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <BoolProperty Name="CargoAllFeatures"
+                DisplayName="All features"
+                Description="Enables every feature of the package (cargo --all-features)."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/features.html#command-line-feature-options"
+                Category="Features">
+    <BoolProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </BoolProperty.DataSource>
+  </BoolProperty>
+
+  <!-- ===================== Errors and warnings ===================== -->
+
+  <BoolProperty Name="RustWarningsAsErrors"
+                DisplayName="Treat warnings as errors"
+                Description="Fails the build on any compiler warning (rustc -D warnings)."
+                HelpUrl="https://doc.rust-lang.org/rustc/lints/levels.html#deny"
+                Category="ErrorsAndWarnings">
+    <BoolProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </BoolProperty.DataSource>
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="warnings as errors;deny warnings;TreatWarningsAsErrors" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <DynamicEnumProperty Name="RustCfg"
+                       DisplayName="Conditional compilation flags"
+                       Description="cfg flags set for the crate (rustc --cfg), tested in code with #[cfg(name)]."
+                       HelpUrl="https://doc.rust-lang.org/rustc/command-line-arguments.html#--cfg-configure-the-compilation-environment"
+                       Category="ErrorsAndWarnings"
+                       EnumProvider="KubunoRustEmpty"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="cfg flags" />
+          <NameValuePair Name="AllowsCustomStrings" Value="True" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="define constants;conditional compilation symbols;cfg" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <StringProperty Name="RustFlags"
+                  DisplayName="Additional rustc flags"
+                  Description="Flags passed to every rustc invocation (Cargo's build.rustflags, space-separated), for example -C target-cpu=native."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags"
+                  Category="ErrorsAndWarnings">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </StringProperty.DataSource>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="rustflags;RUSTFLAGS;compiler options;target-cpu" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <!-- ===================== Output ===================== -->
+
+  <StringProperty Name="CargoTargetDir"
+                  DisplayName="Target directory"
+                  Description="Where Cargo writes build outputs. Default: the CARGO_TARGET_DIR environment variable, else Cargo's own default (target next to Cargo.toml)."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/build-cache.html"
+                  Category="Output">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="DirectoryPath" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="output path;base output path;CARGO_TARGET_DIR" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="TargetPath"
+                  DisplayName="Output file"
+                  Description="The executable this configuration produces."
+                  Category="Output"
+                  ReadOnly="True">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="True" />
+    </StringProperty.DataSource>
+  </StringProperty>
+
+</Rule>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "Debug" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties like
+  .NET"). The settings are the ones Kubuno.VisualStudio.RustProjectSystem's RustDebugLaunchProvider
+  reads for F5/Ctrl+F5 (the same user-file properties as the RustDebugger rule, rust_debugger.xaml),
+  shown inline and in the "debug launch profile" dialog the link opens, like .NET's own Debug page.
+  The environment is edited as a name/value list; the KubunoRust persistence converts it to and from
+  the one-NAME=value-per-line form stored in the .rsproj.user file.
+-->
+<Rule Name="RustDebug"
+      DisplayName="Debug"
+      Description="Settings used to start and debug the executable (F5 / Ctrl+F5)."
+      PageTemplate="generic"
+      Order="1000"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="General" DisplayName="General" />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="UserFile" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+
+  <StringProperty Name="RustDebugPageDescription"
+                  DisplayName="Ignored"
+                  Description="F5 starts the executable of the 'Binary to build and debug' (Application page) under the native debugger, with Rust visualizers (natvis). Its PATH already includes the profile directory, its deps folder and the Rust standard library, so -C prefer-dynamic builds such as Kubuno desktop applications start as is."
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="Description" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="debug;launch;F5;natvis" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="OpenRustLaunchProfile"
+                  DisplayName="Open debug launch profile UI"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="LinkAction">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="Action" Value="Command" />
+          <NameValuePair Name="Command" Value="KubunoOpenRustLaunchProfile" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="launch profile;arguments;working directory;environment variables" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="RustDebuggerCommandArguments"
+                  DisplayName="Command line arguments"
+                  Description="Arguments passed to the executable, verbatim."
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="MultiLineString" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="arguments;command line;args" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="RustDebuggerWorkingDirectory"
+                  DisplayName="Working directory"
+                  Description="The executable's current directory; a relative path is relative to the project folder. Empty: the folder of Cargo.toml."
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="DirectoryPath" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="working directory;current directory;cwd" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="RustDebuggerEnvironmentVariables"
+                  DisplayName="Environment variables"
+                  Description="Environment variables set for the executable, over Visual Studio's own environment. Setting PATH replaces the PATH the debugger computes."
+                  Category="General">
+    <StringProperty.DataSource>
+      <DataSource Persistence="KubunoRust" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="NameValueList" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="environment;variables;env;RUST_LOG;RUST_BACKTRACE" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <BoolProperty Name="RustDebuggerBacktrace"
+                DisplayName="Backtraces on panic"
+                Description="Sets RUST_BACKTRACE=1 (on by default) so a panic prints a stack trace, unless the environment variables above set it."
+                HelpUrl="https://doc.rust-lang.org/std/backtrace/index.html#environment-variables"
+                Category="General">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="RUST_BACKTRACE;panic;stack trace" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+</Rule>

@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Project-level "ConfigurationGeneral" rule every CPS project needs (same shape as the JS SDK's). -->
+<!-- Project-level "ConfigurationGeneral" rule every CPS project needs (same shape as the JS SDK's).
+     PropertyPagesHidden: CPS reads it by name, but it is not a page of the Project Properties editor
+     (listed there, its per-configuration TargetPath breaks the editor's configuration-less page). -->
 <Rule Name="ConfigurationGeneral"
       DisplayName="General"
       PageTemplate="generic"
+      PropertyPagesHidden="true"
       Description="General"
       xmlns="http://schemas.microsoft.com/build/2009/properties">
   <Rule.Categories>

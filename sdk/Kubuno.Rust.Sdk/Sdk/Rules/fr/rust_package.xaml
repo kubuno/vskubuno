@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  French copy of ../rust_package.xaml (same schema; only DisplayName, Description and messages are translated).
+  "Package" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties like
+  .NET"): the Cargo.toml [package] metadata crates.io shows, the counterpart of the .NET SDK's
+  PackagePropertyPage.xaml. Every value is read and surgically written by the KubunoRust persistence;
+  a field inherited from the workspace ('field.workspace = true') shows "{ workspace = true }" with
+  the inherited value as its evaluated preview, and typing "{ workspace = true }" restores the
+  inheritance.
+-->
+<Rule Name="RustPackage"
+      DisplayName="Package"
+      Description="Métadonnées du package Cargo, affichées sur crates.io et par cargo publish."
+      PageTemplate="generic"
+      Order="400"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="General" DisplayName="Général" />
+    <Category Name="License" DisplayName="Licence" />
+    <Category Name="Discovery" DisplayName="Découverte" Description="Façon dont le package est trouvé sur crates.io." />
+    <Category Name="Publishing" DisplayName="Publication" Description="Destination et contenu de ce que cargo publish envoie." />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="KubunoRust" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+
+  <!-- ===================== General ===================== -->
+
+  <StringProperty Name="PackageVersion"
+                  DisplayName="Version"
+                  Description="Version du package, au format SemVer (majeure.mineure.correctif, éventuellement suivie de -préversion et +build)."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-version-field"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Version non valide : une version SemVer telle que 1.0.0 ou 2.1.0-beta.1 est attendue." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="version;semver;package version" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <DynamicEnumProperty Name="PackageAuthors"
+                       DisplayName="Auteurs"
+                       Description="Personnes ou organisations qui ont écrit le package (par exemple Jeanne Dupont &lt;jeanne@example.com&gt;)."
+                       HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-authors-field"
+                       Category="General"
+                       EnumProvider="KubunoRustEmpty"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Auteurs" />
+          <NameValuePair Name="AllowsCustomStrings" Value="True" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="authors;company;owners;auteurs;sociÃ©tÃ©;propriÃ©taires" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <StringProperty Name="PackageDescription"
+                  DisplayName="Description"
+                  Description="Brève description du package, affichée sur crates.io (texte brut, pas Markdown). Obligatoire pour publier."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-description-field"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="MultiLineString" />
+    </StringProperty.ValueEditors>
+  </StringProperty>
+
+  <StringProperty Name="PackageReadme"
+                  DisplayName="Fichier README"
+                  Description="Fichier README affiché sur la page crates.io du package. Vide : README.md, README.txt ou README situé à côté de Cargo.toml, s’il existe."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-readme-field"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="FilePath">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="FileTypeFilter" Value="Fichiers Markdown (*.md)|*.md|Tous les fichiers (*.*)|*.*" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+  </StringProperty>
+
+  <StringProperty Name="PackageHomepage"
+                  DisplayName="Page d’accueil"
+                  Description="URL de la page d’accueil du package."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-homepage-field"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="URL non valide : une adresse absolue http:// ou https:// est attendue." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="project url;homepage;website;page dâ€™accueil;site web;url de projet" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="PackageRepository"
+                  DisplayName="URL du dépôt"
+                  Description="URL du dépôt source du package."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-repository-field"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="URL non valide : une adresse absolue http:// ou https:// est attendue." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="repository;git;source;dÃ©pÃ´t;source" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="PackageDocumentation"
+                  DisplayName="URL de la documentation"
+                  Description="URL de la documentation du package. Vide : crates.io renvoie vers sa page docs.rs."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-documentation-field"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="URL non valide : une adresse absolue http:// ou https:// est attendue." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="documentation;docs.rs" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <!-- ===================== License ===================== -->
+
+  <EnumProperty Name="PackageLicensePreset"
+                DisplayName="Licence"
+                Description="Sélectionne une expression de licence courante ; choisissez « Autre expression » pour saisir n’importe quelle expression SPDX ci-dessous."
+                HelpUrl="https://spdx.org/licenses/"
+                Category="License">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="license;licence;spdx;mit;apache;licence" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="(none)" DisplayName="Aucun" />
+    <EnumValue Name="MIT OR Apache-2.0" DisplayName="MIT OR Apache-2.0 (convention de l’écosystème Rust)" />
+    <EnumValue Name="MIT" DisplayName="MIT" />
+    <EnumValue Name="Apache-2.0" DisplayName="Apache 2.0" />
+    <EnumValue Name="AGPL-3.0-only" DisplayName="GNU AGPL 3.0 uniquement" />
+    <EnumValue Name="AGPL-3.0-or-later" DisplayName="GNU AGPL 3.0 ou ultérieure" />
+    <EnumValue Name="GPL-3.0-only" DisplayName="GNU GPL 3.0 uniquement" />
+    <EnumValue Name="GPL-3.0-or-later" DisplayName="GNU GPL 3.0 ou ultérieure" />
+    <EnumValue Name="GPL-2.0-only" DisplayName="GNU GPL 2.0 uniquement" />
+    <EnumValue Name="LGPL-3.0-only" DisplayName="GNU LGPL 3.0 uniquement" />
+    <EnumValue Name="LGPL-2.1-only" DisplayName="GNU LGPL 2.1 uniquement" />
+    <EnumValue Name="MPL-2.0" DisplayName="Licence publique Mozilla 2.0" />
+    <EnumValue Name="BSD-3-Clause" DisplayName="BSD 3-Clause" />
+    <EnumValue Name="BSD-2-Clause" DisplayName="BSD 2-Clause" />
+    <EnumValue Name="ISC" DisplayName="ISC" />
+    <EnumValue Name="Zlib" DisplayName="zlib" />
+    <EnumValue Name="BSL-1.0" DisplayName="Licence logicielle Boost 1.0" />
+    <EnumValue Name="0BSD" DisplayName="Zero-Clause BSD" />
+    <EnumValue Name="Unlicense" DisplayName="The Unlicense" />
+    <EnumValue Name="{}{ workspace = true }" DisplayName="Hérité de l’espace de travail" />
+    <EnumValue Name="(other)" DisplayName="Autre expression" />
+  </EnumProperty>
+
+  <StringProperty Name="PackageLicense"
+                  DisplayName="Expression de licence"
+                  Description="Expression de licence SPDX du package (Cargo.toml license), par exemple MIT OR Apache-2.0."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields"
+                  Category="License">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Expression de licence SPDX non valide : combinez des identificateurs de licence avec AND, OR, WITH et des parenthèses, par exemple MIT OR Apache-2.0." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustPackage::PackageLicensePreset" />
+      <NameValuePair Name="SearchTerms" Value="license;spdx;expression" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="PackageLicenseFile"
+                  DisplayName="Fichier de licence"
+                  Description="Fichier contenant le texte de la licence, pour une licence sans identificateur SPDX (Cargo.toml license-file)."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields"
+                  Category="License">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="FilePath">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="FileTypeFilter" Value="Tous les fichiers (*.*)|*.*" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+  </StringProperty>
+
+  <!-- ===================== Discovery ===================== -->
+
+  <DynamicEnumProperty Name="PackageKeywords"
+                       DisplayName="Mots clés"
+                       Description="Jusqu’à 5 mots clés de recherche pour crates.io (lettres ASCII, chiffres, '_', '-' ou '+', en commençant par une lettre, 20 caractères au maximum)."
+                       HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-keywords-field"
+                       Category="Discovery"
+                       EnumProvider="KubunoRustEmpty"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Mots clés" />
+          <NameValuePair Name="AllowsCustomStrings" Value="True" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="tags;keywords;mots clÃ©s;Ã©tiquettes" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <DynamicEnumProperty Name="PackageCategories"
+                       DisplayName="Catégories"
+                       Description="Jusqu’à 5 catégories crates.io dans lesquelles le package est répertorié."
+                       HelpUrl="https://crates.io/category_slugs"
+                       Category="Discovery"
+                       EnumProvider="KubunoRustCratesIoCategories"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Catégories" />
+          <NameValuePair Name="AllowsCustomStrings" Value="False" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="categories;crates.io" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <!-- ===================== Publishing ===================== -->
+
+  <EnumProperty Name="PackagePublish"
+                DisplayName="Publier"
+                Description="Indique si cargo publish peut envoyer le package (Cargo.toml publish), et vers où."
+                HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-publish-field"
+                Category="Publishing">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="publish;registry;crates.io;private;publier;registre;privÃ©" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="true" DisplayName="Vers n’importe quel registre (crates.io par défaut)" />
+    <EnumValue Name="false" DisplayName="Jamais (package privé)" />
+    <EnumValue Name="registries" DisplayName="Uniquement vers les registres ci-dessous" />
+    <EnumValue Name="{}{ workspace = true }" DisplayName="Hérité de l’espace de travail" />
+  </EnumProperty>
+
+  <DynamicEnumProperty Name="PackagePublishRegistries"
+                       DisplayName="Registres autorisés"
+                       Description="Registres vers lesquels cargo publish peut envoyer (noms issus de .cargo/config.toml [registries] ; crates-io pour crates.io)."
+                       HelpUrl="https://doc.rust-lang.org/cargo/reference/registries.html"
+                       Category="Publishing"
+                       EnumProvider="KubunoRustEmpty"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Registres" />
+          <NameValuePair Name="AllowsCustomStrings" Value="True" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustPackage::PackagePublish" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustPackage" "PackagePublish" "registries")</NameValuePair.Value>
+      </NameValuePair>
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <DynamicEnumProperty Name="PackageInclude"
+                       DisplayName="Fichiers inclus"
+                       Description="Modèles de type gitignore des seuls fichiers inclus par cargo package (Cargo.toml include). Vide : tous les fichiers non exclus."
+                       HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-exclude-and-include-fields"
+                       Category="Publishing"
+                       EnumProvider="KubunoRustEmpty"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Modèles" />
+          <NameValuePair Name="AllowsCustomStrings" Value="True" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+  </DynamicEnumProperty>
+
+  <DynamicEnumProperty Name="PackageExclude"
+                       DisplayName="Fichiers exclus"
+                       Description="Modèles de type gitignore des fichiers que cargo package exclut (Cargo.toml exclude)."
+                       HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-exclude-and-include-fields"
+                       Category="Publishing"
+                       EnumProvider="KubunoRustEmpty"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Modèles" />
+          <NameValuePair Name="AllowsCustomStrings" Value="True" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+  </DynamicEnumProperty>
+
+</Rule>

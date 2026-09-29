@@ -5,8 +5,8 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using Kubuno.VisualStudio.Core.Overrides;
 using Kubuno.VisualStudio.Designer;
+using Kubuno.VisualStudio.UI;
 using Microsoft.VisualStudio.PlatformUI;
-using Microsoft.VisualStudio.Shell;
 
 namespace Kubuno.VisualStudio.LanguageService.Overrides
 {
@@ -15,7 +15,7 @@ namespace Kubuno.VisualStudio.LanguageService.Overrides
     /// by level (nearest first), each with its exact signature and what its base behaviour does - Visual Studio's C#
     /// "Override members" dialog for the Kubuno hierarchy. The checked members are written overriding their base.
     /// </summary>
-    internal sealed class OverrideMembersDialog : DialogWindow
+    internal sealed class OverrideMembersDialog : ThemedDialog
     {
         private readonly List<(CheckBox Box, OverridableMember Member)> _boxes = new List<(CheckBox, OverridableMember)>();
 
@@ -25,10 +25,7 @@ namespace Kubuno.VisualStudio.LanguageService.Overrides
             Title = french ? "Substituer des membres" : "Override Members";
             Width = 640;
             Height = 560;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResizeWithGrip;
-            SetResourceReference(BackgroundProperty, VsBrushes.WindowKey);
-            SetResourceReference(ForegroundProperty, VsBrushes.WindowTextKey);
 
             var root = new DockPanel { Margin = new Thickness(12) };
 
@@ -40,15 +37,14 @@ namespace Kubuno.VisualStudio.LanguageService.Overrides
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 8),
             };
-            header.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.WindowTextKey);
             DockPanel.SetDock(header, Dock.Top);
             root.Children.Add(header);
 
             var buttons = new DockPanel { Margin = new Thickness(0, 10, 0, 0), LastChildFill = false };
-            var all = new Button { Content = french ? "Tout sélectionner" : "Select All", MinWidth = 110, Margin = new Thickness(0, 0, 6, 0) };
-            var none = new Button { Content = french ? "Tout désélectionner" : "Deselect All", MinWidth = 110 };
-            var ok = new Button { Content = "OK", IsDefault = true, MinWidth = 80, Margin = new Thickness(0, 0, 6, 0) };
-            var cancel = new Button { Content = french ? "Annuler" : "Cancel", IsCancel = true, MinWidth = 80 };
+            var all = new Button { Content = french ? "Tout sélectionner" : "Select All", MinWidth = 110, MinHeight = 23, Margin = new Thickness(0, 0, 7, 0) };
+            var none = new Button { Content = french ? "Tout désélectionner" : "Deselect All", MinWidth = 110, MinHeight = 23 };
+            var ok = new Button { Content = "OK", IsDefault = true, MinWidth = 75, MinHeight = 23, Margin = new Thickness(0, 0, 7, 0) };
+            var cancel = new Button { Content = french ? "Annuler" : "Cancel", IsCancel = true, MinWidth = 75, MinHeight = 23 };
             all.Click += (_, _) => _boxes.ForEach(b => b.Box.IsChecked = true);
             none.Click += (_, _) => _boxes.ForEach(b => b.Box.IsChecked = false);
             ok.Click += (_, _) => DialogResult = true;
@@ -68,19 +64,15 @@ namespace Kubuno.VisualStudio.LanguageService.Overrides
             foreach (var level in context.Available.Select(m => m.Level).Distinct())
             {
                 var levelHeader = new TextBlock { Text = level, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 2) };
-                levelHeader.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.WindowTextKey);
                 list.Children.Add(levelHeader);
                 foreach (var member in context.Available.Where(m => m.Level == level))
                 {
                     var signature = new TextBlock { Text = member.Signature, FontFamily = new FontFamily("Cascadia Mono, Consolas") };
-                    signature.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.WindowTextKey);
-                    var doc = new TextBlock { Text = member.LocalizedDoc(french), Opacity = 0.75, TextWrapping = TextWrapping.Wrap };
-                    doc.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.WindowTextKey);
+                    TextBlock doc = ThemedControls.SecondaryText(member.LocalizedDoc(french));
                     var content = new StackPanel();
                     content.Children.Add(signature);
                     content.Children.Add(doc);
                     var box = new CheckBox { Content = content, Margin = new Thickness(8, 2, 0, 2), ToolTip = member.BaseCall };
-                    box.SetResourceReference(ForegroundProperty, VsBrushes.WindowTextKey);
                     _boxes.Add((box, member));
                     list.Children.Add(box);
                 }
@@ -88,7 +80,8 @@ namespace Kubuno.VisualStudio.LanguageService.Overrides
 
             var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list };
             var frame = new Border { BorderThickness = new Thickness(1), Child = scroll, Padding = new Thickness(4) };
-            frame.SetResourceReference(Border.BorderBrushProperty, VsBrushes.ComboBoxBorderKey);
+            frame.SetResourceReference(Border.BorderBrushProperty, ThemedDialogColors.ListBoxBorderBrushKey);
+            frame.SetResourceReference(Border.BackgroundProperty, ThemedDialogColors.ListBoxBrushKey);
             root.Children.Add(frame);
             Content = root;
         }

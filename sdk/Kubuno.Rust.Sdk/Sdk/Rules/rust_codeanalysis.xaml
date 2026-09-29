@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "Code Analysis" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties
+  like .NET"): the counterpart of the .NET SDK's CodeAnalysisPropertyPage.xaml. Clippy lint levels
+  live in Cargo.toml's [lints.clippy] / [lints.rust] tables (lint groups are written with
+  priority = -1 so individual lints still override them), rustfmt settings in rustfmt.toml next to
+  Cargo.toml (created on first change), all edited surgically by the KubunoRust persistence.
+-->
+<Rule Name="RustCodeAnalysis"
+      DisplayName="Code Analysis"
+      Description="Clippy lints and rustfmt formatting settings."
+      PageTemplate="generic"
+      Order="500"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="Clippy" DisplayName="Clippy" Description="The Rust linter, run with cargo clippy." />
+    <Category Name="LintLevels" DisplayName="Lint levels" Description="Cargo.toml [lints]: how each lint group is reported, for the compiler, Clippy and rust-analyzer alike." />
+    <Category Name="Formatting" DisplayName="Formatting (rustfmt)" Description="rustfmt.toml: how Format Document and cargo fmt lay out the code." />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="KubunoRust" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+
+  <!-- ===================== Clippy ===================== -->
+
+  <BoolProperty Name="KubunoClippyOnBuild"
+                DisplayName="Run Clippy on build"
+                Description="Runs cargo clippy after every successful build and reports its warnings in the Error List."
+                HelpUrl="https://doc.rust-lang.org/clippy/usage.html"
+                Category="Clippy">
+    <BoolProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </BoolProperty.DataSource>
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="clippy;analyzers;run code analysis on build;lint" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <!-- ===================== Lint levels (Cargo.toml [lints]) ===================== -->
+
+  <EnumProperty Name="ClippyCorrectness" DisplayName="clippy::correctness"
+                Description="Code that is outright wrong or useless (deny by default)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=correctness"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippySuspicious" DisplayName="clippy::suspicious"
+                Description="Code that is most likely wrong or useless (warn by default)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=suspicious"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyStyle" DisplayName="clippy::style"
+                Description="Code that should be written in a more idiomatic way (warn by default)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=style"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyComplexity" DisplayName="clippy::complexity"
+                Description="Code that does something simple in a complex way (warn by default)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=complexity"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyPerf" DisplayName="clippy::perf"
+                Description="Code that can be written to run faster (warn by default)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=perf"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyPedantic" DisplayName="clippy::pedantic"
+                Description="Stricter lints with occasional false positives (allow by default)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=pedantic"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyNursery" DisplayName="clippy::nursery"
+                Description="New lints still under development (allow by default)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=nursery"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <EnumProperty Name="ClippyCargo" DisplayName="clippy::cargo"
+                Description="Lints for the Cargo manifest itself (allow by default)."
+                HelpUrl="https://rust-lang.github.io/rust-clippy/master/index.html#?groups=cargo"
+                Category="LintLevels">
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <EnumProperty Name="RustLintUnsafeCode" DisplayName="unsafe_code"
+                Description="Usage of unsafe code (compiler lint, allow by default). Forbid it to guarantee a 100% safe crate."
+                HelpUrl="https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html#unsafe-code"
+                Category="LintLevels">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="unsafe;forbid unsafe" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <EnumProperty Name="RustLintMissingDocs" DisplayName="missing_docs"
+                Description="Public items without documentation comments (compiler lint, allow by default); the counterpart of .NET's documentation file warnings."
+                HelpUrl="https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html#missing-docs"
+                Category="LintLevels">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="documentation;xml documentation;docs" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="allow" DisplayName="Allow" />
+    <EnumValue Name="warn" DisplayName="Warn" />
+    <EnumValue Name="deny" DisplayName="Deny" />
+    <EnumValue Name="forbid" DisplayName="Forbid" />
+  </EnumProperty>
+
+  <!-- ===================== Formatting (rustfmt.toml) ===================== -->
+
+  <EnumProperty Name="KubunoFormatOnSave"
+                DisplayName="Format on save"
+                Description="Runs Format Document (rustfmt) on every .rs file of this project before it is saved."
+                HelpUrl="https://rust-lang.github.io/rustfmt/"
+                Category="Formatting">
+    <EnumProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </EnumProperty.DataSource>
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="format on save;rustfmt;formatting" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="global" DisplayName="Use the Tools › Options setting" IsDefault="True" />
+    <EnumValue Name="true" DisplayName="Enabled" />
+    <EnumValue Name="false" DisplayName="Disabled" />
+  </EnumProperty>
+
+  <EnumProperty Name="RustfmtEdition" DisplayName="Edition"
+                Description="The Rust edition rustfmt parses the code with (edition). Default: the crate's edition when run by cargo fmt."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#edition"
+                Category="Formatting">
+    <EnumValue Name="default" DisplayName="Default" />
+    <EnumValue Name="2015" DisplayName="Rust 2015" />
+    <EnumValue Name="2018" DisplayName="Rust 2018" />
+    <EnumValue Name="2021" DisplayName="Rust 2021" />
+    <EnumValue Name="2024" DisplayName="Rust 2024" />
+  </EnumProperty>
+
+  <IntProperty Name="RustfmtMaxWidth" DisplayName="Maximum line width"
+               Description="max_width: the maximum width of each line (default 100)."
+               HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#max_width"
+               Category="Formatting">
+    <IntProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Invalid width: expected a whole number between 10 and 1000." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </IntProperty.ValueEditors>
+    <IntProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="line length;width;wrap" />
+    </IntProperty.Metadata>
+  </IntProperty>
+
+  <BoolProperty Name="RustfmtHardTabs" DisplayName="Indent with tabs"
+                Description="hard_tabs: indents with tab characters instead of spaces."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#hard_tabs"
+                Category="Formatting">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="tabs;indentation" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <IntProperty Name="RustfmtTabSpaces" DisplayName="Indent size"
+               Description="tab_spaces: the number of spaces per indentation level (default 4)."
+               HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#tab_spaces"
+               Category="Formatting">
+    <IntProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Invalid indent size: expected a whole number between 1 and 16." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </IntProperty.ValueEditors>
+    <IntProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="indentation;spaces" />
+    </IntProperty.Metadata>
+  </IntProperty>
+
+  <EnumProperty Name="RustfmtNewlineStyle" DisplayName="Line endings"
+                Description="newline_style: the line endings rustfmt writes."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#newline_style"
+                Category="Formatting">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="crlf;lf;newline;end of line" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="Auto" DisplayName="Auto (from the file)" />
+    <EnumValue Name="Native" DisplayName="Native (CRLF on Windows)" />
+    <EnumValue Name="Unix" DisplayName="Unix (LF)" />
+    <EnumValue Name="Windows" DisplayName="Windows (CRLF)" />
+  </EnumProperty>
+
+  <BoolProperty Name="RustfmtReorderImports" DisplayName="Sort imports"
+                Description="reorder_imports: sorts use declarations alphabetically within each group."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#reorder_imports"
+                Category="Formatting">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="using;imports;sort" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <BoolProperty Name="RustfmtUseFieldInitShorthand" DisplayName="Use field init shorthand"
+                Description="use_field_init_shorthand: writes Point { x, y } instead of Point { x: x, y: y }."
+                HelpUrl="https://rust-lang.github.io/rustfmt/?version=v1&amp;search=#use_field_init_shorthand"
+                Category="Formatting" />
+
+  <StringProperty Name="RustfmtConfigPath"
+                  DisplayName="Configuration file"
+                  Description="The rustfmt configuration file these settings are written to."
+                  HelpUrl="https://rust-lang.github.io/rustfmt/"
+                  Category="Formatting"
+                  ReadOnly="True" />
+
+</Rule>

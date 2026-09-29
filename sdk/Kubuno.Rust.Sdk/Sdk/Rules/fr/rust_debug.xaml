@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  French copy of ../rust_debug.xaml (same schema; only DisplayName, Description and messages are translated).
+  "Debug" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties like
+  .NET"). The settings are the ones Kubuno.VisualStudio.RustProjectSystem's RustDebugLaunchProvider
+  reads for F5/Ctrl+F5 (the same user-file properties as the RustDebugger rule, rust_debugger.xaml),
+  shown inline and in the "debug launch profile" dialog the link opens, like .NET's own Debug page.
+  The environment is edited as a name/value list; the KubunoRust persistence converts it to and from
+  the one-NAME=value-per-line form stored in the .rsproj.user file.
+-->
+<Rule Name="RustDebug"
+      DisplayName="Déboguer"
+      Description="Paramètres utilisés pour démarrer et déboguer l’exécutable (F5 / Ctrl+F5)."
+      PageTemplate="generic"
+      Order="1000"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="General" DisplayName="Général" />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="UserFile" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+
+  <StringProperty Name="RustDebugPageDescription"
+                  DisplayName="Ignoré"
+                  Description="F5 démarre l’exécutable du « Binaire à générer et à déboguer » (page Application) sous le débogueur natif, avec les visualiseurs Rust (natvis). Son PATH inclut déjà le répertoire du profil, son dossier deps et la bibliothèque standard de Rust : les builds -C prefer-dynamic, comme les applications Kubuno desktop, démarrent donc telles quelles."
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="Description" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="debug;launch;F5;natvis;dÃ©boguer;lancer;lancement" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="OpenRustLaunchProfile"
+                  DisplayName="Ouvrir l’interface utilisateur des profils de lancement de débogage"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="LinkAction">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="Action" Value="Command" />
+          <NameValuePair Name="Command" Value="KubunoOpenRustLaunchProfile" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="launch profile;arguments;working directory;environment variables;profil de lancement;rÃ©pertoire de travail;variables dâ€™environnement" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="RustDebuggerCommandArguments"
+                  DisplayName="Arguments de la ligne de commande"
+                  Description="Arguments transmis tels quels à l’exécutable."
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="MultiLineString" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="arguments;command line;args;ligne de commande;arguments" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="RustDebuggerWorkingDirectory"
+                  DisplayName="Répertoire de travail"
+                  Description="Répertoire actif de l’exécutable ; un chemin relatif est relatif au dossier du projet. Vide : le dossier de Cargo.toml."
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="DirectoryPath" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="working directory;current directory;cwd;rÃ©pertoire de travail;rÃ©pertoire actif" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="RustDebuggerEnvironmentVariables"
+                  DisplayName="Variables d’environnement"
+                  Description="Variables d’environnement définies pour l’exécutable, par-dessus l’environnement de Visual Studio. Définir PATH remplace le PATH calculé par le débogueur."
+                  Category="General">
+    <StringProperty.DataSource>
+      <DataSource Persistence="KubunoRust" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="NameValueList" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="environment;variables;env;RUST_LOG;RUST_BACKTRACE;environnement;variables dâ€™environnement" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <BoolProperty Name="RustDebuggerBacktrace"
+                DisplayName="Traces d’appels en cas de panique"
+                Description="Définit RUST_BACKTRACE=1 (activé par défaut) afin qu’une panique affiche une trace de la pile, sauf si les variables d’environnement ci-dessus la définissent."
+                HelpUrl="https://doc.rust-lang.org/std/backtrace/index.html#environment-variables"
+                Category="General">
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="RUST_BACKTRACE;panic;stack trace" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+</Rule>

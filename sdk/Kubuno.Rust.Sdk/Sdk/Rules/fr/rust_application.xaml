@@ -1,0 +1,590 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  French copy of ../rust_application.xaml (same schema; only DisplayName, Description and messages are translated).
+  "Application" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties
+  like .NET"): the counterpart of the .NET SDK's ApplicationPropertyPage.xaml, with the same three
+  categories (General / Win32 resources / Dependencies).
+
+  Persistence="KubunoRust" is Kubuno.VisualStudio.RustProjectSystem's RustProjectPropertiesProvider:
+  it reads and SURGICALLY edits Cargo.toml (and src/main.rs for windows_subsystem), never
+  regenerating them. Properties with their own ProjectFile/UserFile data source are plain MSBuild
+  properties of the .rsproj. A localized copy of this file lives in Rules\<culture>\ (same names,
+  translated DisplayName/Description/messages only).
+-->
+<Rule Name="RustApplication"
+      DisplayName="Application"
+      Description="Spécifie les paramètres et propriétés d’application de la crate."
+      PageTemplate="generic"
+      Order="100"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="General" DisplayName="Général" />
+    <Category Name="Win32Resources" DisplayName="Ressources Win32" Description="Icône, manifeste d’application et informations de version incorporés dans l’exécutable." />
+    <Category Name="Dependencies" DisplayName="Dépendances" Description="Crates et projets dont dépend ce package." />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="KubunoRust" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+
+  <!-- Hidden facts used by the visibility conditions below (computed from Cargo.toml and the src/ layout). -->
+  <BoolProperty Name="HasBinaryTarget" Visible="False" ReadOnly="True" Category="General" />
+  <BoolProperty Name="HasLibraryTarget" Visible="False" ReadOnly="True" Category="General" />
+
+  <!-- ===================== General ===================== -->
+
+  <StringProperty Name="PackageName"
+                  DisplayName="Nom de la crate"
+                  Description="Nom du package (Cargo.toml [package] name) : lettres, chiffres, '-' et '_', en commençant par une lettre. La crate bibliothèque porte ce nom, avec '-' remplacé par '_'. Le renommage met aussi à jour CargoPackage dans le fichier projet."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-name-field"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Nom de crate non valide : utilisez uniquement des lettres, des chiffres, '-' et '_', en commençant par une lettre (64 caractères au maximum)." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="package;crate;name;assembly name;nom;nom de la crate;nom de lâ€™assembly" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <EnumProperty Name="Edition"
+                DisplayName="Édition de Rust"
+                Description="Édition de Rust avec laquelle la crate est compilée (Cargo.toml [package] edition). Les éditions activent des changements de langage ; les crates d’éditions différentes interagissent sans problème."
+                HelpUrl="https://doc.rust-lang.org/edition-guide/"
+                Category="General">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="language version;langversion;version du langage;Ã©dition" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="2024" DisplayName="Rust 2024" />
+    <EnumValue Name="2021" DisplayName="Rust 2021" />
+    <EnumValue Name="2018" DisplayName="Rust 2018" />
+    <EnumValue Name="2015" DisplayName="Rust 2015" />
+    <EnumValue Name="{}{ workspace = true }" DisplayName="Hérité de l’espace de travail" />
+  </EnumProperty>
+
+  <StringProperty Name="TargetKinds"
+                  DisplayName="Type de sortie"
+                  Description="Cibles que Cargo génère à partir de ce package : un binaire (src/main.rs ou [[bin]]) produit un .exe, une bibliothèque (src/lib.rs ou [lib]) les types de crate sélectionnés ci-dessous."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/cargo-targets.html"
+                  Category="General"
+                  ReadOnly="True">
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="output type;exe;dll;bin;lib;type de sortie" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <DynamicEnumProperty Name="LibraryCrateTypes"
+                       DisplayName="Types de crate de la bibliothèque"
+                       Description="Types de bibliothèque vers lesquels la cible [lib] est compilée (Cargo.toml [lib] crate-type). Aucun coché : valeur par défaut de Cargo (lib)."
+                       HelpUrl="https://doc.rust-lang.org/cargo/reference/cargo-targets.html#the-crate-type-field"
+                       Category="General"
+                       EnumProvider="KubunoRustLibraryCrateTypes"
+                       MultipleValuesAllowed="True">
+    <DynamicEnumProperty.ValueEditors>
+      <ValueEditor EditorType="MultiStringSelector">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="TypeDescriptorText" Value="Types de crate" />
+          <NameValuePair Name="AllowsCustomStrings" Value="False" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </DynamicEnumProperty.ValueEditors>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::HasLibraryTarget" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "HasLibraryTarget" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="crate-type;cdylib;staticlib;dylib;rlib;proc-macro;dll" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <DynamicEnumProperty Name="DefaultRun"
+                       DisplayName="Binaire par défaut"
+                       Description="Binaire que « cargo run » démarre quand le package en contient plusieurs (Cargo.toml [package] default-run)."
+                       HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html#the-default-run-field"
+                       Category="General"
+                       EnumProvider="KubunoRustBinaryTargets">
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::HasBinaryTarget" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "HasBinaryTarget" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="default-run;startup object;main" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <DynamicEnumProperty Name="CargoBin"
+                       DisplayName="Binaire à générer et à déboguer"
+                       Description="Cible [[bin]] utilisée par Générer, F5 et Ctrl+F5 (cargo --bin). Vide : binaire par défaut choisi par Cargo."
+                       HelpUrl="https://doc.rust-lang.org/cargo/commands/cargo-build.html#target-selection"
+                       Category="General"
+                       EnumProvider="KubunoRustBinaryTargets">
+    <DynamicEnumProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </DynamicEnumProperty.DataSource>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::HasBinaryTarget" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "HasBinaryTarget" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="startup;bin;executable" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <EnumProperty Name="WindowsSubsystem"
+                DisplayName="Sous-système Windows"
+                Description="Indique si l’exécutable ouvre une fenêtre de console : attribut #![windows_subsystem] en tête du fichier source principal du binaire (comme le type de sortie Application console/Application Windows de .NET)."
+                HelpUrl="https://doc.rust-lang.org/reference/runtime.html#the-windows_subsystem-attribute"
+                Category="General">
+    <EnumProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::HasBinaryTarget" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "HasBinaryTarget" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="output type;console application;windows application;winexe;subsystem;type de sortie;application console;application Windows;sous-systÃ¨me" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="console" DisplayName="Application console" />
+    <EnumValue Name="windows" DisplayName="Application Windows (sans console)" />
+    <EnumValue Name="windows-release" DisplayName="Application Windows en Release, console en Debug" />
+  </EnumProperty>
+
+  <DynamicEnumProperty Name="CargoTargetTriple"
+                       DisplayName="Plateforme cible"
+                       Description="Triple cible pour lequel la crate est compilée (cargo --target). Vide : plateforme hôte. La sortie est alors placée dans &lt;répertoire cible&gt;\&lt;triple&gt;\&lt;profil&gt;."
+                       HelpUrl="https://doc.rust-lang.org/rustc/platform-support.html"
+                       Category="General"
+                       EnumProvider="KubunoRustTargetTriples">
+    <DynamicEnumProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </DynamicEnumProperty.DataSource>
+    <DynamicEnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="target framework;platform;triple;architecture;cross compile;framework cible;plateforme;architecture;compilation croisÃ©e" />
+    </DynamicEnumProperty.Metadata>
+  </DynamicEnumProperty>
+
+  <StringProperty Name="InstallRustTargets"
+                  DisplayName="Installer d’autres cibles..."
+                  Category="General">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="LinkAction">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="Action" Value="Command" />
+          <NameValuePair Name="Command" Value="KubunoInstallRustTargets" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="rustup;target add;install" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="TargetOperatingSystem"
+                  DisplayName="SE cible"
+                  Description="Système d’exploitation et ABI de la plateforme cible ci-dessus."
+                  Category="General"
+                  ReadOnly="True">
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::CargoTargetTriple" />
+      <NameValuePair Name="SearchTerms" Value="target os;platform" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <EnumProperty Name="KubunoMinimumWindowsVersion"
+                DisplayName="Version minimale de Windows"
+                Description="Version de Windows la plus ancienne que l’application déclare prendre en charge (entrées supportedOS du manifeste d’application incorporé ; nécessite « Incorporer les ressources Win32 »)."
+                HelpUrl="https://learn.microsoft.com/windows/win32/sbscs/application-manifests#supportedos"
+                Category="General">
+    <EnumProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </EnumProperty.DataSource>
+    <EnumProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="target platform min version;supportedOS;windows 10;windows 11" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="10" DisplayName="Windows 10 / Windows 11" IsDefault="True" />
+    <EnumValue Name="8.1" DisplayName="Windows 8.1" />
+    <EnumValue Name="8" DisplayName="Windows 8" />
+    <EnumValue Name="7" DisplayName="Windows 7" />
+  </EnumProperty>
+
+  <StringProperty Name="RustVersion"
+                  DisplayName="Version minimale de Rust prise en charge"
+                  Description="Chaîne d’outils Rust la plus ancienne prise en charge par la crate (Cargo.toml [package] rust-version, par exemple 1.80). Cargo refuse les chaînes d’outils plus anciennes et le résolveur privilégie les versions de dépendances compatibles."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/rust-version.html"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^[^&#x200B;]*$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Version de Rust non valide : une version telle que 1.80 ou 1.80.1 est attendue." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="msrv;rust-version;toolchain" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="KubunoDesktopSrc"
+                  DisplayName="Sources de Kubuno desktop"
+                  Description="Copie locale de l’espace de travail Cargo de Kubuno desktop vers laquelle pointent les dépendances par chemin kubuno-* (KUBUNO_DESKTOP_SRC à la création du projet). Maintenez-la synchronisée avec les chemins de Cargo.toml."
+                  HelpUrl="https://github.com/kubuno/desktop"
+                  Category="General">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="DirectoryPath" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(not (has-evaluated-value "RustApplication" "KubunoDesktopSrc" ""))</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="KUBUNO_DESKTOP_SRC;kubuno_ui;desktop" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="CargoManifestPath"
+                  DisplayName="Manifeste Cargo"
+                  Description="Fichier Cargo.toml que ce projet génère (cargo --manifest-path). Par défaut : le Cargo.toml situé à côté du fichier projet."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/manifest.html"
+                  Category="General">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="FilePath">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="FileTypeFilter" Value="Manifeste Cargo (Cargo.toml)|Cargo.toml|Tous les fichiers (*.*)|*.*" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+  </StringProperty>
+
+  <StringProperty Name="CargoPackage"
+                  DisplayName="Package Cargo"
+                  Description="Package d’un espace de travail que ce projet génère (cargo -p). Vide : le package du manifeste."
+                  HelpUrl="https://doc.rust-lang.org/cargo/commands/cargo-build.html#package-selection"
+                  Category="General">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+  </StringProperty>
+
+  <!-- ===================== Win32 resources ===================== -->
+
+  <BoolProperty Name="KubunoWin32Resources"
+                DisplayName="Incorporer les ressources Win32"
+                Description="Incorpore une icône, un manifeste d’application et des informations de version dans l’exécutable. Le SDK génère le fichier .res et l’associe par liaison ; aucun script de build ni aucune dépendance de crate n’est nécessaire."
+                HelpUrl="https://learn.microsoft.com/windows/win32/menurc/resource-files-in-visual-studio"
+                Category="Win32Resources">
+    <BoolProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </BoolProperty.DataSource>
+    <BoolProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="resources;win32;res;rc;embed;ressources;incorporer" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <StringProperty Name="KubunoApplicationIcon"
+                  DisplayName="Icône"
+                  Description="Fichier .ico affiché pour l’exécutable dans l’Explorateur de fichiers et dans la barre des tâches."
+                  HelpUrl="https://learn.microsoft.com/windows/win32/menurc/icon-resource"
+                  Category="Win32Resources">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="FilePath">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="FileTypeFilter" Value="Fichiers d’icône (*.ico)|*.ico|Tous les fichiers (*.*)|*.*" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "KubunoWin32Resources" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="icon;ico;application icon;icÃ´ne" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <EnumProperty Name="KubunoApplicationManifest"
+                DisplayName="Manifeste"
+                Description="Manifeste d’application incorporé dans l’exécutable : généré à partir des paramètres ci-dessous, fichier personnalisé ou aucun."
+                HelpUrl="https://learn.microsoft.com/windows/win32/sbscs/application-manifests"
+                Category="Win32Resources">
+    <EnumProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </EnumProperty.DataSource>
+    <EnumProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "KubunoWin32Resources" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="manifest;app.manifest;manifeste" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="Default" DisplayName="Généré à partir des paramètres ci-dessous" IsDefault="True" />
+    <EnumValue Name="Custom" DisplayName="Fichier manifeste personnalisé" />
+    <EnumValue Name="None" DisplayName="Aucun manifeste" />
+  </EnumProperty>
+
+  <StringProperty Name="KubunoApplicationManifestFile"
+                  DisplayName="Fichier manifeste"
+                  Description="Manifeste d’application (.manifest) incorporé tel quel."
+                  HelpUrl="https://learn.microsoft.com/windows/win32/sbscs/application-manifests"
+                  Category="Win32Resources">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="FilePath">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="FileTypeFilter" Value="Fichiers manifeste (*.manifest)|*.manifest|Tous les fichiers (*.*)|*.*" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources;RustApplication::KubunoApplicationManifest" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(and (has-evaluated-value "RustApplication" "KubunoWin32Resources" true) (has-evaluated-value "RustApplication" "KubunoApplicationManifest" "Custom"))</NameValuePair.Value>
+      </NameValuePair>
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <EnumProperty Name="KubunoDpiAwareness"
+                DisplayName="Prise en charge du DPI"
+                Description="Manière dont Windows met à l’échelle les fenêtres de l’application sur les moniteurs à haute résolution (manifeste dpiAware/dpiAwareness). Les applications Kubuno desktop gèrent le DPI par moniteur."
+                HelpUrl="https://learn.microsoft.com/windows/win32/hidpi/setting-the-default-dpi-awareness-for-a-process"
+                Category="Win32Resources">
+    <EnumProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </EnumProperty.DataSource>
+    <EnumProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources;RustApplication::KubunoApplicationManifest" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(and (has-evaluated-value "RustApplication" "KubunoWin32Resources" true) (has-evaluated-value "RustApplication" "KubunoApplicationManifest" "Default"))</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="dpi;high dpi;scaling;per monitor;mise Ã  lâ€™Ã©chelle;haute rÃ©solution" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="PerMonitorV2" DisplayName="Par moniteur (v2)" IsDefault="True" />
+    <EnumValue Name="PerMonitor" DisplayName="Par moniteur" />
+    <EnumValue Name="System" DisplayName="Système" />
+    <EnumValue Name="Unaware" DisplayName="Non prise en charge (bitmap étiré par Windows)" />
+  </EnumProperty>
+
+  <EnumProperty Name="KubunoExecutionLevel"
+                DisplayName="Niveau d’exécution UAC"
+                Description="Privilèges que l’application demande au démarrage (manifeste requestedExecutionLevel)."
+                HelpUrl="https://learn.microsoft.com/cpp/build/reference/manifestuac-embeds-uac-information-in-manifest"
+                Category="Win32Resources">
+    <EnumProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </EnumProperty.DataSource>
+    <EnumProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources;RustApplication::KubunoApplicationManifest" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(and (has-evaluated-value "RustApplication" "KubunoWin32Resources" true) (has-evaluated-value "RustApplication" "KubunoApplicationManifest" "Default"))</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="uac;administrator;elevation;requestedExecutionLevel;administrateur;Ã©lÃ©vation" />
+    </EnumProperty.Metadata>
+    <EnumValue Name="asInvoker" DisplayName="Comme l’appelant" IsDefault="True" />
+    <EnumValue Name="highestAvailable" DisplayName="Le plus élevé disponible" />
+    <EnumValue Name="requireAdministrator" DisplayName="Exiger un administrateur" />
+  </EnumProperty>
+
+  <BoolProperty Name="KubunoLongPathAware"
+                DisplayName="Prise en charge des chemins longs"
+                Description="Déclare que l’application prend en charge les chemins plus longs que MAX_PATH (manifeste longPathAware)."
+                HelpUrl="https://learn.microsoft.com/windows/win32/fileio/maximum-file-path-limitation"
+                Category="Win32Resources">
+    <BoolProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </BoolProperty.DataSource>
+    <BoolProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources;RustApplication::KubunoApplicationManifest" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(and (has-evaluated-value "RustApplication" "KubunoWin32Resources" true) (has-evaluated-value "RustApplication" "KubunoApplicationManifest" "Default"))</NameValuePair.Value>
+      </NameValuePair>
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <BoolProperty Name="KubunoCommonControlsV6"
+                DisplayName="Styles visuels (Common Controls 6)"
+                Description="Lie l’application à la version 6 des contrôles communs Windows afin que les boîtes de dialogue et contrôles natifs utilisent le style visuel actuel."
+                HelpUrl="https://learn.microsoft.com/windows/win32/controls/cookbook-overview"
+                Category="Win32Resources">
+    <BoolProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </BoolProperty.DataSource>
+    <BoolProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources;RustApplication::KubunoApplicationManifest" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(and (has-evaluated-value "RustApplication" "KubunoWin32Resources" true) (has-evaluated-value "RustApplication" "KubunoApplicationManifest" "Default"))</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="comctl32;visual styles;themes" />
+    </BoolProperty.Metadata>
+  </BoolProperty>
+
+  <StringProperty Name="KubunoFileVersion"
+                  DisplayName="Version de fichier"
+                  Description="Version de fichier affichée dans l’onglet Détails de l’exécutable (majeure.mineure.build.révision). Vide : la version du package."
+                  HelpUrl="https://learn.microsoft.com/windows/win32/menurc/versioninfo-resource"
+                  Category="Win32Resources">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="String">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="EvaluatedValueValidationRegex" Value="^(\d{1,5}(\.\d{1,5}){0,3}([-+][0-9A-Za-z.+-]*)?)?$" />
+          <NameValuePair Name="EvaluatedValueFailedValidationMessage" Value="Version non valide : jusqu’à quatre nombres séparés par des points sont attendus, par exemple 1.2.3.0." />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "KubunoWin32Resources" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="version;file version;assembly version;version de fichier;version dâ€™assembly" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="KubunoProductName"
+                  DisplayName="Nom du produit"
+                  Description="Nom du produit affiché dans l’onglet Détails de l’exécutable. Vide : le nom du package."
+                  Category="Win32Resources">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "KubunoWin32Resources" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="product" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="KubunoFileDescription"
+                  DisplayName="Description du fichier"
+                  Description="Description affichée dans l’onglet Détails de l’exécutable et dans le Gestionnaire des tâches. Vide : la description du package."
+                  Category="Win32Resources">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "KubunoWin32Resources" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="title;description" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="KubunoCompanyName"
+                  DisplayName="Société"
+                  Description="Société affichée dans les informations de version de l’exécutable. Vide : les auteurs du package."
+                  Category="Win32Resources">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "KubunoWin32Resources" true)</NameValuePair.Value>
+      </NameValuePair>
+      <NameValuePair Name="SearchTerms" Value="company;publisher;sociÃ©tÃ©;Ã©diteur" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="KubunoCopyright"
+                  DisplayName="Copyright"
+                  Description="Mention de copyright affichée dans l’onglet Détails de l’exécutable."
+                  Category="Win32Resources">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "KubunoWin32Resources" true)</NameValuePair.Value>
+      </NameValuePair>
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="KubunoTrademarks"
+                  DisplayName="Marques"
+                  Description="Marques légales affichées dans les informations de version de l’exécutable."
+                  Category="Win32Resources">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.Metadata>
+      <NameValuePair Name="DependsOn" Value="RustApplication::KubunoWin32Resources" />
+      <NameValuePair Name="VisibilityCondition">
+        <NameValuePair.Value>(has-evaluated-value "RustApplication" "KubunoWin32Resources" true)</NameValuePair.Value>
+      </NameValuePair>
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <!-- ===================== Dependencies ===================== -->
+
+  <StringProperty Name="DependenciesSummary"
+                  DisplayName="Dépendances déclarées"
+                  Description="Dépendances déclarées dans Cargo.toml ([dependencies], [dev-dependencies], [build-dependencies] et leurs variantes spécifiques à une cible)."
+                  HelpUrl="https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html"
+                  Category="Dependencies"
+                  ReadOnly="True">
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="references;packages;crates;nuget;rÃ©fÃ©rences;packages" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="OpenCrateManager"
+                  DisplayName="Gérer les crates..."
+                  Category="Dependencies">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="LinkAction">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="Action" Value="Command" />
+          <NameValuePair Name="Command" Value="KubunoOpenCrateManager" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="crates.io;nuget;package manager;cargo add;gestionnaire de packages" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="OpenReferenceManager"
+                  DisplayName="Gestionnaire de références..."
+                  Category="Dependencies">
+    <StringProperty.DataSource>
+      <DataSource Persistence="ProjectFile" HasConfigurationCondition="False" />
+    </StringProperty.DataSource>
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="LinkAction">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="Action" Value="Command" />
+          <NameValuePair Name="Command" Value="KubunoOpenReferenceManager" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="project reference;path dependency;rÃ©fÃ©rence de projet;dÃ©pendance par chemin" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+</Rule>

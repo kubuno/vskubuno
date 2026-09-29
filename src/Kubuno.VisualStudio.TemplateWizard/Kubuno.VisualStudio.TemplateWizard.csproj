@@ -74,6 +74,20 @@
       <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\envdte80.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <!-- The themed dialog base (docs/ARCHITECTURE.md, "Themed dialogs"): DialogWindow and the theme keys, from
+         the same Visual Studio install for the same reason as the interop assemblies above. -->
+    <Reference Include="Microsoft.VisualStudio.Shell.15.0">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.15.0.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Framework">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\UI\*.cs" Link="UI\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <PropertyGroup>

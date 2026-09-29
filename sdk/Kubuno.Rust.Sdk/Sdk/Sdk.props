@@ -77,6 +77,33 @@
     <CargoExtraArgs Condition="'$(CargoExtraArgs)' == ''"></CargoExtraArgs>
 
     <!--
+      Defaults of the properties the Project Properties editor shows (docs/RSPROJ.md, "Project properties
+      like .NET"), so every page shows an actual value for a project that never set them. All of them
+      can be overridden in the project, per configuration where it makes sense.
+    -->
+    <!-- Build page: features and rustc flags (Sdk.targets turns them into cargo arguments). -->
+    <CargoFeatures Condition="'$(CargoFeatures)' == ''"></CargoFeatures>
+    <CargoNoDefaultFeatures Condition="'$(CargoNoDefaultFeatures)' == ''">false</CargoNoDefaultFeatures>
+    <CargoAllFeatures Condition="'$(CargoAllFeatures)' == ''">false</CargoAllFeatures>
+    <CargoTargetTriple Condition="'$(CargoTargetTriple)' == ''"></CargoTargetTriple>
+    <RustWarningsAsErrors Condition="'$(RustWarningsAsErrors)' == ''">false</RustWarningsAsErrors>
+    <RustCfg Condition="'$(RustCfg)' == ''"></RustCfg>
+    <RustFlags Condition="'$(RustFlags)' == ''"></RustFlags>
+    <!-- Code Analysis page. KubunoFormatOnSave: "global" (Tools > Options), "true" or "false". -->
+    <KubunoClippyOnBuild Condition="'$(KubunoClippyOnBuild)' == ''">false</KubunoClippyOnBuild>
+    <KubunoFormatOnSave Condition="'$(KubunoFormatOnSave)' == ''">global</KubunoFormatOnSave>
+    <!-- Debug page: F5 sets RUST_BACKTRACE=1 unless this is false (the user file usually sets it). -->
+    <RustDebuggerBacktrace Condition="'$(RustDebuggerBacktrace)' == ''">true</RustDebuggerBacktrace>
+    <!-- Application page, Win32 resources (Sdk.targets' KubunoWin32Resources target). -->
+    <KubunoWin32Resources Condition="'$(KubunoWin32Resources)' == ''">false</KubunoWin32Resources>
+    <KubunoApplicationManifest Condition="'$(KubunoApplicationManifest)' == ''">Default</KubunoApplicationManifest>
+    <KubunoDpiAwareness Condition="'$(KubunoDpiAwareness)' == ''">PerMonitorV2</KubunoDpiAwareness>
+    <KubunoExecutionLevel Condition="'$(KubunoExecutionLevel)' == ''">asInvoker</KubunoExecutionLevel>
+    <KubunoMinimumWindowsVersion Condition="'$(KubunoMinimumWindowsVersion)' == ''">10</KubunoMinimumWindowsVersion>
+    <KubunoLongPathAware Condition="'$(KubunoLongPathAware)' == ''">false</KubunoLongPathAware>
+    <KubunoCommonControlsV6 Condition="'$(KubunoCommonControlsV6)' == ''">false</KubunoCommonControlsV6>
+
+    <!--
       The task assembly this SDK ships (work package 2) — resolved relative to this very file,
       exactly like the JS SDK locates its own task DLL. Two TFMs are shipped side by side, picked by
       $(MSBuildRuntimeType) ("Full" = the .NET Framework MSBuild.exe VS ships; anything else = the

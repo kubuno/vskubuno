@@ -72,6 +72,7 @@ namespace Kubuno.VisualStudio.RustProjectSystem
             var arguments = await properties.GetEvaluatedPropertyValueAsync("RustDebuggerCommandArguments").ConfigureAwait(false);
             var workingDirectory = await properties.GetEvaluatedPropertyValueAsync("RustDebuggerWorkingDirectory").ConfigureAwait(false);
             var environmentText = await properties.GetEvaluatedPropertyValueAsync("RustDebuggerEnvironment").ConfigureAwait(false);
+            var backtrace = await properties.GetEvaluatedPropertyValueAsync("RustDebuggerBacktrace").ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(workingDirectory))
             {
@@ -98,6 +99,8 @@ namespace Kubuno.VisualStudio.RustProjectSystem
                 sysroot,
                 hostTriple,
                 existingPath: Environment.GetEnvironmentVariable("PATH"),
+                // Debug page, "Backtraces on panic" (on by default): off omits RUST_BACKTRACE entirely.
+                rustBacktrace: string.Equals(backtrace, "false", StringComparison.OrdinalIgnoreCase) ? null : "1",
                 overrides: DebugEnvironmentText.Parse(environmentText));
 
             var settings = new DebugLaunchSettings(launchOptions | DebugLaunchOptions.MergeEnvironment)

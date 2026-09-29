@@ -13,7 +13,8 @@ namespace Kubuno.VisualStudio.Infrastructure
     /// Implements the "Format on save" option: when enabled and a .rs document is about to be
     /// saved, runs Edit.FormatDocument on it first (rust-analyzer wires that command to rustfmt),
     /// so the formatted text is what actually gets written to disk. Off by default
-    /// (<see cref="RustOptionsPage.FormatOnSave"/>).
+    /// (<see cref="RustOptionsPage.FormatOnSave"/>). A <c>.rsproj</c> can override it per project with its
+    /// <c>KubunoFormatOnSave</c> property (Project Properties, Code Analysis page).
     ///
     /// Uses <see cref="IVsRunningDocTableEvents3.OnBeforeSave"/> rather than trying to hook the LSP
     /// layer directly: it is the one place VS guarantees to call synchronously, on the UI thread,
@@ -55,13 +56,22 @@ namespace Kubuno.VisualStudio.Infrastructure
 
             try
             {
-                if (!_getOptions().FormatOnSave)
+                var info = _runningDocumentTable.GetDocumentInfo(docCookie);
+                if (!string.Equals(Path.GetExtension(info.Moniker), Constants.RustFileExtension, StringComparison.OrdinalIgnoreCase))
                 {
                     return VSConstants.S_OK;
                 }
 
-                var info = _runningDocumentTable.GetDocumentInfo(docCookie);
-                if (!string.Equals(Path.GetExtension(info.Moniker), Constants.RustFileExtension, StringComparison.OrdinalIgnoreCase))
+                // A .rsproj may override the global option (Code Analysis page, "Format on save":
+                // KubunoFormatOnSave = true / false; "global" or unset defers to Tools > Options).
+                var projectSetting = info.Hierarchy is null ? null : Commands.RsprojSelection.GetBuildProperty(info.Hierarchy, "KubunoFormatOnSave");
+                var enabled = projectSetting switch
+                {
+                    "true" => true,
+                    "false" => false,
+                    _ => _getOptions().FormatOnSave,
+                };
+                if (!enabled)
                 {
                     return VSConstants.S_OK;
                 }

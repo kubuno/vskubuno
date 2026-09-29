@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "Settings" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties like
+  .NET", section "Settings page"), the counterpart of the .NET SDK's SettingsPropertyPage.xaml.
+  Typed application settings (.kbsettings) are designed but not implemented yet: the page states it
+  and links to the design note.
+-->
+<Rule Name="RustSettings"
+      DisplayName="Settings"
+      Description="Settings"
+      PageTemplate="generic"
+      Order="1200"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="General" DisplayName="General" />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="KubunoRust" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+
+  <StringProperty Name="RustSettingsPageDescription"
+                  DisplayName="Ignored"
+                  Description="Application settings let an application store typed values (per user or per application) with defaults declared at design time. For Kubuno applications they will be declared in a .kbsettings file, edited in a settings designer and read from Rust through generated, typed accessors. Not available yet."
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="Description" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="settings;app settings;kbsettings;configuration" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="RustSettingsDesignNote"
+                  DisplayName="Read the design note"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="LinkAction">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="Action" Value="URL" />
+          <NameValuePair Name="URL" Value="https://github.com/kubuno/vskubuno/blob/main/docs/RSPROJ.md#settings-page-design-note" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+  </StringProperty>
+
+</Rule>

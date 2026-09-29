@@ -17,6 +17,8 @@
   <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.CargoBuild" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
   <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.CargoTest" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
   <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.CargoFetch" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
+  <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.CargoClippy" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
+  <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.KubunoWin32Resources" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
 
   <!-- The two configurations Visual Studio's Configuration Manager/toolbar dropdown offer
        (capability ProjectConfigurationsDeclaredAsItems below), mapped to cargo's dev/release
@@ -103,12 +105,27 @@
   <PropertyGroup>
     <KubunoRustSdkRulesDirectory Condition="'$(KubunoRustSdkRulesDirectory)' == ''">$(MSBuildThisFileDirectory)Rules</KubunoRustSdkRulesDirectory>
   </PropertyGroup>
+
+  <!--
+    Localized pages of the Project Properties editor (docs/RSPROJ.md, "Project properties like .NET"):
+    Rules\<culture>\rust_*.xaml hold the same rules with translated display names, descriptions and
+    messages. Visual Studio passes its UI language as LangName/LangID to design-time evaluations; the
+    probing is the one Microsoft.Managed.DesignTime.targets uses for the .NET pages (exact culture, then
+    the neutral culture, then the English files next to this one).
+  -->
+  <PropertyGroup Condition="'$(KubunoRustSdkPagesDirectory)' == ''">
+    <KubunoRustSdkPagesDirectory>$(KubunoRustSdkRulesDirectory)\$(LangName)</KubunoRustSdkPagesDirectory>
+    <KubunoRustSdkPagesDirectory Condition="'$(LangName)' == '' or !Exists('$(KubunoRustSdkPagesDirectory)\rust_application.xaml')">$(KubunoRustSdkRulesDirectory)\$(LangName.Split('-')[0])</KubunoRustSdkPagesDirectory>
+    <KubunoRustSdkPagesDirectory Condition="'$(LangName)' == '' or !Exists('$(KubunoRustSdkPagesDirectory)\rust_application.xaml')">$(KubunoRustSdkRulesDirectory)</KubunoRustSdkPagesDirectory>
+  </PropertyGroup>
+
   <ItemGroup>
     <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\ProjectItemsSchema.xaml" />
     <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\general.xaml">
       <Context>Project</Context>
     </PropertyPageSchema>
-    <PropertyPageSchema Include="$(KubunoRustSdkRulesDirectory)\cargo.xaml">
+    <!-- The Project Properties editor's pages (a document tab like .NET's, opened by Properties on the project). -->
+    <PropertyPageSchema Include="$(KubunoRustSdkPagesDirectory)\rust_application.xaml;$(KubunoRustSdkPagesDirectory)\rust_build.xaml;$(KubunoRustSdkPagesDirectory)\rust_package.xaml;$(KubunoRustSdkPagesDirectory)\rust_codeanalysis.xaml;$(KubunoRustSdkPagesDirectory)\rust_debug.xaml;$(KubunoRustSdkPagesDirectory)\rust_resources.xaml;$(KubunoRustSdkPagesDirectory)\rust_settings.xaml">
       <Context>Project</Context>
     </PropertyPageSchema>
     <!-- F5/Ctrl+F5 (work package 4): CPS reads DebuggerFlavor through debugger_general.xaml;
@@ -166,7 +183,9 @@
       $(TargetPath) with cargo's own authoritative compiler-artifact path whenever it runs.
     -->
     <OutputType Condition="'$(OutputType)' == ''">Exe</OutputType>
-    <OutputPath>$(_KubunoEffectiveTargetDir)\$(CargoProfileDirName)\</OutputPath>
+    <!-- cargo's target option (a triple) (Application page, "Target platform") nests the profile folder under the triple. -->
+    <_KubunoTripleDir Condition="'$(CargoTargetTriple)' != ''">$(CargoTargetTriple)\</_KubunoTripleDir>
+    <OutputPath>$(_KubunoEffectiveTargetDir)\$(_KubunoTripleDir)$(CargoProfileDirName)\</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
     <AssemblyName>$(_KubunoBinName)</AssemblyName>
     <TargetName>$(_KubunoBinName)</TargetName>
@@ -187,6 +206,74 @@
     <_KubunoCargoLockFile Include="$(_KubunoManifestDir)\Cargo.lock" Condition="Exists('$(_KubunoManifestDir)\Cargo.lock')" />
   </ItemGroup>
 
+  <!--
+    Build page properties (docs/RSPROJ.md, "Project properties like .NET") turned into cargo arguments:
+    features (a ';' list), and the rustc flags passed as one merged build.rustflags config override
+    (RustFlags, then -D warnings for RustWarningsAsErrors, then one cfg flag per RustCfg entry).
+  -->
+  <ItemGroup>
+    <_KubunoCargoFeature Include="$(CargoFeatures)" />
+    <_KubunoRustCfg Include="$(RustCfg)" />
+  </ItemGroup>
+  <PropertyGroup>
+
+    <!-- Win32 resources (Application page): the .res file is named after a hash of its content (see
+         KubunoWin32Resources), so a changed icon/version changes cargo's arguments and relinks the exe. -->
+    <_KubunoWin32ResourcesEnabled Condition="'$(KubunoWin32Resources)' == 'true' and '$(DesignTimeBuild)' != 'true'">true</_KubunoWin32ResourcesEnabled>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(KubunoWin32Resources)' == 'true'">
+    <_KubunoWin32ResourceInput Include="$(KubunoApplicationIcon)" Condition="'$(KubunoApplicationIcon)' != '' and Exists('$(KubunoApplicationIcon)')" />
+    <_KubunoWin32ResourceInput Include="$(KubunoApplicationManifestFile)" Condition="'$(KubunoApplicationManifest)' == 'Custom' and '$(KubunoApplicationManifestFile)' != '' and Exists('$(KubunoApplicationManifestFile)')" />
+  </ItemGroup>
+
+  <!--
+    KubunoWin32Resources: generates the Win32 .res (icon, application manifest, version information)
+    that CoreCompile links into the executable through cargo rustc (link-arg for the bin only) -
+    no build.rs or crate dependency in the developer's package. Empty version fields fall back to
+    Cargo.toml's [package] version/name/description/authors (read by the task).
+  -->
+  <Target Name="KubunoWin32Resources" Condition="'$(_KubunoWin32ResourcesEnabled)' == 'true'">
+    <PropertyGroup>
+      <_KubunoWin32ResourceFile>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'kubuno_win32_{hash}.res'))</_KubunoWin32ResourceFile>
+      <_KubunoWin32Icon Condition="'$(KubunoApplicationIcon)' != ''">$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(KubunoApplicationIcon)'))</_KubunoWin32Icon>
+      <_KubunoWin32CustomManifest Condition="'$(KubunoApplicationManifestFile)' != ''">$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(KubunoApplicationManifestFile)'))</_KubunoWin32CustomManifest>
+    </PropertyGroup>
+    <KubunoWin32Resources OutputFile="$(_KubunoWin32ResourceFile)"
+                          CargoManifestPath="$(CargoManifestPath)"
+                          IconFile="$(_KubunoWin32Icon)"
+                          ManifestMode="$(KubunoApplicationManifest)"
+                          CustomManifestFile="$(_KubunoWin32CustomManifest)"
+                          DpiAwareness="$(KubunoDpiAwareness)"
+                          ExecutionLevel="$(KubunoExecutionLevel)"
+                          MinimumWindowsVersion="$(KubunoMinimumWindowsVersion)"
+                          LongPathAware="$(KubunoLongPathAware)"
+                          CommonControlsV6="$(KubunoCommonControlsV6)"
+                          FileVersion="$(KubunoFileVersion)"
+                          ProductVersion="$(KubunoProductVersion)"
+                          ProductName="$(KubunoProductName)"
+                          CompanyName="$(KubunoCompanyName)"
+                          FileDescription="$(KubunoFileDescription)"
+                          Copyright="$(KubunoCopyright)"
+                          Trademarks="$(KubunoTrademarks)"
+                          OriginalFilename="$(_KubunoBinName).exe"
+                          InternalName="$(_KubunoBinName)">
+      <Output TaskParameter="ResourceFile" PropertyName="_KubunoWin32ResourcePath" />
+    </KubunoWin32Resources>
+    <ItemGroup>
+      <_KubunoLinkArg Include="$(_KubunoWin32ResourcePath)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- The rustc flags (an item list is only usable inside a target). -->
+  <Target Name="_KubunoComputeRustFlags">
+    <PropertyGroup>
+      <_KubunoRustFlags>$(RustFlags)</_KubunoRustFlags>
+      <_KubunoRustFlags Condition="'$(RustWarningsAsErrors)' == 'true'">$(_KubunoRustFlags) -D warnings</_KubunoRustFlags>
+      <_KubunoRustFlags Condition="'@(_KubunoRustCfg)' != ''">$(_KubunoRustFlags) @(_KubunoRustCfg->'--cfg %(Identity)', ' ')</_KubunoRustFlags>
+      <_KubunoRustFlags>$(_KubunoRustFlags.Trim())</_KubunoRustFlags>
+    </PropertyGroup>
+  </Target>
+
   <Target Name="CreateManifestResourceNames" />
 
   <!--
@@ -197,14 +284,25 @@
     Microsoft.Common.targets import on purpose (a later definition of the same name would win).
   -->
   <Target Name="CoreCompile"
-          DependsOnTargets="CargoRestore"
-          Inputs="$(MSBuildProjectFullPath);$(CargoManifestPath);@(_KubunoCargoLockFile);@(_KubunoCargoSourceFiles)"
+          DependsOnTargets="CargoRestore;_KubunoComputeRustFlags;KubunoWin32Resources"
+          Inputs="$(MSBuildProjectFullPath);$(CargoManifestPath);@(_KubunoCargoLockFile);@(_KubunoCargoSourceFiles);@(_KubunoWin32ResourceInput);@(_KubunoLinkArg)"
           Outputs="$(TargetPath)">
+    <!-- With Win32 resources the bin is named explicitly: `cargo rustc` needs exactly one target. -->
+    <PropertyGroup>
+      <_KubunoBuildBin>$(CargoBin)</_KubunoBuildBin>
+      <_KubunoBuildBin Condition="'$(_KubunoBuildBin)' == '' and '@(_KubunoLinkArg)' != ''">$(_KubunoBinName)</_KubunoBuildBin>
+    </PropertyGroup>
     <CargoBuild ManifestPath="$(CargoManifestPath)"
                 Package="$(CargoPackage)"
                 Profile="$(CargoProfile)"
                 TargetDir="$(CargoTargetDir)"
-                Bin="$(CargoBin)"
+                Bin="$(_KubunoBuildBin)"
+                Features="@(_KubunoCargoFeature)"
+                NoDefaultFeatures="$(CargoNoDefaultFeatures)"
+                AllFeatures="$(CargoAllFeatures)"
+                TargetTriple="$(CargoTargetTriple)"
+                RustFlags="$(_KubunoRustFlags)"
+                LinkArgs="@(_KubunoLinkArg)"
                 ExtraArgs="$(CargoExtraArgs)"
                 WorkingDirectory="$(_KubunoManifestDir)">
       <Output TaskParameter="ExecutablePath" PropertyName="TargetPath" />
@@ -225,6 +323,24 @@
     <CargoFetch ManifestPath="$(CargoManifestPath)" TargetDir="$(CargoTargetDir)" WorkingDirectory="$(_KubunoManifestDir)" />
   </Target>
 
+  <!--
+    KubunoClippy (Code Analysis page, "Run Clippy on build"): `cargo clippy` over the package after a
+    successful compile, with the same profile/features/target; its lints reach the Error List like
+    compiler warnings. Lint levels come from Cargo.toml's [lints] table.
+  -->
+  <Target Name="KubunoClippy" AfterTargets="CoreCompile" DependsOnTargets="_KubunoComputeRustFlags" Condition="'$(KubunoClippyOnBuild)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+    <CargoClippy ManifestPath="$(CargoManifestPath)"
+                 Package="$(CargoPackage)"
+                 Profile="$(CargoProfile)"
+                 TargetDir="$(CargoTargetDir)"
+                 Features="@(_KubunoCargoFeature)"
+                 NoDefaultFeatures="$(CargoNoDefaultFeatures)"
+                 AllFeatures="$(CargoAllFeatures)"
+                 TargetTriple="$(CargoTargetTriple)"
+                 RustFlags="$(_KubunoRustFlags)"
+                 WorkingDirectory="$(_KubunoManifestDir)" />
+  </Target>
+
   <Target Name="_KubunoReportTargetPath" AfterTargets="CoreBuild" Condition="Exists('$(TargetPath)')">
     <Message Text="$(MSBuildProjectName) -&gt; $(TargetPath)" Importance="High" />
   </Target>
@@ -240,6 +356,7 @@
       <_KubunoCleanProfileArg Condition="'$(CargoProfile)' == 'debug'">--profile dev</_KubunoCleanProfileArg>
       <_KubunoCleanProfileArg Condition="'$(CargoProfile)' == 'release'">--release</_KubunoCleanProfileArg>
       <_KubunoCleanProfileArg Condition="'$(CargoProfile)' != 'release' and '$(CargoProfile)' != 'debug'">--profile $(CargoProfile)</_KubunoCleanProfileArg>
+      <_KubunoCleanProfileArg Condition="'$(CargoTargetTriple)' != ''">$(_KubunoCleanProfileArg) --target $(CargoTargetTriple)</_KubunoCleanProfileArg>
     </PropertyGroup>
     <Exec Command="cargo clean --manifest-path &quot;$(CargoManifestPath)&quot; $(_KubunoCleanProfileArg)"
           WorkingDirectory="$(_KubunoManifestDir)"
@@ -280,6 +397,7 @@
       <_KubunoRunBinArg Condition="'$(CargoBin)' != ''">--bin $(CargoBin)</_KubunoRunBinArg>
       <_KubunoRunProfileArg Condition="'$(CargoProfile)' == 'release'">--release</_KubunoRunProfileArg>
       <_KubunoRunProfileArg Condition="'$(CargoProfile)' != 'release' and '$(CargoProfile)' != 'debug'">--profile $(CargoProfile)</_KubunoRunProfileArg>
+      <_KubunoRunProfileArg Condition="'$(CargoTargetTriple)' != ''">$(_KubunoRunProfileArg) --target $(CargoTargetTriple)</_KubunoRunProfileArg>
     </PropertyGroup>
     <Exec Command="cargo run --manifest-path &quot;$(CargoManifestPath)&quot; $(_KubunoRunBinArg) $(_KubunoRunProfileArg) $(CargoExtraArgs)"
           WorkingDirectory="$(_KubunoManifestDir)"
@@ -291,11 +409,16 @@
   </Target>
 
   <!-- Test (Kubuno.Cargo.MSBuild.Tasks' CargoTest â€” work package 2): same diagnostics treatment as Build. -->
-  <Target Name="Test">
+  <Target Name="Test" DependsOnTargets="_KubunoComputeRustFlags">
     <CargoTest ManifestPath="$(CargoManifestPath)"
                Package="$(CargoPackage)"
                Profile="$(CargoProfile)"
                TargetDir="$(CargoTargetDir)"
+               Features="@(_KubunoCargoFeature)"
+               NoDefaultFeatures="$(CargoNoDefaultFeatures)"
+               AllFeatures="$(CargoAllFeatures)"
+               TargetTriple="$(CargoTargetTriple)"
+               RustFlags="$(_KubunoRustFlags)"
                ExtraArgs="$(CargoExtraArgs)"
                WorkingDirectory="$(_KubunoManifestDir)" />
   </Target>

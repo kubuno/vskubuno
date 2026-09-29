@@ -21,5 +21,11 @@ namespace Kubuno.Cargo.Commands
 
         /// <summary>`cargo doc`: a local dependency's "Open documentation" (with <c>--open -p</c>).</summary>
         Doc,
+
+        /// <summary>`cargo rustc`: a build whose final crate gets extra rustc arguments after "--" (the .rsproj SDK's embedded Win32 resources).</summary>
+        Rustc,
+
+        /// <summary>`cargo clippy`: the linter, run after a build when a .rsproj enables "Run Clippy on build".</summary>
+        Clippy,
     }
 }

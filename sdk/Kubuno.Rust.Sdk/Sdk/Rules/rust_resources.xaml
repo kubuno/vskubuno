@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "Resources" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties
+  like .NET"), the counterpart of the .NET SDK's ResourcesPropertyPage.xaml: like .resx files there,
+  Kubuno resources (.kbres, docs/EVENTS.md "Resources") are edited as files, not as project
+  properties, so this page only explains that and links to them. Win32 resources (icon, manifest,
+  version information) are on the Application page.
+-->
+<Rule Name="RustResources"
+      DisplayName="Resources"
+      Description="Resources"
+      PageTemplate="generic"
+      Order="1100"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+  <Rule.Categories>
+    <Category Name="General" DisplayName="General" />
+  </Rule.Categories>
+
+  <Rule.DataSource>
+    <DataSource Persistence="KubunoRust" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+
+  <StringProperty Name="RustResourcesPageDescription"
+                  DisplayName="Ignored"
+                  Description="Application resources (images, strings, icons used by views) live in Kubuno resource files (.kbres) of the project, edited directly from Solution Explorer. The icon, manifest and version information embedded in the executable are Win32 resources, set on the Application page."
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="Description" />
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="resources;kbres;resx;images;strings" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+  <StringProperty Name="CreateOrOpenKbres"
+                  DisplayName="Create or open application resources"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="LinkAction">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="Action" Value="Command" />
+          <NameValuePair Name="Command" Value="KubunoCreateOrOpenKbres" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+  </StringProperty>
+
+  <StringProperty Name="GoToWin32Resources"
+                  DisplayName="Win32 resources (icon, manifest, version)"
+                  Category="General">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="LinkAction">
+        <ValueEditor.Metadata>
+          <NameValuePair Name="Action" Value="Focus" />
+          <NameValuePair Name="PropertyPage" Value="RustApplication" />
+          <NameValuePair Name="Property" Value="KubunoWin32Resources" />
+        </ValueEditor.Metadata>
+      </ValueEditor>
+    </StringProperty.ValueEditors>
+    <StringProperty.Metadata>
+      <NameValuePair Name="SearchTerms" Value="icon;manifest;version" />
+    </StringProperty.Metadata>
+  </StringProperty>
+
+</Rule>

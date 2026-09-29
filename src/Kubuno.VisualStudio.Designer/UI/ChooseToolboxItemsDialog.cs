@@ -3,8 +3,8 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.VisualStudio.UI;
 using Microsoft.VisualStudio.PlatformUI;
-using Microsoft.VisualStudio.Shell;
 
 namespace Kubuno.VisualStudio.Designer.UI
 {
@@ -13,7 +13,7 @@ namespace Kubuno.VisualStudio.Designer.UI
     /// other crates declare (compiled into its last design build), each with a check box; the checked ones join the
     /// Toolbox's "&lt;Project&gt; Composants" tab.
     /// </summary>
-    internal sealed class ChooseToolboxItemsDialog : DialogWindow
+    internal sealed class ChooseToolboxItemsDialog : ThemedDialog
     {
         private readonly List<(CheckBox Box, string Key)> _boxes = new List<(CheckBox, string)>();
 
@@ -23,9 +23,7 @@ namespace Kubuno.VisualStudio.Designer.UI
             Title = french ? "Choisir des éléments de la boîte à outils" : "Choose Toolbox Items";
             Width = 560;
             Height = 460;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            SetResourceReference(BackgroundProperty, VsBrushes.WindowKey);
-            SetResourceReference(ForegroundProperty, VsBrushes.WindowTextKey);
+            ResizeMode = ResizeMode.CanResizeWithGrip;
 
             var root = new DockPanel { Margin = new Thickness(12) };
             var header = new TextBlock
@@ -40,17 +38,14 @@ namespace Kubuno.VisualStudio.Designer.UI
                         ? "Contrôles des autres crates du projet (après sa dernière génération). Les éléments cochés apparaissent dans l'onglet du projet de la boîte à outils ; l'application doit lier leur crate (use <crate> as _;)."
                         : "Controls of the project's other crates (as of its last build). The checked ones appear in the project's Toolbox tab; the application must link their crate (use <crate> as _;)."),
             };
-            header.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.WindowTextKey);
             DockPanel.SetDock(header, Dock.Top);
             root.Children.Add(header);
 
-            var ok = new Button { Content = "OK", IsDefault = true, MinWidth = 80, Margin = new Thickness(0, 0, 6, 0) };
-            var cancel = new Button { Content = french ? "Annuler" : "Cancel", IsCancel = true, MinWidth = 80 };
+            var ok = new Button { Content = "OK", IsDefault = true };
+            var cancel = new Button { Content = french ? "Annuler" : "Cancel", IsCancel = true };
             ok.Click += (_, _) => DialogResult = true;
             cancel.Click += (_, _) => DialogResult = false;
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
-            buttons.Children.Add(ok);
-            buttons.Children.Add(cancel);
+            StackPanel buttons = ThemedControls.ButtonRow(ok, cancel);
             DockPanel.SetDock(buttons, Dock.Bottom);
             root.Children.Add(buttons);
 
@@ -58,7 +53,6 @@ namespace Kubuno.VisualStudio.Designer.UI
             foreach (var group in components.GroupBy(c => c.CrateName ?? "?").OrderBy(g => g.Key))
             {
                 var crate = new TextBlock { Text = group.Key, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 2) };
-                crate.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.WindowTextKey);
                 list.Children.Add(crate);
                 foreach (var component in group.OrderBy(c => c.Name))
                 {
@@ -69,13 +63,15 @@ namespace Kubuno.VisualStudio.Designer.UI
                         IsChecked = chosen.Contains(key),
                         Margin = new Thickness(8, 2, 0, 2),
                     };
-                    box.SetResourceReference(ForegroundProperty, VsBrushes.WindowTextKey);
                     _boxes.Add((box, key));
                     list.Children.Add(box);
                 }
             }
 
-            root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list });
+            var frame = new Border { BorderThickness = new Thickness(1), Padding = new Thickness(4), Child = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list } };
+            frame.SetResourceReference(Border.BorderBrushProperty, ThemedDialogColors.ListBoxBorderBrushKey);
+            frame.SetResourceReference(Border.BackgroundProperty, ThemedDialogColors.ListBoxBrushKey);
+            root.Children.Add(frame);
             Content = root;
         }
 

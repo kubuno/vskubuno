@@ -94,5 +94,8 @@ namespace Kubuno.VisualStudio
 
         /// <summary>Tools menu entry for <see cref="Commands.RestartRustAnalyzerCommand"/>.</summary>
         public const int RestartRustAnalyzerCommand = 0x010F;
+
+        /// <summary>Tools menu entry for <see cref="Commands.DialogGalleryCommand"/> (developer instances only).</summary>
+        public const int DialogGalleryCommand = 0x0250;
     }
 }

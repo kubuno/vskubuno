@@ -65,6 +65,10 @@
     <Compile Include="Constants.cs" />
     <Compile Include="PackageGuids.cs" />
     <Compile Include="KubunoPackage.cs" />
+    <!-- The themed dialog base shared as source by every assembly that shows a dialog (docs/ARCHITECTURE.md, "Themed dialogs"). -->
+    <Compile Include="..\Shared\UI\ThemedDialog.cs">
+      <Link>UI\ThemedDialog.cs</Link>
+    </Compile>
     <Compile Include="LanguageService\ContentDefinition.cs" />
     <Compile Include="LanguageService\RustLanguageClient.cs" />
     <Compile Include="LanguageService\RustAnalyzerMiddleLayer.cs" />
@@ -95,6 +99,7 @@
     <Compile Include="Debugging\DebugRustTestAtCursorCommand.cs" />
     <Compile Include="Commands\GenerateRustProjectsCommand.cs" />
     <Compile Include="Commands\RestartRustAnalyzerCommand.cs" />
+    <Compile Include="Commands\DialogGalleryCommand.cs" />
     <!-- Extended "Ajouter" submenu on a .rsproj project node (product request, see KubunoCommands.vsct's own comment). -->
     <Compile Include="Commands\RsprojSelection.cs" />
     <Compile Include="Commands\RsprojFileReader.cs" />
@@ -521,6 +526,7 @@
     <!-- RsprojFileReader.cs: a plain XDocument read of another .rsproj's own <CargoManifestPath>. -->
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Xaml" />
     <!-- Package.GetDialogPage(...) (used for Kubuno.VisualStudio.Views' KbviewOptionsPage - see KubunoPackage.InitializeAsync) returns a DialogPage, which implements System.Windows.Forms.IWin32Window. -->
     <Reference Include="System.Windows.Forms" />
     <Reference Include="PresentationCore" />

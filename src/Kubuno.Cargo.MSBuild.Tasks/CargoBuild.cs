@@ -21,6 +21,13 @@ namespace Kubuno.Cargo.MSBuild.Tasks
         public bool Workspace { get; set; }
 
         /// <summary>
+        /// Linker arguments for the executable only (the SDK's generated Win32 <c>.res</c> file). When set, the build
+        /// runs <c>cargo rustc --bin &lt;Bin&gt; ... -- -C link-arg=&lt;arg&gt;</c> instead of <c>cargo build</c>: <c>cargo rustc</c>
+        /// passes extra rustc arguments to the final crate only, so dependencies keep their cache. Requires <see cref="Bin"/>.
+        /// </summary>
+        public string[] LinkArgs { get; set; } = Array.Empty<string>();
+
+        /// <summary>
         /// The built executable's absolute path once <see cref="CargoBuildTaskBase.Execute"/>
         /// returns — the authoritative <c>compiler-artifact</c> path when cargo actually rebuilt
         /// the target, otherwise a path-convention fallback (<see cref="ExecutableResolver"/>) for
@@ -34,7 +41,8 @@ namespace Kubuno.Cargo.MSBuild.Tasks
 
         protected override CargoCommand CreateCommand()
         {
-            CargoCommand command = CargoCommand.Build();
+            bool linkArgs = LinkArgs.Length > 0 && !string.IsNullOrEmpty(Bin);
+            CargoCommand command = linkArgs ? CargoCommand.Rustc() : CargoCommand.Build();
             if (Workspace)
             {
                 command.WithWorkspace();
@@ -42,6 +50,13 @@ namespace Kubuno.Cargo.MSBuild.Tasks
             if (!string.IsNullOrEmpty(Bin))
             {
                 command.WithTarget(CargoTargetSelector.Bin(Bin!));
+            }
+            if (linkArgs)
+            {
+                foreach (string arg in LinkArgs)
+                {
+                    command.WithRustcArgs("-C", "link-arg=" + arg);
+                }
             }
             return command;
         }
@@ -88,7 +103,8 @@ namespace Kubuno.Cargo.MSBuild.Tasks
                 Kind: LaunchTargetKind.Bin,
                 Profile: string.IsNullOrEmpty(Profile) ? "debug" : Profile!,
                 TargetDir: targetDir,
-                WorkspaceRoot: manifestDirectory);
+                WorkspaceRoot: manifestDirectory,
+                TargetTriple: string.IsNullOrEmpty(TargetTriple) ? null : TargetTriple);
 
             return ExecutableResolver.Resolve(target);
         }
