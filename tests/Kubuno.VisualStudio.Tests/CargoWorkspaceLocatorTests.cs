@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Kubuno.VisualStudio.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -97,6 +98,43 @@ namespace Kubuno.VisualStudio.Tests
             var root = CargoWorkspaceLocator.FindWorkspaceRoot(@"C:\repo\crate\", isDirectory, fileExists);
 
             Assert.AreEqual(@"C:\repo\crate", root);
+        }
+
+        private static bool IsRustFolder(string? folder, params string[] files)
+        {
+            var fileSet = new HashSet<string>(files, System.StringComparer.OrdinalIgnoreCase);
+            return CargoWorkspaceLocator.IsRustFolder(
+                folder,
+                fileSet.Contains,
+                directory => files.Where(f => string.Equals(Path.GetDirectoryName(f), directory, System.StringComparison.OrdinalIgnoreCase)),
+                directory => files.Select(f => Path.GetDirectoryName(f)!)
+                    .Where(d => string.Equals(Path.GetDirectoryName(d), directory, System.StringComparison.OrdinalIgnoreCase))
+                    .Distinct());
+        }
+
+        [TestMethod]
+        public void IsRustFolder_True_ForManifestAtTheRoot() =>
+            Assert.IsTrue(IsRustFolder(@"C:\repo", @"C:\repo\Cargo.toml", @"C:\repo\src\main.rs"));
+
+        [TestMethod]
+        public void IsRustFolder_True_ForAMemberCrateOpenedOnItsOwn() =>
+            Assert.IsTrue(IsRustFolder(@"C:\repo\crates\ui\", @"C:\repo\Cargo.toml", @"C:\repo\crates\ui\src\lib.rs"));
+
+        [TestMethod]
+        public void IsRustFolder_True_ForAWorkspaceOneLevelDown() =>
+            Assert.IsTrue(IsRustFolder(@"C:\repo", @"C:\repo\README.md", @"C:\repo\windows\Cargo.toml"));
+
+        [TestMethod]
+        public void IsRustFolder_True_ForAnRsprojAtTheRoot() =>
+            Assert.IsTrue(IsRustFolder(@"C:\repo", @"C:\repo\App.RSPROJ"));
+
+        [TestMethod]
+        public void IsRustFolder_False_ForAnyOtherFolder()
+        {
+            Assert.IsFalse(IsRustFolder(@"C:\web", @"C:\web\package.json", @"C:\web\App\App.csproj"));
+            Assert.IsFalse(IsRustFolder(@"C:\deep", @"C:\deep\a\b\Cargo.toml"), "only one level down is probed");
+            Assert.IsFalse(IsRustFolder(null));
+            Assert.IsFalse(IsRustFolder("  "));
         }
     }
 }

@@ -58,21 +58,49 @@ namespace Kubuno.VisualStudio.Infrastructure
                     "NuGet",
                     "NuGet.Config");
 
-                var existingContent = File.Exists(configPath) ? File.ReadAllText(configPath) : null;
-                var (content, changed) = NuGetLocalFeedRegistration.Plan(existingContent, SourceName, feedDirectory);
-                if (!changed)
+                // Checked on every package load: skip even reading NuGet.Config when it has not changed
+                // since this very feed folder was last found (or made) registered in it.
+                var stampPath = StampPath();
+                if (stampPath is not null && File.Exists(stampPath) && File.ReadAllText(stampPath) == Stamp(feedDirectory, configPath))
                 {
                     return;
                 }
 
-                Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-                File.WriteAllText(configPath, content);
-                KubunoLog.WriteLine($"Kubuno: registered the bundled Kubuno.Rust.Sdk NuGet feed ('{feedDirectory}') in '{configPath}'.");
+                var existingContent = File.Exists(configPath) ? File.ReadAllText(configPath) : null;
+                var (content, changed) = NuGetLocalFeedRegistration.Plan(existingContent, SourceName, feedDirectory);
+                if (changed)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+                    File.WriteAllText(configPath, content);
+                    KubunoLog.WriteLine($"Kubuno: registered the bundled Kubuno.Rust.Sdk NuGet feed ('{feedDirectory}') in '{configPath}'.");
+                }
+
+                if (stampPath is not null)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(stampPath)!);
+                    File.WriteAllText(stampPath, Stamp(feedDirectory, configPath));
+                }
             }
             catch (Exception exception)
             {
                 KubunoLog.WriteException("Kubuno: could not register the bundled Kubuno.Rust.Sdk NuGet feed", exception);
             }
+        }
+
+        /// <summary>Where the last verified state is remembered (per user, outside NuGet.Config).</summary>
+        private static string? StampPath()
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            return string.IsNullOrEmpty(localAppData) ? null : Path.Combine(localAppData, "Kubuno", "VisualStudio", "sdk-feed.stamp");
+        }
+
+        /// <summary>The feed folder plus NuGet.Config's size and time stamp: any edit of the file, or another install folder, invalidates it.</summary>
+        private static string Stamp(string feedDirectory, string configPath)
+        {
+            var config = new FileInfo(configPath);
+            return config.Exists
+                ? $"{feedDirectory}|{config.Length}|{config.LastWriteTimeUtc.Ticks}"
+                : $"{feedDirectory}|missing";
         }
     }
 }

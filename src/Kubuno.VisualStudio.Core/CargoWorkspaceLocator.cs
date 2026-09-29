@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Kubuno.VisualStudio.Core
 {
@@ -63,6 +65,54 @@ namespace Kubuno.VisualStudio.Core
             }
 
             return startDirectory;
+        }
+
+        /// <summary>
+        /// Whether an Open Folder root is Rust work worth loading the Kubuno package for: a <c>Cargo.toml</c> in the
+        /// folder or one of its ancestors (a member crate opened on its own), a <c>.rsproj</c> at its root, or a
+        /// <c>Cargo.toml</c> in one of its direct subfolders (a repository whose Cargo workspace sits one level down).
+        /// Deliberately shallow: it runs on every folder opened in Visual Studio, Rust or not.
+        /// </summary>
+        /// <param name="fileExists">Returns <see langword="true"/> when a file exists at the given full path.</param>
+        /// <param name="rootFiles">The full paths of the files directly in a folder.</param>
+        /// <param name="childDirectories">The full paths of the direct subfolders of a folder.</param>
+        public static bool IsRustFolder(
+            string? folder,
+            Func<string, bool> fileExists,
+            Func<string, IEnumerable<string>> rootFiles,
+            Func<string, IEnumerable<string>> childDirectories)
+        {
+            if (fileExists is null)
+            {
+                throw new ArgumentNullException(nameof(fileExists));
+            }
+
+            if (rootFiles is null)
+            {
+                throw new ArgumentNullException(nameof(rootFiles));
+            }
+
+            if (childDirectories is null)
+            {
+                throw new ArgumentNullException(nameof(childDirectories));
+            }
+
+            if (string.IsNullOrWhiteSpace(folder))
+            {
+                return false;
+            }
+
+            var root = folder!.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            for (var directory = root; !string.IsNullOrEmpty(directory); directory = Path.GetDirectoryName(directory))
+            {
+                if (fileExists(Path.Combine(directory!, ManifestFileName)))
+                {
+                    return true;
+                }
+            }
+
+            return rootFiles(root).Any(file => string.Equals(Path.GetExtension(file), ".rsproj", StringComparison.OrdinalIgnoreCase))
+                || childDirectories(root).Any(child => fileExists(Path.Combine(child, ManifestFileName)));
         }
     }
 }

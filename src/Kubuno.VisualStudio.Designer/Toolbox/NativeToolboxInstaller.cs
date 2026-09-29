@@ -222,7 +222,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             }
         }
 
-        /// <summary>Removes the Kubuno items and every Kubuno tab left empty, e.g. a tab persisted by an earlier version (call once at package load, UI thread).</summary>
+        /// <summary>Removes the Kubuno items and every Kubuno tab left empty, e.g. a tab persisted by an earlier version (UI thread; loads the Toolbox - see <see cref="UninstallIfLeftBehind"/>).</summary>
         public static void Uninstall()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -257,6 +257,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 }
 
                 toolbox.UpdateToolboxUI();
+                SetTabsMayBePersisted(false);
             }
             catch (Exception ex) when (ex is COMException or ArgumentException or InvalidCastException)
             {
@@ -265,6 +266,65 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             finally
             {
                 s_installed = false;
+            }
+        }
+
+        private const string MarkerCollection = @"Kubuno\Toolbox";
+        private const string MarkerProperty = "TabsMayBePersisted";
+
+        /// <summary>
+        /// <see cref="Uninstall"/>, but only when an earlier session may have left Kubuno tabs in the persisted
+        /// Toolbox: it closed (or crashed) while a <c>.kbview</c> designer was active, or it predates this marker.
+        /// Asking for <c>SVsToolbox</c> loads the whole Toolbox (every WinForms/WPF item it knows about), so the
+        /// package must not do it on every load; the marker is a user-settings flag, set while Kubuno items are in
+        /// the Toolbox and cleared once they are removed. Call on the UI thread, when idle.
+        /// </summary>
+        public static void UninstallIfLeftBehind()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var store = MarkerStore();
+            if (store is not null && store.CollectionExists(MarkerCollection) && store.PropertyExists(MarkerCollection, MarkerProperty)
+                && !store.GetBoolean(MarkerCollection, MarkerProperty))
+            {
+                return;
+            }
+
+            Uninstall();
+            SetTabsMayBePersisted(false);
+        }
+
+        private static void SetTabsMayBePersisted(bool value)
+        {
+            try
+            {
+                if (MarkerStore() is not { } store)
+                {
+                    return;
+                }
+
+                if (!store.CollectionExists(MarkerCollection))
+                {
+                    store.CreateCollection(MarkerCollection);
+                }
+
+                store.SetBoolean(MarkerCollection, MarkerProperty, value);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or COMException)
+            {
+                // Best effort: without the marker, the next session simply runs the cleanup again.
+            }
+        }
+
+        private static Microsoft.VisualStudio.Settings.WritableSettingsStore? MarkerStore()
+        {
+            try
+            {
+                return new Microsoft.VisualStudio.Shell.Settings.ShellSettingsManager(ServiceProvider.GlobalProvider)
+                    .GetWritableSettingsStore(Microsoft.VisualStudio.Settings.SettingsScope.UserSettings);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or COMException)
+            {
+                return null;
             }
         }
 
@@ -314,6 +374,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             }
 
             s_installed = true;
+            SetTabsMayBePersisted(true);
             s_iconFailures = 0;
             var added = 0;
             var existing = ListTabs(toolbox);

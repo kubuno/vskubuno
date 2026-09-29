@@ -30,6 +30,21 @@ namespace Kubuno.VisualStudio
         public static readonly Guid RustProjectUIContext = new(RustProjectUIContextString);
 
         /// <summary>
+        /// The only context <see cref="KubunoPackage"/> auto-loads on (a <c>ProvideUIContextRule</c>): a solution
+        /// with a <c>.rsproj</c>, a Rust or <c>.kbview</c> editor, or an Open Folder Cargo workspace
+        /// (<see cref="CargoFolderUIContextString"/>). Never active for a C#-only solution or the start window.
+        /// </summary>
+        public const string KubunoActivationUIContextString = "d0f63dbb-a2e8-47da-9211-127cf0f4c953";
+
+        /// <summary>
+        /// Set by <see cref="Workspace.CargoFolderActivation"/> while the Open Folder workspace is a Cargo one -
+        /// UI context rules have no "the folder contains Cargo.toml" term.
+        /// </summary>
+        public const string CargoFolderUIContextString = "dbfeebb4-e0c3-46c7-a180-cc41fb041f9e";
+
+        public static readonly Guid CargoFolderUIContext = new(CargoFolderUIContextString);
+
+        /// <summary>
         /// <c>providerType</c> for <see cref="Workspace.CargoBuildFileContextProviderFactory"/>
         /// (an <c>ExportFileContextProviderAttribute</c> string, and the <c>FileContext.ProviderType</c>
         /// every <see cref="Workspace.CargoBuildFileContextProvider"/> it creates carries).

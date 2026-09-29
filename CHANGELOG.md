@@ -272,6 +272,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Visual Studio no longer names Kubuno in its "improve Startup performance by disabling..." info bar**: the
+  extension used to load on every start of Visual Studio (empty start window, C# solutions included) and to spend
+  0.7 to 3 s on the UI thread there, loading the whole Toolbox among other things. It now loads only for Rust work
+  - a solution containing a `.rsproj`, a Rust or `.kbview` editor, or an opened folder that is a Cargo workspace -
+  and its load takes about 20 ms of UI-thread time. The rest (Output pane, MCP bridge, Toolbox cleanup, Open Folder
+  launch targets) runs once the solution has finished loading, in the background or when Visual Studio is idle.
+  The Kubuno.Rust.Sdk NuGet feed check no longer re-reads NuGet.Config when it has not changed, the Toolbox cleanup
+  runs only when a previous session may have left Kubuno tabs behind, and the "Kubuno" pane reports the load time.
 - The Kubuno Output pane is no longer flooded with rust-analyzer's "unhandled notification: NotificationReceived"
   errors (a Visual Studio-internal echo, harmless).
 - **Dialogs look like Visual Studio's own in every theme**: the Rust targets, Reference Manager, Remove Unused

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Kubuno.TestAdapter.Containers;
 using Kubuno.VisualStudio.Logging;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -173,6 +174,68 @@ namespace Kubuno.VisualStudio.Workspace
             if (_workspaceService != null)
             {
                 _workspaceService.OnActiveWorkspaceChanged -= OnActiveWorkspaceChangedAsync;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a <see cref="CargoFolderActivation"/> for every Open Folder workspace, as soon as it is initialized.
+    /// </summary>
+    [ExportWorkspaceServiceFactory(WorkspaceServiceFactoryOptions.CreateOnWorkspaceInitialize | WorkspaceServiceFactoryOptions.IsCreateAsync, typeof(CargoFolderActivation))]
+    internal sealed class CargoFolderActivationFactory : IWorkspaceServiceFactory, IAsyncWorkspaceServiceFactory
+    {
+        // The export's contract is IWorkspaceServiceFactory, whatever the options: without it, MEF rejects this part
+        // and, with it, the whole workspace service-factory import (found live - IVsFolderWorkspaceService then
+        // disappears for every consumer, rust-analyzer's language client included). IsCreateAsync makes the
+        // workspace call CreateServiceAsync instead; this synchronous entry point is only a fallback.
+        public object? CreateService(IWorkspace workspaceContext) =>
+            ThreadHelper.JoinableTaskFactory.Run(() => CreateServiceAsync(workspaceContext));
+
+        public async System.Threading.Tasks.Task<object?> CreateServiceAsync(IWorkspace workspaceContext)
+        {
+            var activation = new CargoFolderActivation(workspaceContext?.Location);
+            await activation.ApplyAsync();
+            return activation;
+        }
+    }
+
+    /// <summary>
+    /// Turns <see cref="PackageGuids.CargoFolderUIContext"/> on while the open folder is a Cargo workspace, which
+    /// is what loads <see cref="KubunoPackage"/> in Open Folder mode (its activation rule, see
+    /// <see cref="PackageGuids.KubunoActivationUIContextString"/>): UI context rules can test a project's
+    /// capabilities or the active editor, not what a folder contains. A handful of <c>File.Exists</c> calls on a
+    /// background thread, then one UI context update - nothing else, so opening any other folder stays free.
+    /// </summary>
+    internal sealed class CargoFolderActivation
+    {
+        private readonly string? _root;
+
+        public CargoFolderActivation(string? root) => _root = root;
+
+        public bool IsCargo { get; private set; }
+
+        public async System.Threading.Tasks.Task ApplyAsync()
+        {
+            await TaskScheduler.Default;
+            IsCargo = IsCargoFolder(_root);
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            UIContext.FromUIContextGuid(PackageGuids.CargoFolderUIContext).IsActive = IsCargo;
+        }
+
+        /// <summary>See <see cref="Kubuno.VisualStudio.Core.CargoWorkspaceLocator.IsRustFolder"/>; an unreadable folder is not a Rust one.</summary>
+        internal static bool IsCargoFolder(string? root)
+        {
+            try
+            {
+                return Kubuno.VisualStudio.Core.CargoWorkspaceLocator.IsRustFolder(
+                    root,
+                    File.Exists,
+                    folder => Directory.EnumerateFiles(folder, "*", SearchOption.TopDirectoryOnly),
+                    folder => Directory.EnumerateDirectories(folder));
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or System.Security.SecurityException)
+            {
+                return false;
             }
         }
     }

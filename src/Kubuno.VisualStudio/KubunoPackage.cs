@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -53,32 +54,54 @@ using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 namespace Kubuno.VisualStudio
 {
     /// <summary>
-    /// The Kubuno package: registers the Tools &gt; Options &gt; Kubuno &gt; Rust page and wires up
-    /// the format-on-save hook. The Rust language client itself (<see cref="LanguageService.RustLanguageClient"/>)
+    /// The Kubuno package: registers the Tools &gt; Options &gt; Kubuno pages, the .kbview designer, the
+    /// commands and the format-on-save hook. The Rust language client itself (<see cref="LanguageService.RustLanguageClient"/>)
     /// and the content type it targets are separate MEF components, exported independently of this
     /// package and activated by VS when a matching document is opened - they do not need this
     /// package to be loaded first.
     ///
-    /// Background-loads on a regular solution, no solution, and - importantly, and easy to miss -
-    /// Open Folder (its own dedicated UICONTEXT.FolderOpened, distinct from NoSolution/SolutionExists;
-    /// omitting it means the package silently never loads when a folder is opened, which is the
-    /// primary scenario here), since the format-on-save hook and the "Kubuno" Output pane (created
-    /// here, see KubunoLog.Initialize) should be active as early as possible.
+    /// <para><b>When it loads</b>: only in a Rust context, never
+    /// for a C#-only solution or the start window - Visual Studio otherwise names the extension in its "you can
+    /// improve startup performance by disabling..." info bar. It background-loads on one UI context rule
+    /// (<see cref="PackageGuids.KubunoActivationUIContextString"/>): a solution holding a <c>.rsproj</c>, the active
+    /// project being one, a Rust or <c>.kbview</c> editor, or an Open Folder Cargo workspace (a context
+    /// <see cref="Workspace.CargoFolderActivation"/> turns on - rules have no "folder contains" term). Everything
+    /// else loads it on demand: its commands (menu clicks), the .kbview editor factory, its options pages.</para>
+    ///
+    /// <para><b>What it does when it loads</b>: file probing and service lookups on a background thread, then a
+    /// short UI-thread section for what must exist before the first Kubuno command, editor or F7 (editor factory,
+    /// commands, priority command target, format on save, option hosts); the rest - Output pane, MCP bridge, Toolbox
+    /// cleanup, template wizard preload, Open Folder launch targets - runs once the solution has finished loading,
+    /// off the UI thread or on UI idle (<see cref="InitializeDeferredAsync"/>). Load time and UI-thread time are
+    /// written to the "Kubuno" pane.</para>
     /// </summary>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     // Probes this VSIX's folder for by-name loads of our private assemblies - see the comment at the top
     // of this file for why this replaces the former per-assembly ProvideCodeBase entries.
     [ProvideBindingPath]
     [InstalledProductRegistration("Kubuno for Visual Studio", "Rust language support (rust-analyzer, TextMate coloring, rustfmt) for Kubuno development.", "1.0")]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.NoSolution_string, PackageAutoLoadFlags.BackgroundLoad)]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.FolderOpened_string, PackageAutoLoadFlags.BackgroundLoad)]
+    // The ONLY auto-load. Formerly NoSolution + SolutionExists + FolderOpened: the package (and its Toolbox
+    // cleanup, which loads the whole Toolbox) then ran on every start of Visual Studio, for every user.
+    [ProvideAutoLoad(PackageGuids.KubunoActivationUIContextString, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideUIContextRule(
+        PackageGuids.KubunoActivationUIContextString,
+        name: "Kubuno activation",
+        expression: "RustSolution | RustProject | RustEditor | KbviewEditor | CargoFolder",
+        termNames: new[] { "RustSolution", "RustProject", "RustEditor", "KbviewEditor", "CargoFolder" },
+        termValues: new[]
+        {
+            "SolutionHasProjectCapability:RustProjectSystem",
+            "ActiveProjectCapability:RustProjectSystem",
+            "ActiveEditorContentType:rust",
+            "ActiveEditorContentType:kbview",
+            "{" + PackageGuids.CargoFolderUIContextString + "}",
+        })]
     [ProvideOptionPage(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, supportsAutomation: true)]
     [ProvideProfile(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, isToolsOptionPage: true)]
     [ProvideOptionPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true)]
     [ProvideProfile(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
     [ProvideOptionPage(typeof(DebuggingOptionsPage), Constants.OptionsCategoryName, "Debugging", 0, 0, supportsAutomation: true)]
-    // Kubuno.VisualStudio.Designer's own INTEGRATION.md §3: the split Design|XML editor for .kbview
+    // Kubuno.VisualStudio.Designer's own INTEGRATION.md Â§3: the split Design|XML editor for .kbview
     // files, registered alongside - never instead of - languages.pkgdef's plain core text editor
     // (that pkgdef entry's own comment: "the HIGHEST value wins the double-click default", 0x64 there
     // vs. DesignerConstants.EditorExtensionPriority's 0x60 here, so the plain editor stays default).
@@ -100,7 +123,7 @@ namespace Kubuno.VisualStudio
     [ProvideProfile(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
     // The View Outline tool window (Tools menu, KubunoCommands.vsct). The former fallback "Kubuno
     // Toolbox"/"Kubuno Properties" tool windows were removed: the designer fills Visual Studio's own
-    // Toolbox and Properties window (docs/DESIGNER.md §11). Their GUIDs are no longer registered, so a
+    // Toolbox and Properties window (docs/DESIGNER.md Â§11). Their GUIDs are no longer registered, so a
     // persisted window layout that still names them cannot recreate them.
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow))]
     // The crate manager (NuGet-like, one per .rsproj, in the document well): CrateManager/CrateManagerToolWindow.cs.
@@ -139,111 +162,28 @@ namespace Kubuno.VisualStudio
 
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            var loadTime = Stopwatch.StartNew();
+            var uiThreadTime = new Stopwatch();
 
+            // ---- Background thread (a background-loaded AsyncPackage starts here): file probing, service lookups.
+            // Deliberately no SwitchToMainThreadAsync yet: everything up to the UI section below must stay off it.
+            await TaskScheduler.Default;
             Instance = this;
-
-            if (await GetServiceAsync(typeof(SVsOutputWindow)) is IVsOutputWindow outputWindow)
-            {
-                var paneGuid = PackageGuids.KubunoOutputPane;
-                var hr = outputWindow.CreatePane(ref paneGuid, Constants.OutputPaneTitle, fInitVisible: 1, fClearWithSolution: 0);
-                if (ErrorHandler.Succeeded(hr) &&
-                    ErrorHandler.Succeeded(outputWindow.GetPane(ref paneGuid, out var pane)) &&
-                    pane != null)
-                {
-                    KubunoLog.Initialize(pane);
-                }
-            }
 
             // Kubuno.VisualStudio.Views (the .kbview language client) never references
             // Kubuno.VisualStudio.Logging.KubunoLog directly (that would be a circular reference -
             // see that library's Logging\IKubunoLog.cs remarks and its own INTEGRATION.md &sect;5);
-            // this adapter is the seam instead. Must happen before any .kbview document can open,
-            // so it runs unconditionally here rather than being deferred.
+            // this adapter is the seam instead. Must happen before any .kbview document can open.
             Kubuno.VisualStudio.Views.Logging.KubunoViewsLogHost.Current = new KubunoLogAdapter();
-            Kubuno.VisualStudio.Views.Options.KubunoViewsOptionsHost.Current =
-                (Kubuno.VisualStudio.Views.Options.KbviewOptionsPage)GetDialogPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage));
-
-            // Kubuno.VisualStudio.Designer's own INTEGRATION.md §3/§4/§6: the split Design|XML editor
-            // factory (a classic, package-registered IVsEditorFactory - [ProvideEditorFactory] only
-            // emits pkgdef metadata, VS still needs a live instance handed to it via RegisterEditorFactory),
-            // its options page's static gateway, and the DSG-7 design surface factory. Must happen
-            // before any .kbview document can open through "Open With... > Kubuno View Designer", so
-            // this runs unconditionally here, mirroring the Views language client's own logging/options
-            // wiring immediately above.
-            RegisterEditorFactory(new Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory());
-            Kubuno.VisualStudio.Designer.Options.DesignerOptionsHost.Current =
-                (Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage)GetDialogPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage));
-
-            // docs/DESIGNER.md §11 (WinForms-like designer): the native Toolbox shows each Kubuno component
-            // with the same Kubuno control icon as its Solution Explorer element node (KubunoControls.imagemanifest), and F7/Shift+F7
-            // switch between a .kbview's designer and its XML.
-            // The Kubuno Toolbox tabs exist only while a .kbview designer is active: drop any empty one a
-            // previous session (or version) left in the persisted toolbox.
-            Kubuno.VisualStudio.Designer.Toolbox.NativeToolboxInstaller.Uninstall();
             Kubuno.VisualStudio.Designer.Toolbox.NativeToolboxInstaller.IconName =
                 tag => Kubuno.VisualStudio.Core.SolutionExplorer.ControlIcons.IdFor(tag) == Kubuno.VisualStudio.Core.SolutionExplorer.ControlIcons.FallbackId ? "Control" : tag;
-            // The Properties window resolves the IEventBindingService behind a double-click on an event
-            // row through its own service chain, which ends at Visual Studio's global services - found
-            // live that the chain does not always reach the active designer's surface (the row then did
-            // nothing). Proffered globally too; it only knows .kbview elements, so it is inert for every
-            // other designer (whose own designer host answers first anyway).
-            ((System.ComponentModel.Design.IServiceContainer)this).AddService(
-                typeof(System.ComponentModel.Design.IEventBindingService),
-                Kubuno.VisualStudio.Designer.PropertyBrowser.KbviewEventBindingService.Instance,
-                promote: true);
-            if (await GetServiceAsync(typeof(SVsRegisterPriorityCommandTarget)) is IVsRegisterPriorityCommandTarget priorityTargets)
-            {
-                var viewSwitch = new Kubuno.VisualStudio.Designer.EditorFactory.DesignerViewSwitchCommandTarget(this);
-                ErrorHandler.ThrowOnFailure(priorityTargets.RegisterPriorityCommandTarget(0, viewSwitch, out _viewSwitchCookie));
-                _priorityTargets = priorityTargets;
-            }
 
             var extensionInstallDirectory = GetExtensionInstallDirectory();
+            // Awaited here rather than deferred: when the package loads because a .rsproj is opening, that
+            // project's Sdk="Kubuno.Rust.Sdk/..." must resolve from the bundled feed. Cached (see the class) -
+            // on an unchanged NuGet.Config this is a single small stamp-file read.
             RustSdkFeedInstaller.EnsureRegistered(extensionInstallDirectory);
-            PreloadTemplateWizardAssembly();
             var surfaceExePath = KubunoViewsSurfaceLocator.Locate(extensionInstallDirectory, devBuildDirectory: @"C:\kubuno-build\agent-dsgint\release\examples");
-            if (surfaceExePath is not null)
-            {
-                var oleServiceProvider = (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)this;
-                // docs/DESIGNER.md section 15: each designer renders with its project's own kubuno_ui.dll
-                // (a design build against the project); the bundled surface is the fallback.
-                _designSurfaceRuntimes = new ProjectDesignSurfaceRuntimeProvider(surfaceExePath, JoinableTaskFactory);
-                if (await GetServiceAsync(typeof(SVsSolutionBuildManager)) is IVsSolutionBuildManager2 buildManager)
-                {
-                    _designSurfaceRuntimes.Advise(buildManager);
-                }
-
-                Kubuno.VisualStudio.Designer.DesignSurface.DesignSurfaceHostFactoryHost.Current =
-                    new Kubuno.VisualStudio.Designer.DesignSurface.RustDesignSurfaceHostFactory(surfaceExePath, oleServiceProvider: oleServiceProvider, runtimeProvider: _designSurfaceRuntimes);
-                KubunoLog.WriteLine($"Kubuno: bundled design surface exe resolved at '{surfaceExePath}'.");
-            }
-            else
-            {
-                KubunoLog.WriteLine("Kubuno: kubuno-views-surface.exe not found - the Kubuno View Designer's Design pane will show its placeholder. Build it: cd Z:\\projects\\kubuno\\desktop\\windows ; $env:CARGO_TARGET_DIR='C:\\kubuno-build\\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-views -j 1");
-            }
-
-            // Start the MCP bridge (docs/MCP.md "Integration"): async, off the UI thread's critical
-            // path, and never allowed to fail package load - a developer not using Claude Code, or
-            // a bridge that fails to bind its pipe/write its discovery file, must not affect Rust/
-            // Cargo/Views functionality at all. StartAsync's own try/catch logs to the "Kubuno" pane.
-            var dte = await GetServiceAsync(typeof(SDTE)) as DTE2;
-            JoinableTaskFactory.RunAsync(() => StartMcpBridgeAsync(dte)).FileAndForget("Kubuno/McpBridge/Start");
-
-            var runningDocumentTable = new RunningDocumentTable(this);
-            _formatOnSaveEvents = new FormatOnSaveDocumentEvents(
-                runningDocumentTable,
-                () =>
-                {
-                    ThreadHelper.ThrowIfNotOnUIThread();
-                    return (RustOptionsPage)GetDialogPage(typeof(RustOptionsPage));
-                },
-                () =>
-                {
-                    ThreadHelper.ThrowIfNotOnUIThread();
-                    return GetService(typeof(DTE)) as DTE;
-                });
-            _formatOnSaveEvents.Advise();
 
             // The Project Properties editor's "Manage crates..." / "Reference Manager..." links
             // (Application page, Dependencies category) open this package's own UIs.
@@ -264,21 +204,83 @@ namespace Kubuno.VisualStudio
                 }
             };
 
-            if (await GetServiceAsync(typeof(SComponentModel)) is IComponentModel componentModel)
+            // Fetched here, cast (a COM QueryInterface for the native ones) on the UI thread below.
+            var priorityTargetsService = await GetServiceAsync(typeof(SVsRegisterPriorityCommandTarget));
+            var buildManagerService = surfaceExePath is null ? null : await GetServiceAsync(typeof(SVsSolutionBuildManager));
+            var commandService = await GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
+
+            // ---- UI thread: only what must exist before the first Kubuno command, .kbview editor or F7.
+            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            uiThreadTime.Start();
+            var priorityTargets = priorityTargetsService as IVsRegisterPriorityCommandTarget;
+            var buildManager = buildManagerService as IVsSolutionBuildManager2;
+
+            Kubuno.VisualStudio.Views.Options.KubunoViewsOptionsHost.Current =
+                (Kubuno.VisualStudio.Views.Options.KbviewOptionsPage)GetDialogPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage));
+
+            // Kubuno.VisualStudio.Designer's own INTEGRATION.md Â§3/Â§4/Â§6: the split Design|XML editor
+            // factory (a classic, package-registered IVsEditorFactory - [ProvideEditorFactory] only
+            // emits pkgdef metadata, VS still needs a live instance handed to it via RegisterEditorFactory),
+            // its options page's static gateway, and the DSG-7 design surface factory. Must happen
+            // before any .kbview document can open through "Open With... > Kubuno View Designer" (which
+            // itself loads this package on demand, and waits for this method).
+            RegisterEditorFactory(new Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory());
+            Kubuno.VisualStudio.Designer.Options.DesignerOptionsHost.Current =
+                (Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage)GetDialogPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage));
+
+            // The Properties window resolves the IEventBindingService behind a double-click on an event
+            // row through its own service chain, which ends at Visual Studio's global services - found
+            // live that the chain does not always reach the active designer's surface (the row then did
+            // nothing). Proffered globally too; it only knows .kbview elements, so it is inert for every
+            // other designer (whose own designer host answers first anyway).
+            ((System.ComponentModel.Design.IServiceContainer)this).AddService(
+                typeof(System.ComponentModel.Design.IEventBindingService),
+                Kubuno.VisualStudio.Designer.PropertyBrowser.KbviewEventBindingService.Instance,
+                promote: true);
+            // docs/DESIGNER.md Â§11: F7/Shift+F7 switch between a .kbview's designer and its XML.
+            if (priorityTargets is not null)
             {
-                _workspaceService = componentModel.GetService<IVsFolderWorkspaceService>();
+                var viewSwitch = new Kubuno.VisualStudio.Designer.EditorFactory.DesignerViewSwitchCommandTarget(this);
+                ErrorHandler.ThrowOnFailure(priorityTargets.RegisterPriorityCommandTarget(0, viewSwitch, out _viewSwitchCookie));
+                _priorityTargets = priorityTargets;
             }
 
-            if (_workspaceService != null)
+            if (surfaceExePath is not null)
             {
-                _workspaceService.OnActiveWorkspaceChanged += OnActiveWorkspaceChangedAsync;
-                // The package can finish loading after a folder is already open (e.g. the user
-                // reopens the same folder next session): regenerate for whatever is open right now too.
-                await RegenerateLaunchTargetsForCurrentWorkspaceAsync();
-                await EnsureWorkspaceSettingsExcludeNonRustProjectsAsync();
+                var oleServiceProvider = (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)this;
+                // docs/DESIGNER.md section 15: each designer renders with its project's own kubuno_ui.dll
+                // (a design build against the project); the bundled surface is the fallback.
+                _designSurfaceRuntimes = new ProjectDesignSurfaceRuntimeProvider(surfaceExePath, JoinableTaskFactory);
+                if (buildManager is not null)
+                {
+                    _designSurfaceRuntimes.Advise(buildManager);
+                }
+
+                Kubuno.VisualStudio.Designer.DesignSurface.DesignSurfaceHostFactoryHost.Current =
+                    new Kubuno.VisualStudio.Designer.DesignSurface.RustDesignSurfaceHostFactory(surfaceExePath, oleServiceProvider: oleServiceProvider, runtimeProvider: _designSurfaceRuntimes);
+                KubunoLog.WriteLine($"Kubuno: bundled design surface exe resolved at '{surfaceExePath}'.");
+            }
+            else
+            {
+                KubunoLog.WriteLine("Kubuno: kubuno-views-surface.exe not found - the Kubuno View Designer's Design pane will show its placeholder. Build it: cd Z:\\projects\\kubuno\\desktop\\windows ; $env:CARGO_TARGET_DIR='C:\\kubuno-build\\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-views -j 1");
             }
 
-            if (await GetServiceAsync(typeof(IMenuCommandService)) is OleMenuCommandService commandService)
+            var runningDocumentTable = new RunningDocumentTable(this);
+            _formatOnSaveEvents = new FormatOnSaveDocumentEvents(
+                runningDocumentTable,
+                () =>
+                {
+                    ThreadHelper.ThrowIfNotOnUIThread();
+                    return (RustOptionsPage)GetDialogPage(typeof(RustOptionsPage));
+                },
+                () =>
+                {
+                    ThreadHelper.ThrowIfNotOnUIThread();
+                    return GetService(typeof(DTE)) as DTE;
+                });
+            _formatOnSaveEvents.Advise();
+
+            if (commandService is not null)
             {
                 DebugRustTestAtCursorCommand.Initialize(this, commandService);
                 DesignerToolWindowCommands.Initialize(this, commandService);
@@ -289,6 +291,108 @@ namespace Kubuno.VisualStudio
                 AddProjectItemCommands.Initialize(this, commandService);
                 AddProjectReferenceCommand.Initialize(this, commandService);
                 AddCargoDependencyCommand.Initialize(this, commandService);
+            }
+
+            uiThreadTime.Stop();
+            KubunoLog.WriteLine($"Kubuno: package loaded in {loadTime.ElapsedMilliseconds} ms ({uiThreadTime.ElapsedMilliseconds} ms on the UI thread); the rest follows once the solution is loaded.");
+
+            // Everything else: after the solution (or folder) has finished loading, off the UI thread or on UI idle.
+            JoinableTaskFactory.RunAsync(() => InitializeDeferredAsync(DisposalToken)).FileAndForget("Kubuno/Package/DeferredInitialization");
+        }
+
+        /// <summary>
+        /// The non-essential part of package initialization, none of which a first Kubuno command or editor
+        /// needs: runs once any solution load in progress is over, never on the UI thread except for short idle-time
+        /// steps. Every step is idempotent and never throws.
+        /// </summary>
+        private async Task InitializeDeferredAsync(CancellationToken cancellationToken)
+        {
+            var uiThreadTime = new Stopwatch();
+            try
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+                var waitForSolution = KnownUIContexts.SolutionOpeningContext.IsActive && !KnownUIContexts.SolutionExistsAndFullyLoadedContext.IsActive;
+                if (waitForSolution)
+                {
+                    var loaded = new TaskCompletionSource<bool>();
+                    KnownUIContexts.SolutionExistsAndFullyLoadedContext.WhenActivated(() => loaded.TrySetResult(true));
+                    await loaded.Task.WithCancellation(cancellationToken);
+                }
+
+                await TaskScheduler.Default;
+                PreloadTemplateWizardAssembly();
+
+                // Idle-time UI work: the "Kubuno" Output pane (log lines are buffered until then), the Toolbox
+                // cleanup (only when a previous session may have left Kubuno tabs), the MCP bridge's DTE reads,
+                // the Open Folder workspace service (looked up on the UI thread, as it always was).
+                var componentModel = await GetServiceAsync(typeof(SComponentModel)) as IComponentModel;
+                var outputWindowService = await GetServiceAsync(typeof(SVsOutputWindow));
+                var dteService = await GetServiceAsync(typeof(SDTE));
+                string? visualStudioVersion = null;
+                string? solutionOrFolderPath = null;
+                DTE2? dte = null;
+                await JoinableTaskFactory.StartOnIdle(
+                    async () =>
+                    {
+                        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+                        uiThreadTime.Start();
+                        if (outputWindowService is IVsOutputWindow outputWindow)
+                        {
+                            var paneGuid = PackageGuids.KubunoOutputPane;
+                            var hr = outputWindow.CreatePane(ref paneGuid, Constants.OutputPaneTitle, fInitVisible: 1, fClearWithSolution: 0);
+                            if (ErrorHandler.Succeeded(hr) &&
+                                ErrorHandler.Succeeded(outputWindow.GetPane(ref paneGuid, out var pane)) &&
+                                pane != null)
+                            {
+                                KubunoLog.Initialize(pane);
+                            }
+                        }
+
+                        // docs/DESIGNER.md Â§11: the Kubuno Toolbox tabs exist only while a .kbview designer is
+                        // active; drop any a previous session (or version) left in the persisted toolbox.
+                        Kubuno.VisualStudio.Designer.Toolbox.NativeToolboxInstaller.UninstallIfLeftBehind();
+
+                        try
+                        {
+                            _workspaceService = componentModel?.GetService<IVsFolderWorkspaceService>();
+                        }
+                        catch (Exception exception)
+                        {
+                            KubunoLog.WriteException("Kubuno: the Open Folder workspace service is unavailable", exception);
+                        }
+
+                        dte = dteService as DTE2;
+                        if (dte is not null)
+                        {
+                            visualStudioVersion = dte.Version;
+                            solutionOrFolderPath = dte.Solution?.FullName;
+                        }
+
+                        uiThreadTime.Stop();
+                    },
+                    VsTaskRunContext.UIThreadIdlePriority).JoinAsync(cancellationToken);
+
+                await TaskScheduler.Default;
+                StartMcpBridge(dte, visualStudioVersion, solutionOrFolderPath);
+
+                if (_workspaceService != null)
+                {
+                    _workspaceService.OnActiveWorkspaceChanged += OnActiveWorkspaceChangedAsync;
+                    // The package can finish loading after a folder is already open (e.g. the user
+                    // reopens the same folder next session): regenerate for whatever is open right now too.
+                    await RegenerateLaunchTargetsForCurrentWorkspaceAsync();
+                    await EnsureWorkspaceSettingsExcludeNonRustProjectsAsync();
+                }
+
+                KubunoLog.WriteLine($"Kubuno: deferred initialization done ({uiThreadTime.ElapsedMilliseconds} ms on the UI thread, at idle{(waitForSolution ? ", after the solution load" : string.Empty)}).");
+            }
+            catch (OperationCanceledException)
+            {
+                // Visual Studio is closing.
+            }
+            catch (Exception exception)
+            {
+                KubunoLog.WriteException("Kubuno: deferred package initialization failed", exception);
             }
         }
 
@@ -326,7 +430,7 @@ namespace Kubuno.VisualStudio
         /// <c>Assembly.Load(AssemblyName)</c> call could not find it even with the (since replaced, see
         /// the comment at the top of this file) per-assembly code base registered - a separate,
         /// undocumented resolution path. The package's binding path should now cover it too; loading
-        /// it eagerly, at package initialization, is kept as a belt-and-braces measure: once an assembly of a given
+        /// it eagerly (on a background thread, once the solution is loaded - see InitializeDeferredAsync) is kept as a belt-and-braces measure: once an assembly of a given
         /// identity is already loaded into the AppDomain, the CLR's own assembly-identity cache
         /// satisfies any later <c>Assembly.Load</c> for the same identity without re-resolving it,
         /// regardless of which subsystem asks. Never allowed to fail package load - a wizard that
@@ -349,21 +453,15 @@ namespace Kubuno.VisualStudio
         /// Starts the MCP bridge (see docs/MCP.md "Integration"): the net48 leg of
         /// Kubuno.Mcp.Bridge, loaded in-proc here, hosts a named pipe that <c>kubuno-vs-mcp.exe</c>
         /// (started independently by Claude Code, outside this process - see docs/MCP.md) connects
-        /// to. Called fire-and-forget from <see cref="InitializeAsync"/> via <c>JoinableTaskFactory.RunAsync(...).FileAndForget(...)</c>,
-        /// so a slow or failing bridge start never delays package load; every failure is caught and
-        /// logged to the "Kubuno" Output pane rather than surfaced as an exception - read-only VS
-        /// context for Claude is a convenience, never something Rust/Cargo/Views functionality
-        /// should depend on being available.
+        /// to. Called from <see cref="InitializeDeferredAsync"/> on a background thread, once the solution
+        /// is loaded (so the discovery file names it), with the DTE values it read at UI idle: writing the
+        /// discovery file and starting the accept loop need no UI thread, and the provider only switches to
+        /// it per request. Every failure is caught and logged to the "Kubuno" Output pane rather than surfaced
+        /// as an exception - read-only VS context for Claude is a convenience, never something
+        /// Rust/Cargo/Views functionality should depend on being available.
         /// </summary>
-        private async Task StartMcpBridgeAsync(DTE2? dte)
+        private void StartMcpBridge(DTE2? dte, string? visualStudioVersion, string? solutionOrFolderPath)
         {
-            // Explicit switch (rather than ThreadHelper.ThrowIfNotOnUIThread()) per VSTHRD109:
-            // this is a Task-returning method, so it must switch to the thread it needs instead of
-            // asserting it is already there. In practice this is a no-op resume: InitializeAsync
-            // calls this via JoinableTaskFactory.RunAsync(() => StartMcpBridgeAsync(dte)) while
-            // already on the main thread.
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
             try
             {
                 if (dte is null)
@@ -372,9 +470,14 @@ namespace Kubuno.VisualStudio
                     return;
                 }
 
+                if (_mcpBridgeHost is not null)
+                {
+                    return;
+                }
+
                 var provider = new Kubuno.Mcp.Bridge.Dte.DteVsContextProvider(dte);
                 var host = new Kubuno.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost(provider);
-                host.Start(visualStudioVersion: dte.Version, solutionOrFolderPath: dte.Solution?.FullName);
+                host.Start(visualStudioVersion: visualStudioVersion, solutionOrFolderPath: solutionOrFolderPath);
                 _mcpBridgeHost = host;
                 KubunoLog.WriteLine($"Kubuno: MCP bridge started (pipe '{host.PipeName}').");
             }
