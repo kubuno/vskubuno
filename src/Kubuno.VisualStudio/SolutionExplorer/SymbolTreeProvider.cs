@@ -71,12 +71,27 @@ namespace Kubuno.VisualStudio.SolutionExplorer
             return source;
         }
 
-        protected override IEnumerable<IAttachedRelationship> GetRelationships(object item) => Enumerable.Empty<IAttachedRelationship>();
+        /// <summary>
+        /// Our own nodes declare the "Contains" relationship (like Roslyn's): Solution Explorer only offers
+        /// "Scope to This" for a node whose providers report the relationship it is currently browsing.
+        /// </summary>
+        protected override IEnumerable<IAttachedRelationship> GetRelationships(object item) =>
+            item is KubunoTreeItem && OwnsTreeItems ? ContainsRelationship.Instances : Enumerable.Empty<IAttachedRelationship>();
 
         /// <summary>Whether this provider answers for the children of our own nodes (exactly one provider must).</summary>
         protected abstract bool OwnsTreeItems { get; }
 
         protected abstract IAttachedCollectionSource? CreateForHierarchyItem(IVsHierarchyItem item);
+    }
+
+    /// <summary>The "Contains" relationship (parent to children), as an <see cref="IAttachedRelationship"/>.</summary>
+    internal sealed class ContainsRelationship : IAttachedRelationship
+    {
+        public static readonly IAttachedRelationship[] Instances = { new ContainsRelationship() };
+
+        public string Name => KnownRelationships.Contains;
+
+        public string DisplayName => KnownRelationships.Contains;
     }
 
     /// <summary>

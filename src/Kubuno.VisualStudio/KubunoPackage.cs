@@ -102,6 +102,8 @@ namespace Kubuno.VisualStudio
     // Toolbox and Properties window (docs/DESIGNER.md §11). Their GUIDs are no longer registered, so a
     // persisted window layout that still names them cannot recreate them.
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow))]
+    // The crate manager (NuGet-like, one per .rsproj, in the document well): CrateManager/CrateManagerToolWindow.cs.
+    [ProvideToolWindow(typeof(Kubuno.VisualStudio.CrateManager.CrateManagerToolWindow), MultiInstances = true, Style = VsDockStyle.MDI, Transient = true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     // Extended "Ajouter" submenu on a .rsproj project node (KubunoCommands.vsct's
     // VisibilityConstraints, guidRustProjectUIContext): the CPS-native way to scope a menu group to

@@ -45,6 +45,12 @@ namespace Kubuno.Cargo.Commands
         /// <summary>`cargo remove`: the positional crate name goes through <see cref="WithExtraArgs"/>.</summary>
         public static CargoCommand Remove() => new CargoCommand(CargoCommandKind.Remove);
 
+        /// <summary>`cargo update`: updates Cargo.lock; <see cref="WithPackage"/> restricts it to one crate (<c>-p</c>).</summary>
+        public static CargoCommand Update() => new CargoCommand(CargoCommandKind.Update);
+
+        /// <summary>`cargo doc`: builds (and with <c>--open</c> opens) the documentation.</summary>
+        public static CargoCommand Doc() => new CargoCommand(CargoCommandKind.Doc);
+
         /// <summary>Passed as <c>--manifest-path</c> when set (path to a specific Cargo.toml).</summary>
         public string? ManifestPath { get; set; }
 
@@ -245,6 +251,10 @@ namespace Kubuno.Cargo.Commands
                     return "add";
                 case CargoCommandKind.Remove:
                     return "remove";
+                case CargoCommandKind.Update:
+                    return "update";
+                case CargoCommandKind.Doc:
+                    return "doc";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Kind), Kind, "Unknown Cargo command kind.");
             }

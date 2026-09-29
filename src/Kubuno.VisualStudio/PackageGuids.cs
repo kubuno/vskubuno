@@ -6,6 +6,9 @@ namespace Kubuno.VisualStudio
     internal static class PackageGuidStrings
     {
         public const string Package = "5f3a9b2e-9e0c-4f0a-9a7a-6f0f3c9c9d10";
+
+        /// <summary>The crate manager tool window (<see cref="CrateManager.CrateManagerToolWindow"/>).</summary>
+        public const string CrateManagerToolWindow = "b7f0a3d2-6c1e-4f8b-9a4d-2e5c7b1f9a63";
     }
 
     internal static class PackageGuids
@@ -64,11 +67,24 @@ namespace Kubuno.VisualStudio
         public const int AddProjectReferenceCommand = 0x010B;
         public const int AddCargoDependencyCommand = 0x010C;
 
-        /// <summary>Dependencies node's own floating context menu (KubunoDependenciesNodeContextMenu in KubunoCommands.vsct).</summary>
+        /// <summary>Floating context menu of the Dependencies node and its category nodes (KubunoCommands.vsct).</summary>
         public const int KubunoDependenciesNodeContextMenu = 0x1025;
 
-        public const int AddCargoDependencyFromNodeCommand = 0x010D;
+        /// <summary>Floating context menu of one dependency node (KubunoCommands.vsct).</summary>
+        public const int KubunoDependencyItemContextMenu = 0x1027;
+
+        // Commands of those two menus (SolutionExplorer\DependenciesNodeContextMenu.cs routes them).
         public const int RemoveCargoDependencyCommand = 0x010E;
+        public const int DependenciesAddProjectReferenceCommand = 0x0110;
+        public const int DependenciesManageCratesCommand = 0x0111;
+        public const int DependenciesUpdateAllCommand = 0x0112;
+        public const int DependenciesRemoveUnusedCommand = 0x0113;
+        public const int DependencyOpenDocumentationCommand = 0x0114;
+        public const int DependencyOpenSourceCommand = 0x0115;
+        public const int DependencyUpdateCommand = 0x0116;
+        public const int DependencyCopyPathCommand = 0x0117;
+        public const int DependencyOpenFolderCommand = 0x0118;
+        public const int DependencyManageCommand = 0x0119;
 
         /// <summary>Tools menu entry for <see cref="Commands.RestartRustAnalyzerCommand"/>.</summary>
         public const int RestartRustAnalyzerCommand = 0x010F;

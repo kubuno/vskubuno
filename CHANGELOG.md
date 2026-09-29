@@ -8,6 +8,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **A "Dependencies" node like a .NET project's**: under a `.rsproj`, *Dependencies* (*Dépendances* in a
+  French Visual Studio) now shows the resolved dependency graph in categories with the .NET project
+  system's icons - *Procedural macros* (like *Analyzers*, including the ones a dependency brings in),
+  *Toolchain* (like *Frameworks*: the Rust version, channel and target, with `std`/`core`/`alloc`/
+  `proc_macro`/`test`), *Crates* (registry crates, like *Packages*), *Projects* (path dependencies) and
+  *Git*. Every crate shows its resolved version and expands into its own dependencies; dev- and build-
+  dependencies carry a `[dev]`/`[build]` badge; an unresolved dependency gets the yellow warning icon, a
+  yanked version too, an outdated one an "update available" marker (checked against crates.io in the
+  background); an optional dependency no feature enables is dimmed, as is one only used on another
+  platform. Errors (a broken `Cargo.toml`, a failed resolution) appear as a node under *Dependencies*.
+  The tree refreshes when `Cargo.toml` or `Cargo.lock` changes, never blocks Visual Studio, works
+  offline and keeps expanded nodes expanded.
+- **Context menus on the Dependencies tree**: *Add Project Reference...*, *Manage Crates...*, *Update
+  Crates* (`cargo update`), *Remove Unused Dependencies...* (through cargo-machete, or cargo-udeps with an
+  installed nightly toolchain; when neither is installed, a message says how to install them), *Scope to
+  This* and *New Solution Explorer View*; on a dependency: *Open Documentation* (docs.rs, the toolchain's
+  local documentation, or `cargo doc --open`), *Open Source Code*, *Update* (`cargo update -p`),
+  *Remove* (`cargo remove`), *Copy Full Path*, *Open Folder in File Explorer* and *Properties*.
+- **Properties window (F4) for a dependency**: name, requested and resolved version, latest version,
+  source (registry, path, git URL and commit), path, activated and requested features, default
+  features, optional, type (normal/dev/build), target (`cfg(...)`), license, repository, description -
+  read-only, each with a description, like a .NET package reference. The toolchain node shows the Rust
+  version, channel, target, commit, LLVM version and sysroot.
+- **Reference Manager** (replaces the former "Project reference" checklist): Projects > Solution lists
+  the other `.rsproj` projects, Browse > Recent the path dependencies outside the solution; search box,
+  details pane, and *Browse...* to reference any crate folder. OK applies `cargo add --path` /
+  `cargo remove`.
+- **Crate manager**, the counterpart of NuGet's package manager (opened from the Dependencies node, a
+  dependency, or *Add > Cargo dependency (crate)...*): *Browse* searches crates.io (download counts,
+  descriptions, most downloaded crates first), *Installed* lists the project's registry crates (works
+  offline), *Updates* the outdated ones (with *Update all*). The details pane offers the version,
+  dependency type, default features and each feature as a checkbox, license, links, minimum Rust
+  version, and *Install* / *Update* / *Uninstall* through `cargo add`/`cargo remove`, whose output goes
+  to the "Kubuno" Output pane. It follows the Visual Studio theme and language.
+
 - **Views work like Windows Forms forms**: the *Kubuno Desktop Application* project template and the
   *Kubuno View* item template now create an absolute surface - a `<Panel DesignWidth="800"
   DesignHeight="450">` root whose controls have their own `X`/`Y`/`Width`/`Height` and an `Anchor`
@@ -22,6 +57,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Cargo output could be lost**: the extension's process runner could return before the last lines
+  of a command's output were read, so a large `cargo metadata` result sometimes came back empty
+  ("Could not parse `cargo metadata` output").
 - **Crisp Toolbox icons at high DPI**: the Kubuno components' Toolbox icons looked deformed and blurry at
   175 % (uneven circles, soft irregular lines, glyphs touching the cell edges). They are now drawn for the
   pixel grid - 1-pixel strokes on whole pixels, symmetric pixel circles, a 1-pixel margin - like the Windows

@@ -27,6 +27,13 @@
           <ButtonText>Kubuno Dependencies</ButtonText>
         </Strings>
       </Menu>
+      <!-- One dependency node's floating context menu (DependencyTreeItem, same mechanism). -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Kubuno Dependency</ButtonText>
+        </Strings>
+      </Menu>
 
       <!--
         The .kbview design surface's context menus (docs/DESIGNER.md §12), shown by
@@ -150,8 +157,30 @@
         The Dependencies node's own floating context menu group (KubunoDependenciesNodeContextMenu
         above, shown via IVsUIShell.ShowContextMenu - SolutionExplorer\DependenciesNodeContextMenu.cs).
       -->
-      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenuGroup" priority="0x0600">
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenuGroup" priority="0x0100">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeUpdateGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeScopeGroup" priority="0x0300">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenu" />
+      </Group>
+      <!-- One dependency's menu, in the .NET project system's order: open, update/remove, paths, scope, properties. -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemOpenGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemEditGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemPathGroup" priority="0x0300">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemScopeGroup" priority="0x0400">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemPropertiesGroup" priority="0x0500">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemContextMenu" />
       </Group>
 
       <!-- The .kbview design surface's element menu, in WinForms order. -->
@@ -352,27 +381,121 @@
       </Button>
 
       <!--
-        Same "Dépendance Cargo (crate)..." command, reachable from the Dependencies node's own
-        context menu (DependenciesTreeItem.IContextMenuPattern, SolutionExplorer/TreeItems.cs), and
-        "Supprimer" on one crate node (DependencyTreeItem). Both shown via IVsUIShell.ShowContextMenu
-        against KubunoDependenciesNodeContextMenuGroup (see the Groups section above) - not parented
-        under any shell menu, so no VisibilityConstraints are needed (nothing ever reaches them
-        except that explicit ShowContextMenu call).
+        The Dependencies node's and a dependency node's own context menus (IContextMenuPattern on
+        the tree items, SolutionExplorer/TreeItems.cs), shown via IVsUIShell.ShowContextMenu with
+        DependenciesNodeCommandTarget, which answers every command's state and - TextChanges - its
+        text in VS's UI language (the English texts here are the fallback). Not parented under any
+        shell menu, so no VisibilityConstraints are needed.
       -->
-      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddCargoDependencyFromNode" priority="0x0100" type="Button">
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependenciesAddProjectReference" priority="0x0100" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenuGroup" />
-        <Icon guid="guidRustProjectImages" id="CargoManifest" />
+        <Icon guid="ImageCatalogGuid" id="Reference" />
         <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Dépendance Cargo (crate)...</ButtonText>
+          <ButtonText>Add Project Reference...</ButtonText>
         </Strings>
       </Button>
-      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidRemoveCargoDependency" priority="0x0101" type="Button">
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependenciesManageCrates" priority="0x0101" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeContextMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="PackageReference" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Manage Crates...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependenciesUpdateAll" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeUpdateGroup" />
+        <Icon guid="ImageCatalogGuid" id="RunUpdate" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Update Crates</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependenciesRemoveUnused" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeUpdateGroup" />
+        <Icon guid="ImageCatalogGuid" id="CleanData" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Remove Unused Dependencies...</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependencyOpenDocumentation" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemOpenGroup" />
+        <Icon guid="ImageCatalogGuid" id="OpenWebSite" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Open Documentation</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependencyOpenSource" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemOpenGroup" />
+        <Icon guid="ImageCatalogGuid" id="GoToSourceCode" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Open Source Code</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependencyManage" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemEditGroup" />
+        <Icon guid="ImageCatalogGuid" id="PackageReference" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Manage Crates...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependencyUpdate" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemEditGroup" />
+        <Icon guid="ImageCatalogGuid" id="RunUpdate" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Update</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidRemoveCargoDependency" priority="0x0102" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemEditGroup" />
         <Icon guid="ImageCatalogGuid" id="Remove" />
         <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>Supprimer</ButtonText>
+          <ButtonText>Remove</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependencyCopyPath" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemPathGroup" />
+        <Icon guid="ImageCatalogGuid" id="Copy" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Copy Full Path</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDependencyOpenFolder" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemPathGroup" />
+        <Icon guid="ImageCatalogGuid" id="OpenFolder" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Open Folder in File Explorer</ButtonText>
         </Strings>
       </Button>
 
@@ -474,6 +597,26 @@
 
   <!-- VS's own standard commands, placed in the .kbview design surface's context menus. -->
   <CommandPlacements>
+    <!--
+      The Dependencies menus reuse Solution Explorer's own "Scope to This" / "New Solution Explorer
+      View" (StandardCommandSet11, answered by Solution Explorer for the selected node) and the
+      standard "Properties" (Alt+Enter), so they read and behave like in a .NET project.
+    -->
+    <CommandPlacement guid="guidVSStd11" id="cmdidSolutionExplorerScopeToThis" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeScopeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd11" id="cmdidSolutionExplorerNewScopedWindow" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependenciesNodeScopeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd11" id="cmdidSolutionExplorerScopeToThis" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemScopeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd11" id="cmdidSolutionExplorerNewScopedWindow" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemScopeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidPropSheetOrProperties" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDependencyItemPropertiesGroup" />
+    </CommandPlacement>
     <CommandPlacement guid="guidVSStd97" id="cmdidViewCode" priority="0x0100">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerCodeGroup" />
     </CommandPlacement>
@@ -627,6 +770,12 @@
   <Symbols>
     <GuidSymbol name="guidKubunoPackage" value="{5f3a9b2e-9e0c-4f0a-9a7a-6f0f3c9c9d10}" />
 
+    <!-- CMDSETID_StandardCommandSet11 (stdidcmd.h), not declared by the SDK's .vsct headers. -->
+    <GuidSymbol name="guidVSStd11" value="{D63DB1F0-404E-4B21-9648-CA8D99245EC3}">
+      <IDSymbol name="cmdidSolutionExplorerNewScopedWindow" value="34" />
+      <IDSymbol name="cmdidSolutionExplorerScopeToThis" value="38" />
+    </GuidSymbol>
+
     <!--
       The RustProjectSystem/RustProject.imagemanifest images (RustProjectImages.cs), reused here so
       "Add" submenu buttons carry the Rust logo instead of a generic ImageCatalogGuid moniker.
@@ -651,6 +800,24 @@
       <IDSymbol name="KubunoItemContextMenuGroup" value="0x1021" />
       <IDSymbol name="KubunoDependenciesNodeContextMenu" value="0x1025" />
       <IDSymbol name="KubunoDependenciesNodeContextMenuGroup" value="0x1026" />
+      <IDSymbol name="KubunoDependencyItemContextMenu" value="0x1027" />
+      <IDSymbol name="KubunoDependenciesNodeUpdateGroup" value="0x1028" />
+      <IDSymbol name="KubunoDependenciesNodeScopeGroup" value="0x1029" />
+      <IDSymbol name="KubunoDependencyItemOpenGroup" value="0x102A" />
+      <IDSymbol name="KubunoDependencyItemEditGroup" value="0x102B" />
+      <IDSymbol name="KubunoDependencyItemPathGroup" value="0x102C" />
+      <IDSymbol name="KubunoDependencyItemScopeGroup" value="0x102D" />
+      <IDSymbol name="KubunoDependencyItemPropertiesGroup" value="0x102E" />
+      <IDSymbol name="cmdidDependenciesAddProjectReference" value="0x0110" />
+      <IDSymbol name="cmdidDependenciesManageCrates" value="0x0111" />
+      <IDSymbol name="cmdidDependenciesUpdateAll" value="0x0112" />
+      <IDSymbol name="cmdidDependenciesRemoveUnused" value="0x0113" />
+      <IDSymbol name="cmdidDependencyOpenDocumentation" value="0x0114" />
+      <IDSymbol name="cmdidDependencyOpenSource" value="0x0115" />
+      <IDSymbol name="cmdidDependencyUpdate" value="0x0116" />
+      <IDSymbol name="cmdidDependencyCopyPath" value="0x0117" />
+      <IDSymbol name="cmdidDependencyOpenFolder" value="0x0118" />
+      <IDSymbol name="cmdidDependencyManage" value="0x0119" />
       <IDSymbol name="cmdidDebugRustTestAtCursor" value="0x0100" />
       <IDSymbol name="cmdidShowKubunoOutline" value="0x0103" />
       <IDSymbol name="cmdidGenerateRustProjects" value="0x0104" />
@@ -662,7 +829,6 @@
       <IDSymbol name="cmdidAddRustBinary" value="0x010A" />
       <IDSymbol name="cmdidAddProjectReference" value="0x010B" />
       <IDSymbol name="cmdidAddCargoDependency" value="0x010C" />
-      <IDSymbol name="cmdidAddCargoDependencyFromNode" value="0x010D" />
       <IDSymbol name="cmdidRemoveCargoDependency" value="0x010E" />
       <IDSymbol name="cmdidRestartRustAnalyzer" value="0x010F" />
 

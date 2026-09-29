@@ -15,5 +15,11 @@ namespace Kubuno.Cargo.Commands
 
         /// <summary>`cargo remove`: the Dependencies node's own "Supprimer" command.</summary>
         Remove,
+
+        /// <summary>`cargo update`: the Dependencies node's "Update crates" and a dependency's "Update" (with <c>-p</c>).</summary>
+        Update,
+
+        /// <summary>`cargo doc`: a local dependency's "Open documentation" (with <c>--open -p</c>).</summary>
+        Doc,
     }
 }

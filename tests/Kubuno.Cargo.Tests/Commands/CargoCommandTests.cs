@@ -62,6 +62,17 @@ namespace Kubuno.Cargo.Tests.Commands
         }
 
         [Fact]
+        public void Update_of_one_crate_and_doc_open_emit_expected_arguments()
+        {
+            Assert.Equal(
+                "update --manifest-path C:\\app\\Cargo.toml -p serde",
+                CargoCommand.Update().WithManifestPath(@"C:\app\Cargo.toml").WithPackage("serde").ToCommandLine().Arguments);
+            Assert.Equal(
+                "doc --manifest-path C:\\app\\Cargo.toml -p corelib --open --no-deps",
+                CargoCommand.Doc().WithManifestPath(@"C:\app\Cargo.toml").WithPackage("corelib").WithExtraArgs("--open", "--no-deps").ToCommandLine().Arguments);
+        }
+
+        [Fact]
         public void Bare_build_emits_no_extra_flags()
         {
             CargoCommandLine line = CargoCommand.Build().ToCommandLine();

@@ -28,5 +28,8 @@ namespace Kubuno.Cargo.Metadata
         public IReadOnlyList<string> WorkspaceMembers { get; set; } = Array.Empty<string>();
 
         public IReadOnlyList<string> WorkspaceDefaultMembers { get; set; } = Array.Empty<string>();
+
+        /// <summary>The resolved dependency graph; <see langword="null"/> for <c>--no-deps</c> output.</summary>
+        public CargoResolve? Resolve { get; set; }
     }
 }

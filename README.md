@@ -407,8 +407,27 @@ A `.rsproj` reads like a WinForms/WPF project in Solution Explorer:
   the Rust visibility (`pub`, `pub(crate)` = internal, `pub(super)` = protected, private).
   Expanding a `.kbview` shows its element tree (`x:Name` when set, else the tag). Double-click
   jumps to the item; a view element opens the Kubuno View Designer with it selected.
-- A **Dependencies** node lists the crates `Cargo.toml` declares (read-only, from `cargo metadata
-  --no-deps`), grouped as crates / dev-dependencies / build-dependencies.
+- A **Dependencies** node like a .NET project's (see "Dependencies, Reference Manager and crate
+  manager" below).
+
+### Dependencies, Reference Manager and crate manager (lot 10)
+
+- **Dependencies** shows the resolved graph (`cargo metadata` for the host platform, offline first) in
+  the .NET project system's categories and icons: *Procedural macros* (~ Analyzers), *Toolchain*
+  (~ Frameworks: `rustc -vV`, with the sysroot crates), *Crates* (~ Packages; each expands into its own
+  dependencies), *Projects* (path dependencies) and *Git*. Dev/build dependencies carry a badge;
+  unresolved or yanked ones the warning icon, outdated ones an update marker (crates.io sparse index,
+  cached); errors appear as child nodes. Refreshed on `Cargo.toml`/`Cargo.lock` changes.
+- Context menus: Add Project Reference, Manage Crates, Update Crates (`cargo update`), Remove Unused
+  Dependencies (cargo-machete, or cargo-udeps with an installed nightly), Scope to This, New Solution
+  Explorer View; on a dependency: Open Documentation, Open Source Code, Update, Remove, Copy Full Path,
+  Open Folder in File Explorer, Properties (F4: versions, source, path, features, type, target, license,
+  repository, description).
+- **Reference Manager**: Projects > Solution, Browse > Recent, search, Browse... to any crate folder;
+  OK runs `cargo add --path` / `cargo remove`.
+- **Crate manager** (NuGet-like): Browse (crates.io search), Installed (offline), Updates; version,
+  type, default features and feature checkboxes; Install/Update/Uninstall through `cargo add`/`cargo
+  remove`, output in the "Kubuno" pane. `Cargo.toml` is only ever edited by cargo.
 
 Rust symbols come from `rust-analyzer symbols` (the same syntactic outline rust-analyzer returns
 for `textDocument/documentSymbol`, without starting a second language server); view elements come

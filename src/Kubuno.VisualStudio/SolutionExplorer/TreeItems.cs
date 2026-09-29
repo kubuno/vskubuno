@@ -5,13 +5,11 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
 using System.Windows;
-using Kubuno.Cargo.Metadata;
 using Kubuno.VisualStudio.Core.SolutionExplorer;
 using Microsoft.Internal.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Kubuno.VisualStudio.SolutionExplorer
 {
@@ -35,11 +33,14 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         /// <summary>Position among its siblings (source order, or group order).</summary>
         public int Order { get; set; }
 
+        /// <summary>Identity across refreshes (<see cref="TreeMerger"/>), so a kept node keeps its expansion state.</summary>
+        public string? MergeKey { get; set; }
+
         public abstract string Text { get; }
 
         public virtual string ToolTipText => Text;
 
-        public string? StateToolTipText => null;
+        public virtual string? StateToolTipText => null;
 
         public object? ToolTipContent => ToolTipText;
 
@@ -47,15 +48,15 @@ namespace Kubuno.VisualStudio.SolutionExplorer
 
         public FontStyle FontStyle => FontStyles.Normal;
 
-        public bool IsCut => false;
+        public virtual bool IsCut => false;
 
         public abstract ImageMoniker IconMoniker { get; }
 
         public virtual ImageMoniker ExpandedIconMoniker => IconMoniker;
 
-        public ImageMoniker OverlayIconMoniker => default;
+        public virtual ImageMoniker OverlayIconMoniker => default;
 
-        public ImageMoniker StateIconMoniker => default;
+        public virtual ImageMoniker StateIconMoniker => default;
 
         public object SourceItem => this;
 
@@ -78,7 +79,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         internal static ImageMoniker ControlIcon(string? tag) => new ImageMoniker { Guid = ControlIcons.ImagesGuid, Id = ControlIcons.IdFor(tag) };
 
         /// <summary>A <c>KnownMonikers</c> property by name (see <see cref="SymbolMonikerNames"/>), cached.</summary>
-        protected static ImageMoniker Moniker(string name)
+        internal static ImageMoniker Moniker(string name)
         {
             lock (MonikerCache)
             {
@@ -100,8 +101,13 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         {
             RaisePropertyChanged(nameof(Text));
             RaisePropertyChanged(nameof(ToolTipText));
+            RaisePropertyChanged(nameof(ToolTipContent));
             RaisePropertyChanged(nameof(IconMoniker));
             RaisePropertyChanged(nameof(ExpandedIconMoniker));
+            RaisePropertyChanged(nameof(OverlayIconMoniker));
+            RaisePropertyChanged(nameof(StateIconMoniker));
+            RaisePropertyChanged(nameof(StateToolTipText));
+            RaisePropertyChanged(nameof(IsCut));
         }
     }
 
@@ -211,116 +217,5 @@ namespace Kubuno.VisualStudio.SolutionExplorer
                 target.RemoveAt(target.Count - 1);
             }
         }
-    }
-
-    /// <summary>
-    /// The "Dependencies" node of a <c>.rsproj</c> (like the "Dependencies" node of an SDK-style C#
-    /// project) - the tree itself is read-only (from <c>cargo metadata</c>), but its own context menu
-    /// ("Dépendance Cargo (crate)...") and a crate node's ("Supprimer") mutate <c>Cargo.toml</c>
-    /// through <c>cargo add</c>/<c>cargo remove</c> (<see cref="Commands.AddCargoDependencyCommand"/>),
-    /// never by hand - <see cref="DependenciesNodeContextMenu"/> is the
-    /// <see cref="Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuPattern"/> plumbing both use.
-    /// </summary>
-    internal sealed class DependenciesTreeItem : KubunoTreeItem, Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuPattern
-    {
-        private readonly ObservableCollection<DependencyGroupTreeItem> _groups = new ObservableCollection<DependencyGroupTreeItem>();
-        private readonly Action _ensureLoaded;
-        private readonly IVsHierarchy _hierarchy;
-        private bool _loaded;
-
-        public DependenciesTreeItem(Action ensureLoaded, IVsHierarchy hierarchy)
-            : base(order: -1)
-        {
-            _ensureLoaded = ensureLoaded;
-            _hierarchy = hierarchy;
-        }
-
-        public override string Text => "Dependencies";
-
-        public override string ToolTipText => "Cargo dependencies declared by Cargo.toml (read-only, from cargo metadata).";
-
-        public override ImageMoniker IconMoniker => KnownMonikers.ReferenceGroup;
-
-        public override bool HasItems => !_loaded || _groups.Count > 0;
-
-        public override IEnumerable Items
-        {
-            get
-            {
-                _ensureLoaded();
-                return _groups;
-            }
-        }
-
-        public override int Priority => -1;
-
-        public Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuController ContextMenuController =>
-            DependenciesNodeContextMenu.ForAdd(_hierarchy);
-
-        public void SetGroups(IReadOnlyList<CargoDependencyGroup> groups)
-        {
-            bool hadItems = HasItems;
-            _loaded = true;
-            _groups.Clear();
-            for (int i = 0; i < groups.Count; i++)
-            {
-                _groups.Add(new DependencyGroupTreeItem(groups[i], i, _hierarchy));
-            }
-
-            if (hadItems != HasItems)
-            {
-                RaisePropertyChanged(nameof(HasItems));
-            }
-        }
-    }
-
-    internal sealed class DependencyGroupTreeItem : KubunoTreeItem
-    {
-        private readonly List<DependencyTreeItem> _dependencies = new List<DependencyTreeItem>();
-        private readonly CargoDependencyGroup _group;
-
-        public DependencyGroupTreeItem(CargoDependencyGroup group, int order, IVsHierarchy hierarchy)
-            : base(order)
-        {
-            _group = group;
-            for (int i = 0; i < group.Dependencies.Count; i++)
-            {
-                _dependencies.Add(new DependencyTreeItem(group.Dependencies[i], i, hierarchy));
-            }
-        }
-
-        public override string Text => _group.DisplayText;
-
-        public override ImageMoniker IconMoniker => KnownMonikers.PackageFolderClosed;
-
-        public override ImageMoniker ExpandedIconMoniker => KnownMonikers.PackageFolderOpened;
-
-        public override bool HasItems => _dependencies.Count > 0;
-
-        public override IEnumerable Items => _dependencies;
-    }
-
-    internal sealed class DependencyTreeItem : KubunoTreeItem, Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuPattern
-    {
-        private readonly CargoDependency _dependency;
-        private readonly IVsHierarchy _hierarchy;
-
-        public DependencyTreeItem(CargoDependency dependency, int order, IVsHierarchy hierarchy)
-            : base(order)
-        {
-            _dependency = dependency;
-            _hierarchy = hierarchy;
-        }
-
-        public override string Text => CargoDependencyGroups.DisplayText(_dependency);
-
-        public override string ToolTipText =>
-            (_dependency.Path ?? _dependency.Source ?? _dependency.Name)
-            + (_dependency.Target != null ? " [" + _dependency.Target + "]" : string.Empty);
-
-        public override ImageMoniker IconMoniker => _dependency.Path != null ? KnownMonikers.Reference : KnownMonikers.PackageReference;
-
-        public Microsoft.Internal.VisualStudio.PlatformUI.IContextMenuController ContextMenuController =>
-            DependenciesNodeContextMenu.ForRemove(_hierarchy, _dependency.Rename ?? _dependency.Name);
     }
 }

@@ -20,4 +20,9 @@
     <ProjectReference Include="..\..\src\Kubuno.VisualStudio.Core\Kubuno.VisualStudio.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Real `cargo metadata` captures shared with Kubuno.Cargo.Tests (Dependencies node mapping). -->
+    <None Include="..\Kubuno.Cargo.Tests\Fixtures\Metadata\dependencies-*.json" Link="Fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

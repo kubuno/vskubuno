@@ -83,6 +83,11 @@ namespace Kubuno.Cargo.Processes
             int exitCode = await exitSignal.Task.ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
 
+            // Exited can be raised before the asynchronous readers have delivered the last lines: the
+            // parameterless WaitForExit also waits for both redirected streams to reach end of file.
+            // Without it a large single-line output (cargo metadata's JSON) was sometimes lost entirely.
+            process.WaitForExit();
+
             List<string> stdoutCopy;
             List<string> stderrCopy;
             lock (standardOutput)

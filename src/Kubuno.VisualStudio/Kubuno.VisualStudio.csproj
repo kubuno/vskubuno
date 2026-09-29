@@ -95,10 +95,18 @@
     <Compile Include="Commands\AddProjectItemCommands.cs" />
     <Compile Include="Commands\NewItemNameDialog.cs" />
     <Compile Include="Commands\AddProjectReferenceCommand.cs" />
-    <Compile Include="Commands\ProjectReferenceDialog.cs" />
+    <Compile Include="Commands\ReferenceManagerDialog.cs" />
     <Compile Include="Commands\AddCargoDependencyCommand.cs" />
-    <Compile Include="Commands\CargoDependencyDialog.cs" />
+    <!-- The Dependencies node (like a .NET project's "Dépendances"): menus, properties, managers. -->
+    <Compile Include="Commands\CargoRunner.cs" />
+    <Compile Include="Commands\DependencyCommands.cs" />
+    <Compile Include="Commands\UnusedDependenciesDialog.cs" />
+    <Compile Include="CrateManager\CrateManagerToolWindow.cs" />
+    <Compile Include="CrateManager\CrateManagerControl.cs" />
     <Compile Include="SolutionExplorer\DependenciesNodeContextMenu.cs" />
+    <Compile Include="SolutionExplorer\DependencyTreeItems.cs" />
+    <Compile Include="SolutionExplorer\DependencyBrowseObject.cs" />
+    <Compile Include="SolutionExplorer\DependencyDataLoader.cs" />
     <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: shows its two package-registered tool windows. -->
     <Compile Include="Designer\DesignerToolWindowCommands.cs" />
     <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §6: resolves kubuno-views-surface.exe (DSG-7's embedded design surface). -->

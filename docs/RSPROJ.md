@@ -953,3 +953,77 @@ within 1.5 DIP), and `MSBuild -restore` on the `.rsproj` with
 fail on the previous template (`kubuno_ui.dll` in the shared directory) and on a missing desktop
 checkout (`KUBUNO0001`), and to pass on all four templates. Target directories are deleted as it goes
 (a desktop build is over a gigabyte) unless `-Keep`.
+
+## Addendum - Dependencies node, Reference Manager and crate manager like .NET (lot 10)
+
+Requested by the product owner (screenshots of a WinForms project's "Dépendances" node): the `.rsproj`
+Dependencies experience as complete as .NET's.
+
+**Research.**
+- The .NET node is not CPS itself but the managed project system (`dotnet/project-system`): a
+  `DependenciesTree` capability, dependency "subtree providers" per kind, `IProjectTreePropertiesProvider`
+  for customization. None of it is reusable by a non-managed project type, so the node stays an
+  `IAttachedCollectionSourceProvider` node (lot 8) and reproduces the design. Its category icons were read
+  from the installed `Microsoft.VisualStudio.ProjectSystem.Managed*.dll` (KnownMonikers they reference):
+  `ReferenceGroup`(`Warning`/`Error`) for the root, `CodeInformation` (Analyzers), `Framework`
+  (Frameworks), `PackageReference`/`NuGetNoColor`(`Warning`) (Packages), `Application`(`Warning`)
+  (Projects); French names from its satellite resources ("Dépendances", "Analyseurs", "Frameworks",
+  "Projets", "Chemin d'accès"...). A unit test checks every moniker name against the image catalog.
+- Solution Explorer patterns (`Microsoft.Internal.VisualStudio.PlatformUI`, reflected from
+  Shell.Framework): `IBrowsablePattern.GetBrowseObject` feeds F4/Alt+Enter, `IContextMenuPattern` the
+  menus, `IPivotItemProviderPattern.CreatePivotRootItem` "New Solution Explorer View", `IRefreshPattern`
+  the Refresh button. **"Scope to This" also needs the provider to report the "Contains" relationship
+  for the node** (`SolutionNavigatorCommandTarget.GetPivotInfo` filters
+  `IAttachedCollectionService.GetRelationships(item)` on the current relationship, read from its IL):
+  `GetRelationships` returned nothing before, so the command stayed hidden.
+- Standard commands placed in our menus: `guidVSStd11` (`{D63DB1F0-...}`, not declared by the SDK's .vsct
+  headers) 38 = Scope to This, 34 = New Solution Explorer View; `guidVSStd97:cmdidPropSheetOrProperties`.
+- Cargo: `cargo metadata` `resolve.nodes[].deps[].dep_kinds[{kind,target}]`, `features` (activated),
+  `--filter-platform <host>` (only what the host build uses: without it the graph included wasm and
+  other-platform crates); `cargo add/remove` (`--dev/--build/--target/--rename/--optional/
+  --[no-]default-features`), `cargo update -p name@version`. crates.io: `GET /api/v1/crates?q=`
+  (`sort=downloads` when empty), `/api/v1/crates/{name}` (licenses per version), sparse index
+  `index.crates.io/{1|2|3/a|ab/cd}/name` (versions, yanked, `features` + `features2`, implicit optional-
+  dependency features) with a tool User-Agent, as crates.io's policy asks.
+
+**Design decisions.**
+- Categories by source like .NET (Packages vs Projects): *Macros procédurales* (direct proc-macros plus
+  those in the build closure, like analyzers brought by packages), *Chaîne d'outils* (`rustc -vV` in the
+  package folder so `rust-toolchain.toml` applies; sysroot crates open their `rust-src` sources),
+  *Crates*, *Projets*, *Git*. Dev/build are **badges** (`[dev]`, `[build]`), not sub-groups: a crate
+  declared both normal and dev is one node, and the table is in F4's *Type*.
+- States: resolved; *pending* (first load, declarations only); unresolved (warning icon, tooltip says
+  why); inactive (dimmed with `IsCut`) for an optional dependency no feature enables and for a
+  target-specific one filtered out for this platform; yanked = warning icon; outdated = update overlay.
+- Pipeline (never on the UI thread): `--no-deps` first (instant tree on first load), then the resolve
+  graph offline, online only if needed, and `rustc -vV`/`--print sysroot` in parallel (cached 2 min per
+  folder), then crates.io markers (session cache 30 min; unreachable = markers skipped, logged once).
+  Reloads on `Cargo.toml` and the workspace `Cargo.lock` (changes cargo metadata itself makes are
+  ignored for 3 s); a failed reload keeps the last good tree and adds the error node; merged in place.
+- Every change goes through cargo; `CrateInstallPlanner` (Core, unit-tested) turns a crate-manager
+  request into commands: `cargo add` updates a version or adds features, but cannot drop a feature, so
+  that case is `cargo remove` + `cargo add` restoring rename/optional/default-features/table/target.
+- Unused dependencies: cargo-machete (`cargo machete --skip-target-dir <dir>`, report parsed), else
+  cargo-udeps **only if `cargo-udeps.exe` and a nightly toolchain are already installed**, run with
+  `RUSTUP_AUTO_INSTALL=0` - verified live that a bare `cargo +nightly` makes rustup download a whole
+  nightly toolchain (~900 MB) on demand; that toolchain was removed again.
+- "Dépendance Cargo (crate)..." now opens the crate manager; the former small dialogs
+  (`CargoDependencyDialog`, `ProjectReferenceDialog`) are gone. UI in code (no XAML build in this
+  project), themed with `ThemedDialogStyleLoader` and `EnvironmentColors`; strings FR/EN from VS's UI
+  culture (`DependenciesText`).
+- Found on the way: `ProcessRunner` returned on the `Exited` event, before the asynchronous readers had
+  delivered the output - large `cargo metadata` output was sometimes lost ("Could not parse ... does not
+  contain any JSON tokens"). It now also calls the parameterless `WaitForExit()`.
+
+**Live test** (experimental instance, UI Automation, solution `C:\kubuno-build\rsproj-test\deps`: a
+Kubuno Desktop Application with registry, renamed, optional, `cfg(windows)`, dev, build, path and git
+dependencies, plus two libraries): the tree (categories, resolved versions, badges, transitive
+expansion, 6 proc-macros from the closure, toolchain with sysroot crates, `itoa` dimmed), both menus in
+French, F4 (all rows and values), Scope to This and New Solution Explorer View, Update Crates / Update /
+Remove / Copy Full Path / Open Source Code (serde's `lib.rs`, `std`'s `lib.rs`) / Open Folder / Open
+Documentation (docs.rs), Remove Unused Dependencies with cargo-machete (dialog, only the checked one
+removed) and without it (message), the error node on a broken `Cargo.toml` (groups kept expanded), the
+Reference Manager (swap two projects, Browse... to a crate outside the solution), and the crate manager
+(Browse search + install as dev with a feature, feature change on an installed crate = remove + add,
+Updates tab with an outdated crate, Update, Uninstall). Not simulated: crates.io unreachable (the code
+paths show the message and keep Installed working, unit-tested parsing only).

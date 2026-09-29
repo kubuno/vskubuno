@@ -35,6 +35,50 @@ namespace Kubuno.Cargo.Metadata
         public IReadOnlyDictionary<string, IReadOnlyList<string>> Features { get; set; }
             = new Dictionary<string, IReadOnlyList<string>>();
 
+        /// <summary>
+        /// Where the package comes from: <c>registry+...</c>/<c>sparse+...</c> for a registry crate,
+        /// <c>git+URL?ref#commit</c> for a git one, <see langword="null"/> for a local (path) package.
+        /// </summary>
+        public string? Source { get; set; }
+
+        public string? Description { get; set; }
+
+        /// <summary>The SPDX license expression of <c>[package] license</c>.</summary>
+        public string? License { get; set; }
+
+        /// <summary>The <c>[package] license-file</c> path, when a custom license is used.</summary>
+        public string? LicenseFile { get; set; }
+
+        public string? Repository { get; set; }
+
+        public string? Homepage { get; set; }
+
+        public string? Documentation { get; set; }
+
+        public IReadOnlyList<string> Authors { get; set; } = Array.Empty<string>();
+
+        public string? Edition { get; set; }
+
+        /// <summary>The minimum supported Rust version (<c>rust-version</c>).</summary>
+        public string? RustVersion { get; set; }
+
+        /// <summary>Whether one of the package's targets is a procedural macro library.</summary>
+        public bool IsProcMacro
+        {
+            get
+            {
+                foreach (var target in Targets)
+                {
+                    if (target.IsKind(CargoTargetKind.ProcMacro))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         public override string ToString() => $"{Name} {Version}";
     }
 }

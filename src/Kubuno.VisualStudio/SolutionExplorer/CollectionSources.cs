@@ -107,20 +107,42 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         }
     }
 
-    /// <summary>The "Dependencies" node attached under a <c>.rsproj</c> project node.</summary>
+    /// <summary>
+    /// The "Dependencies" node attached under a <c>.rsproj</c> project node, and the loading pipeline
+    /// behind it. Lazy (nothing runs before the node is expanded), never on the UI thread:
+    /// <list type="number">
+    /// <item><c>cargo metadata --no-deps</c> - the declarations, shown at once on a first load;</item>
+    /// <item><c>cargo metadata</c> with the resolve graph (offline first) and <c>rustc -vV</c>, in
+    /// parallel - resolved versions, categories, transitive dependencies, the toolchain;</item>
+    /// <item>crates.io's sparse index for direct registry crates - update/yanked markers.</item>
+    /// </list>
+    /// Reloaded (debounced) whenever <c>Cargo.toml</c> or the workspace's <c>Cargo.lock</c> changes;
+    /// the tree is merged in place, so expanded nodes stay expanded.
+    /// </summary>
     internal sealed class ProjectDependenciesSource : IAttachedCollectionSource, IDisposable
     {
-        private readonly IVsHierarchy _project;
+        private static readonly List<WeakReference<ProjectDependenciesSource>> Live = new List<WeakReference<ProjectDependenciesSource>>();
+
         private readonly DependenciesTreeItem _node;
-        private DebouncedFileWatcher? _watcher;
+        private DebouncedFileWatcher? _manifestWatcher;
+        private DebouncedFileWatcher? _lockWatcher;
+        private string? _lockPath;
+        private CancellationTokenSource? _pending;
+        private DateTime _ignoreLockUntilUtc;
         private bool _started;
+        private bool _disposed;
 
         public ProjectDependenciesSource(object sourceItem, IVsHierarchy project)
         {
             SourceItem = sourceItem;
-            _project = project;
-            _node = new DependenciesTreeItem(EnsureLoaded, project);
+            Project = project;
+            _node = new DependenciesTreeItem(EnsureLoaded, this);
             Items = new[] { _node };
+            lock (Live)
+            {
+                Live.RemoveAll(w => !w.TryGetTarget(out _));
+                Live.Add(new WeakReference<ProjectDependenciesSource>(this));
+            }
         }
 
         public object SourceItem { get; }
@@ -129,7 +151,44 @@ namespace Kubuno.VisualStudio.SolutionExplorer
 
         public IEnumerable Items { get; }
 
-        public void Dispose() => _watcher?.Dispose();
+        public IVsHierarchy Project { get; }
+
+        /// <summary>The latest model (declarations only until the resolve graph is known).</summary>
+        public DependencyTreeModel Model { get; private set; } = DependencyTreeModel.Empty;
+
+        /// <summary>The live source of <paramref name="project"/>'s Dependencies node, if Solution Explorer created one.</summary>
+        public static ProjectDependenciesSource? For(IVsHierarchy project)
+        {
+            lock (Live)
+            {
+                foreach (var weak in Live)
+                {
+                    if (weak.TryGetTarget(out var source) && !source._disposed && ReferenceEquals(source.Project, project))
+                    {
+                        return source;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Re-reads everything now (after a cargo command this extension ran).</summary>
+        public void Reload()
+        {
+            if (_started && !_disposed)
+            {
+                _ = LoadAsync();
+            }
+        }
+
+        public void Dispose()
+        {
+            _disposed = true;
+            _manifestWatcher?.Dispose();
+            _lockWatcher?.Dispose();
+            _pending?.Cancel();
+        }
 
         private void EnsureLoaded()
         {
@@ -139,53 +198,136 @@ namespace Kubuno.VisualStudio.SolutionExplorer
             }
 
             _started = true;
-            _ = LoadAsync(watch: true);
+            _ = LoadAsync();
         }
 
-        private async Task LoadAsync(bool watch)
+        private async Task LoadAsync()
         {
+            var cancellation = new CancellationTokenSource();
+            Interlocked.Exchange(ref _pending, cancellation)?.Cancel();
+            var token = cancellation.Token;
             try
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var manifest = GetProperty("CargoManifestPath");
                 var packageName = GetProperty("CargoPackage");
-                if (string.IsNullOrEmpty(manifest) && _project.GetCanonicalName((uint)VSConstants.VSITEMID.Root, out var projectFile) == VSConstants.S_OK)
+                if (string.IsNullOrEmpty(manifest) && Project.GetCanonicalName((uint)VSConstants.VSITEMID.Root, out var projectFile) == VSConstants.S_OK)
                 {
                     manifest = Path.Combine(Path.GetDirectoryName(projectFile) ?? string.Empty, "Cargo.toml");
                 }
 
                 if (string.IsNullOrEmpty(manifest) || !File.Exists(manifest))
                 {
-                    _node.SetGroups(Array.Empty<CargoDependencyGroup>());
+                    Publish(DependencyTreeModel.Empty, token);
                     return;
                 }
 
-                if (watch)
-                {
-                    _watcher = new DebouncedFileWatcher(manifest!, () => _ = LoadAsync(watch: false));
-                }
+                _manifestWatcher ??= new DebouncedFileWatcher(manifest!, () => _ = LoadAsync());
 
                 await TaskScheduler.Default;
-                var metadata = await new CargoMetadataReader(new ProcessRunner())
-                    .ReadAsync(Path.GetDirectoryName(manifest)!, manifest);
-                var package = CargoDependencyGroups.FindPackage(metadata, manifest, packageName);
-                var groups = package != null ? CargoDependencyGroups.Group(package) : Array.Empty<CargoDependencyGroup>();
+                var directory = Path.GetDirectoryName(manifest)!;
+                var toolchainTask = DependencyDataLoader.GetToolchainAsync(directory, token);
 
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                _node.SetGroups(groups);
+                CargoMetadata declared;
+                try
+                {
+                    declared = await DependencyDataLoader.ReadDeclaredAsync(manifest!, token);
+                }
+                catch (CargoMetadataException)
+                {
+                    // Possibly caught mid-write (cargo add/remove, an editor saving): try once more.
+                    await Task.Delay(800, token);
+                    try
+                    {
+                        declared = await DependencyDataLoader.ReadDeclaredAsync(manifest!, token);
+                    }
+                    catch (CargoMetadataException exception)
+                    {
+                        // Cargo.toml is broken: say so under the node, keeping the last good tree (and its expansion).
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(token);
+                        Publish(Model.WithDiagnostics(new[] { DependenciesText.MetadataFailed(DependencyDataLoader.Summarize(exception.Message)) }), token);
+                        return;
+                    }
+                }
+
+                var package = CargoDependencyGroups.FindPackage(declared, manifest, packageName);
+                if (package is null)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(token);
+                    Publish(DependencyTreeModel.Empty, token);
+                    return;
+                }
+
+                WatchLockFile(Path.Combine(declared.WorkspaceRoot, "Cargo.lock"));
+                if (!Model.IsResolved)
+                {
+                    // First load: show the declarations right away, resolved versions follow.
+                    var pending = DependencyTreeBuilder.Build(package, null, null, null);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(token);
+                    Publish(pending, token);
+                    await TaskScheduler.Default;
+                }
+
+                var toolchain = await toolchainTask;
+                var (resolved, error) = await DependencyDataLoader.ReadResolvedAsync(manifest!, toolchain?.Host, token);
+                var model = DependencyTreeBuilder.Build(package, resolved, toolchain, error);
+
+                // cargo metadata may have just (re)written Cargo.lock: that is not a change to react to.
+                _ignoreLockUntilUtc = DateTime.UtcNow.AddSeconds(3);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(token);
+                Publish(model, token);
+
+                await TaskScheduler.Default;
+                if (await DependencyDataLoader.ApplyRegistryStatusAsync(model.AllItems, token))
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(token);
+                    Publish(model, token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Superseded by a newer load.
             }
             catch (Exception exception)
             {
                 KubunoLog.WriteException("Solution Explorer: reading the Cargo dependencies", exception);
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                _node.SetGroups(Array.Empty<CargoDependencyGroup>());
             }
+        }
+
+        private void Publish(DependencyTreeModel model, CancellationToken token)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (token.IsCancellationRequested || _disposed)
+            {
+                return;
+            }
+
+            Model = model;
+            _node.SetModel(model);
+        }
+
+        private void WatchLockFile(string lockPath)
+        {
+            if (string.Equals(_lockPath, lockPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            _lockWatcher?.Dispose();
+            _lockPath = lockPath;
+            _lockWatcher = new DebouncedFileWatcher(lockPath, () =>
+            {
+                if (DateTime.UtcNow >= _ignoreLockUntilUtc)
+                {
+                    _ = LoadAsync();
+                }
+            });
         }
 
         private string? GetProperty(string name)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            return _project is IVsBuildPropertyStorage storage
+            return Project is IVsBuildPropertyStorage storage
                 && storage.GetPropertyValue(name, null, (uint)_PersistStorageType.PST_PROJECT_FILE, out var value) == VSConstants.S_OK
                 && !string.IsNullOrWhiteSpace(value)
                 ? value

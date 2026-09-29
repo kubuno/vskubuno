@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Kubuno.Cargo.Metadata
 {
     /// <summary>
@@ -30,6 +33,18 @@ namespace Kubuno.Cargo.Metadata
 
         /// <summary>Registry/git source, e.g. <c>"registry+https://github.com/rust-lang/crates.io-index"</c>; <see langword="null"/> for a path dependency.</summary>
         public string? Source { get; set; }
+
+        /// <summary>The features the declaration asks for (<c>features = [...]</c>).</summary>
+        public IReadOnlyList<string> Features { get; set; } = Array.Empty<string>();
+
+        /// <summary><see langword="false"/> for <c>default-features = false</c>.</summary>
+        public bool UsesDefaultFeatures { get; set; } = true;
+
+        /// <summary>The alternative registry name (<c>registry = "..."</c>), if any.</summary>
+        public string? Registry { get; set; }
+
+        /// <summary>The name the dependency is known under in the package (its rename, else its name).</summary>
+        public string LocalName => Rename ?? Name;
 
         public override string ToString() => $"{Name} {Req}";
     }

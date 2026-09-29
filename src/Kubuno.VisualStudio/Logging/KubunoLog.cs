@@ -79,6 +79,34 @@ namespace Kubuno.VisualStudio.Logging
             WriteToPane(pane, line);
         }
 
+        /// <summary>Brings the "Kubuno" pane to the front of the Output window (UI thread).</summary>
+        public static void Activate()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            IVsOutputWindowPane? pane;
+            lock (SyncRoot)
+            {
+                pane = _pane;
+            }
+
+            try
+            {
+                pane?.Activate();
+                if (ServiceProvider.GlobalProvider.GetService(typeof(SVsUIShell)) is IVsUIShell shell)
+                {
+                    var outputWindow = new Guid("34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3"); // GUID_OutWindow
+                    if (shell.FindToolWindow((uint)__VSFINDTOOLWIN.FTW_fForceCreate, ref outputWindow, out var frame) == 0 && frame != null)
+                    {
+                        frame.ShowNoActivate();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Showing the pane is a convenience; the output is written either way.
+            }
+        }
+
         public static void WriteException(string context, Exception exception)
         {
             WriteLine($"{context}: {exception}");
