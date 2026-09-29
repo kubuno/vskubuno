@@ -14,7 +14,7 @@ namespace Kubuno.Cargo.DesignSurface
     public sealed class DesignSurfaceStamp
     {
         public const string FileName = "surface.json";
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2; // 2: surfaces built with debug info (debug profile)
 
         public int Version { get; set; } = CurrentVersion;
 

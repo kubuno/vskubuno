@@ -316,8 +316,8 @@ JavaScript project system uses (checked by reflection against the installed CPS 
 - **Environment**: PATH is prepended with the profile directory, its `deps` folder and the Rust
   standard library directory (`Kubuno.Launch.RustDebugEnvironment`, the same logic Open Folder's
   `launch.vs.json` uses), which is what `-C prefer-dynamic` builds need (`kubuno_ui.dll`,
-  `std-*.dll`); `RUST_BACKTRACE=1` is set; the toolchain's natvis files are installed as for Open
-  Folder.
+  `std-*.dll`); `RUST_BACKTRACE=1` is set; the Just My Code/step-filter files and the Rust panic exception
+  setting are applied as for Open Folder (`docs/DEBUGGING.md`).
 - **Debug settings**: the Project Properties editor's Debug page (`Sdk/Rules/rust_debug.xaml`) and its
   "Open debug launch profile UI" dialog edit the selected debugger rule's properties
   (`Sdk/Rules/rust_debugger.xaml`, `DisplayName="Local Rust Debugger"`, stored in `<project>.rsproj.user`): command
@@ -483,12 +483,10 @@ change made to the vendored copy.
   delete an unwanted auto-generated entry by hand if the heuristic (see
   `NonRustProjectExclusionScanner`'s own remarks) got a directory wrong.
 - The debugger's expression evaluator speaks C++, not Rust (see `docs/ARCHITECTURE.md`'s "Known
-  limits"): natvis views of `std` types work - the toolchain's own `.natvis` files (discovered via
-  `Kubuno.Launch.RustToolchain.FindNatvisFiles`) are installed to the per-user Natvis directory
-  (`%USERPROFILE%\Documents\Visual Studio 2022\Visualizers`, `Debugging/NatvisInstaller.cs`; VS's
-  own auto-discovery mechanism for it - see the doc comment there for why PDB embedding and a
-  VSIX asset were both ruled out) - but Rust expressions (method calls, trait dispatch) in the
-  Watch window do not.
+  limits" and `docs/DEBUGGING.md`): natvis views of `std` types work - rustc embeds the toolchain's own
+  `.natvis` files in every PDB it links, `kubuno_views` embeds the Kubuno types' natvis the same way, and the
+  VSIX registers a copy (`Kubuno.natvis`) - but Rust expressions (method calls, trait dispatch) in the
+  Watch window do not, and `self.field` must be written `self->field`.
 - Visual Studio's built-in LSP client does not let an `ILanguageClient` override the `initialize`
   request's `rootUri`; the workspace root is instead passed as the spawned rust-analyzer process's
   working directory (which rust-analyzer falls back to when `rootUri` is absent), combined with

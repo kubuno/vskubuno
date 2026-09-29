@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Concord component configuration (docs/DEBUGGING.md, "Panics as exceptions"). The formatter sits on the
+  target-computer side (levels below 100,000 are monitor components), above the native runtime's own C++
+  exception formatter, and is only called for the C++ exception category (the category a Rust panic is
+  raised in on MSVC); everything that is not a `rust_panic` is passed down unchanged.
+-->
+<Configuration xmlns="http://schemas.microsoft.com/vstudio/vsdconfig/2008">
+  <ManagedComponent
+    ComponentId="7C2E4B1A-4F7D-4E0B-9A3E-6B1D2C8F5A10"
+    ComponentLevel="80000"
+    AssemblyName="Kubuno.VisualStudio.Debugger">
+    <Class Name="Kubuno.VisualStudio.Debugger.RustPanicExceptionFormatter">
+      <Implements>
+        <InterfaceGroup>
+          <Filter>
+            <!-- DkmExceptionCategory::Cpp, the "C++ Exceptions" category of Exception Settings. -->
+            <ExceptionCategory RequiredValue="3A12D0B7-C26C-11D0-B442-00A0244A1DD2"/>
+          </Filter>
+          <Interface Name="IDkmExceptionFormatter"/>
+        </InterfaceGroup>
+      </Implements>
+    </Class>
+  </ManagedComponent>
+</Configuration>

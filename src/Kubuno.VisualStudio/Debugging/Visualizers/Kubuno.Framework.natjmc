@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Kubuno for Visual Studio - the Kubuno framework as external code (docs/DEBUGGING.md), like Windows Forms
+  frames in a C# application: with "Enable Just My Code" on, the Call Stack of a Kubuno desktop application
+  shows the application's own frames (its handlers, its view model, main) and collapses the host, the views
+  runtime, the executor of async handlers and the controls into [External Code]; a panic inside the framework is
+  shown at the application's line that called it (ExceptionImplementation).
+
+  Installed next to Kubuno.Rust.natjmc and refreshed on every Rust debug launch, unless Tools > Options >
+  Kubuno > Debugging > "Treat the Kubuno framework as external code" is off (the setting for people who work
+  on Kubuno itself).
+-->
+<NonUserCode xmlns="http://schemas.microsoft.com/vstudio/debugger/jmc/2015">
+  <Module Name="*\kubuno_ui.dll" />
+  <Function Name="kubuno_views::*" ExceptionImplementation="true" />
+  <Function Name="kubuno_controls::*" ExceptionImplementation="true" />
+  <Function Name="kubuno_ui::*" ExceptionImplementation="true" />
+  <Function Name="drive_app_controls::*" ExceptionImplementation="true" />
+  <!-- The dispatch glue #[kubuno_views::event_handlers] generates in the application's own crate. -->
+  <!-- (`impl$N`: Rust's name for an impl block, so a C++ Foo::handle_event is never matched.) -->
+  <Function Name="*::impl$*::handle_event" ExceptionImplementation="true" />
+  <Function Name="*::impl$*::handle_event::*" ExceptionImplementation="true" />
+  <Function Name="*::impl$*::dispatch_event" ExceptionImplementation="true" />
+  <Function Name="*::__kubuno_*" ExceptionImplementation="true" />
+  <!-- Common dependencies of a Kubuno application. -->
+  <Function Name="tracing::*" ExceptionImplementation="true" />
+  <Function Name="tracing_core::*" ExceptionImplementation="true" />
+  <Function Name="hashbrown::*" ExceptionImplementation="true" />
+  <Function Name="windows::Win32::*" ExceptionImplementation="true" />
+  <Function Name="windows_core::*" ExceptionImplementation="true" />
+  <Function Name="accesskit*" ExceptionImplementation="true" />
+</NonUserCode>

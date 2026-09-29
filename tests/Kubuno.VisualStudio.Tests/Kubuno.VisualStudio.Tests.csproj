@@ -24,6 +24,9 @@
     <!-- The item-template wizard's pure naming and module logic (docs/EVENTS.md EVT-7b), compiled here on its own:
          the wizard assembly itself references Visual Studio install assemblies. -->
     <Compile Include="..\..\src\Kubuno.VisualStudio.TemplateWizard\ControlItemNames.cs" Link="Wizard\ControlItemNames.cs" />
+    <!-- The panic payload decoder of the Concord component (docs/DEBUGGING.md), pure logic over a memory reader; the
+         component assembly itself references the debugger engine of the Visual Studio install. -->
+    <Compile Include="..\..\src\Kubuno.VisualStudio.Debugger\RustPanicPayload.cs" Link="Debugging\RustPanicPayload.cs" />
   </ItemGroup>
 
   <ItemGroup>

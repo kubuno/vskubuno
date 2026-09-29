@@ -1,0 +1,15 @@
+; Exception Settings > C++ Exceptions > " ?? ::st_panic" = Rust panics (docs/DEBUGGING.md, "Panics as exceptions").
+; On MSVC a Rust panic unwinds as a C++ exception whose TypeDescriptor is named `rust_panic` (the toolchain's
+; library/panic_unwind/src/seh.rs). Visual Studio undecorates that name as if it were an MSVC one (".?AVclass@@",
+; first character skipped, UNDNAME_TYPE_ONLY), which turns it into " ?? ::st_panic" - the name the Output window,
+; the exception helper and the C++ exception filter all use (checked live, and with dbghelp's UnDecorateSymbolName),
+; so that is the name registered here, leading space included. It is the same kind of entry Visual Studio registers
+; for std::exception or Platform::COMException ^ in its own VSDebugEng_Impl_Engine.pkgdef (the category GUID below
+; is DkmExceptionCategory::Cpp there). State 1 = "Break When Thrown" checked by default, like the Platform::*
+; entries: a panic stops the debugger at the line that panicked (Kubuno.Rust.natjmc marks the panic machinery as
+; ExceptionImplementation), and the exception helper shows its message (Kubuno.VisualStudio.Debugger's
+; RustPanicExceptionFormatter). Unchecking it lets the panic run its course (a Kubuno application then shows its
+; crash window).
+[$RootKey$\AD7Metrics\Exception\{3A12D0B7-C26C-11D0-B442-00A0244A1DD2}\C++ Exceptions\ ?? ::st_panic]
+"Code"=dword:00000000
+"State"=dword:00000001

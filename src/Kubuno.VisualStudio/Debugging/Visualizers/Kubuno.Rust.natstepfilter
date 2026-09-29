@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Kubuno for Visual Studio - Step Into (F11) over the Rust standard library (docs/DEBUGGING.md). Installed by
+  the extension into %USERPROFILE%\Documents\<Visual Studio version>\Visualizers and refreshed on every Rust debug
+  launch; delete it there to step into the standard library again.
+
+  NoStepInto steps OVER a function - but, unlike Just My Code, still stops at the first line of user code it
+  calls: F11 on `items.iter().map(|s| s.len()).sum()` lands in the closure, F11 on `x?` or `.clone()` does not
+  enter core/alloc at all. Names are ECMA-262 regular expressions matched against the whole function name as the
+  PDB spells it (`core::iter::traits::iterator::Iterator::sum<...>`, `alloc::string::impl$N::clone`).
+
+  The file is read for every native debug session of this user, C++ included: `std::` is therefore matched by the
+  Rust standard library's own module names (std::io::, std::collections::...), never by a bare `std::.*`, so that
+  stepping into the C++ standard library is left alone (C++ std::thread and std::any members included).
+-->
+<StepFilter xmlns="http://schemas.microsoft.com/vstudio/debugger/natstepfilter/2010">
+  <Function><Name>core::.*</Name><Action>NoStepInto</Action></Function>
+  <Function><Name>alloc::.*</Name><Action>NoStepInto</Action></Function>
+  <Function><Name>std::(alloc|array|ascii|async_iter|backtrace|backtrace_rs|borrow|boxed|bstr|cell|char|clone|cmp|collections|convert|default|env|error|f16|f32|f64|f128|ffi|fmt|fs|future|hash|hint|i8|i16|i32|i64|i128|isize|u8|u16|u32|u64|u128|usize|intrinsics|io|iter|marker|mem|net|num|ops|option|os|panic|panicking|path|pin|prelude|primitive|process|ptr|random|range|rc|result|rt|slice|str|string|sync|sys|sys_common|task|time|vec)::.*</Name><Action>NoStepInto</Action></Function>
+  <Function><Name>std::thread::(spawn|Builder|scope|scoped|sleep|sleep_ms|sleep_until|current|park|park_timeout|yield_now|available_parallelism|local|lifecycle|functions|spawnhook|JoinInner|JoinHandle|Packet|Scope|ScopedJoinHandle|main_thread|impl\$).*</Name><Action>NoStepInto</Action></Function>
+  <Function><Name>std::any::(type_name|type_name_of_val|TypeId|impl\$).*</Name><Action>NoStepInto</Action></Function>
+  <Function><Name>enum2\$&lt;(core|alloc|std)::.*</Name><Action>NoStepInto</Action></Function>
+  <Function><Name>(__rust|__rdl|__rg)_.*</Name><Action>NoStepInto</Action></Function>
+  <Function><Name>panic_unwind::.*</Name><Action>NoStepInto</Action></Function>
+</StepFilter>

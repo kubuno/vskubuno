@@ -185,8 +185,8 @@ split exactly:
   appears, `.rsproj` can build a `DebugLaunchSettings` straight from
   `LaunchDescriptionBuilder`'s output (the same `RustDebugEnvironment.Build` PATH-prepending logic
   that already fixes the `-C prefer-dynamic`/`kubuno_ui.dll` lesson) with no JSON file, no
-  toolbar-refresh flakiness, and build-before-run for free. `NatvisInstaller` is unaffected either
-  way.
+  toolbar-refresh flakiness, and build-before-run for free. (`NatvisInstaller` has since been replaced by
+  `RustDebuggerFiles`: see `docs/DEBUGGING.md`.)
 - **NuGet-free restore**: `cargo fetch` via `CargoRestore` (§2) — VS's own Restore gesture already
   invokes the `Restore` target across every project regardless of type, so no VS-side plumbing
   beyond the target hook.

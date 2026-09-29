@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Kubuno for Visual Studio - "Just My Code" for Rust (docs/DEBUGGING.md). Installed by the extension into
+  %USERPROFILE%\Documents\<Visual Studio version>\Visualizers (the only per-user place Visual Studio reads .natjmc
+  files from) and refreshed on every Rust debug launch; delete it there to see the standard library as user code.
+
+  With Tools > Options > Debugging > "Enable Just My Code" on (the default):
+  - the Call Stack collapses the Rust standard library into [External Code] (right-click > Show External Code);
+  - a panic (the " ?? ::st_panic" entry of Exception Settings > C++ Exceptions) is shown at the user's line that
+    panicked (`v[i]`, `x.unwrap()`), not inside the standard library: every standard-library function is an
+    ExceptionImplementation, like _CxxThrowException/RaiseException in Visual Studio's own default.natjmc, so the
+    exception is attributed to the first user frame that called into the library, as .NET does.
+  Stepping is not affected (that needs the MSVC /JMC switch, which rustc has no equivalent of): stepping over the
+  standard library is Kubuno.Rust.natstepfilter's job.
+
+  The file applies to every native debug session of this user, C++ included: `std::` is matched by the Rust standard
+  library's own module names only, so the C++ standard library keeps its usual Just My Code treatment.
+-->
+<NonUserCode xmlns="http://schemas.microsoft.com/vstudio/debugger/jmc/2015">
+  <!-- `-C prefer-dynamic` builds (the Kubuno desktop apps) load the standard library as std-<hash>.dll. -->
+  <Module Name="*\std-*.dll" />
+
+  <!-- The panic machinery, from the panicking call (unwrap, indexing, panic!) down to the C++ throw. -->
+  <Function Name="core::panicking::*" ExceptionImplementation="true" />
+  <Function Name="core::option::unwrap_failed" ExceptionImplementation="true" />
+  <Function Name="core::option::expect_failed" ExceptionImplementation="true" />
+  <Function Name="core::result::unwrap_failed" ExceptionImplementation="true" />
+  <Function Name="core::slice::index::*" ExceptionImplementation="true" />
+  <Function Name="core::str::slice_error_fail*" ExceptionImplementation="true" />
+  <Function Name="core::cell::panic_already_*" ExceptionImplementation="true" />
+  <Function Name="std::panicking::*" ExceptionImplementation="true" />
+  <Function Name="std::panic::*" ExceptionImplementation="true" />
+  <Function Name="std::sys::backtrace::__rust_end_short_backtrace*" ExceptionImplementation="true" />
+  <Function Name="std::rt::*" ExceptionImplementation="true" />
+  <Function Name="panic_unwind::*" ExceptionImplementation="true" />
+  <Function Name="rust_begin_unwind" ExceptionImplementation="true" />
+  <Function Name="__rust_start_panic" ExceptionImplementation="true" />
+  <Function Name="rust_panic" ExceptionImplementation="true" />
+
+  <!-- The rest of the standard library (its generic code - Vec's Index, Option::unwrap... - is instantiated in the
+       user's own modules). -->
+  <Function Name="core::*" ExceptionImplementation="true" />
+  <Function Name="alloc::*" ExceptionImplementation="true" />
+  <Function Name="std::alloc::*" ExceptionImplementation="true" />
+  <Function Name="std::array::*" ExceptionImplementation="true" />
+  <Function Name="std::ascii::*" ExceptionImplementation="true" />
+  <Function Name="std::async_iter::*" ExceptionImplementation="true" />
+  <Function Name="std::backtrace::*" ExceptionImplementation="true" />
+  <Function Name="std::backtrace_rs::*" ExceptionImplementation="true" />
+  <Function Name="std::borrow::*" ExceptionImplementation="true" />
+  <Function Name="std::boxed::*" ExceptionImplementation="true" />
+  <Function Name="std::bstr::*" ExceptionImplementation="true" />
+  <Function Name="std::cell::*" ExceptionImplementation="true" />
+  <Function Name="std::char::*" ExceptionImplementation="true" />
+  <Function Name="std::clone::*" ExceptionImplementation="true" />
+  <Function Name="std::cmp::*" ExceptionImplementation="true" />
+  <Function Name="std::collections::*" ExceptionImplementation="true" />
+  <Function Name="std::convert::*" ExceptionImplementation="true" />
+  <Function Name="std::default::*" ExceptionImplementation="true" />
+  <Function Name="std::env::*" ExceptionImplementation="true" />
+  <Function Name="std::error::*" ExceptionImplementation="true" />
+  <Function Name="std::f16::*" ExceptionImplementation="true" />
+  <Function Name="std::f32::*" ExceptionImplementation="true" />
+  <Function Name="std::f64::*" ExceptionImplementation="true" />
+  <Function Name="std::f128::*" ExceptionImplementation="true" />
+  <Function Name="std::ffi::*" ExceptionImplementation="true" />
+  <Function Name="std::fmt::*" ExceptionImplementation="true" />
+  <Function Name="std::fs::*" ExceptionImplementation="true" />
+  <Function Name="std::future::*" ExceptionImplementation="true" />
+  <Function Name="std::hash::*" ExceptionImplementation="true" />
+  <Function Name="std::hint::*" ExceptionImplementation="true" />
+  <Function Name="std::i8::*" ExceptionImplementation="true" />
+  <Function Name="std::i16::*" ExceptionImplementation="true" />
+  <Function Name="std::i32::*" ExceptionImplementation="true" />
+  <Function Name="std::i64::*" ExceptionImplementation="true" />
+  <Function Name="std::i128::*" ExceptionImplementation="true" />
+  <Function Name="std::isize::*" ExceptionImplementation="true" />
+  <Function Name="std::u8::*" ExceptionImplementation="true" />
+  <Function Name="std::u16::*" ExceptionImplementation="true" />
+  <Function Name="std::u32::*" ExceptionImplementation="true" />
+  <Function Name="std::u64::*" ExceptionImplementation="true" />
+  <Function Name="std::u128::*" ExceptionImplementation="true" />
+  <Function Name="std::usize::*" ExceptionImplementation="true" />
+  <Function Name="std::intrinsics::*" ExceptionImplementation="true" />
+  <Function Name="std::io::*" ExceptionImplementation="true" />
+  <Function Name="std::iter::*" ExceptionImplementation="true" />
+  <Function Name="std::marker::*" ExceptionImplementation="true" />
+  <Function Name="std::mem::*" ExceptionImplementation="true" />
+  <Function Name="std::net::*" ExceptionImplementation="true" />
+  <Function Name="std::num::*" ExceptionImplementation="true" />
+  <Function Name="std::ops::*" ExceptionImplementation="true" />
+  <Function Name="std::option::*" ExceptionImplementation="true" />
+  <Function Name="std::os::*" ExceptionImplementation="true" />
+  <Function Name="std::panic::*" ExceptionImplementation="true" />
+  <Function Name="std::panicking::*" ExceptionImplementation="true" />
+  <Function Name="std::path::*" ExceptionImplementation="true" />
+  <Function Name="std::pin::*" ExceptionImplementation="true" />
+  <Function Name="std::prelude::*" ExceptionImplementation="true" />
+  <Function Name="std::primitive::*" ExceptionImplementation="true" />
+  <Function Name="std::process::*" ExceptionImplementation="true" />
+  <Function Name="std::ptr::*" ExceptionImplementation="true" />
+  <Function Name="std::random::*" ExceptionImplementation="true" />
+  <Function Name="std::range::*" ExceptionImplementation="true" />
+  <Function Name="std::rc::*" ExceptionImplementation="true" />
+  <Function Name="std::result::*" ExceptionImplementation="true" />
+  <Function Name="std::rt::*" ExceptionImplementation="true" />
+  <Function Name="std::slice::*" ExceptionImplementation="true" />
+  <Function Name="std::str::*" ExceptionImplementation="true" />
+  <Function Name="std::string::*" ExceptionImplementation="true" />
+  <Function Name="std::sync::*" ExceptionImplementation="true" />
+  <Function Name="std::sys::*" ExceptionImplementation="true" />
+  <Function Name="std::sys_common::*" ExceptionImplementation="true" />
+  <Function Name="std::task::*" ExceptionImplementation="true" />
+  <Function Name="std::time::*" ExceptionImplementation="true" />
+  <Function Name="std::vec::*" ExceptionImplementation="true" />
+  <Function Name="std::thread::spawn*" ExceptionImplementation="true" />
+  <Function Name="std::thread::Builder*" ExceptionImplementation="true" />
+  <Function Name="std::thread::scope*" ExceptionImplementation="true" />
+  <Function Name="std::thread::scoped*" ExceptionImplementation="true" />
+  <Function Name="std::thread::sleep*" ExceptionImplementation="true" />
+  <Function Name="std::thread::sleep_ms*" ExceptionImplementation="true" />
+  <Function Name="std::thread::sleep_until*" ExceptionImplementation="true" />
+  <Function Name="std::thread::current*" ExceptionImplementation="true" />
+  <Function Name="std::thread::park*" ExceptionImplementation="true" />
+  <Function Name="std::thread::park_timeout*" ExceptionImplementation="true" />
+  <Function Name="std::thread::yield_now*" ExceptionImplementation="true" />
+  <Function Name="std::thread::available_parallelism*" ExceptionImplementation="true" />
+  <Function Name="std::thread::local*" ExceptionImplementation="true" />
+  <Function Name="std::thread::lifecycle*" ExceptionImplementation="true" />
+  <Function Name="std::thread::functions*" ExceptionImplementation="true" />
+  <Function Name="std::thread::spawnhook*" ExceptionImplementation="true" />
+  <Function Name="std::thread::JoinInner*" ExceptionImplementation="true" />
+  <Function Name="std::thread::JoinHandle*" ExceptionImplementation="true" />
+  <Function Name="std::thread::Packet*" ExceptionImplementation="true" />
+  <Function Name="std::thread::Scope*" ExceptionImplementation="true" />
+  <Function Name="std::thread::ScopedJoinHandle*" ExceptionImplementation="true" />
+  <Function Name="std::thread::main_thread*" ExceptionImplementation="true" />
+  <Function Name="std::thread::impl$*" ExceptionImplementation="true" />
+  <Function Name="std::any::type_name*" ExceptionImplementation="true" />
+  <Function Name="std::any::type_name_of_val*" ExceptionImplementation="true" />
+  <Function Name="std::any::TypeId*" ExceptionImplementation="true" />
+  <Function Name="std::any::impl$*" ExceptionImplementation="true" />
+  <Function Name="enum2$&lt;core::*" ExceptionImplementation="true" />
+  <Function Name="enum2$&lt;alloc::*" ExceptionImplementation="true" />
+  <Function Name="enum2$&lt;std::*" ExceptionImplementation="true" />
+</NonUserCode>

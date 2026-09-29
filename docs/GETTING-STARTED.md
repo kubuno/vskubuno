@@ -159,6 +159,23 @@ already has `cargo` on PATH, make sure `cargo`'s directory (normally
 Studio inherits the PATH of the process that launched it, and a build that can't find `cargo` fails
 immediately and clearly (not what "missing DLL" below is about).
 
+### Debugging like C#
+
+Breakpoints (conditional, hit count, tracepoints, function and data breakpoints), F10/F11/Shift+F11, Locals/Watch/
+DataTips and Attach to Process work as for C#, with Rust-aware additions the extension installs by itself
+(`docs/DEBUGGING.md` has the full matrix and the limits):
+
+- a **panic stops the debugger on the line that panicked**, with an exception helper reading "Rust panic:
+  *message*" (Exception Settings > C++ Exceptions > ` ?? ::st_panic`, checked by default); a Kubuno application's
+  crash window only opens if you continue;
+- **readable values**: `Some("two")`, `Ok(42)`, `Vec`/`HashMap` contents, `Mutex` values, and the Kubuno types
+  (`Sender`, `MouseEventArgs`, `Value`, `Row`, `Color`, `Rect`...);
+- **F11 steps over the standard library and the Kubuno framework** but still stops in your closures and handlers;
+  the Call Stack collapses them into `[External Code]` (Tools > Options > Kubuno > Debugging to keep the framework
+  visible);
+- in Watch/conditions, `self` is a pointer: write **`self->count`**, not `self.count`;
+- `kubuno_views::debug_break()` and `result.break_on_err()?` are the `Debugger.Break()` of Rust.
+
 ### Console window
 
 A **Kubuno Desktop Application** opens **no console window** - in Debug too, like a Windows Forms

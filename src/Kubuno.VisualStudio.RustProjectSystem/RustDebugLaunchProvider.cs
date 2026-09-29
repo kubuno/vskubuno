@@ -11,6 +11,8 @@ using Microsoft.VisualStudio.ProjectSystem;
 using Microsoft.VisualStudio.ProjectSystem.Debug;
 using Microsoft.VisualStudio.ProjectSystem.Properties;
 using Microsoft.VisualStudio.ProjectSystem.VS.Debug;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Threading;
 
 namespace Kubuno.VisualStudio.RustProjectSystem
 {
@@ -84,7 +86,13 @@ namespace Kubuno.VisualStudio.RustProjectSystem
             }
 
             var (sysroot, hostTriple) = ResolveToolchain(manifestDirectory);
-            NatvisInstaller.EnsureInstalled(RustToolchain.FindNatvisFiles(sysroot));
+            // Standard-library natvis is embedded in every PDB rustc links; Kubuno.natvis is a VSIX asset. What
+            // remains per-user is Just My Code and the step filters (docs/DEBUGGING.md).
+            RustDebuggerSettings.EnsureDebuggerFilesInstalled();
+            // Exception Settings > C++ Exceptions > " ?? ::st_panic" (Rust panics) must reach the engine (see there).
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            RustDebuggerSettings.EnsurePanicExceptionSetting();
+            await TaskScheduler.Default;
 
             // The profile directory is where cargo put $(TargetPath) itself, which already accounts
             // for CARGO_TARGET_DIR, the profile and any --target triple; RustDebugEnvironment only

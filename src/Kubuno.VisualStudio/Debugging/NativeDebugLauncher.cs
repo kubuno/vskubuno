@@ -46,6 +46,10 @@ namespace Kubuno.VisualStudio.Debugging
             var targets = new[] { info };
             var results = new VsDebugTargetProcessInfo[1];
 
+            // Just My Code and step filters for Rust (docs/DEBUGGING.md), read at the start of the session.
+            Kubuno.VisualStudio.RustProjectSystem.RustDebuggerSettings.EnsureDebuggerFilesInstalled(KubunoLog.WriteLine);
+            Kubuno.VisualStudio.RustProjectSystem.RustDebuggerSettings.EnsurePanicExceptionSetting(KubunoLog.WriteLine);
+
             KubunoLog.WriteLine($"Kubuno: launching '{description.ExecutablePath}' {info.bstrArg} under the native debugger (cwd: {description.WorkingDirectory}).");
             try
             {

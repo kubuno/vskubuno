@@ -77,6 +77,7 @@ namespace Kubuno.VisualStudio
     [ProvideProfile(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, isToolsOptionPage: true)]
     [ProvideOptionPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true)]
     [ProvideProfile(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
+    [ProvideOptionPage(typeof(DebuggingOptionsPage), Constants.OptionsCategoryName, "Debugging", 0, 0, supportsAutomation: true)]
     // Kubuno.VisualStudio.Designer's own INTEGRATION.md §3: the split Design|XML editor for .kbview
     // files, registered alongside - never instead of - languages.pkgdef's plain core text editor
     // (that pkgdef entry's own comment: "the HIGHEST value wins the double-click default", 0x64 there

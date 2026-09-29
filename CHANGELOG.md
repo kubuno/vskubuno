@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Debugging Rust like C# (`docs/DEBUGGING.md`)**:
+  - **Panics break like exceptions**: a panic now stops the debugger on the line that panicked (`v[i]`, `x.unwrap()`,
+    `panic!`), with an exception helper reading "Rust panic: *message*" - the message read from the panic payload by
+    a new debugger engine component. The break is the new Exception Settings > C++ Exceptions > ` ?? ::st_panic`
+    entry (the name Visual Studio gives Rust's `rust_panic`), checked by default and applied at every launch; uncheck
+    it to let panics run.
+  - **Readable values**: `Some("two")`, `Ok(42)`, `Err(...)` with their payload, `Mutex` values, `Box<dyn Trait>` as its
+    concrete type, and the Kubuno types (`Value`, `Row`, `Sender`, `ElementRef`, `ElementProps`, `MouseEventArgs`,
+    `Event`, `HandlerTable`, `Color`, `Rect`...) in Locals, Watch and DataTips, from a natvis the extension registers.
+  - **Step Into over the standard library and the Kubuno framework**: F11 no longer enters `core`/`alloc`/`std`, the
+    framework or the event-handler glue, but still stops in your closures and handlers; with Just My Code the Call
+    Stack collapses them into `[External Code]`. Tools > Options > Kubuno > **Debugging** > "Treat the Kubuno
+    framework as external code" (on by default) keeps the framework visible for people who work on Kubuno.
+  - Design surfaces are built with debug information in the Debug configuration, so a custom control's code can be
+    debugged by attaching to `kubuno-design-surface.exe`.
 - **Paint debug command (EVT-8)**: a checkable Debug > Kubuno > Paint debug (Débogage > Kubuno > Débogage du
   rendu) command toggles the Kubuno runtime's paint-debug overlay (invalidated-region flashes, layout
   bounds/padding, frame time). The choice is persisted, exported as `KUBUNO_PAINT_DEBUG=all` to F5 / Ctrl+F5
@@ -83,6 +98,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- The Rust standard library's natvis files are no longer copied into `Documents\Visual Studio 2022|18\Visualizers`
+  (rustc already embeds them in every PDB); the copies earlier versions put there are removed.
 - **The application log no longer shows every event**: a new *Kubuno Desktop Application* logs at the `info` level,
   also in Debug; set `KUBUNO_LOG=debug` (or call `host::diagnostics::set_max_level`) to see the per-event lines again.
   The template's window now takes its title, position, border and other window properties from the view.

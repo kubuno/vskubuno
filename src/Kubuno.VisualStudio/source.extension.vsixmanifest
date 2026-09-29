@@ -74,6 +74,13 @@
           .vstemplate into its own .zip under ProjectTemplates\/ItemTemplates\ in the built VSIX, the
           same mechanism the stock "VSIX Project" C#/VB project template scaffolding uses.
         -->
+        <!--
+          docs/DEBUGGING.md: Kubuno.natvis, registered for every native debug session wherever the VSIX is installed
+          (Microsoft Learn, "Create custom views of C++ objects", "install and register a .natvis file via a VSIX
+          package"), and the Concord component that gives a Rust panic its message in the exception helper.
+        -->
+        <Asset Type="NativeVisualizer" Path="Debugging\Visualizers\Kubuno.natvis" />
+        <Asset Type="DebuggerEngineExtension" Path="Kubuno.VisualStudio.Debugger.vsdconfig" />
         <Asset Type="Microsoft.VisualStudio.ProjectTemplate" Path="ProjectTemplates" />
         <Asset Type="Microsoft.VisualStudio.ItemTemplate" Path="ItemTemplates" />
     </Assets>

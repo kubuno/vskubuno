@@ -10,6 +10,8 @@ using Kubuno.Cargo.Processes;
 using Kubuno.Launch;
 using Kubuno.VisualStudio.Core;
 using Kubuno.VisualStudio.Logging;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 
 namespace Kubuno.VisualStudio.Debugging
@@ -86,10 +88,12 @@ namespace Kubuno.VisualStudio.Debugging
                 // itself, fixed independently of this).
                 const string existingPath = "${env.PATH}";
 
-                // See NatvisInstaller's remarks for why this - rather than PDB embedding or a
-                // VSIX asset - is the mechanism that actually gets std types (String, Vec,
-                // Option, ...) visualized under VS's native debugger.
-                NatvisInstaller.EnsureInstalled(RustToolchain.FindNatvisFiles(sysroot), KubunoLog.WriteLine);
+                // Standard-library natvis is embedded in every PDB rustc links and Kubuno.natvis is a
+                // VSIX asset; Just My Code and the step filters are per-user files (see RustDebuggerFiles).
+                Kubuno.VisualStudio.RustProjectSystem.RustDebuggerSettings.EnsureDebuggerFilesInstalled(KubunoLog.WriteLine);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+                Kubuno.VisualStudio.RustProjectSystem.RustDebuggerSettings.EnsurePanicExceptionSetting(KubunoLog.WriteLine);
+                await TaskScheduler.Default;
 
                 var entries = new List<(LaunchDescription Description, string ProjectPath)>();
                 foreach (var package in metadata.Packages)

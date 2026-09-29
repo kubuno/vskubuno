@@ -246,7 +246,9 @@ namespace Kubuno.Cargo.DesignSurface
                 inputs.SurfaceSource,
                 "-C", "prefer-dynamic",
                 "-C", string.Equals(profile, "release", StringComparison.Ordinal) ? "opt-level=3" : "opt-level=0",
-                "-C", "debuginfo=0",
+                // Full debug info outside release (docs/DEBUGGING.md, "Debugging the design surface"): a custom control's
+                // code runs in the surface, and a developer attaching the debugger to kubuno-design-surface.exe gets a PDB.
+                "-C", string.Equals(profile, "release", StringComparison.Ordinal) ? "debuginfo=0" : "debuginfo=2",
                 "--cap-lints", "allow",
                 "-L", "dependency=" + inputs.DepsDirectory,
             };
