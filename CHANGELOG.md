@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The Events tab (⚡) works like Windows Forms' for existing handlers**: the value cell of an event is now a
+  dropdown of the code-behind's handlers that can take that event (a method whose sender and argument types fit,
+  or one that takes none, or `&dyn EventArgs`, plus the entries of a `handlers!` table); picking one binds the
+  event to it. Typing a new name for an event that already has a handler **renames the handler** - the `On...`
+  attributes of every view of the folder that use it, the Rust method (or the table entry and its function) and
+  its calls - with one undo step per file, through the open editors (unsaved changes included). Clearing the
+  value removes the attribute, and also deletes the handler when it is still the empty stub the designer
+  created and nothing else uses it.
+- **Renaming a handler method in the Rust editor** (F2 / Ctrl+R, R) renames it in the `.kbview` files too, and in
+  its `handlers!` string; **F2 on a handler name in a `.kbview`**'s XML renames the method as well.
+- **"Handler not found" warnings in `.kbview` files**: an event naming a handler the code-behind does not have,
+  or one that cannot take the event's arguments, is underlined and listed in the Error List, with the quick fixes
+  *Create handler `x`* (adds the typed method to the code-behind) and *Use `closest_name`*; an older event name
+  such as `OnToggled` gets *Use `OnCheckedChanged`*. The warnings update when the code-behind is saved.
+- **"Convert to Typed Handlers"** in the design surface's context menu (right-click on the canvas background):
+  the same conversion as the light-bulb action of the XML editor.
+
 - **Hover tooltips (Quick Info) that look like C#'s**, for Rust and for `.kbview` files. Hovering a Rust
   symbol now shows Visual Studio's own symbol icon (method, struct, trait, field, constant, macro, module...,
   with the lock/heart overlay for private/`pub(crate)` items, the same as in Solution Explorer), the

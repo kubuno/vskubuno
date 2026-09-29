@@ -172,10 +172,21 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
             CollectionAssert.AreEqual(new[] { "handler 0.2 OnClick custom_name" }, unboundHost.Calls);
 
             var (bound, host) = Create("0.1");
+            host.Compatible.Add("other_handler");
             click.SetValue(bound, "say_hello_clicked");
             click.SetValue(bound, "other_handler");
+            click.SetValue(bound, "brand_new_name");
             click.SetValue(bound, string.Empty);
-            CollectionAssert.AreEqual(new[] { "handler 0.1 OnClick (default)", "set 0.1 OnClick=other_handler", "remove 0.1 OnClick" }, host.Calls);
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "handler 0.1 OnClick (default)",
+                    "set 0.1 OnClick=other_handler",
+                    "rename 0.1 OnClick other_handler->brand_new_name",
+                    "removeHandler 0.1 OnClick",
+                },
+                host.Calls,
+                "the same name shows it, a compatible handler rebinds, a new name renames, clearing removes");
         }
 
         [TestMethod]
@@ -335,8 +346,49 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
 
             row.SetValue(element, "dark_changed");
             row.ResetValue(element);
-            CollectionAssert.AreEqual(new[] { "set 0 OnToggled=dark_changed", "remove 0 OnToggled" }, host.Calls);
+            CollectionAssert.AreEqual(new[] { "rename 0 OnCheckedChanged dark_toggled->dark_changed", "removeHandler 0 OnCheckedChanged" }, host.Calls);
             Assert.IsTrue(KbviewEventBindingService.Instance.ShowCode(element, element.GetEvents()["OnCheckedChanged"]!));
+        }
+
+        [TestMethod]
+        public void EventRow_Dropdown_ListsTheCompatibleHandlers_NotExclusive()
+        {
+            var (element, host) = Create("0.1");
+            host.Compatible.AddRange(new[] { "say_hello_clicked", "any_click" });
+            var row = element.GetEventProperties().Find("OnClick", false);
+            var context = new ElementContext(element, row);
+
+            Assert.IsTrue(row.Converter.GetStandardValuesSupported(context));
+            Assert.IsFalse(row.Converter.GetStandardValuesExclusive(context), "a new name can still be typed");
+            CollectionAssert.AreEqual(new[] { "say_hello_clicked", "any_click" }, row.Converter.GetStandardValues(context).Cast<string>().ToArray());
+            Assert.IsFalse(row.Converter.GetStandardValuesSupported(null), "no element, no list");
+
+            var methods = KbviewEventBindingService.Instance.GetCompatibleMethods(element.GetEvents()["OnClick"]!);
+            CollectionAssert.AreEqual(new[] { "say_hello_clicked", "any_click" }, methods.Cast<string>().ToArray());
+        }
+
+        /// <summary>The grid's <see cref="ITypeDescriptorContext"/> for one row of one element.</summary>
+        private sealed class ElementContext : ITypeDescriptorContext
+        {
+            public ElementContext(object instance, PropertyDescriptor property)
+            {
+                Instance = instance;
+                PropertyDescriptor = property;
+            }
+
+            public IContainer? Container => null;
+
+            public object Instance { get; }
+
+            public PropertyDescriptor PropertyDescriptor { get; }
+
+            public object? GetService(Type serviceType) => null;
+
+            public void OnComponentChanged()
+            {
+            }
+
+            public bool OnComponentChanging() => true;
         }
 
         private sealed class FakeHost : IKbviewElementHost
@@ -373,6 +425,15 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
                 Calls.Add($"handler {elementId} {eventName} {suggestedName ?? "(default)"}");
 
             public bool IsHandlerRequestRecent(string elementId, string eventName) => Recent;
+
+            public List<string> Compatible { get; } = new List<string>();
+
+            public IReadOnlyList<string> GetCompatibleHandlers(string elementId, string eventName) => Compatible;
+
+            public void RenameHandler(string elementId, string eventName, string oldName, string newName) =>
+                Calls.Add($"rename {elementId} {eventName} {oldName}->{newName}");
+
+            public void RemoveHandler(string elementId, string eventName) => Calls.Add($"removeHandler {elementId} {eventName}");
         }
     }
 }

@@ -65,7 +65,7 @@ namespace Kubuno.VisualStudio.Designer.Handlers
             return new HandlerLocation(uri, ParseRange(element.GetProperty("range")));
         }
 
-        private static HandlerWorkspaceEdit ParseEdit(JsonElement element)
+        internal static HandlerWorkspaceEdit ParseEdit(JsonElement element)
         {
             Dictionary<string, IReadOnlyList<TextEditDto>>? changes = null;
             if (TryGetNonNull(element, "changes", out var changesElement))
@@ -107,7 +107,7 @@ namespace Kubuno.VisualStudio.Designer.Handlers
             return new LspPosition(line, character);
         }
 
-        private static bool TryGetNonNull(JsonElement element, string propertyName, out JsonElement value)
+        internal static bool TryGetNonNull(JsonElement element, string propertyName, out JsonElement value)
         {
             if (element.TryGetProperty(propertyName, out value) && value.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined))
             {

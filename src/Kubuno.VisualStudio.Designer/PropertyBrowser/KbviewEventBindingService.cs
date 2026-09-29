@@ -41,8 +41,13 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             return AttributeValueRules.DefaultHandlerName(element?.XName, element?.Component.Name ?? string.Empty, e?.Name ?? string.Empty);
         }
 
-        /// <summary>Handler names are not enumerated from the code-behind yet (no language-server method for it) - an empty list, which only means the grid always navigates after binding.</summary>
-        public ICollection GetCompatibleMethods(EventDescriptor e) => Array.Empty<string>();
+        /// <summary>
+        /// The code-behind's handlers <paramref name="e"/> can be bound to (EVT-5, <c>kubuno/compatibleHandlers</c>): typed
+        /// methods whose sender and args fit the event, and the legacy table's entries. The row's own dropdown
+        /// (<see cref="HandlerNamesConverter"/>) shows the same list.
+        /// </summary>
+        public ICollection GetCompatibleMethods(EventDescriptor e) =>
+            e is KbviewEventDescriptor { Owner: { } element } ? element.Host.GetCompatibleHandlers(element.ElementId, e.Name).ToArray() : Array.Empty<string>();
 
         public EventDescriptor? GetEvent(PropertyDescriptor property) => (property as KbviewEventPropertyDescriptor)?.EventDescriptor;
 

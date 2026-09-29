@@ -138,6 +138,23 @@ namespace Kubuno.VisualStudio.Designer
 
         public static string MenuDesignSize => T("Design Size...", "Taille de conception…");
 
+        // ---- Handler commands (docs/EVENTS.md §5.4/§5.5, EVT-5) ----
+
+        public static string MenuConvertHandlers => T("Convert to Typed Handlers", "Convertir en gestionnaires typés");
+
+        /// <summary>The server refused a handler command (<paramref name="reason"/> is its English explanation).</summary>
+        public static string HandlerCommandRefused(string action, string reason) => T($"{action}: {reason}.", $"{action} : {reason}.");
+
+        public static string HandlerCommandNothingToDo(string action) => T($"{action}: nothing to change.", $"{action} : rien à modifier.");
+
+        public static string HandlerCommandFailed(string action, string file, string failure) => T(
+            $"{action}: {file} could not be edited ({failure}).",
+            $"{action} : {file} n'a pas pu être modifié ({failure}).");
+
+        public static string HandlersConverted(int count) => T(
+            $"{count} handler(s) converted to typed handlers.",
+            $"{count} gestionnaire(s) converti(s) en gestionnaires typés.");
+
         // ---- Layout submenus (docs/DESIGNER.md §13) - the Windows Forms designer's Format menu names ----
 
         public static string MenuAlign => T("Align", "Aligner");

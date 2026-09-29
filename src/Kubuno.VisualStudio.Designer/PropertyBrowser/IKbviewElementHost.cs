@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Kubuno.VisualStudio.Designer.Registry;
 
 namespace Kubuno.VisualStudio.Designer.PropertyBrowser
@@ -35,5 +36,18 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         /// <summary>Whether a <see cref="CreateOrShowHandler"/> request for this element/event was issued very recently (still in flight) - guards against the Properties window's own double navigation.</summary>
         bool IsHandlerRequestRecent(string elementId, string eventName);
+
+        /// <summary>
+        /// EVT-5 (<c>kubuno/compatibleHandlers</c>): the handlers of the code-behind <paramref name="eventName"/> of the
+        /// element can be bound to - the Events tab row's dropdown, like WinForms' compatible methods. Synchronous
+        /// (the grid asks when the dropdown opens), bounded by a short timeout; empty when the server cannot tell.
+        /// </summary>
+        IReadOnlyList<string> GetCompatibleHandlers(string elementId, string eventName);
+
+        /// <summary>EVT-5 (<c>kubuno/renameHandler</c>): renames handler <paramref name="oldName"/> to <paramref name="newName"/> in every view of the folder and in the Rust code-behind (one undo unit per file).</summary>
+        void RenameHandler(string elementId, string eventName, string oldName, string newName);
+
+        /// <summary>EVT-5 (<c>kubuno/removeHandler</c>): clears the event - removes its attribute, and the handler when it is an untouched stub nothing else uses.</summary>
+        void RemoveHandler(string elementId, string eventName);
     }
 }

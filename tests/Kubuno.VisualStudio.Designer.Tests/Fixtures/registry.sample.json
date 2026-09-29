@@ -604,6 +604,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnClick"
@@ -1218,6 +1259,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnCheckedChanged"
@@ -1813,6 +1895,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -2420,6 +2543,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnClick"
@@ -3015,6 +3179,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -3635,6 +3840,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnClick"
@@ -4216,6 +4462,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -4831,6 +5118,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnClick"
@@ -5397,6 +5725,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -5975,6 +6344,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnClick"
@@ -6541,6 +6951,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -7169,6 +7620,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -7815,6 +8307,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -8475,6 +9008,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnClick"
@@ -9055,6 +9629,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -9655,6 +10270,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -10276,6 +10932,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnCheckedChanged"
@@ -10890,6 +11587,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnValueChanged"
@@ -11497,6 +12235,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -12134,6 +12913,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnTextChanged"
@@ -12722,6 +13542,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -13324,6 +14185,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -13961,6 +14863,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnSelectedValueChanged"
@@ -14565,6 +15508,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -15187,6 +16171,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnValueChanged"
@@ -15746,6 +16771,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -16334,6 +17400,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnClick"
@@ -16907,6 +18014,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnClick"
@@ -17466,6 +18614,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -18064,6 +19253,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -18673,6 +19903,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -19290,6 +20561,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnClick"
@@ -19900,6 +21212,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -20529,6 +21882,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -21193,6 +22587,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnStepSelected"
@@ -21795,6 +23230,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -22417,6 +23893,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -23049,6 +24566,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnSelectionChanged"
@@ -23666,6 +25224,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",
@@ -24308,6 +25907,47 @@
         "browsable": true,
         "root_only": true,
         "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
       }
     ],
     "default_event": "OnSelectionChanged"
@@ -24894,6 +26534,47 @@
           "EventArgs"
         ],
         "args_rust_type": "EmptyEventArgs",
+        "args_mut": false,
+        "cancelable": false,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosing",
+        "display_name": "FormClosing",
+        "doc": "Occurs before the window of the view closes. Cancel it to keep the window open (unsaved changes).",
+        "doc_fr": "Se produit avant la fermeture de la fenêtre de la vue. Annulez-le pour la garder ouverte (modifications non enregistrées).",
+        "category": "Behavior",
+        "args_type": "FormClosingEventArgs",
+        "args_chain": [
+          "FormClosingEventArgs",
+          "CancelEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosingEventArgs",
+        "args_mut": true,
+        "cancelable": true,
+        "routing": "Direct",
+        "aliases": [],
+        "browsable": true,
+        "root_only": true,
+        "common": false
+      },
+      {
+        "name": "OnFormClosed",
+        "display_name": "FormClosed",
+        "doc": "Occurs after the window of the view has closed, just before it is destroyed.",
+        "doc_fr": "Se produit après la fermeture de la fenêtre de la vue, juste avant sa destruction.",
+        "category": "Behavior",
+        "args_type": "FormClosedEventArgs",
+        "args_chain": [
+          "FormClosedEventArgs",
+          "EventArgs"
+        ],
+        "args_rust_type": "FormClosedEventArgs",
         "args_mut": false,
         "cancelable": false,
         "routing": "Direct",

@@ -67,6 +67,7 @@ namespace Kubuno.VisualStudio.Designer.Handlers.Infrastructure
                 elementId = request.ElementId,
                 @event = request.EventName,
                 suggestedName = request.SuggestedName,
+                openFiles = request.OpenFiles,
             };
 
             JToken? token;

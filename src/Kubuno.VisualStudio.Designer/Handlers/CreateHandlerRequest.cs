@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Kubuno.VisualStudio.Designer.Handlers
 {
@@ -10,8 +11,9 @@ namespace Kubuno.VisualStudio.Designer.Handlers
     /// </summary>
     public sealed class CreateHandlerRequest
     {
-        public CreateHandlerRequest(string kbviewUri, string elementId, string eventName, string? suggestedName = null)
+        public CreateHandlerRequest(string kbviewUri, string elementId, string eventName, string? suggestedName = null, IDictionary<string, string>? openFiles = null)
         {
+            OpenFiles = openFiles ?? new Dictionary<string, string>();
             KbviewUri = kbviewUri ?? throw new ArgumentNullException(nameof(kbviewUri));
             ElementId = elementId ?? throw new ArgumentNullException(nameof(elementId));
             EventName = eventName ?? throw new ArgumentNullException(nameof(eventName));
@@ -28,5 +30,8 @@ namespace Kubuno.VisualStudio.Designer.Handlers
 
         /// <summary><see langword="null"/> to let the server pick <c>on_&lt;xname or element&gt;_&lt;event&gt;</c> itself (docs/DESIGNER.md's own DSG-10 naming rule).</summary>
         public string? SuggestedName { get; }
+
+        /// <summary>The texts of the open code-behind documents (<c>uri -&gt; text</c>): the server computes its offsets against them, not the files (EVT-5).</summary>
+        public IDictionary<string, string> OpenFiles { get; }
     }
 }

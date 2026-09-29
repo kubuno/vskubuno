@@ -161,7 +161,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
     /// <summary>A registry event (<c>OnClick</c>...) as a component event - what the Events tab and <see cref="KbviewEventBindingService"/> reason about.</summary>
     public sealed class KbviewEventDescriptor : EventDescriptor
     {
-        public KbviewEventDescriptor(EventMeta @event)
+        public KbviewEventDescriptor(EventMeta @event, KbviewElementObject? owner = null)
             : base(@event?.Name ?? throw new ArgumentNullException(nameof(@event)), new Attribute[]
             {
                 new CategoryAttribute(@event.LocalizedCategory),
@@ -170,9 +170,13 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             })
         {
             Event = @event;
+            Owner = owner;
         }
 
         public EventMeta Event { get; }
+
+        /// <summary>The element whose Events tab lists this event (what <see cref="KbviewEventBindingService.GetCompatibleMethods"/> asks about), or null.</summary>
+        public KbviewElementObject? Owner { get; }
 
         public override Type ComponentType => typeof(KbviewElementObject);
 
@@ -219,7 +223,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
 
         public override Type PropertyType => typeof(string);
 
-        public override TypeConverter Converter => new StringConverter();
+        public override TypeConverter Converter => new HandlerNamesConverter(Name);
 
         /// <summary>
         /// The attribute holding this event's handler on <paramref name="element"/>: the canonical one, or an older
@@ -237,7 +241,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         {
             if (component is KbviewElementObject element && element.GetRawValue(AttributeOf(element)) is not null)
             {
-                element.RemoveAttribute(AttributeOf(element));
+                element.Host.RemoveHandler(element.ElementId, Name);
             }
         }
 
@@ -253,9 +257,10 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             var current = element.GetRawValue(attribute);
             if (text.Length == 0)
             {
+                // Clearing the row (EVT-5): the attribute goes, and the handler too when it is an untouched stub.
                 if (current is not null)
                 {
-                    element.RemoveAttribute(attribute);
+                    element.Host.RemoveHandler(element.ElementId, Name);
                 }
 
                 return;
@@ -273,12 +278,43 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             {
                 element.Host.CreateOrShowHandler(element.ElementId, Name, null);
             }
+            else if (element.Host.GetCompatibleHandlers(element.ElementId, Name).Contains(name, StringComparer.Ordinal))
+            {
+                // Another existing handler picked from the dropdown: rebind, like WinForms.
+                element.SetAttribute(attribute, name);
+            }
             else
             {
-                element.SetAttribute(attribute, name);
+                // A new name for the bound handler: rename it, in every view and in the Rust code (EVT-5), like
+                // WinForms renames the method when its name is edited in the Events tab.
+                element.Host.RenameHandler(element.ElementId, Name, current!, name);
             }
         }
 
         public override bool ShouldSerializeValue(object component) => component is KbviewElementObject element && !string.IsNullOrEmpty(element.GetRawValue(AttributeOf(element)));
+    }
+
+    /// <summary>
+    /// The Events tab row's dropdown (EVT-5, docs/EVENTS.md §5.3): the code-behind's handlers the event can be bound
+    /// to - WinForms' compatible methods -, asked from the language server when the dropdown opens. Not exclusive: a
+    /// new name can still be typed (it creates or renames the handler).
+    /// </summary>
+    public sealed class HandlerNamesConverter : StringConverter
+    {
+        private readonly string _eventName;
+
+        public HandlerNamesConverter(string eventName)
+        {
+            _eventName = eventName ?? throw new ArgumentNullException(nameof(eventName));
+        }
+
+        public override bool GetStandardValuesSupported(ITypeDescriptorContext? context) => context?.Instance is KbviewElementObject;
+
+        public override bool GetStandardValuesExclusive(ITypeDescriptorContext? context) => false;
+
+        public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext? context) =>
+            new StandardValuesCollection(context?.Instance is KbviewElementObject element
+                ? element.Host.GetCompatibleHandlers(element.ElementId, _eventName).ToArray()
+                : Array.Empty<string>());
     }
 }

@@ -206,7 +206,7 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             {
                 // Browsable events only; the view's own events (Load, Shown...) on its root element only.
                 _events = new EventDescriptorCollection(
-                    Component.Events.Where(e => e.Browsable && (IsRoot || !e.RootOnly)).Select(e => (EventDescriptor)new KbviewEventDescriptor(e)).ToArray(),
+                    Component.Events.Where(e => e.Browsable && (IsRoot || !e.RootOnly)).Select(e => (EventDescriptor)new KbviewEventDescriptor(e, this)).ToArray(),
                     readOnly: true);
             }
 

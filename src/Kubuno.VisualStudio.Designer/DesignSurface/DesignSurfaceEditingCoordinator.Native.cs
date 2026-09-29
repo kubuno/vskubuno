@@ -443,7 +443,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             var service = new HandlerCreationService(new JsonRpcKubunoViewsLanguageServerClient(rpc), documentHost);
             try
             {
-                var result = await service.CreateAsync(new CreateHandlerRequest(uri, elementId, eventName, suggestedName), CancellationToken.None);
+                var result = await service.CreateAsync(new CreateHandlerRequest(uri, elementId, eventName, suggestedName, OpenCodeBehindTexts(uri)), CancellationToken.None);
                 KubunoViewsLogHost.Current.WriteLine($"[designer] kubuno/createHandler '{eventName}' on '{elementId}': {result.Outcome} ({result.HandlerName}).");
                 if (result.Outcome == HandlerCreationOutcome.NothingToDo)
                 {

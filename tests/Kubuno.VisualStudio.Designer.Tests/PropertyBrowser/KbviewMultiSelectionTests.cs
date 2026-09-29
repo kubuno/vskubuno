@@ -141,6 +141,16 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
 
             public bool IsHandlerRequestRecent(string elementId, string eventName) => false;
 
+            public IReadOnlyList<string> GetCompatibleHandlers(string elementId, string eventName) => Array.Empty<string>();
+
+            public void RenameHandler(string elementId, string eventName, string oldName, string newName)
+            {
+            }
+
+            public void RemoveHandler(string elementId, string eventName)
+            {
+            }
+
             public void RunScheduled()
             {
                 var pending = _scheduled.ToList();

@@ -6,9 +6,9 @@
 > server) and `vskubuno` (Visual Studio designer). It builds on
 > `docs/XML_VIEWS.md` §2/§4/§7 and `docs/DESIGNER.md` §11 (Properties window, ⚡ tab).
 >
-> **Status (2026-09-29):** EVT-1 to EVT-4 are **done** (see §9, "EVT-1 as built", §10,
-> "EVT-2 and EVT-3 as built", and §11, "EVT-4 as built" — the attribute is `#[kubuno_views::event_handlers]`,
-> see there); EVT-5 to EVT-8 are not started.
+> **Status (2026-09-29):** EVT-1 to EVT-5 are **done** (see §9, "EVT-1 as built", §10,
+> "EVT-2 and EVT-3 as built", §11, "EVT-4 as built" — the attribute is `#[kubuno_views::event_handlers]`,
+> see there —, and §12, "EVT-5 as built"); EVT-6: see §13; EVT-7 and EVT-8 are not started.
 
 ## 0. Where we are today
 
@@ -452,7 +452,7 @@ instead of `&mut dyn ViewModel`.
 | EVT-2 ✅ done (§10) | Input router and ordered synthesis (mouse, hover, keys, focus, validation) | `events/router.rs`, `node.rs` `fire` (typed), every `families/*.rs` call site | EVT-1 | L | Scripted `Frame` sequences asserting exact WinForms orders (§3); legacy `ViewEvent` tests unchanged; live: `view_preview` with an event log overlay |
 | EVT-3 ✅ done (§10) | Registry metadata and catalogue | `registry/{mod,export,docs_fr}.rs`, families' `EventMeta` tables, aliases, `validate.rs` alias hint; C# `Registry/EventMeta.cs`, `KbviewElementObject` categories and default event | EVT-1 | M | Registry test: every `default_event` exists; alias parse tests; C# JSON round-trip; live: ⚡ tab grouped with descriptions in VS experimental instance |
 | EVT-4 ✅ done (§11) | Typed handlers and migration | `kubuno-views-macros` `#[handlers]`, `EventSink`, `Runtime::frame_typed`, legacy adapter; `handler_insert.rs` typed stub | EVT-1, EVT-2 | L | `trybuild` pass/fail tests (bad signature, async + Handled); existing `handlers!` tests untouched; live: `KubunoLot8App` old and new style both click through |
-| EVT-5 | Designer/LS commands | LS `compatibleHandlers`, `renameHandler`, remove-empty-stub, missing-handler diagnostic, convert code action; C# `GetCompatibleMethods`, surface double-click → default event, rename menu | EVT-3, EVT-4 | M | LS unit tests on temp workspaces; live: dropdown lists handlers, rename updates XML + Rust in one undo per file |
+| EVT-5 ✅ done (§12) | Designer/LS commands | LS `compatibleHandlers`, `renameHandler`, remove-empty-stub, missing-handler diagnostic, convert code action; C# `GetCompatibleMethods`, surface double-click → default event, rename menu | EVT-3, EVT-4 | M | LS unit tests on temp workspaces; live: dropdown lists handlers, rename updates XML + Rust in one undo per file |
 | EVT-6 | View lifecycle, window events, threading | `runtime.rs` lifecycle hooks, host close/activation plumbing, `UiDispatcher`, `spawn_local` executor | EVT-2 | M | Unit tests with a fake host; live: FormClosing cancel keeps the window, background thread `begin_invoke` updates a label |
 | EVT-7 | Custom controls and user controls | `kubuno-views-meta` (shared grammar), `#[derive(Component/UserControl)]`, extensible registry (`inventory`), `<UserControl x:Class>`, LS `syn` scan, project Toolbox tab, per-project design host | EVT-3, EVT-4 | L | Macro and LS produce identical `ComponentMeta` (shared golden tests); live: a `RatingBar` user control appears in the Toolbox, is dropped, its event bound and raised |
 | EVT-8 | Paint, scroll, drag and drop | `PaintEventArgs` for `<Canvas>`/custom controls, `ScrollEventArgs`, OLE drop target in the host, `DragEventArgs` | EVT-2, EVT-6 | L | Unit tests on synthetic drag sequences (Enter → Over* → Drop/Leave); live: drop a file from Explorer onto a list |
@@ -826,6 +826,314 @@ impl in a CRLF file, reasons), an LSP round trip (`createHandler` typed, `codeAc
 `convertHandlers`). C#: caret position of a typed stub past the added import, `ArgsRustType`/`ArgsMut` from the
 fixture (292 Designer tests). `tools/test-templates.ps1 -Run` passes with the typed template.
 
+## 12. EVT-5 as built (2026-09-29)
+
+In `Z:\src\desktop\windows` (`kubuno-views-ls` only, uncommitted there) and in this repository. `kubuno-views`,
+`kubuno_ui` and the macros are unchanged.
+
+### Language server (`kubuno-views-ls`)
+
+- **The handler set of a view** (`handlers.rs`, `CodeBehind`): the union, over the `.rs` files of the view's
+  folder, of the methods of the `#[event_handlers]` impls (`code_behind::impl_methods`: name, `#[handler(name =
+  "…")]`, `#[handler(skip)]`, receiver, the parameters classified as `AnySender` (`&ElementRef`,
+  `&Sender<AnyElement>`), `Sender(C)`, `AnyArgs` (`&dyn EventArgs`) or `Args { ty, generic }`, the body's braces,
+  the item's start with its doc comments/attributes) and of the `handlers!` table entries (now with their offsets).
+  It is *unknown* — and no handler is ever reported missing — when no typed impl or table is found, or when a file
+  builds handlers in a way the scanner cannot read (`HandlerTable::new(`, `insert_typed(`, an unparsable table).
+- **Compatibility** (`accepts`) follows the runtime (`with_args`, `typed_sender`), not §5.3's chain rule: a
+  `Sender<C>` must name the element's own control; args must be absent, `&dyn EventArgs`, `EmptyEventArgs`, the
+  event's `args_rust` (`ValueChangedEventArgs<String>` is read as `TextChangedEventArgs`, etc.), `CancelEventArgs`
+  for a cancelable event, `HandledEventArgs` for a handled one. A legacy table entry accepts every event.
+- **`openFiles`** (`sources.rs`): every handler request (`createHandler`, `convertHandlers`, and the three new
+  ones) takes the client's open buffers (`uri → text`), installed for the request and read instead of the disk,
+  so the edits' offsets match the editor (this also fixes two `createHandler`s in a row against an unsaved
+  code-behind). Sibling views are read from the server's open documents first (an unsaved new view included).
+- **`kubuno/compatibleHandlers { uri, elementId, event }`** → `{ handlers }`: typed methods first (declaration
+  order), then table entries.
+- **`kubuno/renameHandler { uri, old?, new, position?, rustRenamed? }`** → `{ edit, oldName, reason }`: every event
+  attribute naming `old` in the folder's views (`edit::set_attribute`, under the name the file uses — an alias
+  stays an alias), the method name (or its `#[handler(name)]` string), `.old(` calls, the table entry's string, the
+  identifier it forwards to and the legacy `fn old`. Refused (with `reason`) when `new` is not a method identifier
+  or is already taken by any `fn` of the folder. From a `.rs` file, `position` gives the method under the cursor;
+  `rustRenamed` (rust-analyzer already renamed the Rust side) limits the edit to the views and the strings, and a
+  method bound under `#[handler(name)]` is left alone (the views name the string).
+- **`kubuno/removeHandler { uri, elementId, event }`** → `{ edit, handlerName, removedStub }`: removes the
+  attribute as written (canonical or alias); when that was the handler's only reference in the folder's views and
+  its body is still the stub (`// TODO: implement <any name>` — a renamed stub keeps its original comment —, the legacy `let _ = (vm, value);`, or empty), deletes the
+  method with its doc/attributes and one adjacent blank line — or the legacy `fn` and its forwarding table entry
+  (only when the entry is exactly `name(vm, value)`).
+- **Diagnostics**: an event attribute naming a handler the set does not have is a WARNING `missing-handler`
+  ("handler `x` not found in the code-behind"); one whose every declaration refuses the event is a WARNING
+  `incompatible-handler` ("… cannot take the arguments of `OnMouseUp` (`MouseEventArgs` from a `Button`)"). Both
+  carry `data { handler, elementId, event }`. The main loop now wakes every 1.5 s (`recv_timeout`) and republishes
+  the diagnostics of an open view when the (modified time, length) of its folder's `.rs` files changed — a
+  handler added or renamed in Rust and saved clears or raises the warning without touching the view.
+- **Code actions** (`quick_fixes`, computed from the document, not from the client's `context.diagnostics`):
+  *Create handler `x`* (`handler_insert::insert_handler_stub`, the code-behind edit only, marked preferred), *Use
+  `closest`* (a compatible handler within `max(2, len/3)` edits), *Use `OnCheckedChanged`* on an older event name
+  (§10's hint); then the EVT-4 conversion.
+- **F2 in the XML**: `renameProvider` with `prepareRename` (the value of an event attribute) and
+  `textDocument/rename` → the same rename; a refusal is a `RequestFailed` error carrying the reason.
+- **`kubuno/createHandler`** with a `suggestedName` that is already a handler binds the event to it (the
+  attribute only) instead of creating `name_2`: what picking an existing handler in the dropdown sends.
+
+### Visual Studio
+
+- **⚡ tab**: each event row's converter (`HandlerNamesConverter`) lists `kubuno/compatibleHandlers` (asked
+  synchronously when the dropdown opens, 2 s timeout, cached per buffer version for 3 s; not exclusive, a new name
+  can be typed); `KbviewEventBindingService.GetCompatibleMethods` returns the same list (the event descriptor now
+  knows its element). Setting a row: empty → `kubuno/removeHandler`; unbound → `createHandler` (an existing
+  handler is bound); same name → show it; a compatible handler → rebind (`setAttribute`); another name →
+  `kubuno/renameHandler` (like WinForms, which renames the method when its name is edited in the grid). Reset =
+  remove. No separate "Rename handler…" row menu: the grid's own cell is the rename gesture.
+- **Applying** (`WorkspaceEditApplier`, `VsWorkspaceFileHost`): every file of the answer is planned first (no
+  overlap, fits its text), then applied as ONE edit per file through the document's buffer when it is open in any
+  editor (running document table: the designer's `.kbview`, a code window's `.rs`) — never reopening it —, else
+  spliced into the file on disk. The open `.rs` of the view's folder are sent as `openFiles`.
+- **Rust editor rename**: `RustAnalyzerMiddleLayer` intercepts `textDocument/rename`, lets rust-analyzer answer,
+  then asks `kubuno/renameHandler { position, rustRenamed: true, openFiles }` (when the Kubuno Views server is
+  running, i.e. a view was opened in this session) and merges its edits into rust-analyzer's `WorkspaceEdit`
+  (`RenameEditMerger`: appended to the same file's `TextDocumentEdit`, else a new one with `version: null`; or into
+  `changes`).
+- **Context menu**: *Convert to Typed Handlers* / *Convertir en gestionnaires typés* (`cmdidDesignerConvertHandlers`
+  0x0205, view menu: right-click on the canvas background) → `kubuno/convertHandlers`, result in the status bar.
+- Double-click on a control still creates/opens its default event's handler (§10).
+
+### Deviations and limits
+
+- The scan is textual, like EVT-4's (no `syn` in the server); only the folder of the view is considered, and a
+  rename does not follow other call paths than `.name(` calls.
+- A Rust-editor rename updates the views only when the Kubuno Views server is running; otherwise the view gets the
+  missing-handler warning (and its quick fixes) as soon as it is opened.
+- Warnings follow the code-behind on save (disk), not on each keystroke in the Rust editor.
+
+### Tests
+
+LS: `code_behind` (+2: methods of a typed impl with every parameter shape and attribute, `fn`/identifier search),
+`sources` (1), `handlers` (10: a renamed stub still removed, compatibility by sender/args/cancel, the open buffer used, rename across two views and
+the method, rename after rust-analyzer, legacy rename, removal of a typed stub with its blank line and of a legacy
+stub with its entry, a shared or edited handler kept, missing/incompatible warnings + quick fixes + the alias fix +
+an unknown set, F2), and an LSP round trip (dropdown on an unsaved buffer, quick fix, rename both ways, F2
+refusal, removal, the warning cleared by a saved code-behind); 117 unit + 17 round-trip tests, clippy clean. C#:
+the ⚡ row semantics (rebind/rename/remove, alias), the dropdown and `GetCompatibleMethods`, the answers' parsing,
+the applier (buffer = one edit, disk, nothing applied on a bad edit), the rename merge (both `WorkspaceEdit`
+shapes), the context-menu command (298 Designer tests). The C# registry fixture was regenerated from the real export
+after EVT-6 (FormClosing/FormClosed). `tools/test-templates.ps1 -Run` passes.
+
+### Live verification (regular Visual Studio, 2026-09-29)
+
+A new *Kubuno Desktop Application* (`Evt5App`, from the installed template through DTE), with two extra methods
+(`any_click(&mut self)`, `switch_only(&mut self, sender: &Sender<Switch>, e: &CheckedChangedEventArgs)`) and a second
+button `OnClick="missing_one"`:
+
+- the Error List and the XML editor showed the warning *handler `missing_one` not found in the code-behind* (line 15,
+  squiggle, light bulb); the light bulb's *Create handler `missing_one`* added the typed stub to the open `main_view.rs`
+  buffer; once saved, the warning disappeared without touching the view;
+- the ⚡ Click row of that button showed a dropdown listing `on_hello_click`, `any_click`, `missing_one` — not
+  `switch_only`;
+- typing `other_click` in that row renamed the handler in the view and in the Rust method (both buffers edited,
+  unsaved); the project built;
+- F2 (Refactor.Rename) on `other_click` in the Rust editor, renamed `other_pressed`: rust-analyzer renamed the method
+  and the view's `OnClick` followed;
+- clearing the row removed the attribute and the stub (with its blank line); the project built — **found live**: the
+  renamed stub kept its `// TODO: implement missing_one` comment and was not recognized as a stub; the check now accepts
+  any name there;
+- a Rust hover (`ViewModel`) showed the C#-style Quick Info (signature, `kubuno_views::binding`, the documentation);
+- a fresh *Kubuno Desktop Application* built, and after *Restart rust-analyzer* the Error List and the editor showed no
+  diagnostic.
+
+Not exercised live: *Convert to Typed Handlers* in the design surface's menu (registered in the view menu; the
+conversion itself is EVT-4's, unit- and round-trip-tested) and F2 in the XML editor (round-trip-tested).
+
+## 13. EVT-6 as built (2026-09-29)
+
+In `Z:\src\desktop\windows` (uncommitted there): `kubuno-controls` (host), `kubuno-views` (runtime, events),
+`kubuno-views-macros`. `kubuno_ui` is unchanged; every exe was rebuilt (`build-all`) and restaged. Applications that
+use none of this behave as before (the host changes are opt-in per frame).
+
+### Host (`kubuno_controls::host`)
+
+- **Wake-up from any thread**: `UiWaker` (`Send + Sync + Clone`, `host::ui_waker()` on the UI thread, usable before
+  the window exists) posts `WM_KUBUNO_WAKE` (`WM_APP + 0x4B51`) to its thread's host window, coalesced (one in the
+  queue at a time; a process-wide registry maps UI thread → window, filled at `WM_NCCREATE`, emptied at
+  `WM_NCDESTROY`). `is_ui_thread()` is `!InvokeRequired`.
+- **Frames for work, not looks**: the host asks for a frame with an invalidation when the window can paint, and
+  **renders directly when it is minimised or hidden** (no `WM_PAINT` would come) — for `WM_KUBUNO_WAKE`, for the new
+  `request_wake_after(ms)` (a second one-shot `SetTimer`, id `0x4B56`, same per-frame "shortest wins" rule as
+  `request_repaint_after`, which keeps its paint-only meaning) and for a close request. A render re-entered from a
+  modal loop is turned into an invalidation (`Host::rendering`).
+- **Deferred close**: `defer_close()` is a per-frame declaration (reset at each frame start, like the cursor). When
+  the last frame declared it, `WM_CLOSE` (after `set_close_handler`, which still decides first; `quit` still
+  bypasses everything) queues `InputEvent::CloseRequested(CloseReason)` for the next frame instead of destroying the
+  window (`InputEvent` is `#[non_exhaustive]`, so this is additive). `CloseReason::{UserClosing,
+  ApplicationExitCall, WindowsShutDown, TaskManagerClosing}`: a plain `WM_CLOSE` (caption, Alt+F4, task bar,
+  `close_window`) is `UserClosing` — as WinForms gives `Form.Close()` —, `request_close(reason)` marks the `wParam`
+  (`0x4B55_000r`), `WM_QUERYENDSESSION` renders a frame **synchronously** with `WindowsShutDown` and answers `FALSE`
+  when the page called `cancel_close()`. **Safety net**: a `CloseRequested` nobody consumed by the end of its frame
+  closes the window (`quit`), so a page that stops deferring (the template's "waiting for the view to compile"
+  branch) can always be closed. `WM_EXITSIZEMOVE` invalidates once (the view's Move after a drag).
+- Not changed: activation is still read from the focus edges (`Frame::window_focused`): for a top-level window
+  `WM_ACTIVATE` and `WM_SETFOCUS`/`WM_KILLFOCUS` coincide, and an embedded window never gets `WM_ACTIVATE`.
+
+### Runtime (`kubuno_views::runtime::Runtime`)
+
+- **Frame order** (module doc): (1) a close request (host's, or `Runtime::close(reason)`) → FormClosing on the
+  root (cancelable, `FormClosingEventArgs { reason, cancel }`; Rust subscribers: `runtime.form_closing()` after
+  the XML handler); not cancelled → FormClosed → Deactivate (if the window was active) → `shutdown()` →
+  `host::quit()`, and the frame only paints; cancelled → `host::cancel_close()`; (2) the router's first half (Load
+  → Activated on the first frame, input); (3) the dispatcher's closures in posting order, the due timer ticks, the
+  woken async tasks; (4) paint, the router's second half (Shown); (5) the first poll of tasks spawned by this
+  frame's handlers (+ a 1 ms repaint so their changes show), `request_wake_after` for the next due timer/delay,
+  `defer_close()`. Deviation from §3: Load/Activated/Shown were EVT-2's; the root also raises **Move /
+  LocationChanged when the window moves on screen** (`Frame::client_origin`).
+- **Graceful shutdown** (`Runtime::shutdown`, idempotent, also in `Drop`): async tasks dropped at their `.await`
+  (their `JoinHandle`s report `Cancelled`, `UiHandle::update` returns `None`), dispatcher closed (queued closures
+  dropped, blocked `invoke`s released with `DispatchError::Closed`, new posts refused), timers stopped. A closed view
+  raises nothing any more.
+- `VIEW_EVENTS` gained **OnFormClosing** (`FormClosingEventArgs`, cancelable) and **OnFormClosed**
+  (`FormClosedEventArgs`), category Behavior, with French docs; the export, the LS and the ⚡ tab get them from the
+  registry (the C# fixture `registry.sample.json` was not regenerated: it belongs to the C# side).
+- A host abstraction (`runtime::HostPort`, crate-private) lets the unit tests drive the whole frame with a fake host
+  and a fake clock (`run_frame` with no canvas: everything but the paint).
+- `frame_typed`/`frame_typed_with` now require `V: 'static` (the closures and tasks reach `&mut V` through `Any`).
+
+### `UiDispatcher<V>` (`events/dispatcher.rs`)
+
+`runtime.dispatcher::<V>()` (or `UiHandle::dispatcher()`): `begin_invoke(FnOnce(&mut V) -> R + Send) ->
+AsyncResult<R>` (queue + `UiWaker`), `invoke(f) -> Result<R, DispatchError>` (blocks the worker), `is_ui_thread`,
+`invoke_required`, `is_closed`. `AsyncResult<R>` is the oneshot: `wait`, `wait_timeout`, `try_take`,
+`is_completed`, and `Future`. `DispatchError::{Closed, OnUiThread, WrongViewModel, Timeout}`. **Deviations**: `invoke`
+on the UI thread returns `OnUiThread` at once rather than running inline (the view model is already mutably borrowed
+there — use it); closures need the typed frame (`frame_typed`): under the untyped `frame` they report
+`WrongViewModel`. Lock poisoning is ignored (single-operation critical sections), no `unwrap`.
+
+### Executor and async handlers (`events/executor.rs`)
+
+- One executor per runtime (`UiContext`: tasks, delay timers, frame clock), polled at steps 3 and 5 (up to 8 passes
+  for tasks woken meanwhile; a poll longer than 50 ms logs a warning with the task/handler name). Wakers are
+  `Send + Sync`: they mark the task ready and wake the host, so a task always resumes on the UI thread.
+- `spawn_local(future) -> JoinHandle<T>` on the current view (a thread-local "current runtime" set during frames;
+  outside a frame the future is dropped with a warning), `Runtime::spawn_local` from outside. `JoinHandle<T>`:
+  `Future<Output = Result<T, Cancelled>>`, `cancel`, `is_finished`, `is_cancelled`, `try_take`; dropping it detaches.
+  `delay(Duration)` (on the frame clock; a helper-thread sleep outside a view), `yield_now()`.
+- `UiHandle<V>`: `update(|vm| …) -> Option<R>` lends `&mut V` for the closure. The runtime lends the view model to
+  the tasks it polls through a scoped thread-local pointer (`with_vm_scope`, the only `unsafe` of the feature): taken
+  out while an update runs, so a nested `update` gets `None` rather than a second `&mut`; the type and the runtime are
+  checked. `None` too after close. `dispatcher()`, `is_closed()`, `UiHandle::current()`.
+- **Async handlers** (`#[event_handlers]`): an `async fn` is a handler; it takes no `self` (error: "cannot borrow the
+  view model across `.await`: take `ui: UiHandle<Self>`"), an optional `ui: UiHandle<Self>` then an optional copy of
+  the args **by value**. `&mut A` / `&A` / a sender / a trait object are compile errors; writable args by value
+  (`FormClosingEventArgs`, `KeyEventArgs`) are refused by the new marker trait **`ReadOnlyArgs`** (implemented by the
+  derive for args without `handled`/`cancel`, and by `EmptyEventArgs`/`ValueChangedEventArgs<T>`), whose
+  `on_unimplemented` message says to set them in a synchronous handler — the §6 rule, enforced. The generated arm
+  clones the args (`typed::copy_for_async`), takes `UiHandle::<Self>::current()` and spawns the handler's future named
+  after it; its first poll is in the same frame (step 3 or 5). `HandlerInfo::asynchronous`. An `async fn` helper that
+  is not a handler needs `#[handler(skip)]`.
+
+### `Timer` (`events/timer.rs`)
+
+`Timer::new(name)` (interval 100 ms, disabled, like WinForms), `with_interval`/`set_interval` (restarts counting),
+`with_handler`/`set_handler` (the view-model handler a tick runs, as `OnTick="…"` would; sender element `"Timer"`,
+`x:Name` = the timer's name), `start`/`stop`/`set_enabled`, `tick()` (`Event<EmptyEventArgs>` for Rust subscribers),
+`runtime.add_timer(&t)` / `remove_timer`. Ticks run at step 3; late ticks coalesce into one (like `WM_TIMER`); the next
+tick is due `interval` after the one that ran; the runtime wakes the host for it (minimised included). Not built: a
+`<Timer>` XML element / component tray (EVT-7).
+
+### Macro robustness (product-owner report during EVT-6)
+
+- `HandlerInfo` is built by `const` builders (`HandlerInfo::new(name, method).with_sender(..).with_args(..,
+  mut).asynchronous()`), never a struct literal: a field added to the runtime type no longer breaks code expanded by
+  a stale macro build (the `E0063: missing structure fields: asynchronous` rust-analyzer showed mid-change).
+- Handler parameters are exempted from the unused lint by touching each one once at the top of the body
+  (`let _ = &e;`, spanned at the parameter) instead of `#[allow(unused_variables)]` on the method, so an unused
+  `let` in a handler's body still warns. Done for every handler candidate even when its signature is wrong, so one
+  mistake does not also flag its parameters.
+- An impl that does not parse (a syntax error in a method body being typed) is **recovered**, not rejected: its
+  header and every item of its body that parses on its own are expanded as usual (so the other handlers, the
+  `EventSink` and `frame_typed(…, &mut vm, …)` elsewhere stay valid), and a method whose body is broken keeps its
+  signature with an `unreachable!()` body. The macro adds no error of its own: rustc parses the item before
+  expanding it and rust-analyzer parses the file, so each reports the syntax error once, at its token (adding syn's
+  copy showed it twice; re-emitting the broken tokens made rust-analyzer add "Syntax Error in Expansion" on the
+  attribute and a spurious E0282). Anything that is not an impl still gets "goes on the impl block", at its first
+  token.
+- Checked with rustc and `rust-analyzer diagnostics` (1.98.1) on the scratch project below: a correct project has
+  no diagnostic (only the workspace's usual `inactive-code` hints); with `let x = ;` in one handler and an unused
+  `let` in another, rustc reports exactly the syntax error and the unused local (no unused parameter), and
+  rust-analyzer only its own parser's error at that token.
+- rust-analyzer loads the compiled proc-macro dylib: after the macro crate changes, rebuild and **restart
+  rust-analyzer** (VS: *Redémarrer rust-analyzer*) or its expansion stays the old one.
+
+### Tests
+
+`kubuno-views` (all 503 unit tests pass): `events::dispatcher` (6: posting from threads, order and typed results,
+`invoke` blocking a worker while the UI thread pumps, `invoke` on the UI thread refused, close drops queued closures
+and releases a blocked worker, wrong view model type, `wait_timeout` and awaiting the result), `events::timer` (3:
+ticks on a fake clock, coalescing, interval change/stop/restart, Rust subscriber stopping its timer), `events::router`
+(4: window Move, FormClosing → FormClosed → Deactivate, cancelled closing then a later one, no Deactivate when
+inactive), `runtime` (12, fake host + fake clock through the real frame: lifecycle order Load → Activated → Shown then
+FormClosing → FormClosed → Deactivate + quit + consumed request + no more deferral; cancel keeps the view then
+`Runtime::close(ApplicationExitCall)` closes it; Rust `form_closing` subscriber cancels; 3 threads × 5 closures in
+per-thread order + `invoke` result; close releases workers; drop = shutdown; untyped frame → `WrongViewModel`; timer
+wake-up requests and coalescing; an async `OnLoad` handler awaiting a 1 s delay then completing; an async handler
+getting its args copy from a timer; close cancels tasks/handles and disables `UiHandle`; nested `spawn_local`, nested
+`update` refused). Macros: 4 new unit tests (async expansion, async errors ×8, parameters-only exemption, syntax-error
+recovery and item splitting) + 2 doctests (an async handler compiles; `FormClosingEventArgs` by value in an async
+handler does not — checked to fail on `ReadOnlyArgs`, with the message pointing at the user's type).
+`kubuno-controls` host: 4 new tests (per-frame wake/close declarations, close request queued once and reported until
+consumed, reason round trip through `wParam`, waker thread identity). `kubuno-views-ls` tests unchanged and passing.
+`cargo clippy --all-targets -D warnings` clean on the three crates; no `unwrap` outside tests. The whole workspace
+(`--bins --examples`) builds, the runtime was restaged, and gallery, drive, documents and chat start and close on
+`WM_CLOSE` (the shell hides to its tray, as its close handler says).
+
+### Live verification (2026-09-29)
+
+A scratch *Kubuno Desktop Application* made from the template (`C:\kubuno-build\evt6`, built with cargo, run from its
+target directory): the root names `OnLoad`/`OnShown`/`OnActivated`/`OnDeactivate`/`OnFormClosing`/`OnFormClosed`;
+`main.rs` starts a thread that calls `dispatcher.begin_invoke` every second; a button runs `async fn
+on_run_async_click(ui: UiHandle<Self>, e: MouseEventArgs)` (update, `delay(1.5 s).await`, update). From the app's log:
+Load (status set) → Activated → Shown on the first frame; one dispatcher closure per second, on the UI thread
+(posted from a non-UI thread); **4 ticks ran while the window was minimised** (no `WM_PAINT` then: the wake-up
+renders directly); the async handler (Tab to the button, Enter) logged "started" then, 1.50 s later, "completed,
+update applied = true"; a `WM_CLOSE` with unsaved changes raised FormClosing (UserClosing, dirty) and the window
+stayed; "Discard and close" (`host::close_window`) raised FormClosing (not dirty) → FormClosed → Deactivate and the
+process exited; a `WM_CLOSE` without changes closed at once in the same order. Synthetic mouse clicks posted to a
+background window do not work for any host app (the host's `TME_LEAVE` fires at once because the real cursor is
+elsewhere, so the release lands "outside"); the keyboard was used instead.
+
 ## Scope note (product owner, 2026-09-29)
 
 Changing `kubuno_ui` (and `kubuno-controls`) is explicitly in scope whenever the event system needs it — e.g. real input events (mouse/keyboard/focus/validation sequences), hit-testing, Paint and drag-and-drop hooks belong in the widgets/host that execute them, not in a layer bolted on top. Constraints when doing so: `kubuno_ui` is a dylib without a stable ABI — after any change, rebuild every exe (`tools/build-all.ps1`) and restage; keep the gallery and the desktop apps (shell, drive, documents, chat) building and behaving; add CHANGELOG entries in the desktop repo.
+
+## Requirement — WinForms-style overridable control methods ("OnPaint" family) (product owner, 2026-09-29)
+
+Custom controls (EVT-7) and user code must be able to override the WinForms `protected virtual On…` family, not only subscribe to events. Rust shape: a `Control` trait with default methods (the "base" behaviour, callable explicitly like `base.OnPaint(e)`), implemented by `#[derive(Component)]` controls and optionally by subclass-like wrappers of existing controls:
+- **Painting**: `on_paint(&mut self, e: &mut PaintEventArgs)` with a WinForms-`Graphics`-like API over kubuno's `Canvas` (lines, rects, rounded rects, ellipses, arcs, paths, gradients, images, text with layout/measure, clip, transforms, save/restore, antialias), `on_paint_background`, `invalidate()` / `invalidate_rect()` / `refresh()`, double-buffered by default (like `DoubleBuffered`), `ControlStyles`-equivalent flags (UserPaint, Opaque, ResizeRedraw, Selectable, SupportsTransparentBackColor…). `PaintEventArgs` becomes real in EVT-8 (borrowed canvas via a scoped callback instead of `Any`).
+- **Owner-draw** for list-like controls: `DrawItem`/`MeasureItem` (ListBox, ComboBox, ListView, TreeView, DataTable cells, tabs, menus) with `DrawMode::OwnerDrawFixed/Variable`.
+- **Input/lifecycle overrides**: `on_mouse_down/up/move/enter/leave/hover/wheel`, `on_click`, `on_key_down/up/press`, `process_cmd_key`/`process_dialog_key`, `is_input_key`, `on_got_focus/lost_focus/enter/leave`, `on_validating`, `on_resize/size_changed/layout/move`, `on_visible_changed/enabled_changed`, `on_handle_created`/`on_create_control`, `on_load`, `dispose`. Each default method raises the corresponding event (WinForms rule: `OnClick` raises `Click`), so overriding and subscribing compose.
+- **Low level**: a `wnd_proc(&mut self, msg: &mut Message) -> bool` hook (message pre-filter on Windows; platform-neutral subset on other backends) and `create_params`-like window options for native-hosted controls.
+- **Layout**: `get_preferred_size`, `on_layout`, `set_bounds_core` equivalents for custom containers.
+- Designer: overridden paint is what the designer shows (it renders through the project's own kubuno_ui.dll / design host); `DesignMode` flag available to the control.
+Implemented across EVT-7 (Component trait + overrides + registry) and EVT-8 (Paint/Graphics, owner-draw, drag-drop); changes to `kubuno_ui`/`kubuno-controls` expected (host invalidation, double buffering, message hook).
+
+## Requirement — tooling that goes with custom controls & overrides (product owner, 2026-09-29)
+
+Everything WinForms/VS provides around custom controls must have a Kubuno equivalent:
+- **Override assistance**: completion inside `impl Control for X` listing overridable `on_…` methods with their exact signatures (like typing `override` in C#), a quick action "Substituer des membres…" (Override members dialog with checkboxes), and "Implémenter le trait" for required items; generated bodies call the base behaviour by default.
+- **Item templates**: Kubuno Custom Control (owner-drawn `Control` with `on_paint` skeleton), Kubuno User Control (`.kbview` + code-behind usable as a control), Inherited control (wrap/extend an existing control), Component (non-visual, like WinForms components in the tray).
+- **Toolbox integration**: project controls appear automatically in a "<Project> Components" tab after build (like WinForms), with their icon (`#[toolbox(icon = "...")]`), plus "Choisir des éléments…" to add controls from other crates.
+- **Design-time metadata attributes** (WinForms `ComponentModel` equivalents): `#[category]`, `#[description]`, `#[default_value]`, `#[browsable]`, `#[default_event]`, `#[default_property]`, `#[designer_serialization_visibility]`, `#[localizable]`, `#[editor(...)]`, `#[type_converter(...)]`; `DesignMode` flag at runtime.
+- **Property editors** in the Properties window: colour picker, font picker, image/resource picker, enum flags, collection editor (items, columns, tabs), string list, anchor/dock (done), plus custom editors a control can provide; **smart tags / designer verbs** (the ▸ action panel on a selected control, e.g. "Modifier les colonnes…", "Ancrer dans le conteneur parent").
+- **Non-visual components tray** under the design surface (timers, background workers, data sources), like WinForms' component tray.
+- **Resources**: `.kbres` (resx-like) for images/strings/icons with a resource editor, localizable views (per-culture resources), and typed access from Rust.
+- **Debugging & diagnostics for painting**: a "paint debug" overlay (flash invalidated regions, show layout bounds/padding, FPS/frame time), a debugger visualizer for `Rect`/`Color`/images/`Value`, natvis for kubuno types, and Output-pane tracing of event dispatch (optional, like WPF trace sources).
+- **Code navigation**: Class View / Object Browser-like listing of controls, their properties/events/overridable methods from the registry; Go to definition from `.kbview` element → Rust control type.
+- **Snippets**: `onpaint`, `event`, `handler`, `prop` (bindable property with change notification).
+
+## Requirement — cascading control hierarchy rooted in Component/Control equivalents (product owner, 2026-09-29)
+
+Mirror the WinForms hierarchy (System.ComponentModel.Component → System.Windows.Forms.Control → …) in idiomatic Rust (no class inheritance: **trait hierarchy + embedded base state + generated delegation**):
+- Levels: `Component` (site/container, `DesignMode`, `Disposed` event, non-visual components) → `Control: Component` (bounds, anchor/dock, visible/enabled, parent/children, focus, all `on_…` overrides + events, invalidate/paint) → `ScrollableControl` → `ContainerControl` → `UserControl` / `View` (the Form equivalent: Load/Shown/Closing). Intermediate bases: `ButtonBase` (Button, CheckBox, RadioButton, IconButton, Switch), `TextBoxBase` (TextField, TextArea, MaskedField, SearchField), `ListControl` (ListBox, ComboBox, CheckedListBox, Dropdown), `ScrollBarBase`, `LabelBase`, `ContainerBase` (Panel, GroupBox, Card, Stack…), etc. — every existing Kubuno control placed in the tree.
+- Each level = a trait with default methods (the "virtual" behaviour) + a plain base-state struct embedded in the concrete control; `#[derive(Component)]` with `#[kubuno(extends = ButtonBase)]` generates the delegation boilerplate and a `base()`/`base_mut()` accessor so an override can call the parent's implementation (like `base.OnPaint(e)`); trait upcasting (`&dyn Button` → `&dyn ButtonBase` → `&dyn Control` → `&dyn Component`, stable since Rust 1.86) gives polymorphism, plus `downcast_ref::<T>()`.
+- User code extends any level: `#[kubuno(extends = Button)] struct RoundButton` overriding `on_paint`, inheriting all Button props/events.
+- Metadata inheritance: the registry records the base chain; properties/events/default event are inherited and overridable; the Properties window shows inherited members, the Object Browser/Class View shows the hierarchy, `.kbview` validation accepts inherited attributes, and the Toolbox/`is`-checks (e.g. "any ButtonBase") use it.
+- `kubuno_ui` widgets are refactored onto this hierarchy (they execute it); the XML views layer and the designer consume the same chain. Planned as part of EVT-7 (before custom controls), with a compatibility layer so current views keep working.

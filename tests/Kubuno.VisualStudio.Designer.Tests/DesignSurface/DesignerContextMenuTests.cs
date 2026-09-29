@@ -251,7 +251,32 @@ namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
 
         // ── helpers ─────────────────────────────────────────────────────
 
-        private const uint Enabled = (uint)(OleInterop.OLECMDF.OLECMDF_SUPPORTED | OleInterop.OLECMDF.OLECMDF_ENABLED);
+        [TestMethod]
+        public void ConvertToTypedHandlers_IsOnTheViewMenuOnly_AndRuns()
+        {
+            DesignerText.ForceFrench = true;
+            try
+            {
+                var actions = new RecordingActions();
+                var view = new DesignerContextMenuCommandTarget(DesignerMenuModel.Build(View, null, Registry, null), actions);
+                var group = DesignerCommandIds.CommandSet;
+                Assert.AreEqual(0, QueryRaw(view, group, DesignerCommandIds.ConvertHandlers, out var flags));
+                Assert.AreEqual(Enabled, flags);
+                Assert.AreEqual("Convertir en gestionnaires typés", QueryText(view, DesignerCommandIds.ConvertHandlers));
+                Exec(view, group, DesignerCommandIds.ConvertHandlers);
+                CollectionAssert.AreEqual(new[] { "ConvertHandlers" }, actions.Calls);
+
+                var element = new DesignerContextMenuCommandTarget(DesignerMenuModel.Build(View, "0.1", Registry, null), new RecordingActions());
+                QueryRaw(element, group, DesignerCommandIds.ConvertHandlers, out var hidden);
+                Assert.AreNotEqual(0u, hidden & (uint)OleInterop.OLECMDF.OLECMDF_INVISIBLE, "not on an element's menu");
+            }
+            finally
+            {
+                DesignerText.ForceFrench = null;
+            }
+        }
+
+        private const uint Enabled =(uint)(OleInterop.OLECMDF.OLECMDF_SUPPORTED | OleInterop.OLECMDF.OLECMDF_ENABLED);
         private const uint Disabled = (uint)OleInterop.OLECMDF.OLECMDF_SUPPORTED;
 
         private static uint Std97(DesignerContextMenuCommandTarget target, uint id)
@@ -326,6 +351,8 @@ namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
             public void EditDesignSize() => Calls.Add("DesignSize");
 
             public void RunLayoutCommand(DesignerLayoutCommand command) => Calls.Add("Layout " + command);
+
+            public void ConvertHandlers() => Calls.Add("ConvertHandlers");
         }
     }
 }

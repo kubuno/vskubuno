@@ -592,6 +592,16 @@
           <ButtonText>Design Size...</ButtonText>
         </Strings>
       </Button>
+      <!-- docs/EVENTS.md §5.4 (EVT-5): the view menu's "Convert to Typed Handlers" (kubuno/convertHandlers). -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerConvertHandlers" priority="0x0200" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewCodeGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Convert to Typed Handlers</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
 
@@ -856,6 +866,7 @@
       <IDSymbol name="cmdidDesignerUnwrap" value="0x0202" />
       <IDSymbol name="cmdidDesignerViewProperties" value="0x0203" />
       <IDSymbol name="cmdidDesignerDesignSize" value="0x0204" />
+      <IDSymbol name="cmdidDesignerConvertHandlers" value="0x0205" />
       <IDSymbol name="cmdidDesignerWrapStack" value="0x0210" />
       <IDSymbol name="cmdidDesignerWrapPanel" value="0x0211" />
       <IDSymbol name="cmdidDesignerWrapCard" value="0x0212" />
