@@ -1272,7 +1272,25 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   rendered at install time is retried in the background for 30 s. (Do not preload the
   icons' resource assembly from the package: verified that it blanked every Kubuno icon - see
   docs/RSPROJ.md lot 8.)
-- **Double-click** a Toolbox item → `IVsToolboxUser.ItemPicked` → `ToolboxInsertionPlanner`: into the
+- **Icons, pixel-hinted (2026-09-29)** - product-owner complaint: at 175 % the icons looked "bigger than their
+  cells and resized, deformed" (uneven circles, soft irregular lines, glyphs touching the cell edges). Findings:
+  every designer hands the legacy Toolbox 16x16 bitmaps (decompiled: WinForms' `BaseToolboxItemSource`, XAML's
+  `ToolboxUtilities.GetBitmapForType` scales its icons to 16x16); no moniker/DPI-aware item API exists
+  (`IVsToolbox`..`IVsToolbox7`, `IVsToolboxItemProvider(2)`); re-checked live with 28/32/48 px bitmaps, with
+  and without `iImageWidth`/`iImageIndex`: a wider slot, nothing painted. Visual Studio upscales the 16 px
+  bitmap (`DpiHelper` default at 175 %: `MixedNearestNeighborHighQualityBicubic`), which keeps pixel art crisp
+  and blurs a vector drawn at 16 px with 1.33-1.5 px strokes. So the Toolbox icons are now drawn FOR the pixel
+  grid by `Toolbox/ToolboxIconRasterizer` from the same Lucide XAML: content box 2..22 units mapped to the pixel
+  centres 1.5..14.5 (a 14x14 glyph, 1-px transparent margin, enforced by a clip), exactly 1-px strokes, every
+  on-curve point snapped to its pixel centre (Bézier control points move with their end point), ellipses and
+  rectangles snap their edges, circles rasterized analytically (symmetric pixel rings - WPF's Bézier ellipse was
+  lopsided), square caps/mitred joins, Lucide dots as solid 1x1/2x2 blocks. *Found live* with test patterns:
+  the Toolbox's upscale erases any 1-px feature lying between transparency-key pixels (1-px lines and a
+  checkerboard vanished except the outer row/column), which left the first hinted icons dotted; the 8
+  neighbours of every inked pixel are therefore opaque background, only farther pixels take the key (WinForms'
+  pixel art survives thanks to its filled interiors). Solution Explorer keeps the vector icons (image service).
+  Comparison, live at 175 %: `C:\kubuno-build\icons-preview\toolbox-vs-winforms.png`; per-icon previews
+  (old vs hinted, simulated upscale): `hinted-dark.png`, `hinted-light.png`, `hinted-focus.png`.- **Double-click** a Toolbox item → `IVsToolboxUser.ItemPicked` → `ToolboxInsertionPlanner`: into the
   selected element if it accepts the component, else its nearest ancestor that does (a port of
   `design::can_drop_component`), appended, `X/Y/Width/Height/Anchor` only inside a `DockAnchor`
   container (§14); then the new element is selected.

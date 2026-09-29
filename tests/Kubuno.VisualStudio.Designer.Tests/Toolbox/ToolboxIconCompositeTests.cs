@@ -34,5 +34,19 @@ namespace Kubuno.VisualStudio.Designer.Tests.Toolbox
             Assert.AreEqual(((int?)77, 155, 240), NativeToolboxInstaller.Composite(new byte[] { 240, 155, 77, 255 }, 0, Dark));
             Assert.AreEqual(((int?)254, 0, 255), NativeToolboxInstaller.Composite(new byte[] { 255, 0, 255, 255 }, 0, Dark));
         }
+
+        [TestMethod]
+        public void OnlyPixelsNextToInk_GetTheOpaqueBackgroundHalo()
+        {
+            // The Toolbox erodes 1-px features that touch the transparency key on both sides (found live), so
+            // the 8 neighbours of every inked pixel are opaque background, not key.
+            var ink = new bool[16 * 16];
+            ink[(8 * 16) + 8] = true;
+            Assert.IsTrue(NativeToolboxInstaller.TouchesInk(ink, 7, 7));
+            Assert.IsTrue(NativeToolboxInstaller.TouchesInk(ink, 9, 8));
+            Assert.IsFalse(NativeToolboxInstaller.TouchesInk(ink, 10, 8));
+            Assert.IsFalse(NativeToolboxInstaller.TouchesInk(ink, 8, 8), "the ink pixel itself is not its own neighbour");
+            Assert.IsFalse(NativeToolboxInstaller.TouchesInk(ink, 0, 0));
+        }
     }
 }

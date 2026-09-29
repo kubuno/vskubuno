@@ -20,6 +20,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   with a default size suited to the control (a button 100 x 36, a text field 200 x 36, ...) and
   `Anchor="Top, Left"`; a Toolbox double-click does the same.
 
+### Fixed
+
+- **Crisp Toolbox icons at high DPI**: the Kubuno components' Toolbox icons looked deformed and blurry at
+  175 % (uneven circles, soft irregular lines, glyphs touching the cell edges). They are now drawn for the
+  pixel grid - 1-pixel strokes on whole pixels, symmetric pixel circles, a 1-pixel margin - like the Windows
+  Forms toolbox icons, which Visual Studio's scaling keeps sharp.
 ### Changed
 
 - **Anchor/Dock in the Properties window show their default value like WinForms**: an absent `Anchor`
