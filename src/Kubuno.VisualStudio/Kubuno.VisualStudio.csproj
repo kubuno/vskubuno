@@ -78,6 +78,17 @@
     <Compile Include="LanguageService\Overrides\OverrideMembersDialog.cs" />
     <Compile Include="LanguageService\Overrides\OverrideSuggestedActions.cs" />
     <Compile Include="LanguageService\Overrides\KubunoRustCompletion.cs" />
+    <Compile Include="LanguageService\IntelliSense\RustLsp.cs" />
+    <Compile Include="LanguageService\IntelliSense\RustCompletionSource.cs" />
+    <Compile Include="LanguageService\IntelliSense\RustCompletionCommitManager.cs" />
+    <Compile Include="LanguageService\IntelliSense\RustCompletionItemManager.cs" />
+    <Compile Include="LanguageService\IntelliSense\RustSnippetSession.cs" />
+    <Compile Include="LanguageService\IntelliSense\RustClassifications.cs" />
+    <Compile Include="LanguageService\IntelliSense\RustInlayHintsOption.cs" />
+    <Compile Include="LanguageService\IntelliSense\RustCodeLens.cs" />
+    <Compile Include="LanguageService\IntelliSense\RustDocCommentContinuation.cs" />
+    <Compile Include="LanguageService\IntelliSense\KbviewCrossLanguageCompletion.cs" />
+    <Compile Include="LanguageService\IntelliSense\KbviewDefinitionFallback.cs" />
     <Compile Include="SolutionExplorer\CollectionSources.cs" />
     <Compile Include="SolutionExplorer\SymbolNavigator.cs" />
     <Compile Include="SolutionExplorer\SymbolQueries.cs" />
@@ -186,6 +197,11 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The grammar's own TextMate theme (Visual Studio loads <grammar>.tmTheme next to it): C#'s classifications. -->
+    <Content Include="Grammars\rust.tmLanguage.tmTheme">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Grammars\LICENSE-rust-syntax.txt">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -208,6 +224,11 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Grammars\Kbview\kbview.tmLanguage.json</Link>
+    </Content>
+    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\kbview.tmLanguage.tmTheme">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Grammars\Kbview\kbview.tmLanguage.tmTheme</Link>
     </Content>
     <Content Include="..\Kubuno.VisualStudio.Views\Grammars\kbview-language-configuration.json">
       <IncludeInVSIX>true</IncludeInVSIX>

@@ -59,6 +59,7 @@ namespace Kubuno.VisualStudio.Logging
         public static void WriteLine(string message)
         {
             var line = FormatLine(message);
+            MirrorToFile(line);
 
             IVsOutputWindowPane? pane;
             lock (SyncRoot)
@@ -118,6 +119,32 @@ namespace Kubuno.VisualStudio.Logging
         /// traffic/errors show up here too (see RustLanguageClient.AttachForCustomMessageAsync).
         /// </summary>
         public static TraceListener CreateJsonRpcTraceListener() => new OutputPaneTraceListener();
+
+        /// <summary>
+        /// The file named by the <c>KUBUNO_VS_LOG</c> environment variable, if any: every line of the pane is also appended there
+        /// (support and automated checks, where the Output window cannot be read).
+        /// </summary>
+        private static readonly string? MirrorPath = Environment.GetEnvironmentVariable("KUBUNO_VS_LOG");
+
+        private static void MirrorToFile(string line)
+        {
+            if (string.IsNullOrEmpty(MirrorPath))
+            {
+                return;
+            }
+
+            try
+            {
+                lock (SyncRoot)
+                {
+                    System.IO.File.AppendAllText(MirrorPath, line + Environment.NewLine);
+                }
+            }
+            catch (Exception)
+            {
+                // Best effort, like the pane itself.
+            }
+        }
 
         private static string FormatLine(string message) => $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
 

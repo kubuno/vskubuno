@@ -8,6 +8,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **C#-grade IntelliSense for Rust and `.kbview` (`docs/INTELLISENSE.md`, a feature matrix against C#)**:
+  - **Completion like C#'s**: rust-analyzer's items with the same icons as QuickInfo and Solution Explorer, filter
+    buttons (Structures, Traits, Methods and functions, Fields, Locals...), the "unimported crates and modules"
+    expander, IntelliCode-like starred items at the top, bold matched characters, and a description beside the list
+    with the colorized declaration, the import and the rustdoc. Snippets now work: argument placeholders
+    (`push(value)`), postfix templates (`.if`, `.match`...) and Kubuno's snippets, with Tab / Shift+Tab between the
+    fields; auto-import items add their `use`; Parameter Info opens after a completed call; a punctuation character
+    (`(`, `<`, `.`, `;`...) commits the bare name, and the list closes as soon as a name is no longer being typed.
+  - **Semantic colors like C#'s**: structs, enums, traits (as interfaces), type parameters, methods, locals,
+    parameters, fields, constants, control keywords and doc comments use C#'s classifications, `u32`/`bool`/`self`
+    are keywords, and Fonts and Colors gets "Rust - Macro", "Rust - Lifetime" (italic), "Rust - Mutable variable"
+    (underlined) and "Rust - Unsafe operation" (bold). The TextMate colors shown before rust-analyzer is ready follow
+    the same classifications.
+  - **CodeLens**: "3 references | 1 implementation" above functions, types, traits and variants; a click opens Find
+    All References or Go To Implementation (Tools > Options > Kubuno > Rust > CodeLens).
+  - **Inlay hints** (inferred types, parameter names, method chains) shown by default, or only while Alt+F1 is held
+    like C#'s option (Tools > Options > Kubuno > Rust > Inlay hints).
+  - **Go To All (Ctrl+T)** finds functions and methods too; Enter continues `///` and `//!` doc comments.
+  - **`.kbview` ⇄ Rust**: completion of the compatible code-behind handlers in `OnClick="..."` and of the view
+    model's paths in `{Binding ...}`; F12 on a control's tag opens its Rust type (a user control's own struct, else
+    kubuno_ui's) and F12 on a binding path the `"Path" =>` arm of `fn get`; Find All References on a handler also
+    lists the views using it; handler names and `{Binding ...}` are colored like XAML's.
+  - `KUBUNO_VS_LOG=<file>` mirrors the Kubuno Output pane into a file (support, automated checks).
+
 - **Debugging Rust like C# (`docs/DEBUGGING.md`)**:
   - **Panics break like exceptions**: a panic now stops the debugger on the line that panicked (`v[i]`, `x.unwrap()`,
     `panic!`), with an exception helper reading "Rust panic: *message*" - the message read from the panic payload by
@@ -248,6 +272,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- The Kubuno Output pane is no longer flooded with rust-analyzer's "unhandled notification: NotificationReceived"
+  errors (a Visual Studio-internal echo, harmless).
 - **Dialogs look like Visual Studio's own in every theme**: the Rust targets, Reference Manager, Remove Unused
   Dependencies, "Ajouter" name, Override Members, Choose Toolbox Items, Design Size, inherited control and launch
   profile dialogs, and the crate manager, now use Visual Studio's themed dialog colors and controls (buttons, text

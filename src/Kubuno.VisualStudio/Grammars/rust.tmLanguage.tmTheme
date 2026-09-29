@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Kubuno Rust: the colors of this grammar's TextMate scopes, as Visual Studio classification types (Visual Studio loads the
+  theme next to a grammar, <grammar>.tmTheme, instead of its global one). Only classification names: the colors
+  themselves come from Tools > Options > Fonts and Colors, so they follow the light/dark theme and the user's settings.
+-->
+<plist version="1.0">
+  <dict>
+    <key>name</key>
+    <string>Kubuno Rust</string>
+    <key>settings</key>
+    <array>
+      <dict>
+        <key>scope</key>
+        <string>comment, punctuation.definition.comment</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>comment</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>comment.line.documentation, comment.block.documentation</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>xml doc comment - text</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>string, punctuation.definition.string, string.quoted, meta.interpolation</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>string</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>constant.character.escape, punctuation.definition.interpolation</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>string - escape character</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>constant.numeric, punctuation.separator.dot.decimal</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>number</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>keyword, storage.type, storage.modifier, keyword.other, constant.language, variable.language, keyword.declaration</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>keyword</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>keyword.control</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>keyword - control</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>keyword.operator</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>operator</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>punctuation.brackets, punctuation.semi, punctuation.comma, punctuation.definition.attribute, punctuation.brackets.attribute</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>punctuation</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.function</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>method name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.function.macro, entity.name.type.macro, entity.name.function.macro.rules, keyword.operator.macro.dollar</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>Rust - macro</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.type, entity.name.type.declaration, entity.name.type.metavariable</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>class name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.type.struct</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>struct name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.type.enum, entity.name.type.option, entity.name.type.result</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>enum name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.type.trait</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>interface name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.type.primitive, entity.name.type.numeric</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>keyword</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.type.lifetime, punctuation.definition.lifetime</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>type parameter name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.namespace, entity.name.module</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>namespace name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>variable, variable.other</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>identifier</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>variable.other.metavariable</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>parameter name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>constant.other.caps</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>constant name</string>
+        </dict>
+      </dict>
+    </array>
+  </dict>
+</plist>

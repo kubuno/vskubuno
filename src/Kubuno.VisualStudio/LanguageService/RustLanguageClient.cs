@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 using EnvDTE;
 using Process = System.Diagnostics.Process;
 using Kubuno.VisualStudio.Core;
+using Kubuno.VisualStudio.Core.IntelliSense;
 using Kubuno.VisualStudio.Infrastructure;
+using Kubuno.VisualStudio.LanguageService.IntelliSense;
 using Kubuno.VisualStudio.Logging;
 using Kubuno.VisualStudio.Options;
 using Microsoft.VisualStudio.LanguageServer.Client;
@@ -16,6 +18,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
+using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
 namespace Kubuno.VisualStudio.LanguageService
@@ -42,17 +45,24 @@ namespace Kubuno.VisualStudio.LanguageService
         /// <summary>The MEF-created instance, for <see cref="Commands.RestartRustAnalyzerCommand"/> (null until a .rs file activated the client).</summary>
         internal static RustLanguageClient? Instance { get; private set; }
 
+        /// <summary>The document versions rust-analyzer was sent (Kubuno's own requests wait for their text).</summary>
+        internal RustDocumentVersions DocumentVersions => _middleLayer.DocumentVersions;
+
         [Import]
         internal IVsFolderWorkspaceService? WorkspaceService { get; set; }
 
         [Import]
         internal SVsServiceProvider? ServiceProvider { get; set; }
 
-        public string Name => "Kubuno Rust Language Server";
+        /// <summary>The client's name (also how Kubuno's own requests pick this server through Visual Studio's broker).</summary>
+        public const string ClientName = "Kubuno Rust Language Server";
+
+        public string Name => ClientName;
 
         public IEnumerable<string> ConfigurationSections => Array.Empty<string>();
 
-        public object? InitializationOptions => null;
+        /// <summary>rust-analyzer's settings (<see cref="RustAnalyzerHandshake.InitializationOptions"/>), as the Newtonsoft object Visual Studio's JSON-RPC serializer expects.</summary>
+        public object? InitializationOptions => JObject.Parse(RustAnalyzerHandshake.InitializationOptions().ToJsonString());
 
         public IEnumerable<string>? FilesToWatch => null;
 
@@ -120,7 +130,9 @@ namespace Kubuno.VisualStudio.LanguageService
 
             process.ErrorDataReceived += (_, e) =>
             {
-                if (!string.IsNullOrEmpty(e.Data))
+                // Visual Studio echoes every server-to-client message back as a "NotificationReceived" notification, which
+                // rust-analyzer reports as an error each time: noise, not a problem.
+                if (!string.IsNullOrEmpty(e.Data) && e.Data.IndexOf("method: \"NotificationReceived\"", StringComparison.Ordinal) < 0)
                 {
                     KubunoLog.WriteLine($"[rust-analyzer stderr] {e.Data}");
                 }
@@ -129,7 +141,21 @@ namespace Kubuno.VisualStudio.LanguageService
 
             KubunoLog.WriteLine($"rust-analyzer started (PID {process.Id}).");
             _process = process;
-            return new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream);
+            // The initialize handshake is adjusted on the wire (see LspHandshakeStreams): Kubuno's completion snippets and
+            // commands on the client side, the C#-like semantic token legend on the server side.
+            var handshake = new LspHandshakeStreams(
+                process.StandardInput.BaseStream,
+                process.StandardOutput.BaseStream,
+                RustAnalyzerHandshake.RewriteInitializeRequest,
+                json => RustAnalyzerHandshake.RewriteInitializeResponse(json, map =>
+                {
+                    _middleLayer.SemanticTokens = map;
+                    KubunoLog.WriteLine($"rust-analyzer handshake adjusted: completion snippets on, semantic tokens mapped onto {map.Legend.Count} C# classifications.");
+                }))
+            {
+                OnRewriteError = exception => KubunoLog.WriteException("Could not adjust the rust-analyzer handshake", exception),
+            };
+            return new Connection(handshake.ServerToClient, handshake.ClientToServer);
         }
 
         /// <summary>

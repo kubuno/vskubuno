@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Kubuno Views: the colors of this grammar's TextMate scopes, as Visual Studio classification types (Visual Studio loads the
+  theme next to a grammar, <grammar>.tmTheme, instead of its global one). Only classification names: the colors
+  themselves come from Tools > Options > Fonts and Colors, so they follow the light/dark theme and the user's settings.
+-->
+<plist version="1.0">
+  <dict>
+    <key>name</key>
+    <string>Kubuno Views</string>
+    <key>settings</key>
+    <array>
+      <dict>
+        <key>scope</key>
+        <string>comment, comment.block.xml, punctuation.definition.comment</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XML Comment</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.tag, entity.name.tag.localname.xml, entity.name.tag.namespace.xml, meta.tag</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XML Name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>punctuation.definition.tag, punctuation.separator.namespace.xml</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XML Delimiter</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.other.attribute-name, entity.other.attribute-name.localname.xml, entity.other.attribute-name.namespace.xml</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XML Attribute</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>string.quoted.double.xml, string.quoted.single.xml</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XML Attribute Value</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>punctuation.definition.string.begin.xml, punctuation.definition.string.end.xml</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XML Attribute Quotes</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>constant.character.entity, punctuation.definition.constant</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XML Attribute Value</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.function.handler.kbview</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>method name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>punctuation.section.embedded.binding.kbview, keyword.other.binding.kbview</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XAML Markup Extension Class</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.other.attribute-name.binding.kbview</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XAML Markup Extension Parameter Name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>variable.other.property.binding.kbview</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>XAML Markup Extension Parameter Value</string>
+        </dict>
+      </dict>
+    </array>
+  </dict>
+</plist>

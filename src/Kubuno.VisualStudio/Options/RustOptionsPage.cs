@@ -30,5 +30,41 @@ namespace Kubuno.VisualStudio.Options
             "per request/response; Verbose adds full StreamJsonRpc detail including raw JSON payloads.")]
         [DefaultValue(LspTraceLevel.Off)]
         public LspTraceLevel LspTrace { get; set; } = LspTraceLevel.Off;
+
+        [Category("Editor")]
+        [DisplayName("Inlay hints")]
+        [Description("rust-analyzer's inline hints (inferred types, parameter names, method chains) in .rs files. Always " +
+            "(default); While pressing Alt+F1, like C#'s \"Display inline hints only when pressing Alt+F1\"; Visual Studio " +
+            "setting (Text Editor > All Languages > Inlay Hints); or Never.")]
+        [DefaultValue(RustInlayHintsMode.Always)]
+        public RustInlayHintsMode InlayHints { get; set; } = RustInlayHintsMode.Always;
+
+        [Category("Editor")]
+        [DisplayName("CodeLens")]
+        [Description("Show reference and implementation counts (\"3 references\") above Rust items, like C#'s CodeLens. " +
+            "Click a count to open Find All References / the implementations.")]
+        [DefaultValue(true)]
+        public bool CodeLens { get; set; } = true;
+
+        /// <summary>Raised after the page's settings were applied (open editors refresh their inlay hints and code lenses).</summary>
+        internal static event System.EventHandler? Applied;
+
+        protected override void OnApply(PageApplyEventArgs e)
+        {
+            base.OnApply(e);
+            if (e.ApplyBehavior == ApplyKind.Apply)
+            {
+                Applied?.Invoke(this, System.EventArgs.Empty);
+            }
+        }
+    }
+
+    /// <summary>When rust-analyzer's inlay hints are shown (<see cref="RustOptionsPage.InlayHints"/>).</summary>
+    public enum RustInlayHintsMode
+    {
+        Always,
+        WhilePressingAltF1,
+        VisualStudioSetting,
+        Never,
     }
 }
