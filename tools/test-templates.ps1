@@ -6,7 +6,7 @@
 
     1. `cargo build` in the generated project (own target directory), failing on any warning;
     2. with -Run: runs what the template produces (console: exit code 0; desktop app: its window must
-       stay up for a few seconds, launched with the PATH F5 computes - profile dir, deps, Rust std);
+       stay up for a few seconds with its page area at the view's DesignWidth x DesignHeight, launched with the PATH F5 computes - profile dir, deps, Rust std);
     3. `MSBuild -restore` on the generated .rsproj (the real Kubuno.Rust.Sdk build Visual Studio runs),
        with CARGO_TARGET_DIR set to a shared directory (like a machine-wide CARGO_TARGET_DIR) - the setup that made a
        fresh Kubuno Desktop Application fail with E0463 before the .rsproj gave it its own subfolder.
@@ -144,6 +144,19 @@ function Find-MSBuild {
     return $null
 }
 
+if (-not ('TemplateTestWin32' -as [type])) {
+    Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+public static class TemplateTestWin32 {
+    [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr hWnd, out RECT rect);
+    [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
+}
+'@
+}
+
 $sysroot = (& rustc --print sysroot).Trim()
 $hostTriple = ((& rustc -vV) | Where-Object { $_ -like 'host:*' }).Substring(5).Trim()
 $stdDir = Join-Path $sysroot "lib\rustlib\$hostTriple\lib"
@@ -200,7 +213,26 @@ foreach ($dir in Get-ChildItem $templatesRoot -Directory) {
                         $proc.Refresh()
                         if ($proc.HasExited) { $failures += "run: exited early (exit $($proc.ExitCode))" }
                         elseif ($proc.MainWindowHandle -eq [IntPtr]::Zero) { $failures += 'run: no main window'; Stop-Process -Id $proc.Id -Force; [void]$proc.WaitForExit(10000) }
-                        else { "   run: window '$($proc.MainWindowTitle)' up"; Stop-Process -Id $proc.Id -Force; [void]$proc.WaitForExit(10000) }
+                        else {
+                            "   run: window '$($proc.MainWindowTitle)' up"
+                            # Like a WinForms form, the window's page area (client area below the 34-DIP Kubuno
+                            # caption) must be the view's DesignWidth x DesignHeight.
+                            $view = [IO.File]::ReadAllText((Join-Path $p.Dir 'src\main_view.kbview'))
+                            $designW = [double]([regex]::Match($view, 'DesignWidth="(\d+)"').Groups[1].Value)
+                            $designH = [double]([regex]::Match($view, 'DesignHeight="(\d+)"').Groups[1].Value)
+                            # Per-monitor aware, or Windows reports a DPI-virtualized client rect.
+                            [void][TemplateTestWin32]::SetThreadDpiAwarenessContext([IntPtr]-4)
+                            $rc = New-Object TemplateTestWin32+RECT
+                            [void][TemplateTestWin32]::GetClientRect($proc.MainWindowHandle, [ref]$rc)
+                            $scale = [TemplateTestWin32]::GetDpiForWindow($proc.MainWindowHandle) / 96.0
+                            $pageW = $rc.Right / $scale
+                            $pageH = $rc.Bottom / $scale - 34
+                            if ([math]::Abs($pageW - $designW) -gt 1.5 -or [math]::Abs($pageH - $designH) -gt 1.5) {
+                                $failures += "run: page area $([math]::Round($pageW,1)) x $([math]::Round($pageH,1)) DIP, expected the view's design size $designW x $designH"
+                            }
+                            else { "   run: page area = design size $designW x $designH" }
+                            Stop-Process -Id $proc.Id -Force; [void]$proc.WaitForExit(10000)
+                        }
                     }
                 }
                 default { "   run: nothing to run for this template" }

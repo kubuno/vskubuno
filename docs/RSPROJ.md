@@ -385,7 +385,11 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
   (a `kubuno_controls::host::run_with_chrome` window loading a starter view through
   `kubuno_views::runtime::Runtime`/`FileWatcher` - the same API `kubuno-views/examples/
   view_preview.rs` uses - with a starter `main_view.kbview` + same-stem `main_view.rs` code-behind,
-  deliberately named that way for lot 8's planned nesting). Its `Cargo.toml` depends on
+  deliberately named that way for lot 8's planned nesting). Since 2026-09-29 the starter view is an
+  absolute surface like a new WinForms form (docs/DESIGNER.md §14): a `<Panel DesignWidth="800"
+  DesignHeight="450">` root with anchored children, and `main.rs` opens the window with that design
+  size as its page area (`Runtime::design_size`, `HostOptions::client_size`), painting the view over
+  the whole client area so the anchors follow every resize. Its `Cargo.toml` depends on
   `kubuno-ui`/`kubuno-controls`/`kubuno-views` via **path dependencies on this machine's own
   `desktop/windows` checkout** (`Z:/src/desktop/windows/src/crates/...`, decision documented in the
   Cargo.toml itself) rather than git-tagged dependencies: this template's own bar is "must build on
@@ -942,7 +946,9 @@ template project build can break the next desktop-workspace build).
 project template into `C:\kubuno-build\template-tests\<timestamp>` exactly as Visual Studio does (same
 files, same token values as `CrateNameWizard`, fails on any unreplaced `$token$`), then per template:
 `cargo build` in an own target directory (fails on any warning), with `-Run` runs the result (console
-exit code; desktop app window up for 6 s with F5's PATH), and `MSBuild -restore` on the `.rsproj` with
+exit code; desktop app window up for 6 s with F5's PATH, and its page area - the client area below the
+34-DIP Kubuno caption, read per-monitor-DPI-aware - equal to the view's `DesignWidth` x `DesignHeight`
+within 1.5 DIP), and `MSBuild -restore` on the `.rsproj` with
 `CARGO_TARGET_DIR` pointing at a shared directory, failing if `kubuno_ui.dll` lands in it. Verified to
 fail on the previous template (`kubuno_ui.dll` in the shared directory) and on a missing desktop
 checkout (`KUBUNO0001`), and to pass on all four templates. Target directories are deleted as it goes

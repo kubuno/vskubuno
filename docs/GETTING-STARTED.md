@@ -213,6 +213,20 @@ Visual Studio's own tool windows, the same way the WinForms designer works:
   plain Open Folder mode (see `README.md`'s "Known limitations" - the file tree itself is correct
   there, only the expand-to-symbols affordance is missing).
 
+**Views work like Windows Forms forms.** A new Kubuno Desktop Application's `main_view.kbview`, and
+every view added with *Add > New Item > Kubuno View*, has a `<Panel>` root designed at
+`DesignWidth` x `DesignHeight` (800 x 450, the size of a new WinForms form): each control has its
+own `X`/`Y`/`Width`/`Height`, and its **Anchor** (Top, Left by default) says which edges of the
+window it stays attached to - the starter's Status field is anchored Top, Left, Right (it stretches
+with the window) and its button Top, Right. In the Properties window, `Anchor` and `Dock` open the
+Windows Forms designer's own pickers (the four bars around a box for Anchor), and an absent `Anchor`
+shows `Top, Left` in normal (non-bold) type, like WinForms. A control dropped from the Toolbox onto
+a Panel lands at the drop point with a default size and `Anchor="Top, Left"`. Resizing the design
+canvas (its bottom/right handles) moves anchored controls exactly as the running application does:
+the window opens with the view's design size as its client area and relays out the controls on
+every resize. (`Anchor`/`Dock` only apply inside a `<Panel>`; inside a `<Stack>` or a `<Card>` the
+two rows are greyed out, like a control inside a WinForms FlowLayoutPanel.)
+
 The former **"Kubuno Toolbox"** / **"Kubuno Properties"** fallback tool windows were removed: use
 Visual Studio's own Toolbox (View > Toolbox) and Properties window (F4).
 

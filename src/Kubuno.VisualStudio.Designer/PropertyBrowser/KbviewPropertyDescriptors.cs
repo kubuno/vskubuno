@@ -90,7 +90,9 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
                 return;
             }
 
-            var normalized = Kind is null ? AttributeValueRules.NormalizeName(text) : AttributeValueRules.Normalize(Kind, text);
+            var normalized = Kind is null ? AttributeValueRules.NormalizeName(text)
+                : IsAnchor ? LayoutAttributeText.NormalizeAnchor(text)
+                : AttributeValueRules.Normalize(Kind, text);
             if (string.Equals(normalized, current, StringComparison.Ordinal))
             {
                 return;
@@ -103,8 +105,16 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         public override bool ShouldSerializeValue(object component)
         {
             var raw = Element(component)?.GetRawValue(AttributeName);
-            return raw is not null && !string.Equals(raw, _default, StringComparison.Ordinal);
+            if (raw is null)
+            {
+                return false;
+            }
+
+            // "Left, Top" is the default anchoring too: compare the edges, not the text.
+            return IsAnchor ? !LayoutAttributeText.SameAnchor(raw, _default) : !string.Equals(raw, _default, StringComparison.Ordinal);
         }
+
+        private bool IsAnchor => string.Equals(AttributeName, "Anchor", StringComparison.Ordinal) && _editor is KbviewAnchorEditor;
 
         private static KbviewElementObject? Element(object? component) => component as KbviewElementObject;
 

@@ -8,6 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Views work like Windows Forms forms**: the *Kubuno Desktop Application* project template and the
+  *Kubuno View* item template now create an absolute surface - a `<Panel DesignWidth="800"
+  DesignHeight="450">` root whose controls have their own `X`/`Y`/`Width`/`Height` and an `Anchor`
+  (the Status field stretches with the window, anchored Top, Left, Right; the button stays top-right).
+  `Anchor`/`Dock` are therefore usable on every control of a new view, as on a new WinForms form,
+  instead of being greyed out under the former `Card` > `Stack` layout. The generated application opens
+  its window with the view's design size as its client area and relays out the anchored controls on
+  every resize. Existing views are not changed.
+- **Toolbox drops into a Panel are placed like WinForms controls**: at the drop point (whole pixels),
+  with a default size suited to the control (a button 100 x 36, a text field 200 x 36, ...) and
+  `Anchor="Top, Left"`; a Toolbox double-click does the same.
+
+### Changed
+
+- **Anchor/Dock in the Properties window show their default value like WinForms**: an absent `Anchor`
+  reads `Top, Left` and an absent `Dock` `None`, in normal (non-bold) type; `Anchor` written as the
+  default in any order is not bold either. A typed `Anchor` value is normalized (`right,bottom` →
+  `Bottom, Right`) and an invalid one is refused with the grid's own message.
+- `tools/test-templates.ps1 -Run` also checks that a new desktop application's window opens with the
+  view's design size as its client area.
+
 - **Multi-selection in the `.kbview` designer, like the Windows Forms designer**: a drag on the empty
   area of a container (or of the view, or of the canvas around it) draws a dashed selection rectangle
   that selects the children of that container it touches; Ctrl+click toggles an element, Shift+click adds

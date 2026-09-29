@@ -1274,8 +1274,8 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   docs/RSPROJ.md lot 8.)
 - **Double-click** a Toolbox item → `IVsToolboxUser.ItemPicked` → `ToolboxInsertionPlanner`: into the
   selected element if it accepts the component, else its nearest ancestor that does (a port of
-  `design::can_drop_component`), appended, `X/Y/Width/Height` only inside a `DockAnchor` container;
-  then the new element is selected.
+  `design::can_drop_component`), appended, `X/Y/Width/Height/Anchor` only inside a `DockAnchor`
+  container (§14); then the new element is selected.
 - **Drag** from the Toolbox onto the surface. *Found live:* OLE does **not** reach a drop target that
   `devenv.exe` registers on the surface's parent (the window under the cursor belongs to the Rust
   surface process), so the surface registers its OWN OLE drop target
@@ -1443,7 +1443,8 @@ text starting with an element.
   (`System.Windows.Forms.Design.DockEditor`/`AnchorEditor`, wrapped by `KbviewDockEditor`/
   `KbviewAnchorEditor` over the attribute text - `LayoutAttributeText`). Under a non-Dock/Anchor parent both
   rows stay visible but read-only, with a description saying they only apply inside a Panel - WinForms'
-  own choice for a control in a FlowLayoutPanel.
+  own choice for a control in a FlowLayoutPanel. An absent `Anchor` shows `Top, Left` and an absent `Dock`
+  `None`, non-bold (§14).
 
 ### Testing notes
 
@@ -1600,3 +1601,33 @@ of two buttons pastes `hello2`/`third2`; Ctrl+D duplicates two; a Shift-drag of 
 handle resizes both (whole DIP, found live: the first build wrote `569.3334`). The Properties window
 showed three buttons with the differing values blank, the Kubuno Layout toolbar appeared by itself, and
 the context menu showed the French Layout submenus.
+
+## 14. Views are absolute surfaces, like WinForms forms
+
+Product-owner request (2026-09-29): "make sure the Anchor property works well". The deeper cause found:
+the templates generated `Card` > `Stack` views (flow layout), where `Dock`/`Anchor` are greyed out and do
+nothing, whereas a new WinForms `Form` is an absolute surface where Anchor works on every control.
+
+- **Templates** - the *Kubuno Desktop Application* `main_view.kbview` and the *Kubuno View* item template
+  have a `<Panel DesignWidth="800" DesignHeight="450">` root (WinForms' new-form size); each child has
+  `X`/`Y`/`Width`/`Height` and an `Anchor` (the Status field `Top, Left, Right`, the button `Top, Right`).
+  Users' existing views are never rewritten.
+- **Runtime window** - `kubuno_views::design::declared_design_size` (the root's literal `Width`/`Height`
+  or `DesignWidth`/`DesignHeight`, `None` when neither axis is declared) is kept by `compile` and read
+  with `Runtime::design_size`. The template's `main.rs` opens the window with it through
+  `kubuno_controls::host::HostOptions::client_size` (new: `width`×`height` is the page area below the
+  host's caption; the window is grown by the resize frame `WM_NCCALCSIZE` keeps plus the 34-DIP Kubuno
+  caption, or by `AdjustWindowRectExForDpi` under the system chrome) and paints the view over the whole
+  page area, so the root Panel's anchors (reference = the design size, §12) follow every window resize.
+  `tools/test-templates.ps1 -Run` checks the page area equals the design size (per-monitor-DPI-aware
+  `GetClientRect`; found live: a DPI-unaware PowerShell reads a virtualized 457×243 for 800×450 at 175 %).
+- **Toolbox drops** - `design::skeleton_xml` places a control dropped into a `DockAnchor` container at the
+  drop point (whole DIP, relative to the container's box), with `design::default_drop_size` (a WinForms
+  `DefaultSize` analogue matched to the Kubuno metrics: Button 100×36, text fields 200×36, check boxes
+  140×24, lists 200×120, containers 200×100, else 120×36) and `Anchor="Top, Left"`; the drop ghost is
+  that exact rect. `ToolboxInsertionPlanner.DefaultSize`/`SkeletonXml` mirror it for a double-click.
+- **Properties window** - the `Dock`/`Anchor` rows keep the Windows Forms designer's own `DockEditor`/
+  `AnchorEditor` (§12). Their descriptors now carry WinForms' defaults: an absent attribute shows `None` /
+  `Top, Left`, non-bold; `Anchor` is bold only when its edges differ from Top+Left (`LayoutAttributeText.
+  SameAnchor`, so `Left, Top` is not bold); a typed value is normalized like WinForms' enum converter
+  (`LayoutAttributeText.NormalizeAnchor`: `right,bottom` → `Bottom, Right`, anything else refused).

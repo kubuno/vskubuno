@@ -34,7 +34,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
     /// selected container", like WinForms: the selected element itself when it can take the component as
     /// a child, otherwise its nearest ancestor that can, appended at the end. The acceptance rule is a port
     /// of <c>kubuno_views::design::can_drop_component</c> (the rule a drag-and-drop on the surface already
-    /// uses, DSG-9) and the skeleton mirrors its <c>skeleton_xml</c> (<c>X/Y/Width/Height</c> only inside a
+    /// uses, DSG-9) and the skeleton mirrors its <c>skeleton_xml</c> (<c>X/Y/Width/Height/Anchor</c> only inside a
     /// <c>DockAnchor</c> container). Pure: reads the current text with <see cref="ElementAttributeReader"/>.
     /// </summary>
     public static class ToolboxInsertionPlanner
@@ -54,7 +54,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                     CanDrop(container, attributes.ChildTagNames.Count, component, registry))
                 {
                     var index = attributes.ChildTagNames.Count;
-                    return new ToolboxInsertion(candidate, index, SkeletonXml(component, container.LayoutKind, index));
+                    return new ToolboxInsertion(candidate, index, SkeletonXml(component, container.LayoutKind, index, registry));
                 }
 
                 if (candidate.Length == 0)
@@ -82,16 +82,75 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             }
         }
 
-        /// <summary><c>&lt;Button/&gt;</c>, or with a default <c>X/Y/Width/Height</c> in a <c>DockAnchor</c> container (cascaded so successive insertions do not overlap exactly).</summary>
-        public static string SkeletonXml(string component, LayoutKind? containerLayout, int index)
+        /// <summary>
+        /// <c>&lt;Button/&gt;</c>, or, in a <c>DockAnchor</c> container, placed like a Windows Forms control: a default
+        /// <c>X/Y</c> (cascaded so successive insertions do not overlap exactly), the component's
+        /// <see cref="DefaultSize"/> and WinForms' default anchoring, <c>Anchor="Top, Left"</c>.
+        /// </summary>
+        public static string SkeletonXml(string component, LayoutKind? containerLayout, int index, ComponentRegistry? registry = null)
         {
             if (containerLayout == LayoutKind.DockAnchor)
             {
                 var offset = 8 + (24 * (index % 10));
-                return $"<{component} X=\"{offset}\" Y=\"{offset}\" Width=\"80\" Height=\"24\"/>";
+                var (width, height) = DefaultSize(component, registry);
+                return FormattableString.Invariant($"<{component} X=\"{offset}\" Y=\"{offset}\" Width=\"{width}\" Height=\"{height}\" Anchor=\"{DefaultAnchor}\"/>");
             }
 
             return $"<{component}/>";
+        }
+
+        /// <summary>The anchoring every element placed in a <c>DockAnchor</c> container gets (WinForms' <c>Top | Left</c>).</summary>
+        public const string DefaultAnchor = "Top, Left";
+
+        /// <summary>
+        /// The size a new element gets in a <c>DockAnchor</c> container, DIP - the port of
+        /// <c>kubuno_views::design::default_drop_size</c> (a drag-and-drop on the surface), like a WinForms
+        /// control's <c>DefaultSize</c>.
+        /// </summary>
+        public static (int Width, int Height) DefaultSize(string component, ComponentRegistry? registry = null)
+        {
+            switch (component)
+            {
+                case "Button":
+                case "IconButton":
+                    return (100, 36);
+                case "TextField":
+                case "SearchField":
+                case "MaskedField":
+                case "NumericField":
+                case "ColorField":
+                case "DatePicker":
+                case "ComboBox":
+                case "Dropdown":
+                    return (200, 36);
+                case "Label":
+                case "LinkLabel":
+                case "Badge":
+                    return (100, 24);
+                case "CheckBox":
+                case "RadioButton":
+                case "Switch":
+                    return (140, 24);
+                case "Slider":
+                case "ProgressBar":
+                    return (200, 24);
+                case "Separator":
+                    return (200, 8);
+                case "Icon":
+                case "Spinner":
+                    return (24, 24);
+                case "TextArea":
+                case "ListBox":
+                case "CheckedListBox":
+                case "ListView":
+                case "TreeView":
+                case "DataTable":
+                    return (200, 120);
+                case "MonthCalendar":
+                    return (280, 300);
+                default:
+                    return registry?.Find(component) is { } meta && meta.Children != ChildrenModel.None ? (200, 100) : (120, 36);
+            }
         }
     }
 }

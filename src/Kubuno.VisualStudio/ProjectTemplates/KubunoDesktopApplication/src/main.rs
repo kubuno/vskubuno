@@ -5,7 +5,7 @@
 
 mod main_view;
 
-use kubuno_controls::host::{self, Chrome, Frame};
+use kubuno_controls::host::{self, Chrome, Frame, HostOptions};
 use kubuno_ui::{Rect, Theme};
 use kubuno_views::node::ViewEventKind;
 use kubuno_views::runtime::{FileWatcher, Runtime};
@@ -25,19 +25,22 @@ fn main() -> std::process::ExitCode {
     let mut view_model = MainViewModel::default();
     let mut handlers = handler_table();
 
-    let result = host::run_with_chrome(
-        "$safeprojectname$",
-        900,
-        700,
-        Theme::light(),
-        Chrome::Kubuno,
+    // Like a Windows Forms form, the window opens with the view's designed size as its client area
+    // (the root's DesignWidth x DesignHeight in main_view.kbview), and the view fills the whole client
+    // area: when the window is resized, each control follows its Anchor.
+    let (width, height) = runtime.design_size().unwrap_or((800.0, 450.0));
+    let mut options = HostOptions::new("$safeprojectname$", width.round() as u32, height.round() as u32, Theme::light());
+    options.chrome = Chrome::Kubuno;
+    options.client_size = true;
+    options.fit_work_area = true;
+
+    let result = host::run_with_options(
+        options,
         move |canvas, frame: &Frame| {
             host::request_repaint_after(250);
             watcher.poll(&mut runtime);
 
-            let margin = 24.0_f32;
-            let top = frame.chrome_top + margin;
-            let body = Rect::new(margin, top, (frame.size.0 - margin).max(margin), (frame.size.1 - margin).max(top));
+            let body = Rect::new(0.0, frame.chrome_top, frame.size.0, frame.size.1.max(frame.chrome_top));
 
             if runtime.has_view() {
                 let events = runtime.frame(canvas, frame, &mut view_model, &mut handlers, body);
@@ -49,7 +52,8 @@ fn main() -> std::process::ExitCode {
             } else {
                 let theme = canvas.theme();
                 let format = &canvas.formats().body;
-                canvas.text("Waiting for main_view.kbview to compile...", &body, format, &theme.text_secondary, false);
+                let text = Rect::new(body.left + 24.0, body.top + 24.0, body.right, body.bottom);
+                canvas.text("Waiting for main_view.kbview to compile...", &text, format, &theme.text_secondary, false);
             }
         },
     );

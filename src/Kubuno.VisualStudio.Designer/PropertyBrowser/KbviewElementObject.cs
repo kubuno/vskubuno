@@ -151,7 +151,9 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
                         var isDockOrAnchor = name == "Dock" || name == "Anchor";
                         System.Drawing.Design.UITypeEditor? editor = name == "Dock" ? new KbviewDockEditor() : name == "Anchor" ? new KbviewAnchorEditor() : null;
                         var doc = isDockOrAnchor && !dockAnchorParent ? DesignerText.DockAnchorOnlyInPanel(name) : DesignerText.CommonAttributeDoc(name);
-                        list.Add(new KbviewAttributePropertyDescriptor(name, name, kind, defaultValue: null, doc, PropertyCategoryMap.Category.Layout, editor, readOnly: isDockOrAnchor && !dockAnchorParent));
+                        // Like WinForms, an absent Dock/Anchor shows its default value ("None" / "Top, Left"), non-bold.
+                        var defaultValue = name == "Dock" ? LayoutAttributeText.DefaultDock : name == "Anchor" ? LayoutAttributeText.DefaultAnchor : null;
+                        list.Add(new KbviewAttributePropertyDescriptor(name, name, kind, defaultValue, doc, PropertyCategoryMap.Category.Layout, editor, readOnly: isDockOrAnchor && !dockAnchorParent));
                     }
                 }
 

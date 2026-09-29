@@ -226,6 +226,39 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
         }
 
         [TestMethod]
+        public void Anchor_ShowsAndEditsLikeWinForms()
+        {
+            var host = new FakeHost("<Panel>\n  <Button/>\n  <Button Anchor=\"Left, Top\"/>\n  <Button Anchor=\"Bottom, Right\"/>\n</Panel>");
+            PropertyDescriptor Anchor(string id, out KbviewElementObject element)
+            {
+                element = new KbviewElementObject(host, id, Registry.Find("Button")!);
+                return element.GetProperties().Find("Anchor", false);
+            }
+
+            // Absent: WinForms' default "Top, Left", not bold; Dock shows "None".
+            var anchor = Anchor("0", out var absent);
+            Assert.AreEqual("Top, Left", anchor.GetValue(absent));
+            Assert.IsFalse(anchor.ShouldSerializeValue(absent));
+            Assert.AreEqual("None", absent.GetProperties().Find("Dock", false).GetValue(absent));
+
+            // Written as the default (in any order): still not bold.
+            anchor = Anchor("1", out var topLeft);
+            Assert.IsFalse(anchor.ShouldSerializeValue(topLeft));
+
+            // Any other value: bold, resettable.
+            anchor = Anchor("2", out var bottomRight);
+            Assert.AreEqual("Bottom, Right", anchor.GetValue(bottomRight));
+            Assert.IsTrue(anchor.ShouldSerializeValue(bottomRight));
+            Assert.IsTrue(anchor.CanResetValue(bottomRight));
+
+            // A typed value is normalized like WinForms' enum converter; garbage is refused.
+            anchor = Anchor("0", out var typed);
+            anchor.SetValue(typed, "right, bottom");
+            CollectionAssert.Contains(host.Calls, "set 0 Anchor=Bottom, Right");
+            Assert.Throws<ArgumentException>(() => anchor.SetValue(typed, "Top, Middle"));
+        }
+
+        [TestMethod]
         public void TheView_ShowsItsDesignTimeSize()
         {
             var properties = new KbviewElementObject(new FakeHost(View), "", Registry.Find("Card")!).GetProperties();

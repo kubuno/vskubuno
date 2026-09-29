@@ -1,11 +1,13 @@
 <!--
-  $fileinputname$.kbview - code-behind in the same folder: $fileinputname$.rs. Edit this XML freely:
-  kubuno-views-ls (installed with the desktop workspace) gives you IntelliSense/diagnostics for it,
-  and "Open With... > Kubuno View Designer" opens the live Design/XML split view.
+  $fileinputname$.kbview - code-behind in the same folder: $fileinputname$.rs. Double-click this file
+  in Solution Explorer for the designer (F7 shows this XML); kubuno-views-ls (installed with the
+  desktop workspace) gives you IntelliSense/diagnostics.
+
+  Like a Windows Forms form, the view is an absolute surface: the root <Panel> is designed at
+  DesignWidth x DesignHeight, each control has its X/Y/Width/Height, and its Anchor says which edges
+  it stays attached to when the view is resized (Top, Left by default).
 -->
-<Card Title="$fileinputname$">
-  <Stack Direction="TopDown" Gap="16" Padding="0">
-    <TextField x:Name="status" Text="{Binding Status}" Placeholder="Status" />
-    <Button x:Name="action" Text="Run" Variant="Primary" OnClick="action_clicked"/>
-  </Stack>
-</Card>
+<Panel DesignWidth="800" DesignHeight="450">
+  <TextField x:Name="status" Text="{Binding Status}" Placeholder="Status" X="24" Y="24" Width="632" Height="36" Anchor="Top, Left, Right"/>
+  <Button x:Name="action" Text="Run" Variant="Primary" OnClick="action_clicked" X="672" Y="24" Width="104" Height="36" Anchor="Top, Right"/>
+</Panel>

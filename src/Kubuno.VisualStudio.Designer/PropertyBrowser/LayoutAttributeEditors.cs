@@ -44,6 +44,37 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
             return anchor;
         }
 
+        /// <summary>The value an absent <c>Anchor</c> attribute stands for, as the Properties window shows it (non-bold, like WinForms).</summary>
+        public const string DefaultAnchor = "Top, Left";
+
+        /// <summary>The value an absent <c>Dock</c> attribute stands for.</summary>
+        public const string DefaultDock = "None";
+
+        /// <summary>
+        /// A typed <c>Anchor</c> value in its canonical form (<c>right,top</c> → <c>Top, Right</c>), like WinForms'
+        /// enum converter. Throws <see cref="ArgumentException"/> (the grid's "invalid property value" dialog) on
+        /// anything that is not a set of <c>Top, Bottom, Left, Right</c> or <c>None</c>.
+        /// </summary>
+        public static string NormalizeAnchor(string text)
+        {
+            var anchor = WinForms.AnchorStyles.None;
+            foreach (var part in (text ?? string.Empty).Split(','))
+            {
+                var edge = part.Trim();
+                if (!Enum.TryParse<WinForms.AnchorStyles>(edge, ignoreCase: true, out var parsed) || !Enum.IsDefined(typeof(WinForms.AnchorStyles), parsed) || edge.Length == 0 || char.IsDigit(edge[0]))
+                {
+                    throw new ArgumentException(DesignerText.InvalidEnum(text ?? string.Empty, "Top, Bottom, Left, Right, None"));
+                }
+
+                anchor |= parsed;
+            }
+
+            return FormatAnchor(anchor);
+        }
+
+        /// <summary>Whether two <c>Anchor</c> texts name the same edges (an absent attribute being <see cref="DefaultAnchor"/>).</summary>
+        public static bool SameAnchor(string? a, string? b) => ParseAnchor(a) == ParseAnchor(b);
+
         /// <summary><c>Top, Left, Right</c> (edges in the order Top, Bottom, Left, Right), or <c>None</c>.</summary>
         public static string FormatAnchor(WinForms.AnchorStyles anchor)
         {

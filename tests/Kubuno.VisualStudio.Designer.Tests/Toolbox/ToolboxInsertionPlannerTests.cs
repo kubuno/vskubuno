@@ -52,7 +52,15 @@ namespace Kubuno.VisualStudio.Designer.Tests.Toolbox
         public void AnchorContainer_GetsPositionAndSize()
         {
             var plan = ToolboxInsertionPlanner.Plan("<Panel><Button/></Panel>", string.Empty, "Button", Registry)!;
-            Assert.AreEqual("<Button X=\"32\" Y=\"32\" Width=\"80\" Height=\"24\"/>", plan.Xml);
+            Assert.AreEqual("<Button X=\"32\" Y=\"32\" Width=\"100\" Height=\"36\" Anchor=\"Top, Left\"/>", plan.Xml);
+        }
+
+        [TestMethod]
+        public void AnchorContainer_UsesTheComponentDefaultSize()
+        {
+            Assert.AreEqual("<TextField X=\"8\" Y=\"8\" Width=\"200\" Height=\"36\" Anchor=\"Top, Left\"/>", ToolboxInsertionPlanner.Plan("<Panel/>", null, "TextField", Registry)!.Xml);
+            Assert.AreEqual((200, 100), ToolboxInsertionPlanner.DefaultSize("Stack", Registry), "a container gets room for children");
+            Assert.AreEqual((120, 36), ToolboxInsertionPlanner.DefaultSize("Unknown", Registry));
         }
 
         [TestMethod]
