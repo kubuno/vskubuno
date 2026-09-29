@@ -37,14 +37,14 @@ namespace Kubuno.VisualStudio.Core.Overrides
         {
             new RustSnippet(
                 "onpaint",
-                "Override on_paint: draw the control, then raise Paint (base).",
-                "Substituer on_paint : dessiner le contrôle, puis déclencher Paint (base).",
+                "Override on_paint: draw the control with e.graphics, then raise Paint (base).",
+                "Substituer on_paint : dessiner le contrôle avec e.graphics, puis déclencher Paint (base).",
                 new[]
                 {
                     "fn on_paint(&mut self, e: &mut PaintEventCx<'_>) {",
-                    "    let r = e.clip_rectangle;",
-                    "    let theme = e.graphics.theme();",
-                    "    e.graphics.fill_rounded(&r, 4.0, &theme.accent);",
+                    "    let g = e.graphics;",
+                    "    let r = e.bounds();",
+                    "    g.fill_rounded_rectangle(Color::from(g.theme().accent), r, 4.0);",
                     "    self.base_mut().on_paint(e);",
                     "}",
                 },

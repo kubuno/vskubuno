@@ -137,8 +137,21 @@
           <CommandName>Kubuno Layout</CommandName>
         </Strings>
       </Menu>
+      <!-- Debug > Kubuno submenu (docs/EVENTS.md EVT-8): hosts the "Paint debug" toggle (PaintDebugCommand). -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDebugMenu" priority="0x0700" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDebugMenuGroup"/>
+        <Strings>
+          <ButtonText>Kubuno</ButtonText>
+        </Strings>
+      </Menu>
     </Menus>
     <Groups>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDebugMenuGroup" priority="0x0700">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_DEBUG"/>
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDebugCommandsGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDebugMenu"/>
+      </Group>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
       </Group>
@@ -265,6 +278,14 @@
     </Groups>
 
     <Buttons>
+      <!-- Debug > Kubuno > Paint debug (PaintDebugCommand; checkable, French text set at run time). -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidPaintDebug" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDebugCommandsGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Paint debug</ButtonText>
+        </Strings>
+      </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDebugRustTestAtCursor" priority="0x0100" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Icon guid="ImageCatalogGuid" id="Test" />
@@ -901,6 +922,10 @@
       <IDSymbol name="cmdidRemoveCargoDependency" value="0x010E" />
       <IDSymbol name="cmdidRestartRustAnalyzer" value="0x010F" />
       <IDSymbol name="cmdidDialogGallery" value="0x0250" />
+      <IDSymbol name="cmdidPaintDebug" value="0x0260" />
+      <IDSymbol name="KubunoDebugMenu" value="0x1070" />
+      <IDSymbol name="KubunoDebugMenuGroup" value="0x1071" />
+      <IDSymbol name="KubunoDebugCommandsGroup" value="0x1072" />
 
       <!-- .kbview design surface context menus - MUST match Kubuno.VisualStudio.Designer's DesignerCommandIds. -->
       <IDSymbol name="KubunoDesignerElementContextMenu" value="0x1030" />

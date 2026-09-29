@@ -99,6 +99,7 @@
     <Compile Include="Debugging\DebugRustTestAtCursorCommand.cs" />
     <Compile Include="Commands\GenerateRustProjectsCommand.cs" />
     <Compile Include="Commands\RestartRustAnalyzerCommand.cs" />
+    <Compile Include="Commands\PaintDebugCommand.cs" />
     <Compile Include="Commands\DialogGalleryCommand.cs" />
     <!-- Extended "Ajouter" submenu on a .rsproj project node (product request, see KubunoCommands.vsct's own comment). -->
     <Compile Include="Commands\RsprojSelection.cs" />

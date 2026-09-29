@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Paint debug command (EVT-8)**: a checkable Debug > Kubuno > Paint debug (Débogage > Kubuno > Débogage du
+  rendu) command toggles the Kubuno runtime's paint-debug overlay (invalidated-region flashes, layout
+  bounds/padding, frame time). The choice is persisted, exported as `KUBUNO_PAINT_DEBUG=all` to F5 / Ctrl+F5
+  launches and newly opened designers (a value you set yourself is never overridden), and applied live to every
+  running Kubuno window, including the designer's design surfaces, via the `Kubuno.PaintDebug` window message.
+- **Painting with the `Graphics` API in custom controls (EVT-8)**: the *Contrôle personnalisé Kubuno* item template now
+  draws its face with `e.graphics` (a linear gradient in a rounded rectangle, an inset outline dotted while focused,
+  centred text with an ellipsis), shows `on_paint_background` and a commented `on_print`; the `onpaint` snippet uses the
+  `Graphics` API; "Substituer des membres..." offers `on_print` (whose body calls `self.paint_layers(e)`) and the drag
+  methods `on_drag_enter`/`on_drag_over`/`on_drag_drop`/`on_drag_leave`. The designer renders owner-drawn items and
+  custom painting through the project's own runtime, like the running application.
 - **Project properties like .NET for `.rsproj` projects (lot 11 of `docs/RSPROJ.md`)**: Properties on a Rust project
   now opens a searchable document tab like a .NET project's, with Application (General, Win32 resources,
   Dependencies), Build, Package, Code Analysis, Debug, Resources and Settings pages - each property with a title, a

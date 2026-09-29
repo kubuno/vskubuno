@@ -283,6 +283,7 @@ namespace Kubuno.VisualStudio
                 DesignerToolWindowCommands.Initialize(this, commandService);
                 GenerateRustProjectsCommand.Initialize(this, commandService);
                 RestartRustAnalyzerCommand.Initialize(this, commandService);
+                PaintDebugCommand.Initialize(commandService);
                 DialogGalleryCommand.Initialize(commandService);
                 AddProjectItemCommands.Initialize(this, commandService);
                 AddProjectReferenceCommand.Initialize(this, commandService);

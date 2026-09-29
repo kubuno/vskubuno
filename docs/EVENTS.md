@@ -10,7 +10,8 @@
 > "EVT-2 and EVT-3 as built", §11, "EVT-4 as built" — the attribute is `#[kubuno_views::event_handlers]`,
 > see there —, and §12, "EVT-5 as built"); EVT-6: see §13; EVT-7 is split in two: **EVT-7a** (the control
 > hierarchy and the overridable `on_…` methods) is done, see §14; EVT-7b (custom controls and user controls
-> in XML, tooling) is done, see §15; EVT-8 is not started.
+> in XML, tooling) is done, see §15; EVT-7c (WinForms-rich property sets) is §16; **EVT-8** (paint and the
+> `Graphics` API, owner-draw, drag and drop, the paint debug overlay) is done, see §17.
 
 ## 0. Where we are today
 
@@ -458,7 +459,7 @@ instead of `&mut dyn ViewModel`.
 | EVT-6 | View lifecycle, window events, threading | `runtime.rs` lifecycle hooks, host close/activation plumbing, `UiDispatcher`, `spawn_local` executor | EVT-2 | M | Unit tests with a fake host; live: FormClosing cancel keeps the window, background thread `begin_invoke` updates a label |
 | EVT-7a ✅ done (§14) | Control hierarchy and overridable `on_…` methods | `kubuno-views/src/component/`, `controls.rs` (classes), `#[derive(Component)]` in `kubuno-views-macros`, router/nodes/`DesignSlot` delivering through the classes, registry base chain, `ControlHost` | EVT-2, EVT-4 | L | Upcast/downcast, override + event order, router through a control, `compile_fail` macro misuse; live: a `RoundButton` (extends `Button`) in a template app |
 | EVT-7b ✅ done (§15) | Custom controls and user controls | `kubuno-views-meta` (shared grammar), `#[derive(Component/UserControl)]`, extensible registry (static constructors, not `inventory`: §15), `<UserControl x:Class>`, LS `syn` scan, project Toolbox tab, per-project design host | EVT-3, EVT-4 | L | Macro and LS produce identical `ComponentMeta` (shared golden tests); live: a `RatingBar` user control appears in the Toolbox, is dropped, its event bound and raised |
-| EVT-8 | Paint, scroll, drag and drop | `PaintEventArgs` for `<Canvas>`/custom controls, `ScrollEventArgs`, OLE drop target in the host, `DragEventArgs` | EVT-2, EVT-6 | L | Unit tests on synthetic drag sequences (Enter → Over* → Drop/Leave); live: drop a file from Explorer onto a list |
+| EVT-8 ✅ done (§17) | Paint, scroll, drag and drop | `PaintEventArgs` for `<Canvas>`/custom controls, `ScrollEventArgs`, OLE drop target in the host, `DragEventArgs` | EVT-2, EVT-6 | L | Unit tests on synthetic drag sequences (Enter → Over* → Drop/Leave); live: drop a file from Explorer onto a list |
 
 Suggested order: EVT-1 → (EVT-2 ∥ EVT-3) → EVT-4 → (EVT-5 ∥ EVT-6) → EVT-7 → EVT-8. EVT-1 to EVT-4
 bring the visible benefit (typed handlers, full ⚡ tab); EVT-7 is the largest risk and the most
@@ -1576,3 +1577,226 @@ access tree, styled formats); `kubuno_ui` 728 (Tab indexes, disabled parts, alig
 documents and chat start. `tools/test-templates.ps1 -Run`: all four templates build and run. C#: Designer 341 (colour/
 font/composite converters, category map, multi-selection, entity round trip, the theme-tokens fixture generated from
 the runtime).
+
+## 17. EVT-8 as built — painting, the `Graphics` API, owner-draw, drag and drop (2026-09-29)
+
+In `Z:\src\desktop\windows` (uncommitted there): `drive-app-controls` (two default methods on `Canvas`, `Debug`/
+`PartialEq` on `Rect`, `Clone` on `ShadowLayer`), `kubuno-controls` (host: `dnd`, `paint_debug`; painter),
+`kubuno_ui` (new `graphics` module; owner-draw in the list widgets), `kubuno-views`; and in this repository (the
+*Paint debug* command, the Custom Control item template, the regenerated `OverridableMembers.json`). `kubuno_ui` is a
+dylib: the workspace was rebuilt and restaged; the gallery and the `view_preview` showcase are pixel-identical with the
+defaults (see "Live verification").
+
+### The `Graphics` API (`kubuno_ui::graphics`)
+
+- **`Graphics<'a>`**, a borrowed view over a `&dyn Canvas` — `System.Drawing.Graphics`' surface in Rust: `draw_line(s)`,
+  `draw/fill_rectangle(s)`, `draw/fill_rounded_rectangle` (.NET 9), `draw/fill_ellipse`, `draw_arc`, `draw/fill_pie`,
+  `draw_bezier(s)`, `draw_curve` and `draw/fill_closed_curve` (cardinal splines), `draw/fill_polygon`, `draw/fill_path`,
+  `clear`, `draw_string` (in a box: `StringFormat` alignment and line alignment, wrapping, `StringTrimming` incl. the
+  ellipses and `EllipsisPath`, `DirectionRightToLeft`, `NoClip`; `Font` underline/strikeout), `draw_string_at`,
+  `measure_string`, `draw_image` / `draw_image_with` (source rectangle, opacity) / `draw_image_unscaled` / `image_size`,
+  `draw_icon` (the Kubuno vector icons); clip (`set_clip`, `set_clip_path`, `intersect_clip(_path)`, `reset_clip`,
+  `clip_bounds`, `is_visible`), transforms (translate, scale, rotate, `rotate_transform_at`, `multiply_transform`,
+  `transform`, `set_transform`, `reset_transform`; `Matrix` with `MatrixOrder`, prepend by default like GDI+),
+  `save`/`restore` (WinForms' `GraphicsState`: restoring discards the later states; an unknown state does nothing) and
+  `with_saved`, and the hints (`SmoothingMode` — antialiased by default, a deliberate deviation from WinForms —,
+  `TextRenderingHint`, `InterpolationMode`, `CompositingMode`).
+- Value types: `Color` (straight alpha, `rgb`/`argb`/`from_hex`, from/to the theme's `D2D1_COLOR_F`), `PointF`, `SizeF`,
+  `RectExt` (helpers on the shared `Rect`), `Brush` (`Solid`, `LinearGradientBrush` — `from_rect` with
+  `LinearGradientMode`, `with_angle`, stops, `WrapMode` —, `RadialGradientBrush`: GDI+'s elliptical `PathGradientBrush`),
+  `Pen` (width, `DashStyle` or a custom pattern in pen widths, dash offset, `LineCap`s, `LineJoin`, miter limit,
+  `PenAlignment::Inset`), `GraphicsPath` (figures of lines, cubic/quadratic Béziers and SVG-style arcs; `add_line(s)`,
+  `add_rectangle`, `add_rounded_rectangle`, `add_ellipse`, `add_arc` — GDI+'s true-angle arcs, clockwise on screen —,
+  `add_pie`, `add_polygon`, `add_bezier(s)`, `add_curve`, `add_closed_curve`, `add_path`, `start_figure`/`close_figure`,
+  `transform`, `flatten`, `bounds`, `is_visible` by `FillMode`), `Font` (points like WinForms, or DIP, or a theme text
+  role — the default, which follows the app font —; `FontStyle` bits), `StringFormat`, `Image` (a file decoded by WIC on
+  first use per device, or a bitmap).
+- **How it draws.** When the canvas lends its renderer (new `Canvas::graphics_renderer`, default `None`; the host's
+  painter lends it), each call is drawn with Direct2D on the canvas' own device context, in the frame's `BeginDraw`: the
+  op pushes its clip (axis-aligned when the transform allows, a geometric-mask layer otherwise), composes its transform
+  with the context's current one (the scroll offsets), sets its hints, draws, and restores everything — so `Graphics`
+  calls interleave safely with the canvas primitives — and reports what it drew for the scroll extents (new
+  `Canvas::note_drawn`). Gradient stops are interpolated in straight alpha, dashes are a custom stroke style, text goes
+  through a DirectWrite layout (formats built per family/size/weight and kept). Without a renderer (another app's
+  canvas, a test canvas) the calls fall back to the primitives: rectangles and circles as rounded fills and strokes,
+  other shapes flattened (triangle fans, dotted lines), gradients as their middle colour, axis-aligned clips only, no
+  images.
+- **Recording.** Every call is an `Op` carrying its state (transform, clip list, hints); `Graphics::recording()` and
+  `Graphics::recorder()` keep them in a `DisplayList` (`describe`, `bounds`, `replay`). `Graphics` also implements
+  `Canvas`: a canvas primitive called on it is recorded as a `CanvasCall` and forwarded, so a `kubuno_ui` widget
+  painted through a `Graphics` is recorded whole; `raw_canvas()` / `renderer()` hand the underlying objects out and mark
+  the recording incomplete (`has_unrecorded_drawing`).
+- **Lending to event args.** Every method takes `&self`, and a `Graphics` is covariant in its lifetime: `GraphicsSlot`
+  lends one to `'static` event args for the duration of a raise (a scope guard clears it, even on a panic); read
+  afterwards, the slot answers a null `Graphics` that draws nothing — never a dangling one.
+- Deviations: images and icons follow translation and scale, not rotation; `EllipsisPath` trims at a character with
+  the last `\` segment kept; `PathGradientBrush` is the elliptical case only; no hatch or texture brushes, no regions
+  beyond rectangles and paths, no `PageUnit`.
+
+### Paint in the control hierarchy (`kubuno-views`)
+
+- `PaintEventCx` now carries `graphics: &Graphics` (`e.graphics`, which also answers the canvas primitives, so EVT-7
+  code such as `e.graphics.fill_rounded(..)` still compiles), `canvas()` (the raw `ControlCanvas`; asking for it turns
+  the paint buffer off for that paint), `clip_rectangle` / `bounds()` (surface coordinates, as before),
+  `client_rectangle()` (local), `state`. The `Paint` event's `PaintEventArgs { clip_rectangle, graphics() }` is real:
+  its handlers (the element's `OnPaint="…"`, Rust subscribers of `control.paint()`) draw on the lent surface.
+- **`on_paint_background`** (root behaviour): the control's `BackColor` — over the parent's background (the canvas'
+  `current_bg`) when the colour has alpha and the class has `SUPPORTS_TRANSPARENT_BACK_COLOR`, made opaque otherwise —,
+  then its `BackgroundImage` laid out by `BackgroundImageLayout`, clipped to the bounds. It raises no event.
+- **`on_paint`**: unchanged (the base raises `Paint`).
+- **`on_print`** (WinForms `OnPrint`, product-owner request): called for off-screen rendering (`draw_to_bitmap`) and
+  printing; the default runs `paint_layers(e)` when `USER_PAINT` is set — `on_paint_background` unless `OPAQUE`, then
+  `on_paint` (which raises `Paint`, as in the reference source; `OnPrint` raises nothing of its own). `paint_layers` is a
+  provided method called on the outer object, so an `on_print` override that calls it reaches the class's own
+  `on_paint`, which `self.base_mut().on_print(e)` would not (the delegation limit of §14); the override catalogue's stub
+  for `on_print` therefore calls `self.paint_layers(e)`.
+- **`invoke_paint(child, e)` / `invoke_paint_background(child, e)`** (composite controls drawing their children),
+  **`draw_to_display_list()`** (records `on_print` through a recorder, shifted to the control's origin) and
+  **`draw_to_bitmap(target, target_bounds)`** (replays it on any `Graphics` at `target_bounds`, at the control's size).
+- **`component::paint::paint_control`** is the WM_PAINT of the hosts (`CustomControlNode`, `<PaintBox>`,
+  `ControlHost`): nothing when `USER_PAINT` is cleared; the background unless `OPAQUE`; `on_paint`. **Double
+  buffering**: every frame is composed off screen, and with `OPTIMIZED_DOUBLE_BUFFER` (the default;
+  `double_buffered()` / `set_double_buffered`) the paint is recorded and the next frames **replay** it instead of
+  calling the paint methods, while the control stays valid: no `invalidate`/`refresh`, the same bounds, interaction
+  state, DPI scale and theme, no property change (the view runtime invalidates a class whose applied property values
+  changed; `ControlHost` one lent mutably through `HostedControl::borrow_mut`). A paint that touched the raw canvas, or
+  whose `Paint` event has a handler or a Rust subscriber, is not kept. `invalidate_rect` asks for a frame (WinForms
+  posting `WM_PAINT`); an invalidation made while painting (an animation) stands. The `<Button>` node skips the class's
+  `on_paint` when a class clears `USER_PAINT` (the built-in look paints, like a native control), and raises the
+  element's `OnPaint`.
+- **`ControlStyles` honoured** (documented on the type): `USER_PAINT`, `OPAQUE`, `RESIZE_REDRAW`,
+  `SUPPORTS_TRANSPARENT_BACK_COLOR`, `OPTIMIZED_DOUBLE_BUFFER`; `DOUBLE_BUFFER` and `ALL_PAINTING_IN_WM_PAINT` hold by
+  construction (no flicker is possible, no separate erase pass).
+- **`<PaintBox>`** (display family, default event `OnPaint`): a surface its `Paint` handler draws on — the design
+  note's `<Canvas>`, renamed because `Canvas` is the drawing trait of the prelude (a `Sender<Canvas>` stub would not
+  compile).
+- Registry: `OnPaint` joins the common events (category Appearance; raised by custom controls, `<PaintBox>` and
+  buttons, not by the other built-in controls, which paint their widgets directly).
+
+### Owner-draw
+
+- `kubuno_ui::graphics::owner_draw`: `DrawMode` (the replica's), `DrawItemState` (WinForms' bits), `DrawItemEventArgs`
+  (`graphics`, `index`, `sub_index`, `bounds`, `state`, `text`, `font`, `fore_color`, `back_color`, `draw_default`;
+  `draw_background`, `draw_focus_rectangle`, `draw_text`), `MeasureItemEventArgs`, the `OwnerDrawHandler` trait
+  (closures are handlers). The widgets are painted with `&self` inside a frame, so the handler is **lent for a paint**
+  (`with_handler`, a scoped thread-local stack; the running handler is taken out of it while it runs, so a nested
+  owner-drawn widget never gets a second `&mut`). Without a handler, or when it sets `draw_default`, the item paints
+  normally (WinForms would leave it blank).
+- The widgets: `ListBox` (`OwnerDrawFixed`; `OwnerDrawVariable` with `measure_items` → `item_heights`, used for layout,
+  hit-testing, scrolling and the scroll indicator — single column, as in WinForms), `ComboBox` and `Dropdown` (their
+  edit field with `COMBO_BOX_EDIT`, and their drop-down rows; variable heights are not applied to the drop-down),
+  `ListView` (`owner_draw`: rows in Details, tiles in LargeIcon), `TreeView` (`OwnerDrawText`: the label;
+  `OwnerDrawAll`: the row), `DataTable` (new `owner_draw_cells`: each cell, `sub_index` = column, clipped to its column),
+  `Tabs` (`OwnerDrawFixed`: the caption; the strip keeps its hover wash and indicator), `Menu` (new `owner_draw`: the menu
+  items; separators and section labels stay the menu's).
+- **Popups**: a combo box's list and a context menu are painted in their own popup window after the page, when the view
+  model is no longer at hand; their owner-drawn rows are **recorded** during the page's paint through the real handler
+  (`RecordedItems::record`, on a recorder `Graphics`) and replayed in the popup.
+- Views: `DrawMode` on `ListBox`/`ComboBox`/`Dropdown` (bindable), `Tabs` (`Normal`/`OwnerDrawFixed`) and `TreeView`
+  (`OwnerDrawText`/`OwnerDrawAll`), `OwnerDraw` on `ListView`, `DataTable` and `ContextMenu`; events `OnDrawItem`
+  (aliases `OnDrawNode` on `TreeView`, `OnCellPainting` on `DataTable`) and `OnMeasureItem`, with
+  `events::DrawItemEventArgs` / `MeasureItemEventArgs` (the surface lent through a `GraphicsSlot`; `draw_default`, the
+  colours, the font and the measured size are copied back). They go through the element's class (`on_event`) then its
+  handler, and are not reported in the frame's events (they are raised for every item of every paint).
+
+### Drag and drop
+
+- **Host (`kubuno_controls::host::dnd`)**: `DataObject` (text, files, custom formats by name; `from_text`, `from_files`,
+  `with_custom`, `has_format` / `formats` with WinForms' names) and `DragDropEffects` (with `pick(mods)`: Ctrl copies,
+  Shift moves…) now live here and are re-exported by `kubuno_views::events`. **Target**: a page calls `accept_drops`
+  (views: when an element has `AllowDrop`), and the window registers with OLE once (`RegisterDragDrop`; a refusal — a
+  design surface owns its drop target — is remembered; revoked at `WM_DESTROY`). Each OLE call (`DragEnter`,
+  `DragOver`, `DragLeave`, `Drop`) updates the `Tracker` (the frame's `DragFrame`: phase, data, allowed effects, client
+  DIP point, modifiers, buttons, internal) and **renders a frame at once** from the drop target (never inside another
+  paint), so the page's handlers answer (`set_effect`, masked by the allowed effects) before OLE is answered — the
+  cursor shows what a drop would do while the pointer moves. A foreign data object is read (`CF_HDROP`,
+  `CF_UNICODETEXT`, every registered `HGLOBAL` format up to 1 MB); the process's own drag hands over its `DataObject`
+  whole. `accept_files` (EVT-7c) still works: with the OLE target registered, dropped files nobody answered for become
+  `FilesDropped`. **Source**: `do_drag_drop(data, allowed, done)` starts after the frame (a posted `WM_KUBUNO_DRAG`:
+  OLE's modal loop runs from the message loop, and the window keeps rendering as a target meanwhile), with an
+  `IDataObject` offering text, `CF_HDROP` (files can be dropped onto the Explorer) and the custom formats as registered
+  clipboard formats, and an `IDropSource` (Escape cancels, releasing the button drops); the button state is
+  resynchronised afterwards (the release happened inside OLE's loop). Implemented with windows-rs `#[implement]`.
+- **Views**: the runtime routes the drag to the deepest element that allows drops under the pointer (last frame's
+  geometry): `DragEnter`, then `DragOver` while it moves over the same element (starting from the last answer),
+  `DragLeave` when it moves off or is cancelled (the next target gets `DragEnter`), and `DragDrop` only when the target
+  accepted (`e.effect` not `NONE`); the effect goes back to the source. `DragEventArgs` gained `key_state` (WinForms'
+  bits) and `suggested_effect()`; its coordinates stay relative to the element (WinForms gives screen coordinates).
+  `Control` gained `on_drag_enter/over/drop/leave` (overridable, in the catalogue) with their accessors, and
+  `do_drag_drop(data, allowed) -> DragOperation` (also `kubuno_views::dnd::do_drag_drop`), which completes with the
+  effect — poll it, or `.await` it in an async handler. `ItemDrag`, `GiveFeedback` and `QueryContinueDrag` are not
+  raised (the source uses OLE's default cursors).
+
+### Paint debug overlay
+
+`kubuno_controls::host::paint_debug`: invalidated regions flash (a repainted buffered control, an explicit invalidation:
+magenta, fading over 600 ms), the layout bounds of every view element (cyan) with its padding (green) and margin
+(orange), and the frame's paint time and frames per second (top right). On with `KUBUNO_PAINT_DEBUG` (`1`/`all`, or
+`invalidate,layout,fps`), live with the registered window message `Kubuno.PaintDebug` (`wParam` = the bits 1/2/4), or
+`paint_debug::set_flags`. Visual Studio: **Debug › Kubuno › Paint debug** (*Débogage › Kubuno › Débogage du rendu*,
+checkable, persisted) posts the message to every `KubunoControlsHost` window — running apps and the designer's
+surfaces — and sets `KUBUNO_PAINT_DEBUG=all` in Visual Studio's own environment, which F5/Ctrl+F5 launches and new
+design surfaces inherit (a value the user set is kept).
+
+### Tooling
+
+- The override catalogue gained `on_print` and the four drag methods (62 members); `overrides_fixture.rs` and
+  `OverridableMembers.json` were regenerated. The *Contrôle personnalisé Kubuno* item template shows
+  `on_paint_background` (calling the base), an `on_paint` with a gradient face, an inset outline (dotted with the focus)
+  and centred text with an ellipsis, and `on_print` as a commented example.
+- French documentation for every new event and property.
+
+### Tests
+
+`kubuno_ui` (760 unit tests): the graphics module (matrices, colours, gradients, dash patterns; paths: fill modes, arcs,
+pies, curves, transforms, rounded corners; fonts and string formats, the approximate measure; every call as an op with
+its state, save/restore nesting, clip replace/intersect/path, text placement, the canvas primitives recorded and
+forwarded, the fallback mapping onto a recording canvas, display-list replay in its recorded state, the null
+`Graphics`; the slot cleared after a raise and after a panic; owner-draw handlers with `draw_default`, nesting without
+aliasing, measure, focus rectangles) and an owner-drawn `ListBox` (fixed: rows to the handler in order, the default row
+painted; variable: measured heights driving `item_rect`, `item_at`, `visible_rows`, `max_top_index`).
+`kubuno_controls` host (42): the drag `Tracker` (enter → over → drop, leave, the answer masked by the allowed
+effects), effects to and from OLE and `pick`, `DataObject` formats, a data object round trip through real OLE (text,
+files, a custom format), start requests, the paint debug flags and notes. `kubuno-views` (588 unit + integration +
+doc tests): `paint_control` (order, `OPAQUE`, `USER_PAINT`, a replay identical to the paint, repaints on invalidation,
+state and bounds, no buffer with a handler, a subscriber, `DoubleBuffered` off or a raw-canvas paint, `BackColor`
+opaque and transparent), `on_print` and `draw_to_bitmap`, `invoke_paint`, paint and draw-item args lent and copied
+back, `DragOperation` (awaited, replaced), and through the real runtime with a fake host and a recording canvas: a drag
+routed A.DragEnter → A.DragOver → A.DragLeave → B.DragEnter → B.DragDrop with the effects returned, nothing over an
+element without `AllowDrop`, a cancelled drag; an `OwnerDrawVariable` list's MeasureItem before its DrawItem, and a
+`<PaintBox>` handler drawing on the lent surface. `kubuno-views-ls` 124 + golden + round trip pass unchanged. `cargo
+clippy --all-targets -D warnings` clean on `kubuno_ui`, `kubuno-controls`, `kubuno-views`. C#: the Paint debug helpers
+(15 tests in `Kubuno.Launch.Tests`).
+
+### Live verification (2026-09-29)
+
+- Desktop workspace rebuilt and restaged: gallery, settings and the `view_preview` showcase (tabs 0–4) pixel-identical
+  to the binaries built before EVT-8 (0 px; the spinner's 81 px are the same animation noise as before-vs-before);
+  drive, documents, chat and shell start and close normally. `tools/test-templates.ps1 -Run`: the four templates OK,
+  including the new *Contrôle personnalisé Kubuno*.
+- Scratch *Kubuno Desktop Application* `Evt8App` (a `Gauge` custom control: radial dial, gradient arc with round caps,
+  ticks under rotating transforms, centred text; an `OwnerDrawVariable` `ListBox` with icons and two-line rows; a drag
+  source panel, a text drop zone, a `<PaintBox>` area chart). Dragging the source panel onto the list:
+  `DoDragDrop` → `DragEnter`/`DragOver`… → `DragDrop` with the text and the custom format
+  (`["UnicodeText","Evt8App.Item"]`) → the awaited effect `COPY`. A drag from a second instance of the application
+  (another process) reached the list through the OLE `IDataObject`. `KUBUNO_PAINT_DEBUG`/the registered message
+  toggled the overlay on (frame-time box, flashes) and off (0 px difference with the original frame).
+- Regular Visual Studio with the Release VSIX: the designer's first design build failed while an instance of the
+  application held `kubuno_ui.dll` (the expected *Failed* bar + **Générer**); once it was closed, **Générer** rebuilt
+  it and the preview swapped to the project's `kubuno-design-surface.exe`, painting the `Gauge` through its `on_paint`.
+  F5 started the application under the debugger, and **Déboguer › Kubuno › Paint debug** switched its overlay on
+  live.
+- Not automated: a file drag from the Explorer itself (a synthetic drag source did not complete its OLE loop); the
+  file path of `DragEventArgs` was covered by the OLE round-trip test and the cross-process drag.
+
+## Requirement — the WinForms printing stack (product owner, 2026-09-29; follow-up, not started)
+
+`on_print` (EVT-8) is the control's side of printing. The rest of WinForms' printing stack is to come:
+
+- a **`PrintDocument`** non-visual component (component tray, `<PrintDocument>` in XML): `BeginPrint`,
+  `QueryPageSettings`, `PrintPage` (with `HasMorePages`, the page's `Graphics`, the margin and page bounds), `EndPrint`;
+  `DocumentName`, `DefaultPageSettings`, `PrinterSettings`;
+- **`PrintPreviewControl`** / **`PrintPreviewDialog`** (the pages rendered through the same `PrintPage` handler, zoom,
+  columns and rows), **`PrintDialog`** (printer, copies, range) and **`PageSetupDialog`** (paper, orientation, margins);
+- on Windows through the print spooler / XPS, with Direct2D printing (`ID2D1PrintControl` over an XPS print job), the
+  page `Graphics` being the EVT-8 `Graphics` over a print surface, and controls rendered onto it through `on_print`.

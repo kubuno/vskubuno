@@ -33,7 +33,10 @@ impl RoundButton {
         [TestMethod]
         public void The_embedded_catalogue_matches_the_rust_table()
         {
-            Assert.AreEqual(57, Catalog.Members.Count);
+            Assert.AreEqual(62, Catalog.Members.Count);
+            var print = Catalog.Members.Single(m => m.Level == "Control" && m.Name == "on_print");
+            Assert.AreEqual("self.paint_layers(e);", print.BaseCall, "on_print's base rendering must reach the class's own on_paint");
+            Assert.IsTrue(Catalog.Members.Any(m => m.Name == "on_drag_drop" && m.Event == "OnDragDrop"));
             CollectionAssert.AreEqual(new[] { "Button", "ButtonBase", "Control", "Component" }, (Catalog.Chains["Button"]).ToList());
             CollectionAssert.AreEqual(new[] { "Control", "Component" }, (Catalog.Chains["Control"]).ToList());
             var click = Catalog.Members.Single(m => m.Level == "Control" && m.Name == "on_click");

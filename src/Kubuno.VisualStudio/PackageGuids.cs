@@ -97,5 +97,8 @@ namespace Kubuno.VisualStudio
 
         /// <summary>Tools menu entry for <see cref="Commands.DialogGalleryCommand"/> (developer instances only).</summary>
         public const int DialogGalleryCommand = 0x0250;
+
+        /// <summary>Debug &gt; Kubuno &gt; Paint debug entry for <see cref="Commands.PaintDebugCommand"/>.</summary>
+        public const int PaintDebugCommand = 0x0260;
     }
 }
