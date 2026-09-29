@@ -47,6 +47,11 @@ namespace Kubuno.VisualStudio.TemplateWizard
                 ? raw ?? string.Empty
                 : string.Empty;
 
+            if (runKind == WizardRunKind.AsNewProject && replacementsDictionary.TryGetValue("$solutiondirectory$", out var solutionDirectory) && !string.IsNullOrWhiteSpace(solutionDirectory))
+            {
+                _solutionDirectory = solutionDirectory;
+            }
+
             string crateName = SanitizeCrateName(safeProjectName);
             replacementsDictionary["$cratename$"] = crateName;
             replacementsDictionary["$moduleid$"] = crateName.Replace('-', '_');
@@ -144,8 +149,31 @@ namespace Kubuno.VisualStudio.TemplateWizard
         {
         }
 
+        /// <summary>
+        /// The new solution gets its own <c>Kubuno.Rust.Sdk</c> NuGet feed and the user's NuGet.Config gets the bundled one.
+        /// This wizard runs whether or not the Kubuno package is loaded (a New Project dialog loads only this assembly), and
+        /// the package would load too late for the new <c>.rsproj</c>'s <c>Sdk="Kubuno.Rust.Sdk/…"</c> to resolve on a fresh
+        /// machine - see <c>SdkFeedDistribution</c>. Best-effort: never throws.
+        /// </summary>
         public void RunFinished()
         {
+            try
+            {
+                if (_solutionDirectory is null)
+                {
+                    return;
+                }
+
+                var extensionDirectory = Path.GetDirectoryName(typeof(CrateNameWizard).Assembly.Location);
+                Kubuno.VisualStudio.Core.ProjectGeneration.SdkFeedDistribution.EnsureUserRegistered(extensionDirectory, _ => { });
+                Kubuno.VisualStudio.Core.ProjectGeneration.SdkFeedDistribution.EnsureSolutionLocal(_solutionDirectory, extensionDirectory, _ => { });
+            }
+            catch (Exception)
+            {
+                // A template must never fail to create a project over an optional convenience.
+            }
         }
+
+        private string? _solutionDirectory;
     }
 }

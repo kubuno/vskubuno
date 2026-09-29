@@ -1148,3 +1148,37 @@ application", the icon, and version information 2.3.4 / "Kubuno SAS" in its file
 (left to the visual check): ticking a feature checkbox with the mouse (UI Automation's Toggle does not commit it,
 the Add box does) and rows below the first category of a long page (not exposed to UI Automation until scrolled into
 view by a real wheel or keyboard).
+
+## Addendum - SDK feed independent of the package load
+
+**The gap.** `RustSdkFeedInstaller` registers the bundled feed in the user's `NuGet.Config` when the Kubuno package
+loads. Since the package no longer autoloads at startup, and its activation rule needs a project with the
+`RustProjectSystem` capability (a project that has already been evaluated), the package cannot be what makes
+`Sdk="Kubuno.Rust.Sdk/1.0.0"` resolve: on a fresh machine, opening an existing `.rsproj` (or creating one from a
+template) as the very first action asks NuGet for the SDK before any Kubuno code has run, the project fails to load, and
+without the capability the package never loads to fix it.
+
+**The fix: the solution travels with its SDK** (`Core/ProjectGeneration/SdkFeedDistribution.cs`).
+`EnsureSolutionLocal(solutionDirectory, extensionDirectory)` copies the bundled `Kubuno.Rust.Sdk.*.nupkg` to
+`<solution>\.kubuno\sdk-feed\` and merges a relative source (`.kubuno/sdk-feed`, key `Kubuno.Rust.Sdk (solution)`) into the
+`NuGet.Config` next to the solution (an existing file is merged into under its own spelling, never replaced). NuGet's
+SDK resolver reads that file from the solution/project folder, so nothing else has to be installed, registered or
+loaded, and a checkout that commits `NuGet.Config` and `.kubuno/sdk-feed` opens on any machine with Visual Studio (about
+570 KB per solution; the folder can be shared by keeping it at the repository root). It is written by:
+
+- the **project templates** - `CrateNameWizard.RunFinished` (`$solutiondirectory$`); the wizard assembly is the one piece of
+  Kubuno code a New Project dialog loads, and it compiles `SdkFeedDistribution` in as source (types `internal`, symbol
+  `KUBUNO_SHARED_AS_SOURCE`) so its dependency closure stays minimal;
+- **Generate Visual Studio projects** (`GenerateRustProjectsCommand`), for existing Cargo workspaces.
+
+The wizard also runs `EnsureUserRegistered` (the same user-level registration the package does, cached by
+`%LOCALAPPDATA%\Kubuno\VisualStudio\sdk-feed.stamp`). A hand-written `.rsproj` in a solution that carries neither file
+still depends on that user-level registration: run *Generate Visual Studio projects* on it once, or copy
+`.kubuno\sdk-feed` and `NuGet.Config` from any generated solution.
+
+**Verified** with an empty user `NuGet.Config` (`<clear/>`, temporarily swapped for the real one, restored afterwards) and a
+scratch `NUGET_PACKAGES`: MSBuild evaluation of a `.rsproj` fails without the solution feed (`Kubuno.Rust.Sdk` cannot be
+resolved) and succeeds with it, the package restored from `<solution>\.kubuno\sdk-feed`. In an experimental hive the
+real `CrateNameWizard` was run through reflection from the deployed VSIX (solution folder gets `NuGet.Config` and the
+package), then Visual Studio opened that solution with the user's NuGet source empty: the project loaded and the SDK was
+restored from the solution's feed. Unit tests: `SdkFeedDistributionTests`.

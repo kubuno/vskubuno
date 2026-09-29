@@ -95,6 +95,10 @@ $table = @(
     @{ Name = 'Star';             Icon = 'star';                 Accent = 0 }
     @{ Name = 'Gauge';            Icon = 'gauge';                Accent = 0 }
     @{ Name = 'Shapes';           Icon = 'shapes';               Accent = 0 }
+    # EVT-7c: the hover hint component, the context menu and its items.
+    @{ Name = 'ToolTip';          Icon = 'message-square-text';  Accent = 1 }
+    @{ Name = 'ContextMenu';      Icon = 'square-menu';          Accent = 0 }
+    @{ Name = 'MenuItem';         Icon = 'align-left';           Accent = 0 }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS

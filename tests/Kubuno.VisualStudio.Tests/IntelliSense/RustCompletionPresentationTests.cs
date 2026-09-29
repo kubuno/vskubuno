@@ -67,14 +67,57 @@ namespace Kubuno.VisualStudio.Tests.IntelliSense
         }
 
         [TestMethod]
-        public void OnlyTheClearlyMoreRelevantItemsAreStarred()
+        public void OnlyRustAnalyzersTopRelevanceItemsAreStarred()
         {
-            // Real rust-analyzer sortTexts: one preselected local (7fffffd1), two locals, the rest at the common score.
-            var sortTexts = new[] { "7ffffff6", "7ffffff6", "7fffffd1", "7ffffff4", "7ffffff4", "7ffffff6", "7ffffff6", "7ffffff6" };
+            // Real rust-analyzer output for `Vec::`: `new` is preselected (best score); the rest are lower tiers.
+            var sortTexts = new[] { "7fffffe8", "7fffffe7", "7fffffe8", "7ffffff2" };
+            var preselect = new[] { false, true, false, false };
 
-            CollectionAssert.AreEqual(new[] { 2 }, RustCompletionPresentation.StarredIndexes(sortTexts).ToArray());
-            Assert.AreEqual(0, RustCompletionPresentation.StarredIndexes(new[] { "7ffffff6", "7ffffff6" }).Count);
-            Assert.AreEqual(0, RustCompletionPresentation.StarredIndexes(new[] { "7ffffff6", "7ffffff6", "7ffffff6", "7ffffff6", "x" }).Count);
+            CollectionAssert.AreEqual(new[] { 1 }, RustCompletionPresentation.StarredIndexes(sortTexts, preselect).ToArray());
+            Assert.AreEqual(0, RustCompletionPresentation.StarredIndexes(sortTexts, new[] { false, false, false, false }).Count);
+            // A preselected item that is not at the best score of the list is not top relevance.
+            Assert.AreEqual(0, RustCompletionPresentation.StarredIndexes(sortTexts, new[] { true, false, false, false }).Count);
+            Assert.AreEqual(0, RustCompletionPresentation.StarredIndexes(new[] { "x" }, new[] { true }).Count);
+        }
+
+        [TestMethod]
+        public void TheListIsSortedByRelevanceTierThenConstructorsThenAlphabetically()
+        {
+            var keys = new[]
+            {
+                RustCompletionPresentation.SortKey("7fffffe8", RustCompletionCategory.Method, "swap_remove"),
+                RustCompletionPresentation.SortKey("7fffffe8", RustCompletionCategory.Function, "with_capacity"),
+                RustCompletionPresentation.SortKey("7fffffe7", RustCompletionCategory.Function, "new"),
+                RustCompletionPresentation.SortKey("7ffffff2", RustCompletionCategory.Function, "a_lower_tier_function"),
+                RustCompletionPresentation.SortKey("7fffffe8", RustCompletionCategory.Method, "remove"),
+                RustCompletionPresentation.SortKey("7fffffe8", RustCompletionCategory.Function, "from_raw_parts"),
+            };
+            var order = keys.Select((key, i) => (key, i)).OrderBy(p => p.key, System.StringComparer.Ordinal).Select(p => p.i).ToArray();
+
+            // new (best tier), the tier-e8 functions alphabetically, its methods alphabetically, then the lower tier.
+            CollectionAssert.AreEqual(new[] { 2, 5, 1, 4, 0, 3 }, order);
+        }
+
+        [TestMethod]
+        public void ConstructorsAfterATypePathAreLiftedJustBehindTheTopTier()
+        {
+            Assert.AreEqual("7fffffe8", RustCompletionPresentation.NextTier("7fffffe7"));
+            Assert.IsNull(RustCompletionPresentation.NextTier("x"));
+            Assert.IsTrue(RustCompletionPresentation.IsConstructorLike(RustCompletionCategory.Function, "const fn(usize) -> Vec<T, Global>", "Vec"));
+            Assert.IsTrue(RustCompletionPresentation.IsConstructorLike(RustCompletionCategory.Function, "fn(T) -> Self", "Vec"));
+            Assert.IsTrue(RustCompletionPresentation.IsConstructorLike(RustCompletionCategory.Function, "fn() -> Self", "Vec"));
+            Assert.IsFalse(RustCompletionPresentation.IsConstructorLike(RustCompletionCategory.Function, "fn(&self) -> usize", "Vec"));
+            Assert.IsFalse(RustCompletionPresentation.IsConstructorLike(RustCompletionCategory.Method, "fn(&self) -> Self", "Vec"));
+
+            var new_ = RustCompletionPresentation.SortKey("7fffffe7", RustCompletionCategory.Function, "new", "7fffffe8");
+            var from = RustCompletionPresentation.SortKey("7ffffffb", RustCompletionCategory.Function, "from", "7fffffe8");
+            var swapRemove = RustCompletionPresentation.SortKey("7fffffe8", RustCompletionCategory.Method, "swap_remove");
+            var withCapacity = RustCompletionPresentation.SortKey("7fffffe8", RustCompletionCategory.Function, "with_capacity", "7fffffe8");
+            Assert.IsTrue(System.String.CompareOrdinal(withCapacity, from) < 0, "constructors of the tier itself come first");
+            var pop = RustCompletionPresentation.SortKey("7ffffff2", RustCompletionCategory.Method, "pop");
+            Assert.IsTrue(System.String.CompareOrdinal(new_, from) < 0);
+            Assert.IsTrue(System.String.CompareOrdinal(from, swapRemove) < 0, "a lifted constructor leads the methods of its new tier");
+            Assert.IsTrue(System.String.CompareOrdinal(swapRemove, pop) < 0);
         }
 
         [TestMethod]

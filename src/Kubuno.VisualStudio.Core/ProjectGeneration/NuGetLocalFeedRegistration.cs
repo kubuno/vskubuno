@@ -14,7 +14,11 @@ namespace Kubuno.VisualStudio.Core.ProjectGeneration
     /// SDK's own (large, version-fragile) client libraries, mirroring exactly what
     /// <c>dotnet nuget add source</c> does to the file.
     /// </summary>
+#if KUBUNO_SHARED_AS_SOURCE
+    internal static class NuGetLocalFeedRegistration
+#else
     public static class NuGetLocalFeedRegistration
+#endif
     {
         /// <param name="existingConfigXml"><see langword="null"/> when no NuGet.Config exists yet at the target path.</param>
         /// <param name="sourceName">The packageSources <c>key</c> - also used to detect an already-registered entry (by key, not by path, so a developer's own rename sticks).</param>

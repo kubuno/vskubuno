@@ -80,6 +80,9 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
             ["Star"] = 56, // Lucide "star"
             ["Gauge"] = 57, // Lucide "gauge"
             ["Shapes"] = 58, // Lucide "shapes"
+            ["ToolTip"] = 59, // Lucide "message-square-text"
+            ["ContextMenu"] = 60, // Lucide "square-menu"
+            ["MenuItem"] = 61, // Lucide "align-left"
         };
 
         /// <summary>The image id for element <paramref name="tag"/> (<see cref="FallbackId"/> when unknown).</summary>

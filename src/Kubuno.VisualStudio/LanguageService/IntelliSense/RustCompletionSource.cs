@@ -181,6 +181,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
 
         public Task<CompletionContext> GetCompletionContextAsync(IAsyncCompletionSession session, CompletionTrigger trigger, SnapshotPoint triggerLocation, SnapshotSpan applicableToSpan, CancellationToken token)
         {
+            Dbg($"GetContext reason={trigger.Reason} char={trigger.Character}");
             bool byCharacter = trigger.Reason == CompletionTriggerReason.Insertion && !char.IsLetterOrDigit(trigger.Character) && trigger.Character != '_';
             var context = byCharacter
                 ? new JObject { ["triggerKind"] = 2, ["triggerCharacter"] = trigger.Character.ToString() }
@@ -218,6 +219,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
             }
             catch (OperationCanceledException)
             {
+                Dbg("Request cancelled");
                 return CompletionContext.Empty;
             }
             catch (Exception exception) when (exception is RemoteInvocationException or ConnectionLostException or ObjectDisposedException or InvalidOperationException)
@@ -229,6 +231,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
             var itemsToken = result is JArray array ? array : result?["items"] as JArray;
             if (itemsToken is null || itemsToken.Count == 0)
             {
+                Dbg("Request answered with no items");
                 return CompletionContext.Empty;
             }
 
@@ -238,7 +241,15 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
                 KubunoLog.WriteLine($"Completion: {raw.Count} rust-analyzer items ({raw.Count(i => (int?)i["insertTextFormat"] == 2)} snippets, {raw.Count(i => i["data"]?["imports"] is JArray { Count: > 0 })} with an import).");
             }
 
-            var starred = RustCompletionPresentation.StarredIndexes(raw.Select(i => (string?)i["sortText"]).ToList());
+            if (Environment.GetEnvironmentVariable("KUBUNO_COMPLETION_TRACE") == "1")
+            {
+                foreach (var probe in raw.OrderBy(i => (string?)i["sortText"], StringComparer.Ordinal).Take(3))
+                {
+                    Dbg($"item label='{(string?)probe["label"]}' kind={(int?)probe["kind"]} sortText='{(string?)probe["sortText"]}' preselect={(bool?)probe["preselect"]} detail='{(string?)probe["detail"]}'");
+                }
+            }
+
+            var starred = RustCompletionPresentation.StarredIndexes(raw.Select(i => (string?)i["sortText"]).ToList(), raw.Select(i => (bool?)i["preselect"] == true).ToList());
             var starRank = new Dictionary<int, int>();
             for (int i = 0; i < starred.Count; i++)
             {
@@ -246,6 +257,11 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
             }
 
             bool french = DesignerText.IsFrench;
+
+            // After `Type::`, the constructors (`new`, `with_capacity`, `from`...) lead the list, right after rust-analyzer's own
+            // top-relevance items, like C#'s IntelliCode does: rust-analyzer ranks trait constructors (`from`) low.
+            var pathType = PathQualifier(triggerLocation.Snapshot, applicableToSpan.Start.TranslateTo(triggerLocation.Snapshot, PointTrackingMode.Negative).Position);
+            var constructorTier = pathType is null ? null : RustCompletionPresentation.NextTier(raw.Select(i => (string?)i["sortText"]).OrderBy(t => t, StringComparer.Ordinal).FirstOrDefault());
             var items = ImmutableArray.CreateBuilder<CompletionItem>(raw.Count);
             var usedFilters = new Dictionary<string, CompletionFilter>(StringComparer.Ordinal);
             bool hasUnimported = false;
@@ -273,9 +289,10 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
                     hasUnimported = true;
                 }
 
-                bool isStarred = starRank.TryGetValue(i, out var rank);
+                bool isStarred = starRank.ContainsKey(i);
                 var shown = isStarred ? RustCompletionPresentation.StarPrefix + display : display;
-                var sortText = isStarred ? "0" + rank.ToString("D2") : "1" + display.ToLowerInvariant();
+                var constructor = constructorTier != null && RustCompletionPresentation.IsConstructorLike(category, (string?)item["detail"], pathType);
+                var sortText = RustCompletionPresentation.SortKey((string?)item["sortText"], category, display, constructor ? constructorTier : null);
                 var filterText = (string?)item["filterText"] ?? display;
                 var suffix = data.ImportPath is { } importPath ? "(use " + importPath + ")" : string.Empty;
                 var completionItem = new CompletionItem(
@@ -299,6 +316,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
                 items.Add(completionItem);
             }
 
+            Dbg("final order: " + string.Join(" | ", items.OrderBy(i => i.SortText, StringComparer.Ordinal).Take(14).Select(i => i.DisplayText)));
             var filterStates = RustCompletionPresentation.Filters
                 .Where(f => usedFilters.ContainsKey(f.Key))
                 .Select(f => new CompletionFilterWithState(usedFilters[f.Key], false))
@@ -413,6 +431,24 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
         }
 
         private static bool IsIdentifierChar(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+        /// <summary>The name before a <c>::</c> that ends right before <paramref name="position"/> (<c>Vec</c> in <c>Vec::</c>), or null.</summary>
+        private static string? PathQualifier(ITextSnapshot snapshot, int position)
+        {
+            if (position < 3 || snapshot[position - 1] != ':' || snapshot[position - 2] != ':')
+            {
+                return null;
+            }
+
+            int end = position - 2;
+            int start = end;
+            while (start > 0 && IsIdentifierChar(snapshot[start - 1]))
+            {
+                start--;
+            }
+
+            return start < end ? snapshot.GetText(start, end - start) : null;
+        }
 
         /// <summary>True when <paramref name="position"/> follows a <c>//</c> on its line that is not inside a string.</summary>
         private static bool IsInLineComment(ITextSnapshot snapshot, int position)

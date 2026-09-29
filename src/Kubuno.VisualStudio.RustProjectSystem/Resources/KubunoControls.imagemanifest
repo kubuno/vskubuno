@@ -67,6 +67,9 @@
     <ID Name="Star" Value="56" />
     <ID Name="Gauge" Value="57" />
     <ID Name="Shapes" Value="58" />
+    <ID Name="ToolTip" Value="59" />
+    <ID Name="ContextMenu" Value="60" />
+    <ID Name="MenuItem" Value="61" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -358,6 +361,21 @@
       <Source Uri="$(Controls)/Shapes.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/Shapes.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/Shapes.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(ToolTip)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/ToolTip.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/ToolTip.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/ToolTip.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(ContextMenu)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/ContextMenu.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/ContextMenu.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/ContextMenu.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(MenuItem)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/MenuItem.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/MenuItem.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/MenuItem.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

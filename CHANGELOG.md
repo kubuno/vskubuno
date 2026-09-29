@@ -272,6 +272,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Rust completion**: the list now opens by itself on `Vec::` and `v.` even when they are typed fast (the characters used
+  to reach the still-open identifier list as one update and no list was left); it keeps rust-analyzer's relevance
+  tiers instead of re-sorting them alphabetically, stars only rust-analyzer's top-relevance items (`new` after `Vec::`,
+  no longer `swap_remove` and `remove`), and lifts the constructors (`new`, `with_capacity`, `from`, `default`...) to
+  the head of a `Type::` list like C#'s IntelliCode.
+- **The `Kubuno.Rust.Sdk` NuGet feed no longer depends on the package having loaded.** Opening an existing `.rsproj`, or
+  creating one from a template, as the first action on a fresh machine could fail to resolve the SDK (the package that
+  registered the feed loads only after a project has loaded). A new solution, and every solution passed through
+  "Generate Visual Studio projects", now carries its own copy of the SDK package (`.kubuno/sdk-feed`) and a
+  `NuGet.Config` source for it; the template wizard also registers the bundled feed in the user's `NuGet.Config`.
+  See `docs/RSPROJ.md`.
+- The Toolbox and Solution Explorer have an icon for the `ToolTip`, `ContextMenu` and `MenuItem` components.
+- `The_scanner_ignores_comments_and_strings` (override assistant) failed on a checkout with CRLF line endings: the test's
+  source sample is now normalised.
+
 - **Visual Studio no longer names Kubuno in its "improve Startup performance by disabling..." info bar**: the
   extension used to load on every start of Visual Studio (empty start window, C# solutions included) and to spend
   0.7 to 3 s on the UI thread there, loading the whole Toolbox among other things. It now loads only for Rust work

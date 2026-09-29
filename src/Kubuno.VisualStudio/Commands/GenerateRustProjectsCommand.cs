@@ -150,6 +150,16 @@ namespace Kubuno.VisualStudio.Commands
                 }
             }
 
+            // The generated solution carries its own Kubuno.Rust.Sdk feed, so it opens on a machine where this extension's
+            // package has never loaded (SdkFeedDistribution).
+            if (plan.Count > 0)
+            {
+                SdkFeedDistribution.EnsureSolutionLocal(
+                    solutionPath is null ? workspaceRoot : Path.GetDirectoryName(solutionPath)!,
+                    Path.GetDirectoryName(typeof(GenerateRustProjectsCommand).Assembly.Location),
+                    KubunoLog.WriteLine);
+            }
+
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             var summary = plan.Count == 0

@@ -29,7 +29,7 @@ itself (the reason is given); "Not available" says why.
 
 | Feature | C# | Rust in Kubuno | How |
 |---|---|---|---|
-| Completion list as you type (letters, `.`, `::`, `'` after `&`/`<`) | yes | yes | Kubuno `RustCompletionSource` (rust-analyzer items) |
+| Completion list as you type (letters, `.`, `::`, `'` after `&`/`<`) | yes | yes, also when typed fast: `Vec::` or `v.` typed while the identifier list is still open reopens the list (`RustCompletionItemManager` re-triggers it) | Kubuno `RustCompletionSource` (rust-analyzer items) |
 | Icons by kind | yes | yes, the same monikers as QuickInfo and Solution Explorer | Kubuno (`RustCompletionPresentation.IconMonikerName`) |
 | Filter buttons ("chips") | yes | Modules, Structures, Enums, Traits, Methods and functions, Fields, Locals and parameters, Constants, Macros, Keywords, Snippets | Kubuno |
 | Expander "items from unimported namespaces" | yes | yes: "unimported crates and modules" (auto-import items), on by default | Kubuno (`CompletionExpander`) |
@@ -40,7 +40,7 @@ itself (the reason is given); "Not available" says why.
 | Auto-import completion adds the `use` | yes | yes (the item is asked again and resolved at commit, for the current text) | Kubuno |
 | Keyword completion | yes | yes | rust-analyzer |
 | Description beside the list | colorized signature + docs | the same: icon, colorized declaration (`fn len(&self) -> usize`), the import in grey, rustdoc | Kubuno, same renderer as QuickInfo |
-| IntelliCode starred items | yes (ML) | yes: rust-analyzer's clearly more relevant items (type match, locals...) starred at the top, rest alphabetical | Kubuno (`StarredIndexes`, from rust-analyzer's relevance in `sortText`) |
+| IntelliCode starred items | yes (ML) | yes: only rust-analyzer's top-relevance items (its `preselect`, at the list's best score) are starred. The list keeps rust-analyzer's relevance tiers (its `sortText`) and is alphabetical only inside a tier; after `Type::` the constructors (`new`, `with_capacity`, `from`, `default`...) lead right behind the starred ones | Kubuno (`RustCompletionPresentation.SortKey` / `StarredIndexes` / `IsConstructorLike`) |
 | Ctrl+Space / Ctrl+J | yes | yes (never auto-inserts rust-analyzer's "preselected" item) | Kubuno |
 | Parameter Info (Ctrl+Shift+Space), current parameter bold | yes | yes, also reopened after completing a call | Built-in (`signatureHelp`), Kubuno triggers it after a commit |
 | QuickInfo | yes | yes, C#-style | Kubuno (commit f1aabf4) |

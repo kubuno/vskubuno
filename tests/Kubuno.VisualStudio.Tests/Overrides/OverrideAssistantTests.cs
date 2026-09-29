@@ -8,7 +8,11 @@ namespace Kubuno.VisualStudio.Tests.Overrides
     [TestClass]
     public class OverrideAssistantTests
     {
-        private const string Round = @"//! RoundButton.
+        // Normalised to LF: a checkout with core.autocrlf turns the verbatim literal's line breaks into CRLF, which shifted
+        // the offsets these tests compute (the scanner test failed on such checkouts).
+        private static readonly string Round = RoundSource.Replace("\r\n", "\n");
+
+        private const string RoundSource = @"//! RoundButton.
 use kubuno_views::prelude::*;
 
 /// A pill.

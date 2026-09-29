@@ -27,6 +27,9 @@
     <RootNamespace>Kubuno.VisualStudio.TemplateWizard</RootNamespace>
     <AssemblyName>Kubuno.VisualStudio.TemplateWizard</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- The shared-as-source files (below) declare their types internal here, so Kubuno.VisualStudio.dll (which references this
+         assembly) does not see two SdkFeedDistribution types. -->
+    <DefineConstants>$(DefineConstants);KUBUNO_SHARED_AS_SOURCE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +38,13 @@
     <Reference Include="PresentationCore" />
     <Reference Include="WindowsBase" />
     <Reference Include="System.Xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The SDK-feed distribution logic (docs/RSPROJ.md, "SDK feed"): shared as source, not as an assembly reference, to keep this
+         assembly's dependency closure minimal (see the comment above). Its NuGet.Config merge is a pure XML function. -->
+    <Compile Include="..\Kubuno.VisualStudio.Core\ProjectGeneration\SdkFeedDistribution.cs" Link="Shared\SdkFeedDistribution.cs" />
+    <Compile Include="..\Kubuno.VisualStudio.Core\ProjectGeneration\NuGetLocalFeedRegistration.cs" Link="Shared\NuGetLocalFeedRegistration.cs" />
   </ItemGroup>
 
   <ItemGroup>

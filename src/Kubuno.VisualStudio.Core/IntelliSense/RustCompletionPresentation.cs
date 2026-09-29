@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Kubuno.VisualStudio.Core.QuickInfo;
 using Kubuno.VisualStudio.Core.SolutionExplorer;
 
@@ -206,30 +207,88 @@ namespace Kubuno.VisualStudio.Core.IntelliSense
         }
 
         /// <summary>
-        /// The indexes of the items to star (IntelliCode-like): rust-analyzer encodes its relevance score in
-        /// <c>sortText</c> (<c>u32::MAX - score</c>, hexadecimal). The items clearly above the common score (type
-        /// match, preselected, local in scope...) are starred, at most <paramref name="max"/>, best first.
+        /// The key the completion list is sorted by (ordinal, ascending): rust-analyzer's own relevance tier first (its
+        /// <c>sortText</c> is the inverted score in fixed-width hexadecimal, so the best tier sorts first), then - inside a
+        /// tier only - associated functions (<c>new</c>, <c>with_capacity</c>...) before methods, then alphabetical. The
+        /// order never crosses a relevance tier, except that constructors after a <c>Type::</c> path may be lifted to
+        /// <paramref name="promotedTier"/> (see <see cref="NextTier"/>).
         /// </summary>
-        public static IReadOnlyList<int> StarredIndexes(IReadOnlyList<string?> sortTexts, int max = 3)
+        public static string SortKey(string? sortText, RustCompletionCategory category, string displayText, string? promotedTier = null)
         {
-            var scores = new long[sortTexts.Count];
-            for (int i = 0; i < sortTexts.Count; i++)
+            var tier = "ffffffff";
+            if (sortText is { Length: >= 8 } && uint.TryParse(sortText.Substring(0, 8), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _))
             {
-                scores[i] = uint.TryParse(sortTexts[i], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var inverted) ? uint.MaxValue - inverted : -1;
+                tier = sortText.Substring(0, 8).ToLowerInvariant();
             }
 
-            var valid = scores.Where(s => s >= 0).ToList();
-            if (valid.Count < 4)
+            char group = category == RustCompletionCategory.Method ? '2' : '0';
+            if (promotedTier != null && string.CompareOrdinal(promotedTier, tier) < 0)
+            {
+                tier = promotedTier;
+                group = '1'; // behind the functions that are natively in that tier, ahead of its methods
+            }
+
+            return tier + group + displayText.ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// The relevance tier right after <paramref name="bestSortText"/>'s (the list's best): where constructors are lifted to
+        /// after a <c>Type::</c> path (see <see cref="IsConstructorLike"/>), so they lead the rest of the list without ever
+        /// passing the top-relevance items. Null when the sort text is not rust-analyzer's.
+        /// </summary>
+        public static string? NextTier(string? bestSortText) =>
+            bestSortText is { Length: >= 8 } && uint.TryParse(bestSortText.Substring(0, 8), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var value) && value < uint.MaxValue
+                ? (value + 1).ToString("x8", CultureInfo.InvariantCulture)
+                : null;
+
+        /// <summary>
+        /// An associated function (no <c>self</c>) that builds a value of the type being completed - <c>new</c>,
+        /// <c>with_capacity</c>, <c>from</c>, <c>default</c>: its return type is <c>Self</c> or <paramref name="typeName"/>
+        /// (possibly inside <c>Result</c>/<c>Option</c>).
+        /// </summary>
+        public static bool IsConstructorLike(RustCompletionCategory category, string? detail, string? typeName)
+        {
+            if (category != RustCompletionCategory.Function || string.IsNullOrEmpty(detail))
+            {
+                return false;
+            }
+
+            int arrow = detail!.LastIndexOf("->", StringComparison.Ordinal);
+            if (arrow < 0)
+            {
+                return false;
+            }
+
+            var returned = detail.Substring(arrow + 2);
+            return Regex.IsMatch(returned, @"\bSelf\b")
+                || (!string.IsNullOrEmpty(typeName) && Regex.IsMatch(returned, @"\b" + Regex.Escape(typeName!) + @"\b"));
+        }
+
+        /// <summary>
+        /// The indexes of the items to star (IntelliCode-like): only rust-analyzer's top-relevance items - the ones it
+        /// marks <c>preselect</c> (clearly relevant, and at the best score of the list) - at most <paramref name="max"/>,
+        /// in list order. Nothing is starred when rust-analyzer preselects nothing.
+        /// </summary>
+        public static IReadOnlyList<int> StarredIndexes(IReadOnlyList<string?> sortTexts, IReadOnlyList<bool> preselected, int max = 3)
+        {
+            string? best = null;
+            for (int i = 0; i < sortTexts.Count; i++)
+            {
+                var tier = sortTexts[i] is { Length: >= 8 } text ? text.Substring(0, 8).ToLowerInvariant() : null;
+                if (tier != null && (best == null || string.CompareOrdinal(tier, best) < 0))
+                {
+                    best = tier;
+                }
+            }
+
+            if (best == null)
             {
                 return Array.Empty<int>();
             }
 
-            long mode = valid.GroupBy(s => s).OrderByDescending(g => g.Count()).ThenBy(g => g.Key).First().Key;
-            long best = valid.Max();
-            long threshold = mode + ((best - mode + 1) / 2);
-            return Enumerable.Range(0, scores.Length)
-                .Where(i => scores[i] > mode && scores[i] >= threshold)
-                .OrderByDescending(i => scores[i])
+            return Enumerable.Range(0, sortTexts.Count)
+                .Where(i => preselected[i] && sortTexts[i] is { Length: >= 8 } text && string.Equals(text.Substring(0, 8), best, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(i => sortTexts[i]!.Substring(0, 8), StringComparer.OrdinalIgnoreCase)
                 .ThenBy(i => i)
                 .Take(max)
                 .ToList();
