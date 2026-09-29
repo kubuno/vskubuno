@@ -10,6 +10,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// </summary>
     public interface IDesignSurfaceHostFactory
     {
-        IDesignSurfaceHost Create();
+        /// <summary>A host for one pane; <paramref name="document"/> (null outside Visual Studio) lets the factory pick the runtime of the document's project (docs/DESIGNER.md section 15).</summary>
+        IDesignSurfaceHost Create(DesignSurfaceDocument? document);
     }
 }

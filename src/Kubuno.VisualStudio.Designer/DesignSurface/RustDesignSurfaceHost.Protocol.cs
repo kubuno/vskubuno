@@ -41,8 +41,16 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         public void SelectMany(IReadOnlyList<string> elementIds, string? primary)
         {
             _lastSentSelection = primary;
+            _lastSelectionIds = elementIds;
             SendLine(DesignSurfaceProtocol.EncodeSelectMany(elementIds, primary));
         }
+
+        /// <summary>
+        /// The whole last known selection (primary first), whoever made it - the host (<see cref="Select"/>,
+        /// <see cref="SelectMany"/>) or the surface (<c>selectionChanged</c>): re-sent to a restarted
+        /// surface, so a hot swap onto a rebuilt runtime keeps the selection (docs/DESIGNER.md section 15).
+        /// </summary>
+        private IReadOnlyList<string>? _lastSelectionIds;
 
         /// <summary>Asks the surface to apply a Layout toolbar / Format menu command to its selection (<c>format</c>); it answers with one <c>editRequests</c> batch.</summary>
         public void Format(string command) => SendLine(DesignSurfaceProtocol.EncodeFormat(command));
@@ -62,6 +70,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private void SendSelect(string? id)
         {
             _lastSentSelection = id;
+            _lastSelectionIds = id is null ? null : new[] { id };
             SendLine(DesignSurfaceProtocol.EncodeSelect(id));
         }
 
@@ -132,7 +141,16 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 SendSetDesignMode(true);
             }
 
-            if (_lastSentSelection != null)
+            var selection = _lastSelectionIds;
+            if (selection is { Count: > 1 })
+            {
+                SelectMany(selection, selection[0]);
+            }
+            else if (selection is { Count: 1 })
+            {
+                SendSelect(selection[0]);
+            }
+            else if (_lastSentSelection != null)
             {
                 SendSelect(_lastSentSelection);
             }
@@ -156,8 +174,21 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             }
 
             var line = e.Data;
+            if (!ReferenceEquals(sender, _surface))
+            {
+                return; // A late line of a process a hot swap already replaced.
+            }
+
+            // The ABI handshake (docs/DESIGNER.md section 15) - RustDesignSurfaceHost.Runtime.cs.
+            if (TryHandleSurfaceInfo(line))
+            {
+                return;
+            }
+
             if (DesignSurfaceProtocol.TryParseSelectionChanged(line, out var elementIds))
             {
+                _lastSelectionIds = elementIds;
+                _lastSentSelection = elementIds.Count > 0 ? elementIds[0] : null;
 #pragma warning disable VSTHRD001, VSTHRD110
                 Dispatcher.BeginInvoke(new Action(() => SelectionChanged?.Invoke(this, new DesignSurfaceSelectionChangedEventArgs(elementIds))));
 #pragma warning restore VSTHRD001, VSTHRD110
@@ -354,6 +385,92 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     return false;
             }
         }
+
+        /// <summary>The <c>surfaceInfo</c> handshake version this host speaks (<c>SURFACE_INFO_VERSION</c> in <c>view_embed.rs</c>).</summary>
+        public const int SurfaceInfoVersion = 1;
+
+        /// <summary>
+        /// Parses the <c>surfaceInfo</c> handshake (docs/DESIGNER.md section 15), the first line a surface
+        /// writes: <c>{type, version, uiDll, uiDllSha256}</c> - the loaded <c>kubuno_ui.dll</c>'s path and
+        /// the SHA-256 of the one the exe was linked against (null when not built by the design build).
+        /// </summary>
+        public static bool TryParseSurfaceInfo(string line, out int version, out string? uiDll, out string? uiDllSha256)
+        {
+            version = 0;
+            uiDll = null;
+            uiDllSha256 = null;
+            if (!TryParseAsType(line, "surfaceInfo", out var root))
+            {
+                return false;
+            }
+
+            if (root.TryGetProperty("version", out var versionProp) && versionProp.ValueKind == JsonValueKind.Number && versionProp.TryGetInt32(out var v))
+            {
+                version = v;
+            }
+
+            if (root.TryGetProperty("uiDll", out var dllProp) && dllProp.ValueKind == JsonValueKind.String)
+            {
+                uiDll = dllProp.GetString();
+            }
+
+            if (root.TryGetProperty("uiDllSha256", out var shaProp) && shaProp.ValueKind == JsonValueKind.String)
+            {
+                uiDllSha256 = shaProp.GetString();
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// The ABI check of the <c>surfaceInfo</c> handshake: <see langword="null"/> when the surface may run,
+        /// else why it must not. The DLL it loaded must be the copy next to its exe (never another
+        /// <c>kubuno_ui.dll</c> found on PATH), and when a hash is known - the design build's, recorded by the
+        /// host (<paramref name="expectedSha256"/>) and embedded in the exe (<paramref name="reportedSha256"/>) -
+        /// the loaded file must have it. <paramref name="loadedSha256"/> hashes the loaded file (injectable
+        /// for tests); it is only called when a hash is expected.
+        /// </summary>
+        public static string? CheckSurfaceInfo(int version, string? uiDll, string? reportedSha256, string exePath, string? expectedSha256, Func<string, string?> loadedSha256)
+        {
+            if (version != SurfaceInfoVersion)
+            {
+                return $"handshake version {version}, expected {SurfaceInfoVersion}";
+            }
+
+            if (string.IsNullOrEmpty(uiDll))
+            {
+                return "the surface did not report its kubuno_ui.dll";
+            }
+
+            var exeDirectory = System.IO.Path.GetDirectoryName(exePath) ?? string.Empty;
+            if (!string.Equals(System.IO.Path.GetDirectoryName(uiDll), exeDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                return $"loaded {uiDll} instead of the copy in {exeDirectory}";
+            }
+
+            if (expectedSha256 is not null && reportedSha256 is not null && !string.Equals(expectedSha256, reportedSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                return $"the exe was linked against {Short(reportedSha256)}, the design build recorded {Short(expectedSha256)}";
+            }
+
+            var expected = expectedSha256 ?? reportedSha256;
+            if (expected is null)
+            {
+                return null;
+            }
+
+            var actual = loadedSha256(uiDll!);
+            if (actual is null)
+            {
+                return $"{uiDll} could not be read";
+            }
+
+            return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase)
+                ? null
+                : $"loaded kubuno_ui.dll {Short(actual)}, linked against {Short(expected)}";
+        }
+
+        private static string Short(string sha) => sha.Length > 12 ? sha.Substring(0, 12) : sha;
 
         /// <summary>
         /// Parses `line` as JSON and checks its `type` property equals `expectedType` - the one place

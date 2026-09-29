@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The `.kbview` designer renders with the project's own `kubuno_ui.dll`**: once the project has been
+  built, the designer's preview is compiled against the project's dependency graph and loads exactly the
+  `kubuno_ui.dll` the application loads, so a change to the Kubuno controls or styles the project uses
+  shows in the designer after the next build - no mismatch between what the designer draws and what the
+  application draws. Until then (or when that preview cannot be prepared) the designer uses the preview
+  runtime bundled with the extension and says so in a thin bar at the top of the design view ("Preview:
+  bundled runtime - build the project to use its kubuno_ui.dll"), with a *Build* link. The switch is
+  automatic, and after every later build of the project the preview restarts on the new runtime while
+  keeping the selection. The preparation takes a couple of seconds after a build, runs in the
+  background (it can be canceled from the bar) and reports its progress and errors in the *Kubuno*
+  output pane. A preview whose loaded `kubuno_ui.dll` is not the one it was built against is refused
+  with a clear message instead of running on mismatched code.
+
 - **A "Dependencies" node like a .NET project's**: under a `.rsproj`, *Dependencies* (*Dépendances* in a
   French Visual Studio) now shows the resolved dependency graph in categories with the .NET project
   system's icons - *Procedural macros* (like *Analyzers*, including the ones a dependency brings in),
@@ -57,6 +70,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Empty Kubuno tabs in the Toolbox for other documents**: with a code file or any other non-`.kbview`
+  document active, the Toolbox showed the Kubuno tabs (*Display*, *Choice*, *Text*...) each with its
+  "There are no usable controls in this group" text. The Kubuno tabs now only appear while a `.kbview`
+  designer is the active document, like the Windows Forms tabs only appear for a Windows Forms
+  designer; tabs shared with Windows Forms keep their own controls, and empty Kubuno tabs left by an
+  earlier version are removed.
 - **Cargo output could be lost**: the extension's process runner could return before the last lines
   of a command's output were read, so a large `cargo metadata` result sometimes came back empty
   ("Could not parse `cargo metadata` output").

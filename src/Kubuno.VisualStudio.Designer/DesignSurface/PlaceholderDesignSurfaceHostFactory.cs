@@ -14,6 +14,6 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         {
         }
 
-        public IDesignSurfaceHost Create() => new PlaceholderDesignSurfaceHost();
+        public IDesignSurfaceHost Create(DesignSurfaceDocument? document) => new PlaceholderDesignSurfaceHost();
     }
 }

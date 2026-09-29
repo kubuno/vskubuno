@@ -31,9 +31,9 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
     {
         private readonly DesignerSplitView _view;
 
-        public DesignerWindowPane(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, DesignerViewMode initialMode = DesignerViewMode.Design)
+        public DesignerWindowPane(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, DesignerViewMode initialMode = DesignerViewMode.Design, DesignSurface.DesignSurfaceDocument? document = null)
         {
-            _view = new DesignerSplitView(textBuffer, oleServiceProvider, GetTrackSelection, initialMode, EnsureActiveDesigner);
+            _view = new DesignerSplitView(textBuffer, oleServiceProvider, GetTrackSelection, initialMode, EnsureActiveDesigner, document);
             Content = _view;
         }
 

@@ -1236,9 +1236,17 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   `IVsToolbox.AddItem` (`Toolbox/NativeToolboxInstaller.cs`) with a data object carrying the private
   clipboard format `Kubuno.Views.ToolboxItem` (the component name, UTF-8 - `ToolboxItemFormat`), and
   the designer pane implementing `IVsToolboxUser` (`DesignerWindowPane`). The Toolbox asks the ACTIVE
-  document's `IsSupported` for each item, so the Kubuno tabs show only while a `.kbview` designer is
-  active and hide (grey with "Show All") everywhere else; no visibility logic of our own. The Toolbox
-  adds its "Pointer" entry to each tab itself.
+  document's `IsSupported` for each item. The Toolbox adds its "Pointer" entry to each tab itself.
+- **Visibility (2026-09-29)** - *found live:* with the items merely refused by another document's
+  `IsSupported`, the Toolbox still showed every Kubuno tab with its "no usable control in this group" text
+  (WinForms' tabs disappear). The Toolbox window is native code (`msenv.dll`, `CToolbox`) and the interop
+  API has no per-tab visibility (`IVsToolbox`..`IVsToolbox7`, `TBXITEMINFO` flags: only DELETEBITMAP,
+  DONTPERSIST, CANTREMOVE, IMAGEINDEX). So `NativeToolboxInstaller` follows the designer's command UI
+  context (`DesignerConstants.CommandUiContextGuidString`, active exactly while a `.kbview` designer is the
+  active document): activated, it adds the items (and the tabs that do not exist yet); deactivated, it
+  removes them (`RemoveItem`) and then every Kubuno-named tab left EMPTY (`RemoveTab`) - a tab shared with
+  WinForms keeps its own items. At package load the same cleanup removes empty Kubuno tabs persisted in
+  `toolbox.tbd` by earlier versions (`AddTab` tabs persist, only the items were `TBXIF_DONTPERSIST`).
 - **Content** - one tab per registry family, French or English names from VS's UI culture
   (`DesignerText.ToolboxTabName`: "Contrôles communs", "Affichage", "Choix", "Texte", "Conteneurs",
   "Données"), items sorted alphabetically inside a tab. A tab that already exists (e.g. WinForms'
@@ -1649,3 +1657,107 @@ nothing, whereas a new WinForms `Form` is an absolute surface where Anchor works
   `Top, Left`, non-bold; `Anchor` is bold only when its edges differ from Top+Left (`LayoutAttributeText.
   SameAnchor`, so `Left, Top` is not bold); a typed value is normalized like WinForms' enum converter
   (`LayoutAttributeText.NormalizeAnchor`: `right,bottom` → `Bottom, Right`, anything else refused).
+
+## 15. The design surface uses the project's own `kubuno_ui.dll`
+
+Product-owner decision (2026-09-29): the designer must render with exactly the same `kubuno_ui.dll` as the
+project it edits - no ABI mismatch, the project's Kubuno controls and styles visible immediately
+(prerequisite for EVENTS.md EVT-7, custom controls in the designer). Implemented as below; the surface
+bundled in the VSIX (`tools\surface\view_embed.exe`) is only the fallback.
+
+### Why not `cargo build --example` or a surface crate
+
+`kubuno-ui` is `crate-type = ["dylib"]` and cargo names a dylib without a hash: every build of it lands in
+the same `deps\kubuno_ui.dll` (docs/RSPROJ.md, "Template build fix"). Anything cargo builds into the
+project's target directory with a different feature set or lock file rebuilds that one file with other
+metadata - the E0463 lesson. Both obvious designs do exactly that:
+- `cargo build -p kubuno-views --example view_embed` against the project's manifest: the dev-dependencies
+  of a non-member package are not even resolved, and building an example of it activates other features;
+- a `kubuno-design-surface` crate added to the project's graph (or a shadow workspace next to it): its
+  dependencies unify features differently (the example's former `windows` OLE features alone changed
+  `windows`, hence `kubuno-ui`'s metadata hash), and a user's own `[dependencies]` would have to be mirrored
+  exactly.
+
+### Design build (`Kubuno.Cargo.DesignSurface`)
+
+`DesignSurfaceBuilder.BuildAsync(DesignSurfaceProject)`:
+1. **The project's own cargo build**, argument for argument what `Kubuno.Rust.Sdk`'s `CargoBuild` task
+   runs (`CargoCommandFor`: same manifest, `-p`, `--bin`, profile, `$(CargoExtraArgs)`,
+   `CARGO_TARGET_DIR` and message format, read from the `.rsproj`'s evaluated properties through
+   `IVsBuildPropertyStorage` for the active configuration). Right after a Visual Studio build it is a
+   no-op (0.5 s); it never builds anything differently. Its `compiler-artifact` messages give the exact
+   artifacts of the graph (`DesignSurfaceInputs`): `kubuno_ui.dll` (its `deps` copy, the file rustc
+   linked), the `kubuno_views`/`kubuno_controls` rlibs (the right hash: a `deps` folder can hold several),
+   and `kubuno-views/examples/view_embed.rs` of that very `kubuno-views` (`target.src_path`) - the surface
+   source always matches the `kubuno_views` API it is compiled against. A failed build is tolerated when
+   those inputs were built (e.g. the application's exe locked by a running instance).
+2. **`rustc` directly** (`RustcArgumentsFor`): `view_embed.rs` as a bin, `--extern` the three `kubuno_*`
+   crates by path, `-L dependency=<deps>` for everything else (resolved by the crate hashes recorded in
+   them), `-C prefer-dynamic` (one `std` shared with `kubuno_ui.dll`), `opt-level=0` (`3` for release),
+   `--cap-lints allow`, `rustc`/sysroot as rustup picks them in the manifest folder. Nothing in the
+   project's target directory is built or overwritten. ~1 s. The surface therefore uses **no crate and no
+   `windows` feature the project graph lacks**: `view_embed.rs` declares its few Win32/OLE calls itself
+   (`mod win32`) and implements `IDropTarget` over a hand-written vtable (`mod ole_drop`), and
+   `kubuno-views` no longer has dev-dependencies (which also stops the desktop workspace's own example
+   build from rebuilding `kubuno_ui.dll` with extra features). The SHA-256 of the linked
+   `kubuno_ui.dll` is passed as `KUBUNO_DESIGN_UI_DLL_SHA256` and embedded (`option_env!`).
+3. **A shadow copy**, like the WinForms designer's: `<target dir>\kubuno-design\<profile>\<key>\` holds the
+   exe, a byte-identical copy of the project's `kubuno_ui.dll` (hash re-checked after the copy) and the
+   toolchain's `std-*.dll`. A surface loading the project's `deps\kubuno_ui.dll` itself would lock it and
+   the project's next build could not replace it (checked: a loaded image cannot be overwritten). The folder
+   is outside `<target dir>\<profile>` so the SDK's `cargo clean --profile ...` (Clean/Rebuild) never meets
+   a file a running surface holds. `<key>` = hash of the DLL's SHA-256, every input's path/size/write time,
+   `rustc -vV` and the profile; `surface.json` (written last: "complete") records the inputs, `current.json`
+   points at the current folder. `TryReuse` (no process at all) reuses it while no input changed; stale
+   folders are deleted (one still in use is kept and removed by a later build).
+
+### Runtime selection and hot swap (`ProjectDesignSurfaceRuntimeProvider`, `RustDesignSurfaceHost.Runtime.cs`)
+
+- `KbviewEditorFactory` passes the document's hierarchy/item id down to `IDesignSurfaceHostFactory.Create
+  (DesignSurfaceDocument)`. The VSIX's `ProjectDesignSurfaceRuntimeProvider` gives every pane of one
+  `.rsproj` a shared `IDesignSurfaceRuntimeSource` (a lease, released with the pane): *Project* (the design
+  build's exe), or the bundled exe with *NotBuilt* (no `kubuno_ui.dll` in the profile folder yet),
+  *Building*, *Failed* or *NotApplicable* (no `.rsproj`, e.g. Open Folder, or no `kubuno-views` in it).
+- Triggers: opening a designer (reuse at once, else a design build when the project is built); every
+  `IVsUpdateSolutionEvents2.UpdateProjectCfg_Done` of that project (build, rebuild, clean - a clean makes it
+  *NotBuilt*); `OnActiveProjectCfgChange` (Debug/Release switch re-reads the properties). One design build
+  at a time per project, a request during one re-runs it after; cancelable.
+- **Hot swap**: when the source offers another exe, the host kills the running surface and starts the new
+  one in its place; `BeginProtocolIo` re-sends the text, design mode and the WHOLE selection (the last
+  `selectionChanged`/`select`/`selectMany`, as `selectMany` for a multi-selection). Late stdout lines and
+  the `Exited` event of the replaced process are ignored (`sender != _surface`).
+- **Info bar** (`DesignerSplitView`, VS info colours): shown in Design/Split mode unless the state is
+  *Project* - "Aperçu : runtime intégré — générez le projet pour utiliser sa kubuno_ui.dll." + **Générer**
+  (`IVsSolutionBuildManager.StartSimpleUpdateProjectConfiguration`, a normal build whose completion runs the
+  design build), "Aperçu : compilation de l'aperçu…" + **Annuler**, failure (+ detail) + **Générer**, or the
+  not-applicable text. Progress and errors (cargo stderr, rustc output) go to the *Kubuno* output pane.
+
+### ABI handshake (`surfaceInfo`)
+
+The surface's first stdout line: `{"type":"surfaceInfo","version":1,"uiDll":<path of the loaded
+kubuno_ui.dll, GetModuleFileNameW>,"uiDllSha256":<embedded hash or null>}`. The host
+(`DesignSurfaceProtocol.CheckSurfaceInfo`, unit-tested) refuses the surface when the version differs, the
+loaded DLL is not the copy next to the exe (another `kubuno_ui.dll` found on PATH), the embedded hash
+differs from the design build's record, or the loaded file's SHA-256 differs from it; a surface whose first
+line is not `surfaceInfo` (an older build) is refused too. Refused: the process is killed, the container
+shows "Aperçu refusé : la kubuno_ui.dll chargée par l'aperçu n'est pas celle avec laquelle il a été
+compilé (…)", the source forgets that design build and falls back to the bundled runtime (*Failed*, with
+**Générer**). The bundled surface carries no hash: only the "copy next to the exe" rule applies (the VSIX
+ships both from one cargo build).
+
+### Live verification (regular Visual Studio, 2026-09-29)
+
+A new *Kubuno Desktop Application* (`DsurfApp`, never built): the designer opened on the bundled runtime
+with the bar; **Générer** built the project (53 s) and 2 s later the preview restarted on
+`C:\kubuno-build\desktop-target\rsproj\dsurfapp\kubuno-design\debug\be16e8fde0eee94f\kubuno-design-surface.exe`,
+bar gone; the process's module list showed `kubuno_ui.dll` loaded from that folder, SHA-256 equal to the
+project's `debug\deps\kubuno_ui.dll`. With `kubuno_ui::buttons::RADIUS` changed to 18 and the project
+rebuilt, the preview swapped to a new folder (new DLL hash `5CDD2A2B…`) with the selected button still
+selected (`select Some("1")` re-sent), and the application started with F5's PATH loaded a `kubuno_ui.dll`
+with the same hash. A tampered copy (one byte appended, surface restarted) was refused by the handshake
+(`loaded kubuno_ui.dll 8FC006F7…, linked against 5CDD2A2B…`) and the pane fell back to the bundled runtime;
+the next build restored the project runtime. The source was then restored byte for byte and rebuilt.
+
+**Known limitation**: the SDK's `CoreCompile` incremental gate only lists the project's own sources, so after
+editing a path dependency's sources (e.g. `kubuno_ui` in the desktop checkout) a plain *Build* is considered
+up to date - use *Rebuild* (or `cargo build`, then any build) to pick the change up.

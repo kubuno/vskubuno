@@ -111,6 +111,8 @@
     <Compile Include="Designer\DesignerToolWindowCommands.cs" />
     <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §6: resolves kubuno-views-surface.exe (DSG-7's embedded design surface). -->
     <Compile Include="Designer\KubunoViewsSurfaceLocator.cs" />
+    <!-- docs/DESIGNER.md section 15: the designer renders with the project's own kubuno_ui.dll (design build). -->
+    <Compile Include="Designer\ProjectDesignSurfaceRuntimeProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="source.extension.cs">
       <AutoGen>True</AutoGen>

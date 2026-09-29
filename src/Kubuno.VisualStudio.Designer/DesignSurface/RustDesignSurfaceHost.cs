@@ -83,7 +83,6 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// <summary>How long <see cref="DestroyWindowCore"/> waits for a graceful exit before killing.</summary>
         private const int ShutdownGraceMs = 2_000;
 
-        private readonly string _exePath;
         private readonly string _extraArgs;
         private readonly DispatcherTimer _childPoll = new() { Interval = TimeSpan.FromMilliseconds(20) };
         private readonly DispatcherTimer _retryTimer = new();
@@ -120,9 +119,22 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// library's own tests and the updated spike, which have no live VS to query) means every
         /// forwarded key goes straight to the WPF fallback.
         /// </param>
+        // VSTHRD010: the chained constructor's own suppression (below) applies here too - there is no place
+        // for a statement before a constructor initializer.
+#pragma warning disable VSTHRD010
         public RustDesignSurfaceHost(string exePath, string extraArgs = "", object? oleServiceProvider = null)
+            : this(new DesignSurfaceRuntimeLease(new FixedDesignSurfaceRuntimeSource(new DesignSurfaceRuntime(exePath ?? throw new ArgumentNullException(nameof(exePath)), isProjectRuntime: false, expectedUiDllSha256: null)), null), extraArgs, oleServiceProvider)
         {
-            _exePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
+        }
+#pragma warning restore VSTHRD010
+
+        /// <param name="runtime">The pane's lease on its project's runtime source (docs/DESIGNER.md section 15): the exe to run, replaced (hot swap) whenever the source changes. Released with the window.</param>
+        /// <param name="extraArgs">See the other constructor.</param>
+        /// <param name="oleServiceProvider">See the other constructor.</param>
+        public RustDesignSurfaceHost(DesignSurfaceRuntimeLease runtime, string extraArgs = "", object? oleServiceProvider = null)
+        {
+            _lease = runtime ?? throw new ArgumentNullException(nameof(runtime));
+            _runtime = runtime.Source.Current ?? throw new ArgumentException("The runtime source has no runtime.", nameof(runtime));
             _extraArgs = extraArgs ?? string.Empty;
             // The null-check itself needs no VS type, so it is safe to sit directly in this always-run
             // constructor; VsFilterKeysBridge.TryQuery is only ever CALLED (hence only ever JIT'd, hence
@@ -138,6 +150,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             Focusable = true;
             EnsureErrorModeSet();
             _retryTimer.Tick += (_, _) => { _retryTimer.Stop(); StartOrShowProblem(); };
+            _lease.Source.Changed += OnRuntimeSourceChanged;
         }
 
         /// <summary>The design surface's own process, once started.</summary>
@@ -200,7 +213,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// </summary>
         private void StartOrShowProblem()
         {
-            if (_disposed)
+            if (_disposed || _rejected)
             {
                 return;
             }
@@ -224,25 +237,25 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         /// </summary>
         private string? FindRuntimeProblem()
         {
-            if (!File.Exists(_exePath))
+            if (!File.Exists(CurrentExePath))
             {
-                return $"Design surface exe not found: {_exePath}";
+                return $"Design surface exe not found: {CurrentExePath}";
             }
 
-            var dir = Path.GetDirectoryName(_exePath);
+            var dir = Path.GetDirectoryName(CurrentExePath);
             if (string.IsNullOrEmpty(dir))
             {
-                return $"Design surface exe has no directory: {_exePath}";
+                return $"Design surface exe has no directory: {CurrentExePath}";
             }
 
             if (!File.Exists(Path.Combine(dir, "kubuno_ui.dll")))
             {
-                return $"kubuno_ui.dll missing next to {_exePath}";
+                return $"kubuno_ui.dll missing next to {CurrentExePath}";
             }
 
             if (Directory.GetFiles(dir, "std-*.dll").Length == 0)
             {
-                return $"Rust runtime (std-*.dll) missing next to {_exePath}";
+                return $"Rust runtime (std-*.dll) missing next to {CurrentExePath}";
             }
 
             return null;
@@ -251,11 +264,11 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private void LaunchSurface()
         {
             NativeMethods.SetWindowText(_container, string.Empty);
-            var dir = Path.GetDirectoryName(_exePath)!;
+            var dir = Path.GetDirectoryName(CurrentExePath)!;
             // No `<file.kbview>` positional argument any more (DSG-6: `view_embed`'s file argument is now
             // OPTIONAL, and the document text arrives over stdin instead - see `SendSetText`).
             var args = $"--parent {_container.ToInt64()}" + (_extraArgs.Length > 0 ? " " + _extraArgs : string.Empty);
-            var psi = new ProcessStartInfo(_exePath, args)
+            var psi = new ProcessStartInfo(CurrentExePath, args)
             {
                 UseShellExecute = false,
                 RedirectStandardError = true,
@@ -274,13 +287,12 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                 CreateNoWindow = true,
                 WorkingDirectory = dir,
             };
-            // kubuno_ui is a Rust dylib one folder up in a dev build; make it resolvable without
-            // relying on the caller's own PATH.
+            // The exe's own folder holds its kubuno_ui.dll and std-*.dll (the loader looks there first
+            // anyway); the parent folder is a dev build's profile folder. Both before the inherited PATH,
+            // so no other kubuno_ui.dll can be picked up - the surfaceInfo handshake checks it anyway.
             var parentDir = Path.GetDirectoryName(dir);
-            if (!string.IsNullOrEmpty(parentDir))
-            {
-                psi.EnvironmentVariables["PATH"] = parentDir + ";" + psi.EnvironmentVariables["PATH"];
-            }
+            psi.EnvironmentVariables["PATH"] = dir + ";" + (string.IsNullOrEmpty(parentDir) ? string.Empty : parentDir + ";") + psi.EnvironmentVariables["PATH"];
+            _handshake = HandshakeState.Waiting;
 
             Process proc;
             try
@@ -399,7 +411,18 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
                     return;
                 }
 
+                if (!ReferenceEquals(sender, _surface))
+                {
+                    return; // A process replaced by a hot swap: its successor is already running.
+                }
+
                 var exitCode = SafeExitCode();
+                if (_rejected)
+                {
+                    KubunoViewsLogHost.Current.WriteLine($"[designer] refused design surface exited (code {exitCode}); waiting for a new runtime.");
+                    return;
+                }
+
                 KubunoViewsLogHost.Current.WriteLine($"[designer] design surface exited unexpectedly (code {exitCode}); restarting.");
                 if ((DateTime.UtcNow - _lastStart).TotalMilliseconds >= StableAfterMs)
                 {
@@ -792,6 +815,8 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             _disposed = true;
             _childPoll.Stop();
             _retryTimer.Stop();
+            _lease.Source.Changed -= OnRuntimeSourceChanged;
+            _lease.Dispose();
             NativeMethods.DestroyWindow(hwnd.Handle);
 
             if (_surface != null && !SafeHasExited() && !_surface.WaitForExit(ShutdownGraceMs))

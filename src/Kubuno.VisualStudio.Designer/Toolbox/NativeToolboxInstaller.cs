@@ -24,9 +24,8 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
     /// reflection on the installed <c>Microsoft.VisualStudio.Interop.dll</c>): <c>IVsToolbox.AddTab</c> +
     /// <c>IVsToolbox.AddItem</c> with a data object carrying the private <see cref="ToolboxItemFormat"/>, and
     /// the designer pane implementing <c>IVsToolboxUser</c>. The Toolbox asks the ACTIVE document's
-    /// <c>IVsToolboxUser.IsSupported</c> for every item and hides (or greys, with "Show All") the ones it
-    /// refuses, so the Kubuno tabs appear only while a <c>.kbview</c> designer is the active document -
-    /// no visibility logic of our own. Items are added with <c>TBXIF_DONTPERSIST</c>: they are rebuilt
+    /// <c>IVsToolboxUser.IsSupported</c> for every item; the items, and the Kubuno tabs they need, exist
+    /// only while a <c>.kbview</c> designer is the active document (<see cref="EnsureInstalled"/>). Items are added with <c>TBXIF_DONTPERSIST</c>: they are rebuilt
     /// from the live <c>kubuno/registry</c> in every session (the registry is the truth and may change
     /// with the Kubuno version), and never accumulate as stale duplicates in the persisted toolbox.</para>
     ///
@@ -49,11 +48,128 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
         /// <summary>Whether the Kubuno items were added to the Toolbox in this session.</summary>
         public static bool IsInstalled => s_installed;
 
-        /// <summary>Adds every component of <paramref name="registry"/> once per Visual Studio session (idempotent afterwards). Best-effort: failures are logged, never thrown.</summary>
+        private static ComponentRegistry? s_registry;
+        private static bool s_subscribed;
+
+        /// <summary>
+        /// Shows the Kubuno components in the Toolbox while a <c>.kbview</c> designer is the active document,
+        /// and removes them - and the tabs they created - otherwise (the designer's command UI context,
+        /// <see cref="DesignerConstants.CommandUiContextGuidString"/>), like the WinForms designer's tabs
+        /// only appear for a WinForms designer. Found live: with the items merely refused by the active
+        /// document's <c>IsSupported</c>, the Toolbox still showed each Kubuno tab with its "no usable
+        /// control in this group" text for every other document; the Toolbox (native <c>msenv</c> code) has
+        /// no per-tab visibility API, so the tabs are really added and removed. Best-effort: failures are
+        /// logged, never thrown.
+        /// </summary>
         public static void EnsureInstalled(ComponentRegistry registry)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (s_installed || registry is null || registry.Components.Count == 0)
+            if (registry is null || registry.Components.Count == 0)
+            {
+                return;
+            }
+
+            s_registry = registry;
+            var context = UIContext.FromUIContextGuid(new Guid(DesignerConstants.CommandUiContextGuidString));
+            if (!s_subscribed)
+            {
+                s_subscribed = true;
+                context.UIContextChanged += (_, e) =>
+                {
+                    ThreadHelper.ThrowIfNotOnUIThread();
+                    if (e.Activated)
+                    {
+                        Install();
+                    }
+                    else
+                    {
+                        Uninstall();
+                    }
+                };
+                // Icons are rendered for the current theme; re-render them when it changes (like VS's own).
+                Microsoft.VisualStudio.PlatformUI.VSColorTheme.ThemeChanged += _ => RefreshIcons();
+            }
+
+            if (context.IsActive)
+            {
+                Install();
+            }
+        }
+
+        /// <summary>Removes the Kubuno items and every Kubuno tab left empty, e.g. a tab persisted by an earlier version (call once at package load, UI thread).</summary>
+        public static void Uninstall()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (Package.GetGlobalService(typeof(SVsToolbox)) is not IVsToolbox toolbox)
+            {
+                return;
+            }
+
+            try
+            {
+                foreach (var (data, _) in s_items)
+                {
+                    toolbox.RemoveItem((Microsoft.VisualStudio.OLE.Interop.IDataObject)data);
+                }
+
+                s_items.Clear();
+                var existing = ListTabs(toolbox);
+                foreach (var tab in DesignerText.AllToolboxTabNames())
+                {
+                    // A shared tab (e.g. WinForms' "Conteneurs") keeps its own items: only an empty one goes.
+                    if (existing.Contains(tab) && IsEmpty(toolbox, tab))
+                    {
+                        toolbox.RemoveTab(tab);
+                    }
+                }
+
+                toolbox.UpdateToolboxUI();
+            }
+            catch (Exception ex) when (ex is COMException or ArgumentException or InvalidCastException)
+            {
+                KubunoViewsLogHost.Current.WriteException("[designer] Toolbox: could not remove the Kubuno tabs", ex);
+            }
+            finally
+            {
+                s_installed = false;
+            }
+        }
+
+        private static HashSet<string> ListTabs(IVsToolbox toolbox)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var tabs = new HashSet<string>(StringComparer.Ordinal);
+            if (ErrorHandler.Failed(toolbox.EnumTabs(out var tabEnum)) || tabEnum is null)
+            {
+                return tabs;
+            }
+
+            var one = new string[1];
+            while (tabEnum.Next(1, one, out var fetched) == VSConstants.S_OK && fetched == 1)
+            {
+                tabs.Add(one[0]);
+            }
+
+            return tabs;
+        }
+
+        private static bool IsEmpty(IVsToolbox toolbox, string tab)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (ErrorHandler.Failed(toolbox.EnumItems(tab, out var itemEnum)) || itemEnum is null)
+            {
+                return true;
+            }
+
+            var one = new Microsoft.VisualStudio.OLE.Interop.IDataObject[1];
+            return !(itemEnum.Next(1, one, out var fetched) == VSConstants.S_OK && fetched == 1);
+        }
+
+        private static void Install()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var registry = s_registry;
+            if (s_installed || registry is null)
             {
                 return;
             }
@@ -65,15 +181,20 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             }
 
             s_installed = true;
+            s_iconFailures = 0;
             var added = 0;
+            var existing = ListTabs(toolbox);
             foreach (var family in registry.FamilyNames)
             {
                 var tabName = DesignerText.ToolboxTabName(family);
 
-                // The tab may already exist (a previous session's, or another designer's tab of the same
-                // name, e.g. WinForms' "Conteneurs"): a failure here only means "exists", and AddItem into
-                // an existing tab is fine - the IsSupported filtering keeps each designer's items apart.
-                toolbox.AddTab(tabName);
+                // The tab may already exist (another designer's tab of the same name, e.g. WinForms'
+                // "Conteneurs"): AddItem into it is fine - the IsSupported filtering keeps each designer's
+                // items apart, and Uninstall leaves a tab that still has items.
+                if (!existing.Contains(tabName))
+                {
+                    toolbox.AddTab(tabName);
+                }
 
                 foreach (var component in SortedForToolbox(registry.Families[family]))
                 {
@@ -91,8 +212,6 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 }
             }
 
-            // Icons are rendered for the current theme; re-render them when it changes (like VS's own).
-            Microsoft.VisualStudio.PlatformUI.VSColorTheme.ThemeChanged += _ => RefreshIcons();
             toolbox.UpdateToolboxUI();
             KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: added {added} Kubuno component(s) in {registry.FamilyNames.Count} tab(s), {added - s_iconFailures} with their icon.");
             if (s_iconFailures > 0)

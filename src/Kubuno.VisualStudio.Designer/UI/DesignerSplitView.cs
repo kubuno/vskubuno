@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using Kubuno.VisualStudio.Designer.DesignSurface;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
@@ -40,6 +41,13 @@ namespace Kubuno.VisualStudio.Designer.UI
         private readonly ToggleButton _designTab;
         private readonly ToggleButton _xmlTab;
         private readonly ToggleButton _splitTab;
+        // The runtime info bar (docs/DESIGNER.md section 15): shown while the preview does not run on the
+        // project's own kubuno_ui.dll, with the action that gets it there ("Générer") or cancels the build.
+        private readonly Border _runtimeBar;
+        private readonly TextBlock _runtimeBarText;
+        private readonly Hyperlink _runtimeBarLink;
+        private IDesignSurfaceRuntimeAware? _runtimeAware;
+        private string? _runtimeRejectedMessage;
         private bool _disposed;
 
         // VSTHRD010 cannot be satisfied with a preceding ThrowIfNotOnUIThread() call for a constructor
@@ -50,14 +58,14 @@ namespace Kubuno.VisualStudio.Designer.UI
         // KbviewEditorFactory.CreateEditorInstance, which already asserts ThrowIfNotOnUIThread() before
         // ever reaching here (see that method's own doc comment).
 #pragma warning disable VSTHRD010
-        public DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, Func<Microsoft.VisualStudio.Shell.Interop.ITrackSelection?>? trackSelection = null, DesignerViewMode initialMode = DesignerViewMode.Design, Action? ensureActiveDesigner = null)
-            : this(textBuffer, oleServiceProvider, DesignSurfaceHostFactoryHost.Current, trackSelection, initialMode, ensureActiveDesigner)
+        public DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, Func<Microsoft.VisualStudio.Shell.Interop.ITrackSelection?>? trackSelection = null, DesignerViewMode initialMode = DesignerViewMode.Design, Action? ensureActiveDesigner = null, DesignSurfaceDocument? document = null)
+            : this(textBuffer, oleServiceProvider, DesignSurfaceHostFactoryHost.Current, trackSelection, initialMode, ensureActiveDesigner, document)
         {
         }
 #pragma warning restore VSTHRD010
 
         /// <summary>Overload used by tests to inject a fake <see cref="IDesignSurfaceHostFactory"/> instead of the static gateway's current value.</summary>
-        internal DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, IDesignSurfaceHostFactory designSurfaceHostFactory, Func<Microsoft.VisualStudio.Shell.Interop.ITrackSelection?>? trackSelection = null, DesignerViewMode initialMode = DesignerViewMode.Design, Action? ensureActiveDesigner = null)
+        internal DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, IDesignSurfaceHostFactory designSurfaceHostFactory, Func<Microsoft.VisualStudio.Shell.Interop.ITrackSelection?>? trackSelection = null, DesignerViewMode initialMode = DesignerViewMode.Design, Action? ensureActiveDesigner = null, DesignSurfaceDocument? document = null)
         {
             // See the public constructor's own comment above for why this is asserted rather than
             // proven to the analyzer across the ": this(...)" chain.
@@ -77,9 +85,10 @@ namespace Kubuno.VisualStudio.Designer.UI
             _ensureActiveDesigner = ensureActiveDesigner;
             _viewModel.Mode = initialMode;
             _codeWindowHost = new CodeWindowHost(textBuffer, oleServiceProvider);
-            _designSurfaceHost = designSurfaceHostFactory.Create();
+            _designSurfaceHost = designSurfaceHostFactory.Create(document);
 
             var root = new Grid();
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
@@ -87,6 +96,10 @@ namespace Kubuno.VisualStudio.Designer.UI
             var tabStrip = BuildTabStrip(_designTab, _xmlTab, _splitTab);
             Grid.SetRow(tabStrip, 0);
             root.Children.Add(tabStrip);
+
+            (_runtimeBar, _runtimeBarText, _runtimeBarLink) = BuildRuntimeBar();
+            Grid.SetRow(_runtimeBar, 1);
+            root.Children.Add(_runtimeBar);
 
             var contentGrid = new Grid();
             _designColumn = new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) };
@@ -113,10 +126,19 @@ namespace Kubuno.VisualStudio.Designer.UI
             Grid.SetColumn(_codeWindowHost, 2);
             contentGrid.Children.Add(_codeWindowHost);
 
-            Grid.SetRow(contentGrid, 1);
+            Grid.SetRow(contentGrid, 2);
             root.Children.Add(contentGrid);
 
             Content = root;
+
+            if (_designSurfaceHost is IDesignSurfaceRuntimeAware runtimeAware)
+            {
+                _runtimeAware = runtimeAware;
+                runtimeAware.RuntimeSource.Changed += OnRuntimeSourceChanged;
+                runtimeAware.RuntimeRejected += OnRuntimeRejected;
+            }
+
+            UpdateRuntimeBar();
 
             _viewModel.PropertyChanged += (_, e) =>
             {
@@ -218,6 +240,87 @@ namespace Kubuno.VisualStudio.Designer.UI
             return strip;
         }
 
+        private static (Border Bar, TextBlock Text, Hyperlink Link) BuildRuntimeBar()
+        {
+            var link = new Hyperlink();
+            var text = new TextBlock { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+            var bar = new Border
+            {
+                Padding = new Thickness(8, 3, 8, 3),
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Visibility = Visibility.Collapsed,
+                Child = text,
+            };
+            // Visual Studio's own info bar colours (theme-aware).
+            bar.SetResourceReference(Border.BackgroundProperty, VsBrushes.InfoBackgroundKey);
+            bar.SetResourceReference(Border.BorderBrushProperty, Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolWindowBorderBrushKey);
+            text.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.InfoTextKey);
+            link.SetResourceReference(TextElement.ForegroundProperty, Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ControlLinkTextBrushKey);
+            return (bar, text, link);
+        }
+
+        private void OnRuntimeSourceChanged(object? sender, EventArgs e)
+        {
+#pragma warning disable VSTHRD001, VSTHRD110 // raised on any thread; a plain dispatcher hop, as in RustDesignSurfaceHost.
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _runtimeRejectedMessage = null;
+                UpdateRuntimeBar();
+            }));
+#pragma warning restore VSTHRD001, VSTHRD110
+        }
+
+        private void OnRuntimeRejected(object? sender, string message)
+        {
+            _runtimeRejectedMessage = message;
+            UpdateRuntimeBar();
+        }
+
+        /// <summary>Shows the bar while the preview is not on the project's runtime (or was refused), with its action link.</summary>
+        private void UpdateRuntimeBar()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            var source = _runtimeAware?.RuntimeSource;
+            var state = source?.State ?? DesignSurfaceRuntimeState.Project;
+            var message = _runtimeRejectedMessage ?? DesignerText.RuntimeBarMessage(state);
+            var action = _runtimeRejectedMessage is not null ? DesignerText.RuntimeBarAction(DesignSurfaceRuntimeState.NotBuilt) : DesignerText.RuntimeBarAction(state);
+            _runtimeBarText.Inlines.Clear();
+            if (string.IsNullOrEmpty(message) || !_viewModel.IsDesignPaneVisible)
+            {
+                _runtimeBar.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            _runtimeBarText.Inlines.Add(new Run(message));
+            if (source?.Detail is { Length: > 0 } detail && _runtimeRejectedMessage is null && state == DesignSurfaceRuntimeState.Failed)
+            {
+                _runtimeBarText.Inlines.Add(new Run(" (" + detail + ")"));
+            }
+
+            if (action.Length > 0 && source is not null)
+            {
+                _runtimeBarLink.Inlines.Clear();
+                _runtimeBarLink.Inlines.Add(new Run(action));
+                _runtimeBarLink.Click -= OnRuntimeBarLinkClick;
+                _runtimeBarLink.Click += OnRuntimeBarLinkClick;
+                _runtimeBarText.Inlines.Add(new Run("  "));
+                _runtimeBarText.Inlines.Add(_runtimeBarLink);
+            }
+
+            _runtimeBar.Visibility = Visibility.Visible;
+        }
+
+        private void OnRuntimeBarLinkClick(object sender, RoutedEventArgs e)
+        {
+            _runtimeRejectedMessage = null;
+            _runtimeAware?.RuntimeSource.RunAction();
+            UpdateRuntimeBar();
+        }
+
         private void ApplyViewMode()
         {
             _designColumn.Width = _viewModel.IsDesignPaneVisible ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
@@ -228,6 +331,7 @@ namespace Kubuno.VisualStudio.Designer.UI
             _designTab.IsChecked = _viewModel.Mode == DesignerViewMode.Design;
             _xmlTab.IsChecked = _viewModel.Mode == DesignerViewMode.Xml;
             _splitTab.IsChecked = _viewModel.Mode == DesignerViewMode.Split;
+            UpdateRuntimeBar();
         }
 
         public void Dispose()
@@ -244,6 +348,11 @@ namespace Kubuno.VisualStudio.Designer.UI
             _editingCoordinator?.Dispose();
             _designSurfaceHost.Dispose();
             _codeWindowHost.Dispose();
+            if (_runtimeAware is not null)
+            {
+                _runtimeAware.RuntimeSource.Changed -= OnRuntimeSourceChanged;
+                _runtimeAware.RuntimeRejected -= OnRuntimeRejected;
+            }
         }
 
         /// <summary>

@@ -128,6 +128,7 @@ namespace Kubuno.VisualStudio
         private Kubuno.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost? _mcpBridgeHost;
         private IVsRegisterPriorityCommandTarget? _priorityTargets;
         private uint _viewSwitchCookie;
+        private ProjectDesignSurfaceRuntimeProvider? _designSurfaceRuntimes;
 
         /// <summary>
         /// Set once the package is sited, so MEF components (which are not package-owned and would
@@ -176,6 +177,9 @@ namespace Kubuno.VisualStudio
             // docs/DESIGNER.md §11 (WinForms-like designer): the native Toolbox shows each Kubuno component
             // with the same Kubuno control icon as its Solution Explorer element node (KubunoControls.imagemanifest), and F7/Shift+F7
             // switch between a .kbview's designer and its XML.
+            // The Kubuno Toolbox tabs exist only while a .kbview designer is active: drop any empty one a
+            // previous session (or version) left in the persisted toolbox.
+            Kubuno.VisualStudio.Designer.Toolbox.NativeToolboxInstaller.Uninstall();
             Kubuno.VisualStudio.Designer.Toolbox.NativeToolboxInstaller.IconName =
                 tag => Kubuno.VisualStudio.Core.SolutionExplorer.ControlIcons.IdFor(tag) == Kubuno.VisualStudio.Core.SolutionExplorer.ControlIcons.FallbackId ? "Control" : tag;
             // The Properties window resolves the IEventBindingService behind a double-click on an event
@@ -201,9 +205,17 @@ namespace Kubuno.VisualStudio
             if (surfaceExePath is not null)
             {
                 var oleServiceProvider = (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)this;
+                // docs/DESIGNER.md section 15: each designer renders with its project's own kubuno_ui.dll
+                // (a design build against the project); the bundled surface is the fallback.
+                _designSurfaceRuntimes = new ProjectDesignSurfaceRuntimeProvider(surfaceExePath, JoinableTaskFactory);
+                if (await GetServiceAsync(typeof(SVsSolutionBuildManager)) is IVsSolutionBuildManager2 buildManager)
+                {
+                    _designSurfaceRuntimes.Advise(buildManager);
+                }
+
                 Kubuno.VisualStudio.Designer.DesignSurface.DesignSurfaceHostFactoryHost.Current =
-                    new Kubuno.VisualStudio.Designer.DesignSurface.RustDesignSurfaceHostFactory(surfaceExePath, oleServiceProvider: oleServiceProvider);
-                KubunoLog.WriteLine($"Kubuno: design surface exe resolved at '{surfaceExePath}'.");
+                    new Kubuno.VisualStudio.Designer.DesignSurface.RustDesignSurfaceHostFactory(surfaceExePath, oleServiceProvider: oleServiceProvider, runtimeProvider: _designSurfaceRuntimes);
+                KubunoLog.WriteLine($"Kubuno: bundled design surface exe resolved at '{surfaceExePath}'.");
             }
             else
             {
@@ -457,6 +469,11 @@ namespace Kubuno.VisualStudio
 
                 _mcpBridgeHost?.Dispose();
                 _mcpBridgeHost = null;
+
+#pragma warning disable VSTHRD010 // guarded by ThreadHelper.CheckAccess() above, like the RDT unadvise.
+                _designSurfaceRuntimes?.Dispose();
+#pragma warning restore VSTHRD010
+                _designSurfaceRuntimes = null;
 
                 if (_priorityTargets is not null)
                 {

@@ -14,7 +14,10 @@ namespace Kubuno.VisualStudio.DesignerIntegration
     /// mirroring <c>Kubuno.VisualStudio.Views.Locating.KubunoViewsLanguageServerLocator</c>'s own
     /// shape, minus the Tools &gt; Options override this library has no options page field for yet.
     /// Never throws; a caller must treat <see langword="null"/> as "not found" (log it, leave the
-    /// placeholder design surface in place) rather than fail package load over it.
+    /// placeholder design surface in place) rather than fail package load over it. Since docs/DESIGNER.md
+    /// section 15 this bundled surface is only the FALLBACK runtime: a designer whose project has been
+    /// built renders with a surface compiled against that project's own kubuno_ui.dll
+    /// (<see cref="ProjectDesignSurfaceRuntimeProvider"/>).
     /// </summary>
     internal static class KubunoViewsSurfaceLocator
     {

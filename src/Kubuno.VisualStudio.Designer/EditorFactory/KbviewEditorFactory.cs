@@ -145,7 +145,8 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
                     return VSConstants.S_OK;
                 }
 
-                pane = new DesignerWindowPane(textLines, oleServiceProvider);
+                // The document's project decides which design surface runtime renders it (docs/DESIGNER.md section 15).
+                pane = new DesignerWindowPane(textLines, oleServiceProvider, document: new DesignSurface.DesignSurfaceDocument(pszMkDocument, pvHier, itemid));
 
                 ppunkDocView = Marshal.GetIUnknownForObject(pane);
                 ppunkDocData = Marshal.GetIUnknownForObject(textLines);

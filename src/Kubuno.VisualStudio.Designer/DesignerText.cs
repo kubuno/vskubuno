@@ -23,6 +23,38 @@ namespace Kubuno.VisualStudio.Designer
         /// <summary>Appended to the document tab caption of the Design view, like WinForms' <c>Form1.cs [Design]</c>.</summary>
         public static string DesignCaptionSuffix => T(" [Design]", " [Conception]");
 
+        /// <summary>The designer's runtime info bar (docs/DESIGNER.md section 15): its message, before the action link.</summary>
+        public static string RuntimeBarMessage(DesignSurface.DesignSurfaceRuntimeState state) => state switch
+        {
+            DesignSurface.DesignSurfaceRuntimeState.NotBuilt => T(
+                "Preview: bundled runtime - build the project to use its kubuno_ui.dll.",
+                "Aperçu : runtime intégré — générez le projet pour utiliser sa kubuno_ui.dll."),
+            DesignSurface.DesignSurfaceRuntimeState.Building => T(
+                "Preview: building the preview with the project's kubuno_ui.dll...",
+                "Aperçu : compilation de l'aperçu avec la kubuno_ui.dll du projet…"),
+            DesignSurface.DesignSurfaceRuntimeState.Failed => T(
+                "Preview: bundled runtime - the preview could not be built with the project's kubuno_ui.dll (see Output > Kubuno).",
+                "Aperçu : runtime intégré — l'aperçu n'a pas pu être compilé avec la kubuno_ui.dll du projet (voir Sortie > Kubuno)."),
+            DesignSurface.DesignSurfaceRuntimeState.NotApplicable => T(
+                "Preview: bundled runtime - this view is not part of a project that uses kubuno-views.",
+                "Aperçu : runtime intégré — cette vue n'appartient pas à un projet qui utilise kubuno-views."),
+            _ => string.Empty,
+        };
+
+        /// <summary>The info bar's action link, empty when the state offers none.</summary>
+        public static string RuntimeBarAction(DesignSurface.DesignSurfaceRuntimeState state) => state switch
+        {
+            DesignSurface.DesignSurfaceRuntimeState.NotBuilt => T("Build", "Générer"),
+            DesignSurface.DesignSurfaceRuntimeState.Building => T("Cancel", "Annuler"),
+            DesignSurface.DesignSurfaceRuntimeState.Failed => T("Build", "Générer"),
+            _ => string.Empty,
+        };
+
+        /// <summary>Shown in the design pane when a surface's kubuno_ui.dll does not match the one it was built against.</summary>
+        public static string RuntimeRejected(string detail) => T(
+            "Preview refused: the kubuno_ui.dll this preview loaded is not the one it was built against (" + detail + "). Build the project again.",
+            "Aperçu refusé : la kubuno_ui.dll chargée par l'aperçu n'est pas celle avec laquelle il a été compilé (" + detail + "). Générez à nouveau le projet.");
+
         public static string CategoryDesign => T("Design", "Design");
 
         public static string CategoryLayout => T("Layout", "Disposition");
@@ -155,6 +187,13 @@ namespace Kubuno.VisualStudio.Designer
             $"« {value} » n'est pas un nom de fonction Rust valide.");
 
         /// <summary>Toolbox tab display name for a registry family (<c>ComponentMeta.Family</c>).</summary>
+        /// <summary>Every Toolbox tab name the registry families map to, in both languages (stale-tab cleanup).</summary>
+        public static string[] AllToolboxTabNames() => new[]
+        {
+            "Common Controls", "Contrôles communs", "Display", "Affichage", "Choice", "Choix", "Text", "Texte",
+            "Containers", "Conteneurs", "Data", "Données",
+        };
+
         public static string ToolboxTabName(string family)
         {
             switch ((family ?? string.Empty).ToLowerInvariant())
