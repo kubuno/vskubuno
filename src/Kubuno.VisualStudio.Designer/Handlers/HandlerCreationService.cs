@@ -98,10 +98,10 @@ namespace Kubuno.VisualStudio.Designer.Handlers
         /// The file/position of the new <c>fn &lt;handlerName&gt;(...)</c> stub: always the edit whose
         /// inserted text contains the literal <c>"fn &lt;handlerName&gt;("</c> - <c>kubuno-views-ls</c>'s
         /// <c>handler_insert</c> module always creates a real <c>fn</c> (never a closure-only table
-        /// entry), precisely so "go to definition" keeps working. Its position is unaffected by the
-        /// OTHER edit optionally inserted into the same file (the <c>handlers!</c> table registration,
-        /// always placed at a strictly later offset - see that module's own doc), so the position the
-        /// server reported is still exactly where the text landed once applied.
+        /// entry), precisely so "go to definition" keeps working (a legacy <c>fn</c>, or a typed method of the
+        /// <c>#[event_handlers]</c> impl, EVT-4) - adjusted by <see cref="PositionAfterApply"/> for the other
+        /// edits of the same file that land before it (the <c>use kubuno_views::prelude::*;</c> a typed stub may
+        /// add), so the caret lands on the <c>fn</c> once everything is applied.
         /// </summary>
         private static (string Uri, LspPosition Position)? FindHandlerStubLocation(
             IReadOnlyDictionary<string, IReadOnlyList<TextEditDto>> changes,
@@ -113,11 +113,43 @@ namespace Kubuno.VisualStudio.Designer.Handlers
                 var stub = pair.Value.FirstOrDefault(e => e.NewText.Contains(needle));
                 if (stub is not null)
                 {
-                    return (pair.Key, stub.Range.Start);
+                    return (pair.Key, PositionAfterApply(pair.Value, stub, needle));
                 }
             }
 
             return null;
         }
+
+        /// <summary>
+        /// Where <paramref name="needle"/> (inside <paramref name="stub"/>'s inserted text) lands once all of the
+        /// file's <paramref name="edits"/> are applied: the stub's reported start, moved down by the lines the
+        /// edits placed before it add (a typed stub comes with a <c>use kubuno_views::prelude::*;</c> line at the
+        /// top of the file, EVT-4), then to the <c>fn</c> itself inside the inserted text (a typed method is
+        /// indented, and may follow a separating blank line).
+        /// </summary>
+        private static LspPosition PositionAfterApply(IReadOnlyList<TextEditDto> edits, TextEditDto stub, string needle)
+        {
+            var line = stub.Range.Start.Line;
+            foreach (var edit in edits)
+            {
+                if (ReferenceEquals(edit, stub) || Compare(edit.Range.Start, stub.Range.Start) > 0)
+                {
+                    continue;
+                }
+
+                line += CountNewlines(edit.NewText) - (edit.Range.End.Line - edit.Range.Start.Line);
+            }
+
+            var at = stub.NewText.IndexOf(needle, StringComparison.Ordinal);
+            var before = stub.NewText.Substring(0, at);
+            var newlines = CountNewlines(before);
+            var column = newlines == 0 ? stub.Range.Start.Character + before.Length : before.Length - before.LastIndexOf('\n') - 1;
+            return new LspPosition(line + newlines, column);
+        }
+
+        private static int CountNewlines(string text) => text.Count(c => c == '\n');
+
+        private static int Compare(LspPosition a, LspPosition b) =>
+            a.Line != b.Line ? a.Line.CompareTo(b.Line) : a.Character.CompareTo(b.Character);
     }
 }

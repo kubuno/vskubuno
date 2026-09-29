@@ -6,8 +6,9 @@
 > server) and `vskubuno` (Visual Studio designer). It builds on
 > `docs/XML_VIEWS.md` §2/§4/§7 and `docs/DESIGNER.md` §11 (Properties window, ⚡ tab).
 >
-> **Status (2026-09-29):** EVT-1, EVT-2 and EVT-3 are **done** (see §9, "EVT-1 as built", and §10,
-> "EVT-2 and EVT-3 as built"); EVT-4 to EVT-8 are not started.
+> **Status (2026-09-29):** EVT-1 to EVT-4 are **done** (see §9, "EVT-1 as built", §10,
+> "EVT-2 and EVT-3 as built", and §11, "EVT-4 as built" — the attribute is `#[kubuno_views::event_handlers]`,
+> see there); EVT-5 to EVT-8 are not started.
 
 ## 0. Where we are today
 
@@ -450,7 +451,7 @@ instead of `&mut dyn ViewModel`.
 | EVT-1 ✅ done (§9) | Args, traits, `Event<A>`/`Subscription`, `ElementRef`/`Sender` | new `kubuno-views/src/events/{mod,args,multicast,sender}.rs`, `#[derive(EventArgs)]` in new `kubuno-views-macros` | — | M | Unit tests: order, drop = unsubscribe, add/remove during raise, re-entrancy skip, depth cap, `Handled` short-circuit, `Cancelable` visibility |
 | EVT-2 ✅ done (§10) | Input router and ordered synthesis (mouse, hover, keys, focus, validation) | `events/router.rs`, `node.rs` `fire` (typed), every `families/*.rs` call site | EVT-1 | L | Scripted `Frame` sequences asserting exact WinForms orders (§3); legacy `ViewEvent` tests unchanged; live: `view_preview` with an event log overlay |
 | EVT-3 ✅ done (§10) | Registry metadata and catalogue | `registry/{mod,export,docs_fr}.rs`, families' `EventMeta` tables, aliases, `validate.rs` alias hint; C# `Registry/EventMeta.cs`, `KbviewElementObject` categories and default event | EVT-1 | M | Registry test: every `default_event` exists; alias parse tests; C# JSON round-trip; live: ⚡ tab grouped with descriptions in VS experimental instance |
-| EVT-4 | Typed handlers and migration | `kubuno-views-macros` `#[handlers]`, `EventSink`, `Runtime::frame_typed`, legacy adapter; `handler_insert.rs` typed stub | EVT-1, EVT-2 | L | `trybuild` pass/fail tests (bad signature, async + Handled); existing `handlers!` tests untouched; live: `KubunoLot8App` old and new style both click through |
+| EVT-4 ✅ done (§11) | Typed handlers and migration | `kubuno-views-macros` `#[handlers]`, `EventSink`, `Runtime::frame_typed`, legacy adapter; `handler_insert.rs` typed stub | EVT-1, EVT-2 | L | `trybuild` pass/fail tests (bad signature, async + Handled); existing `handlers!` tests untouched; live: `KubunoLot8App` old and new style both click through |
 | EVT-5 | Designer/LS commands | LS `compatibleHandlers`, `renameHandler`, remove-empty-stub, missing-handler diagnostic, convert code action; C# `GetCompatibleMethods`, surface double-click → default event, rename menu | EVT-3, EVT-4 | M | LS unit tests on temp workspaces; live: dropdown lists handlers, rename updates XML + Rust in one undo per file |
 | EVT-6 | View lifecycle, window events, threading | `runtime.rs` lifecycle hooks, host close/activation plumbing, `UiDispatcher`, `spawn_local` executor | EVT-2 | M | Unit tests with a fake host; live: FormClosing cancel keeps the window, background thread `begin_invoke` updates a label |
 | EVT-7 | Custom controls and user controls | `kubuno-views-meta` (shared grammar), `#[derive(Component/UserControl)]`, extensible registry (`inventory`), `<UserControl x:Class>`, LS `syn` scan, project Toolbox tab, per-project design host | EVT-3, EVT-4 | L | Macro and LS produce identical `ComponentMeta` (shared golden tests); live: a `RatingBar` user control appears in the Toolbox, is dropped, its event bound and raised |
@@ -704,6 +705,126 @@ GETTING-STARTED "Console window"), then a real click on the button: VS's Output 
 application's `tracing` lines `event MouseDown`, `event Click`, `event MouseClick`, `event MouseUp`, in that
 order, followed by the returned `ViewEvent`s (`Other { name: "MouseDown", args: "MouseEventArgs" }`, `Clicked`,
 `MouseClick`, `MouseUp`).
+
+## 11. EVT-4 as built (2026-09-29)
+
+In `Z:\src\desktop\windows` (uncommitted there) and in this repository. `kubuno_ui` and `kubuno-controls` are
+unchanged. Existing `handlers!` projects build and run unchanged (checked on a copy of a project created with
+the previous template).
+
+### Deviation: the attribute is `#[kubuno_views::event_handlers]`
+
+§4.2/§5.4 wrote `#[kubuno_views::handlers]`. That name is taken: `handlers!` (the legacy table, `#[macro_export]`)
+lives in the crate root's macro namespace, and an attribute macro of the same name cannot be re-exported next
+to it (E0255; declarative attribute macros, which could serve both, are still unstable). Renaming the legacy
+macro would break every existing project, so the attribute is **`#[kubuno_views::event_handlers]`** (or
+`#[event_handlers]` after `use kubuno_views::prelude::*;`). Everything below uses that name.
+
+### Runtime (`kubuno-views`)
+
+- **`events/typed.rs`**: `EventSink { const HANDLERS: &[HandlerInfo]; fn handle_event(&mut self, handler, cx:
+  &HandlerContext, args: &mut dyn EventArgs) -> bool; fn handler_info(name) }`, `HandlerInfo { name, method,
+  sender (element, "*" for any, None), args (tooling name, None), args_mut }`, `HandlerContext` (the sender +
+  its resolved properties, `typed_sender::<C>()`), `dispatch_typed(vm, handler, sender, args)`, the args
+  adapter `with_args::<T>()` (exact type; the root `EmptyEventArgs` for any event; `CancelEventArgs` /
+  `HandledEventArgs` bridged over any cancelable / handled args, the flag written back; otherwise a
+  `tracing::warn!` and the handler is not called), and `TypedViewModel<V>` (forwards `get`/`set`, answers
+  `dispatch_event`).
+- **Dispatch order**: `ViewModel` gained a default method `dispatch_event(&mut self, handler, sender, args) ->
+  bool { false }`; `HandlerTable::dispatch_args` calls it first, then the table's typed entries, then its legacy
+  entries with `args.legacy_value()` (the legacy adapter of §5.4 point 1). A sink handler whose args or sender
+  do not fit is skipped with a warning but still "claims" its name, so a same-named legacy entry never runs in
+  its place.
+- **`Runtime::frame_typed(canvas, frame, vm: &mut V, bounds)`** and **`frame_typed_with(…, handlers, bounds)`**
+  (`V: ViewModel + EventSink`) paint through `TypedViewModel`. `frame` is unchanged.
+- **Sender** (`events/sender.rs`): `ElementRef` gained `attributes: &[(String, String)]` (the element's
+  non-event XML attributes, recorded by `SlotEvents::from_element`); `ElementProps::resolve(name, attributes,
+  vm)` turns them into the properties of the frame (`{Binding P}` → `vm.get(P)`), read through `get`, `string`,
+  `bool`, `f32`, `text()` (`Text`), `name()` (`x:Name`), `iter`. **`kubuno_views::controls`**: one zero-sized
+  `Component` per non-structural control of the registry (`Button`, `Switch`, `TextField`… 41 types, checked
+  against the registry by a test), `Resolved = ElementProps`; `AnyElement` (`ELEMENT = "*"`) accepts any
+  element. Control-specific resolved structs are EVT-7. The structural elements (`<ToolbarItem>`…) have no type:
+  their events are raised by their parent.
+- **`kubuno_views::prelude`**: `ViewModel`, `Value`, `HandlerTable`, `handlers!`, `event_handlers`, `Sender`,
+  `ElementRef`, `ElementProps`, `AnyElement`, `EventArgs` (trait + derive), `EventSink`, `ArgsChain`, `Handled`,
+  `Cancelable`, every args type and every control type.
+- **Click carries `MouseEventArgs`** (deviation from WinForms' declared `EventArgs`, matching its runtime
+  object): a `<Button>`/`<IconButton>`/`<LinkLabel>` click (`node::click_args`: left button, click count, the
+  pointer relative to the control, modifiers), the router's synthesized Click and DoubleClick (`mouse_args`),
+  and a keyboard activation (`MouseButton::None`, `clicks == 0`). The registry declares `OnClick`/`OnDoubleClick`
+  (common) and the three controls' `OnClick` with `MouseEventArgs`. Legacy value unchanged (`Bool(true)`).
+- **Tooling metadata**: `ArgsChain` gained `RUST_TYPE` (the type a handler declares: `"EmptyEventArgs"` for the
+  root, the alias for `ValueChangedEventArgs<T>` through `IntoLegacyValue::ARGS_TYPE`: `TextChangedEventArgs`,
+  `CheckedChangedEventArgs`, `NumericValueChangedEventArgs`, `SelectionChangedEventArgs`) and `WRITABLE` (the
+  derive's `handled`/`cancel`); `EventMeta` gained `args_rust`/`args_mut`, exported as `args_rust_type`/
+  `args_mut` (C# `EventMeta.ArgsRustType`/`ArgsMut`, fixture regenerated). `EventArgs`, `ArgsChain` and
+  `Component` carry `#[diagnostic::on_unimplemented]` messages ("`u32` is not an event args type", "… is not a
+  control a `Sender` can be typed with").
+
+### The macro (`kubuno-views-macros`, `syn` now with `full`)
+
+`#[event_handlers]` on an inherent impl (generic impls supported) re-emits the impl without the `#[handler]`
+helper attributes, adds `#[allow(unused_variables)]` to each handler (a designer stub ignores its sender and
+args, as in WinForms), and generates `impl EventSink` (a `match` on the handler name, one arm per method; the
+arm builds the typed sender with `cx.typed_sender::<C>()` and calls the method inside `with_args::<A>()`, with
+`quote_spanned!` so trait errors point at the user's types). Every method with a `&mut self`/`&self` receiver is
+a handler; associated functions without `self` are left alone; `#[handler(skip)]`, `#[handler(name = "…")]`.
+Accepted after the receiver: nothing, `e: &A`/`&mut A`, `&dyn EventArgs`/`&mut dyn EventArgs`, `sender:
+&Sender<C>`/`&ElementRef`, or sender then args. Compile errors (each with the expected shape): trait impl,
+arguments on the attribute, async (EVT-6), generics, a return type, `self` by value, more than two parameters,
+args or sender by value, `&mut Sender`, `Sender` without a type, the sender after the args, two args, a trait
+object other than `dyn EventArgs`, duplicate handler names, unknown `handler` option. On an error the impl and an
+empty `EventSink` are still emitted, so only the real mistake is reported.
+
+### Language server (`kubuno-views-ls`)
+
+- **`code_behind.rs`**: a literal/comment-aware scanner (brackets, the `#[event_handlers]` impl, the single
+  `impl ViewModel for X`, the `handlers!` table and its `"name" => |a, b| body` entries, the prelude import
+  point, the 5-argument `.frame(` calls).
+- **`kubuno/createHandler`**: in a file with a typed impl, the stub is a method appended to it (after a blank
+  line) — `fn on_ok_click(&mut self, sender: &Sender<Button>, e: &MouseEventArgs) { // TODO }`: sender typed with
+  the element's control type (`&ElementRef` for a structural element), args from `EventMeta::args_rust`
+  (`&dyn EventArgs` for the root, `&mut` when `args_mut`); `use kubuno_views::prelude::*;` is added when
+  missing; no table entry. A legacy file keeps the legacy stub (§5.4 point 3). The C# `HandlerCreationService`
+  now places the caret on the new `fn` even when an earlier edit (the import) shifts it.
+- **Convert (§5.4 point 4)**: `textDocument/codeAction` (capability advertised) returns one `refactor.rewrite`
+  action, *Convert the handlers! table to typed handlers*, on a `.kbview` whose code-behind can be converted;
+  `kubuno/convertHandlers { uri }` returns the same `{ edit, converted, reason }`. Each entry becomes a method of
+  a new `#[kubuno_views::event_handlers] impl <ViewModel>` placed after the `impl ViewModel` (or appended to an
+  existing typed impl): `let vm = self;` and `let value = e.legacy_value();` (each only when the closure bound
+  it; no `e` parameter when the value was ignored), then the closure body; a name that is not an identifier (or
+  is `get`/`set`…) gets `#[handler(name = "…")]`. The table is emptied (`handlers! {}`) so its function keeps
+  compiling, `.frame(` calls with five arguments in the sibling files become `.frame_typed_with(`, the prelude
+  import is added. CRLF files stay CRLF.
+
+### Templates
+
+*Kubuno Desktop Application*: `main_view.rs` imports the prelude and declares `#[kubuno_views::event_handlers]
+impl MainViewModel { fn on_hello_click(&mut self, sender: &Sender<Button>, e: &MouseEventArgs) }` (the view's
+`OnClick="on_hello_click"`); `main.rs` paints with `runtime.frame_typed(canvas, frame, &mut view_model, body)`
+(no `handler_table`). *Kubuno View* item: the same shape (`on_action_click` on `State`).
+
+### Not built (EVT-5)
+
+The ⚡ tab's compatible-handlers dropdown (`GetCompatibleMethods`), a designer menu command for the conversion
+(the LS request exists), rename/remove-stub, the missing-handler diagnostic; `#[deprecated]` on `handlers!`
+(§5.4 point 5).
+
+### Tests
+
+Rust: `events::typed` (9: the `HANDLERS` table, typed args and sender, bindings resolved in sender props,
+`handled` written back, `cancel` bridged from a derived cancelable args, base/`dyn` args, mismatches skipped but
+claimed, legacy table behind the sink with the legacy value, a plain view model unchanged), a node test where a
+real `ButtonNode` click reaches typed methods in the WinForms order with a typed sender and `MouseEventArgs`
+beside a legacy entry, `controls` (one type per control), `ElementProps` doctest; macro unit tests on the
+expansion and on every error message (4), 8 `compile_fail` doctests and a passing example; all previous tests
+unchanged (478 unit tests in `kubuno-views`). LS: `code_behind` (7), `handler_insert` typed round trips (4:
+typed method in the impl, signatures per event — MouseDown, KeyDown `&mut`, TextChanged, Validating `&mut
+CancelEventArgs`, Switch toggled, GotFocus `&dyn EventArgs`, root Load —, structural element, prelude added
+and empty impls), `convert_handlers` (3: the previous template converted exactly, append to an existing typed
+impl in a CRLF file, reasons), an LSP round trip (`createHandler` typed, `codeAction` absent/present,
+`convertHandlers`). C#: caret position of a typed stub past the added import, `ArgsRustType`/`ArgsMut` from the
+fixture (292 Designer tests). `tools/test-templates.ps1 -Run` passes with the typed template.
 
 ## Scope note (product owner, 2026-09-29)
 

@@ -11,5 +11,5 @@
 -->
 <Panel DesignWidth="800" DesignHeight="450">
   <TextField x:Name="status" Text="{Binding Status}" Placeholder="Status" X="24" Y="24" Width="632" Height="36" Anchor="Top, Left, Right"/>
-  <Button x:Name="hello" Text="Say hello" Variant="Primary" OnClick="say_hello_clicked" X="672" Y="24" Width="104" Height="36" Anchor="Top, Right"/>
+  <Button x:Name="hello" Text="Say hello" Variant="Primary" OnClick="on_hello_click" X="672" Y="24" Width="104" Height="36" Anchor="Top, Right"/>
 </Panel>

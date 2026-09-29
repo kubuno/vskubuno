@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Typed event handlers, like a Windows Forms form's**: a new *Kubuno Desktop Application* (and a new
+  *Kubuno View* item) now declares its handlers as methods of the view model, in an impl marked
+  `#[kubuno_views::event_handlers]` - `fn on_hello_click(&mut self, sender: &Sender<Button>, e:
+  &MouseEventArgs)` receives the button that was clicked and the click's arguments. Double-clicking a control on
+  the design surface, or an event in the Properties window's Events tab, adds such a method with the right
+  sender and argument types (`&mut KeyEventArgs` for KeyDown, `&CheckedChangedEventArgs` for a switch...), and
+  the editor opens on it. Projects created earlier, with a `handlers!` table, keep building and working
+  unchanged, and keep getting table-style handlers.
+- **"Convert the handlers! table to typed handlers"**: a quick action (light bulb, Ctrl+.) in a `.kbview`'s XML
+  editor rewrites its code-behind's `handlers!` table into typed methods and updates the `runtime.frame(...)`
+  call, in one step.
+
 - **The Properties window's Events tab (⚡) lists every Windows Forms event of a `.kbview` control, grouped
   by category**: Action, Mouse, Key, Focus, Behavior, Layout, Property Changed..., with the event's
   description (in French when Visual Studio is in French) in the description pane and Windows Forms names

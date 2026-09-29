@@ -100,6 +100,34 @@ namespace Kubuno.VisualStudio.Designer.Tests.Handlers
             CollectionAssert.AreEqual(new[] { (RsUri, new LspPosition(2, 0)) }, host.Navigations, "opens the code-behind at the new fn stub, not the .kbview file");
         }
 
+        /// <summary>
+        /// EVT-4: a typed stub is an indented method after a blank line, inserted together with a
+        /// <c>use kubuno_views::prelude::*;</c> line higher in the file - the caret still lands on its <c>fn</c>.
+        /// </summary>
+        [TestMethod]
+        public async Task Created_TypedStub_NavigatesToTheMethodPastTheAddedImport()
+        {
+            var changes = new Dictionary<string, IReadOnlyList<TextEditDto>>
+            {
+                [KbviewUri] = new List<TextEditDto> { Edit(0, 7, " OnClick=\"on_ok_click\"") },
+                [RsUri] = new List<TextEditDto>
+                {
+                    Edit(12, 0, "\n    fn on_ok_click(&mut self, sender: &Sender<Button>, e: &MouseEventArgs) {\n        // TODO: implement on_ok_click\n    }\n"),
+                    Edit(2, 0, "use kubuno_views::prelude::*;\n"),
+                },
+            };
+            var client = new FakeKubunoViewsLanguageServerClient
+            {
+                Response = new CreateHandlerResponse("on_ok_click", location: null, new HandlerWorkspaceEdit(changes)),
+            };
+            var host = new FakeHandlerDocumentHost();
+
+            var result = await new HandlerCreationService(client, host).CreateAsync(Request(), CancellationToken.None);
+
+            Assert.AreEqual(HandlerCreationOutcome.Created, result.Outcome);
+            CollectionAssert.AreEqual(new[] { (RsUri, new LspPosition(14, 4)) }, host.Navigations);
+        }
+
         [TestMethod]
         public async Task Created_AppliesFilesInDeterministicOrdinalUriOrder()
         {

@@ -16,7 +16,7 @@ use kubuno_controls::host::{self, Chrome, Frame, HostOptions};
 use kubuno_ui::{Rect, Theme};
 use kubuno_views::runtime::{FileWatcher, Runtime};
 
-use main_view::{handler_table, MainViewModel};
+use main_view::MainViewModel;
 
 /// `main_view.kbview` sits next to this file - resolved from `CARGO_MANIFEST_DIR` (a compile-time
 /// constant) so the path is correct regardless of the process's current working directory,
@@ -29,7 +29,6 @@ fn main() -> std::process::ExitCode {
     watcher.poll(&mut runtime); // Load once before the window even opens.
 
     let mut view_model = MainViewModel::default();
-    let mut handlers = handler_table();
 
     // Like a Windows Forms form, the window opens with the view's designed size as its client area
     // (the root's DesignWidth x DesignHeight in main_view.kbview), and the view fills the whole client
@@ -49,7 +48,8 @@ fn main() -> std::process::ExitCode {
             let body = Rect::new(0.0, frame.chrome_top, frame.size.0, frame.size.1.max(frame.chrome_top));
 
             if runtime.has_view() {
-                let events = runtime.frame(canvas, frame, &mut view_model, &mut handlers, body);
+                // Runs the `#[kubuno_views::event_handlers]` methods of `MainViewModel` the view names.
+                let events = runtime.frame_typed(canvas, frame, &mut view_model, body);
                 for event in &events {
                     tracing::debug!("event: {event:?}");
                 }

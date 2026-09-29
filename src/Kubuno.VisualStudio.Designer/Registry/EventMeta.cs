@@ -33,6 +33,13 @@ namespace Kubuno.VisualStudio.Designer.Registry
         /// <summary>The args type followed by its ancestors, root last - what makes a handler compatible (§5.3).</summary>
         public List<string> ArgsChain { get; set; } = new List<string>();
 
+        /// <summary>The Rust args type a typed handler declares (<c>"MouseEventArgs"</c>, <c>"TextChangedEventArgs"</c>,
+        /// <c>"EmptyEventArgs"</c> for the root) - EVT-4; null in an older export.</summary>
+        public string? ArgsRustType { get; set; }
+
+        /// <summary>A typed handler takes the args as <c>&amp;mut</c> (it can set <c>handled</c>/<c>cancel</c>) - EVT-4.</summary>
+        public bool ArgsMut { get; set; }
+
         /// <summary>A handler can cancel it (<c>Validating</c>).</summary>
         public bool Cancelable { get; set; }
 

@@ -134,6 +134,14 @@ namespace Kubuno.VisualStudio.Designer.Tests.Registry
             CollectionAssert.AreEqual(new[] { "MouseEventArgs", "EventArgs" }, down.ArgsChain);
             Assert.IsTrue(button.Events.Single(e => e.Name == "OnValidating").Cancelable);
             Assert.IsTrue(button.Events.Single(e => e.Name == "OnLoad").RootOnly);
+
+            // EVT-4: the Rust type a typed handler declares, and whether it takes the args as `&mut`.
+            Assert.AreEqual("MouseEventArgs", down.ArgsRustType);
+            Assert.IsFalse(down.ArgsMut);
+            Assert.AreEqual("MouseEventArgs", button.Events[0].ArgsType, "a click carries MouseEventArgs");
+            Assert.IsTrue(button.Events.Single(e => e.Name == "OnKeyDown").ArgsMut);
+            Assert.AreEqual("EmptyEventArgs", button.Events.Single(e => e.Name == "OnGotFocus").ArgsRustType);
+            Assert.AreEqual("CheckedChangedEventArgs", registry.Find("Switch")!.FindEvent("OnCheckedChanged")!.ArgsRustType);
         }
 
         [TestMethod]
