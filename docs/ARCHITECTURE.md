@@ -112,7 +112,12 @@ assembly names changed - including the wizard assemblies the `.vstemplate` files
 **Loading** is unchanged: the package still auto-loads on the one "Kubuno activation" rule (nothing loads for a
 C#-only solution or the start window); each assembly with MEF parts is a `MefComponent` asset of the VSIX manifest (the
 Web and Mobile ones too, so their first MEF part needs no manifest change). The "Kubuno" pane (and `KUBUNO_VS_LOG`)
-still reports "package loaded in X ms (Y ms on the UI thread)" and the deferred initialization time.
+still reports "package loaded in X ms (Y ms on the UI thread)" and the deferred initialization time. Measured A/B on
+the same solution (DsLive, fresh `.vs`, warm, separate hives, 3-5 runs each): package load 24-42 ms on the UI thread
+before the layers vs 40-44 ms after, deferred initialization 61-64 ms vs 25-28 ms at idle - the total UI-thread time
+went down. Layers register their dialog gallery samples as providers (`DialogGallery.Register(Func<...>)`), built when
+the gallery opens: building them eagerly (override catalog, designer and wizard assemblies) had added about 45 ms to
+the package load's UI-thread time.
 
 **Visual Studio SDK builds.** Most assemblies compile against the NuGet `Microsoft.VisualStudio.SDK` 17.14; the CPS
 project systems and the wizards compile against the installed Visual Studio's 18.x assemblies. `Kubuno.Core` compiles
@@ -160,7 +165,8 @@ high-contrast themes (no white window, no default WPF buttons or selection color
   shared assembly would bring binding conflicts.
 - Re-check: in the experimental instance, Tools > "Kubuno: Dialog Gallery" (shown only when Visual Studio was started
   with `/rootsuffix`; DTE command `Kubuno.DialogGallery`) lists every dialog with sample data - switch the theme and
-  open them again. A new dialog adds itself to its assembly's `*DialogGallery.Entries`.
+  open them again. A new dialog adds itself to its assembly's `*DialogGallery.Entries`, which its layer registers as a
+  provider (evaluated when the gallery opens, never during the package load).
 
 ## Phases
 

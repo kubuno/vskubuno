@@ -173,7 +173,12 @@ namespace Kubuno.Desktop
         }
 
         /// <summary>This layer's dialogs, with sample data, for the dialog gallery (docs/ARCHITECTURE.md, "Themed dialogs").</summary>
-        private static void RegisterDialogGalleryEntries()
+        private static void RegisterDialogGalleryEntries() =>
+            // A provider: built (the override catalog parsed, the designer and wizard assemblies loaded) only when the
+            // gallery opens, never during the package load.
+            DialogGallery.Register(DialogGalleryEntries);
+
+        private static IEnumerable<KeyValuePair<string, Func<bool?>>> DialogGalleryEntries()
         {
             var entries = new List<KeyValuePair<string, Func<bool?>>>
             {
@@ -197,7 +202,7 @@ namespace Kubuno.Desktop
 
             entries.AddRange(Kubuno.Desktop.Designer.UI.DesignerDialogGallery.Entries);
             entries.AddRange(TemplateWizardDialogGallery.Entries);
-            DialogGallery.Register(entries);
+            return entries;
         }
 
         /// <summary>

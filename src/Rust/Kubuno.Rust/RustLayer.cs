@@ -144,7 +144,8 @@ namespace Kubuno.Rust
         /// <summary>This layer's dialogs, with sample data, for the dialog gallery (docs/ARCHITECTURE.md, "Themed dialogs").</summary>
         private static void RegisterDialogGalleryEntries()
         {
-            DialogGallery.Register(new[]
+            // Providers: built (and their assemblies loaded) only when the gallery opens, never during the package load.
+            DialogGallery.Register(() => new[]
             {
                 new KeyValuePair<string, Func<bool?>>("Ajouter › (NewItemNameDialog)", () => new NewItemNameDialog("Ajouter - Vue Kubuno", "Nom :", "MainView").ShowModal()),
                 new KeyValuePair<string, Func<bool?>>(DependenciesText.ReferenceManagerTitle("Sample"), () => new ReferenceManagerDialog("Sample", new[]
@@ -155,7 +156,7 @@ namespace Kubuno.Rust
                 }).ShowModal()),
                 new KeyValuePair<string, Func<bool?>>(DependenciesText.RemoveUnusedTitle, () => new UnusedDependenciesDialog("cargo-machete", new[] { "itoa", "serde_json", "once_cell" }).ShowModal()),
             });
-            DialogGallery.Register(Kubuno.Rust.ProjectSystem.ProjectProperties.RustProjectSystemDialogGallery.Entries);
+            DialogGallery.Register(() => Kubuno.Rust.ProjectSystem.ProjectProperties.RustProjectSystemDialogGallery.Entries);
         }
 
         /// <summary>

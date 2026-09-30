@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Tests of the Core layer (docs/ARCHITECTURE.md, "Layers (as built)"): the pure helpers of Kubuno.Core.Logic (LSP
-       plumbing, UI language) and the unified settings manifest every layer's options pages are declared in. -->
+       plumbing, UI language), the dialog gallery registry of Kubuno.Core and the unified settings manifest every layer's options pages are declared in. -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\..\src\Core\Kubuno.Core\Kubuno.Core.csproj" />
   </ItemGroup>
 
 </Project>
