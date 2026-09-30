@@ -65,6 +65,9 @@ namespace Kubuno.VisualStudio.Designer
 
         public static string CategoryData => T("Data", "Données");
 
+        /// <summary>The printing components' category and Toolbox tab (docs/PRINTING.md), WinForms' "Printing" / "Impression".</summary>
+        public static string CategoryPrinting => T("Printing", "Impression");
+
         public static string CategoryMisc => T("Misc", "Divers");
 
         public static string CategoryAction => T("Action", "Action");
@@ -404,7 +407,7 @@ namespace Kubuno.VisualStudio.Designer
         public static string[] AllToolboxTabNames() => new[]
         {
             "Common Controls", "Contrôles communs", "Display", "Affichage", "Choice", "Choix", "Text", "Texte",
-            "Containers", "Conteneurs", "Data", "Données", "Components", "Composants",
+            "Containers", "Conteneurs", "Data", "Données", "Components", "Composants", "Printing", "Impression",
         };
 
         /// <summary>The Toolbox tab of a project's own controls (docs/EVENTS.md EVT-7b), like WinForms' "&lt;Project&gt; Components".</summary>
@@ -420,6 +423,7 @@ namespace Kubuno.VisualStudio.Designer
                 case "text": return T("Text", "Texte");
                 case "containers": return T("Containers", "Conteneurs");
                 case "data": return T("Data", "Données");
+                case "printing": return CategoryPrinting;
                 case "components": return T("Components", "Composants");
                 default:
                     return family is null || family.Length == 0 ? "Kubuno" : char.ToUpperInvariant(family[0]) + family.Substring(1);

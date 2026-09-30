@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Printing in Kubuno desktop applications (`docs/PRINTING.md`)**, the Windows Forms way:
+  - A **Printing** Toolbox tab ("Impression" in French) in every Kubuno desktop project: `PrintDocument`,
+    `PrintPreviewDialog`, `PrintDialog`, `PageSetupDialog` (component tray) and `PrintPreviewControl`, with their own
+    16-pixel icons. Components of the Kubuno libraries (printing, data) now get tabs of their own by category, without
+    "Choose Items…".
+  - Properties window: the printing properties under *Printing*/*Impression* (document name, origin at margins,
+    printer, landscape, paper, margins, copies, print to file); the dialogs' and the preview's `Document` is a
+    drop-down of the view's documents. A double-click on a `PrintDocument` creates its `PrintPage` handler
+    (`fn print_document1_print_page(&mut self, _sender: &Control, _e: &mut PrintPageEventArgs)`).
+  - `.kbview` IntelliSense knows the printing components before the project is built (the language server now follows
+    the `kubuno` crate's workspace dependencies), and the designer renders views holding them at once (the bundled
+    surface links them).
+  - A sample, `samples/printing-desktop`: a designed document with its handlers, the preview, Print and Page Setup
+    dialogs, and a preview built in code; `--print-to <file.pdf>` prints to "Microsoft Print to PDF" without a dialog.
 - **Database tooling for Kubuno desktop applications (`docs/DATA.md`, DATA-4 to DATA-8)**:
   - **Data Explorer** (View, next to Server Explorer): add PostgreSQL, SQLite, MySQL/MariaDB and SQL Server
     connections with a themed dialog (Test connection; the connection string is stored only in the Windows

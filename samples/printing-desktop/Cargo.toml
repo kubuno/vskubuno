@@ -1,0 +1,19 @@
+[package]
+name = "printing-desktop"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# A Kubuno desktop application that prints (vskubuno docs/PRINTING.md): a designed PrintDocument with
+# its BeginPrint/PrintPage handlers, the preview, Print and Page Setup dialogs of the designer's
+# "Printing" Toolbox tab, and a document built in code. Open printing-desktop.rsproj in Visual Studio
+# (or `cargo run` with CARGO_TARGET_DIR on a local disk: kubuno_ui is a dylib).
+#
+#   printing-desktop.exe --print-to C:\temp\sample.pdf   prints the text to "Microsoft Print to PDF"
+#                                                         into that file, then closes (a smoke test).
+#   printing-desktop.exe --preview                        opens the print preview at once.
+
+[dependencies]
+# Kubuno, from a local checkout of github.com/kubuno/desktop (its `windows` workspace), like the
+# Kubuno Desktop Application template (change it here AND <KubunoDesktopSrc> in the .rsproj).
+kubuno = { path = "Z:/src/desktop/windows/src/crates/kubuno" }

@@ -121,6 +121,12 @@ namespace Kubuno.VisualStudio.Designer.PropertyBrowser
         /// </summary>
         public static string DisplayName(string category)
         {
+            // The printing components' own category (docs/PRINTING.md), localized like the standard ones.
+            if (string.Equals(category, "Printing", StringComparison.OrdinalIgnoreCase))
+            {
+                return DesignerText.CategoryPrinting;
+            }
+
             foreach (Category known in Enum.GetValues(typeof(Category)))
             {
                 if (string.Equals(known.ToString(), (category ?? string.Empty).Replace(" ", string.Empty), StringComparison.OrdinalIgnoreCase))

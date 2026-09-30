@@ -196,6 +196,14 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             }
 
             s_registry = registry;
+            if (s_installed && Package.GetGlobalService(typeof(SVsToolbox)) is IVsToolbox installedToolbox && LibrarySignature(registry) != s_librarySignature)
+            {
+                // The language server declared (or dropped) library components since the Toolbox was filled.
+                RemoveLibraryItems(installedToolbox);
+                AddLibraryItems(installedToolbox, registry);
+                installedToolbox.UpdateToolboxUI();
+            }
+
             var context = UIContext.FromUIContextGuid(new Guid(DesignerConstants.CommandUiContextGuidString));
             if (!s_subscribed)
             {
@@ -239,6 +247,8 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 }
 
                 s_items.Clear();
+                s_libraryItems.Clear();
+                s_librarySignature = string.Empty;
                 var existing = ListTabs(toolbox);
                 var kubunoTabs = DesignerText.AllToolboxTabNames().ToList();
                 if (s_installedProjectTab is { } projectTab)
@@ -406,6 +416,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 }
             }
 
+            added += AddLibraryItems(toolbox, registry);
             AddProjectItems(toolbox);
             toolbox.UpdateToolboxUI();
             KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: added {added} Kubuno component(s) in {registry.FamilyNames.Count} tab(s), {added - s_iconFailures} with their icon.");
@@ -622,6 +633,74 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             return s_iconFailures;
         }
 
+        /// <summary>
+        /// The crates of the Kubuno libraries whose components get Toolbox tabs of their own, by their
+        /// <c>#[toolbox(category = …)]</c>: <c>kubuno-print</c>'s "Impression" (docs/PRINTING.md) and <c>kubuno-data</c>'s
+        /// "Données" - like the WinForms Toolbox's "Printing" and "Data" tabs, present in every project that links
+        /// them (through the <c>kubuno</c> crate), without "Choose Items…".
+        /// </summary>
+        private static readonly string[] LibraryCrates = { "kubuno_print", "kubuno_data" };
+
+        private static readonly HashSet<string> s_libraryItems = new HashSet<string>(StringComparer.Ordinal);
+        private static string s_librarySignature = string.Empty;
+
+        /// <summary>The library components of <paramref name="registry"/> and their tabs, in Toolbox order (see <see cref="LibraryCrates"/>).</summary>
+        public static IEnumerable<(string Tab, ComponentMeta Component)> LibraryItems(ComponentRegistry registry) =>
+            registry.Components
+                .Where(c => c.IsProject && c.Browsable && c.CrateName is { } crate && LibraryCrates.Contains(crate))
+                .GroupBy(c => c.Name, StringComparer.Ordinal)
+                .Select(g => g.First())
+                .GroupBy(c => DesignerText.ToolboxTabName((c.ToolboxCategory ?? "Components").ToLowerInvariant()), StringComparer.Ordinal)
+                .SelectMany(g => SortedForToolbox(g).Select(c => (g.Key, c)));
+
+        private static string LibrarySignature(ComponentRegistry registry) =>
+            string.Join(";", LibraryItems(registry).Select(i => i.Tab + "/" + i.Component.Name));
+
+        /// <summary>Adds the library components' tabs and items; returns how many items were added.</summary>
+        private static int AddLibraryItems(IVsToolbox toolbox, ComponentRegistry registry)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var added = 0;
+            var existing = ListTabs(toolbox);
+            foreach (var (tab, component) in LibraryItems(registry))
+            {
+                if (!existing.Contains(tab))
+                {
+                    toolbox.AddTab(tab);
+                    existing.Add(tab);
+                }
+
+                try
+                {
+                    if (AddItem(toolbox, component, tab))
+                    {
+                        s_libraryItems.Add(component.Name);
+                        added++;
+                    }
+                }
+                catch (Exception ex) when (ex is COMException or ArgumentException or ExternalException)
+                {
+                    KubunoViewsLogHost.Current.WriteException($"[designer] Toolbox: could not add '{component.Name}'", ex);
+                }
+            }
+
+            s_librarySignature = LibrarySignature(registry);
+            return added;
+        }
+
+        private static void RemoveLibraryItems(IVsToolbox toolbox)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            foreach (var item in s_items.Where(i => !i.Project && s_libraryItems.Contains(i.Component)).ToList())
+            {
+                toolbox.RemoveItem((Microsoft.VisualStudio.OLE.Interop.IDataObject)item.Data);
+                s_items.Remove(item);
+            }
+
+            s_libraryItems.Clear();
+            s_librarySignature = string.Empty;
+        }
+
         /// <summary>Alphabetical inside a tab, like the WinForms Toolbox (Visual Studio adds the "Pointer" entry on top of each tab itself).</summary>
         public static IEnumerable<ComponentMeta> SortedForToolbox(IEnumerable<ComponentMeta> components) =>
             components.OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase);
@@ -635,6 +714,11 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 {
                     yield return (DesignerText.ToolboxTabName(family), component.Name);
                 }
+            }
+
+            foreach (var (tab, component) in LibraryItems(registry))
+            {
+                yield return (tab, component.Name);
             }
         }
     }

@@ -1789,7 +1789,7 @@ clippy --all-targets -D warnings` clean on `kubuno_ui`, `kubuno-controls`, `kubu
 - Not automated: a file drag from the Explorer itself (a synthetic drag source did not complete its OLE loop); the
   file path of `DragEventArgs` was covered by the OLE round-trip test and the cross-process drag.
 
-## Requirement — the WinForms printing stack (product owner, 2026-09-29; follow-up, not started)
+## Requirement — the WinForms printing stack (product owner, 2026-09-29; built 2026-09-30: see `docs/PRINTING.md`)
 
 `on_print` (EVT-8) is the control's side of printing. The rest of WinForms' printing stack is to come:
 

@@ -83,6 +83,11 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
             ["ToolTip"] = 59, // Lucide "message-square-text"
             ["ContextMenu"] = 60, // Lucide "square-menu"
             ["MenuItem"] = 61, // Lucide "align-left"
+            ["PrintDocument"] = 62, // Lucide "printer"
+            ["PrintPreviewControl"] = 63, // Lucide "file-search"
+            ["PrintPreviewDialog"] = 64, // Lucide "scan-eye"
+            ["PrintDialog"] = 65, // Lucide "printer-check"
+            ["PageSetupDialog"] = 66, // Lucide "file-sliders"
         };
 
         /// <summary>The image id for element <paramref name="tag"/> (<see cref="FallbackId"/> when unknown).</summary>

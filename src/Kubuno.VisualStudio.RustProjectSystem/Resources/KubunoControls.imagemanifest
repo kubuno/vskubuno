@@ -70,6 +70,11 @@
     <ID Name="ToolTip" Value="59" />
     <ID Name="ContextMenu" Value="60" />
     <ID Name="MenuItem" Value="61" />
+    <ID Name="PrintDocument" Value="62" />
+    <ID Name="PrintPreviewControl" Value="63" />
+    <ID Name="PrintPreviewDialog" Value="64" />
+    <ID Name="PrintDialog" Value="65" />
+    <ID Name="PageSetupDialog" Value="66" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -376,6 +381,31 @@
       <Source Uri="$(Controls)/MenuItem.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/MenuItem.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/MenuItem.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(PrintDocument)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/PrintDocument.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/PrintDocument.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/PrintDocument.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(PrintPreviewControl)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/PrintPreviewControl.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/PrintPreviewControl.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/PrintPreviewControl.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(PrintPreviewDialog)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/PrintPreviewDialog.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/PrintPreviewDialog.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/PrintPreviewDialog.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(PrintDialog)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/PrintDialog.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/PrintDialog.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/PrintDialog.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(PageSetupDialog)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/PageSetupDialog.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/PageSetupDialog.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/PageSetupDialog.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

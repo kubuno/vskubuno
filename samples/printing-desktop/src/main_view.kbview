@@ -1,0 +1,18 @@
+<!--
+  The printing sample's window. The PrintDocument and the dialogs are non-visual components: the
+  designer lists them in its component tray, under the surface. Double-click the PrintDocument to add
+  a PrintPage handler; the dialogs' Document property is a drop-down of the view's documents.
+-->
+<Panel DesignWidth="760" DesignHeight="500" Title="Kubuno printing sample" OnLoad="main_view_load">
+  <Label x:Name="caption" Text="Text to print (one paragraph per line):" X="24" Y="16" Width="480" Height="20"/>
+  <TextArea x:Name="body" X="24" Y="40" Width="712" Height="360" Anchor="Top, Bottom, Left, Right"/>
+  <Button x:Name="preview" Text="Print preview…" OnClick="preview_click" X="24" Y="420" Width="150" Height="36" Anchor="Bottom, Left"/>
+  <Button x:Name="page_setup" Text="Page setup…" OnClick="page_setup_click" X="186" Y="420" Width="130" Height="36" Anchor="Bottom, Left"/>
+  <Button x:Name="code_preview" Text="Preview (code)" OnClick="code_preview_click" X="328" Y="420" Width="140" Height="36" Anchor="Bottom, Left"/>
+  <Button x:Name="print" Text="Print…" Variant="Primary" OnClick="print_click" X="616" Y="420" Width="120" Height="36" Anchor="Bottom, Right"/>
+  <Label x:Name="status" Text="" X="24" Y="466" Width="712" Height="20" Anchor="Bottom, Left, Right"/>
+  <PrintDocument x:Name="print_document1" DocumentName="Kubuno printing sample" OnBeginPrint="print_document1_begin_print" OnPrintPage="print_document1_print_page" OnEndPrint="print_document1_end_print"/>
+  <PrintPreviewDialog x:Name="print_preview_dialog1" Document="print_document1"/>
+  <PrintDialog x:Name="print_dialog1" Document="print_document1" AllowSomePages="true"/>
+  <PageSetupDialog x:Name="page_setup_dialog1" Document="print_document1"/>
+</Panel>

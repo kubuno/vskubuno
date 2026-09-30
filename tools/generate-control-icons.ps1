@@ -99,6 +99,12 @@ $table = @(
     @{ Name = 'ToolTip';          Icon = 'message-square-text';  Accent = 1 }
     @{ Name = 'ContextMenu';      Icon = 'square-menu';          Accent = 0 }
     @{ Name = 'MenuItem';         Icon = 'align-left';           Accent = 0 }
+    # Printing (docs/PRINTING.md): the Toolbox's Printing tab ("Impression").
+    @{ Name = 'PrintDocument';    Icon = 'printer' }
+    @{ Name = 'PrintPreviewControl'; Icon = 'file-search' }
+    @{ Name = 'PrintPreviewDialog'; Icon = 'scan-eye' }
+    @{ Name = 'PrintDialog';      Icon = 'printer-check';        Accent = 1 }
+    @{ Name = 'PageSetupDialog';  Icon = 'file-sliders' }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS
