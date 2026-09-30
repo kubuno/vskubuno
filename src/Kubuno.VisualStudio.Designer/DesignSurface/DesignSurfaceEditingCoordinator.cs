@@ -127,6 +127,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             _buffer.Changed += OnBufferChanged;
             _host.SetDesignMode(true);
 
+            // docs/DATA.md DATA-6: drops from the Data Sources window (the .ExternalDrop.cs half).
+            ExternalDesignerDrop.Register(this);
+
             // INTEGRATION.md §9: DSG-8's selection sync, wired here because this class already resolves
             // every live collaborator (IComponentModel, the language client's JsonRpc, the document URI)
             // that both the editing pipeline above and selection sync need - see that section's own
@@ -551,6 +554,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
             }
 
             _disposed = true;
+            ExternalDesignerDrop.Unregister(this);
             _pushTimer.Stop();
             _pushTimer.Tick -= OnPushTimerTick;
             _host.EditRequested -= OnEditRequested;

@@ -34,6 +34,14 @@
   <data name="S_kubuno_debugging_Description" xml:space="preserve"><value>Debugging of Rust and Kubuno applications.</value></data>
   <data name="S_kubuno_debugging_justMyCode_Title" xml:space="preserve"><value>Just My Code</value></data>
   <data name="S_kubuno_debugging_justMyCode_Description" xml:space="preserve"><value>Which frames the debugger shows.</value></data>
+  <data name="S_kubuno_data_Title" xml:space="preserve"><value>Data</value></data>
+  <data name="S_kubuno_data_Description" xml:space="preserve"><value>The Data Explorer and its query windows.</value></data>
+  <data name="S_kubuno_data_explorer_Title" xml:space="preserve"><value>Data Explorer</value></data>
+  <data name="S_kubuno_data_explorer_Description" xml:space="preserve"><value>Connections, schema tree and table data.</value></data>
+  <data name="S_kubuno_data_query_Title" xml:space="preserve"><value>Query window</value></data>
+  <data name="S_kubuno_data_query_Description" xml:space="preserve"><value>Running SQL queries.</value></data>
+  <data name="S_kubuno_data_diagnostics_Title" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="S_kubuno_data_diagnostics_Description" xml:space="preserve"><value>Logging of the data helper (kubuno-data-tool).</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Title" xml:space="preserve"><value>Path override</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Description" xml:space="preserve"><value>Full path to rust-analyzer.exe. When empty, Kubuno tries &quot;rustup which rust-analyzer&quot;, then %USERPROFILE%\.cargo\bin\rust-analyzer.exe, then the PATH environment variable. Applies the next time the server starts.</value></data>
   <data name="S_kubuno_rust_editor_formatOnSave_Title" xml:space="preserve"><value>Format on save</value></data>
@@ -87,4 +95,16 @@
   <data name="S_kubuno_designer_editor_useAsDefault_Description" xml:space="preserve"><value>A double-click on a .kbview file opens the Kubuno View Designer (Design | XML split view) instead of the plain XML editor. Either way the designer is reachable through Open With.</value></data>
   <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Title" xml:space="preserve"><value>Treat the Kubuno framework as external code</value></data>
   <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Description" xml:space="preserve"><value>Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno framework (kubuno_views, kubuno_controls, kubuno_ui.dll, the event-handler dispatch glue) into [External Code] and Step Into (F11) goes straight to your handlers. Turn it off to see and debug Kubuno&apos;s own code. The Rust standard library is always stepped over. Takes effect at the next debug session.</value></data>
+  <data name="S_kubuno_data_explorer_showDataRows_Title" xml:space="preserve"><value>Rows shown by Show Table Data</value></data>
+  <data name="S_kubuno_data_explorer_showDataRows_Description" xml:space="preserve"><value>How many rows &quot;Show Table Data&quot; reads from a table or view (1 to 100000).</value></data>
+  <data name="S_kubuno_data_explorer_defaultCredentialStore_Title" xml:space="preserve"><value>Default credential storage</value></data>
+  <data name="S_kubuno_data_explorer_defaultCredentialStore_Description" xml:space="preserve"><value>Where the Add Connection dialog proposes to store a new connection string. Either way the string is never written into a project.</value></data>
+  <data name="S_kubuno_data_explorer_defaultCredentialStore_Item_credentialManager" xml:space="preserve"><value>Windows Credential Manager</value></data>
+  <data name="S_kubuno_data_explorer_defaultCredentialStore_Item_userSecrets" xml:space="preserve"><value>User secrets</value></data>
+  <data name="S_kubuno_data_query_maxRows_Title" xml:space="preserve"><value>Maximum rows per result</value></data>
+  <data name="S_kubuno_data_query_maxRows_Description" xml:space="preserve"><value>A result set is cut after this many rows; the status bar of the query window says so (1 to 1000000).</value></data>
+  <data name="S_kubuno_data_query_timeoutSeconds_Title" xml:space="preserve"><value>Query timeout (seconds)</value></data>
+  <data name="S_kubuno_data_query_timeoutSeconds_Description" xml:space="preserve"><value>How long a query may run before it is cancelled (1 to 86400).</value></data>
+  <data name="S_kubuno_data_diagnostics_logRequests_Title" xml:space="preserve"><value>Log data helper requests</value></data>
+  <data name="S_kubuno_data_diagnostics_logRequests_Description" xml:space="preserve"><value>Log each request to kubuno-data-tool (method and parameters, with connection strings, passwords and SQL text removed) in the Kubuno Output pane.</value></data>
 </root>

@@ -8,6 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Database tooling for Kubuno desktop applications (`docs/DATA.md`, DATA-4 to DATA-8)**:
+  - **Data Explorer** (View, next to Server Explorer): add PostgreSQL, SQLite, MySQL/MariaDB and SQL Server
+    connections with a themed dialog (Test connection; the connection string is stored only in the Windows
+    Credential Manager or the user secrets, never in a project), then browse schemas, tables, views, columns, keys,
+    indexes and functions; *Show data*, a query window (F5 / Ctrl+Shift+E, results grids, messages, cancel) and
+    *Generate script* (SELECT, INSERT, UPDATE, DELETE, CREATE). Options in Tools > Options > Kubuno > Data.
+  - **Data Sources** window (Shift+Alt+D) and the **Add New Data Source** wizard: pick a connection, the name of its
+    connection string in the application and the tables/views; the wizard writes `src/data/<name>.kbdata` (the typed
+    source, yours to edit) and `src/data/<name>.rs` (your code, never rewritten), wires `mod data;`, the `kubuno`
+    `data` feature and the user-secrets id, copies the connection string into the project's secret store and builds the
+    offline SQLx cache in the background.
+  - **Drag and drop from Data Sources onto a view**, as in Windows Forms: a table becomes an editable, formatted
+    `DataTable` (or detail fields: a label and a bound control per column) with its `BindingSource` (filled when the
+    window opens), `TableAdapter`, `DbConnection`, `ErrorProvider` and `BindingNavigator`, in one undoable edit.
+  - **Migrations**: a *Database* submenu on Rust projects (Add Migration, Apply Migrations, Revert Last Migration,
+    Update SQLx Cache) and a *Migrations* node in Solution Explorer showing each migration as applied, pending or
+    changed, and whether the SQLx cache is up to date; a stale cache is also a build warning and an info bar.
+  - **SQL in Rust strings**: the SQL of `query!`, `query_as!`, `sqlx::query(…)`, `DbCommand::with_text(…)` and the
+    adapters' commands is coloured as SQL, completes tables and columns (aliases included) from the connection's
+    schema, and gets a warning squiggle on an unknown table or column.
+  - Rust projects now rebuild when a `.kbdata`, a migration or the `.sqlx` cache changes.
 - **Kubuno desktop applications written like Windows Forms (`docs/PROGRAMMING-MODEL.md`)**:
   - A new *Kubuno Desktop Application* is three short files, like a Windows Forms project: `main.rs`
     (`kubuno::Application::run(MainView::new())`), `main_view.kbview` (the window's design) and `main_view.rs` (the

@@ -24,7 +24,11 @@ $categories = @(
     @('kubuno.designer', 'Designer', 'Concepteur', 'The Kubuno View Designer.', 'Le concepteur de vues Kubuno.'),
     @('kubuno.designer.editor', 'Editor', 'Editeur', 'How .kbview files are opened.', 'Comment les fichiers .kbview sont ouverts.'),
     @('kubuno.debugging', 'Debugging', 'Debogage', 'Debugging of Rust and Kubuno applications.', 'Debogage des applications Rust et Kubuno.'),
-    @('kubuno.debugging.justMyCode', 'Just My Code', 'Uniquement mon code', 'Which frames the debugger shows.', 'Les cadres que le debogueur affiche.')
+    @('kubuno.debugging.justMyCode', 'Just My Code', 'Uniquement mon code', 'Which frames the debugger shows.', 'Les cadres que le debogueur affiche.'),
+    @('kubuno.data', 'Data', 'Donnees', 'The Data Explorer and its query windows.', 'L''Explorateur de donnees et ses fenetres de requete.'),
+    @('kubuno.data.explorer', 'Data Explorer', 'Explorateur de donnees', 'Connections, schema tree and table data.', 'Connexions, arborescence du schema et donnees des tables.'),
+    @('kubuno.data.query', 'Query window', 'Fenetre de requete', 'Running SQL queries.', 'Execution des requetes SQL.'),
+    @('kubuno.data.diagnostics', 'Diagnostics', 'Diagnostics', 'Logging of the data helper (kubuno-data-tool).', 'Journalisation de l''assistant de donnees (kubuno-data-tool).')
 )
 
 # Properties: moniker, type (boolean/string/enum), default, English title, French title, English description, French description,
@@ -109,7 +113,27 @@ $properties = @(
     @{ m = 'kubuno.debugging.justMyCode.frameworkIsExternalCode'; t = 'boolean'; d = $true
        en = 'Treat the Kubuno framework as external code'; fr = 'Traiter le framework Kubuno comme du code externe'
        den = 'Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno framework (kubuno_views, kubuno_controls, kubuno_ui.dll, the event-handler dispatch glue) into [External Code] and Step Into (F11) goes straight to your handlers. Turn it off to see and debug Kubuno''s own code. The Rust standard library is always stepped over. Takes effect at the next debug session.'
-       dfr = 'Comme Windows Forms pour une application C#: avec Uniquement mon code active, la Pile des appels replie le framework Kubuno (kubuno_views, kubuno_controls, kubuno_ui.dll, la colle d''envoi des gestionnaires d''evenements) en [Code externe] et Pas a pas detaille (F11) va directement a vos gestionnaires. Decochez pour voir et deboguer le code de Kubuno lui-meme. La bibliotheque standard de Rust est toujours ignoree. Pris en compte a la prochaine session de debogage.' }
+       dfr = 'Comme Windows Forms pour une application C#: avec Uniquement mon code active, la Pile des appels replie le framework Kubuno (kubuno_views, kubuno_controls, kubuno_ui.dll, la colle d''envoi des gestionnaires d''evenements) en [Code externe] et Pas a pas detaille (F11) va directement a vos gestionnaires. Decochez pour voir et deboguer le code de Kubuno lui-meme. La bibliotheque standard de Rust est toujours ignoree. Pris en compte a la prochaine session de debogage.' },
+    @{ m = 'kubuno.data.explorer.showDataRows'; t = 'integer'; d = 200; extra = @{ minimum = 1; maximum = 100000 }
+       en = 'Rows shown by Show Table Data'; fr = 'Lignes lues par Afficher les donnees'
+       den = 'How many rows "Show Table Data" reads from a table or view (1 to 100000).'
+       dfr = 'Nombre de lignes que "Afficher les donnees" lit dans une table ou une vue (1 a 100000).' },
+    @{ m = 'kubuno.data.explorer.defaultCredentialStore'; t = 'enum'; d = 'credentialManager'; e = 'credentialManager=Windows Credential Manager|Gestionnaire d''identification Windows;userSecrets=User secrets|Secrets utilisateur'
+       en = 'Default credential storage'; fr = 'Stockage initial des informations d''identification'
+       den = 'Where the Add Connection dialog proposes to store a new connection string. Either way the string is never written into a project.'
+       dfr = 'Emplacement propose par la boite de dialogue Ajouter une connexion pour une nouvelle chaine de connexion. Dans les deux cas, la chaine n''est jamais ecrite dans un projet.' },
+    @{ m = 'kubuno.data.query.maxRows'; t = 'integer'; d = 1000; extra = @{ minimum = 1; maximum = 1000000 }
+       en = 'Maximum rows per result'; fr = 'Nombre maximal de lignes par resultat'
+       den = 'A result set is cut after this many rows; the status bar of the query window says so (1 to 1000000).'
+       dfr = 'Un jeu de resultats est tronque apres ce nombre de lignes; la barre d''etat de la fenetre de requete l''indique (1 a 1000000).' },
+    @{ m = 'kubuno.data.query.timeoutSeconds'; t = 'integer'; d = 30; extra = @{ minimum = 1; maximum = 86400 }
+       en = 'Query timeout (seconds)'; fr = 'Delai d''execution des requetes (secondes)'
+       den = 'How long a query may run before it is cancelled (1 to 86400).'
+       dfr = 'Duree maximale d''une requete avant son annulation (1 a 86400).' },
+    @{ m = 'kubuno.data.diagnostics.logRequests'; t = 'boolean'; d = $false
+       en = 'Log data helper requests'; fr = 'Journaliser les requetes de l''assistant de donnees'
+       den = 'Log each request to kubuno-data-tool (method and parameters, with connection strings, passwords and SQL text removed) in the Kubuno Output pane.'
+       dfr = 'Journalise chaque requete envoyee a kubuno-data-tool (methode et parametres, sans chaines de connexion, mots de passe ni texte SQL) dans le volet Sortie Kubuno.' }
 )
 
 # French strings are written without accents in the table above (ASCII source); this restores them (case-sensitive pairs).
@@ -162,6 +186,28 @@ elements => éléments
 element => élément
 evenements => événements
 duree => durée
+Duree => Durée
+Donnees => Données
+donnees => données
+Fenetre => Fenêtre
+fenetre => fenêtre
+schema => schéma
+Execution => Exécution
+execution => exécution
+Delai => Délai
+resultat => résultat
+tronque apres => tronqué après
+d'etat => d'état
+propose par => proposé par
+boite => boîte
+ecrite => écrite
+chaine de connexion => chaîne de connexion
+la chaine n => la chaîne n
+chaines de => chaînes de
+envoyee a => envoyée à
+methode et => méthode et
+(1 a 1 => (1 à 1
+(1 a 8 => (1 à 8
 '@
 $accents = @(); foreach ($line in ($accentPairs -split "`r?`n")) { if ($line -match ' => ') { $p = $line -split ' => ', 2; $accents += ,@($p[0], $p[1]) } }
 function Fr([string]$s) { foreach ($a in $accents) { $s = $s -creplace [regex]::Escape($a[0]), $a[1] }; $s }

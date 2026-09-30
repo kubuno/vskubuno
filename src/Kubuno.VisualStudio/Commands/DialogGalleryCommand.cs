@@ -53,6 +53,16 @@ namespace Kubuno.VisualStudio.Commands
                     new ReferenceCandidate("helper", @"C:\src\helper\Cargo.toml", isReferenced: false),
                 }).ShowModal()),
                 new KeyValuePair<string, Func<bool?>>(DependenciesText.RemoveUnusedTitle, () => new UnusedDependenciesDialog("cargo-machete", new[] { "itoa", "serde_json", "once_cell" }).ShowModal()),
+                // docs/DATA.md DATA-5 (no helper calls from the gallery: Test and OK only validate).
+                new KeyValuePair<string, Func<bool?>>(Kubuno.VisualStudio.Core.Data.DataText.AddConnectionTitle + " (AddConnectionDialog)", () => new Kubuno.VisualStudio.DataExplorer.AddConnectionDialog(new[] { "Shop" }, Kubuno.VisualStudio.Core.Data.CredentialStoreKind.CredentialManager, test: null, save: null).ShowModal()),
+                // docs/DATA.md DATA-7 (no helper calls from the gallery).
+                new KeyValuePair<string, Func<bool?>>(Kubuno.VisualStudio.Core.Migrations.MigrationText.AddMigrationTitle + " (AddMigrationDialog)", () => new Kubuno.VisualStudio.Migrations.AddMigrationDialog("shop-app", "shop").ShowModal()),
+                new KeyValuePair<string, Func<bool?>>(Kubuno.VisualStudio.Core.Migrations.MigrationText.ConnectionDialogTitle + " (ConnectionNameDialog)", () => new Kubuno.VisualStudio.Migrations.ConnectionNameDialog(
+                    Kubuno.VisualStudio.Core.Migrations.MigrationText.ConnectionDialogIntro("shop-app"), new[] { "Shop", "Sales" }, "Shop", userSecretsId: null, listExplorer: null, copyToSecrets: null).ShowModal()),
+                // docs/DATA.md DATA-6 (sample connections and schema; Finish only validates).
+                new KeyValuePair<string, Func<bool?>>(Kubuno.VisualStudio.Core.DataSources.DataSourcesText.WizardTitle + " (DataSourceWizardDialog)", () => new Kubuno.VisualStudio.DataSources.DataSourceWizardDialog(
+                    new Kubuno.VisualStudio.Core.DataSources.DataSourceWizardModel(Kubuno.VisualStudio.DataSources.SampleDataSourceWizardBackend.Connections, new[] { "shop" }, moduleSchema: null),
+                    new Kubuno.VisualStudio.DataSources.SampleDataSourceWizardBackend()).ShowModal()),
             };
 
             OverrideContext? overrides = OverrideAssistant.Analyze(SampleComponent, SampleComponent.IndexOf("base: Button", StringComparison.Ordinal), OverrideCatalog.Default);

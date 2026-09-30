@@ -39,7 +39,9 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
         public IEnumerable<char> PotentialCommitCharacters => CommitCharacters;
 
         public bool ShouldCommitCompletion(IAsyncCompletionSession session, SnapshotPoint location, char typedChar, CancellationToken token) =>
-            RustCompletionPresentation.CommitCharacters.IndexOf(typedChar) >= 0;
+            Sql.SqlCompletionSource.IsSqlSession(session)
+                ? Sql.SqlCompletionSource.CommitCharacters.IndexOf(typedChar) >= 0
+                : RustCompletionPresentation.CommitCharacters.IndexOf(typedChar) >= 0;
 
         public CommitResult TryCommit(IAsyncCompletionSession session, ITextBuffer buffer, CompletionItem item, char typedChar, CancellationToken token)
         {

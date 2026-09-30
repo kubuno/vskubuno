@@ -206,6 +206,12 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         private void OnDragDropEditRequested(object? sender, DesignSurfaceDragDropEditRequestedEventArgs e)
         {
             var op = e.Op;
+            if (TryHandleExternalDrop(op))
+            {
+                // The placeholder of a Data Sources drag (docs/DATA.md DATA-6): the .ExternalDrop.cs half inserts the real thing.
+                return;
+            }
+
             object encoded = op.Kind == DesignSurfaceDragDropOpKind.InsertChild
                 ? new { kind = "insertChild", parentId = op.ParentId, index = op.Index ?? 0, xml = op.Xml }
                 : new { kind = "moveElement", elementId = op.ElementId, newParentId = op.NewParentId, index = op.Index ?? 0 };

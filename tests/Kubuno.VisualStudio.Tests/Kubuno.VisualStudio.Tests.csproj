@@ -34,6 +34,12 @@
     <None Include="..\Kubuno.Cargo.Tests\Fixtures\Metadata\dependencies-*.json" Link="Fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <!-- Real rust-analyzer 1.98 textDocument/hover markdown (QuickInfo conversion tests). -->
     <None Update="Fixtures\Hover\*.md" CopyToOutputDirectory="PreserveNewest" />
+    <!-- kubuno-data-tool schema.load answers (Data Explorer tree tests, docs/DATA.md DATA-5). -->
+    <None Update="Data\Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Schema snapshots in the `schema.load` format (docs/DATA.md DATA-8: SQL IntelliSense in Rust strings). -->
+    <None Update="Fixtures\Sql\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- A real kubuno-data-tool migrate.status answer, paths normalized (docs/DATA.md DATA-7: the Migrations node). -->
+    <None Update="Migrations\Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

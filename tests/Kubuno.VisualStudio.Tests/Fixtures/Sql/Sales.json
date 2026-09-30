@@ -1,0 +1,15 @@
+{"provider":"postgres","serverVersion":"16.4","database":"sales","schemas":[
+  {"name":"public","tables":[
+    {"name":"products","kind":"table","columns":[
+      {"name":"id","dbType":"int4","rustType":"i32","nullable":false,"maxLength":0,"primaryKey":true,"autoIncrement":true,"readOnly":false,"default":null},
+      {"name":"name","dbType":"text","rustType":"String","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null},
+      {"name":"UnitPrice","dbType":"numeric","rustType":"rust_decimal::Decimal","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null}],
+     "primaryKey":["id"],"foreignKeys":[],"indexes":[]}],
+   "functions":[]},
+  {"name":"billing","tables":[
+    {"name":"invoices","kind":"table","columns":[
+      {"name":"id","dbType":"int8","rustType":"i64","nullable":false,"maxLength":0,"primaryKey":true,"autoIncrement":true,"readOnly":false,"default":null},
+      {"name":"product_id","dbType":"int4","rustType":"i32","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null},
+      {"name":"amount","dbType":"numeric","rustType":"rust_decimal::Decimal","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null}],
+     "primaryKey":["id"],"foreignKeys":[],"indexes":[]}],
+   "functions":[{"name":"invoice_total","kind":"function","returnType":"numeric","arguments":"invoice bigint"}]}]}

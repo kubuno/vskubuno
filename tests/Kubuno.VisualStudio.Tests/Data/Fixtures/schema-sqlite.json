@@ -1,0 +1,25 @@
+{"provider":"sqlite","serverVersion":"3.45.1","database":"shop.db","schemas":[
+  {"name":"main","tables":[
+    {"name":"orders","kind":"table",
+     "columns":[
+       {"name":"id","dbType":"INTEGER","rustType":"i64","nullable":false,"maxLength":0,"primaryKey":true,"autoIncrement":true,"readOnly":false,"default":null},
+       {"name":"customer_id","dbType":"INTEGER","rustType":"i64","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null},
+       {"name":"amount","dbType":"NUMERIC","rustType":"String","nullable":true,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":"0"},
+       {"name":"ordered","dbType":"DATE","rustType":"chrono::NaiveDate","nullable":true,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null}],
+     "primaryKey":["id"],
+     "foreignKeys":[{"name":"fk_orders_customer","columns":["customer_id"],"refSchema":"main","refTable":"customers","refColumns":["id"]}],
+     "indexes":[]},
+    {"name":"customers","kind":"table",
+     "columns":[
+       {"name":"id","dbType":"INTEGER","rustType":"i64","nullable":false,"maxLength":0,"primaryKey":true,"autoIncrement":true,"readOnly":false,"default":null},
+       {"name":"name","dbType":"TEXT","rustType":"String","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null},
+       {"name":"email","dbType":"TEXT","rustType":"Option<String>","nullable":true,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null},
+       {"name":"age","dbType":"INTEGER","rustType":"Option<i64>","nullable":true,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null},
+       {"name":"birth_date","dbType":"DATE","rustType":"Option<chrono::NaiveDate>","nullable":true,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null}],
+     "primaryKey":["id"],
+     "foreignKeys":[],
+     "indexes":[{"name":"sqlite_autoindex_customers_1","columns":["email"],"unique":true},{"name":"ix_customers_age","columns":["age"],"unique":false}]},
+    {"name":"big_orders","kind":"view",
+     "columns":[{"name":"id","dbType":"INTEGER","rustType":"i64","nullable":true,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":true,"default":null}],
+     "primaryKey":[],"foreignKeys":[],"indexes":[]}],
+   "functions":[]}]}

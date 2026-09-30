@@ -127,6 +127,12 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
             Dbg($"Init reason={trigger.Reason} char='{trigger.Character}' pos={triggerLocation.Position} prev='{(triggerLocation.Position >= 2 ? triggerLocation.Snapshot[triggerLocation.Position - 2] : ' ')}'");
             var snapshot = triggerLocation.Snapshot;
             int position = triggerLocation.Position;
+            if (Sql.SqlCompletionSource.IsInSql(triggerLocation))
+            {
+                // A query string: the SQL completion lists there, rust-analyzer has nothing to add.
+                return CompletionStartData.DoesNotParticipateInCompletion;
+            }
+
             switch (trigger.Reason)
             {
                 case CompletionTriggerReason.Insertion:

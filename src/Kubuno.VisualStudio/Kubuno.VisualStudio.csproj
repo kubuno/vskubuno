@@ -91,6 +91,11 @@
     <Compile Include="LanguageService\IntelliSense\RustDocCommentContinuation.cs" />
     <Compile Include="LanguageService\IntelliSense\KbviewCrossLanguageCompletion.cs" />
     <Compile Include="LanguageService\IntelliSense\KbviewDefinitionFallback.cs" />
+    <Compile Include="LanguageService\Sql\SqlBufferState.cs" />
+    <Compile Include="LanguageService\Sql\SqlClassifier.cs" />
+    <Compile Include="LanguageService\Sql\SqlCompletionSource.cs" />
+    <Compile Include="LanguageService\Sql\SqlErrorTagger.cs" />
+    <Compile Include="LanguageService\Sql\SqlSchemaLocator.cs" />
     <Compile Include="SolutionExplorer\CollectionSources.cs" />
     <Compile Include="SolutionExplorer\SymbolNavigator.cs" />
     <Compile Include="SolutionExplorer\SymbolQueries.cs" />
@@ -138,6 +143,27 @@
     <Compile Include="Designer\KubunoViewsSurfaceLocator.cs" />
     <!-- docs/DESIGNER.md section 15: the designer renders with the project's own kubuno_ui.dll (design build). -->
     <Compile Include="Designer\ProjectDesignSurfaceRuntimeProvider.cs" />
+    <!-- docs/DATA.md DATA-5: the Data Explorer, its query windows and the kubuno-data-tool host (logic in Kubuno.VisualStudio.Core\Data). -->
+    <Compile Include="DataExplorer\DataToolHost.cs" />
+    <Compile Include="DataExplorer\DataUi.cs" />
+    <Compile Include="DataExplorer\DataExplorerControl.cs" />
+    <Compile Include="DataExplorer\DataExplorerToolWindow.cs" />
+    <Compile Include="DataExplorer\AddConnectionDialog.cs" />
+    <Compile Include="DataExplorer\QueryControl.cs" />
+    <Compile Include="DataExplorer\QueryToolWindow.cs" />
+    <Compile Include="DataExplorer\ShowDataExplorerCommand.cs" />
+    <!-- docs/DATA.md DATA-7: migrations and the SQLx cache. -->
+    <Compile Include="Migrations\MigrationCommands.cs" />
+    <Compile Include="Migrations\MigrationDialogs.cs" />
+    <Compile Include="Migrations\MigrationsTree.cs" />
+    <Compile Include="Migrations\SqlxStaleInfoBar.cs" />
+    <Compile Include="Migrations\RsprojTargetDirectory.cs" />
+    <Compile Include="Options\DataOptionsPage.cs" />
+    <Compile Include="DataSources\DataSourcesControl.cs" />
+    <Compile Include="DataSources\DataSourcesToolWindow.cs" />
+    <Compile Include="DataSources\DataSourceGenerator.cs" />
+    <Compile Include="DataSources\DataSourceWizardDialog.cs" />
+    <Compile Include="DataSources\ShowDataSourcesCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="source.extension.cs">
       <AutoGen>True</AutoGen>
@@ -307,6 +333,17 @@
           this workspace documents, vskubuno/CLAUDE.md #5); override with /p:KubunoRustStdDir=<dir>.
     -->
     <KubunoViewsLsDir>$([System.IO.Path]::GetDirectoryName('$(KubunoViewsLsExePath)'))\</KubunoViewsLsDir>
+    <!--
+      kubuno-data-tool.exe (docs/DATA.md DATA-5: the Data Explorer's helper, JSON lines over stdio; crate
+      kubuno-data-tool of the desktop repo). Shipped in tools\ BESIDE kubuno-views-ls.exe and sharing its
+      tools\kubuno_ui.dll / std-*.dll, so it MUST come from the SAME cargo build (same CARGO_TARGET_DIR, same
+      toolchain) as kubuno-views-ls.exe - a Rust dylib has no stable ABI:
+        cd Z:\src\desktop\windows
+        $env:CARGO_TARGET_DIR = "C:\kubuno-build\desktop-target"
+        cargo build -r -p kubuno-views-ls -p kubuno-data-tool
+      Override with /p:KubunoDataToolExePath=<path> (then also point KubunoViewsLsExePath at the same build).
+    -->
+    <KubunoDataToolExePath Condition="'$(KubunoDataToolExePath)' == ''">C:\kubuno-build\desktop-target\release\kubuno-data-tool.exe</KubunoDataToolExePath>
     <KubunoRustStdDir Condition="'$(KubunoRustStdDir)' == ''">$(USERPROFILE)\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib\</KubunoRustStdDir>
     <!--
       kubuno-vs-mcp.exe (Kubuno.Mcp, net8.0 - docs/MCP.md "Integration"). Default: this repo's own
@@ -387,6 +424,8 @@
            Text="kubuno_ui.dll not found beside kubuno-views-ls.exe in '$(KubunoViewsLsDir)'. kubuno-views-ls.exe imports it (kubuno-ui is a Rust dylib) and must ship with the kubuno_ui.dll of the same cargo build." />
     <Error Condition="'@(KubunoRustStdDll)' == ''"
            Text="Rust's std-*.dll not found in '$(KubunoRustStdDir)'. kubuno-views-ls.exe imports it (-C prefer-dynamic); pass /p:KubunoRustStdDir=&lt;rustc --print sysroot&gt;\lib\rustlib\x86_64-pc-windows-msvc\lib\ for the toolchain that built it." />
+    <Error Condition="!Exists('$(KubunoDataToolExePath)')"
+           Text="kubuno-data-tool.exe not found at '$(KubunoDataToolExePath)'. Build it from the desktop repo in the SAME cargo build as kubuno-views-ls.exe (they share tools\kubuno_ui.dll): cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -p kubuno-data-tool -- or pass /p:KubunoDataToolExePath=&lt;path to kubuno-data-tool.exe&gt;." />
   </Target>
 
   <ItemGroup>
@@ -394,6 +433,12 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>tools\kubuno-views-ls.exe</Link>
+    </Content>
+    <!-- docs/DATA.md DATA-5: the Data Explorer's helper, using the tools\kubuno_ui.dll / std-*.dll below (same cargo build, see KubunoDataToolExePath). -->
+    <Content Include="$(KubunoDataToolExePath)" Condition="Exists('$(KubunoDataToolExePath)')">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\kubuno-data-tool.exe</Link>
     </Content>
     <!-- kubuno-views-ls.exe's runtime DLLs - see KubunoViewsLsDir/KubunoRustStdDir above. -->
     <KubunoRustStdDll Include="$(KubunoRustStdDir)std-*.dll" />

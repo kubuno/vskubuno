@@ -36,7 +36,7 @@
       </Menu>
 
       <!--
-        The .kbview design surface's context menus (docs/DESIGNER.md §12), shown by
+        The .kbview design surface's context menus (docs/DESIGNER.md Â§12), shown by
         DesignSurfaceEditingCoordinator.Commands.cs through IVsUIShell.ShowContextMenu with a
         DesignerContextMenuCommandTarget (Kubuno.VisualStudio.Designer), which answers every item's
         state and - for our own commands (TextChanges) - its text in VS's UI language; the English
@@ -82,7 +82,7 @@
       </Menu>
 
       <!--
-        docs/DESIGNER.md §13: the Windows Forms designer's Layout commands. Every item is one of VS's own
+        docs/DESIGNER.md Â§13: the Windows Forms designer's Layout commands. Every item is one of VS's own
         standard commands (guidVSStd97: Align Lefts..., Make Same Size, spacing, Center, z-order - with VS's
         own icons and localized names), placed below in the element context menu's Layout submenus and in the
         designer's Layout toolbar, and answered by DesignerWindowPane / DesignerContextMenuCommandTarget from
@@ -142,6 +142,80 @@
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDebugMenuGroup"/>
         <Strings>
           <ButtonText>Kubuno</ButtonText>
+        </Strings>
+      </Menu>
+      <!--
+        docs/DATA.md DATA-5: the Data Explorer's toolbar and context menus, and the query window's toolbar. Their
+        commands are answered by the tool window panes' own command services (DataExplorer\DataExplorerToolWindow.cs,
+        DataExplorer\QueryToolWindow.cs), which also set the French/English texts at run time.
+      -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataExplorerToolbar" priority="0x0000" type="ToolWindowToolbar">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataExplorerToolbar" />
+        <Strings>
+          <ButtonText>Data Explorer</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataConnectionContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Data Explorer connection</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Data Explorer table</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataNodeContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Data Explorer node</ButtonText>
+        </Strings>
+      </Menu>
+      <!-- docs/DATA.md DATA-6: the Data Sources window's toolbar and the drop-choice menu of its nodes (DataSources\DataSourcesToolWindow.cs). -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesToolbar" priority="0x0000" type="ToolWindowToolbar">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesToolbar" />
+        <Strings>
+          <ButtonText>Data Sources</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Data Sources node</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataScriptMenu" priority="0x0100" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableScriptGroup"/>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Generate Script</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoQueryToolbar" priority="0x0000" type="ToolWindowToolbar">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoQueryToolbar" />
+        <Strings>
+          <ButtonText>Query</ButtonText>
+        </Strings>
+      </Menu>
+      <!--
+        docs/DATA.md DATA-7: the "Database" submenu of a .rsproj project node (Migrations\MigrationCommands.cs sets the
+        French/English texts at run time; hidden unless the active project is a .rsproj, VisibilityConstraints).
+      -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseProjectMenu" priority="0x0100" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseProjectGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Database</ButtonText>
+        </Strings>
+      </Menu>
+      <!-- The floating context menu of the Migrations node and its children (Migrations\MigrationsTree.cs, IVsUIShell.ShowContextMenu). -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Kubuno Migrations</ButtonText>
         </Strings>
       </Menu>
     </Menus>
@@ -238,7 +312,7 @@
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewPropertiesGroup" priority="0x0300">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewContextMenu" />
       </Group>
-      <!-- docs/DESIGNER.md §13: the Layout submenus of the element context menu, and the Layout toolbar groups. -->
+      <!-- docs/DESIGNER.md Â§13: the Layout submenus of the element context menu, and the Layout toolbar groups. -->
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutGroup" priority="0x0450">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
       </Group>
@@ -274,6 +348,72 @@
       </Group>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarOrderGroup" priority="0x0600">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" />
+      </Group>
+      <!-- docs/DATA.md DATA-5: Data Explorer and query window groups. -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataExplorerToolbarGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataExplorerToolbar" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataConnectionQueryGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataConnectionContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataConnectionEditGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataConnectionContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableDataGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableScriptGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableEditGroup" priority="0x0300">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataScriptListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataScriptMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataNodeGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataNodeContextMenu" />
+      </Group>
+      <!-- docs/DATA.md DATA-6: Data Sources toolbar and node menu groups. -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesToolbarGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesToolbar" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesModeGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesControlGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesActionGroup" priority="0x0300">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoQueryToolbarGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoQueryToolbar" />
+      </Group>
+      <!-- docs/DATA.md DATA-7: the project node's "Database" submenu and the Migrations node's context menu. -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseProjectGroup" priority="0x0350">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseMigrationGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseProjectMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseSqlxGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseProjectMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseRefreshGroup" priority="0x0300">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseProjectMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsOpenGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsMainGroup" priority="0x0200">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsSqlxGroup" priority="0x0300">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsRefreshGroup" priority="0x0400">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsContextMenu" />
       </Group>
     </Groups>
 
@@ -346,11 +486,11 @@
       <!--
         Extended "Ajouter" CASCADING SUBMENU on a .rsproj project node (not the top-level project
         context menu - the earlier revision of this file got that wrong, verified live: it rendered
-        these as flat top-level entries instead of nested under "Ajouter ›"). The real "Ajouter"
+        these as flat top-level entries instead of nested under "Ajouter â€º"). The real "Ajouter"
         flyout is not a distinct shell-defined Menu id third parties can see in vsshlids.h - it is
         assembled by the shell from a handful of well-known GROUPS inside IDM_VS_CTXT_PROJNODE, the
-        same ones the WinForms/C# project system itself injects "Référence...", "Formulaire (Windows
-        Forms)...", "Contrôle utilisateur...", "Composant...", "Classe..." into - so third-party
+        same ones the WinForms/C# project system itself injects "RÃ©fÃ©rence...", "Formulaire (Windows
+        Forms)...", "ContrÃ´le utilisateur...", "Composant...", "Classe..." into - so third-party
         commands join that same flyout by using THOSE groups as their own Parent directly, not by
         defining a competing Menu. Scoped to .rsproj only via per-Button VisibilityConstraints
         (guidRustProjectUIContext, a ProvideUIContextRule on ActiveProjectCapability:RustProjectSystem
@@ -361,7 +501,7 @@
         <Icon guid="ImageCatalogGuid" id="Reference" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Référence de projet...</ButtonText>
+          <ButtonText>RÃ©fÃ©rence de projet...</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoView" priority="0x0100" type="Button">
@@ -385,7 +525,7 @@
         <Icon guid="ImageCatalogGuid" id="Test" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Test d'intégration...</ButtonText>
+          <ButtonText>Test d'intÃ©gration...</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddRustExample" priority="0x0103" type="Button">
@@ -410,7 +550,7 @@
         <Icon guid="guidRustProjectImages" id="RustFile" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Contrôle personnalisé Kubuno...</ButtonText>
+          <ButtonText>ContrÃ´le personnalisÃ© Kubuno...</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoUserControl" priority="0x0100" type="Button">
@@ -418,7 +558,7 @@
         <Icon guid="guidRustProjectImages" id="RustFile" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Contrôle utilisateur Kubuno...</ButtonText>
+          <ButtonText>ContrÃ´le utilisateur Kubuno...</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoInheritedControl" priority="0x0100" type="Button">
@@ -426,7 +566,7 @@
         <Icon guid="guidRustProjectImages" id="RustFile" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Contrôle hérité Kubuno...</ButtonText>
+          <ButtonText>ContrÃ´le hÃ©ritÃ© Kubuno...</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoComponent" priority="0x0100" type="Button">
@@ -452,7 +592,7 @@
         <Icon guid="guidRustProjectImages" id="CargoManifest" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Dépendance Cargo (crate)...</ButtonText>
+          <ButtonText>DÃ©pendance Cargo (crate)...</ButtonText>
         </Strings>
       </Button>
 
@@ -668,7 +808,7 @@
           <ButtonText>Design Size...</ButtonText>
         </Strings>
       </Button>
-      <!-- docs/EVENTS.md §5.4 (EVT-5): the view menu's "Convert to Typed Handlers" (kubuno/convertHandlers). -->
+      <!-- docs/EVENTS.md Â§5.4 (EVT-5): the view menu's "Convert to Typed Handlers" (kubuno/convertHandlers). -->
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerConvertHandlers" priority="0x0200" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewCodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
@@ -676,6 +816,403 @@
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
           <ButtonText>Convert to Typed Handlers</ButtonText>
+        </Strings>
+      </Button>
+      <!--
+        docs/DATA.md DATA-5. View > Data Explorer (next to Server Explorer; also placed in View > Other Windows), then
+        the Data Explorer's own commands: toolbar buttons (icons, the text is the tooltip) and context menu items,
+        placed in several menus through CommandPlacements. Texts are set at run time (French/English).
+      -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowDataExplorer" priority="0x0300" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_VIEW_ORG_WINDOWS" />
+        <Icon guid="ImageCatalogGuid" id="Database" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Data Explorer</ButtonText>
+          <CanonicalName>.View.KubunoDataExplorer</CanonicalName>
+          <LocCanonicalName>.View.KubunoDataExplorer</LocCanonicalName>
+        </Strings>
+      </Button>
+      <!--
+        docs/DATA.md DATA-6. View > Other Windows > Data Sources (Shift+Alt+D), the Data Sources toolbar and the menu of a
+        table / column (its drop choice, checked at run time). Texts are set at run time (French/English).
+      -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowDataSources" priority="0x0101" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Icon guid="ImageCatalogGuid" id="DataSourceView" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Data Sources</ButtonText>
+          <CanonicalName>.View.KubunoDataSources</CanonicalName>
+          <LocCanonicalName>.View.KubunoDataSources</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesAdd" priority="256" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="AddDataSource" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Add New Data Source...</ButtonText>
+          <CanonicalName>.Data.AddDataSource</CanonicalName>
+          <LocCanonicalName>.Data.AddDataSource</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesConfigure" priority="257" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="ConfigureDatabaseWizard" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Configure Data Source with Wizard...</ButtonText>
+          <CanonicalName>.Data.ConfigureDataSource</CanonicalName>
+          <LocCanonicalName>.Data.ConfigureDataSource</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesRefresh" priority="258" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="Refresh" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Refresh</ButtonText>
+          <CanonicalName>.Data.RefreshDataSources</CanonicalName>
+          <LocCanonicalName>.Data.RefreshDataSources</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesEditFile" priority="259" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="EditDocument" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Edit the .kbdata File</ButtonText>
+          <CanonicalName>.Data.EditDataSourceFile</CanonicalName>
+          <LocCanonicalName>.Data.EditDataSourceFile</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesInsert" priority="256" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesActionGroup" />
+        <Icon guid="ImageCatalogGuid" id="Add" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Add to the Open View</ButtonText>
+          <CanonicalName>.Data.AddToOpenView</CanonicalName>
+          <LocCanonicalName>.Data.AddToOpenView</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesModeGrid" priority="256" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesModeGroup" />
+        <Icon guid="ImageCatalogGuid" id="DataGrid" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>DataTable (grid)</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesModeDetails" priority="257" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesModeGroup" />
+        <Icon guid="ImageCatalogGuid" id="DetailView" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Details</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesControlTextField" priority="256" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesControlGroup" />
+        <Icon guid="ImageCatalogGuid" id="TextBox" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>TextField</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesControlNumericField" priority="257" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesControlGroup" />
+        <Icon guid="ImageCatalogGuid" id="Numeric" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>NumericField</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesControlCheckBox" priority="258" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesControlGroup" />
+        <Icon guid="ImageCatalogGuid" id="CheckBoxChecked" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>CheckBox</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesControlDatePicker" priority="259" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesControlGroup" />
+        <Icon guid="ImageCatalogGuid" id="DateTimePicker" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>DatePicker</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesControlLabel" priority="260" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesControlGroup" />
+        <Icon guid="ImageCatalogGuid" id="Label" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Label</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesControlNone" priority="261" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesControlGroup" />
+        <Icon guid="ImageCatalogGuid" id="Cancel" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>[None]</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataAddConnection" priority="256" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataExplorerToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="AddConnection" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Add Connection...</ButtonText>
+          <CanonicalName>.Data.AddConnection</CanonicalName>
+          <LocCanonicalName>.Data.AddConnection</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataRefresh" priority="257" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataExplorerToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="Refresh" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Refresh</ButtonText>
+          <CanonicalName>.Data.Refresh</CanonicalName>
+          <LocCanonicalName>.Data.Refresh</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataNewQuery" priority="258" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataExplorerToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="NewQuery" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>New Query</ButtonText>
+          <CanonicalName>.Data.NewQuery</CanonicalName>
+          <LocCanonicalName>.Data.NewQuery</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataDelete" priority="259" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataExplorerToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="Remove" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Delete Connection</ButtonText>
+          <CanonicalName>.Data.DeleteConnection</CanonicalName>
+          <LocCanonicalName>.Data.DeleteConnection</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataShowData" priority="256" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableDataGroup" />
+        <Icon guid="ImageCatalogGuid" id="Table" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Show Table Data</ButtonText>
+          <CanonicalName>.Data.ShowTableData</CanonicalName>
+          <LocCanonicalName>.Data.ShowTableData</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataCopyName" priority="256" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableEditGroup" />
+        <Icon guid="ImageCatalogGuid" id="Copy" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Copy Name</ButtonText>
+          <CanonicalName>.Data.CopyName</CanonicalName>
+          <LocCanonicalName>.Data.CopyName</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataScriptSelect" priority="256" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataScriptListGroup" />
+        <Icon guid="ImageCatalogGuid" id="Script" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>SELECT</ButtonText>
+          <CanonicalName>.Data.ScriptSelect</CanonicalName>
+          <LocCanonicalName>.Data.ScriptSelect</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataScriptInsert" priority="257" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataScriptListGroup" />
+        <Icon guid="ImageCatalogGuid" id="Script" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>INSERT</ButtonText>
+          <CanonicalName>.Data.ScriptInsert</CanonicalName>
+          <LocCanonicalName>.Data.ScriptInsert</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataScriptUpdate" priority="258" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataScriptListGroup" />
+        <Icon guid="ImageCatalogGuid" id="Script" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>UPDATE</ButtonText>
+          <CanonicalName>.Data.ScriptUpdate</CanonicalName>
+          <LocCanonicalName>.Data.ScriptUpdate</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataScriptDelete" priority="259" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataScriptListGroup" />
+        <Icon guid="ImageCatalogGuid" id="Script" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>DELETE</ButtonText>
+          <CanonicalName>.Data.ScriptDelete</CanonicalName>
+          <LocCanonicalName>.Data.ScriptDelete</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataScriptCreate" priority="260" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataScriptListGroup" />
+        <Icon guid="ImageCatalogGuid" id="TableScript" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>CREATE</ButtonText>
+          <CanonicalName>.Data.ScriptCreate</CanonicalName>
+          <LocCanonicalName>.Data.ScriptCreate</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidQueryExecute" priority="256" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoQueryToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="Run" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Execute</ButtonText>
+          <CanonicalName>.Data.ExecuteQuery</CanonicalName>
+          <LocCanonicalName>.Data.ExecuteQuery</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidQueryCancel" priority="257" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoQueryToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="CancelQuery" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Cancel Query</ButtonText>
+          <CanonicalName>.Data.CancelQuery</CanonicalName>
+          <LocCanonicalName>.Data.CancelQuery</LocCanonicalName>
+        </Strings>
+      </Button>
+
+      <!-- docs/DATA.md DATA-7: migrations and the SQLx cache (Migrations\MigrationCommands.cs; texts set at run time). -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationAdd" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseMigrationGroup" />
+        <Icon guid="ImageCatalogGuid" id="NewItem" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Add Migration...</ButtonText>
+          <CanonicalName>.Data.AddMigration</CanonicalName>
+          <LocCanonicalName>.Data.AddMigration</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationRun" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseMigrationGroup" />
+        <Icon guid="ImageCatalogGuid" id="Run" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Apply Migrations</ButtonText>
+          <CanonicalName>.Data.ApplyMigrations</CanonicalName>
+          <LocCanonicalName>.Data.ApplyMigrations</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationRevert" priority="0x0102" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseMigrationGroup" />
+        <Icon guid="ImageCatalogGuid" id="Undo" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Revert Last Migration</ButtonText>
+          <CanonicalName>.Data.RevertMigration</CanonicalName>
+          <LocCanonicalName>.Data.RevertMigration</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidSqlxPrepare" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseSqlxGroup" />
+        <Icon guid="ImageCatalogGuid" id="DatabaseModelRefresh" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Update SQLx Cache</ButtonText>
+          <CanonicalName>.Data.UpdateSqlxCache</CanonicalName>
+          <LocCanonicalName>.Data.UpdateSqlxCache</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationRefresh" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseRefreshGroup" />
+        <Icon guid="ImageCatalogGuid" id="Refresh" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Refresh Status</ButtonText>
+          <CanonicalName>.Data.RefreshMigrationStatus</CanonicalName>
+          <LocCanonicalName>.Data.RefreshMigrationStatus</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationOpen" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsOpenGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Open</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -730,7 +1267,7 @@
     <CommandPlacement guid="guidVSStd97" id="cmdidViewCode" priority="0x0100">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewCodeGroup" />
     </CommandPlacement>
-    <!-- docs/DESIGNER.md §13: the Layout commands, in the context submenus and in the Layout toolbar. -->
+    <!-- docs/DESIGNER.md Â§13: the Layout commands, in the context submenus and in the Layout toolbar. -->
     <CommandPlacement guid="guidVSStd97" id="cmdidAlignLeft" priority="0x0100">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" />
     </CommandPlacement>
@@ -851,6 +1388,63 @@
     <CommandPlacement guid="guidVSStd97" id="cmdidSendToBack" priority="0x0101">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerToolbarOrderGroup" />
     </CommandPlacement>
+    <!-- docs/DATA.md DATA-5: Data Explorer commands reused in its context menus, and View > Other Windows. -->
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowDataExplorer" priority="0x0100">
+      <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataNewQuery" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataConnectionQueryGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataRefresh" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataConnectionQueryGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataCopyName" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataConnectionEditGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataDelete" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataConnectionEditGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataNewQuery" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableDataGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataRefresh" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataTableEditGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataNewQuery" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataNodeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataCopyName" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataNodeGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataRefresh" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataNodeGroup" />
+    </CommandPlacement>
+    <!-- docs/DATA.md DATA-6: the toolbar's Configure / Edit / Refresh also in the node menu. -->
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesConfigure" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesActionGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesEditFile" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesActionGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDataSourcesRefresh" priority="0x0103">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDataSourcesActionGroup" />
+    </CommandPlacement>
+    <!-- docs/DATA.md DATA-7: the "Database" commands again in the Migrations node's context menu. -->
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationAdd" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsMainGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationRun" priority="0x0101">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsMainGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationRevert" priority="0x0102">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsMainGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidSqlxPrepare" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsSqlxGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationRefresh" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsRefreshGroup" />
+    </CommandPlacement>
   </CommandPlacements>
 
   <Symbols>
@@ -880,6 +1474,9 @@
 
     <!-- The .kbview designer command UI context (DesignerConstants.CommandUiContextGuidString): active while it is the active document. -->
     <GuidSymbol name="guidKubunoDesignerCmdUI" value="{B634717B-8D65-47A1-BCAD-DA3C18B559C1}" />
+
+    <!-- The query windows' key binding scope (PackageGuidStrings.QueryToolWindow, ProvideKeyBindingTable). -->
+    <GuidSymbol name="guidKubunoQueryWindow" value="{48c1434c-7de1-43cb-b8c6-2e7ce28d72ed}" />
 
     <GuidSymbol name="guidKubunoCommandsPackageCmdSet" value="{5A67B8C7-E9FD-4917-B844-F103C0485DE1}">
       <IDSymbol name="KubunoToolsMenuGroup" value="0x1020" />
@@ -926,6 +1523,74 @@
       <IDSymbol name="KubunoDebugMenu" value="0x1070" />
       <IDSymbol name="KubunoDebugMenuGroup" value="0x1071" />
       <IDSymbol name="KubunoDebugCommandsGroup" value="0x1072" />
+      <!-- docs/DATA.md DATA-5 - MUST match PackageIds (PackageGuids.cs). -->
+      <IDSymbol name="cmdidShowDataExplorer" value="0x0300" />
+      <IDSymbol name="cmdidDataAddConnection" value="0x0301" />
+      <IDSymbol name="cmdidDataRefresh" value="0x0302" />
+      <IDSymbol name="cmdidDataNewQuery" value="0x0303" />
+      <IDSymbol name="cmdidDataDelete" value="0x0304" />
+      <IDSymbol name="cmdidDataShowData" value="0x0305" />
+      <IDSymbol name="cmdidDataCopyName" value="0x0306" />
+      <IDSymbol name="cmdidDataScriptSelect" value="0x0310" />
+      <IDSymbol name="cmdidDataScriptInsert" value="0x0311" />
+      <IDSymbol name="cmdidDataScriptUpdate" value="0x0312" />
+      <IDSymbol name="cmdidDataScriptDelete" value="0x0313" />
+      <IDSymbol name="cmdidDataScriptCreate" value="0x0314" />
+      <IDSymbol name="cmdidQueryExecute" value="0x0320" />
+      <IDSymbol name="cmdidQueryCancel" value="0x0321" />
+      <IDSymbol name="KubunoDataExplorerToolbar" value="0x1080" />
+      <IDSymbol name="KubunoDataExplorerToolbarGroup" value="0x1081" />
+      <IDSymbol name="KubunoDataConnectionContextMenu" value="0x1082" />
+      <IDSymbol name="KubunoDataConnectionQueryGroup" value="0x1083" />
+      <IDSymbol name="KubunoDataConnectionEditGroup" value="0x1084" />
+      <IDSymbol name="KubunoDataTableContextMenu" value="0x1085" />
+      <IDSymbol name="KubunoDataTableDataGroup" value="0x1086" />
+      <IDSymbol name="KubunoDataTableScriptGroup" value="0x1087" />
+      <IDSymbol name="KubunoDataTableEditGroup" value="0x1088" />
+      <IDSymbol name="KubunoDataScriptMenu" value="0x1089" />
+      <IDSymbol name="KubunoDataScriptListGroup" value="0x108A" />
+      <IDSymbol name="KubunoQueryToolbar" value="0x108B" />
+      <IDSymbol name="KubunoQueryToolbarGroup" value="0x108C" />
+      <IDSymbol name="KubunoDataNodeContextMenu" value="0x108E" />
+      <IDSymbol name="KubunoDataNodeGroup" value="0x108F" />
+      <!-- docs/DATA.md DATA-7 - MUST match PackageIds (PackageGuids.cs). -->
+      <IDSymbol name="cmdidMigrationAdd" value="0x0540" />
+      <IDSymbol name="cmdidMigrationRun" value="0x0541" />
+      <IDSymbol name="cmdidMigrationRevert" value="0x0542" />
+      <IDSymbol name="cmdidSqlxPrepare" value="0x0543" />
+      <IDSymbol name="cmdidMigrationRefresh" value="0x0544" />
+      <IDSymbol name="cmdidMigrationOpen" value="0x0545" />
+      <IDSymbol name="KubunoDatabaseProjectMenu" value="0x10D0" />
+      <IDSymbol name="KubunoDatabaseProjectGroup" value="0x10D1" />
+      <IDSymbol name="KubunoDatabaseMigrationGroup" value="0x10D2" />
+      <IDSymbol name="KubunoDatabaseSqlxGroup" value="0x10D3" />
+      <IDSymbol name="KubunoDatabaseRefreshGroup" value="0x10D4" />
+      <IDSymbol name="KubunoMigrationsContextMenu" value="0x10D5" />
+      <IDSymbol name="KubunoMigrationsOpenGroup" value="0x10D6" />
+      <IDSymbol name="KubunoMigrationsMainGroup" value="0x10D7" />
+      <IDSymbol name="KubunoMigrationsSqlxGroup" value="0x10D8" />
+      <IDSymbol name="KubunoMigrationsRefreshGroup" value="0x10D9" />
+      <!-- docs/DATA.md DATA-6 - MUST match PackageIds (PackageGuids.cs). -->
+      <IDSymbol name="cmdidShowDataSources" value="0x0340" />
+      <IDSymbol name="cmdidDataSourcesAdd" value="0x0341" />
+      <IDSymbol name="cmdidDataSourcesConfigure" value="0x0342" />
+      <IDSymbol name="cmdidDataSourcesRefresh" value="0x0343" />
+      <IDSymbol name="cmdidDataSourcesEditFile" value="0x0344" />
+      <IDSymbol name="cmdidDataSourcesInsert" value="0x0345" />
+      <IDSymbol name="cmdidDataSourcesModeGrid" value="0x0346" />
+      <IDSymbol name="cmdidDataSourcesModeDetails" value="0x0347" />
+      <IDSymbol name="cmdidDataSourcesControlTextField" value="0x0348" />
+      <IDSymbol name="cmdidDataSourcesControlNumericField" value="0x0349" />
+      <IDSymbol name="cmdidDataSourcesControlCheckBox" value="0x034A" />
+      <IDSymbol name="cmdidDataSourcesControlDatePicker" value="0x034B" />
+      <IDSymbol name="cmdidDataSourcesControlLabel" value="0x034C" />
+      <IDSymbol name="cmdidDataSourcesControlNone" value="0x034D" />
+      <IDSymbol name="KubunoDataSourcesToolbar" value="0x10A0" />
+      <IDSymbol name="KubunoDataSourcesToolbarGroup" value="0x10A1" />
+      <IDSymbol name="KubunoDataSourcesContextMenu" value="0x10A2" />
+      <IDSymbol name="KubunoDataSourcesModeGroup" value="0x10A3" />
+      <IDSymbol name="KubunoDataSourcesControlGroup" value="0x10A4" />
+      <IDSymbol name="KubunoDataSourcesActionGroup" value="0x10A5" />
 
       <!-- .kbview design surface context menus - MUST match Kubuno.VisualStudio.Designer's DesignerCommandIds. -->
       <IDSymbol name="KubunoDesignerElementContextMenu" value="0x1030" />
@@ -960,7 +1625,7 @@
       <IDSymbol name="cmdidDesignerWrapScrollArea" value="0x0214" />
       <IDSymbol name="cmdidDesignerCreateHandlerFirst" value="0x0220" />
       <IDSymbol name="cmdidDesignerSelectFirst" value="0x0240" />
-      <!-- docs/DESIGNER.md §13: Layout submenus and toolbar. -->
+      <!-- docs/DESIGNER.md Â§13: Layout submenus and toolbar. -->
       <IDSymbol name="KubunoDesignerAlignMenu" value="0x1035" />
       <IDSymbol name="KubunoDesignerSizeMenu" value="0x1036" />
       <IDSymbol name="KubunoDesignerHorizontalSpacingMenu" value="0x1037" />
@@ -1000,8 +1665,22 @@
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoInheritedControl" context="guidRustProjectUIContext" />
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddKubunoComponent" context="guidRustProjectUIContext" />
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="cmdidAddCargoDependency" context="guidRustProjectUIContext" />
-    <!-- The designer Layout toolbar (docs/DESIGNER.md §13): shown while a .kbview designer is the active document. -->
+    <!-- docs/DATA.md DATA-7: the project node's "Database" submenu, .rsproj only. -->
+    <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="KubunoDatabaseProjectMenu" context="guidRustProjectUIContext" />
+    <!-- The designer Layout toolbar (docs/DESIGNER.md Â§13): shown while a .kbview designer is the active document. -->
     <VisibilityItem guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerLayoutToolbar" context="guidKubunoDesignerCmdUI" />
   </VisibilityConstraints>
+  <!--
+    docs/DATA.md DATA-5: in a query window (its own key binding scope, ProvideKeyBindingTable on KubunoPackage), F5 and
+    Ctrl+Shift+E execute and Alt+Break cancels, like SQL Server's query editor.
+  -->
+  <KeyBindings>
+    <KeyBinding guid="guidKubunoCommandsPackageCmdSet" id="cmdidQueryExecute" editor="guidKubunoQueryWindow" key1="E" mod1="Control Shift" />
+    <KeyBinding guid="guidKubunoCommandsPackageCmdSet" id="cmdidQueryExecute" editor="guidKubunoQueryWindow" key1="VK_F5" />
+    <KeyBinding guid="guidKubunoCommandsPackageCmdSet" id="cmdidQueryCancel" editor="guidKubunoQueryWindow" key1="VK_CANCEL" mod1="Alt" />
+    <!-- docs/DATA.md DATA-6: View > Other Windows > Data Sources, Visual Studio's own chord for its Data Sources window. -->
+    <KeyBinding guid="guidKubunoCommandsPackageCmdSet" id="cmdidShowDataSources" editor="guidVSStd97" key1="D" mod1="Alt Shift" />
+  </KeyBindings>
+
 
 </CommandTable>

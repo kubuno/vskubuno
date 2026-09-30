@@ -190,7 +190,56 @@
                                                                                    "description":  "@S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Description;..\\Kubuno.VisualStudio.dll",
                                                                                    "default":  true,
                                                                                    "order":  190
-                                                                               }
+                                                                               },
+                       "kubuno.data.explorer.showDataRows":  {
+                                                                 "type":  "integer",
+                                                                 "title":  "@S_kubuno_data_explorer_showDataRows_Title;..\\Kubuno.VisualStudio.dll",
+                                                                 "description":  "@S_kubuno_data_explorer_showDataRows_Description;..\\Kubuno.VisualStudio.dll",
+                                                                 "default":  200,
+                                                                 "order":  200,
+                                                                 "maximum":  100000,
+                                                                 "minimum":  1
+                                                             },
+                       "kubuno.data.explorer.defaultCredentialStore":  {
+                                                                           "type":  "string",
+                                                                           "title":  "@S_kubuno_data_explorer_defaultCredentialStore_Title;..\\Kubuno.VisualStudio.dll",
+                                                                           "description":  "@S_kubuno_data_explorer_defaultCredentialStore_Description;..\\Kubuno.VisualStudio.dll",
+                                                                           "default":  "credentialManager",
+                                                                           "order":  210,
+                                                                           "enum":  [
+                                                                                        "credentialManager",
+                                                                                        "userSecrets"
+                                                                                    ],
+                                                                           "enumItemLabels":  [
+                                                                                                  "@S_kubuno_data_explorer_defaultCredentialStore_Item_credentialManager;..\\Kubuno.VisualStudio.dll",
+                                                                                                  "@S_kubuno_data_explorer_defaultCredentialStore_Item_userSecrets;..\\Kubuno.VisualStudio.dll"
+                                                                                              ]
+                                                                       },
+                       "kubuno.data.query.maxRows":  {
+                                                         "type":  "integer",
+                                                         "title":  "@S_kubuno_data_query_maxRows_Title;..\\Kubuno.VisualStudio.dll",
+                                                         "description":  "@S_kubuno_data_query_maxRows_Description;..\\Kubuno.VisualStudio.dll",
+                                                         "default":  1000,
+                                                         "order":  220,
+                                                         "maximum":  1000000,
+                                                         "minimum":  1
+                                                     },
+                       "kubuno.data.query.timeoutSeconds":  {
+                                                                "type":  "integer",
+                                                                "title":  "@S_kubuno_data_query_timeoutSeconds_Title;..\\Kubuno.VisualStudio.dll",
+                                                                "description":  "@S_kubuno_data_query_timeoutSeconds_Description;..\\Kubuno.VisualStudio.dll",
+                                                                "default":  30,
+                                                                "order":  230,
+                                                                "maximum":  86400,
+                                                                "minimum":  1
+                                                            },
+                       "kubuno.data.diagnostics.logRequests":  {
+                                                                   "type":  "boolean",
+                                                                   "title":  "@S_kubuno_data_diagnostics_logRequests_Title;..\\Kubuno.VisualStudio.dll",
+                                                                   "description":  "@S_kubuno_data_diagnostics_logRequests_Description;..\\Kubuno.VisualStudio.dll",
+                                                                   "default":  false,
+                                                                   "order":  240
+                                                               }
                    },
     "categories":  {
                        "kubuno":  {
@@ -267,6 +316,26 @@
                                                            "title":  "@S_kubuno_debugging_justMyCode_Title;..\\Kubuno.VisualStudio.dll",
                                                            "description":  "@S_kubuno_debugging_justMyCode_Description;..\\Kubuno.VisualStudio.dll",
                                                            "order":  140
-                                                       }
+                                                       },
+                       "kubuno.data":  {
+                                           "title":  "@S_kubuno_data_Title;..\\Kubuno.VisualStudio.dll",
+                                           "description":  "@S_kubuno_data_Description;..\\Kubuno.VisualStudio.dll",
+                                           "order":  150
+                                       },
+                       "kubuno.data.explorer":  {
+                                                    "title":  "@S_kubuno_data_explorer_Title;..\\Kubuno.VisualStudio.dll",
+                                                    "description":  "@S_kubuno_data_explorer_Description;..\\Kubuno.VisualStudio.dll",
+                                                    "order":  160
+                                                },
+                       "kubuno.data.query":  {
+                                                 "title":  "@S_kubuno_data_query_Title;..\\Kubuno.VisualStudio.dll",
+                                                 "description":  "@S_kubuno_data_query_Description;..\\Kubuno.VisualStudio.dll",
+                                                 "order":  170
+                                             },
+                       "kubuno.data.diagnostics":  {
+                                                       "title":  "@S_kubuno_data_diagnostics_Title;..\\Kubuno.VisualStudio.dll",
+                                                       "description":  "@S_kubuno_data_diagnostics_Description;..\\Kubuno.VisualStudio.dll",
+                                                       "order":  180
+                                                   }
                    }
 }

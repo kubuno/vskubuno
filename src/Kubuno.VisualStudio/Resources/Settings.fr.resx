@@ -34,6 +34,14 @@
   <data name="S_kubuno_debugging_Description" xml:space="preserve"><value>Débogage des applications Rust et Kubuno.</value></data>
   <data name="S_kubuno_debugging_justMyCode_Title" xml:space="preserve"><value>Uniquement mon code</value></data>
   <data name="S_kubuno_debugging_justMyCode_Description" xml:space="preserve"><value>Les cadres que le débogueur affiche.</value></data>
+  <data name="S_kubuno_data_Title" xml:space="preserve"><value>Données</value></data>
+  <data name="S_kubuno_data_Description" xml:space="preserve"><value>L&apos;Explorateur de données et ses fenêtres de requête.</value></data>
+  <data name="S_kubuno_data_explorer_Title" xml:space="preserve"><value>Explorateur de données</value></data>
+  <data name="S_kubuno_data_explorer_Description" xml:space="preserve"><value>Connexions, arborescence du schéma et données des tables.</value></data>
+  <data name="S_kubuno_data_query_Title" xml:space="preserve"><value>Fenêtre de requête</value></data>
+  <data name="S_kubuno_data_query_Description" xml:space="preserve"><value>Exécution des requêtes SQL.</value></data>
+  <data name="S_kubuno_data_diagnostics_Title" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="S_kubuno_data_diagnostics_Description" xml:space="preserve"><value>Journalisation de l&apos;assistant de données (kubuno-data-tool).</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Title" xml:space="preserve"><value>Chemin personnalisé</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Description" xml:space="preserve"><value>Chemin complet de rust-analyzer.exe. Vide, Kubuno essaie &quot;rustup which rust-analyzer&quot;, puis %USERPROFILE%\.cargo\bin\rust-analyzer.exe, puis la variable d&apos;environnement PATH. Pris en compte au prochain démarrage du serveur.</value></data>
   <data name="S_kubuno_rust_editor_formatOnSave_Title" xml:space="preserve"><value>Mettre en forme à l&apos;enregistrement</value></data>
@@ -87,4 +95,16 @@
   <data name="S_kubuno_designer_editor_useAsDefault_Description" xml:space="preserve"><value>Un double-clic sur un fichier .kbview ouvre le concepteur de vues Kubuno (vue fractionnée Design | XML) au lieu de l&apos;éditeur XML simple. Dans les deux cas, le concepteur reste accessible par Ouvrir avec.</value></data>
   <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Title" xml:space="preserve"><value>Traiter le framework Kubuno comme du code externe</value></data>
   <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Description" xml:space="preserve"><value>Comme Windows Forms pour une application C#: avec Uniquement mon code activé, la Pile des appels replie le framework Kubuno (kubuno_views, kubuno_controls, kubuno_ui.dll, la colle d&apos;envoi des gestionnaires d&apos;événements) en [Code externe] et Pas à pas détaillé (F11) va directement à vos gestionnaires. Décochez pour voir et déboguer le code de Kubuno lui-même. La bibliothèque standard de Rust est toujours ignorée. Pris en compte à la prochaine session de débogage.</value></data>
+  <data name="S_kubuno_data_explorer_showDataRows_Title" xml:space="preserve"><value>Lignes lues par Afficher les données</value></data>
+  <data name="S_kubuno_data_explorer_showDataRows_Description" xml:space="preserve"><value>Nombre de lignes que &quot;Afficher les données&quot; lit dans une table ou une vue (1 à 100000).</value></data>
+  <data name="S_kubuno_data_explorer_defaultCredentialStore_Title" xml:space="preserve"><value>Stockage initial des informations d&apos;identification</value></data>
+  <data name="S_kubuno_data_explorer_defaultCredentialStore_Description" xml:space="preserve"><value>Emplacement proposé par la boîte de dialogue Ajouter une connexion pour une nouvelle chaîne de connexion. Dans les deux cas, la chaîne n&apos;est jamais écrite dans un projet.</value></data>
+  <data name="S_kubuno_data_explorer_defaultCredentialStore_Item_credentialManager" xml:space="preserve"><value>Gestionnaire d&apos;identification Windows</value></data>
+  <data name="S_kubuno_data_explorer_defaultCredentialStore_Item_userSecrets" xml:space="preserve"><value>Secrets utilisateur</value></data>
+  <data name="S_kubuno_data_query_maxRows_Title" xml:space="preserve"><value>Nombre maximal de lignes par résultat</value></data>
+  <data name="S_kubuno_data_query_maxRows_Description" xml:space="preserve"><value>Un jeu de résultats est tronqué après ce nombre de lignes; la barre d&apos;état de la fenêtre de requête l&apos;indique (1 à 1000000).</value></data>
+  <data name="S_kubuno_data_query_timeoutSeconds_Title" xml:space="preserve"><value>Délai d&apos;exécution des requêtes (secondes)</value></data>
+  <data name="S_kubuno_data_query_timeoutSeconds_Description" xml:space="preserve"><value>Durée maximale d&apos;une requête avant son annulation (1 à 86400).</value></data>
+  <data name="S_kubuno_data_diagnostics_logRequests_Title" xml:space="preserve"><value>Journaliser les requêtes de l&apos;assistant de données</value></data>
+  <data name="S_kubuno_data_diagnostics_logRequests_Description" xml:space="preserve"><value>Journalise chaque requête envoyée à kubuno-data-tool (méthode et paramètres, sans chaînes de connexion, mots de passe ni texte SQL) dans le volet Sortie Kubuno.</value></data>
 </root>

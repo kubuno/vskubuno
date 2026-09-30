@@ -1,0 +1,25 @@
+{"provider":"sqlite","serverVersion":"3.45.1","database":"shop.db","schemas":[
+  {"name":"main","tables":[
+    {"name":"customers","kind":"table",
+     "columns":[
+       {"name":"id","dbType":"INTEGER","rustType":"i64","nullable":false,"maxLength":0,"primaryKey":true,"autoIncrement":true,"readOnly":false,"default":null},
+       {"name":"name","dbType":"TEXT","rustType":"String","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null},
+       {"name":"email","dbType":"TEXT","rustType":"String","nullable":true,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null},
+       {"name":"created_at","dbType":"TEXT","rustType":"chrono::NaiveDateTime","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":"CURRENT_TIMESTAMP"}],
+     "primaryKey":["id"],"foreignKeys":[],
+     "indexes":[{"name":"ix_customers_email","columns":["email"],"unique":true}]},
+    {"name":"orders","kind":"table",
+     "columns":[
+       {"name":"id","dbType":"INTEGER","rustType":"i64","nullable":false,"maxLength":0,"primaryKey":true,"autoIncrement":true,"readOnly":false,"default":null},
+       {"name":"customer_id","dbType":"INTEGER","rustType":"i64","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null},
+       {"name":"total","dbType":"REAL","rustType":"f64","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":"0"},
+       {"name":"status","dbType":"TEXT","rustType":"String","nullable":false,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":false,"default":null}],
+     "primaryKey":["id"],
+     "foreignKeys":[{"name":"fk_orders_customer","columns":["customer_id"],"refSchema":"main","refTable":"customers","refColumns":["id"]}],
+     "indexes":[]},
+    {"name":"order_totals","kind":"view",
+     "columns":[
+       {"name":"customer_id","dbType":"INTEGER","rustType":"i64","nullable":true,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":true,"default":null},
+       {"name":"total","dbType":"REAL","rustType":"f64","nullable":true,"maxLength":0,"primaryKey":false,"autoIncrement":false,"readOnly":true,"default":null}],
+     "primaryKey":[],"foreignKeys":[],"indexes":[]}],
+   "functions":[]}]}

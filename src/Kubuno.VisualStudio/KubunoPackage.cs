@@ -128,6 +128,16 @@ namespace Kubuno.VisualStudio
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow))]
     // The crate manager (NuGet-like, one per .rsproj, in the document well): CrateManager/CrateManagerToolWindow.cs.
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.CrateManager.CrateManagerToolWindow), MultiInstances = true, Style = VsDockStyle.MDI, Transient = true)]
+    // docs/DATA.md DATA-5: the Data Explorer (docked with Server Explorer, {74946827-37a0-11d2-a273-00c04f8ef4ec}) and its
+    // query windows (in the document well, one per query, not restored at the next start; their own key binding scope
+    // for F5 / Ctrl+Shift+E, KubunoCommands.vsct KeyBindings), and the Data options page.
+    [ProvideToolWindow(typeof(Kubuno.VisualStudio.DataExplorer.DataExplorerToolWindow), Style = VsDockStyle.Tabbed, Window = "74946827-37a0-11d2-a273-00c04f8ef4ec")]
+    [ProvideToolWindow(typeof(Kubuno.VisualStudio.DataExplorer.QueryToolWindow), MultiInstances = true, Style = VsDockStyle.MDI, Transient = true)]
+    [ProvideKeyBindingTable(PackageGuidStrings.QueryToolWindow, 120)]
+    // docs/DATA.md DATA-6: the Data Sources window (docked with Server Explorer, like the Data Explorer).
+    [ProvideToolWindow(typeof(Kubuno.VisualStudio.DataSources.DataSourcesToolWindow), Style = VsDockStyle.Tabbed, Window = "74946827-37a0-11d2-a273-00c04f8ef4ec")]
+    [ProvideOptionPage(typeof(DataOptionsPage), Constants.OptionsCategoryName, "Data", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.data")]
+    [ProvideProfile(typeof(DataOptionsPage), Constants.OptionsCategoryName, "Data", 0, 0, isToolsOptionPage: true)]
     [ProvideSettingsManifest(PackageRelativeManifestFile = @"UnifiedSettings\kubuno.registration.json")]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     // Extended "Ajouter" submenu on a .rsproj project node (KubunoCommands.vsct's
@@ -292,6 +302,9 @@ namespace Kubuno.VisualStudio
                 AddProjectItemCommands.Initialize(this, commandService);
                 AddProjectReferenceCommand.Initialize(this, commandService);
                 AddCargoDependencyCommand.Initialize(this, commandService);
+                Kubuno.VisualStudio.DataExplorer.ShowDataExplorerCommand.Initialize(commandService);
+                Kubuno.VisualStudio.Migrations.MigrationCommands.Initialize(commandService);
+                Kubuno.VisualStudio.DataSources.ShowDataSourcesCommand.Initialize(commandService);
             }
 
             uiThreadTime.Stop();
@@ -600,6 +613,9 @@ namespace Kubuno.VisualStudio
                 _designSurfaceRuntimes?.Dispose();
 #pragma warning restore VSTHRD010
                 _designSurfaceRuntimes = null;
+
+                // docs/DATA.md DATA-5: stop kubuno-data-tool (EOF on its stdin).
+                Kubuno.VisualStudio.DataExplorer.DataToolHost.Shutdown();
 
                 if (_priorityTargets is not null)
                 {

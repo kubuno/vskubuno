@@ -203,6 +203,11 @@
     <!-- Gate CoreCompile's own Inputs/Outputs check â€” cargo still does the fine-grained
          incremental work; this only decides whether to shell out to it at all. -->
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.rs" Condition="Exists('$(_KubunoManifestDir)\src')" />
+    <!-- docs/DATA.md DATA-7: what `data_source!` reads at compile time (the .kbdata files and the offline query cache),
+         and the migrations its stale-cache warning compares that cache with - a change to any of them must reach cargo. -->
+    <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.kbdata" Condition="Exists('$(_KubunoManifestDir)\src')" />
+    <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\.sqlx\*.json" Condition="Exists('$(_KubunoManifestDir)\.sqlx')" />
+    <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\migrations\*.sql" Condition="Exists('$(_KubunoManifestDir)\migrations')" />
     <_KubunoCargoLockFile Include="$(_KubunoManifestDir)\Cargo.lock" Condition="Exists('$(_KubunoManifestDir)\Cargo.lock')" />
   </ItemGroup>
 
