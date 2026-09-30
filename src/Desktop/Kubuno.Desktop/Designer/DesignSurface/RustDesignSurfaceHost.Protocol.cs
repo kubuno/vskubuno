@@ -422,7 +422,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>
         /// Parses the <c>surfaceInfo</c> handshake (docs/DESIGNER.md section 15), the first line a surface
-        /// writes: <c>{type, version, uiDll, uiDllSha256}</c> - the loaded <c>kubuno_ui.dll</c>'s path and
+        /// writes: <c>{type, version, uiDll, uiDllSha256}</c> - the loaded <c>kubuno_ui-&lt;hash&gt;.dll</c>'s path and
         /// the SHA-256 of the one the exe was linked against (null when not built by the design build).
         /// </summary>
         public static bool TryParseSurfaceInfo(string line, out int version, out string? uiDll, out string? uiDllSha256)
@@ -456,7 +456,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         /// <summary>
         /// The ABI check of the <c>surfaceInfo</c> handshake: <see langword="null"/> when the surface may run,
         /// else why it must not. The DLL it loaded must be the copy next to its exe (never another
-        /// <c>kubuno_ui.dll</c> found on PATH), and when a hash is known - the design build's, recorded by the
+        /// build of <c>kubuno_ui</c> found on PATH), and when a hash is known - the design build's, recorded by the
         /// host (<paramref name="expectedSha256"/>) and embedded in the exe (<paramref name="reportedSha256"/>) -
         /// the loaded file must have it. <paramref name="loadedSha256"/> hashes the loaded file (injectable
         /// for tests); it is only called when a hash is expected.
@@ -498,7 +498,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
             return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase)
                 ? null
-                : $"loaded kubuno_ui.dll {Short(actual)}, linked against {Short(expected)}";
+                : $"loaded {System.IO.Path.GetFileName(uiDll)} {Short(actual)}, linked against {Short(expected)}";
         }
 
         private static string Short(string sha) => sha.Length > 12 ? sha.Substring(0, 12) : sha;

@@ -234,7 +234,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         }
 
         /// <summary>
-        /// <see langword="null"/> when the exe and its runtime DLLs (<c>kubuno_ui.dll</c>, Rust's own
+        /// <see langword="null"/> when the exe and its runtime DLLs (the <c>kubuno_ui-&lt;hash&gt;.dll</c> it imports, Rust's own
         /// <c>std-*.dll</c> - the workspace links <c>-C prefer-dynamic</c>) are all present next to it;
         /// otherwise a one-line, user-facing description of what is missing.
         /// </summary>
@@ -251,9 +251,11 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 return $"Design surface exe has no directory: {CurrentExePath}";
             }
 
-            if (!File.Exists(Path.Combine(dir, "kubuno_ui.dll")))
+            // The exe imports its own build of kubuno_ui by name (kubuno_ui-<hash>.dll): that file, not any kubuno_ui.dll.
+            var uiDll = Kubuno.Desktop.Logic.DesignSurface.KubunoUiLibrary.ImportedBy(CurrentExePath);
+            if (uiDll is not null && !File.Exists(Path.Combine(dir, uiDll)))
             {
-                return $"kubuno_ui.dll missing next to {CurrentExePath}";
+                return $"{uiDll} missing next to {CurrentExePath}";
             }
 
             if (Directory.GetFiles(dir, "std-*.dll").Length == 0)
@@ -290,9 +292,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 CreateNoWindow = true,
                 WorkingDirectory = dir,
             };
-            // The exe's own folder holds its kubuno_ui.dll and std-*.dll (the loader looks there first
+            // The exe's own folder holds its kubuno_ui-<hash>.dll and std-*.dll (the loader looks there first
             // anyway); the parent folder is a dev build's profile folder. Both before the inherited PATH,
-            // so no other kubuno_ui.dll can be picked up - the surfaceInfo handshake checks it anyway.
+            // so no other build of kubuno_ui can be picked up - the surfaceInfo handshake checks it anyway.
             var parentDir = Path.GetDirectoryName(dir);
             psi.EnvironmentVariables["PATH"] = dir + ";" + (string.IsNullOrEmpty(parentDir) ? string.Empty : parentDir + ";") + psi.EnvironmentVariables["PATH"];
             _handshake = HandshakeState.Waiting;

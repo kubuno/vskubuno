@@ -14,7 +14,9 @@ namespace Kubuno.Desktop.Logic.DesignSurface
     public sealed class DesignSurfaceStamp
     {
         public const string FileName = "surface.json";
-        public const int CurrentVersion = 2; // 2: surfaces built with debug info (debug profile)
+        // 2: surfaces built with debug info (debug profile); 3: the DLL is copied under the name the surface
+        // imports (kubuno_ui-<hash>.dll, UiDllFileName).
+        public const int CurrentVersion = 3;
 
         public int Version { get; set; } = CurrentVersion;
 
@@ -26,6 +28,9 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
         /// <summary>The project's <c>kubuno_ui.dll</c> it was copied from.</summary>
         public string UiDllSource { get; set; } = string.Empty;
+
+        /// <summary>The copy's name in the folder: the one the surface imports (<see cref="KubunoUiLibrary"/>).</summary>
+        public string UiDllFileName { get; set; } = KubunoUiLibrary.PlainFileName;
 
         public string Rustc { get; set; } = string.Empty;
 
@@ -43,7 +48,10 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             try
             {
                 var stamp = JsonSerializer.Deserialize<DesignSurfaceStamp>(json);
-                return stamp is { Version: CurrentVersion } && stamp.Key.Length > 0 && stamp.UiDllSha256.Length > 0 ? stamp : null;
+                return stamp is { Version: CurrentVersion } && stamp.Key.Length > 0 && stamp.UiDllSha256.Length > 0
+                    && KubunoUiLibrary.IsLibraryFileName(stamp.UiDllFileName)
+                    ? stamp
+                    : null;
             }
             catch (JsonException)
             {

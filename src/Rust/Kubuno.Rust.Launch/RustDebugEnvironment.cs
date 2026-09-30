@@ -16,8 +16,10 @@ namespace Kubuno.Rust.Launch
         /// <summary>
         /// The PATH entries to prepend, in the order the loader should search them:
         /// 1. the profile directory itself (`&lt;target-dir&gt;/[&lt;triple&gt;/]&lt;profile&gt;`) —
-        ///    where the crate's own dylibs (e.g. `kubuno_ui.dll`) land;
-        /// 2. its `deps` subdirectory — where dependency dylibs land;
+        ///    where Cargo uplifts the crate's own dylibs;
+        /// 2. its `deps` subdirectory — where dependency dylibs land, among them each build of
+        ///    the Kubuno desktop workspace's `kubuno_ui-&lt;hash&gt;.dll` (one file name per build, the
+        ///    exe imports its own) with its PDB, which the debugger finds beside it;
         /// 3. the toolchain's host-triple std lib directory — where `std-*.dll` lives when
         ///    the build links it dynamically.
         /// </summary>

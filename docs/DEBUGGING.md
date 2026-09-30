@@ -209,6 +209,10 @@ library occasionally, set a breakpoint inside it (its source is available with t
 
 - **Handlers under the debugger**: press F5, click in the running application, the breakpoint in the handler is hit
   (verified), including when the click comes from UI Automation.
+- **Breakpoints in the Kubuno framework**: each build of the shared library is `kubuno_ui-<hash>.dll` (docs/DESIGNER.md
+  section 16) with its `kubuno_ui-<hash>.pdb` beside it in `deps`, where F5's PATH finds the DLL and the debugger the
+  PDB (the DLL records the PDB's file name only). Verified 2026-09-30: a breakpoint in `kubuno_ui::buttons`'
+  `Button::paint` bound and hit, frame module `...\debug\deps\kubuno_ui-<hash>.dll`, locals shown.
 - **Attach to Process** (Debug > Attach to Process, *Native* code): works for a Kubuno application started with Ctrl+F5
   or from Explorer (verified: attached by PID, then a click hit a handler breakpoint). The panic behaviour follows
   `IsDebuggerPresent` at the time of the panic, so attaching later is enough.
@@ -217,7 +221,8 @@ library occasionally, set a breakpoint inside it (its source is available with t
   controls' code (`on_paint`, `get_preferred_size`...) runs with `design_mode()` true. Debug > Attach to Process >
   `kubuno-design-surface.exe` (Native), then set breakpoints in the control's code. Design surfaces are now built with
   full debug information in the debug profile (they were built without, so there was nothing to bind to), and each
-  surface keeps its own PDB next to it. While the surface is stopped the designer pane is frozen; detach
+  surface keeps its own PDB next to it, with the one of its `kubuno_ui-<hash>.dll` (docs/DESIGNER.md section 16).
+  While the surface is stopped the designer pane is frozen; detach
   (Debug > Detach All) rather than stopping, or the designer restarts the surface. *Not verified live in this pass*
   (the build change is covered by unit tests only).
 - `Component::design_mode()` (WinForms `DesignMode`) tells a control it runs in the designer, e.g. to paint a hint

@@ -1704,8 +1704,10 @@ metadata - the E0463 lesson. Both obvious designs do exactly that:
    build from rebuilding `kubuno_ui.dll` with extra features). The SHA-256 of the linked
    `kubuno_ui.dll` is passed as `KUBUNO_DESIGN_UI_DLL_SHA256` and embedded (`option_env!`).
 3. **A shadow copy**, like the WinForms designer's: `<target dir>\kubuno-design\<profile>\<key>\` holds the
-   exe, a byte-identical copy of the project's `kubuno_ui.dll` (hash re-checked after the copy) and the
-   toolchain's `std-*.dll`. A surface loading the project's `deps\kubuno_ui.dll` itself would lock it and
+   exe, a byte-identical copy of the project's `kubuno_ui.dll` (hash re-checked after the copy) under the
+   name the exe imports, `kubuno_ui-<hash>.dll` (section 16; read from the exe's import table,
+   `KubunoUiLibrary.ImportedBy`, recorded as `UiDllFileName` in `surface.json` v3), its PDB
+   (`kubuno_ui-<hash>.pdb`, for a debugger attached to the surface) and the toolchain's `std-*.dll`. A surface loading the project's `deps\kubuno_ui.dll` itself would lock it and
    the project's next build could not replace it (checked: a loaded image cannot be overwritten). The folder
    is outside `<target dir>\<profile>` so the SDK's `cargo clean --profile ...` (Clean/Rebuild) never meets
    a file a running surface holds. `<key>` = hash of the DLL's SHA-256, every input's path/size/write time,
@@ -1737,7 +1739,7 @@ metadata - the E0463 lesson. Both obvious designs do exactly that:
 ### ABI handshake (`surfaceInfo`)
 
 The surface's first stdout line: `{"type":"surfaceInfo","version":1,"uiDll":<path of the loaded
-kubuno_ui.dll, GetModuleFileNameW>,"uiDllSha256":<embedded hash or null>}`. The host
+kubuno_ui-<hash>.dll, kubuno_ui::library::module_path()>,"uiDllSha256":<embedded hash or null>}`. The host
 (`DesignSurfaceProtocol.CheckSurfaceInfo`, unit-tested) refuses the surface when the version differs, the
 loaded DLL is not the copy next to the exe (another `kubuno_ui.dll` found on PATH), the embedded hash
 differs from the design build's record, or the loaded file's SHA-256 differs from it; a surface whose first
@@ -1763,3 +1765,104 @@ the next build restored the project runtime. The source was then restored byte f
 **Known limitation**: the SDK's `CoreCompile` incremental gate only lists the project's own sources, so after
 editing a path dependency's sources (e.g. `kubuno_ui` in the desktop checkout) a plain *Build* is considered
 up to date - use *Rebuild* (or `cargo build`, then any build) to pick the change up.
+
+## 16. One file name per kubuno_ui build
+
+Product-owner decision (2026-09-30): a Kubuno program must never load a `kubuno_ui` DLL of another build.
+`kubuno-ui` is a Rust `dylib`, and Rust has no stable ABI: any rebuild (an added impl block, another generic
+instantiation, another compiler) renames or reshapes the symbols it exports. Under one fixed name, an exe
+linked against the previous build loaded the new file and died in the loader with the modal
+« Point d'entrée introuvable … `_RNvMs8_…9kubuno_ui` » (`0xC0000139`) - or, worse, ran on a changed layout
+with unchanged symbol names (v0 mangling does not encode a non-generic function's signature).
+
+**Every build is now named after itself, `kubuno_ui-<16 hex digits>.dll`, and every program imports that
+exact name.** Two builds coexist in one folder or on `PATH`, each program loads its own, and a program whose
+build is missing fails with `STATUS_DLL_NOT_FOUND` (`0xC0000135`) - the loader's message names
+`kubuno_ui-<hash>.dll`, a clearly *missing* file instead of an obscure entry point.
+
+### Mechanisms considered
+
+The name a program imports is the one the import library (`kubuno_ui.dll.lib`) records, which MSVC's
+`link.exe` takes from `/OUT:` (or from a `LIBRARY` statement of the `.def` file) when it links the DLL. So
+the name must be decided at that link, from what can change the ABI - and in a plain `cargo build`,
+`cargo run`, `cargo test`, the SDK's `.rsproj` build and the designer's design build alike.
+
+| Option | Verdict |
+|---|---|
+| Cargo's own hashed names (`-C extra-filename`, as `std-<hash>.dll`) | Cargo gives a *path* dylib no hash on purpose; the only switch is the internal `__CARGO_DEFAULT_LIB_METADATA` variable (used to build `std`), which must be in Cargo's own environment (not `[env]`), renames every path dylib, cdylib and MSVC exe, and hashes Cargo-level metadata only: an edit of `kubuno_ui`'s sources would keep the name. Rejected. |
+| `-C extra-filename` through `RUSTFLAGS`/a rustc wrapper | Cargo computes the output names itself and would not find the renamed files (no uplift, no `--extern`, rebuild every time); per-package `rustflags` are nightly-only. Rejected. |
+| A `build.rs`-generated crate name | A crate's name is static in `Cargo.toml`. Rejected. |
+| A second `/DEF` with `LIBRARY kubuno_ui-<hash>.dll` passed by `build.rs` | `link.exe` takes one `.def` (rustc's, with the export list); the name would also have to be known before compiling, from sources alone, missing dependency-version changes. Rejected. |
+| Rename after linking + a regenerated import library (`lib /DEF /NAME`) | Needs a hook between the DLL's link and its dependents' - Cargo has none in a plain build - and leaves the DLL recording `kubuno_ui.pdb`, so two builds' PDBs would collide. Rejected as a post-step; kept as the idea. |
+| A side-by-side assembly manifest per exe | Also needs the hash when each exe is linked, plus a manifest per program and per build folder layout. Rejected. |
+| Patching import tables | Last resort, rewrites signed/linked binaries. Rejected. |
+| **A link shim installed by `kubuno-ui`'s own `build.rs`** | Chosen: see below. |
+
+### The link shim (`desktop: src/crates/kubuno-ui/build.rs`)
+
+The build script copies itself to `OUT_DIR\link-shim\link.exe` (with the Rust runtime DLL it needs) and
+emits, through the documented `cargo::rustc-env` instruction, `VCINSTALLDIR`/`VSCMD_ARG_TGT_ARCH` and a
+`PATH` that starts with that folder - for **this package's rustc invocations only** (its lib, tests and
+examples). With `VCINSTALLDIR` set, rustc's MSVC discovery (`find-msvc-tools`, the "developer prompt" rule)
+takes `link.exe` from `PATH`, i.e. the shim. The shim finds the real `link.exe` exactly as rustc would have
+(same crate, the original environment restored) and forwards every link unchanged, except the one whose
+output is `kubuno_ui.dll`:
+- `/OUT:` becomes `kubuno_ui-<hash>.dll`, so the import library records that name, the export directory
+  carries it, and the PDB becomes `kubuno_ui-<hash>.pdb` (rustc links with `/PDBALTPATH:%_PDB%`: the DLL
+  records the PDB's file name, which a debugger looks for beside the DLL);
+- `<hash>` covers every input of that link: the arguments (rustc's temporary folder normalized out) and each
+  input file - its content inside rustc's temporary folder (rewritten on every run: `lib.def`, the metadata
+  and symbol objects), its size and modification time elsewhere (the crate's objects, every dependency rlib,
+  `std`, the natvis files). It therefore changes whenever the DLL is relinked from anything different, which
+  is whenever its ABI can change, and stays the same when nothing did;
+- afterwards `kubuno_ui.dll`/`kubuno_ui.pdb` are re-created (one rename, never missing in between) as hard
+  links to the hashed files: Cargo uplifts them and rustc keeps reading the crate's metadata from
+  `deps\kubuno_ui.dll`. That plain name is only an alias now - no program imports it;
+- the three most recent hashed builds are kept in the output folder, older ones deleted (best effort: a file
+  a running program holds is left for the next link).
+
+The shim travels with the crate: any workspace that builds `kubuno-ui` - the desktop workspace, a template
+project, the designer's design build (which links against `deps\kubuno_ui.dll` and so imports the hashed
+name) - gets it without configuration. It is inert on non-MSVC targets, and a failure to install it only
+warns (the DLL then keeps its plain name). The guard is an integration test of `kubuno-ui`
+(`tests/library_file_name.rs`) asserting that the DLL a test program loaded is `kubuno_ui-<hash>.dll`.
+Changing `PATH` between builds does not rebuild anything (the build script does not track it).
+
+Delay-loading `kubuno_ui` (for a friendlier message than the loader's) is not possible: a Rust dylib exports
+statics, and data imports cannot be delay-loaded (`LNK1194`). The loader's own message is the failure mode.
+
+### Who looks for the DLL, and how
+
+A program's `kubuno_ui` build is read **from the program itself** (its import table), never assumed:
+- **cargo run / cargo test / F5**: nothing to do - Cargo puts `deps` on `PATH`, and so does F5
+  (`RustDebugEnvironment`: profile folder, `deps`, the toolchain's libraries). The debugger loads
+  `deps\kubuno_ui-<hash>.pdb` beside the DLL (verified: a breakpoint in `kubuno_ui::buttons` binds and hits,
+  frame module `…\deps\kubuno_ui-<hash>.dll`, locals shown). `Kubuno.Framework.natjmc` matches
+  `*\kubuno_ui-*.dll` as framework code.
+- **Design build**: `KubunoUiLibrary.ImportedBy(surface exe)` names the copy (section 15); `FindRuntimeProblem`
+  checks that very file; the handshake reports the loaded path through `kubuno_ui::library::module_path()`
+  (`GetModuleHandleExW` on an address inside the library).
+- **VSIX**: `Kubuno.VisualStudio.csproj` reads the name `kubuno-views-ls.exe`, `kubuno-data-tool.exe` and
+  `view_embed.exe` import (a regex over the exe, at evaluation) and ships that file from the build's `deps`
+  folder as `tools\kubuno_ui-<hash>.dll` / `tools\surface\kubuno_ui-<hash>.dll`; the build fails when the
+  two tools of `tools\` import different builds.
+- **Desktop scripts**: `tools/stage-runtime.ps1` copies, next to each exe, the build it imports (with its
+  PDB), removes staged builds no exe imports any more, and lists exes whose build left `deps`;
+  `packaging/package-msix.ps1` ships the name the packaged exe imports; `tools/ui-parity/shoot.ps1` puts
+  `deps` on `PATH`.
+- An exe of a desktop checkout older than this change imports the plain `kubuno_ui.dll`: the design build
+  and the VSIX fall back to that name; `stage-runtime.ps1` reports it as needing a relink.
+
+### Verification (2026-09-30)
+
+Desktop workspace, release, own target folder: all eight programs (`kubuno-desktop`, `drive`, `kubuno-chat`,
+`kubuno-documents`, `kubuno-views-ls`, `kubuno-data-tool`, `gallery`, `view_embed`) import
+`kubuno_ui-c766a537e389ff77.dll`; the gallery and the shell started from staged copies on C: with a
+`PATH` of System32 only. After an ABI-changing edit (a new impl block) and a rebuild, the new gallery
+imported `kubuno_ui-4ce638714d55639b.dll`; both galleries ran **at the same time from the same folder**, each
+with its own DLL loaded, and the old shell kept running on the old one. The new gallery without its DLL
+exits with `0xC0000135`. In an own Visual Studio hive, a copy of `samples/printing-desktop` built through
+the SDK (`printing-desktop.exe` → `kubuno_ui-ab21aba6a20de8c0.dll` in `deps`), F5 stopped on a breakpoint in
+`kubuno_ui::buttons::impl$7::paint` with symbols, and the designer first ran the VSIX's surface on its
+bundled `tools\surface\kubuno_ui-366da9519c380e46.dll`, then the design build's surface on its copy of
+`kubuno_ui-ab21aba6a20de8c0.dll` (SHA-256 equal to the project's), both "ABI check passed".

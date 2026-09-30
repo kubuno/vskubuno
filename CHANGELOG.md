@@ -214,6 +214,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Kubuno programs never load a `kubuno_ui` library of another build** (`docs/DESIGNER.md`, section 16): every
+  build of the Kubuno desktop library is now named `kubuno_ui-<hash>.dll` and each program imports its own, so the
+  « Point d'entrée introuvable … kubuno_ui » dialog cannot happen any more and a missing library is reported under
+  its own name. The extension follows: F5 and the debugger find the library and its symbols in the build's `deps`
+  folder (verified with a breakpoint inside `kubuno_ui`), Just My Code treats `kubuno_ui-*.dll` as framework code,
+  the designer copies into its preview folder the library build the preview imports (with its symbols) and checks
+  that file, and the extension ships the builds its bundled `kubuno-views-ls.exe`, `kubuno-data-tool.exe` and
+  fallback preview import. Previews built by an earlier version are rebuilt once. Programs of an older desktop
+  checkout (plain `kubuno_ui.dll`) keep working.
 - `Kubuno.Rust.Sdk` is now version 1.1.0 (new projects and the templates use it): an SDK is cached by version, so
   the changes above could not reach a machine that already had 1.0.0.
 - A project that is a member of a larger Cargo workspace uses the workspace's target directory and `Cargo.lock`,

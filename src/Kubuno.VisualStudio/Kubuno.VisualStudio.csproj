@@ -219,16 +219,24 @@
       STATUS_DLL_NOT_FOUND (0xC0000135) before reading a single byte of stdin, which VS reports as a
       JSON-RPC ConnectionLostException during "initialize". Both DLLs are therefore shipped beside it
       in tools\ (the Windows loader looks in the exe's own folder first):
-        - kubuno_ui.dll comes from the SAME cargo build as the exe (Cargo uplifts it next to the exe);
-          a Rust dylib has no stable ABI, so it must never be mixed with a different build.
+        - kubuno_ui comes from the SAME cargo build as the exe; a Rust dylib has no stable ABI, so
+          every build of it has its own file name, kubuno_ui-<hash>.dll, and the exe imports the
+          exact one it was linked against (desktop repo, src/crates/kubuno-ui/build.rs). That name is
+          read from the exe itself (its import table holds it as plain ASCII) and the file taken from
+          the build's deps\ folder - Cargo's <profile>\kubuno_ui.dll is only an alias of the latest
+          build. An exe of a desktop checkout older than per-build names imports kubuno_ui.dll.
         - std-*.dll comes from the toolchain that built the exe (default: the stable MSVC toolchain
           this workspace documents, vskubuno/CLAUDE.md #5); override with /p:KubunoRustStdDir=<dir>.
     -->
     <KubunoViewsLsDir>$([System.IO.Path]::GetDirectoryName('$(KubunoViewsLsExePath)'))\</KubunoViewsLsDir>
+    <KubunoViewsLsUiDllName Condition="Exists('$(KubunoViewsLsExePath)')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(KubunoViewsLsExePath)')), 'kubuno_ui-[0-9a-f]{16}\.dll').Value)</KubunoViewsLsUiDllName>
+    <KubunoViewsLsUiDllName Condition="'$(KubunoViewsLsUiDllName)' == ''">kubuno_ui.dll</KubunoViewsLsUiDllName>
+    <KubunoViewsLsUiDll Condition="Exists('$(KubunoViewsLsDir)deps\$(KubunoViewsLsUiDllName)')">$(KubunoViewsLsDir)deps\$(KubunoViewsLsUiDllName)</KubunoViewsLsUiDll>
+    <KubunoViewsLsUiDll Condition="'$(KubunoViewsLsUiDll)' == ''">$(KubunoViewsLsDir)$(KubunoViewsLsUiDllName)</KubunoViewsLsUiDll>
     <!--
       kubuno-data-tool.exe (docs/DATA.md DATA-5: the Data Explorer's helper, JSON lines over stdio; crate
       kubuno-data-tool of the desktop repo). Shipped in tools\ BESIDE kubuno-views-ls.exe and sharing its
-      tools\kubuno_ui.dll / std-*.dll, so it MUST come from the SAME cargo build (same CARGO_TARGET_DIR, same
+      tools\kubuno_ui-<hash>.dll / std-*.dll, so it MUST come from the SAME cargo build (same CARGO_TARGET_DIR, same
       toolchain) as kubuno-views-ls.exe - a Rust dylib has no stable ABI:
         cd Z:\src\desktop\windows
         $env:CARGO_TARGET_DIR = "C:\kubuno-build\desktop-target"
@@ -236,6 +244,9 @@
       Override with /p:KubunoDataToolExePath=<path> (then also point KubunoViewsLsExePath at the same build).
     -->
     <KubunoDataToolExePath Condition="'$(KubunoDataToolExePath)' == ''">C:\kubuno-build\desktop-target\release\kubuno-data-tool.exe</KubunoDataToolExePath>
+    <!-- The kubuno_ui build it imports: must be kubuno-views-ls.exe's (KubunoCheckToolExes). -->
+    <KubunoDataToolUiDllName Condition="Exists('$(KubunoDataToolExePath)')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(KubunoDataToolExePath)')), 'kubuno_ui-[0-9a-f]{16}\.dll').Value)</KubunoDataToolUiDllName>
+    <KubunoDataToolUiDllName Condition="'$(KubunoDataToolUiDllName)' == ''">kubuno_ui.dll</KubunoDataToolUiDllName>
     <KubunoRustStdDir Condition="'$(KubunoRustStdDir)' == ''">$(USERPROFILE)\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib\</KubunoRustStdDir>
     <!--
       kubuno-vs-mcp.exe (Kubuno.Core.Mcp, net8.0 - docs/MCP.md "Integration"). Default: this repo's own
@@ -256,9 +267,10 @@
         naming view_embed - omitted above only because a doubled dash is not valid inside an XML
         comment; see src/Desktop/Kubuno.Desktop/Designer/INTEGRATION.md §6 for the literal command)
       Shipped under its OWN tools\surface\ subfolder (see the Content items below), never merged with
-      kubuno-views-ls.exe's own tools\kubuno_ui.dll/std-*.dll: a Rust dylib has no stable ABI, and this
-      exe comes from a DIFFERENT CARGO_TARGET_DIR, so it needs its OWN matching kubuno_ui.dll copied
-      alongside it, not kubuno-views-ls's.
+      kubuno-views-ls.exe's own tools\kubuno_ui-<hash>.dll/std-*.dll: a Rust dylib has no stable ABI, and this
+      exe comes from a DIFFERENT CARGO_TARGET_DIR, so it needs its OWN matching kubuno_ui-<hash>.dll
+      copied alongside it, not kubuno-views-ls's (the name it imports is read from it, like
+      KubunoViewsLsUiDllName above).
     -->
     <KubunoViewsSurfaceExePath Condition="'$(KubunoViewsSurfaceExePath)' == ''">C:\kubuno-build\agent-dsgint\release\examples\view_embed.exe</KubunoViewsSurfaceExePath>
     <!--
@@ -275,13 +287,17 @@
       shaped CARGO_TARGET_DIR.
     -->
     <KubunoViewsSurfaceProfileDir Condition="'$(KubunoViewsSurfaceProfileDir)' == ''">C:\kubuno-build\agent-dsgint\release\</KubunoViewsSurfaceProfileDir>
+    <KubunoViewsSurfaceUiDllName Condition="Exists('$(KubunoViewsSurfaceExePath)')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(KubunoViewsSurfaceExePath)')), 'kubuno_ui-[0-9a-f]{16}\.dll').Value)</KubunoViewsSurfaceUiDllName>
+    <KubunoViewsSurfaceUiDllName Condition="'$(KubunoViewsSurfaceUiDllName)' == ''">kubuno_ui.dll</KubunoViewsSurfaceUiDllName>
+    <KubunoViewsSurfaceUiDll Condition="Exists('$(KubunoViewsSurfaceProfileDir)deps\$(KubunoViewsSurfaceUiDllName)')">$(KubunoViewsSurfaceProfileDir)deps\$(KubunoViewsSurfaceUiDllName)</KubunoViewsSurfaceUiDll>
+    <KubunoViewsSurfaceUiDll Condition="'$(KubunoViewsSurfaceUiDll)' == ''">$(KubunoViewsSurfaceProfileDir)$(KubunoViewsSurfaceUiDllName)</KubunoViewsSurfaceUiDll>
   </PropertyGroup>
 
   <Target Name="KubunoCheckSurfaceExe" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoViewsSurfaceExePath)')"
            Text="kubuno-views-surface.exe (view_embed.exe) not found at '$(KubunoViewsSurfaceExePath)'. Build it: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-print -j 1 (kubuno-print wraps kubuno-views' surface with the data and printing components linked) -- or pass /p:KubunoViewsSurfaceExePath=&lt;path&gt;." />
-    <Error Condition="!Exists('$(KubunoViewsSurfaceProfileDir)kubuno_ui.dll')"
-           Text="kubuno_ui.dll not found at '$(KubunoViewsSurfaceProfileDir)' (kubuno-views-surface.exe's own profile root). It must ship with the kubuno_ui.dll of the SAME cargo build (own CARGO_TARGET_DIR, do not reuse kubuno-views-ls's copy)." />
+    <Error Condition="!Exists('$(KubunoViewsSurfaceUiDll)')"
+           Text="$(KubunoViewsSurfaceUiDllName) (the kubuno_ui build view_embed.exe imports) not found in '$(KubunoViewsSurfaceProfileDir)deps' nor '$(KubunoViewsSurfaceProfileDir)'. It must ship with the kubuno_ui of the SAME cargo build (own CARGO_TARGET_DIR, do not reuse kubuno-views-ls's copy): rebuild view_embed.exe." />
   </Target>
 
   <ItemGroup>
@@ -296,10 +312,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>tools\surface\view_embed.exe</Link>
     </Content>
-    <Content Include="$(KubunoViewsSurfaceProfileDir)kubuno_ui.dll" Condition="Exists('$(KubunoViewsSurfaceProfileDir)kubuno_ui.dll')">
+    <Content Include="$(KubunoViewsSurfaceUiDll)" Condition="Exists('$(KubunoViewsSurfaceUiDll)')">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>tools\surface\kubuno_ui.dll</Link>
+      <Link>tools\surface\$(KubunoViewsSurfaceUiDllName)</Link>
     </Content>
     <KubunoViewsSurfaceStdDll Include="$(KubunoRustStdDir)std-*.dll" />
     <Content Include="@(KubunoViewsSurfaceStdDll)">
@@ -312,12 +328,14 @@
   <Target Name="KubunoCheckToolExes" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoViewsLsExePath)')"
            Text="kubuno-views-ls.exe not found at '$(KubunoViewsLsExePath)'. Build it from the desktop repo: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -- or pass /p:KubunoViewsLsExePath=&lt;path to kubuno-views-ls.exe&gt;." />
-    <Error Condition="!Exists('$(KubunoViewsLsDir)kubuno_ui.dll')"
-           Text="kubuno_ui.dll not found beside kubuno-views-ls.exe in '$(KubunoViewsLsDir)'. kubuno-views-ls.exe imports it (kubuno-ui is a Rust dylib) and must ship with the kubuno_ui.dll of the same cargo build." />
+    <Error Condition="!Exists('$(KubunoViewsLsUiDll)')"
+           Text="$(KubunoViewsLsUiDllName) not found in '$(KubunoViewsLsDir)deps' nor '$(KubunoViewsLsDir)'. kubuno-views-ls.exe imports it (kubuno-ui is a Rust dylib, one file name per build) and must ship with that very build: rebuild kubuno-views-ls.exe." />
+    <Error Condition="Exists('$(KubunoDataToolExePath)') And '$(KubunoDataToolUiDllName)' != '$(KubunoViewsLsUiDllName)'"
+           Text="kubuno-data-tool.exe imports $(KubunoDataToolUiDllName) but kubuno-views-ls.exe imports $(KubunoViewsLsUiDllName): they share tools\ and must come from the same cargo build (cargo build --release -p kubuno-views-ls -p kubuno-data-tool)." />
     <Error Condition="'@(KubunoRustStdDll)' == ''"
            Text="Rust's std-*.dll not found in '$(KubunoRustStdDir)'. kubuno-views-ls.exe imports it (-C prefer-dynamic); pass /p:KubunoRustStdDir=&lt;rustc --print sysroot&gt;\lib\rustlib\x86_64-pc-windows-msvc\lib\ for the toolchain that built it." />
     <Error Condition="!Exists('$(KubunoDataToolExePath)')"
-           Text="kubuno-data-tool.exe not found at '$(KubunoDataToolExePath)'. Build it from the desktop repo in the SAME cargo build as kubuno-views-ls.exe (they share tools\kubuno_ui.dll): cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -p kubuno-data-tool -- or pass /p:KubunoDataToolExePath=&lt;path to kubuno-data-tool.exe&gt;." />
+           Text="kubuno-data-tool.exe not found at '$(KubunoDataToolExePath)'. Build it from the desktop repo in the SAME cargo build as kubuno-views-ls.exe (they share tools\kubuno_ui-&lt;hash&gt;.dll): cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -p kubuno-data-tool -- or pass /p:KubunoDataToolExePath=&lt;path to kubuno-data-tool.exe&gt;." />
   </Target>
 
   <ItemGroup>
@@ -326,7 +344,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>tools\kubuno-views-ls.exe</Link>
     </Content>
-    <!-- docs/DATA.md DATA-5: the Data Explorer's helper, using the tools\kubuno_ui.dll / std-*.dll below (same cargo build, see KubunoDataToolExePath). -->
+    <!-- docs/DATA.md DATA-5: the Data Explorer's helper, using the tools\kubuno_ui-<hash>.dll / std-*.dll below (same cargo build, see KubunoDataToolExePath). -->
     <Content Include="$(KubunoDataToolExePath)" Condition="Exists('$(KubunoDataToolExePath)')">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -334,10 +352,10 @@
     </Content>
     <!-- kubuno-views-ls.exe's runtime DLLs - see KubunoViewsLsDir/KubunoRustStdDir above. -->
     <KubunoRustStdDll Include="$(KubunoRustStdDir)std-*.dll" />
-    <Content Include="$(KubunoViewsLsDir)kubuno_ui.dll" Condition="Exists('$(KubunoViewsLsDir)kubuno_ui.dll')">
+    <Content Include="$(KubunoViewsLsUiDll)" Condition="Exists('$(KubunoViewsLsUiDll)')">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>tools\kubuno_ui.dll</Link>
+      <Link>tools\$(KubunoViewsLsUiDllName)</Link>
     </Content>
     <Content Include="@(KubunoRustStdDll)">
       <IncludeInVSIX>true</IncludeInVSIX>

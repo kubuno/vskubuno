@@ -54,6 +54,12 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
         /// <summary>The project's <c>kubuno_ui.dll</c> that was copied next to the exe.</summary>
         public string UiDllSource { get; }
+
+        /// <summary>
+        /// The name the copy has next to the exe: the one the exe imports, <c>kubuno_ui-&lt;hash&gt;.dll</c>
+        /// (<see cref="KubunoUiLibrary"/>), or the plain name for a <c>kubuno-ui</c> built before per-build names.
+        /// </summary>
+        public string UiDllFileName { get; set; } = KubunoUiLibrary.PlainFileName;
     }
 
     public sealed class DesignSurfaceBuildResult
@@ -83,7 +89,8 @@ namespace Kubuno.Desktop.Logic.DesignSurface
     /// <c>kubuno-views/examples/view_embed.rs</c> with <c>rustc</c> directly against those exact
     /// artifacts (<see cref="RustcArgumentsFor"/>: no cargo, so nothing in the project's target folder
     /// is rebuilt or overwritten - the surface needs no crate or <c>windows</c> feature the graph lacks);
-    /// (3) put the exe, a byte-identical copy of the project's <c>kubuno_ui.dll</c> and the toolchain's
+    /// (3) put the exe, a byte-identical copy of the project's <c>kubuno_ui.dll</c> under the name the exe
+    /// imports (<c>kubuno_ui-&lt;hash&gt;.dll</c>, <see cref="KubunoUiLibrary"/>) and the toolchain's
     /// <c>std-*.dll</c> in <c>&lt;target dir&gt;\kubuno-design\&lt;profile&gt;\&lt;key&gt;\</c>. A copy, the
     /// way the WinForms designer shadow-copies assemblies: a surface that loaded the project's own
     /// <c>deps\kubuno_ui.dll</c> would lock it, and the project's next build could not replace it.
@@ -94,7 +101,9 @@ namespace Kubuno.Desktop.Logic.DesignSurface
     public sealed class DesignSurfaceBuilder
     {
         public const string ExeName = "kubuno-design-surface.exe";
-        public const string UiDllName = "kubuno_ui.dll";
+
+        /// <summary>The name Cargo gives the project's dylib (an alias of its latest <c>kubuno_ui-&lt;hash&gt;.dll</c>).</summary>
+        public const string UiDllName = KubunoUiLibrary.PlainFileName;
         public const string DesignFolderName = "kubuno-design";
         public const string CurrentFileName = "current.json";
         /// <summary>The compile-time variable <c>view_embed.rs</c>'s <c>surfaceInfo</c> handshake embeds.</summary>
@@ -142,9 +151,9 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
             var folder = Path.Combine(designDirectory, stamp.Key);
             var exe = Path.Combine(folder, ExeName);
-            return File.Exists(exe) && File.Exists(Path.Combine(folder, UiDllName)) && File.Exists(Path.Combine(folder, DesignSurfaceStamp.FileName))
+            return File.Exists(exe) && File.Exists(Path.Combine(folder, stamp.UiDllFileName)) && File.Exists(Path.Combine(folder, DesignSurfaceStamp.FileName))
                 && stamp.InputsUnchanged(DesignSurfaceStamp.DescribeFile)
-                ? new DesignSurfaceBuild(exe, stamp.UiDllSha256, stamp.UiDllSource) { ProjectCrate = stamp.ProjectCrate }
+                ? new DesignSurfaceBuild(exe, stamp.UiDllSha256, stamp.UiDllSource) { ProjectCrate = stamp.ProjectCrate, UiDllFileName = stamp.UiDllFileName }
                 : null;
         }
 
@@ -400,12 +409,14 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             var stamp = new DesignSurfaceStamp { Key = key, UiDllSha256 = uiSha, UiDllSource = inputs.UiDll, Rustc = versionLine, Inputs = stampInputs };
             var exe = Path.Combine(folder, ExeName);
 
-            if (File.Exists(Path.Combine(folder, DesignSurfaceStamp.FileName)) && File.Exists(exe)
-                && File.Exists(Path.Combine(folder, UiDllName))
-                && string.Equals(Sha256OfFile(Path.Combine(folder, UiDllName)), uiSha, StringComparison.Ordinal))
+            var existing = File.Exists(exe) ? ReadStamp(Path.Combine(folder, DesignSurfaceStamp.FileName)) : null;
+            if (existing is not null
+                && File.Exists(Path.Combine(folder, existing.UiDllFileName))
+                && string.Equals(Sha256OfFile(Path.Combine(folder, existing.UiDllFileName)), uiSha, StringComparison.Ordinal))
             {
                 log?.Report($"[design build] up to date: {folder}");
-                stamp.ProjectCrate = ReadStamp(Path.Combine(folder, DesignSurfaceStamp.FileName))?.ProjectCrate;
+                stamp.ProjectCrate = existing.ProjectCrate;
+                stamp.UiDllFileName = existing.UiDllFileName;
             }
             else
             {
@@ -443,10 +454,28 @@ namespace Kubuno.Desktop.Logic.DesignSurface
                         return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Failed, null, $"rustc failed to compile the design surface (exit code {rustcResult.ExitCode})");
                     }
 
-                    File.Copy(inputs.UiDll, Path.Combine(scratch, UiDllName), overwrite: true);
-                    if (!string.Equals(Sha256OfFile(Path.Combine(scratch, UiDllName)), uiSha, StringComparison.Ordinal))
+                    // The copy takes the name the exe imports: kubuno_ui-<hash>.dll, the build's own name (the
+                    // project's deps\kubuno_ui.dll is Cargo's alias of it), or kubuno_ui.dll for an older kubuno-ui.
+                    var uiName = KubunoUiLibrary.ImportedBy(scratchExe);
+                    if (uiName is null)
+                    {
+                        return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Failed, null, $"the design surface does not import kubuno_ui ({scratchExe})");
+                    }
+
+                    File.Copy(inputs.UiDll, Path.Combine(scratch, uiName), overwrite: true);
+                    if (!string.Equals(Sha256OfFile(Path.Combine(scratch, uiName)), uiSha, StringComparison.Ordinal))
                     {
                         return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Failed, null, "kubuno_ui.dll changed while the design surface was being built; build again");
+                    }
+
+                    stamp.UiDllFileName = uiName;
+
+                    // Its PDB, under the name the DLL records (kubuno_ui-<hash>.pdb, looked for beside the DLL), so a
+                    // debugger attached to the surface has kubuno_ui's symbols (docs/DEBUGGING.md, "Debugging the design surface").
+                    var uiPdb = Path.Combine(inputs.DepsDirectory, Path.ChangeExtension(uiName, ".pdb"));
+                    if (!string.Equals(uiName, UiDllName, StringComparison.OrdinalIgnoreCase) && File.Exists(uiPdb))
+                    {
+                        File.Copy(uiPdb, Path.Combine(scratch, Path.GetFileName(uiPdb)), overwrite: true);
                     }
 
                     var sysrootBin = Path.Combine(sysroot, "bin");
@@ -474,8 +503,8 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
             File.WriteAllText(Path.Combine(designDirectory, CurrentFileName), stamp.ToJson());
             RemoveStaleFolders(designDirectory, key, log);
-            log?.Report($"[design build] design surface ready: {exe} (kubuno_ui.dll {uiSha.Substring(0, 12)}...)");
-            return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Ready, new DesignSurfaceBuild(exe, uiSha, inputs.UiDll) { ProjectCrate = stamp.ProjectCrate }, "ready");
+            log?.Report($"[design build] design surface ready: {exe} ({stamp.UiDllFileName} {uiSha.Substring(0, 12)}...)");
+            return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Ready, new DesignSurfaceBuild(exe, uiSha, inputs.UiDll) { ProjectCrate = stamp.ProjectCrate, UiDllFileName = stamp.UiDllFileName }, "ready");
         }
 
         /// <summary>

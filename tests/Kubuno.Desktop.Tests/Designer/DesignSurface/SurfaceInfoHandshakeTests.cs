@@ -13,7 +13,7 @@ namespace Kubuno.Desktop.Tests.Designer.DesignSurface
     public class SurfaceInfoHandshakeTests
     {
         private const string Exe = @"C:\t\rsproj\app\kubuno-design\debug\0123456789abcdef\kubuno-design-surface.exe";
-        private const string Dll = @"C:\t\rsproj\app\kubuno-design\debug\0123456789abcdef\kubuno_ui.dll";
+        private const string Dll = @"C:\t\rsproj\app\kubuno-design\debug\0123456789abcdef\kubuno_ui-00000000deadbeef.dll";
         private const string Sha = "0EB972E1D386A45A118548579C2CEE6C88E237CFDC39C291C9C7F33D7F1AC6B3";
 
         [TestMethod]
@@ -47,6 +47,7 @@ namespace Kubuno.Desktop.Tests.Designer.DesignSurface
         {
             var problem = DesignSurfaceProtocol.CheckSurfaceInfo(1, Dll, Sha, Exe, Sha, _ => "FFFF" + Sha.Substring(4));
             StringAssert.Contains(problem, "linked against");
+            StringAssert.Contains(problem, "kubuno_ui-00000000deadbeef.dll");
         }
 
         [TestMethod]

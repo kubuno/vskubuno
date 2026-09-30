@@ -141,6 +141,22 @@ namespace Kubuno.Desktop.Tests.DesignSurface
         }
 
         [TestMethod]
+        public void Stamp_keeps_the_name_the_surface_imports_and_rejects_anything_else()
+        {
+            var stamp = new DesignSurfaceStamp { Key = "0123456789abcdef", UiDllSha256 = "AB", UiDllFileName = "kubuno_ui-0123456789abcdef.dll" };
+
+            Assert.AreEqual("kubuno_ui-0123456789abcdef.dll", DesignSurfaceStamp.TryParse(stamp.ToJson())!.UiDllFileName);
+            Assert.AreEqual(DesignSurfaceBuilder.UiDllName, new DesignSurfaceStamp().UiDllFileName, "defaults to the plain name");
+
+            stamp.UiDllFileName = @"..\..\evil.dll";
+            Assert.IsNull(DesignSurfaceStamp.TryParse(stamp.ToJson()));
+
+            stamp.UiDllFileName = "kubuno_ui.dll";
+            stamp.Version = 2;
+            Assert.IsNull(DesignSurfaceStamp.TryParse(stamp.ToJson()), "a version 2 stamp predates per-build names: rebuilt");
+        }
+
+        [TestMethod]
         public async Task A_project_without_kubuno_views_is_not_applicable()
         {
             var runner = new FakeProcessRunner(new ProcessRunResult(0, new[] { @"{""reason"":""build-finished"",""success"":true}" }, new string[0]));

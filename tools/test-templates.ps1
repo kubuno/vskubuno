@@ -321,7 +321,12 @@ foreach ($dir in Get-ChildItem $templatesRoots -Directory) {
                 }
                 'KubunoDesktopApplication' {
                     $profileDir = Join-Path $cargoTarget 'debug'
-                    foreach ($dll in @((Join-Path $profileDir 'kubuno_ui.dll'))) { if (-not (Test-Path $dll)) { $failures += "run: $dll missing" } }
+                    # The exe imports its own build of the shared library, kubuno_ui-<hash>.dll (docs/DESIGNER.md
+                    # section 16), which the build leaves in deps\ - never the plain kubuno_ui.dll (Cargo's alias).
+                    $exeText = [Text.Encoding]::GetEncoding(28591).GetString([IO.File]::ReadAllBytes($exe))
+                    $uiName = [regex]::Match($exeText, 'kubuno_ui-[0-9a-f]{16}\.dll').Value
+                    if (-not $uiName) { $failures += "run: $exe does not import a kubuno_ui-<hash>.dll" }
+                    elseif (-not (Test-Path (Join-Path $profileDir "deps\$uiName"))) { $failures += "run: $uiName (imported by $exe) missing from $profileDir\deps" }
                     if (-not (Get-ChildItem $stdDir -Filter 'std-*.dll')) { $failures += "run: no std-*.dll in $stdDir" }
                     if (-not $failures) {
                         # Same PATH as F5 (Kubuno.Rust.Launch.RustDebugEnvironment): profile dir, deps, Rust std.
