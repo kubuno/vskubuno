@@ -28,11 +28,17 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
         /// other than the sibling default ("Cargo.toml") - see
         /// <see cref="RsprojGenerationOptions.ResolveProjectDirectory"/>.
         /// </param>
+        /// <param name="workspaceBuild">
+        /// Writes <c>&lt;CargoBuildScope&gt;Workspace&lt;/CargoBuildScope&gt;</c>: the project builds the whole Cargo
+        /// workspace (once per build for all its projects) instead of its own package - see
+        /// <see cref="RsprojGenerationPlanner"/> for when the planner asks for it.
+        /// </param>
         public static string Build(
             string packageName,
             string sdkVersion,
             string? cargoBin,
-            string? manifestPathRelativeToProject)
+            string? manifestPathRelativeToProject,
+            bool workspaceBuild = false)
         {
             if (string.IsNullOrWhiteSpace(packageName))
             {
@@ -63,6 +69,13 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
             {
                 var normalized = manifestPathRelativeToProject!.Replace('/', Path.DirectorySeparatorChar);
                 builder.Append("    <CargoManifestPath>").Append(EscapeXmlText(normalized)).Append("</CargoManifestPath>").Append('\n');
+            }
+
+            if (workspaceBuild)
+            {
+                builder.Append("    <!-- The workspace shares a Rust dylib between several crates: build the whole workspace, so that the").Append('\n');
+                builder.Append("         dylib and every program loading it always get the same features (docs/RSPROJ.md, \"Cargo workspaces\"). -->").Append('\n');
+                builder.Append("    <CargoBuildScope>Workspace</CargoBuildScope>").Append('\n');
             }
 
             builder.Append("  </PropertyGroup>").Append('\n');

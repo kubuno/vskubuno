@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The Kubuno desktop applications open, build, run and debug as a Visual Studio solution**
+  (`docs/GETTING-STARTED.md`, "Working on the Kubuno desktop apps"; `docs/RSPROJ.md`, "Cargo workspaces"):
+  *Generate Visual Studio Projects* on the `desktop/windows` workspace gives one project per crate and a
+  `.slnx` with the shell, Chat, Documents and Drive ready for Set as Startup Project and F5, breakpoints
+  included, and Test Explorer lists the workspace's tests.
+- **Workspace builds for a Cargo workspace that shares a Rust dylib** (`Kubuno.Rust.Sdk` 1.1.0):
+  `<CargoBuildScope>Workspace</CargoBuildScope>` builds the whole workspace once per build for all its projects,
+  so the dylib and every program that loads it always match; each error and warning is listed once, under the
+  project whose file it is, and a program that built can still be started when another crate has an error.
+  `CargoWorkspaceRoot` and `CargoWorkspaceBuildArgs` are available too.
+- *Generate Visual Studio Projects* creates a `.slnx` (Visual Studio 2026's format) when the workspace has no
+  solution yet, merges into an existing `.sln` or `.slnx`, and lists the library crates under a *Libraries*
+  folder of a `.slnx`.
+- Test Explorer finds the tests of the projects of an open solution (it only did in Open Folder mode).
+
 - Toolbox: a **Docking** tab ("Ancrage" in French) with **DockArea** (a work area surrounded by panels the user can
   dock, group as tabs, split, float, resize, close and reopen), **DockPanel** (one of its panels) and
   **WorkspaceShell** (an editor's frame: top bar, status bar, body), each with its own icon in the Toolbox and in
@@ -199,6 +214,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- `Kubuno.Rust.Sdk` is now version 1.1.0 (new projects and the templates use it): an SDK is cached by version, so
+  the changes above could not reach a machine that already had 1.0.0.
+- A project that is a member of a larger Cargo workspace uses the workspace's target directory and `Cargo.lock`,
+  always lets cargo decide whether it is up to date (its path dependencies can change too), and Clean removes only
+  its own package's files instead of the whole workspace's.
+- A Visual Studio instance started with a root suffix (an experimental instance) no longer redirects the Kubuno SDK
+  source of your NuGet.Config to its own copy; it only adds the source when none works.
+
 - **The extension is organised in layers, ready for Kubuno web modules and mobile apps** (`docs/ARCHITECTURE.md`,
   "Layers (as built)"): Kubuno.Core (shared Visual Studio infrastructure: themed dialogs, settings plumbing, the Kubuno
   Output pane, the MCP bridge, the layer contracts), Kubuno.Rust (rust-analyzer, Cargo, `.rsproj`, debugging, Test
@@ -374,6 +397,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `Anchor="Top, Left"`; a Toolbox double-click does the same.
 
 ### Fixed
+
+- The Error List pointed at wrong files for a crate of a larger Cargo workspace (paths were read from the crate's
+  folder instead of the workspace's).
+- F5 did not find the executable of a package whose only program has another name (Drive's `drive.exe`).
+- Some build results were lost at the end of a build (the last lines of cargo's output were handled too late): an
+  executable not found right after an up-to-date build, possibly a missing error.
+- Test Explorer showed no tests for a crate that links a Rust dylib (`-C prefer-dynamic`): its test programs could
+  not start without their DLLs on PATH. Unit tests of a `dylib` or proc-macro library were skipped, a crate that did
+  not compile hid every other test, and a test program with hundreds of tests failed them all (Windows' command-line
+  limit).
+- Test Explorer on a workspace whose procedural macro tests use the workspace's dylib (the Kubuno desktop workspace)
+  failed with an "output filename collision" on the DLL: such crates now build their tests apart.
+- *Generate Visual Studio Projects* put the solution in a member's folder when that member's file was the active
+  document.
 
 - A typed data source is no longer reported missing in the Error List ("macro-error: cannot find the data source
   `shop.kbdata`") while the project builds: rust-analyzer expands `data_source!` without the calling file, and the

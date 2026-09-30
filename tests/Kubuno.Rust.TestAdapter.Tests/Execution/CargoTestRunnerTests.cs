@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kubuno.Rust.Cargo.Processes;
@@ -54,6 +55,37 @@ namespace Kubuno.Rust.TestAdapter.Tests.Execution
 
             await Assert.ThrowsAsync<ArgumentException>(() =>
                 CargoTestRunner.RunAsync(runner, @"C:\exe.exe", @"C:\root", Array.Empty<string>(), CancellationToken.None));
+        }
+
+        [Fact]
+        public void Names_are_split_into_batches_that_fit_a_command_line()
+        {
+            var names = new[] { "aaaa", "bbbb", "cccc", "a_very_long_name_on_its_own" };
+
+            var batches = CargoTestRunner.SplitIntoBatches(names, maxLength: 15);
+
+            Assert.Equal(new[] { new[] { "aaaa", "bbbb" }, new[] { "cccc" }, new[] { "a_very_long_name_on_its_own" } }, batches);
+        }
+
+        [Fact]
+        public async Task Hundreds_of_tests_run_in_several_launches_and_every_outcome_is_kept()
+        {
+            // kubuno-controls has hundreds of tests: all their names in one launch exceed Windows' 32,767-character command line.
+            var names = System.Linq.Enumerable.Range(0, 1500).Select(i => $"module::tests::a_reasonably_long_test_name_number_{i}").ToList();
+            var runner = new FakeProcessRunner(request =>
+            {
+                var requested = request.Arguments.Split(' ').Select(a => a.Trim('"')).Where(a => a.StartsWith("module::", StringComparison.Ordinal)).ToList();
+                var lines = requested.Select(n => $"test {n} ... ok").ToList();
+                lines.Add($"test result: ok. {requested.Count} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s");
+                return new ProcessRunResult(0, lines, Array.Empty<string>());
+            });
+
+            CargoTestRunResult result = await CargoTestRunner.RunAsync(runner, @"C:\target\debug\deps\kubuno_controls-1.exe", @"C:\root", names, CancellationToken.None);
+
+            Assert.True(runner.Requests.Count > 1);
+            Assert.All(runner.Requests, request => Assert.True(request.Arguments.Length < 32_000));
+            Assert.Equal(1500, result.Outcomes.Count);
+            Assert.All(result.Outcomes.Values, outcome => Assert.Equal(LibtestVerdict.Passed, outcome.Verdict));
         }
     }
 }

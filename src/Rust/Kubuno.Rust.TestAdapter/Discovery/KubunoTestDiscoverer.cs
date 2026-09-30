@@ -91,8 +91,14 @@ namespace Kubuno.Rust.TestAdapter.Discovery
 
             if (!buildResult.Success)
             {
-                logger?.SendMessage(TestMessageLevel.Warning, $"Kubuno: '{manifestPath}' did not build; no tests discovered from it this run.");
-                return;
+                // The build goes on past a failing crate (CargoTestBuild, --no-fail-fast): the test programs that did build are listed.
+                logger?.SendMessage(TestMessageLevel.Warning, buildResult.Binaries.Count == 0
+                    ? $"Kubuno: '{manifestPath}' did not build; no tests discovered from it this run."
+                    : $"Kubuno: part of '{manifestPath}' did not build; only the tests of the crates that built are listed this run.");
+                if (buildResult.Binaries.Count == 0)
+                {
+                    return;
+                }
             }
 
             foreach (CargoTestBinary binary in buildResult.Binaries)
@@ -122,7 +128,8 @@ namespace Kubuno.Rust.TestAdapter.Discovery
             var request = new ProcessRunRequest(commandLine.FileName, commandLine.Arguments)
             {
                 WorkingDirectory = workingDirectory,
-                EnvironmentVariables = _environmentVariables,
+                // A test program linking a Rust dylib (-C prefer-dynamic) only starts with its DLL folders on PATH.
+                EnvironmentVariables = Execution.TestProcessEnvironment.For(executablePath, workingDirectory, _environmentVariables),
             };
             ProcessRunResult result = await _processRunner.RunAsync(request, onOutput: null, CancellationToken.None).ConfigureAwait(false);
             return result.StandardOutputLines;

@@ -19,6 +19,7 @@
   <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.CargoFetch" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
   <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.CargoClippy" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
   <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.KubunoWin32Resources" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
+  <UsingTask TaskName="Kubuno.Cargo.MSBuild.Tasks.KubunoWorkspaceDiagnostics" AssemblyFile="$(_KubunoCargoTasksAssembly)" />
 
   <!-- The two configurations Visual Studio's Configuration Manager/toolbar dropdown offer
        (capability ProjectConfigurationsDeclaredAsItems below), mapped to cargo's dev/release
@@ -151,6 +152,50 @@
 
   <PropertyGroup>
     <_KubunoManifestDir>$([System.IO.Path]::GetDirectoryName('$(CargoManifestPath)'))</_KubunoManifestDir>
+  </PropertyGroup>
+
+  <!--
+    Cargo workspace root (docs/RSPROJ.md, "Cargo workspaces"): an explicit $(CargoWorkspaceRoot) wins;
+    otherwise the package's own manifest when it declares a [workspace] table, else the nearest
+    Cargo.toml above it that does (cargo's own upward search, four levels deep here), else the
+    package's own directory. A member of a larger workspace needs it for cargo's defaults (the
+    target directory and Cargo.lock live at the workspace root) and for the Error List (rustc
+    reports a member's files relative to the workspace root). Evaluation only reads a few small
+    files; it never runs cargo.
+  -->
+  <PropertyGroup Condition="'$(CargoWorkspaceRoot)' == ''">
+    <_KubunoWsIsRoot0 Condition="Exists('$(CargoManifestPath)')">$([System.IO.File]::ReadAllText('$(CargoManifestPath)').Contains('[workspace'))</_KubunoWsIsRoot0>
+    <CargoWorkspaceRoot Condition="'$(_KubunoWsIsRoot0)' == 'True'">$(_KubunoManifestDir)</CargoWorkspaceRoot>
+
+    <_KubunoWsParent0 Condition="'$(CargoWorkspaceRoot)' == '' and '$(_KubunoManifestDir)' != ''">$([System.IO.Path]::GetDirectoryName('$(_KubunoManifestDir)'))</_KubunoWsParent0>
+    <_KubunoWsDir1 Condition="'$(CargoWorkspaceRoot)' == '' and '$(_KubunoWsParent0)' != ''">$([MSBuild]::GetDirectoryNameOfFileAbove('$(_KubunoWsParent0)', 'Cargo.toml'))</_KubunoWsDir1>
+    <_KubunoWsIsRoot1 Condition="'$(_KubunoWsDir1)' != ''">$([System.IO.File]::ReadAllText('$(_KubunoWsDir1)\Cargo.toml').Contains('[workspace'))</_KubunoWsIsRoot1>
+    <CargoWorkspaceRoot Condition="'$(_KubunoWsIsRoot1)' == 'True'">$(_KubunoWsDir1)</CargoWorkspaceRoot>
+
+    <_KubunoWsParent1 Condition="'$(CargoWorkspaceRoot)' == '' and '$(_KubunoWsDir1)' != ''">$([System.IO.Path]::GetDirectoryName('$(_KubunoWsDir1)'))</_KubunoWsParent1>
+    <_KubunoWsDir2 Condition="'$(CargoWorkspaceRoot)' == '' and '$(_KubunoWsParent1)' != ''">$([MSBuild]::GetDirectoryNameOfFileAbove('$(_KubunoWsParent1)', 'Cargo.toml'))</_KubunoWsDir2>
+    <_KubunoWsIsRoot2 Condition="'$(_KubunoWsDir2)' != ''">$([System.IO.File]::ReadAllText('$(_KubunoWsDir2)\Cargo.toml').Contains('[workspace'))</_KubunoWsIsRoot2>
+    <CargoWorkspaceRoot Condition="'$(_KubunoWsIsRoot2)' == 'True'">$(_KubunoWsDir2)</CargoWorkspaceRoot>
+
+    <_KubunoWsParent2 Condition="'$(CargoWorkspaceRoot)' == '' and '$(_KubunoWsDir2)' != ''">$([System.IO.Path]::GetDirectoryName('$(_KubunoWsDir2)'))</_KubunoWsParent2>
+    <_KubunoWsDir3 Condition="'$(CargoWorkspaceRoot)' == '' and '$(_KubunoWsParent2)' != ''">$([MSBuild]::GetDirectoryNameOfFileAbove('$(_KubunoWsParent2)', 'Cargo.toml'))</_KubunoWsDir3>
+    <_KubunoWsIsRoot3 Condition="'$(_KubunoWsDir3)' != ''">$([System.IO.File]::ReadAllText('$(_KubunoWsDir3)\Cargo.toml').Contains('[workspace'))</_KubunoWsIsRoot3>
+    <CargoWorkspaceRoot Condition="'$(_KubunoWsIsRoot3)' == 'True'">$(_KubunoWsDir3)</CargoWorkspaceRoot>
+
+    <_KubunoWsParent3 Condition="'$(CargoWorkspaceRoot)' == '' and '$(_KubunoWsDir3)' != ''">$([System.IO.Path]::GetDirectoryName('$(_KubunoWsDir3)'))</_KubunoWsParent3>
+    <_KubunoWsDir4 Condition="'$(CargoWorkspaceRoot)' == '' and '$(_KubunoWsParent3)' != ''">$([MSBuild]::GetDirectoryNameOfFileAbove('$(_KubunoWsParent3)', 'Cargo.toml'))</_KubunoWsDir4>
+    <_KubunoWsIsRoot4 Condition="'$(_KubunoWsDir4)' != ''">$([System.IO.File]::ReadAllText('$(_KubunoWsDir4)\Cargo.toml').Contains('[workspace'))</_KubunoWsIsRoot4>
+    <CargoWorkspaceRoot Condition="'$(_KubunoWsIsRoot4)' == 'True'">$(_KubunoWsDir4)</CargoWorkspaceRoot>
+
+    <CargoWorkspaceRoot Condition="'$(CargoWorkspaceRoot)' == ''">$(_KubunoManifestDir)</CargoWorkspaceRoot>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <CargoWorkspaceRoot>$(CargoWorkspaceRoot.TrimEnd('\').TrimEnd('/'))</CargoWorkspaceRoot>
+    <_KubunoIsWorkspaceMember Condition="'$(CargoWorkspaceRoot)' != '$(_KubunoManifestDir)'">true</_KubunoIsWorkspaceMember>
+    <_KubunoWorkspaceBuild Condition="'$(CargoBuildScope)' == 'Workspace'">true</_KubunoWorkspaceBuild>
+    <!-- Never created: listed in CoreCompile's Outputs so that the target always runs (see there). -->
+    <_KubunoAlwaysRunMarker Condition="'$(_KubunoIsWorkspaceMember)' == 'true' or '$(_KubunoWorkspaceBuild)' == 'true'">$(MSBuildProjectDirectory)\obj\kubuno-always-run.never</_KubunoAlwaysRunMarker>
 
     <!--
       Debug/Release map onto cargo's two built-in profiles (docs/RSPROJ.md Â§2); any other
@@ -166,14 +211,19 @@
     <CargoProfileDirName>$(CargoProfile)</CargoProfileDirName>
 
     <!-- Effective target dir (mirrors Kubuno.Rust.Launch.CargoLayout.ResolveTargetDir): an explicit
-         $(CargoTargetDir)/CARGO_TARGET_DIR wins outright, else "<manifest dir>/target". -->
+         $(CargoTargetDir)/CARGO_TARGET_DIR wins outright, else "<workspace root>/target" (the
+         package's own directory for a package that is not part of a larger workspace). -->
     <_KubunoEffectiveTargetDir Condition="'$(CargoTargetDir)' != ''">$(CargoTargetDir)</_KubunoEffectiveTargetDir>
-    <_KubunoEffectiveTargetDir Condition="'$(_KubunoEffectiveTargetDir)' == ''">$(_KubunoManifestDir)\target</_KubunoEffectiveTargetDir>
+    <_KubunoEffectiveTargetDir Condition="'$(_KubunoEffectiveTargetDir)' == ''">$(CargoWorkspaceRoot)\target</_KubunoEffectiveTargetDir>
 
     <!-- The bin target's own name: $(CargoBin), else $(CargoPackage), else the .rsproj's own name. -->
     <_KubunoBinName Condition="'$(CargoBin)' != ''">$(CargoBin)</_KubunoBinName>
     <_KubunoBinName Condition="'$(_KubunoBinName)' == '' and '$(CargoPackage)' != ''">$(CargoPackage)</_KubunoBinName>
     <_KubunoBinName Condition="'$(_KubunoBinName)' == ''">$(MSBuildProjectName)</_KubunoBinName>
+    <!-- Whether the package has an executable at all (cargo's own discovery: src/main.rs, src/bin, or a [[bin]] table). -->
+    <_KubunoHasBin Condition="'$(CargoBin)' != '' or Exists('$(_KubunoManifestDir)\src\main.rs') or Exists('$(_KubunoManifestDir)\src\bin')">true</_KubunoHasBin>
+    <_KubunoManifestHasBinTable Condition="'$(_KubunoHasBin)' != 'true' and Exists('$(CargoManifestPath)')">$([System.IO.File]::ReadAllText('$(CargoManifestPath)').Contains('[[bin]]'))</_KubunoManifestHasBinTable>
+    <_KubunoHasBin Condition="'$(_KubunoManifestHasBinTable)' == 'True'">true</_KubunoHasBin>
 
     <!--
       Output location, expressed through Microsoft.Common's own properties so its TargetDir/
@@ -208,7 +258,7 @@
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.kbdata" Condition="Exists('$(_KubunoManifestDir)\src')" />
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\.sqlx\*.json" Condition="Exists('$(_KubunoManifestDir)\.sqlx')" />
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\migrations\*.sql" Condition="Exists('$(_KubunoManifestDir)\migrations')" />
-    <_KubunoCargoLockFile Include="$(_KubunoManifestDir)\Cargo.lock" Condition="Exists('$(_KubunoManifestDir)\Cargo.lock')" />
+    <_KubunoCargoLockFile Include="$(CargoWorkspaceRoot)\Cargo.lock" Condition="Exists('$(CargoWorkspaceRoot)\Cargo.lock')" />
   </ItemGroup>
 
   <!--
@@ -288,16 +338,81 @@
     Error List entries (Kubuno.Cargo.MSBuild.Tasks â€” work package 2). Defined BEFORE the
     Microsoft.Common.targets import on purpose (a later definition of the same name would win).
   -->
+  <!--
+    The Inputs/Outputs gate only sees this package's own sources: for a member of a larger workspace
+    (whose path dependencies live elsewhere) or a workspace-wide build, $(_KubunoAlwaysRunMarker)
+    names a file that never exists, so cargo always runs and decides for itself (a no-op build of
+    an up-to-date workspace takes a second or two).
+
+    CargoBuildScope (docs/RSPROJ.md, "Cargo workspaces"): "Package" (the default) builds this
+    package with `-p`; "Workspace" builds the whole workspace once for all the projects of the
+    workspace (KubunoCargoWorkspace.proj) and picks this project's executable from its results -
+    required when the workspace has a Rust dylib shared by several programs.
+  -->
+  <Target Name="_KubunoComputeWorkspaceBuildProperties" DependsOnTargets="_KubunoComputeRustFlags" Condition="'$(_KubunoWorkspaceBuild)' == 'true'">
+    <!-- The global properties of KubunoCargoWorkspace.proj: identical for every project of the
+         workspace that builds with the same settings, so MSBuild builds it once. Escaped, since a
+         value may hold ';' (features, cargo arguments). -->
+    <PropertyGroup>
+      <_KubunoWorkspaceBuildArgList>$(CargoWorkspaceBuildArgs.Trim().Replace(' ', ';'))</_KubunoWorkspaceBuildArgList>
+    </PropertyGroup>
+    <ItemGroup>
+      <_KubunoWorkspaceBuildProperty Include="CargoWorkspaceRoot=$([MSBuild]::Escape('$(CargoWorkspaceRoot)'))" />
+      <_KubunoWorkspaceBuildProperty Include="CargoWorkspaceManifestPath=$([MSBuild]::Escape('$(CargoWorkspaceRoot)\Cargo.toml'))" />
+      <_KubunoWorkspaceBuildProperty Include="CargoProfile=$([MSBuild]::Escape('$(CargoProfile)'))" />
+      <_KubunoWorkspaceBuildProperty Include="CargoTargetDir=$([MSBuild]::Escape('$(CargoTargetDir)'))" />
+      <_KubunoWorkspaceBuildProperty Include="CargoFeatures=$([MSBuild]::Escape('$(CargoFeatures)'))" />
+      <_KubunoWorkspaceBuildProperty Include="CargoNoDefaultFeatures=$(CargoNoDefaultFeatures)" />
+      <_KubunoWorkspaceBuildProperty Include="CargoAllFeatures=$(CargoAllFeatures)" />
+      <_KubunoWorkspaceBuildProperty Include="CargoTargetTriple=$([MSBuild]::Escape('$(CargoTargetTriple)'))" />
+      <_KubunoWorkspaceBuildProperty Include="KubunoRustFlags=$([MSBuild]::Escape('$(_KubunoRustFlags)'))" />
+      <_KubunoWorkspaceBuildProperty Include="CargoWorkspaceBuildArgs=$([MSBuild]::Escape('$(_KubunoWorkspaceBuildArgList)'))" />
+    </ItemGroup>
+  </Target>
+
   <Target Name="CoreCompile"
-          DependsOnTargets="CargoRestore;_KubunoComputeRustFlags;KubunoWin32Resources"
+          DependsOnTargets="CargoRestore;_KubunoComputeRustFlags;_KubunoComputeWorkspaceBuildProperties;KubunoWin32Resources"
           Inputs="$(MSBuildProjectFullPath);$(CargoManifestPath);@(_KubunoCargoLockFile);@(_KubunoCargoSourceFiles);@(_KubunoWin32ResourceInput);@(_KubunoLinkArg)"
-          Outputs="$(TargetPath)">
+          Outputs="$(TargetPath);$(_KubunoAlwaysRunMarker)">
     <!-- With Win32 resources the bin is named explicitly: `cargo rustc` needs exactly one target. -->
     <PropertyGroup>
       <_KubunoBuildBin>$(CargoBin)</_KubunoBuildBin>
       <_KubunoBuildBin Condition="'$(_KubunoBuildBin)' == '' and '@(_KubunoLinkArg)' != ''">$(_KubunoBinName)</_KubunoBuildBin>
     </PropertyGroup>
-    <CargoBuild ManifestPath="$(CargoManifestPath)"
+
+    <MSBuild Projects="$(MSBuildThisFileDirectory)KubunoCargoWorkspace.proj"
+             Targets="Build"
+             Properties="@(_KubunoWorkspaceBuildProperty)"
+             Condition="'$(_KubunoWorkspaceBuild)' == 'true'">
+      <Output TaskParameter="TargetOutputs" ItemName="_KubunoWorkspaceResult" />
+    </MSBuild>
+    <ItemGroup Condition="'$(_KubunoWorkspaceBuild)' == 'true'">
+      <_KubunoWorkspaceExecutable Include="@(_KubunoWorkspaceResult->WithMetadataValue('KubunoKind', 'Executable'))" />
+      <_KubunoWorkspaceDiagnostic Include="@(_KubunoWorkspaceResult->WithMetadataValue('KubunoKind', 'Diagnostic'))" />
+      <_KubunoWorkspaceOutcome Include="@(_KubunoWorkspaceResult->WithMetadataValue('KubunoKind', 'Result'))" />
+    </ItemGroup>
+    <PropertyGroup Condition="'$(_KubunoWorkspaceBuild)' == 'true'">
+      <_KubunoWorkspaceSucceeded>@(_KubunoWorkspaceOutcome->'%(Succeeded)')</_KubunoWorkspaceSucceeded>
+      <!-- A library has no executable to pick. -->
+      <_KubunoWorkspaceBin Condition="'$(_KubunoHasBin)' == 'true'">$(_KubunoBinName)</_KubunoWorkspaceBin>
+    </PropertyGroup>
+    <!-- This project's share of the workspace build: the errors and warnings of its own files, and its executable. -->
+    <KubunoWorkspaceDiagnostics Condition="'$(_KubunoWorkspaceBuild)' == 'true'"
+                                Diagnostics="@(_KubunoWorkspaceDiagnostic)"
+                                Executables="@(_KubunoWorkspaceExecutable)"
+                                BuildSucceeded="$(_KubunoWorkspaceSucceeded)"
+                                ProjectFullPath="$(MSBuildProjectFullPath)"
+                                WorkspaceRoot="$(CargoWorkspaceRoot)"
+                                SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)"
+                                BinName="$(_KubunoWorkspaceBin)">
+      <Output TaskParameter="ExecutablePath" PropertyName="_KubunoWorkspaceTargetPath" />
+    </KubunoWorkspaceDiagnostics>
+    <PropertyGroup Condition="'$(_KubunoWorkspaceBuild)' == 'true'">
+      <TargetPath Condition="'$(_KubunoWorkspaceTargetPath)' != ''">$(_KubunoWorkspaceTargetPath)</TargetPath>
+    </PropertyGroup>
+
+    <CargoBuild Condition="'$(_KubunoWorkspaceBuild)' != 'true'"
+                ManifestPath="$(CargoManifestPath)"
                 Package="$(CargoPackage)"
                 Profile="$(CargoProfile)"
                 TargetDir="$(CargoTargetDir)"
@@ -309,6 +424,7 @@
                 RustFlags="$(_KubunoRustFlags)"
                 LinkArgs="@(_KubunoLinkArg)"
                 ExtraArgs="$(CargoExtraArgs)"
+                WorkspaceRoot="$(CargoWorkspaceRoot)"
                 WorkingDirectory="$(_KubunoManifestDir)">
       <Output TaskParameter="ExecutablePath" PropertyName="TargetPath" />
     </CargoBuild>
@@ -343,6 +459,7 @@
                  AllFeatures="$(CargoAllFeatures)"
                  TargetTriple="$(CargoTargetTriple)"
                  RustFlags="$(_KubunoRustFlags)"
+                 WorkspaceRoot="$(CargoWorkspaceRoot)"
                  WorkingDirectory="$(_KubunoManifestDir)" />
   </Target>
 
@@ -354,7 +471,7 @@
     Clean: `cargo clean` for the current profile, hooked before Microsoft.Common's own Clean (the
     JS SDK's _CleanBuildOutput pattern), so Build/Rebuild/Clean all keep their standard definitions.
   -->
-  <Target Name="_KubunoCargoClean" BeforeTargets="BeforeClean">
+  <Target Name="_KubunoCargoClean" BeforeTargets="BeforeClean" DependsOnTargets="_KubunoComputeWorkspaceBuildProperties">
     <PropertyGroup>
       <!-- Always name the profile: a bare `cargo clean` wipes the WHOLE target dir, i.e. the other
            configuration's (and, with a shared CARGO_TARGET_DIR, other packages') artifacts too. -->
@@ -362,14 +479,22 @@
       <_KubunoCleanProfileArg Condition="'$(CargoProfile)' == 'release'">--release</_KubunoCleanProfileArg>
       <_KubunoCleanProfileArg Condition="'$(CargoProfile)' != 'release' and '$(CargoProfile)' != 'debug'">--profile $(CargoProfile)</_KubunoCleanProfileArg>
       <_KubunoCleanProfileArg Condition="'$(CargoTargetTriple)' != ''">$(_KubunoCleanProfileArg) --target $(CargoTargetTriple)</_KubunoCleanProfileArg>
+      <!-- A member of a larger workspace cleans its own package only: the profile directory is the
+           workspace's, shared with every other member. -->
+      <_KubunoCleanProfileArg Condition="'$(_KubunoIsWorkspaceMember)' == 'true' and '$(CargoPackage)' != ''">$(_KubunoCleanProfileArg) -p $(CargoPackage)</_KubunoCleanProfileArg>
     </PropertyGroup>
+    <!-- A workspace-wide build cleans the workspace once per build session (KubunoCargoWorkspace.proj). -->
+    <MSBuild Projects="$(MSBuildThisFileDirectory)KubunoCargoWorkspace.proj"
+             Targets="Clean"
+             Properties="@(_KubunoWorkspaceBuildProperty)"
+             Condition="'$(_KubunoWorkspaceBuild)' == 'true'" />
     <Exec Command="cargo clean --manifest-path &quot;$(CargoManifestPath)&quot; $(_KubunoCleanProfileArg)"
           WorkingDirectory="$(_KubunoManifestDir)"
           EnvironmentVariables="CARGO_TARGET_DIR=$(CargoTargetDir)"
-          Condition="'$(CargoTargetDir)' != ''" />
+          Condition="'$(_KubunoWorkspaceBuild)' != 'true' and '$(CargoTargetDir)' != ''" />
     <Exec Command="cargo clean --manifest-path &quot;$(CargoManifestPath)&quot; $(_KubunoCleanProfileArg)"
           WorkingDirectory="$(_KubunoManifestDir)"
-          Condition="'$(CargoTargetDir)' == ''" />
+          Condition="'$(_KubunoWorkspaceBuild)' != 'true' and '$(CargoTargetDir)' == ''" />
   </Target>
 
   <!--
@@ -425,6 +550,7 @@
                TargetTriple="$(CargoTargetTriple)"
                RustFlags="$(_KubunoRustFlags)"
                ExtraArgs="$(CargoExtraArgs)"
+               WorkspaceRoot="$(CargoWorkspaceRoot)"
                WorkingDirectory="$(_KubunoManifestDir)" />
   </Target>
 

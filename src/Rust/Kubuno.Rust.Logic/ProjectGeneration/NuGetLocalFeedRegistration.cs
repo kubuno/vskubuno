@@ -20,6 +20,27 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
     public static class NuGetLocalFeedRegistration
 #endif
     {
+        /// <summary>The <c>value</c> of the packageSources entry named <paramref name="sourceName"/>, or null (no entry, or a file this class cannot read).</summary>
+        public static string? GetSourceValue(string? configXml, string sourceName)
+        {
+            if (string.IsNullOrWhiteSpace(configXml))
+            {
+                return null;
+            }
+
+            try
+            {
+                return XDocument.Parse(configXml!).Root?.Element("packageSources")?.Elements("add")
+                    .Where(e => string.Equals((string?)e.Attribute("key"), sourceName, StringComparison.OrdinalIgnoreCase))
+                    .Select(e => (string?)e.Attribute("value"))
+                    .FirstOrDefault();
+            }
+            catch (System.Xml.XmlException)
+            {
+                return null;
+            }
+        }
+
         /// <param name="existingConfigXml"><see langword="null"/> when no NuGet.Config exists yet at the target path.</param>
         /// <param name="sourceName">The packageSources <c>key</c> - also used to detect an already-registered entry (by key, not by path, so a developer's own rename sticks).</param>
         /// <param name="sourcePath">Absolute path of the local feed folder (containing the packed <c>Kubuno.Rust.Sdk.*.nupkg</c>).</param>

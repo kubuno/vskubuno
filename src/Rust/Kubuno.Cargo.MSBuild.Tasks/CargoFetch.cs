@@ -47,7 +47,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
             };
 
             var runner = new ProcessRunner();
-            var progress = new Progress<ProcessOutputLine>(line => Log.LogMessage(MessageImportance.Low, line.Text));
+            var progress = new Internal.InlineProgress<ProcessOutputLine>(line => Log.LogMessage(MessageImportance.Low, line.Text));
 
             ProcessRunResult result;
             try

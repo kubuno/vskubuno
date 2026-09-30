@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Kubuno.Rust.Cargo.Commands;
 using Kubuno.Rust.Cargo.Diagnostics;
 using Kubuno.Rust.Cargo.Metadata;
 using Kubuno.Rust.Launch;
 using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 
 namespace Kubuno.Cargo.MSBuild.Tasks
 {
@@ -19,6 +21,13 @@ namespace Kubuno.Cargo.MSBuild.Tasks
 
         /// <summary>Emits <c>--workspace</c> when true.</summary>
         public bool Workspace { get; set; }
+
+        /// <summary>
+        /// The <c>[[bin]]</c> whose artifact <see cref="ExecutablePath"/> reports, without restricting what cargo builds
+        /// (unlike <see cref="Bin"/>): for a <c>--workspace</c> build, which produces every member's executables at once.
+        /// Defaults to <see cref="Bin"/>.
+        /// </summary>
+        public string? ExecutableBin { get; set; }
 
         /// <summary>
         /// Linker arguments for the executable only (the SDK's generated Win32 <c>.res</c> file). When set, the build
@@ -37,7 +46,112 @@ namespace Kubuno.Cargo.MSBuild.Tasks
         [Output]
         public string? ExecutablePath { get; set; }
 
+        /// <summary>
+        /// Every executable of a <c>[[bin]]</c> target this build produced or found fresh (cargo reports both), with the
+        /// target's name as <c>BinName</c> metadata: what a <c>--workspace</c> build hands back to each project of the
+        /// workspace so that it can pick its own executable.
+        /// </summary>
+        [Output]
+        public ITaskItem[] Executables { get; set; } = Array.Empty<ITaskItem>();
+
+        /// <summary>
+        /// Hands the errors and warnings back as <see cref="Diagnostics"/> instead of logging them, and never fails the
+        /// task because of them (<see cref="Succeeded"/> tells how cargo ended). A workspace-wide build runs in a project
+        /// of its own that is not part of the solution, whose errors Visual Studio would show in the Output window only:
+        /// each project of the workspace logs the diagnostics of its own files instead (<see cref="KubunoWorkspaceDiagnostics"/>).
+        /// The rendered text of every diagnostic is still logged, as a message.
+        /// </summary>
+        public bool DiagnosticsAsItems { get; set; }
+
+        /// <summary>
+        /// With <see cref="DiagnosticsAsItems"/>: one item per error or warning (metadata <c>Severity</c> = <c>Error</c> or
+        /// <c>Warning</c>, <c>Code</c>, <c>File</c>, <c>Line</c>, <c>Column</c>, <c>Message</c>), plus, when cargo failed without
+        /// any error diagnostic, one <c>Error</c> item without a file per line cargo wrote to its error output.
+        /// </summary>
+        [Output]
+        public ITaskItem[] Diagnostics { get; set; } = Array.Empty<ITaskItem>();
+
+        /// <summary>Whether cargo exited successfully.</summary>
+        [Output]
+        public bool Succeeded { get; set; }
+
         private string? _artifactExecutablePath;
+        private readonly List<ITaskItem> _executables = new();
+        private readonly List<ITaskItem> _diagnostics = new();
+        private readonly HashSet<string> _diagnosticKeys = new(StringComparer.Ordinal);
+
+        protected override void LogBuildEvent(CargoBuildEvent buildEvent)
+        {
+            if (!DiagnosticsAsItems || buildEvent is not CargoDiagnosticEvent diagnosticEvent)
+            {
+                base.LogBuildEvent(buildEvent);
+                return;
+            }
+
+            CargoDiagnostic diagnostic = diagnosticEvent.Diagnostic;
+            string? severity = diagnostic.Severity switch
+            {
+                CargoDiagnosticSeverity.Error or CargoDiagnosticSeverity.InternalCompilerError => "Error",
+                CargoDiagnosticSeverity.Warning => "Warning",
+                _ => null,
+            };
+            if (severity is null)
+            {
+                base.LogBuildEvent(buildEvent);
+                return;
+            }
+
+            // The same diagnostic can be reported for several units of one crate (a lib and its bin, say): once is enough.
+            string key = $"{severity}|{diagnostic.Code}|{diagnostic.FilePath}|{diagnostic.Line}|{diagnostic.Column}|{diagnostic.Message}";
+            if (_diagnosticKeys.Add(key))
+            {
+                _diagnostics.Add(DiagnosticItem(severity, diagnostic.Code, diagnostic.FilePath, diagnostic.Line ?? 0, diagnostic.Column ?? 0, diagnostic.Message));
+            }
+
+            if (!string.IsNullOrEmpty(diagnostic.RenderedText))
+            {
+                Log.LogMessage(MessageImportance.Normal, diagnostic.RenderedText);
+            }
+        }
+
+        protected override void OnFailedWithoutErrors(Kubuno.Rust.Cargo.Processes.ProcessRunResult result)
+        {
+            if (!DiagnosticsAsItems)
+            {
+                base.OnFailedWithoutErrors(result);
+                return;
+            }
+
+            if (_diagnostics.Exists(item => item.GetMetadata("Severity") == "Error"))
+            {
+                return;
+            }
+
+            foreach (string errorLine in result.StandardErrorLines)
+            {
+                if (!string.IsNullOrWhiteSpace(errorLine))
+                {
+                    _diagnostics.Add(DiagnosticItem("Error", null, null, 0, 0, errorLine));
+                }
+            }
+
+            if (!_diagnostics.Exists(item => item.GetMetadata("Severity") == "Error"))
+            {
+                _diagnostics.Add(DiagnosticItem("Error", null, null, 0, 0, $"cargo exited with code {result.ExitCode}."));
+            }
+        }
+
+        private ITaskItem DiagnosticItem(string severity, string? code, string? file, int line, int column, string message)
+        {
+            var item = new TaskItem("diagnostic" + _diagnostics.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            item.SetMetadata("Severity", severity);
+            item.SetMetadata("Code", code ?? string.Empty);
+            item.SetMetadata("File", file ?? string.Empty);
+            item.SetMetadata("Line", line.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            item.SetMetadata("Column", column.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            item.SetMetadata("Message", message);
+            return item;
+        }
 
         protected override CargoCommand CreateCommand()
         {
@@ -74,9 +188,14 @@ namespace Kubuno.Cargo.MSBuild.Tasks
                 return;
             }
 
+            var item = new TaskItem(artifact.Executable);
+            item.SetMetadata("BinName", artifact.Target.Name);
+            _executables.Add(item);
+
             // Several bins can be produced by one `cargo build --workspace`; only remember the
-            // one this task was actually asked to build (or the only one, when Bin is unset).
-            if (string.IsNullOrEmpty(Bin) || string.Equals(artifact.Target.Name, Bin, StringComparison.Ordinal))
+            // one this task was asked for (or the only one, when no bin is named).
+            string? wanted = string.IsNullOrEmpty(ExecutableBin) ? Bin : ExecutableBin;
+            if (string.IsNullOrEmpty(wanted) || string.Equals(artifact.Target.Name, wanted, StringComparison.Ordinal))
             {
                 _artifactExecutablePath = artifact.Executable;
             }
@@ -84,14 +203,25 @@ namespace Kubuno.Cargo.MSBuild.Tasks
 
         protected override void OnCompleted(Kubuno.Rust.Cargo.Processes.ProcessRunResult result)
         {
+            Succeeded = result.Succeeded;
+            if (DiagnosticsAsItems && !result.Succeeded)
+            {
+                OnFailedWithoutErrors(result);
+            }
+
+            Diagnostics = _diagnostics.ToArray();
+            Executables = _executables.ToArray();
             ExecutablePath = _artifactExecutablePath ?? ResolveConventionalExecutablePath();
         }
 
         private string ResolveConventionalExecutablePath()
         {
             string manifestDirectory = Path.GetDirectoryName(Path.GetFullPath(ManifestPath)) ?? ManifestPath;
-            string targetDir = CargoLayout.ResolveTargetDir(manifestDirectory, TargetDir);
-            string binName = !string.IsNullOrEmpty(Bin)
+            // A workspace member's default target directory is the workspace root's, not its own.
+            string targetDir = CargoLayout.ResolveTargetDir(string.IsNullOrEmpty(WorkspaceRoot) ? manifestDirectory : WorkspaceRoot!, TargetDir);
+            string binName = !string.IsNullOrEmpty(ExecutableBin)
+                ? ExecutableBin!
+                : !string.IsNullOrEmpty(Bin)
                 ? Bin!
                 : !string.IsNullOrEmpty(Package)
                     ? Package!

@@ -73,6 +73,19 @@
          decide" (its own default-run/only-bin/first-bin fallback chain). -->
     <CargoBin Condition="'$(CargoBin)' == ''"></CargoBin>
 
+    <!--
+      Cargo workspaces (docs/RSPROJ.md, "Cargo workspaces"). CargoWorkspaceRoot: the workspace's root
+      folder, found by Sdk.targets from the manifests when left empty. CargoBuildScope: "Package"
+      builds this package alone (`cargo build -p <package>`); "Workspace" builds the whole workspace
+      once per build for all its projects (`cargo build` with the workspace flag, plus
+      CargoWorkspaceBuildArgs, space-separated cargo arguments such as the bins flag), which a
+      workspace sharing a Rust dylib between several
+      programs needs so that the dylib and all its users are always built with the same features.
+    -->
+    <CargoWorkspaceRoot Condition="'$(CargoWorkspaceRoot)' == ''"></CargoWorkspaceRoot>
+    <CargoBuildScope Condition="'$(CargoBuildScope)' == ''">Package</CargoBuildScope>
+    <CargoWorkspaceBuildArgs Condition="'$(CargoWorkspaceBuildArgs)' == ''"></CargoWorkspaceBuildArgs>
+
     <!-- Extra, verbatim cargo arguments a project can append (e.g. the locked/frozen flags). -->
     <CargoExtraArgs Condition="'$(CargoExtraArgs)' == ''"></CargoExtraArgs>
 

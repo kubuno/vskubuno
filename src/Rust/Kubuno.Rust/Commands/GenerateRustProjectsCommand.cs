@@ -37,7 +37,7 @@ namespace Kubuno.Rust.Commands
         /// time) the same way the SDK's own <c>DefaultProjectTypeGuid</c> is a literal in
         /// <c>Sdk.props</c> - bump both together when the SDK is ever re-versioned.
         /// </summary>
-        public const string RsprojSdkVersion = "1.0.0";
+        public const string RsprojSdkVersion = "1.1.0";
 
         public static void Initialize(AsyncPackage package, OleMenuCommandService commandService)
         {
@@ -102,7 +102,19 @@ namespace Kubuno.Rust.Commands
                 return;
             }
 
-            var options = new RsprojGenerationOptions(RsprojSdkVersion);
+            // The manifest found from the active document may be a member's: the solution belongs at the root of the
+            // workspace cargo itself reports.
+            if (!string.IsNullOrEmpty(metadata.WorkspaceRoot) && Directory.Exists(metadata.WorkspaceRoot))
+            {
+                workspaceRoot = metadata.WorkspaceRoot;
+            }
+
+            // A .slnx (the default for a new solution) also lists the library-only members, in a "Libraries" solution
+            // folder: their sources become browsable and buildable in Solution Explorer. A classic .sln keeps the
+            // executables only, as it always did.
+            var solutionPath = ResolveSolutionPath(workspaceRoot);
+            var isSlnx = solutionPath is not null && solutionPath.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase);
+            var options = new RsprojGenerationOptions(RsprojSdkVersion, includeLibraryOnlyMembers: isSlnx);
             var plan = RsprojGenerationPlanner.Plan(metadata, options, File.Exists);
 
             var created = 0;
@@ -129,12 +141,13 @@ namespace Kubuno.Rust.Commands
                 }
             }
 
-            var solutionPath = ResolveSolutionPath(workspaceRoot);
             var addedToSolution = Array.Empty<string>() as System.Collections.Generic.IReadOnlyList<string>;
             if (solutionPath is not null && plan.Count > 0)
             {
                 string? existingContent = File.Exists(solutionPath) ? File.ReadAllText(solutionPath) : null;
-                var solutionPlan = RsprojSolutionGenerator.Plan(workspaceRoot, existingContent, plan);
+                var solutionPlan = isSlnx
+                    ? RsprojSlnxGenerator.Plan(workspaceRoot, existingContent, plan)
+                    : RsprojSolutionGenerator.Plan(workspaceRoot, existingContent, plan);
                 if (solutionPlan.Changed)
                 {
                     try
@@ -171,17 +184,20 @@ namespace Kubuno.Rust.Commands
         }
 
         /// <summary>
-        /// One <c>.sln</c> at the workspace root: an existing one is reused (merged into - see
-        /// <see cref="RsprojSolutionGenerator"/>) when exactly one is found there; with none, a
-        /// fresh one named after the workspace directory is created; with more than one, generation
-        /// is skipped (logged) rather than guessing which the developer meant.
+        /// One solution at the workspace root: an existing <c>.sln</c> or <c>.slnx</c> is reused (merged into - see
+        /// <see cref="RsprojSolutionGenerator"/>/<see cref="RsprojSlnxGenerator"/>) when exactly one is found there; with
+        /// none, a fresh <c>.slnx</c> (Visual Studio 2026's default format) named after the workspace directory is created;
+        /// with more than one, generation is skipped (logged) rather than guessing which the developer meant.
         /// </summary>
         private static string? ResolveSolutionPath(string workspaceRoot)
         {
             string[] existingSolutions;
             try
             {
-                existingSolutions = Directory.GetFiles(workspaceRoot, "*.sln");
+                // "*.sln" alone would also match .slnx files (a three-character extension pattern matches longer ones).
+                existingSolutions = Directory.GetFiles(workspaceRoot, "*.sln*")
+                    .Where(path => path.EndsWith(".sln", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
@@ -199,7 +215,7 @@ namespace Kubuno.Rust.Commands
                 return null;
             }
 
-            return Path.Combine(workspaceRoot, new DirectoryInfo(workspaceRoot).Name + ".sln");
+            return Path.Combine(workspaceRoot, new DirectoryInfo(workspaceRoot).Name + ".slnx");
         }
 
         private static string? TryResolveWorkspaceRootManifest(AsyncPackage package)

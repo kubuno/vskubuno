@@ -4,10 +4,14 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Kubuno.Rust.Logic;
 using Kubuno.Rust.TestAdapter.Containers;
 using Kubuno.Core.Logging;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Events;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
@@ -40,6 +44,7 @@ namespace Kubuno.Rust.Workspace
     [Export(typeof(ICargoWorkspaceSource))]
     internal sealed class CargoWorkspaceSource : ICargoWorkspaceSource, IDisposable
     {
+        private readonly IServiceProvider? _serviceProvider;
         private readonly IVsFolderWorkspaceService? _workspaceService;
         private IFileWatcherService? _fileWatcherService;
         private bool _disposed;
@@ -47,12 +52,22 @@ namespace Kubuno.Rust.Workspace
         [ImportingConstructor]
         public CargoWorkspaceSource([Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider)
         {
+            _serviceProvider = serviceProvider;
+
             // VS's MEF composition does not guarantee ITestContainerDiscoverer construction happens
             // on the UI thread; switch explicitly rather than assume it (unlike KubunoPackage.InitializeAsync,
             // which already runs post-SwitchToMainThreadAsync).
             _workspaceService = ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                // Solution mode (docs/RSPROJ.md, "Cargo workspaces"): the containers are the solution's .rsproj
+                // projects, which change when a solution or project is opened, loaded or closed.
+                SolutionEvents.OnAfterOpenSolution += OnSolutionChanged;
+                SolutionEvents.OnAfterCloseSolution += OnSolutionChanged;
+                SolutionEvents.OnAfterLoadProject += OnSolutionChanged;
+                SolutionEvents.OnAfterOpenProject += OnSolutionChanged;
+                SolutionEvents.OnBeforeCloseProject += OnSolutionChanged;
 
                 if (serviceProvider?.GetService(typeof(SComponentModel)) is IComponentModel componentModel)
                 {
@@ -76,7 +91,10 @@ namespace Kubuno.Rust.Workspace
             var workspace = _workspaceService?.CurrentWorkspace;
             if (workspace is not IWorkspace4 workspace4)
             {
-                return Array.Empty<string>();
+                // No Open Folder workspace: a solution, whose .rsproj projects name their manifests.
+#pragma warning disable VSTHRD010 // GetSolutionManifestPaths switches to the main thread itself (JoinableTaskFactory.Run + SwitchToMainThreadAsync).
+                return GetSolutionManifestPaths();
+#pragma warning restore VSTHRD010
             }
 
             try
@@ -102,6 +120,77 @@ namespace Kubuno.Rust.Workspace
             {
                 KubunoLog.WriteException("Kubuno: failed to enumerate Cargo.toml manifests for Test Explorer", exception);
                 return Array.Empty<string>();
+            }
+        }
+
+        /// <summary>
+        /// The manifests of the open solution's <c>.rsproj</c> projects (<see cref="SolutionTestManifests"/> decides between a
+        /// project's own manifest and its workspace's root manifest), read from their evaluated MSBuild properties.
+        /// </summary>
+        private IReadOnlyList<string> GetSolutionManifestPaths()
+        {
+            try
+            {
+                return ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    return SolutionTestManifests.Select(CollectSolutionProjects());
+                });
+            }
+            catch (Exception exception)
+            {
+                KubunoLog.WriteException("Kubuno: failed to list the solution's Cargo manifests for Test Explorer", exception);
+                return Array.Empty<string>();
+            }
+        }
+
+        private List<RsprojTestProject> CollectSolutionProjects()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var projects = new List<RsprojTestProject>();
+            if (_serviceProvider?.GetService(typeof(SVsSolution)) is not IVsSolution solution)
+            {
+                return projects;
+            }
+
+            var none = Guid.Empty;
+            if (ErrorHandler.Failed(solution.GetProjectEnum((uint)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION, ref none, out var enumerator)) || enumerator is null)
+            {
+                return projects;
+            }
+
+            var hierarchies = new IVsHierarchy[1];
+            while (enumerator.Next(1, hierarchies, out var fetched) == VSConstants.S_OK && fetched == 1)
+            {
+                var hierarchy = hierarchies[0];
+                if (hierarchy is not IVsProject project
+                    || ErrorHandler.Failed(project.GetMkDocument((uint)VSConstants.VSITEMID.Root, out var projectPath))
+                    || projectPath is null
+                    || !projectPath.EndsWith(".rsproj", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var manifestPath = Commands.RsprojSelection.GetBuildProperty(hierarchy, "CargoManifestPath");
+                if (string.IsNullOrEmpty(manifestPath) || !File.Exists(manifestPath))
+                {
+                    continue;
+                }
+
+                projects.Add(new RsprojTestProject(
+                    manifestPath!,
+                    Commands.RsprojSelection.GetBuildProperty(hierarchy, "CargoWorkspaceRoot"),
+                    string.Equals(Commands.RsprojSelection.GetBuildProperty(hierarchy, "CargoBuildScope"), "Workspace", StringComparison.OrdinalIgnoreCase)));
+            }
+
+            return projects;
+        }
+
+        private void OnSolutionChanged(object? sender, EventArgs e)
+        {
+            if (_workspaceService?.CurrentWorkspace is null)
+            {
+                RaiseChanged();
             }
         }
 
@@ -170,6 +259,12 @@ namespace Kubuno.Rust.Workspace
             _disposed = true;
 
             UnhookFileWatcher();
+
+            SolutionEvents.OnAfterOpenSolution -= OnSolutionChanged;
+            SolutionEvents.OnAfterCloseSolution -= OnSolutionChanged;
+            SolutionEvents.OnAfterLoadProject -= OnSolutionChanged;
+            SolutionEvents.OnAfterOpenProject -= OnSolutionChanged;
+            SolutionEvents.OnBeforeCloseProject -= OnSolutionChanged;
 
             if (_workspaceService != null)
             {

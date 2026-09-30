@@ -66,6 +66,29 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
                 }
 
                 var existing = File.Exists(configPath) ? File.ReadAllText(configPath) : null;
+
+                // The user's NuGet.Config is shared by every Visual Studio instance of the machine. An experimental
+                // instance (devenv /rootsuffix X, an extension developer's or a test hive) must not repoint the source
+                // that the regular installation registered to its own, short-lived copy: that would break the regular
+                // Visual Studio's SDK resolution as soon as the experimental hive is reset. It only fills a gap (no
+                // entry, or one pointing at a feed that no longer exists); a solution's own feed (EnsureSolutionLocal)
+                // is what carries a newer SDK to it.
+                var registered = NuGetLocalFeedRegistration.GetSourceValue(existing, UserSourceName);
+                if (registered is not null
+                    && !string.Equals(registered, feedDirectory, StringComparison.OrdinalIgnoreCase)
+                    && IsExperimentalHiveDirectory(extensionInstallDirectory)
+                    && IsUsableFeed(registered))
+                {
+                    log($"Kubuno: not repointing the '{UserSourceName}' NuGet source from '{registered}' to this experimental instance's feed ('{feedDirectory}').");
+                    if (stampPath is not null)
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(stampPath)!);
+                        File.WriteAllText(stampPath, Stamp(feedDirectory, configPath));
+                    }
+
+                    return true;
+                }
+
                 var (content, changed) = NuGetLocalFeedRegistration.Plan(existing, UserSourceName, feedDirectory);
                 if (changed)
                 {
@@ -136,6 +159,42 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
             catch (Exception exception)
             {
                 log("Kubuno: could not give the solution its Kubuno.Rust.Sdk feed: " + exception.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Whether an extension folder belongs to a Visual Studio hive with a root suffix (<c>/rootsuffix Exp</c>): its
+        /// hive folder is <c>&lt;version&gt;_&lt;instance id&gt;&lt;suffix&gt;</c> (<c>18.0_dc9e2338Exp</c>), where the regular
+        /// hive has no suffix (<c>18.0_dc9e2338</c>).
+        /// </summary>
+        public static bool IsExperimentalHiveDirectory(string? extensionInstallDirectory)
+        {
+            if (string.IsNullOrEmpty(extensionInstallDirectory))
+            {
+                return false;
+            }
+
+            foreach (var segment in extensionInstallDirectory!.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(segment, @"^\d+\.\d+_[0-9A-Fa-f]{8}(?<suffix>.*)$");
+                if (match.Success)
+                {
+                    return match.Groups["suffix"].Value.Length > 0;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsUsableFeed(string directory)
+        {
+            try
+            {
+                return Directory.Exists(directory) && Directory.GetFiles(directory, "Kubuno.Rust.Sdk.*.nupkg").Length > 0;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+            {
                 return false;
             }
         }

@@ -50,6 +50,26 @@ namespace Kubuno.Rust.TestAdapter.Tests.Discovery
             Assert.EndsWith("basic-5471b5231873c648.exe", integration.ExecutablePath, StringComparison.Ordinal);
         }
 
+        [Theory]
+        [InlineData("dylib")]
+        [InlineData("proc-macro")]
+        [InlineData("cdylib")]
+        public async Task The_unit_tests_of_a_library_of_any_crate_type_are_found(string crateType)
+        {
+            // Real shape of a `crate-type = ["dylib"]` library's test harness artifact (the Kubuno desktop workspace's kubuno-ui).
+            string line = "{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file:///C:/ws/crates/ui#0.1.0\",\"manifest_path\":\"C:\\\\ws\\\\crates\\\\ui\\\\Cargo.toml\","
+                + "\"target\":{\"kind\":[\"" + crateType + "\"],\"crate_types\":[\"" + crateType + "\"],\"name\":\"ui\",\"src_path\":\"C:\\\\ws\\\\crates\\\\ui\\\\src\\\\lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},"
+                + "\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],"
+                + "\"filenames\":[\"C:\\\\t\\\\debug\\\\deps\\\\ui-708c8250a67c6d38.exe\"],\"executable\":\"C:\\\\t\\\\debug\\\\deps\\\\ui-708c8250a67c6d38.exe\",\"fresh\":false}";
+            var runner = new FakeProcessRunner(new ProcessRunResult(0, new[] { line }, Array.Empty<string>()));
+
+            CargoTestBuildResult result = await CargoTestBuild.RunAsync(runner, @"C:\ws\Cargo.toml", environmentVariables: null, CancellationToken.None);
+
+            var lib = Assert.Single(result.Binaries);
+            Assert.Equal(CargoTestBinaryKind.Lib, lib.Kind);
+            Assert.Equal("ui", lib.TargetName);
+        }
+
         [Fact]
         public async Task Excludes_the_ordinary_non_test_bin_artifact_and_the_lib_rlib()
         {

@@ -70,10 +70,58 @@ namespace Kubuno.Rust.TestAdapter.Discovery
             string packageRoot = Path.GetDirectoryName(Path.GetFullPath(manifestPath))
                 ?? throw new InvalidOperationException($"Could not determine the directory of '{manifestPath}'.");
 
+            TestBuildIsolation.Plan? isolation = await TestBuildIsolation.PlanAsync(processRunner, manifestPath, packageRoot, environmentVariables, cancellationToken).ConfigureAwait(false);
+            if (isolation is null)
+            {
+                return await RunOnceAsync(processRunner, manifestPath, packageRoot, Array.Empty<string>(), environmentVariables, cancellationToken).ConfigureAwait(false);
+            }
+
+            // The workspace without the isolated packages, then each of them in a target directory of its own
+            // (TestBuildIsolation's remarks: a shared dylib would otherwise be built twice into the same file).
+            var excludes = isolation.Packages.SelectMany(package => new[] { "--exclude", package }).Prepend("--workspace").ToArray();
+            var results = new List<CargoTestBuildResult>
+            {
+                await RunOnceAsync(processRunner, manifestPath, packageRoot, excludes, WithTargetDirectory(environmentVariables, isolation.WorkspaceTestTargetDirectory), cancellationToken).ConfigureAwait(false),
+            };
+            foreach (string package in isolation.Packages)
+            {
+                results.Add(await RunOnceAsync(processRunner, manifestPath, packageRoot, new[] { "-p", package }, WithTargetDirectory(environmentVariables, isolation.TargetDirectoryFor(package)), cancellationToken).ConfigureAwait(false));
+            }
+
+            return new CargoTestBuildResult(
+                results.All(result => result.Success),
+                results.SelectMany(result => result.Binaries).ToList(),
+                results.SelectMany(result => result.Diagnostics).ToList());
+        }
+
+        private static IReadOnlyDictionary<string, string> WithTargetDirectory(IReadOnlyDictionary<string, string>? environmentVariables, string targetDirectory)
+        {
+            var environment = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (environmentVariables is not null)
+            {
+                foreach (var pair in environmentVariables)
+                {
+                    environment[pair.Key] = pair.Value;
+                }
+            }
+
+            environment["CARGO_TARGET_DIR"] = targetDirectory;
+            return environment;
+        }
+
+        private static async Task<CargoTestBuildResult> RunOnceAsync(
+            IProcessRunner processRunner,
+            string manifestPath,
+            string packageRoot,
+            IReadOnlyList<string> selection,
+            IReadOnlyDictionary<string, string>? environmentVariables,
+            CancellationToken cancellationToken)
+        {
             CargoCommandLine commandLine = CargoCommand.Test()
                 .WithManifestPath(manifestPath)
                 .WithMessageFormat("json")
-                .WithExtraArgs("--no-run")
+                // --no-fail-fast (cargo test's --keep-going): a crate that does not compile must not hide the tests of all the others.
+                .WithExtraArgs(new[] { "--no-run", "--no-fail-fast" }.Concat(selection).ToArray())
                 .ToCommandLine();
 
             var request = new ProcessRunRequest(commandLine.FileName, commandLine.Arguments)
@@ -158,19 +206,26 @@ namespace Kubuno.Rust.TestAdapter.Discovery
             string executablePath = raw.Executable!;
             string targetDirectory = ResolveTargetDirectory(executablePath);
 
+            // A workspace-root container builds every member's tests: each runs from its own package's folder, as under
+            // `cargo test` (tests that open files by relative path depend on it).
+            string ownPackageRoot = !string.IsNullOrEmpty(raw.ManifestPath) ? Path.GetDirectoryName(raw.ManifestPath) ?? packageRoot : packageRoot;
+
             return new CargoTestBinary(
                 raw.Target.Name,
                 kind.Value,
                 raw.Target.SrcPath,
                 executablePath,
                 Path.GetFullPath(manifestPath),
-                packageRoot,
+                ownPackageRoot,
                 targetDirectory);
         }
 
         private static CargoTestBinaryKind? ClassifyKind(IReadOnlyList<string> rawKind)
         {
-            if (rawKind.Contains("lib"))
+            // A library's unit tests, whatever its crate type: `crate-type = ["dylib"]` (the Kubuno desktop workspace's
+            // kubuno-ui) reports "dylib" instead of "lib", a proc-macro crate "proc-macro".
+            if (rawKind.Contains("lib") || rawKind.Contains("rlib") || rawKind.Contains("dylib") || rawKind.Contains("cdylib")
+                || rawKind.Contains("staticlib") || rawKind.Contains("proc-macro"))
             {
                 return CargoTestBinaryKind.Lib;
             }
@@ -222,6 +277,9 @@ namespace Kubuno.Rust.TestAdapter.Discovery
             public RawProfile? Profile { get; set; }
 
             public string? Executable { get; set; }
+
+            [JsonPropertyName("manifest_path")]
+            public string? ManifestPath { get; set; }
         }
 
         private sealed class RawTarget

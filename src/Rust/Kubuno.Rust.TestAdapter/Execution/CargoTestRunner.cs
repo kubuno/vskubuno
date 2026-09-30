@@ -62,6 +62,73 @@ namespace Kubuno.Rust.TestAdapter.Execution
                 throw new ArgumentException("At least one test name must be requested.", nameof(libtestNames));
             }
 
+            // A Windows command line holds at most 32,767 characters: a test program with hundreds of tests (the Kubuno
+            // desktop workspace's kubuno-controls) cannot get all their names in one launch - the process never started
+            // and every test of the batch was reported failed. Run consecutive batches that fit instead.
+            IReadOnlyList<IReadOnlyList<string>> batches = SplitIntoBatches(libtestNames, MaxNamesLength - executablePath.Length);
+            if (batches.Count == 1)
+            {
+                return await RunBatchAsync(processRunner, executablePath, workingDirectory, libtestNames, cancellationToken).ConfigureAwait(false);
+            }
+
+            var outcomes = new Dictionary<string, LibtestTestOutcome>(StringComparer.Ordinal);
+            var output = new List<string>();
+            var duration = TimeSpan.Zero;
+            int exitCode = 0;
+            foreach (var batch in batches)
+            {
+                CargoTestRunResult part = await RunBatchAsync(processRunner, executablePath, workingDirectory, batch, cancellationToken).ConfigureAwait(false);
+                foreach (var pair in part.Outcomes)
+                {
+                    outcomes[pair.Key] = pair.Value;
+                }
+
+                output.Add(part.CombinedOutput);
+                duration += part.Duration;
+                exitCode = exitCode != 0 ? exitCode : part.ExitCode;
+            }
+
+            return new CargoTestRunResult(outcomes, duration, string.Join(Environment.NewLine, output), exitCode);
+        }
+
+        /// <summary>The room left for test names on one command line (the executable path, flags and quotes need the rest).</summary>
+        internal const int MaxNamesLength = 24_000;
+
+        /// <summary>Consecutive batches whose names (plus a quote pair and a space each) fit in <paramref name="maxLength"/> characters; a name longer than that gets a batch of its own.</summary>
+        public static IReadOnlyList<IReadOnlyList<string>> SplitIntoBatches(IReadOnlyList<string> names, int maxLength)
+        {
+            var batches = new List<IReadOnlyList<string>>();
+            var current = new List<string>();
+            int length = 0;
+            foreach (string name in names)
+            {
+                int cost = name.Length + 3;
+                if (current.Count > 0 && length + cost > maxLength)
+                {
+                    batches.Add(current);
+                    current = new List<string>();
+                    length = 0;
+                }
+
+                current.Add(name);
+                length += cost;
+            }
+
+            if (current.Count > 0)
+            {
+                batches.Add(current);
+            }
+
+            return batches;
+        }
+
+        private static async Task<CargoTestRunResult> RunBatchAsync(
+            IProcessRunner processRunner,
+            string executablePath,
+            string workingDirectory,
+            IReadOnlyList<string> libtestNames,
+            CancellationToken cancellationToken)
+        {
             var args = new List<string>(libtestNames.Count + 3);
             args.AddRange(libtestNames);
             // libtest supports multiple positional filters (OR'd together) - confirmed against
@@ -75,6 +142,8 @@ namespace Kubuno.Rust.TestAdapter.Execution
             var request = new ProcessRunRequest(commandLine.FileName, commandLine.Arguments)
             {
                 WorkingDirectory = workingDirectory,
+                // A test program linking a Rust dylib (-C prefer-dynamic) only starts with its DLL folders on PATH.
+                EnvironmentVariables = TestProcessEnvironment.For(executablePath, workingDirectory, environment: null),
             };
 
             var stopwatch = Stopwatch.StartNew();

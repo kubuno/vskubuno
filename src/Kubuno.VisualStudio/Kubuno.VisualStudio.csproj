@@ -406,17 +406,17 @@
     and builds a `.rsproj` successfully.
   -->
   <PropertyGroup>
-    <KubunoRustSdkNupkgPath Condition="'$(KubunoRustSdkNupkgPath)' == ''">C:\kubuno-build\nuget-local-feed\Kubuno.Rust.Sdk.1.0.0.nupkg</KubunoRustSdkNupkgPath>
+    <KubunoRustSdkNupkgPath Condition="'$(KubunoRustSdkNupkgPath)' == ''">C:\kubuno-build\nuget-local-feed\Kubuno.Rust.Sdk.1.1.0.nupkg</KubunoRustSdkNupkgPath>
   </PropertyGroup>
   <Target Name="KubunoCheckSdkNupkg" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoRustSdkNupkgPath)')"
-           Text="Kubuno.Rust.Sdk.1.0.0.nupkg not found at '$(KubunoRustSdkNupkgPath)'. Pack it: dotnet pack sdk\Kubuno.Rust.Sdk\Kubuno.Rust.Sdk.csproj -c Release -o C:\kubuno-build\nuget-local-feed -- or pass /p:KubunoRustSdkNupkgPath=&lt;path to the .nupkg&gt;." />
+           Text="Kubuno.Rust.Sdk.1.1.0.nupkg not found at '$(KubunoRustSdkNupkgPath)'. Pack it: dotnet pack sdk\Kubuno.Rust.Sdk\Kubuno.Rust.Sdk.csproj -c Release -o C:\kubuno-build\nuget-local-feed -- or pass /p:KubunoRustSdkNupkgPath=&lt;path to the .nupkg&gt;." />
   </Target>
   <ItemGroup>
     <Content Include="$(KubunoRustSdkNupkgPath)">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>tools\SdkFeed\Kubuno.Rust.Sdk.1.0.0.nupkg</Link>
+      <Link>tools\SdkFeed\Kubuno.Rust.Sdk.1.1.0.nupkg</Link>
     </Content>
   </ItemGroup>
   <ItemGroup>

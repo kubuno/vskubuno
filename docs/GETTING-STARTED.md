@@ -145,15 +145,72 @@ If you already have a multi-crate Cargo workspace (not created from the template
 `.rsproj`/`.sln` for it instead of hand-writing one: **Tools menu > "Kubuno: Generate Visual Studio
 Projects"**, or right-click the workspace-root `Cargo.toml` in Solution Explorer/Open Folder and
 pick the same command. This runs `cargo metadata` and creates one `.rsproj` next to each workspace
-member that has a `[[bin]]` target, plus a `.sln` at the workspace root listing all of them.
+member, plus a solution at the workspace root listing all of them: a new one is a `.slnx` with the
+executables at its root and the library-only members under a `Libraries` folder.
 
-- **Idempotent**: re-running it never overwrites an existing `.rsproj`; an existing `.sln` is
-  edited surgically (only the missing project entries are inserted - your own solution folders,
-  other projects and formatting are preserved).
-- A library-only member (no `[[bin]]`) is skipped by default.
+- **Idempotent**: re-running it never overwrites an existing `.rsproj`; an existing `.sln` or `.slnx`
+  (exactly one, at the workspace root - rename the generated one as you like) is edited surgically
+  (only the missing project entries are inserted - your own solution folders, other projects and
+  formatting are preserved).
+- A library-only member is only added to a `.slnx`; a classic `.sln` keeps the executables only.
+- A workspace in which a member is a Rust `dylib` gets `<CargoBuildScope>Workspace</CargoBuildScope>`
+  in every project: see "Working on the Kubuno desktop apps" below.
 - The MSBuild SDK a generated `.rsproj` needs (`Kubuno.Rust.Sdk`) ships inside the extension and
   registers itself as a local NuGet source on first package load - no manual SDK setup, no
   internet access required for that step.
+
+### Working on the Kubuno desktop apps
+
+The desktop applications (`desktop/windows`: the shell, Chat, Documents, Drive and the shared crates -
+`kubuno-ui`, `kubuno-controls`, `kubuno-views`, `kubuno-data`, `kubuno-print`, `kubuno`...) form one Cargo
+workspace. To work on them in Visual Studio:
+
+1. **Once per machine**: when the checkout is on a network share (`Z:`), give cargo a local target
+   directory - `setx CARGO_TARGET_DIR C:\kubuno-build\desktop-target` - and start Visual Studio *after*
+   that (it passes its own environment to every build and to F5). Keep `%USERPROFILE%\.cargo\bin` on
+   PATH.
+2. **Once per checkout**: open `desktop\windows\Cargo.toml` (File > Open > File, or open the folder),
+   then run **Tools > Kubuno: Generate Visual Studio Projects**. It writes one `.rsproj` next to each
+   crate's `Cargo.toml`, a `windows.slnx` at the workspace root (rename it, e.g. `Kubuno.Desktop.slnx`),
+   and the solution's SDK feed (`NuGet.Config`, `.kubuno\sdk-feed`). A later run only adds what is
+   missing.
+3. **Open the `.slnx`**. Solution Explorer shows the six programs at the top - `kubuno-desktop` (the
+   shell), `kubuno-chat`, `kubuno-documents`, `drive-app` (its executable is `drive.exe`),
+   `kubuno-views-ls`, `kubuno-data-tool` - and the libraries and procedural macros under **Libraries**,
+   each project showing exactly its own crate's files.
+4. **Build** (Ctrl+Shift+B). `kubuno-ui` is a Rust `dylib` (`kubuno_ui.dll`) loaded by every program, and
+   a dylib must be built together with all the programs that load it: building one package at a time
+   rebuilds `kubuno_ui.dll` with that package's features and breaks the programs built before it
+   ("entry point not found" when they start). So every project of this workspace builds **the whole
+   workspace** (`<CargoBuildScope>Workspace</CargoBuildScope>`, written by the generator): one
+   `cargo build --workspace --keep-going` per solution build or F5, whatever the number of projects.
+   Each error and warning is listed once, under the project that owns the file; a program that did
+   build is still built when another crate has an error.
+5. **Run and debug**: right-click a program > **Set as Startup Project**, put a breakpoint, press **F5**.
+   `kubuno_ui.dll` and Rust's `std-*.dll` are found through the PATH the extension gives the program
+   (the profile folder, its `deps` folder and the toolchain) - nothing to copy. Ctrl+F5 runs without the
+   debugger. To start a program outside Visual Studio, stage the DLLs next to it with
+   `tools\stage-runtime.ps1`, as before.
+6. **Tests**: Test Explorer lists the whole workspace's `#[test]`s after a build. They are built into
+   folders of their own under the target directory (`kubuno-tests`, and
+   `kubuno-isolated-tests\kubuno-views-macros`): a test build turns on the dev-dependencies' features, so
+   sharing the programs' folder would rebuild `kubuno_ui.dll` back and forth, and
+   `kubuno-views-macros`' tests need a second build of `kubuno_ui.dll` (plain
+   `cargo test --workspace` fails on this workspace with "output filename collision" on
+   `kubuno_ui.dll`). The first discovery builds all the tests (a few minutes, and several gigabytes).
+
+Good to know:
+
+- **Close the running programs before building**: a program that is running keeps `kubuno_ui.dll` open,
+  and the linker cannot replace it (`LNK1104`).
+- **Rebuild** cleans the workspace's profile once (not once per project) and rebuilds everything.
+- **Open Folder keeps working** on the same folder (the `.rsproj`/`.slnx` files are ignored there); use
+  it for a quick look, the solution for F5, breakpoints and tests.
+- **rust-analyzer** works on the share; the "Kubuno" Output pane may name a member's folder as its
+  workspace root - it still loads the whole workspace.
+- The projects use `Kubuno.Rust.Sdk/1.1.0`. A solution generated earlier (1.0.0) keeps building each
+  package on its own: regenerate its `.rsproj` files (delete them and run the command again) to get the
+  workspace build.
 
 ### Building, F5, Ctrl+F5
 

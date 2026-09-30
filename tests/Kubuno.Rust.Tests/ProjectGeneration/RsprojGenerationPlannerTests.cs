@@ -109,12 +109,49 @@ namespace Kubuno.Rust.Tests.ProjectGeneration
         }
 
         [TestMethod]
-        public void Plan_LeavesCargoBinUnset_ForASingleBinPackage()
+        public void Plan_LeavesCargoBinUnset_ForASingleBinNamedAfterThePackage()
         {
-            var app = Package("app", Path.Combine(Root, "app"), new[] { Bin("only-bin") });
+            var app = Package("app", Path.Combine(Root, "app"), new[] { Bin("app") });
             var plan = RsprojGenerationPlanner.Plan(Metadata(app), Options(), _ => false);
 
             StringAssert.DoesNotMatch(plan[0].Content, new System.Text.RegularExpressions.Regex("CargoBin"));
+        }
+
+        [TestMethod]
+        public void Plan_SetsCargoBin_ForASingleBinNotNamedAfterThePackage()
+        {
+            // drive-app's only bin is "drive": the SDK's default (the package name) would look for drive-app.exe.
+            var app = Package("drive-app", Path.Combine(Root, "drive-app"), new[] { Bin("drive") });
+            var plan = RsprojGenerationPlanner.Plan(Metadata(app), Options(), _ => false);
+
+            StringAssert.Contains(plan[0].Content, "<CargoBin>drive</CargoBin>");
+        }
+
+        [TestMethod]
+        public void Plan_BuildsTheWholeWorkspace_WhenAMemberIsADylib()
+        {
+            var ui = Package("ui", Path.Combine(Root, "ui"), new[] { new CargoTarget { Name = "ui", Kind = new[] { CargoTargetKind.Dylib }, CrateTypes = new[] { CargoTargetKind.Dylib } } });
+            var app = Package("app", Path.Combine(Root, "app"), new[] { Bin("app") });
+            var plan = RsprojGenerationPlanner.Plan(Metadata(ui, app), Options(includeLibraryOnly: true), _ => false);
+
+            Assert.AreEqual(2, plan.Count);
+            foreach (var item in plan)
+            {
+                StringAssert.Contains(item.Content, "<CargoBuildScope>Workspace</CargoBuildScope>");
+            }
+        }
+
+        [TestMethod]
+        public void Plan_BuildsEachPackage_WhenNoMemberIsADylib()
+        {
+            var core = Package("core", Path.Combine(Root, "core"), new[] { Lib("core") });
+            var app = Package("app", Path.Combine(Root, "app"), new[] { Bin("app") });
+            var plan = RsprojGenerationPlanner.Plan(Metadata(core, app), Options(includeLibraryOnly: true), _ => false);
+
+            foreach (var item in plan)
+            {
+                StringAssert.DoesNotMatch(item.Content, new System.Text.RegularExpressions.Regex("CargoBuildScope"));
+            }
         }
 
         [TestMethod]

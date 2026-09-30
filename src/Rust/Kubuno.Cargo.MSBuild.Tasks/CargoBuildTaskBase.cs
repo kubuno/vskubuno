@@ -150,7 +150,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
             };
 
             var runner = new ProcessRunner();
-            var progress = new Progress<ProcessOutputLine>(line => OnOutputLine(line, workspaceRoot));
+            var progress = new InlineProgress<ProcessOutputLine>(line => OnOutputLine(line, workspaceRoot));
 
             ProcessRunResult result;
             try
@@ -170,17 +170,26 @@ namespace Kubuno.Cargo.MSBuild.Tasks
                 // cargo failed (non-zero exit) but produced no parsed diagnostic with Error
                 // severity (e.g. a manifest error, or a linker failure with no compiler span) —
                 // still fail the MSBuild task, with whatever it wrote to stderr as the message.
-                foreach (string errorLine in result.StandardErrorLines)
-                {
-                    Log.LogError(errorLine);
-                }
-                if (result.StandardErrorLines.Count == 0)
-                {
-                    Log.LogError($"cargo exited with code {result.ExitCode}.");
-                }
+                OnFailedWithoutErrors(result);
             }
 
             return !Log.HasLoggedErrors;
+        }
+
+        /// <summary>Logs one parsed event (a diagnostic becomes an Error List entry). Overridable to report diagnostics differently.</summary>
+        protected virtual void LogBuildEvent(CargoBuildEvent buildEvent) => CargoDiagnosticLogging.Log(Log, buildEvent);
+
+        /// <summary>cargo failed without any error diagnostic: its stderr becomes the error.</summary>
+        protected virtual void OnFailedWithoutErrors(ProcessRunResult result)
+        {
+            foreach (string errorLine in result.StandardErrorLines)
+            {
+                Log.LogError(errorLine);
+            }
+            if (result.StandardErrorLines.Count == 0)
+            {
+                Log.LogError($"cargo exited with code {result.ExitCode}.");
+            }
         }
 
         private void OnOutputLine(ProcessOutputLine line, string workspaceRoot)
@@ -195,7 +204,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
             }
 
             CargoBuildEvent buildEvent = CargoMessageParser.Parse(line.Text, workspaceRoot);
-            CargoDiagnosticLogging.Log(Log, buildEvent);
+            LogBuildEvent(buildEvent);
             OnBuildEvent(buildEvent);
         }
     }

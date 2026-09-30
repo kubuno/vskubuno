@@ -47,6 +47,14 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
             var memberIds = new HashSet<string>(metadata.WorkspaceMembers, StringComparer.Ordinal);
             var items = new List<RsprojProjectPlanItem>();
 
+            // A Rust dylib shared inside the workspace (the Kubuno desktop workspace's kubuno_ui.dll) must be built together
+            // with every program that loads it: cargo names a dylib without a hash, and building one package at a time
+            // rebuilds it with that package's feature set, breaking the programs built before (docs/RSPROJ.md, "Cargo
+            // workspaces"). Such a workspace's projects build the whole workspace instead.
+            var workspaceBuild = metadata.WorkspaceMembers.Count > 1 && metadata.Packages
+                .Where(package => memberIds.Contains(package.Id))
+                .Any(package => package.Targets.Any(target => target.IsKind(CargoTargetKind.Dylib) || target.CrateTypes.Contains(CargoTargetKind.Dylib)));
+
             foreach (var package in metadata.Packages)
             {
                 if (memberIds.Count > 0 && !memberIds.Contains(package.Id))
@@ -77,9 +85,9 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
 
                 var projectPath = Path.Combine(projectDirectory, package.Name + ".rsproj");
                 var manifestPathRelativeToProject = ComputeManifestPathForProject(projectDirectory, package.ManifestPath);
-                var cargoBin = SelectCargoBinIfAmbiguous(package, binNames);
+                var cargoBin = SelectCargoBinIfNeeded(package, binNames);
 
-                var content = RsprojTemplate.Build(package.Name, options.SdkVersion, cargoBin, manifestPathRelativeToProject);
+                var content = RsprojTemplate.Build(package.Name, options.SdkVersion, cargoBin, manifestPathRelativeToProject, workspaceBuild);
                 var action = projectFileExists(projectPath) ? RsprojPlanAction.SkipExisting : RsprojPlanAction.Create;
 
                 items.Add(new RsprojProjectPlanItem(package.Name, projectPath, package.ManifestPath, action, content, isLibraryOnly));
@@ -91,9 +99,10 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
         }
 
         /// <summary>
-        /// <c>&lt;CargoBin&gt;</c> only when the package has more than one <c>[[bin]]</c> target -
-        /// a single bin (or none) is already what <c>Kubuno.Rust.Sdk/Sdk.props</c>'s own empty
-        /// default resolves to, so writing it out would just be noise. The pick mirrors
+        /// <c>&lt;CargoBin&gt;</c> only when the package has more than one <c>[[bin]]</c> target, or a single one
+        /// not named after the package (<c>drive-app</c>'s <c>drive</c>): the SDK's own default names the executable
+        /// after the package, so <c>$(TargetPath)</c> - and F5 - would otherwise look for a file that is never built.
+        /// A single bin named after the package (or none) needs nothing written. The pick mirrors
         /// <c>Kubuno.Rust.Logic.StartupItemSelector.SelectDefaultBinTarget</c>'s exact
         /// fallback chain (default-run, then the bin named after the package, then the first bin
         /// in `cargo metadata`'s own order) - duplicated rather than shared because that selector
@@ -101,11 +110,16 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
         /// site already has <paramref name="binNames"/> computed; keeping the two in obvious sync
         /// is cheap (both are a handful of lines gated by the same well-known cargo behavior).
         /// </summary>
-        private static string? SelectCargoBinIfAmbiguous(CargoPackage package, IReadOnlyList<string> binNames)
+        private static string? SelectCargoBinIfNeeded(CargoPackage package, IReadOnlyList<string> binNames)
         {
-            if (binNames.Count <= 1)
+            if (binNames.Count == 0)
             {
                 return null;
+            }
+
+            if (binNames.Count == 1)
+            {
+                return string.Equals(binNames[0], package.Name, StringComparison.Ordinal) ? null : binNames[0];
             }
 
             if (!string.IsNullOrEmpty(package.DefaultRun) && binNames.Contains(package.DefaultRun!))
