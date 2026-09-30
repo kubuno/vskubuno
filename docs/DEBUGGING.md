@@ -37,7 +37,7 @@ handlers, a panicking button, a worker thread and an `async` handler, driven thr
 | `Kubuno.Rust.natjmc`, `Kubuno.Rust.natstepfilter` | `%USERPROFILE%\Documents\Visual Studio 18\Visualizers` and `...\Visual Studio 2022\Visualizers`, copied from the VSIX before every Rust debug launch | Visual Studio reads `.natjmc`/`.natstepfilter` only from its installation folder or this per-user folder, near the start of each session |
 | `Kubuno.Framework.natjmc`, `Kubuno.Framework.natstepfilter` | Same folder, unless Tools > Options > Kubuno > **Debugging** > "Treat the Kubuno framework as external code" is off (then removed) | For people who debug Kubuno itself |
 | ` ?? ::st_panic` exception entry | `debugging.pkgdef` (default: checked), re-applied before each launch through `Debugger3.ExceptionGroups` | A registry default that was never touched was found not to reach the engine |
-| Panic message in the exception helper | `Kubuno.VisualStudio.Debugger.dll` + `.vsdconfig` (Concord component, VSIX `DebuggerEngineExtension` asset) | Reads the panic payload from the debuggee |
+| Panic message in the exception helper | `Kubuno.Rust.Debugger.dll` + `.vsdconfig` (Concord component, VSIX `DebuggerEngineExtension` asset) | Reads the panic payload from the debuggee |
 
 The per-user files are named `Kubuno.*`; nothing else in those folders is touched, except the four toolchain natvis
 copies earlier versions of the extension installed there (`intrinsic`/`liballoc`/`libcore`/`libstd.natvis`, removed

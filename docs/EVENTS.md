@@ -1766,7 +1766,7 @@ routed A.DragEnter → A.DragOver → A.DragLeave → B.DragEnter → B.DragDrop
 element without `AllowDrop`, a cancelled drag; an `OwnerDrawVariable` list's MeasureItem before its DrawItem, and a
 `<PaintBox>` handler drawing on the lent surface. `kubuno-views-ls` 124 + golden + round trip pass unchanged. `cargo
 clippy --all-targets -D warnings` clean on `kubuno_ui`, `kubuno-controls`, `kubuno-views`. C#: the Paint debug helpers
-(15 tests in `Kubuno.Launch.Tests`).
+(15 tests in `Kubuno.Rust.Launch.Tests`).
 
 ### Live verification (2026-09-29)
 

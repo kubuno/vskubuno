@@ -25,24 +25,24 @@ So the shape is two processes:
 
 ```
 Claude Code  <--- MCP (stdio) --->  kubuno-vs-mcp.exe  <--- named pipe --->  devenv.exe (VSIX)
-              src/Kubuno.Mcp                              src/Kubuno.Mcp.Bridge, loaded in-proc
+              src/Core/Kubuno.Core.Mcp                              src/Core/Kubuno.Core.Mcp.Bridge, loaded in-proc
 ```
 
-- **`kubuno-vs-mcp.exe`** (`src/Kubuno.Mcp/`, net8.0, standalone exe) is the actual MCP server.
+- **`kubuno-vs-mcp.exe`** (`src/Core/Kubuno.Core.Mcp/`, net8.0, standalone exe) is the actual MCP server.
   It has no VS SDK dependency at all - it only knows how to find and talk to a bridge over a
   local pipe. This is what `claude mcp add` points at.
-- **The bridge** (`src/Kubuno.Mcp.Bridge/`, multi-targeted `net48;net8.0`) is a plain class
+- **The bridge** (`src/Core/Kubuno.Core.Mcp.Bridge/`, multi-targeted `net48;net8.0`) is a plain class
   library, not a process. Its net48 build is loaded in-proc by `Kubuno.VisualStudio` (the VSIX
   package, at package load - see "Integration" below) and hosts the pipe server
   (`VsMcpBridgeHost`) plus a DTE-based `IVsContextProvider` implementation
-  (`DteVsContextProvider`). Its net8.0 build is referenced by `Kubuno.Mcp` and by the tests, and
+  (`DteVsContextProvider`). Its net8.0 build is referenced by `Kubuno.Core.Mcp` and by the tests, and
   contains everything *except* the DTE-specific code (the wire contract, the pipe client, the
   framing, the discovery-file reader/writer) - so the two processes share the contract as source,
   never as a duplicated hand-maintained copy.
 
 ## Why the `ModelContextProtocol` SDK (not a hand-written JSON-RPC layer)
 
-`src/Kubuno.Mcp/Kubuno.Mcp.csproj` takes a direct dependency on the official C# MCP SDK,
+`src/Core/Kubuno.Core.Mcp/Kubuno.Core.Mcp.csproj` takes a direct dependency on the official C# MCP SDK,
 [`ModelContextProtocol`](https://www.nuget.org/packages/ModelContextProtocol) (published by the
 Model Context Protocol project; version `2.2.0` here, targeting `net8.0`/`net9.0`/`net10.0`/
 `netstandard2.0`). A hand-written implementation was considered and rejected:
@@ -62,7 +62,7 @@ Model Context Protocol project; version `2.2.0` here, targeting `net8.0`/`net9.0
 - It ships both a server (`ModelContextProtocol.Server`) and a client
   (`ModelContextProtocol.Client`) surface, including `ModelContextProtocol.Protocol.StreamClientTransport`
   and `McpServerBuilderExtensions.WithStreamServerTransport` - built exactly for wiring a client
-  and a server together over a pair of in-memory streams. `tests/Kubuno.Mcp.Tests/McpProtocolTests.cs`
+  and a server together over a pair of in-memory streams. `tests/Kubuno.Core.Mcp.Tests/McpProtocolTests.cs`
   uses this to run the *real* client and the *real* server against each other, so the protocol
   round-trip tests exercise the actual wire format, not a mock of it.
 
@@ -70,7 +70,7 @@ Model Context Protocol project; version `2.2.0` here, targeting `net8.0`/`net9.0
 
 ### Claude Code <-> `kubuno-vs-mcp.exe`
 
-Standard MCP stdio transport (`WithStdioServerTransport()` in `src/Kubuno.Mcp/Program.cs`):
+Standard MCP stdio transport (`WithStdioServerTransport()` in `src/Core/Kubuno.Core.Mcp/Program.cs`):
 newline-delimited JSON-RPC over stdin/stdout. All logging is routed to **stderr**
 (`builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace)`), because
 stdout is reserved for protocol frames - anything else written there corrupts the stream.
@@ -81,19 +81,19 @@ A private, much simpler request/response protocol over a local named pipe
 (`\\.\pipe\<name>`, `System.IO.Pipes.NamedPipeServerStream`/`NamedPipeClientStream`,
 `PipeOptions.Asynchronous`):
 
-- **Framing** (`Kubuno.Mcp.Bridge.PipeProtocol.PipeMessageFraming`): one JSON document per
+- **Framing** (`Kubuno.Core.Mcp.Bridge.PipeProtocol.PipeMessageFraming`): one JSON document per
   message, as a 4-byte little-endian length prefix followed by that many UTF-8 bytes. Chosen over
   Windows message-mode pipes so the exact same code path also works over the in-memory streams used
   by tests (`System.IO.Pipelines.Pipe.Reader/Writer.AsStream()`), which have no concept of pipe
   message boundaries.
-- **Envelope** (`Kubuno.Mcp.Bridge.Contracts.BridgeRequest`/`BridgeResponse`): `{id, method,
+- **Envelope** (`Kubuno.Core.Mcp.Bridge.Contracts.BridgeRequest`/`BridgeResponse`): `{id, method,
   params}` / `{id, success, result, error}`. `method` is one of the seven tool names below
-  (`Kubuno.Mcp.Bridge.BridgeMethods`); `Kubuno.Mcp.Bridge.PipeProtocol.BridgeDispatcher` routes a
+  (`Kubuno.Core.Mcp.Bridge.BridgeMethods`); `Kubuno.Core.Mcp.Bridge.PipeProtocol.BridgeDispatcher` routes a
   request to the matching `IVsContextProvider` method and turns any exception into an `error`
   response instead of tearing down the connection.
 - **Discovery**: when `VsMcpBridgeHost.Start()` runs (VSIX package load), it picks a pipe name
   (`KubunoVsMcp.<pid>.<random>`) and writes a discovery file to
-  `%LOCALAPPDATA%\Kubuno\vs-mcp\<devenv pid>.json` (`Kubuno.Mcp.Bridge.Discovery.BridgeDiscoveryFile`):
+  `%LOCALAPPDATA%\Kubuno\vs-mcp\<devenv pid>.json` (`Kubuno.Core.Mcp.Bridge.Discovery.BridgeDiscoveryFile`):
   ```json
   {
     "pid": 12345,
@@ -118,9 +118,9 @@ A private, much simpler request/response protocol over a local named pipe
 ## Tools
 
 All seven are declared `ReadOnly = true, Idempotent = true, OpenWorld = false` on
-`[McpServerTool]` (`src/Kubuno.Mcp/Tools/KubunoVsTools.cs`) - this is a protocol-level annotation
+`[McpServerTool]` (`src/Core/Kubuno.Core.Mcp/Tools/KubunoVsTools.cs`) - this is a protocol-level annotation
 a client can see in `tools/list`, not just a comment. Every tool returns its bridge DTO
-(`Kubuno.Mcp.Bridge.Contracts`) serialized as indented JSON text.
+(`Kubuno.Core.Mcp.Bridge.Contracts`) serialized as indented JSON text.
 
 | Tool | Arguments | Returns |
 |---|---|---|
@@ -166,24 +166,24 @@ own justification - not as a blanket "give the bridge write access" change.
 ## Project layout
 
 ```
-src/Kubuno.Mcp/                    kubuno-vs-mcp.exe (net8.0) - the MCP server Claude Code launches
+src/Core/Kubuno.Core.Mcp/                    kubuno-vs-mcp.exe (net8.0) - the MCP server Claude Code launches
   Program.cs                       host + AddMcpServer().WithStdioServerTransport().WithTools<KubunoVsTools>()
   Tools/KubunoVsTools.cs           the 7 [McpServerTool] methods
   Connectivity/IBridgeConnector.cs abstraction the tools call through (real pipe in prod, fake in tests)
   Connectivity/PipeBridgeConnector.cs  discovery + VsMcpBridgeClient wiring
 
-src/Kubuno.Mcp.Bridge/             multi-targeted net48;net8.0 (see its csproj header comment)
+src/Core/Kubuno.Core.Mcp.Bridge/             multi-targeted net48;net8.0 (see its csproj header comment)
   IVsContextProvider.cs            one async method per tool - what a bridge implementation supplies
   BridgeUnavailableException.cs    "no live bridge" signal, shared by client and pipe host
   Contracts/                       BridgeRequest/BridgeResponse envelope + per-tool DTOs
   PipeProtocol/PipeMessageFraming.cs   length-prefixed framing over any Stream
   PipeProtocol/BridgeDispatcher.cs     method-name -> IVsContextProvider call -> BridgeResponse
-  PipeProtocol/VsMcpBridgeClient.cs    one-shot pipe client (Kubuno.Mcp side)
+  PipeProtocol/VsMcpBridgeClient.cs    one-shot pipe client (Kubuno.Core.Mcp side)
   PipeProtocol/VsMcpBridgeHost.cs      accept loop + discovery file lifecycle (VSIX side)
   Discovery/                       BridgeDiscoveryInfo + BridgeDiscoveryFile (read/write/enumerate)
   Dte/DteVsContextProvider.cs      net48-only: IVsContextProvider implemented with EnvDTE/EnvDTE80
 
-tests/Kubuno.Mcp.Tests/            net8.0, MSTest (dotnet test)
+tests/Kubuno.Core.Mcp.Tests/            net8.0, MSTest (dotnet test)
   Fakes/FakeVsContextProvider.cs   canned IVsContextProvider (no VS, no DTE)
   Fakes/FakeBridgeConnector.cs     IBridgeConnector -> BridgeDispatcher directly, no pipe - the
                                     "fake bridge" the protocol round-trip tests are built against
@@ -203,7 +203,7 @@ docs/MCP.md                        this file
 ```bash
 # From the repo root (Z:\src\vskubuno). On Z: (a mapped drive), MSTest's test host
 # can hit .NET's "remote sources" block - set this first, same as the other test projects.
-COMPLUS_LoadFromRemoteSources=1 dotnet test tests/Kubuno.Mcp.Tests/Kubuno.Mcp.Tests.csproj
+COMPLUS_LoadFromRemoteSources=1 dotnet test tests/Kubuno.Core.Mcp.Tests/Kubuno.Core.Mcp.Tests.csproj
 ```
 
 29 tests, all passing as of this writing: 10 framing tests, 10 dispatcher tests, 4 real-named-pipe
@@ -225,8 +225,8 @@ rules). What the VSIX package needs to do at load, in outline:
 ```csharp
 // In KubunoPackage.InitializeAsync, after the package has a DTE2:
 DTE2 dte = (DTE2)await GetServiceAsync(typeof(SDTE));
-var provider = new Kubuno.Mcp.Bridge.Dte.DteVsContextProvider(dte);
-_bridgeHost = new Kubuno.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost(provider);
+var provider = new Kubuno.Core.Mcp.Bridge.Dte.DteVsContextProvider(dte);
+_bridgeHost = new Kubuno.Core.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost(provider);
 _bridgeHost.Start(
     visualStudioVersion: dte.Version,
     solutionOrFolderPath: dte.Solution?.FullName);
@@ -235,13 +235,13 @@ _bridgeHost.Start(
 _bridgeHost?.Dispose();
 ```
 
-`Kubuno.VisualStudio.csproj` would add a `ProjectReference` to `Kubuno.Mcp.Bridge.csproj` (net48
+`Kubuno.VisualStudio.csproj` would add a `ProjectReference` to `Kubuno.Core.Mcp.Bridge.csproj` (net48
 leg picked up automatically, same `IncludeOutputGroupsInVSIX` pattern already used for
-`Kubuno.Cargo`/`Kubuno.Launch` in that csproj) and a `Content` item shipping the published
+`Kubuno.Rust.Cargo`/`Kubuno.Rust.Launch` in that csproj) and a `Content` item shipping the published
 `kubuno-vs-mcp.exe` under `tools\` in the VSIX, e.g.:
 
 ```bash
-dotnet publish src/Kubuno.Mcp/Kubuno.Mcp.csproj -c Release -r win-x64 --self-contained \
+dotnet publish src/Core/Kubuno.Core.Mcp/Kubuno.Core.Mcp.csproj -c Release -r win-x64 --self-contained \
   -p:PublishSingleFile=true -o path\to\Kubuno.VisualStudio\tools\kubuno-vs-mcp
 ```
 
@@ -260,7 +260,7 @@ dotnet publish src/Kubuno.Mcp/Kubuno.Mcp.csproj -c Release -r win-x64 --self-con
 Once `kubuno-vs-mcp.exe` is built (or published as above), point Claude Code at it:
 
 ```bash
-claude mcp add kubuno-vs -- "Z:\src\vskubuno\src\Kubuno.Mcp\bin\Release\net8.0\kubuno-vs-mcp.exe"
+claude mcp add kubuno-vs -- "Z:\src\vskubuno\src\Core\Kubuno.Core.Mcp\bin\Release\net8.0\kubuno-vs-mcp.exe"
 ```
 
 or in `.mcp.json`:
@@ -269,7 +269,7 @@ or in `.mcp.json`:
 {
   "mcpServers": {
     "kubuno-vs": {
-      "command": "Z:\\projects\\kubuno\\vskubuno\\src\\Kubuno.Mcp\\bin\\Release\\net8.0\\kubuno-vs-mcp.exe",
+      "command": "Z:\\projects\\kubuno\\vskubuno\\src\\Kubuno.Core.Mcp\\bin\\Release\\net8.0\\kubuno-vs-mcp.exe",
       "args": [],
       "env": {
         "KUBUNO_VS_PID": ""
@@ -298,7 +298,7 @@ drop it from `env`) unless more than one Visual Studio instance is running at on
 - **`vs_solution_or_folder`'s Cargo workspace detection is a bounded directory scan** (depth 4,
   skips `target`/`node_modules`/`bin`/`obj`/dot-directories, caps at 25 results), not `cargo
   metadata` - cheap and dependency-free, but it can miss an unusual workspace layout that
-  `cargo metadata` would resolve correctly. `Kubuno.Cargo` already owns the authoritative
+  `cargo metadata` would resolve correctly. `Kubuno.Rust.Cargo` already owns the authoritative
   `cargo metadata` view of whatever workspace VS has actually opened; this tool is meant to point
   Claude at candidate roots, not to replace that.
 - **Windows-only.** Named pipes (`System.IO.Pipes`) and `%LOCALAPPDATA%` are Windows concepts,

@@ -180,6 +180,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **The extension is organised in layers, ready for Kubuno web modules and mobile apps** (`docs/ARCHITECTURE.md`,
+  "Layers (as built)"): Kubuno.Core (shared Visual Studio infrastructure: themed dialogs, settings plumbing, the Kubuno
+  Output pane, the MCP bridge, the layer contracts), Kubuno.Rust (rust-analyzer, Cargo, `.rsproj`, debugging, Test
+  Explorer, templates), Kubuno.Desktop (the `.kbview` language server client, the view designer, the data and printing
+  tooling), and the new Kubuno.Web and Kubuno.Mobile layers, registered but still empty. Nothing changes for users: it
+  is still one VSIX with the same package, commands, tool windows, options pages, settings (saved values are kept),
+  editor, templates and project type, and it still loads only for Rust work. Contributors: the assemblies are renamed
+  (`Kubuno.VisualStudio.Core` became `Kubuno.Rust.Logic`, `Kubuno.VisualStudio.Designer` and `Kubuno.VisualStudio.Views`
+  became `Kubuno.Desktop`, `Kubuno.Cargo`/`Kubuno.Launch`/`Kubuno.TestAdapter` became `Kubuno.Rust.*`,
+  `Kubuno.Mcp`/`Kubuno.Mcp.Bridge` became `Kubuno.Core.Mcp*`...), as are the test projects, and a new test project,
+  `Kubuno.Architecture.Tests`, fails when a layer references a layer above it or a sibling target.
 - **F7 in the view designer opens the view's code** (`main_view.rs`), like Windows Forms opening `Form1.cs`; a view
   without a same-stem `.rs` file still shows its XML. Shift+F7 in the code goes back to the designer.
 - **Inline hints follow C#'s defaults**: rust-analyzer's grey hints (`: FileWatcher`, `title:`, `opts:`...) are no longer

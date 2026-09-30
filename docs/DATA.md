@@ -729,8 +729,8 @@ add/status/run/revert, sqlx.status —; a slow recursive query neither blocking 
 `Password=S3cr3t!` never appearing in an error; `--version` and EOF), 3 of them gated on `KUBUNO_TEST_*_URL`
 (skipped: no server). clippy `-D warnings` clean with and without `--features mysql,mssql`.
 
-**Visual Studio** (`src/Kubuno.VisualStudio.Core/Data/*` — the client, models, connection-string builders, tree and
-texts, testable without VS — and `src/Kubuno.VisualStudio/DataExplorer/*`):
+**Visual Studio** (`src/Rust/Kubuno.Rust.Logic/Data/*` — the client, models, connection-string builders, tree and
+texts, testable without VS — and `src/Desktop/Kubuno.Desktop/DataExplorer/*`):
 - `DataToolHost.Service` (`DataToolService`): starts the helper on first use (`tools\kubuno-data-tool.exe`, dev
   fallback `C:\kubuno-build\desktop-target\release\`), restarts it after a crash, stops it with the package; typed calls
   (`ListConnectionsAsync`, `AddConnectionAsync`, `TestConnectionAsync`, `LoadSchemaAsync`, `DataTopAsync`,
@@ -756,7 +756,7 @@ texts, testable without VS — and `src/Kubuno.VisualStudio/DataExplorer/*`):
 - Not built: "Edit connection…" (a stored string cannot be read back — delete and add again); the query editor has no
   SQL colouring (DATA-8 colours Rust strings).
 
-Tests: `Kubuno.VisualStudio.Tests` +34 (client framing/ids/concurrency/cancel/crash-restart/missing exe/log
+Tests: `Kubuno.Rust.Tests` +34 (client framing/ids/concurrency/cancel/crash-restart/missing exe/log
 redaction, connection-string builders per provider, the SQLite file creation, the tree from a `schema.load` fixture
 FR/EN, query texts). Live (hive `KubunoData`, `C:\kubuno-build\data-explorer-live`, UIA/DTE): a SQLite connection
 added with the Credential Manager store (`cmdkey` shows `Kubuno:DataExplorer:ConnectionStrings:Shop`,
@@ -766,7 +766,7 @@ connection removed with its secret. PostgreSQL/MySQL/SQL Server not exercised li
 
 ## 18. DATA-8 as built (2026-09-30): SQL in Rust strings
 
-`src/Kubuno.VisualStudio.Core/Sql/*` (testable) and `src/Kubuno.VisualStudio/LanguageService/Sql/*`:
+`src/Rust/Kubuno.Rust.Logic/Sql/*` (testable) and `src/Rust/Kubuno.Rust/LanguageService/Sql/*`:
 - **Recognised literals**: the SQL argument of `query!`, `query_scalar!`, `query_unchecked!`,
   `query_scalar_unchecked!`, `query_as!`/`query_as_unchecked!` (second argument), with or without `sqlx::`
   (`query_file*` skipped); `sqlx::query(`, `query_as::<…>(`, `query_scalar(`, the `*_with(` forms, `raw_sql(` (without
@@ -794,15 +794,15 @@ connection removed with its secret. PostgreSQL/MySQL/SQL Server not exercised li
   nothing is squiggled. The Data Sources wizard writes the snapshot (DATA-6).
 - Not built: an option to turn it off; crates using sqlx without a `.kbdata` get no schema.
 
-Tests: +48 in `Kubuno.VisualStudio.Tests` (literal detection incl. `query!(` in a comment, escapes and their offsets,
+Tests: +48 in `Kubuno.Rust.Tests` (literal detection incl. `query!(` in a comment, escapes and their offsets,
 incremental edits, a 12 000-line file under 500 ms; the SQL tokenizer; completion contexts and lists from SQLite and
 PostgreSQL fixtures; ~20 no-squiggle cases; the snapshot store and `.kbdata` connections).
 
 ## 19. DATA-6 as built (2026-09-30): Data Sources, the wizard, drag and drop
 
-`src/Kubuno.VisualStudio.Core/DataSources/*` (testable: the `.kbdata` model, names, column kinds, the view reader, the
+`src/Rust/Kubuno.Rust.Logic/DataSources/*` (testable: the `.kbdata` model, names, column kinds, the view reader, the
 drop planner, the code writer, the per-project settings, the wizard model, the crate lookup, FR/EN texts),
-`src/Kubuno.VisualStudio/DataSources/*` (window, tree, wizard, generator, command) and, in the designer,
+`src/Desktop/Kubuno.Desktop/DataSources/*` (window, tree, wizard, generator, command) and, in the designer,
 `DesignSurface/ExternalDesignerDrop.cs` + `DesignSurfaceEditingCoordinator.ExternalDrop.cs` (and a few lines in
 `DesignSurfaceEditingCoordinator.cs` / `.Native.cs`).
 - **Data Sources window** (View > Other Windows > Data Sources, Shift+Alt+D, tabbed with Server Explorer): the
@@ -846,7 +846,7 @@ drop planner, the code writer, the per-project settings, the wizard model, the c
   fails when run with `--features data`, the registry then holding the data classes — to be adapted by the owner of
   the facade.)
 
-Tests: +38 in `Kubuno.VisualStudio.Tests` (wizard steps and names, the generated files — idempotent surgical edits that
+Tests: +38 in `Kubuno.Rust.Tests` (wizard steps and names, the generated files — idempotent surgical edits that
 keep comments —, the drop fragments for a grid, details and a column, unique names, formats by type, Kubuno schema,
 and a real round trip of the inserted XML through `kubuno-views-ls`: well-formed, no new diagnostic). Live (hive
 `KubunoDataDS`, app `C:\kubuno-build\ds-live` from the current template, SQLite customers/orders/v_orders): the wizard
@@ -876,9 +876,9 @@ property editors and smart tags of §9 (component-reference and `ConnectionStrin
 
 ## 20. DATA-7 as built (2026-09-30): migrations and the SQLx cache
 
-`src/Kubuno.VisualStudio.Core/Migrations/*` (texts, the `migrate.*`/`sqlx.*` calls, description rules, the crate's
+`src/Rust/Kubuno.Rust.Logic/Migrations/*` (texts, the `migrate.*`/`sqlx.*` calls, description rules, the crate's
 data info: connections/provider/schema of its `.kbdata` files, `user-secrets-id`, secret names without their values,
-the node model) and `src/Kubuno.VisualStudio/Migrations/*` (commands, dialogs, the Solution Explorer node, the info
+the node model) and `src/Desktop/Kubuno.Desktop/Migrations/*` (commands, dialogs, the Solution Explorer node, the info
 bar, `RsprojTargetDirectory`).
 - **Commands**: a *Database* submenu on a `.rsproj` project node (`VisibilityItem` on the Rust project context):
   **Add Migration…** (ThemedDialog: description, reversible by default, preview of the files; for a Kubuno module's first
@@ -906,7 +906,7 @@ bar, `RsprojTargetDirectory`).
 - Not built: the menu on folders in Open Folder mode; Kubuno module templates with `migrations/` (the templates belong
   to the programming-model work; the helper's first migration of a module already creates its schema).
 
-Tests: +26 in `Kubuno.VisualStudio.Tests` (connection and schema discovery, secret names, the connection choice,
+Tests: +26 in `Kubuno.Rust.Tests` (connection and schema discovery, secret names, the connection choice,
 description rules, the node model from a real `migrate.status` answer — order, states, FR/EN texts, checksum change,
 failed/missing migrations, connection error —, the request shapes incl. `targetDir`). Live (hive `KubunoDataMig`, crate
 `C:\kubuno-build\mig-live`): two migrations added → "2 pending", applied (dates), an applied file edited → ⚠, the last

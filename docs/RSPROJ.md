@@ -21,8 +21,8 @@ property-page dialog.
 
 Work package 5 ("Generate Visual Studio Projects", live-verified against `Z:\src\desktop\windows`
 through a scratch mirror — see its own section below): the generator/planner
-(`Kubuno.VisualStudio.Core/ProjectGeneration/`) is pure and unit-tested (87 tests total in
-`tests/Kubuno.VisualStudio.Tests`); the command
+(`Kubuno.Rust.Logic/ProjectGeneration/`) is pure and unit-tested (87 tests total in
+`tests/Kubuno.Rust.Tests`); the command
 (`Kubuno.VisualStudio/Commands/GenerateRustProjectsCommand.cs`) is reachable from the Tools menu
 and from Solution Explorer/Open Folder's item context menu on a workspace-root `Cargo.toml`
 (gated by `WorkspaceManifestScanner`). SDK distribution: the packed `Kubuno.Rust.Sdk` `.nupkg`
@@ -38,7 +38,7 @@ Work package 4 (verified by reflection and live): `IDebugProfileLaunchTargetsPro
 the managed project system, not to CPS — the seam is CPS's `DebugLaunchProviderBase` +
 `[ExportDebugger(name)]`, picked by the `DebuggerFlavor` property (`debugger_general.xaml`), exactly
 as the JS project system's `LaunchJsonDebugLaunchProvider`; it lives in
-`Kubuno.VisualStudio.RustProjectSystem/RustDebugLaunchProvider.cs` (not `Debugging/`). The
+`Kubuno.Rust.ProjectSystem/RustDebugLaunchProvider.cs` (not `Debugging/`). The
 debugger flavor's own rule (`Rules/rust_debugger.xaml`, `DisplayName="Local Rust Debugger"`, carrying the
 args/working dir/env properties directly — the same shape as the installed VSIX project system's
 `VsixDebugger.xaml`, checked on disk) still names the Start button; since lot 11 the same user-file properties are
@@ -79,7 +79,7 @@ need checking against real assemblies before coding is marked "(unverified)".
 **Non-goals**
 
 - Not a replacement for rust-analyzer, Cargo's dependency resolution, or `cargo build` — `.rsproj`
-  is a thin MSBuild/CPS shell around the same `Kubuno.Cargo`/`Kubuno.Launch` logic Open Folder mode
+  is a thin MSBuild/CPS shell around the same `Kubuno.Rust.Cargo`/`Kubuno.Rust.Launch` logic Open Folder mode
   already uses and has already proven live.
 - Not a replacement for Open Folder mode; both stay supported (§5).
 - Not, in phase 1, an XML-view build step or designer change; `.kbview` handling is
@@ -143,7 +143,7 @@ split exactly:
 - **Stubs**: `ResolveAssemblyReferences`/`GetReferenceAssemblyPaths`/`GetFrameworkPaths` as no-ops,
   `NoStdLib=true` — no managed references to resolve.
 - **Test target**: `cargo test --no-run --message-format=json` through the same task family,
-  feeding **`Kubuno.TestAdapter`** (already in the repo) rather than reinventing discovery — the
+  feeding **`Kubuno.Rust.TestAdapter`** (already in the repo) rather than reinventing discovery — the
   existing `ICargoWorkspaceSource`/`CargoWorkspaceSource` seam already abstracts "where are the
   `Cargo.toml`s" away from VS's own workspace API; a `.rsproj`-backed implementation of that
   interface is a small, isolated addition.
@@ -209,8 +209,8 @@ default-run/package-name/first-bin fallback `StartupItemSelector` already uses),
 with no `[[bin]]` (library-only) is skipped by default; `RsprojGenerationOptions.IncludeLibraryOnlyMembers`
 opts in.
 
-**Pure/testable split** (`Kubuno.VisualStudio.Core/ProjectGeneration/`, unit-tested in
-`tests/Kubuno.VisualStudio.Tests/ProjectGeneration/` — 42 tests): `RsprojGenerationPlanner.Plan`
+**Pure/testable split** (`Kubuno.Rust.Logic/ProjectGeneration/`, unit-tested in
+`tests/Kubuno.Rust.Tests/ProjectGeneration/` — 42 tests): `RsprojGenerationPlanner.Plan`
 takes an already-read `CargoMetadata` + a `projectFileExists` predicate and returns one
 `RsprojProjectPlanItem` per eligible member with `Action` = `Create`/`SkipExisting` — no file I/O.
 `RsprojTemplate` builds the `.rsproj` text; `RsprojSolutionGenerator` builds/merges the `.sln`. The
@@ -292,11 +292,11 @@ Both modes stay: Open Folder is the zero-setup entry point (`devenv folder`, no 
    no-op rebuilds are skipped.
 2. **(M) `Kubuno.Cargo.MSBuild.Tasks`** — `CargoBuild`/`CargoTest`/`CargoFetch` tasks reusing
    `CargoCommand`/`CargoMessageParser`/`ProcessRunner`, emitting `Log.LogError`/`LogWarning` with
-   file/line/column. Owns: new `src/Kubuno.Cargo.MSBuild.Tasks/`. Test: unit tests against known
+   file/line/column. Owns: new `src/Rust/Kubuno.Cargo.MSBuild.Tasks/`. Test: unit tests against known
    `--message-format=json` fixtures; one live check — open the generated `.rsproj` in the
    experimental instance, introduce a compile error, confirm a clickable Error List entry.
 3. **(M) CPS project factory + capabilities + file glob**, in the VSIX. Owns: new
-   `src/Kubuno.VisualStudio.RustProjectSystem/`, referencing the already-present
+   `src/Rust/Kubuno.Rust.ProjectSystem/`, referencing the already-present
    `Microsoft.VisualStudio.SDK` package (CPS assemblies come transitively, no new heavyweight
    dependency). Test, live: open a hand-written `.rsproj` in `/rootsuffix Exp`, confirm it loads,
    Solution Explorer shows the tree with `target/` excluded and `.kbview` nested, Properties opens.
@@ -307,7 +307,7 @@ Both modes stay: Open Folder is the zero-setup entry point (`devenv folder`, no 
    Test, live: F5/Ctrl+F5 on a generated project, breakpoint in `main()`, confirm build-before-F5,
    confirm the `-C prefer-dynamic` PATH fix still holds (no `STATUS_DLL_NOT_FOUND`).
 5. **(S/M) Generation command + idempotency — done.** Owns: `Commands/GenerateRustProjectsCommand.cs`,
-   `Kubuno.VisualStudio.Core/ProjectGeneration/` (reusing `CargoMetadataReader`),
+   `Kubuno.Rust.Logic/ProjectGeneration/` (reusing `CargoMetadataReader`),
    `Infrastructure/RustSdkFeedInstaller.cs`. See §4 above for the full writeup: unit-tested
    (42 tests), live-verified against `Z:\src\desktop\windows` through a scratch mirror (generate,
    build 4/5 through the real Solution Build Manager, F5 `kubuno-desktop` successfully) and against
@@ -378,7 +378,7 @@ Both modes stay: Open Folder is the zero-setup entry point (`devenv folder`, no 
 Requested by the product owner: Rust and Kubuno must appear in VS's *Create a new project*
 dialog (and *Add New Item*), filterable by language/platform/project type, like C# does.
 
-**Shipped**: `.vstemplate` project templates in the VSIX (`src/Kubuno.VisualStudio/ProjectTemplates/`,
+**Shipped**: `.vstemplate` project templates in the VSIX (`src/Rust/Kubuno.Rust/ProjectTemplates/`,
 `ItemTemplates/`), packaged via two `Microsoft.VisualStudio.ProjectTemplate`/`ItemTemplate` assets in
 `source.extension.vsixmanifest` (this VSSDK version needs explicit, wildcarded `Content`
 `IncludeInVSIX` items too - a bare `Path=` asset with nothing else referencing those files packaged
@@ -416,7 +416,7 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
   `$fileinputname$.rs` code-behind), **Rust module file**, **Rust integration test** (under `tests/`,
   reusing `$safeprojectname$` for the crate-under-test's name).
 - **Crate-name sanitisation: shipped in a follow-up pass, as a separate wizard assembly.**
-  `src/Kubuno.VisualStudio.TemplateWizard/` (net48, referencing only
+  `src/Rust/Kubuno.Rust.TemplateWizard/` (net48, referencing only
   `Microsoft.VisualStudio.TemplateWizardInterface` + `EnvDTE`/`EnvDTE80`/`Microsoft.VisualStudio.
   Interop` - all three pinned to this VS install's own copies via `HintPath`, not NuGet packages,
   to keep every interop assembly this project touches on the SAME v18 identity: mixing the
@@ -431,7 +431,7 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
   plain `$safeprojectname$`.
   - **The root cause the previous attempt hit (self-registering `Kubuno.VisualStudio.dll`'s own
     codeBase, breaking `KubunoPackage`'s load) does not reproduce for a separate assembly** - its
-    own `[assembly: ProvideCodeBase(AssemblyName = "Kubuno.VisualStudio.TemplateWizard", ...)]` in
+    own `[assembly: ProvideCodeBase(AssemblyName = "Kubuno.Rust.TemplateWizard", ...)]` in
     `KubunoPackage.cs`, next to the others, is not self-referential.
   - **A second, separate problem surfaced once that was fixed, live-verified**:
     `Microsoft.VisualStudio.TemplateWizard.Wizard.CreateManagedInstance`'s own `Assembly.Load`
@@ -451,7 +451,7 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
   (History: the first attempt reused `Kubuno.VisualStudio.dll` itself as the wizard assembly and
   was reverted for the `KubunoPackage`-breaking reason above; this pass's separate-assembly fix is
   what that revert's own note called for.)
-- Also fixed as part of getting a template to load at all: **`Kubuno.Mcp.Bridge` had no
+- Also fixed as part of getting a template to load at all: **`Kubuno.Core.Mcp.Bridge` had no
   `ProvideCodeBase` entry**, a latent, pre-existing gap unrelated to lot 7 (`KubunoPackage.
   StartMcpBridgeAsync` references it directly) - hit only once something else forced eager
   resolution of it; same fix pattern as the four assemblies already registered.
@@ -478,8 +478,8 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
     PATH fix) is unmodified by this pass; `cargo build` producing a working `my-app-2.exe` at the
     expected `$(CARGO_TARGET_DIR)` was confirmed directly.
   - **Two unrelated environment gotchas hit and worked around while re-verifying live, worth
-    recording**: (1) the VSSDK `Deploy` target's copy of five specific assemblies (`Kubuno.Cargo`,
-    `Kubuno.Launch`, `Kubuno.Mcp.Bridge`, `Kubuno.TestAdapter`, `Kubuno.VisualStudio.Core`) into the
+    recording**: (1) the VSSDK `Deploy` target's copy of five specific assemblies (`Kubuno.Rust.Cargo`,
+    `Kubuno.Rust.Launch`, `Kubuno.Core.Mcp.Bridge`, `Kubuno.Rust.TestAdapter`, `Kubuno.Rust.Logic`) into the
     experimental extension folder is reproducibly racy in this VM - they land as 0-byte files with a
     later timestamp than the rest, causing `KubunoPackage` to fail to load
     (`FileNotFoundException` loading whichever one a given run needs first); the fix is to re-copy
@@ -597,8 +597,8 @@ and expandable type/member nodes under each file).
 double-click/Enter on a node did nothing. No LSP-backed provider exists in the installed VS (the
 JS/TS project system shows no symbol nodes), so there was nothing to reuse.
 
-**What shipped** (`src/Kubuno.VisualStudio/SolutionExplorer/`, pure parts in
-`Kubuno.VisualStudio.Core/SolutionExplorer/`, unit-tested):
+**What shipped** (`src/Rust/Kubuno.Rust/SolutionExplorer/`, pure parts in
+`Kubuno.Rust.Logic/SolutionExplorer/`, unit-tested):
 
 - **Nesting**: `Sdk.targets` adds `DependentUpon="%(Filename).kbview"` to the glob's `.rs` `None`
   items that have a same-stem `.kbview` sibling (an evaluation-time `Update` with a metadata
@@ -703,7 +703,7 @@ test for real" rule) - tracked as a known limitation rather than shipped as an u
 **Open Folder follow-up (2026-09-28, designer WinForms pass).** File icons: the per-extension
 association itself is confirmed working - `IVsImageService2.GetImageMonikerForFile` in the
 experimental instance returns `7d2b8c4e-…:2` for `a.rs` and `…:3` for `b.kbview` (C# files return
-VS's own). The images live in XAML resources of `Kubuno.VisualStudio.RustProjectSystem.dll`, which
+VS's own). The images live in XAML resources of `Kubuno.Rust.ProjectSystem.dll`, which
 the image service resolves by assembly NAME. Preloading that assembly from `KubunoPackage` (so Open
 Folder, where CPS never loads it, would find it) was tried and REVERTED: verified visually that it
 blanked every Kubuno icon, inside `.rsproj` projects too - the Toolbox showed the image service's grey
@@ -789,7 +789,7 @@ end) - the wiring reuses the exact same `AddCargoDependencyCommand.ShowDialogAnd
 surface is the `IContextMenuPattern`/`ShowContextMenu` plumbing itself; flagged here rather than
 silently left unmentioned, per this doc's own "say explicitly what wasn't possible" rule.
 
-**`CargoCommand` gained `Add`/`Remove` kinds** (`Kubuno.Cargo\Commands\CargoCommand.cs`/
+**`CargoCommand` gained `Add`/`Remove` kinds** (`Kubuno.Rust.Cargo\Commands\CargoCommand.cs`/
 `CargoCommandKind.cs`) - the positional crate spec and `--path`/`--dev`/`--build` flags go through
 the existing `WithExtraArgs`, no new builder surface needed. Unit-tested
 (`CargoCommandTests.Add_with_path_and_features_emits_expected_arguments`/
@@ -843,7 +843,7 @@ every screenshot of the real install taken this pass, which at minimum confirms 
 top-level icon resource loads fine there - it does not confirm or rule out the separate
 `RustProject.imagemanifest`/`RustProjectImages` file-icon path `docs/RSPROJ.md`'s own earlier
 "Open Folder follow-up" addendum already flagged as fragile (by-name pack URI resolution breaking if
-a second copy of `Kubuno.VisualStudio.RustProjectSystem.dll` loads in another context). A dedicated
+a second copy of `Kubuno.Rust.ProjectSystem.dll` loads in another context). A dedicated
 investigation pass (`docs/RSPROJ.md` search "VSIXInstaller.exe /q :rootSuffix:Exp" for the fullest
 prior attempt) also could not reproduce a clean signal, for a different reason: it shared the same
 `/rootsuffix Exp` hive this session's own dev `Debug`-configuration builds were repeatedly deploying
@@ -877,8 +877,8 @@ fails with `FileLoadException 0x80131041` ("private assembly located outside the
 directory") **even though the same assembly is already loaded** (via `LoadFrom`) and **without
 raising `AssemblyResolve`** - whereas without the entry the load misses, `AssemblyResolve` fires and
 the loaded copy is returned. The regular hive's `ComponentModelCache\...Default.err` carried the
-same error for `Kubuno.Cargo`. Visual Studio's image service resolves the icons' pack URIs
-(`/Kubuno.VisualStudio.RustProjectSystem;component/...` in `RustProject.imagemanifest` and
+same error for `Kubuno.Rust.Cargo`. Visual Studio's image service resolves the icons' pack URIs
+(`/Kubuno.Rust.ProjectSystem;component/...` in `RustProject.imagemanifest` and
 `KubunoControls.imagemanifest`) by assembly name, so every image-manifest moniker - project node,
 `.rs`/`.kbview`/`Cargo.toml` file icons, `.kbview` element nodes - came out blank, while the
 Toolbox icons kept working because `NativeToolboxInstaller` renders the same XAML through WPF's
@@ -1090,10 +1090,10 @@ to Rust/Cargo/Kubuno.
 | Resources | description, *Create or open application resources* (`.kbres`), link to the Win32 resources | - |
 | Settings | description and a link to the design note below | - |
 
-**Cargo.toml is never regenerated.** `Kubuno.Cargo.Toml.TomlDocument` is a lossless TOML reader/editor (253 unit
+**Cargo.toml is never regenerated.** `Kubuno.Rust.Cargo.Toml.TomlDocument` is a lossless TOML reader/editor (253 unit
 tests: round trips of real manifests including CRLF, a BOM and comments everywhere, dotted keys, inline tables,
 arrays of tables, `field.workspace = true`; every edit is ONE minimal contiguous replacement). The pure property
-model (`Kubuno.VisualStudio.Core.ProjectProperties.RustManifestProperties`, unit-tested with an in-memory file system)
+model (`Kubuno.Rust.Logic.ProjectProperties.RustManifestProperties`, unit-tested with an in-memory file system)
 turns a value into those edits; the VS layer applies each through the document's text buffer (the open editor's,
 else an invisible editor's), so it is **one undo unit of Cargo.toml** (open it, Ctrl+Z), and saves the document if
 it had no unsaved changes of the developer. A value equal to Cargo's default is not written when the key is

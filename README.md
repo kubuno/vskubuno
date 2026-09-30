@@ -12,13 +12,39 @@ README is the full reference; the getting-started guide is the shorter path to a
 
 ## Repository layout
 
+The code is split into layers whose dependencies only go down - Core, then Rust, then the Kubuno targets (Desktop,
+Web, Mobile), which never reference each other. `docs/ARCHITECTURE.md`, "Layers (as built)", has the details and the
+rules (enforced by `tests/Kubuno.Architecture.Tests`).
+
 ```
 src/
-  Kubuno.VisualStudio/        The VSIX project (classic VSSDK AsyncPackage, .NET Framework 4.8)
-  Kubuno.VisualStudio.Core/   Pure logic (rust-analyzer discovery, Cargo workspace root detection)
-                               with no VS SDK dependency, so it can be unit-tested with plain dotnet test
-tests/
-  Kubuno.VisualStudio.Tests/  Unit tests for Kubuno.VisualStudio.Core
+  Kubuno.VisualStudio/        The one VSIX: KubunoPackage (every registration, lists the layers), KubunoCommands.vsct,
+                              the VSIX manifest, the unified settings manifest; ships every layer below
+  Core/                       Shared Visual Studio infrastructure
+    Kubuno.Core/              Layer contracts, themed dialogs, settings plumbing, Output pane, dialog gallery, MCP start
+    Kubuno.Core.Logic/        Pure helpers (LSP, QuickInfo model, UI language) - no VS SDK
+    Kubuno.Core.Mcp(.Bridge)/ The MCP server for Claude and its in-proc bridge (docs/MCP.md)
+  Rust/                       Product-agnostic Rust support
+    Kubuno.Rust/              rust-analyzer, IntelliSense, Cargo workspaces, debugging, .rsproj commands, templates
+    Kubuno.Rust.Logic/        Pure logic of the above - no VS SDK
+    Kubuno.Rust.Cargo/        cargo metadata, build messages, TOML (netstandard2.0)
+    Kubuno.Rust.Launch/       Launch/debug environment of Rust targets (netstandard2.0)
+    Kubuno.Rust.ProjectSystem/ The .rsproj CPS project type
+    Kubuno.Rust.TestAdapter/  Test Explorer adapter for cargo test
+    Kubuno.Rust.Debugger/     Concord component: Rust panics in the exception helper
+    Kubuno.Rust.TemplateWizard/ Crate-name wizard of the templates
+    Kubuno.Cargo.MSBuild.Tasks/ MSBuild tasks of the Kubuno.Rust.Sdk NuGet package
+  Desktop/                    Kubuno desktop applications (kubuno_ui, .kbview)
+    Kubuno.Desktop/           .kbview language client, view designer, data tooling, printing, desktop templates
+    Kubuno.Desktop.Logic/     Pure logic of the above - no VS SDK
+    Kubuno.Desktop.ProjectSystem/ .kbview default editor and icon in a .rsproj, Kubuno control icons
+    Kubuno.Desktop.TemplateWizard/ Control item wizard
+  Web/Kubuno.Web/             Kubuno web modules (skeleton, see its README.md)
+  Mobile/Kubuno.Mobile/       Kubuno mobile apps (skeleton, see its README.md)
+sdk/
+  Kubuno.Rust.Sdk/            The MSBuild SDK of .rsproj projects
+tests/                        One test project per layer (Kubuno.Core.Tests, Kubuno.Rust.Tests, Kubuno.Desktop.Tests...)
+                              plus Kubuno.Architecture.Tests (the layering rules)
 samples/
   hello-rust/                 Tiny Cargo project (bin + lib + example + test) for manual testing
                                in an experimental Visual Studio instance
@@ -35,11 +61,11 @@ Kubuno.VisualStudio.sln
     (`rustup component add rust-analyzer`) - this never fails silently.
   - The workspace root passed to rust-analyzer is the folder containing the nearest `Cargo.toml`
     above the active document (or the Open Folder workspace root as a fallback), computed by
-    `Kubuno.VisualStudio.Core.CargoWorkspaceLocator`.
+    `Kubuno.Rust.Logic.CargoWorkspaceLocator`.
   - All of this (which path was chosen and why, start/stop, errors, and - opt-in - raw LSP
     traffic) is logged to a **"Kubuno" pane in the Output window**.
 - **Syntax coloring before rust-analyzer is ready**: a TextMate grammar for Rust is shipped in the
-  VSIX (`src/Kubuno.VisualStudio/Grammars/rust.tmLanguage.json`, vendored from Visual Studio Code's
+  VSIX (`src/Rust/Kubuno.Rust/Grammars/rust.tmLanguage.json`, vendored from Visual Studio Code's
   built-in Rust extension - see `Grammars/THIRD-PARTY-NOTICES.md` for provenance and licenses) and
   registered via `languages.pkgdef`. This colorizes `.rs` files independently of the language
   client, which is why the file already looks right the instant it opens.
@@ -50,11 +76,11 @@ Kubuno.VisualStudio.sln
   exposes **Build**/**Rebuild**/**Clean**, both from its right-click menu (Solution Explorer/Folder
   View) and from the **Build** menu when it is the active context. This uses VS's Open Folder
   workspace extensibility (`Microsoft.VisualStudio.Workspace`'s `IFileContextProvider` /
-  `IFileContextActionProvider` - `src/Kubuno.VisualStudio/Workspace/`), not a declarative
+  `IFileContextActionProvider` - `src/Rust/Kubuno.Rust/Workspace/`), not a declarative
   `tasks.vs.json`: the goal is clickable, structured diagnostics (file/line/column, severity,
   code, project), which needs `cargo build/clean --message-format=json-diagnostic-rendered-ansi`
-  parsed by `Kubuno.Cargo` - a static task file's generic output-window error matching can't do
-  that. `cargo` runs through `Kubuno.Cargo`'s `CargoCommand`/`ProcessRunner`/`CargoMessageParser`.
+  parsed by `Kubuno.Rust.Cargo` - a static task file's generic output-window error matching can't do
+  that. `cargo` runs through `Kubuno.Rust.Cargo`'s `CargoCommand`/`ProcessRunner`/`CargoMessageParser`.
   Diagnostics become clickable **Error List** entries through Open Folder's own
   `IBuildMessageService` (any `BuildMessage.TaskType` other than `None`); the full rustc-rendered
   text (source snippet, carets, notes) is written straight to the **Build** Output pane via
@@ -64,7 +90,7 @@ Kubuno.VisualStudio.sln
 - **Launch and debug**: every `bin` and `example` target reported by `cargo metadata` appears in
   the **Select Startup Item** dropdown. This is driven by a `.vs\launch.vs.json` the extension
   generates - on Open Folder workspace open, and after every successful Build/Rebuild
-  (`src/Kubuno.VisualStudio/Debugging/RustLaunchTargetsGenerator.cs`, built on `Kubuno.Launch`'s
+  (`src/Rust/Kubuno.Rust/Debugging/RustLaunchTargetsGenerator.cs`, built on `Kubuno.Rust.Launch`'s
   `LaunchDescriptionBuilder`/`LaunchVsJsonWriter`) - rather than a live
   `ILaunchDebugTargetProvider`/`IVsDebugLaunchTargetProvider` MEF component: those interfaces
   exist but are undocumented beyond their member names and version-fragmented (5 and 3 versions
@@ -80,9 +106,9 @@ Kubuno.VisualStudio.sln
   `#[test]` function in the active `.rs` file, builds that test's binary
   (`cargo test --no-run --message-format=json`) and launches it under the native debugger with
   `<name> --exact --nocapture --test-threads=1`, via `IVsDebugger4.LaunchDebugTargets4`
-  (`src/Kubuno.VisualStudio/Debugging/NativeDebugLauncher.cs`). The enclosing test's fully
+  (`src/Rust/Kubuno.Rust/Debugging/NativeDebugLauncher.cs`). The enclosing test's fully
   qualified name (module path + function name) is found by
-  `Kubuno.VisualStudio.Core.RustTestLocator`, a small brace/string/comment-aware text scanner -
+  `Kubuno.Rust.Logic.RustTestLocator`, a small brace/string/comment-aware text scanner -
   no semantic model or rust-analyzer round-trip needed.
 - **"Kubuno: Generate Visual Studio Projects"** (Tools menu, or right-click a workspace-root
   `Cargo.toml` in Solution Explorer/Open Folder): see "Building Rust with MSBuild (`.rsproj`)"
@@ -130,11 +156,11 @@ This produces `src\Kubuno.VisualStudio\bin\<Configuration>\Kubuno.VisualStudio.v
 Notes:
 - Use separate `Restore`/`Build` invocations rather than a single `Rebuild` across the whole
   solution: `Rebuild` runs `Clean` then `Build` for every project in one pass, which has been
-  observed to race between the SDK-style `Kubuno.VisualStudio.Core` project's generated
+  observed to race between the SDK-style `Kubuno.Rust.Logic` project's generated
   `.editorconfig` being deleted and regenerated. `Clean` then `Restore` then `Build` as separate
   invocations avoids it.
-- `dotnet build`/`dotnet test` work for `Kubuno.VisualStudio.Core` and
-  `tests\Kubuno.VisualStudio.Tests` on their own (see Tests below), but **not** for
+- `dotnet build`/`dotnet test` work for `Kubuno.Rust.Logic` and
+  `tests\Kubuno.Rust.Tests` on their own (see Tests below), but **not** for
   `Kubuno.VisualStudio` itself or the `.sln` as a whole - the VSIX project depends on
   `Microsoft.VsSDK.targets`, which ships inside a full Visual Studio install, not the .NET SDK.
 - A `Debug` build also deploys straight into the experimental instance (`DeployExtension=True`),
@@ -142,12 +168,20 @@ Notes:
 
 ## Tests
 
-`Kubuno.VisualStudio.Core` holds the pure logic (`RustAnalyzerLocator`, `CargoWorkspaceLocator`)
-with no VS SDK dependency, specifically so it is testable without a Visual Studio host:
+Each layer keeps its pure logic in an assembly with no VS SDK dependency (`Kubuno.Core.Logic`, `Kubuno.Rust.Logic`,
+`Kubuno.Rust.Cargo`, `Kubuno.Rust.Launch`, `Kubuno.Desktop.Logic`), specifically so it is testable without a Visual
+Studio host, one test project per layer:
 
 ```powershell
-dotnet test tests\Kubuno.VisualStudio.Tests\Kubuno.VisualStudio.Tests.csproj
+dotnet test tests\Kubuno.Core.Tests\Kubuno.Core.Tests.csproj
+dotnet test tests\Kubuno.Rust.Tests\Kubuno.Rust.Tests.csproj
+dotnet test tests\Kubuno.Desktop.Tests\Kubuno.Desktop.Tests.csproj
+# ... and Kubuno.Rust.Cargo.Tests, Kubuno.Rust.Launch.Tests, Kubuno.Rust.TestAdapter.Tests,
+#     Kubuno.Cargo.MSBuild.Tasks.Tests, Kubuno.Core.Mcp.Tests
 ```
+
+`tests\Kubuno.Architecture.Tests` checks the layering rules on the project files and on the built assemblies of the
+solution (build the solution first; it reads each project's `bin\<Configuration>\`).
 
 If this repository's path is on a **mapped network drive** (e.g. `Z:`), .NET Framework's
 loader-from-remote-source restriction can make the MSTest adapter fail to load
@@ -155,7 +189,7 @@ loader-from-remote-source restriction can make the MSTest adapter fail to load
 
 ```powershell
 $env:COMPLUS_LoadFromRemoteSources = "1"
-dotnet test tests\Kubuno.VisualStudio.Tests\Kubuno.VisualStudio.Tests.csproj
+dotnet test tests\Kubuno.Rust.Tests\Kubuno.Rust.Tests.csproj
 ```
 
 (A local, non-mapped path does not need this.)
@@ -196,12 +230,12 @@ limitations" below):
   cargo profile, `<CargoTargetDir>` to `CARGO_TARGET_DIR` (falling back to the environment variable
   of the same name, never overriding an explicit value), and exposes `$(TargetPath)` as the built
   `.exe`'s path (the real `compiler-artifact` path once a build has actually run; a path-convention
-  fallback - the same one `Kubuno.Launch.ExecutableResolver` already uses - beforehand or when an
+  fallback - the same one `Kubuno.Rust.Launch.ExecutableResolver` already uses - beforehand or when an
   incremental build is skipped). `Kubuno.Rust.Sdk.csproj` packages it as a NuGet `MSBuildSdk`
   package, mirroring `Microsoft.VisualStudio.JavaScript.SDK`'s own split (a pure-MSBuild SDK, no
   CPS dependency).
-- **`src/Kubuno.Cargo.MSBuild.Tasks/`** (work package 2) - `CargoBuild`/`CargoTest`/`CargoFetch`
-  MSBuild tasks, reusing `Kubuno.Cargo`'s existing `CargoCommand`/`CargoMessageParser`/
+- **`src/Rust/Kubuno.Cargo.MSBuild.Tasks/`** (work package 2) - `CargoBuild`/`CargoTest`/`CargoFetch`
+  MSBuild tasks, reusing `Kubuno.Rust.Cargo`'s existing `CargoCommand`/`CargoMessageParser`/
   `ProcessRunner` (the same code the Open Folder integration's `cargo build
   --message-format=json-diagnostic-rendered-ansi` support already uses) to run cargo and turn each
   parsed diagnostic into a `Log.LogError`/`LogWarning` call with file/line/column/code - a clickable
@@ -216,10 +250,10 @@ limitations" below):
 $env:PATH = "$env:USERPROFILE\.cargo\bin;C:\Program Files\dotnet;$env:PATH"
 
 # 1. Build the task assembly (both TFMs) and stage it where Kubuno.Rust.Sdk.csproj expects it.
-dotnet build src\Kubuno.Cargo.MSBuild.Tasks\Kubuno.Cargo.MSBuild.Tasks.csproj -c Release
+dotnet build src\Rust\Kubuno.Cargo.MSBuild.Tasks\Kubuno.Cargo.MSBuild.Tasks.csproj -c Release
 New-Item -ItemType Directory -Force sdk\Kubuno.Rust.Sdk\tasks\net472, sdk\Kubuno.Rust.Sdk\tasks\net10.0
-Copy-Item src\Kubuno.Cargo.MSBuild.Tasks\bin\Release\net472\*.dll  sdk\Kubuno.Rust.Sdk\tasks\net472\
-Copy-Item src\Kubuno.Cargo.MSBuild.Tasks\bin\Release\net10.0\*.dll,*.deps.json sdk\Kubuno.Rust.Sdk\tasks\net10.0\
+Copy-Item src\Rust\Kubuno.Cargo.MSBuild.Tasks\bin\Release\net472\*.dll  sdk\Kubuno.Rust.Sdk\tasks\net472\
+Copy-Item src\Rust\Kubuno.Cargo.MSBuild.Tasks\bin\Release\net10.0\*.dll,*.deps.json sdk\Kubuno.Rust.Sdk\tasks\net10.0\
 
 # 2. Pack the SDK into a local feed (a real NuGet package, not just a path import - see below for why).
 dotnet pack sdk\Kubuno.Rust.Sdk\Kubuno.Rust.Sdk.csproj -c Release -o C:\kubuno-build\nuget-local-feed
@@ -278,11 +312,11 @@ src\main.rs(4,20): error E0425: cannot find value `undefined_identifier` in this
 The VSIX registers `.rsproj` as a Common Project System (CPS) project type, the same way the
 JavaScript project system registers `.esproj`:
 
-- **`src/Kubuno.VisualStudio/rsproj.pkgdef`** registers project type
+- **`src/Rust/Kubuno.Rust.ProjectSystem/rsproj.pkgdef`** registers project type
   `{6C7C4CB5-6E36-4C6F-9C6F-9C6E9B4D4C13}` (Kubuno.Rust.Sdk's `DefaultProjectTypeGuid`, what a
   `.sln` records) with CPS as its project factory, key for key like the JS project system's own
   pkgdef.
-- **`src/Kubuno.VisualStudio.RustProjectSystem/`** is the CPS host part (MEF exports, shipped as a
+- **`src/Rust/Kubuno.Rust.ProjectSystem/`** is the CPS host part (MEF exports, shipped as a
   `MefComponent` asset of the VSIX): the project node icon
   (`RustProjectTreePropertiesProvider` + `RustProject.imagemanifest`) and the F5 launch provider
   (below), scoped to the `RustProjectSystem` capability. It compiles against the running Visual Studio's own
@@ -313,7 +347,7 @@ not given a `--target`, so artifacts stay in `<target dir>\<profile>`): a soluti
 ### F5 / Ctrl+F5 on a `.rsproj` (work package 4)
 
 Set the project as the startup project and press F5: Visual Studio builds it through the solution
-build (cargo), then `RustDebugLaunchProvider` (`src/Kubuno.VisualStudio.RustProjectSystem`) starts
+build (cargo), then `RustDebugLaunchProvider` (`src/Rust/Kubuno.Rust.ProjectSystem`) starts
 `$(TargetPath)` under the native debugger. It plugs into CPS's own debug seam, the one the
 JavaScript project system uses (checked by reflection against the installed CPS assemblies: a
 `DebugLaunchProviderBase` exported with `[ExportDebugger("RustDebugger")]`, selected by the
@@ -321,7 +355,7 @@ JavaScript project system uses (checked by reflection against the installed CPS 
 `debugger_general.xaml` rule). Ctrl+F5 runs the same launch without the debugger.
 
 - **Environment**: PATH is prepended with the profile directory, its `deps` folder and the Rust
-  standard library directory (`Kubuno.Launch.RustDebugEnvironment`, the same logic Open Folder's
+  standard library directory (`Kubuno.Rust.Launch.RustDebugEnvironment`, the same logic Open Folder's
   `launch.vs.json` uses), which is what `-C prefer-dynamic` builds need (`kubuno_ui.dll`,
   `std-*.dll`); `RUST_BACKTRACE=1` is set; the Just My Code/step-filter files and the Rust panic exception
   setting are applied as for Open Folder (`docs/DEBUGGING.md`).
@@ -385,7 +419,7 @@ project in three files - `main.rs`, `main_view.kbview` and its `#[kubuno::view]`
 `sqlx::migrate!`-driven Postgres schema, `module.toml`, `build_kbpkg.sh` - following the module
 conventions the platform's own CLAUDE.md documents) - plus three Add New Item templates: **Kubuno
 View** (`.kbview` + a same-stem `.rs` code-behind), **Rust Module**, **Rust Integration Test**.
-Project/crate names go through a small wizard (`Kubuno.VisualStudio.TemplateWizard`) that computes a
+Project/crate names go through a small wizard (`Kubuno.Rust.TemplateWizard`) that computes a
 Cargo-valid `$cratename$` from whatever you typed (lower-cased, invalid characters folded to `-`,
 forced to start with a letter - e.g. `My App 2` -> `my-app-2`) and, for the Kubuno Module template, a
 matching `$moduleid$` (`$cratename$` with `-` -> `_`) for `module.toml`'s `id`/the Postgres schema
@@ -444,7 +478,7 @@ refreshed when the file is saved (unsaved editor changes show up after saving).
 
 ## Third-party code
 
-`src/Kubuno.VisualStudio/Grammars/` ships a TextMate grammar for Rust vendored from Visual Studio
+`src/Rust/Kubuno.Rust/Grammars/` ships a TextMate grammar for Rust vendored from Visual Studio
 Code's built-in Rust extension (itself sourced from `dustypomerleau/rust-syntax`), both MIT
 licensed. See `Grammars/THIRD-PARTY-NOTICES.md` for the full attribution and the (single, cosmetic)
 change made to the vendored copy.

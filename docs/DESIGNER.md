@@ -192,7 +192,7 @@ exe`, appropriate there because Claude Code, not the VSIX, owns that process's
 lifecycle and must *find* an already-running `devenv.exe`). Here the VSIX
 starts the child itself, so reusing the LSP client's own transport shape needs
 no new discovery mechanism and is trivially testable with an in-memory duplex
-stream the same way `tests/Kubuno.Mcp.Tests/McpProtocolTests.cs` already
+stream the same way `tests/Kubuno.Core.Mcp.Tests/McpProtocolTests.cs` already
 proves out for a different pipe.
 
 Proposed methods (all JSON-RPC over the process's own stdio channel):
@@ -328,7 +328,7 @@ a contract that is not just a JSON shape.
 |---|---|---|---|---|---|
 | DSG-1 | Registry JSON export + `kubuno/registry`, plus the additive `icon`/`LayoutKind` fields on `ComponentMeta` | `kubuno-views/src/registry/*` (additive fields), new `kubuno-views-ls/src/registry_export.rs` + `server.rs` wiring | none | S | Rust unit/golden-file tests on the JSON shape; no visual check |
 | DSG-2 | `kubuno/applyEdit`, `kubuno/elementAtOffset`, `kubuno/rangeOfElement`; `edit.rs` returning `{range, text}` instead of whole-file text; the element-id scheme | `kubuno-views/src/edit.rs` (additive), new `kubuno-views-ls/src/edit_bridge.rs` + `server.rs` | none (defines the id scheme DSG-6 must match) | M | Rust unit tests, purely textual — CLI-testable, no visual check |
-| DSG-3 | `IVsEditorFactory` for `.kbview`, split Design\|XML `WindowPane`, XML pane reusing the existing text-editor view | new `src/Kubuno.VisualStudio.Views.Designer/EditorFactory.cs`, `DesignerWindowPane.*` | none (design surface can be a placeholder pane until DSG-7) | M | Manual, experimental instance — **visual check**: opening a `.kbview` shows the split |
+| DSG-3 | `IVsEditorFactory` for `.kbview`, split Design\|XML `WindowPane`, XML pane reusing the existing text-editor view | new `src/Desktop/Kubuno.Desktop/Views.Designer/EditorFactory.cs`, `DesignerWindowPane.*` | none (design surface can be a placeholder pane until DSG-7) | M | Manual, experimental instance — **visual check**: opening a `.kbview` shows the split |
 | DSG-4 | Toolbox + Properties/Events WPF tool windows, bound to DSG-1's JSON (a fixture JSON is enough to start) | new WPF views/viewmodels under the Designer project | DSG-1 (schema; can stub) | M | Viewmodel unit tests (PropKind → editor kind); **visual check** for grid rendering |
 | DSG-5 | Buffer-diff/apply plumbing: `{range,newText}` → one `ITextEdit`, compound-action batching for drags | new `Infrastructure/BufferEditApplier.cs`, `DesignerUndoScope.cs` | DSG-2's response shape | S–M | Unit test against a fake/real `ITextBuffer`; manual Ctrl+Z check |
 | DSG-6 | `kubuno-views-designer` crate: promote `view_preview.rs`'s runtime loop out of `examples/`, add `kubuno/setBuffer`, `kubuno/elementAt` hit-testing (needs an id on *every* node, not just `x:Name`'d ones), adorner paint pass | new crate `kubuno-views-designer` | DSG-2 (id scheme) | L | Hit-test math is unit-testable headless (layout is already exercised without a `Canvas` in `node.rs`'s own tests); adorner rendering needs a **visual check** (standalone run + screenshot) |
@@ -820,7 +820,7 @@ constructs (§6's own "without a Canvas where possible" carve-out) — covered
 instead by the visual check below.
 
 Environment note: `dotnet test`/`vstest.console.exe` on this machine fails to
-load `MSTest.TestAdapter.dll` for `Kubuno.VisualStudio.Designer.Tests`
+load `MSTest.TestAdapter.dll` for `Kubuno.Desktop.Tests`
 (`NETStandardCompatError_MSTest_TestAdapter`) for EVERY test in that project,
 not just the new ones — a pre-existing tooling/SDK-resolution issue (only the
 .NET 10 SDK is installed, no `global.json`), reproduced against an existing,
@@ -834,7 +834,7 @@ Work package DSG-9 (§6) is implemented, scoped exactly as the table asks:
 **split across `kubuno-views`** (`src/design.rs`'s own snap/insertion-index/
 drop-validation math, `src/protocol.rs`'s wire extensions, `examples/
 view_embed.rs`'s wiring) **and a NEW C# file**,
-`Kubuno.VisualStudio.Designer/DesignSurface/RustDesignSurfaceHost.DragDrop.cs`
+`Kubuno.Desktop.Designer/DesignSurface/RustDesignSurfaceHost.DragDrop.cs`
 — a `partial class` split out for the same reason DSG-6's own `RustDesignSurfaceHost
 .Protocol.cs` was ("so this work does not collide with concurrent changes"):
 `RustDesignSurfaceHost.cs`, `RustDesignSurfaceHost.Protocol.cs` and
@@ -1080,15 +1080,15 @@ already do. `cargo clippy -p kubuno-views --all-targets -- -D warnings`
 passes clean; zero `unwrap()`/`expect()` outside `#[cfg(test)]` anywhere
 in the new code.
 
-`Kubuno.VisualStudio.Designer.Tests/DesignSurface/RustDesignSurfaceHostDragDropTests.cs`
+`Kubuno.Desktop.Tests/DesignSurface/RustDesignSurfaceHostDragDropTests.cs`
 asserts the identical `Encode*`/exact-string shapes on the C# side (no live
 process/WPF `Dispatcher` needed), plus every `TryParse*` rejection case
 (wrong `type`, blank/garbage lines, a batch entry that is not `setAttribute`,
 an unrecognised `gesture`, `setAttribute`/`removeElement` correctly left to
 the OTHER parser) — same environment limitation as §9 (`MSTest.TestAdapter.dll`
 fails to load on this machine for every test in this project, pre-existing);
-verified by `MSBuild` compiling both `Kubuno.VisualStudio.Designer.csproj` and
-`Kubuno.VisualStudio.Designer.Tests.csproj` cleanly.
+verified by `MSBuild` compiling both `Kubuno.Desktop.Designer.csproj` and
+`Kubuno.Desktop.Tests.csproj` cleanly.
 
 **A live, end-to-end trace against the compiled `view_embed.exe`** (piping
 the exact JSON lines a real host would over the exe's own stdin/stdout, no
@@ -1136,7 +1136,7 @@ this specific bug (both otherwise off-limits to this package):
   line) is silently tolerated rather than silently dropped as an
   unrecognised line.
 
-`Kubuno.VisualStudio.Designer.Tests/DesignSurface
+`Kubuno.Desktop.Tests/DesignSurface
 /RustDesignSurfaceHostDragDropTests.cs` gained a regression test pinning the
 exact `UTF8Encoding(encoderShouldEmitUTF8Identifier: false)` construction
 used at the write site (the encoding CONFIGURATION, not a live process) so a
@@ -1255,7 +1255,7 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   `TBXIF_DONTPERSIST` (no stale duplicates in the persisted toolbox).
 - **Icons** - one Lucide-based vector icon per component (the Kubuno apps' icon family), Kubuno ink +
   one accent detail in the primary blue `#1A73E8`, Light/Dark/HighContrast variants, generated by
-  `tools/generate-control-icons.ps1` into `Kubuno.VisualStudio.RustProjectSystem/Resources/Icons/Controls/`
+  `tools/generate-control-icons.ps1` into `Kubuno.Rust.ProjectSystem/Resources/Icons/Controls/`
   and `KubunoControls.imagemanifest` (review sheets in `C:\kubuno-build\icons-preview\`). The SAME icons
   are used on the `.kbview` element nodes of Solution Explorer; Rust code symbols keep VS's own
   `KnownMonikers`. The legacy toolbox API (`TBXITEMINFO`) only takes an `HBITMAP` plus a transparency
@@ -1613,7 +1613,7 @@ Rust (`kubuno-views`, 394 tests): the selection model (toggle/add/primary/root e
 container marqueed until selected then dragged, group move (with snapping on the group bounds), group
 resize (incl. Shift on a handle), whole-DIP rounding, Ctrl+A, multi nudge/delete, every `format_rects`
 command and `format_ops`; `protocol.rs` pins the new wire shapes; `edit.rs`/`edit_bridge.rs` cover
-`reorder_children` and multi-element `insertFragment`. C# (`Kubuno.VisualStudio.Designer.Tests`, 265
+`reorder_children` and multi-element `insertFragment`. C# (`Kubuno.Desktop.Tests`, 265
 tests): protocol parsing (`ids`, `selectMany`, `format`, `delete`/`format` batches), `SelectionSyncService`
 with a multi-selection, `MultiSelection`, `LayoutSelectionInfo` enabling and z-order orders, the
 standard-command mapping, `PlanPasteMany`/`PlanDuplicateMany`/`RootTags`, the context-menu model and
@@ -1680,7 +1680,7 @@ metadata - the E0463 lesson. Both obvious designs do exactly that:
   `windows`, hence `kubuno-ui`'s metadata hash), and a user's own `[dependencies]` would have to be mirrored
   exactly.
 
-### Design build (`Kubuno.Cargo.DesignSurface`)
+### Design build (`Kubuno.Rust.Cargo.DesignSurface`)
 
 `DesignSurfaceBuilder.BuildAsync(DesignSurfaceProject)`:
 1. **The project's own cargo build**, argument for argument what `Kubuno.Rust.Sdk`'s `CargoBuild` task
