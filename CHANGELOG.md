@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Toolbox: a **Docking** tab ("Ancrage" in French) with **DockArea** (a work area surrounded by panels the user can
+  dock, group as tabs, split, float, resize, close and reopen), **DockPanel** (one of its panels) and
+  **WorkspaceShell** (an editor's frame: top bar, status bar, body), each with its own icon in the Toolbox and in
+  Solution Explorer; override support knows their classes.
 - **Printing in Kubuno desktop applications (`docs/PRINTING.md`)**, the Windows Forms way:
   - A **Printing** Toolbox tab ("Impression" in French) in every Kubuno desktop project: `PrintDocument`,
     `PrintPreviewDialog`, `PrintDialog`, `PageSetupDialog` (component tray) and `PrintPreviewControl`, with their own
