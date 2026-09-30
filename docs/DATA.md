@@ -646,7 +646,8 @@ In `Z:\src\desktop\windows` (uncommitted): two new workspace crates, `kubuno-dat
   table or query) and `cache` (`check`/`stale_reason` by modification times, `query_file_name(sql)`,
   `missing_queries(plan, dirs)`).
 - **`data_source!("shop.kbdata")`** (`kubuno_data::data_source!`, `kubuno::data::data_source!`: a `macro_rules!` that
-  passes `$crate` to the proc macro). The path is resolved from the calling file, then `src/`, then the package root.
+  passes `$crate` to the proc macro). The path is resolved from the calling file, then `src/`, then the package root, then — for rust-analyzer, whose
+  proc-macro server gives no calling file — the one file under `src` whose path ends with it (`#[kubuno::view]` does the same).
   **No direct `sqlx` dependency is needed**: the macro calls `sqlx_macros_core::query::expand_input` (the code of
   `query_as!` itself) and rewrites the `::sqlx::…` paths of the expansion to `$crate::sqlx::…`. Per table or view:
   `#[derive(Debug, Clone, PartialEq, Default)] pub struct Customer { pub id: i64, pub email: Option<String>, … }`

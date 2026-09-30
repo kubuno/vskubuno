@@ -356,6 +356,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- A typed data source is no longer reported missing in the Error List ("macro-error: cannot find the data source
+  `shop.kbdata`") while the project builds: rust-analyzer expands `data_source!` without the calling file, and the
+  macro now finds the file under `src` by its path (kubuno-data).
 - **Rust completion**: the list now opens by itself on `Vec::` and `v.` even when they are typed fast (the characters used
   to reach the still-open identifier list as one update and no list was left); it keeps rust-analyzer's relevance
   tiers instead of re-sorting them alphabetically, stars only rust-analyzer's top-relevance items (`new` after `Vec::`,
