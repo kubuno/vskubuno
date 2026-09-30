@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Processes;
-using Kubuno.TestAdapter.Discovery;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.TestAdapter.Discovery;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 
-namespace Kubuno.TestAdapter.Execution
+namespace Kubuno.Rust.TestAdapter.Execution
 {
     /// <summary>
     /// VSTest test executor: groups the requested <see cref="TestCase"/>s by the executable that
@@ -224,7 +224,7 @@ namespace Kubuno.TestAdapter.Execution
             TestResult result;
             try
             {
-                Kubuno.Launch.LaunchDescription description = await Task.Run(
+                Kubuno.Rust.Launch.LaunchDescription description = await Task.Run(
                     () => DebugTestLauncher.Build(
                         _processRunner,
                         executablePath,
@@ -234,7 +234,7 @@ namespace Kubuno.TestAdapter.Execution
                         existingPath: Environment.GetEnvironmentVariable("PATH")),
                     cancellationToken).ConfigureAwait(false);
 
-                var commandLine = new Kubuno.Cargo.Commands.CargoCommandLine(description.ExecutablePath, description.Arguments);
+                var commandLine = new Kubuno.Rust.Cargo.Commands.CargoCommandLine(description.ExecutablePath, description.Arguments);
                 IDictionary<string, string?> environmentVariables =
                     description.EnvironmentVariables.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value);
                 int processId = frameworkHandle.LaunchProcessWithDebuggerAttached(

@@ -1,9 +1,9 @@
 using System;
 using System.ComponentModel.Design;
 using System.Linq;
-using Kubuno.VisualStudio.Designer.Toolbox;
+using Kubuno.Desktop.Designer.Toolbox;
 using Microsoft.VisualStudio.Designer.Interfaces;
-using Kubuno.VisualStudio.Designer.UI;
+using Kubuno.Desktop.Designer.UI;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Threading;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.VisualStudio.Designer.EditorFactory
+namespace Kubuno.Desktop.Designer.EditorFactory
 {
     /// <summary>
     /// The <c>IVsWindowPane</c> (via the base <see cref="WindowPane"/>) shown for the Design view of a
@@ -72,7 +72,7 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
             }
             catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.Runtime.InteropServices.COMException)
             {
-                Kubuno.VisualStudio.Views.Logging.KubunoViewsLogHost.Current.WriteException("[designer] could not create the pane's design surface (no Events tab in the Properties window)", ex);
+                Kubuno.Desktop.Views.Logging.KubunoViewsLogHost.Current.WriteException("[designer] could not create the pane's design surface (no Events tab in the Properties window)", ex);
             }
         }
 

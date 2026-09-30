@@ -1,7 +1,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.IntelliSense
+namespace Kubuno.Desktop.Logic.IntelliSense
 {
     /// <summary>
     /// Go To Definition from a <c>.kbview</c> to Rust, where kubuno-views-ls has no answer: from an element's tag

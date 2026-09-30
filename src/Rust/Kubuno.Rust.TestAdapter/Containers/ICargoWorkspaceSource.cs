@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.TestAdapter.Containers
+namespace Kubuno.Rust.TestAdapter.Containers
 {
     /// <summary>
     /// The seam between this library and however the VSIX already knows which Cargo.toml
     /// manifests exist in the open workspace. <see cref="KubunoTestContainerDiscoverer"/>
     /// consumes this rather than talking to Visual Studio services directly, so its own
     /// container-enumeration/change-notification logic is testable without a running Visual
-    /// Studio (see the fake implementations under tests/Kubuno.TestAdapter.Tests/Containers).
+    /// Studio (see the fake implementations under tests/Kubuno.Rust.TestAdapter.Tests/Containers).
     ///
     /// See INTEGRATION.md for exactly what the orchestrator implements against Kubuno.VisualStudio's
     /// existing Open Folder/Cargo workspace plumbing to satisfy this contract, and how it is

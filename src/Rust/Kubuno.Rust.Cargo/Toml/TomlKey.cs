@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Cargo.Toml
+namespace Kubuno.Rust.Cargo.Toml
 {
     /// <summary>Formats key segments for writing into a TOML document.</summary>
     public static class TomlKey

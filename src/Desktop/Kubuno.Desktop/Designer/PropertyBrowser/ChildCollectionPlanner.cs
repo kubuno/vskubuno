@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Kubuno.VisualStudio.Designer.Selection;
+using Kubuno.Desktop.Designer.Selection;
 
-namespace Kubuno.VisualStudio.Designer.PropertyBrowser
+namespace Kubuno.Desktop.Designer.PropertyBrowser
 {
     /// <summary>A plain text replacement: <see cref="Length"/> characters from <see cref="Start"/> become <see cref="NewText"/>.</summary>
     public sealed class TextReplacement

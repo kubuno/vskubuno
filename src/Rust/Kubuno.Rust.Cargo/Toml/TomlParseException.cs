@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Cargo.Toml
+namespace Kubuno.Rust.Cargo.Toml
 {
     /// <summary>Thrown when a document is not valid TOML. <see cref="Line"/> and <see cref="Column"/> are 1-based.</summary>
     public sealed class TomlParseException : FormatException

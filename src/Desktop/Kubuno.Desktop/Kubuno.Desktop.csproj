@@ -1,35 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    A class library (net48, MEF-free WindowPane/editor factory code), not a VSIX project of its own:
-    it declares no source.extension.vsixmanifest and generates no pkgdef, and is never installed or
-    loaded standalone. It exists to be REFERENCED by the Kubuno.VisualStudio VSIX project later (see
-    INTEGRATION.md) - the same "standalone library, wired in a later step" shape already used by
-    src/Kubuno.VisualStudio.Views (see that project's own csproj top comment), and for the same
-    reason: it must not reference Kubuno.VisualStudio or Kubuno.VisualStudio.Core (a reference the
-    other way would be circular once integrated), and its package versions are pinned to match
-    Kubuno.VisualStudio.csproj's own so no binding-redirect surprises appear once referenced.
+    Desktop layer, Visual Studio side (docs/ARCHITECTURE.md, "Layers (as built)"): everything that exists because the
+    target is a Kubuno desktop application (kubuno_ui, .kbview views):
+      - Views\      the .kbview language client (kubuno-views-ls), its content type, options and locator;
+      - Designer\   the WinForms-like view designer: editor factory, design surface host, Toolbox, Properties/events,
+                    outline, handlers (docs/DESIGNER.md; INTEGRATION.md files kept in each folder);
+      - DesignerIntegration\  the design surface locator and the per-project design runtime (docs/DESIGNER.md 15);
+      - LanguageService\      what .kbview adds to Rust files (cross-language completion and navigation, override
+                              members, SQL in Rust strings);
+      - DataExplorer\, DataSources\, Migrations\, Options\DataOptionsPage  the data tooling (docs/DATA.md);
+      - Commands\   the paint debug command; DesktopLayer.cs wires all of it into the package.
+    Printing (docs/PRINTING.md) is served by the same designer/Toolbox code (library component tabs).
 
-    It DOES reference Kubuno.VisualStudio.Views (a sibling library, not the VSIX): the "kbview"
-    content type/file extension constants and the existing IKubunoLog/KubunoViewsLogHost logging
-    gateway already live there, and duplicating them here would be a second, driftable copy of the
-    same string ("kbview") this whole editor is keyed on. That reference is not circular: Views does
-    not, and must not, reference this project back.
+    References Core and Rust only - never Web or Mobile (enforced by tests/Kubuno.Architecture.Tests). The CPS part of
+    the target (.kbview default editor, file icon, Kubuno control icons) is Kubuno.Desktop.ProjectSystem; the control
+    item wizard is Kubuno.Desktop.TemplateWizard; the pure logic is Kubuno.Desktop.Logic.
 
-    TargetFramework is net48 to match the VSIX's own in-proc runtime (classic VSSDK extensions are
-    .NET Framework 4.8) and to let Microsoft.VisualStudio.Shell.WindowPane/DialogPage and WPF types
-    (System.Windows.Interop.HwndHost) resolve without any shims. No .xaml files are used anywhere in
-    this project, matching the rest of this repo (grep confirms no *.xaml exists in vskubuno today):
-    all WPF UI here is built in code-behind, so no XAML markup-compile target is needed on top of the
-    plain SDK-style net48 setup.
+    net48 like every in-proc Visual Studio assembly of the extension. All WPF UI is built in code-behind (no XAML
+    markup compile needed).
   -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <RootNamespace>Kubuno.VisualStudio.Designer</RootNamespace>
-    <AssemblyName>Kubuno.VisualStudio.Designer</AssemblyName>
+    <RootNamespace>Kubuno.Desktop</RootNamespace>
+    <AssemblyName>Kubuno.Desktop</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <!-- Same benign MSB3277 unification notes as Kubuno.VisualStudio (see its csproj). -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <!-- $(VsInstallRoot) is only defined by Microsoft.VsSDK.targets (VSIX projects); resolved like the wizards do. -->
+    <VsInstallRoot Condition="'$(VsInstallRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildBinPath)\..\..\..'))</VsInstallRoot>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,36 +39,38 @@
     <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
     <Reference Include="System.Windows.Forms" />
+    <!-- Open Folder's IVsCommandItem & co., shipped only inside Visual Studio (see Kubuno.Rust.csproj). -->
+    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\OpenFolder\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <!--
-      Same versions as src\Kubuno.VisualStudio\Kubuno.VisualStudio.csproj and
-      src\Kubuno.VisualStudio.Views\Kubuno.VisualStudio.Views.csproj (verified by reading both before
-      writing this one - bump all three together if the VSIX project's own versions ever change).
-      Microsoft.VisualStudio.SDK already carries Microsoft.VisualStudio.Shell.Interop and
-      Microsoft.VisualStudio.TextManager.Interop (IVsEditorFactory, IVsCodeWindow, IVsTextLines,
-      VsCodeWindowClass/VsTextBufferClass) - no separate TextManager.Interop package reference is
-      needed on top of it.
-    -->
+    <!-- Same versions as every other Visual Studio assembly of the extension (bump them together). -->
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.14.60" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="17.12.19" ExcludeAssets="runtime" />
+    <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
+    <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kubuno.VisualStudio.Views\Kubuno.VisualStudio.Views.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="INTEGRATION.md" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- The themed dialog base shared as source by every assembly that shows a dialog (docs/ARCHITECTURE.md, "Themed dialogs"). -->
-    <Compile Include="..\Shared\UI\*.cs" Link="UI\Shared\%(Filename)%(Extension)" />
+    <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
+    <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust\Kubuno.Rust.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
+    <ProjectReference Include="..\Kubuno.Desktop.Logic\Kubuno.Desktop.Logic.csproj" />
+    <!-- The control item names (the "Ajouter" commands name files like the wizard) and its preload. -->
+    <ProjectReference Include="..\Kubuno.Desktop.TemplateWizard\Kubuno.Desktop.TemplateWizard.csproj" />
   </ItemGroup>
 
 </Project>

@@ -2,13 +2,13 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.QuickInfo;
+using Kubuno.Core.Logic.QuickInfo;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.LanguageService.QuickInfo
+namespace Kubuno.Rust.LanguageService.QuickInfo
 {
     /// <summary>
     /// A QuickInfo source that asks a language server for <c>textDocument/hover</c> itself (over the
@@ -19,7 +19,7 @@ namespace Kubuno.VisualStudio.LanguageService.QuickInfo
     /// <c>_vs_rawContent</c> extension is lost when a middle-layer response is re-deserialized, and
     /// cannot carry clickable links anyway.
     /// </summary>
-    internal sealed class LspQuickInfoSource : IAsyncQuickInfoSource
+    public sealed class LspQuickInfoSource : IAsyncQuickInfoSource
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
 

@@ -1,7 +1,7 @@
-using Kubuno.VisualStudio.Designer.Properties;
+using Kubuno.Desktop.Designer.Properties;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Properties
+namespace Kubuno.Desktop.Tests.Designer.Properties
 {
     [TestClass]
     public class BindingExpressionParserTests

@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Standalone MCP server process (kubuno-vs-mcp.exe once packaged - see docs/MCP.md "Packaging").
+    Core layer (docs/ARCHITECTURE.md, "Layers (as built)"). Standalone MCP server process (kubuno-vs-mcp.exe once packaged - see docs/MCP.md "Packaging").
     Targets net8.0 (an installed LTS runtime, same choice already made for
-    tests/Kubuno.Launch.Tests - see that project's csproj comment) rather than net48: this process
+    tests/Kubuno.Rust.Launch.Tests - see that project's csproj comment) rather than net48: this process
     never runs in-proc in devenv.exe, so nothing ties it to .NET Framework, and net8.0 lets it use
     the current `ModelContextProtocol` SDK and a plain `dotnet publish` self-contained exe.
   -->
@@ -12,7 +12,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Mcp</RootNamespace>
+    <RootNamespace>Kubuno.Core.Mcp</RootNamespace>
     <AssemblyName>kubuno-vs-mcp</AssemblyName>
     <OutputType>Exe</OutputType>
     <InvariantGlobalization>true</InvariantGlobalization>
@@ -23,7 +23,7 @@
       The official C# MCP SDK (see docs/MCP.md "Why the ModelContextProtocol SDK" for why a
       hand-written JSON-RPC layer was rejected): stdio transport, tool discovery via
       [McpServerToolType]/[McpServerTool], and a real MCP client (used only by
-      tests/Kubuno.Mcp.Tests, not shipped here) all come from this one package.
+      tests/Kubuno.Core.Mcp.Tests, not shipped here) all come from this one package.
     -->
     <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
@@ -31,7 +31,7 @@
 
   <ItemGroup>
     <!-- net8.0 flavor only: DTOs, pipe client, framing and discovery-file reader - no EnvDTE. -->
-    <ProjectReference Include="..\Kubuno.Mcp.Bridge\Kubuno.Mcp.Bridge.csproj" />
+    <ProjectReference Include="..\Kubuno.Core.Mcp.Bridge\Kubuno.Core.Mcp.Bridge.csproj" />
   </ItemGroup>
 
 </Project>

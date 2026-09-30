@@ -35,7 +35,7 @@
     </Project>
   </TemplateContent>
   <!--
-    docs/RSPROJ.md Addendum (lot 7), "Crate-name casing, revisited": Kubuno.VisualStudio.TemplateWizard
+    docs/RSPROJ.md Addendum (lot 7), "Crate-name casing, revisited": Kubuno.Rust.TemplateWizard
     (a SEPARATE assembly from Kubuno.VisualStudio.dll - see its own csproj header) adds $cratename$
     (a Cargo-valid package name derived from $safeprojectname$: lower-cased, invalid characters
     turned into '-', guaranteed to start with a letter) and $moduleid$ ($cratename$ with '-' -> '_')
@@ -44,7 +44,7 @@
     this assembly's registration (KubunoPackage.cs) is not self-referential, so it does not.
   -->
   <WizardExtension>
-    <Assembly>Kubuno.VisualStudio.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
-    <FullClassName>Kubuno.VisualStudio.TemplateWizard.CrateNameWizard</FullClassName>
+    <Assembly>Kubuno.Rust.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>Kubuno.Rust.TemplateWizard.CrateNameWizard</FullClassName>
   </WizardExtension>
 </VSTemplate>

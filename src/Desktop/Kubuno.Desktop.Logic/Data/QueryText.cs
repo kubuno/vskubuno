@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.Data
+namespace Kubuno.Desktop.Logic.Data
 {
     /// <summary>SQL text helpers of the query window: identifier quoting, the text shown for "Show data", what F5 runs.</summary>
     public static class QueryText

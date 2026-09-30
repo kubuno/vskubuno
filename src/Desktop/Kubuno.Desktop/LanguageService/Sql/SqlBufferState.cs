@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Core.Sql;
+using Kubuno.Desktop.Logic.Sql;
 using Microsoft.VisualStudio.Text;
 
-namespace Kubuno.VisualStudio.LanguageService.Sql
+namespace Kubuno.Desktop.LanguageService.Sql
 {
     /// <summary>
     /// The SQL literals of one Rust buffer (docs/DATA.md DATA-8), shared by the SQL classifier, the SQL completion and the

@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.VisualStudio.Designer.Editing
+namespace Kubuno.Desktop.Designer.Editing
 {
     /// <summary>A half-open <c>[Start, End)</c> LSP-style range - the <c>range</c> half of <c>kubuno/applyEdit</c>'s <c>{range, newText}</c> result (docs/DESIGNER.md §2).</summary>
     public readonly struct LspRange : IEquatable<LspRange>

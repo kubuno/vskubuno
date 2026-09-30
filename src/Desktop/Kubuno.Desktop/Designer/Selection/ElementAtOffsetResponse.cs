@@ -1,7 +1,7 @@
 using System;
-using Kubuno.VisualStudio.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing;
 
-namespace Kubuno.VisualStudio.Designer.Selection
+namespace Kubuno.Desktop.Designer.Selection
 {
     /// <summary>A <c>kubuno/elementAtOffset</c> result (docs/DESIGNER.md §8): the innermost element containing the requested position, and its own full range.</summary>
     public sealed class ElementAtOffsetResponse

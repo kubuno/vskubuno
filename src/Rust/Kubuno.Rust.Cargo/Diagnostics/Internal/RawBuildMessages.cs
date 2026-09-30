@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Metadata;
 
-namespace Kubuno.Cargo.Diagnostics.Internal
+namespace Kubuno.Rust.Cargo.Diagnostics.Internal
 {
     // Raw, 1:1 shapes of Cargo's `--message-format=json` lines. Kept separate from the public,
     // curated models (CargoDiagnostic, CargoArtifact...) so the public API stays small and

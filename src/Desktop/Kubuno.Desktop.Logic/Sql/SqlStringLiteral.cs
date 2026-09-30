@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Kubuno.VisualStudio.Core.Sql
+namespace Kubuno.Desktop.Logic.Sql
 {
     /// <summary>
     /// A Rust string literal recognised as SQL (the query of <c>sqlx::query!</c>, <c>DbCommand::with_text</c>...).

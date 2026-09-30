@@ -5,12 +5,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.ProjectProperties;
+using Kubuno.Rust.Logic.ProjectProperties;
 using Microsoft.Build.Framework.XamlTypes;
 using Microsoft.VisualStudio.ProjectSystem;
 using Microsoft.VisualStudio.ProjectSystem.Properties;
 
-namespace Kubuno.VisualStudio.RustProjectSystem.ProjectProperties
+namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 {
     /// <summary>
     /// A fixed list of values computed when a page asks for it; any other typed value is accepted as is (custom

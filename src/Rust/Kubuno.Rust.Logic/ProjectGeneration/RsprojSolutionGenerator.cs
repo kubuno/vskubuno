@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.ProjectGeneration
+namespace Kubuno.Rust.Logic.ProjectGeneration
 {
     /// <summary>Result of <see cref="RsprojSolutionGenerator.Plan"/>.</summary>
     public sealed class RsprojSolutionPlan

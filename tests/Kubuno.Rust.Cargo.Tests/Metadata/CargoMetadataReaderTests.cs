@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.Cargo.Tests.Fakes;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Cargo.Tests.Fakes;
 using Xunit;
 
-namespace Kubuno.Cargo.Tests.Metadata
+namespace Kubuno.Rust.Cargo.Tests.Metadata
 {
     /// <summary>
     /// Tests the request <see cref="CargoMetadataReader"/> builds (command line, working

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Core.Sql
+namespace Kubuno.Desktop.Logic.Sql
 {
     public enum SqlTokenKind
     {

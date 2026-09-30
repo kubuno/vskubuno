@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Designer.PropertyBrowser
+namespace Kubuno.Desktop.Designer.PropertyBrowser
 {
     /// <summary>A parsed <c>Font</c> attribute (see <see cref="FontText"/>).</summary>
     public sealed class FontSpec

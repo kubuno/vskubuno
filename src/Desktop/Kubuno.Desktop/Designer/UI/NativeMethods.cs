@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Kubuno.VisualStudio.Designer.UI
+namespace Kubuno.Desktop.Designer.UI
 {
     /// <summary>
     /// The one Win32 call <see cref="CodeWindowHost"/> needs to keep the native

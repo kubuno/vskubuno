@@ -1,9 +1,9 @@
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// The kind of Cargo target being launched. Mirrors the subset of `cargo metadata`
     /// target kinds phase 1c cares about (see `docs/ARCHITECTURE.md` phase 1c); the crate
-    /// providing full `cargo metadata` parsing (Kubuno.Cargo) is owned by another agent, so
+    /// providing full `cargo metadata` parsing (Kubuno.Rust.Cargo) is owned by another agent, so
     /// this library defines its own minimal enum instead of depending on it.
     /// </summary>
     public enum LaunchTargetKind

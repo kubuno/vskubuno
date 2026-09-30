@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Views.Locating;
+using Kubuno.Desktop.Views.Locating;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Views.Tests
+namespace Kubuno.Desktop.Tests.Views
 {
     [TestClass]
     public class KbviewWorkspaceLocatorTests

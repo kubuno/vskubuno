@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
-using Kubuno.Mcp.Bridge.Contracts;
+using Kubuno.Core.Mcp.Bridge.Contracts;
 
-namespace Kubuno.Mcp.Bridge.Dte
+namespace Kubuno.Core.Mcp.Bridge.Dte
 {
     /// <summary>
     /// Reference <see cref="IVsContextProvider"/> implementation built entirely on
@@ -337,7 +337,7 @@ namespace Kubuno.Mcp.Bridge.Dte
         /// <summary>
         /// Directories containing a <c>Cargo.toml</c>, found by a depth- and result-bounded
         /// breadth-first scan that skips common heavy/build directories. Intentionally not
-        /// <c>cargo metadata</c> (that requires invoking cargo itself; Kubuno.Cargo already owns
+        /// <c>cargo metadata</c> (that requires invoking cargo itself; Kubuno.Rust.Cargo already owns
         /// that for the workspace VS has actually opened) - this is a cheap, dependency-free
         /// approximation good enough to point Claude at candidate workspace roots.
         /// </summary>

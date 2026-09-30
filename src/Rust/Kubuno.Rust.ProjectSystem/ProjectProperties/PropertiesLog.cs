@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.VisualStudio.RustProjectSystem.ProjectProperties
+namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 {
     /// <summary>
     /// Diagnostics of the Project Properties integration: failures are always traced; with the environment variable

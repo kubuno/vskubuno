@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// The result of asking the toolchain for its sysroot.

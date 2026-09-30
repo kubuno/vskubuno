@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Processes;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
-namespace Kubuno.TestAdapter.Discovery
+namespace Kubuno.Rust.TestAdapter.Discovery
 {
     /// <summary>
     /// VSTest test discoverer: for each source (a Cargo.toml manifest path - see Containers/ for

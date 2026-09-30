@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.VisualStudio.Designer.PropertyBrowser;
-using Kubuno.VisualStudio.Designer.Selection;
+using Kubuno.Desktop.Designer.PropertyBrowser;
+using Kubuno.Desktop.Designer.Selection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
+namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
 {
     /// <summary>The text edits of the collection and string-list editors, checked on the resulting text.</summary>
     [TestClass]

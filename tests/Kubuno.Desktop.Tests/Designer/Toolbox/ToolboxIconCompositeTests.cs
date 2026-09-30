@@ -1,8 +1,8 @@
 using System.Drawing;
-using Kubuno.VisualStudio.Designer.Toolbox;
+using Kubuno.Desktop.Designer.Toolbox;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Toolbox
+namespace Kubuno.Desktop.Tests.Designer.Toolbox
 {
     [TestClass]
     public class ToolboxIconCompositeTests

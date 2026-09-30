@@ -1,10 +1,10 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.Cargo.Tests.Fakes;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Cargo.Tests.Fakes;
 
-namespace Kubuno.Cargo.Tests.Metadata
+namespace Kubuno.Rust.Cargo.Tests.Metadata
 {
     /// <summary>
     /// Real `cargo metadata` output (cargo 1.98.1) of a package with every kind of dependency the

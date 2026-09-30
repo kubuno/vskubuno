@@ -1,7 +1,7 @@
-using Kubuno.VisualStudio.Core.ProjectGeneration;
+using Kubuno.Rust.Logic.ProjectGeneration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.ProjectGeneration
+namespace Kubuno.Rust.Tests.ProjectGeneration
 {
     [TestClass]
     public class NuGetLocalFeedRegistrationTests

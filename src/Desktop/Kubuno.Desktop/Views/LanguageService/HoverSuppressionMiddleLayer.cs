@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Newtonsoft.Json.Linq;
 
-namespace Kubuno.VisualStudio.Views.LanguageService
+namespace Kubuno.Desktop.Views.LanguageService
 {
     /// <summary>
     /// <see cref="KubunoViewsLanguageClient.MiddleLayer"/>: answers Visual Studio's own

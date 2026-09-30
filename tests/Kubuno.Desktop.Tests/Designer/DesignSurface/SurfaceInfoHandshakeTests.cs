@@ -1,8 +1,8 @@
 using System;
-using Kubuno.VisualStudio.Designer.DesignSurface;
+using Kubuno.Desktop.Designer.DesignSurface;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
+namespace Kubuno.Desktop.Tests.Designer.DesignSurface
 {
     /// <summary>
     /// docs/DESIGNER.md section 15: the <c>surfaceInfo</c> ABI handshake - its wire shape (as

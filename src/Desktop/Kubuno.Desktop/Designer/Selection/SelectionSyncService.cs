@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Designer.DesignSurface;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Properties;
-using Kubuno.VisualStudio.Designer.Registry;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Designer.DesignSurface;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Properties;
+using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Desktop.Views.Logging;
 
-namespace Kubuno.VisualStudio.Designer.Selection
+namespace Kubuno.Desktop.Designer.Selection
 {
     /// <summary>
     /// DSG-8's C# half (docs/DESIGNER.md §6/§8/§9): keeps the design surface, the XML text view, the
@@ -72,7 +72,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
     /// resume on the context it started on.
     ///
     /// Pure orchestration over its five collaborator SEAMS (none of them concrete VS/JsonRpc types) -
-    /// unit-tested with fakes (tests/Kubuno.VisualStudio.Designer.Tests/Selection/SelectionSyncServiceTests.cs),
+    /// unit-tested with fakes (tests/Kubuno.Desktop.Tests/Designer/Selection/SelectionSyncServiceTests.cs),
     /// no live VS/JsonRpc/design-surface process needed, mirroring <see cref="Handlers.HandlerCreationService"/>'s
     /// own test-strategy note.
     /// </summary>
@@ -284,7 +284,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
         ///
         /// <see cref="Registry.EventMeta.Name"/> is already the FULL <c>.kbview</c> attribute name (e.g.
         /// <c>"OnClick"</c>, not a bare <c>"Click"</c>) - verified directly against the real DSG-1 export
-        /// fixture (tests/Kubuno.VisualStudio.Designer.Tests/Fixtures/registry.sample.json: every
+        /// fixture (tests/Kubuno.Desktop.Tests/Designer/Fixtures/registry.sample.json: every
         /// <c>events[]</c> entry's <c>"name"</c> is already <c>"OnClick"</c>/<c>"OnToggled"</c>/
         /// <c>"OnChanged"</c>), which disagrees with that type's OWN doc comment example
         /// (<c>{ Name = "Click" }</c>) and with <c>Properties.EventRowViewModel.AttributeName</c>'s

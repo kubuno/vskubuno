@@ -1,6 +1,6 @@
-using Kubuno.Cargo.Registry;
+using Kubuno.Rust.Cargo.Registry;
 
-namespace Kubuno.Cargo.Tests.Registry
+namespace Kubuno.Rust.Cargo.Tests.Registry
 {
     public class SemanticVersionTests
     {

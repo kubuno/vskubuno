@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Metadata
+namespace Kubuno.Rust.Cargo.Metadata
 {
     /// <summary>One package (crate) as reported by `cargo metadata`.</summary>
     public sealed class CargoPackage
@@ -21,7 +21,7 @@ namespace Kubuno.Cargo.Metadata
         /// uses when more than one exists and none is given with <c>--bin</c>. <see
         /// langword="null"/> when unset (most packages), in which case cargo falls back to "the
         /// only bin", then "the bin named after the package", then "the first bin" - see
-        /// <c>Kubuno.VisualStudio.Debugging.StartupItemSelector</c>, which mirrors that exact
+        /// <c>Kubuno.Rust.Logic.StartupItemSelector</c>, which mirrors that exact
         /// fallback chain to auto-pick Open Folder's "Select Startup Item".
         /// </summary>
         public string? DefaultRun { get; set; }

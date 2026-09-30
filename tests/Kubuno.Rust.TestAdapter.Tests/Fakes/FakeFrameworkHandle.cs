@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
-namespace Kubuno.TestAdapter.Tests.Fakes
+namespace Kubuno.Rust.TestAdapter.Tests.Fakes
 {
     /// <summary>A recording <see cref="IFrameworkHandle"/>: never talks to a real Visual Studio/vstest host, just remembers what <see cref="Execution.KubunoTestExecutor"/> reported.</summary>
     internal sealed class FakeFrameworkHandle : IFrameworkHandle

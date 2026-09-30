@@ -4,8 +4,8 @@ using System.Xml;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
-using Kubuno.Cargo.Toml;
-using Kubuno.Cargo.Win32;
+using Kubuno.Rust.Cargo.Toml;
+using Kubuno.Rust.Cargo.Win32;
 using Microsoft.Build.Framework;
 using MSBuildTask = Microsoft.Build.Utilities.Task;
 

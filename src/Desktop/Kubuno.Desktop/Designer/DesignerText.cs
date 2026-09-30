@@ -1,7 +1,8 @@
 using System;
 using System.Globalization;
+using Kubuno.Core.Logic.Localization;
 
-namespace Kubuno.VisualStudio.Designer
+namespace Kubuno.Desktop.Designer
 {
     /// <summary>
     /// The handful of user-visible strings the designer puts into Visual Studio's OWN chrome (Toolbox tab
@@ -13,10 +14,14 @@ namespace Kubuno.VisualStudio.Designer
     /// </summary>
     public static class DesignerText
     {
-        /// <summary>Test seam: forces a language instead of reading the current UI culture.</summary>
-        public static bool? ForceFrench { get; set; }
+        /// <summary>Test seam: forces a language instead of reading the current UI culture (the whole extension's, <see cref="UiLanguage"/>).</summary>
+        public static bool? ForceFrench
+        {
+            get => UiLanguage.ForceFrench;
+            set => UiLanguage.ForceFrench = value;
+        }
 
-        public static bool IsFrench => ForceFrench ?? string.Equals(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, "fr", StringComparison.OrdinalIgnoreCase);
+        public static bool IsFrench => UiLanguage.IsFrench;
 
         private static string T(string english, string french) => IsFrench ? french : english;
 

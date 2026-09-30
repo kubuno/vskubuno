@@ -4,16 +4,16 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Logging
+namespace Kubuno.Core.Logging
 {
     /// <summary>
     /// Writes to the "Kubuno" pane of the Output window: rust-analyzer discovery decisions,
     /// language client start/stop/errors, and (via <see cref="CreateJsonRpcTraceListener"/>) raw
     /// LSP traffic. A static, lazily-created singleton rather than something threaded through
     /// every MEF-constructed component, since MEF parts (the language client, the content type
-    /// exports) are built by the MEF container, not by <see cref="KubunoPackage"/>.
+    /// exports) are built by the MEF container, not by the package. Every layer writes here.
     ///
-    /// The pane itself is created once, on the UI thread, by <see cref="KubunoPackage.InitializeAsync"/>
+    /// The pane itself is created once, on the UI thread, by <see cref="Extensibility.KubunoLayerHost"/>
     /// (via <see cref="Initialize"/>) - not lazily from here. The language client can log before the
     /// package has finished loading (MEF activation is not gated on package load), so messages
     /// written before <see cref="Initialize"/> runs are buffered and flushed once the pane exists,
@@ -24,7 +24,7 @@ namespace Kubuno.VisualStudio.Logging
     /// Every method is safe to call from any thread and never throws: logging must not be a new
     /// source of failure for the very code that reports failures.
     /// </summary>
-    internal static class KubunoLog
+    public static class KubunoLog
     {
         private const int MaxBufferedLines = 500;
 
@@ -32,7 +32,7 @@ namespace Kubuno.VisualStudio.Logging
         private static readonly List<string> PendingLines = new();
         private static IVsOutputWindowPane? _pane;
 
-        /// <summary>Called once, on the UI thread, from <see cref="KubunoPackage.InitializeAsync"/>.</summary>
+        /// <summary>Called once, on the UI thread, from <see cref="Extensibility.KubunoLayerHost"/> (at idle, after the solution load).</summary>
         public static void Initialize(IVsOutputWindowPane pane)
         {
             ThreadHelper.ThrowIfNotOnUIThread();

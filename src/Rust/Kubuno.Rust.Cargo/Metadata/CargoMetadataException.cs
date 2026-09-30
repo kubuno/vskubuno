@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Cargo.Metadata
+namespace Kubuno.Rust.Cargo.Metadata
 {
     /// <summary>Thrown when `cargo metadata` exits with a non-zero code or produces no usable output.</summary>
     public sealed class CargoMetadataException : Exception

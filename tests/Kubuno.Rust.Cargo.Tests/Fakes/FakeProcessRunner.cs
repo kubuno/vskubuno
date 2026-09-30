@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Processes;
 
-namespace Kubuno.Cargo.Tests.Fakes
+namespace Kubuno.Rust.Cargo.Tests.Fakes
 {
     /// <summary>
     /// A mock <see cref="IProcessRunner"/> that never spawns anything: it hands back a

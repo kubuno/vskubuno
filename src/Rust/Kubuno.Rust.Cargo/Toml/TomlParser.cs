@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.Cargo.Toml
+namespace Kubuno.Rust.Cargo.Toml
 {
     /// <summary>
     /// Recursive-descent TOML parser that records the source span of every header, key and value so

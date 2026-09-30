@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace Kubuno.VisualStudio.Designer.Outline
+namespace Kubuno.Desktop.Designer.Outline
 {
     /// <summary>One row of the Document Outline tree view - a thin WPF-binding wrapper around <see cref="OutlineNode"/>, adding only the mutable <see cref="IsSelected"/> flag <see cref="OutlineViewModel"/> drives.</summary>
     public sealed class OutlineNodeViewModel : INotifyPropertyChanged

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Core
+namespace Kubuno.Rust.Logic
 {
     /// <summary>
     /// Keeps the debugger files the extension ships for Rust (docs/DEBUGGING.md) where Visual Studio's native

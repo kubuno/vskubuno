@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing;
 
-namespace Kubuno.VisualStudio.Designer.Handlers
+namespace Kubuno.Desktop.Designer.Handlers
 {
     /// <summary>
     /// DSG-10's C# half (docs/DESIGNER.md §1/§6/§8): calls <c>kubuno/createHandler</c>
@@ -23,7 +23,7 @@ namespace Kubuno.VisualStudio.Designer.Handlers
     /// On the "already exists" short circuit, navigates straight to the existing definition instead.
     ///
     /// Pure orchestration over <see cref="IKubunoViewsLanguageServerClient"/>/<see cref="IHandlerDocumentHost"/> -
-    /// unit-tested with fakes (tests/Kubuno.VisualStudio.Designer.Tests/Handlers/HandlerCreationServiceTests.cs),
+    /// unit-tested with fakes (tests/Kubuno.Desktop.Tests/Designer/Handlers/HandlerCreationServiceTests.cs),
     /// no live VS/JsonRpc needed - mirroring <see cref="CompoundEditCoordinator"/>'s own test-strategy note.
     ///
     /// <see cref="CreateAsync"/> must be called (and awaited) already on the VS UI thread when wired to

@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.Migrations
+namespace Kubuno.Desktop.Logic.Migrations
 {
     /// <summary>The state of one migration in Solution Explorer.</summary>
     public enum MigrationState

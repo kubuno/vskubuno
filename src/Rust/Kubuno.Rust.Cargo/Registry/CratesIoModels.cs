@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using Kubuno.Cargo.Internal;
+using Kubuno.Rust.Cargo.Internal;
 
-namespace Kubuno.Cargo.Registry
+namespace Kubuno.Rust.Cargo.Registry
 {
     /// <summary>One crate of a crates.io search (<c>GET /api/v1/crates?q=</c>).</summary>
     public sealed class CrateSearchResult

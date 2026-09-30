@@ -1,12 +1,12 @@
 using System;
-using Kubuno.VisualStudio.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing;
 
-namespace Kubuno.VisualStudio.Designer.Selection
+namespace Kubuno.Desktop.Designer.Selection
 {
     /// <summary>
     /// The seam <see cref="SelectionSyncService"/> depends on instead of a raw VS text view type -
     /// mirroring <see cref="Editing.IEditableTextBuffer"/>'s own reasoning (unit-testable with a fake,
-    /// see tests/Kubuno.VisualStudio.Designer.Tests/Selection/Fakes/FakeTextViewSelectionAdapter.cs).
+    /// see tests/Kubuno.Desktop.Tests/Designer/Selection/Fakes/FakeTextViewSelectionAdapter.cs).
     /// <see cref="Infrastructure.VsTextViewSelectionAdapter"/> is the real, <c>IVsTextView</c>-dependent
     /// implementation, wrapping <see cref="UI.CodeWindowHost.PrimaryView"/> - see that property's own
     /// doc comment ("Callers (DSG-8's selection sync) must tolerate null here and re-query later").

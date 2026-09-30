@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Mcp.Bridge;
-using Kubuno.Mcp.Bridge.Contracts;
+using Kubuno.Core.Mcp.Bridge;
+using Kubuno.Core.Mcp.Bridge.Contracts;
 
-namespace Kubuno.Mcp.Tests.Fakes
+namespace Kubuno.Core.Mcp.Tests.Fakes
 {
     /// <summary>
     /// Canned <see cref="IVsContextProvider"/> used by dispatcher and pipe end-to-end tests: no

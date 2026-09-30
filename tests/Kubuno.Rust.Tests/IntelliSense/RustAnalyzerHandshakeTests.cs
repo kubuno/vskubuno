@@ -1,9 +1,9 @@
 using System.Linq;
 using System.Text.Json.Nodes;
-using Kubuno.VisualStudio.Core.IntelliSense;
+using Kubuno.Rust.Logic.IntelliSense;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.IntelliSense
+namespace Kubuno.Rust.Tests.IntelliSense
 {
     [TestClass]
     public sealed class RustAnalyzerHandshakeTests

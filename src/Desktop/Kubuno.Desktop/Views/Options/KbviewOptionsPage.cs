@@ -1,12 +1,14 @@
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows.Forms.Design;
 using Microsoft.VisualStudio.Shell;
+using Kubuno.Core.Settings;
 
-namespace Kubuno.VisualStudio.Views.Options
+namespace Kubuno.Desktop.Views.Options
 {
     /// <summary>
     /// Tools &gt; Options &gt; Kubuno &gt; Views. Mirrors the shape of the sibling VSIX project's
-    /// <c>Kubuno.VisualStudio.Options.RustOptionsPage</c> for the Rust language server.
+    /// <c>Kubuno.Rust.Options.RustOptionsPage</c> for the Rust language server.
     ///
     /// This type lives in this library (not in the VSIX) so it ships with the rest of the views
     /// support, but a <c>DialogPage</c> only becomes a real Tools &gt; Options page once a VSIX
@@ -17,8 +19,17 @@ namespace Kubuno.VisualStudio.Views.Options
     /// <see cref="LanguageService.KubunoViewsLanguageClient"/> (MEF-constructed, independent of the
     /// package) can read them.
     /// </summary>
+    // The identity Visual Studio stored this page under before the layers (docs/ARCHITECTURE.md, "Layers (as built)"):
+    // the page GUID of the pkgdef and profile (formerly derived from the type's full name) and the classic settings
+    // key (DialogPage's default is derived from the full name too), kept so existing settings and exports still apply.
+    [Guid("fd2f7bb5-05d7-39f9-beb1-d403ed82a121")]
     public sealed class KbviewOptionsPage : KubunoDialogPage, IKubunoViewsOptions
     {
+        public KbviewOptionsPage()
+            : base(legacyTypeFullName: "Kubuno.VisualStudio.Views.Options.KbviewOptionsPage")
+        {
+        }
+
         [Category("kubuno-views-ls")]
         [DisplayName("Path override")]
         [Description("Full path to kubuno-views-ls.exe. When empty, Kubuno tries the extension's own " +

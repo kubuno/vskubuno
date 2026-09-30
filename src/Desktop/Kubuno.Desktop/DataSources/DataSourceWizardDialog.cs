@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Core.DataSources;
-using Kubuno.VisualStudio.DataExplorer;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Desktop.Logic.DataSources;
+using Kubuno.Desktop.DataExplorer;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.DataSources
+namespace Kubuno.Desktop.DataSources
 {
     /// <summary>
     /// "Ajouter une source de données..." / "Configure..." (docs/DATA.md §9, DATA-6; Visual Studio's Data Source Configuration Wizard):

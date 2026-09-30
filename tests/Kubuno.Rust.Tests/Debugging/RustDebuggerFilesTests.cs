@@ -1,10 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
-using Kubuno.VisualStudio.Core;
+using Kubuno.Rust.Logic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.Debugging
+namespace Kubuno.Rust.Tests.Debugging
 {
     [TestClass]
     public sealed class RustDebuggerFilesTests

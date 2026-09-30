@@ -2,18 +2,18 @@ using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Mcp.Bridge;
-using Kubuno.Mcp.Bridge.Contracts;
-using Kubuno.Mcp.Bridge.PipeProtocol;
-using Kubuno.Mcp.Tests.Fakes;
+using Kubuno.Core.Mcp.Bridge;
+using Kubuno.Core.Mcp.Bridge.Contracts;
+using Kubuno.Core.Mcp.Bridge.PipeProtocol;
+using Kubuno.Core.Mcp.Tests.Fakes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Mcp.Tests
+namespace Kubuno.Core.Mcp.Tests
 {
     /// <summary>
     /// Runs <see cref="VsMcpBridgeHost"/> on a real local named pipe (uniquely named per test, not
     /// the production "%LOCALAPPDATA%\Kubuno\vs-mcp\pid.json" pipe) and talks to it with
-    /// <see cref="VsMcpBridgeClient"/> - the same two classes Kubuno.Mcp and the VSIX bridge use in
+    /// <see cref="VsMcpBridgeClient"/> - the same two classes Kubuno.Core.Mcp and the VSIX bridge use in
     /// production, wired to a <see cref="FakeVsContextProvider"/> instead of DTE. This is what
     /// proves the framing (PipeMessageFramingTests) and the dispatcher (BridgeDispatcherTests)
     /// actually work together over a real OS pipe, end to end.

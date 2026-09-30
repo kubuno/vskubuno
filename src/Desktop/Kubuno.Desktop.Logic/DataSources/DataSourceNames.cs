@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.VisualStudio.Core.DataSources
+namespace Kubuno.Desktop.Logic.DataSources
 {
     /// <summary>
     /// Names of the Data Sources feature (docs/DATA.md §9, DATA-6): the data source's Rust module name, the connection string

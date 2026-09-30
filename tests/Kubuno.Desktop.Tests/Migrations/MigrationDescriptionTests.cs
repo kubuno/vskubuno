@@ -1,7 +1,7 @@
-using Kubuno.VisualStudio.Core.Migrations;
+using Kubuno.Desktop.Logic.Migrations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.Migrations
+namespace Kubuno.Desktop.Tests.Migrations
 {
     /// <summary>The "Add Migration" dialog's validation: the same rules as the helper's <c>snake_description</c>.</summary>
     [TestClass]

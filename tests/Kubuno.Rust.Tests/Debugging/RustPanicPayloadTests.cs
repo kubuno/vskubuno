@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Kubuno.VisualStudio.Debugger;
+using Kubuno.Rust.Debugger;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.Debugging
+namespace Kubuno.Rust.Tests.Debugging
 {
     /// <summary>
     /// <see cref="RustPanicPayload"/> against a fake debuggee memory laid out like rustc 1.98's

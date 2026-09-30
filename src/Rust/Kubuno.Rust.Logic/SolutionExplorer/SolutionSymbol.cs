@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Core.SolutionExplorer
+namespace Kubuno.Rust.Logic.SolutionExplorer
 {
     /// <summary>What a Solution Explorer symbol node stands for (docs/RSPROJ.md, lot 8).</summary>
     public enum SolutionSymbolKind
@@ -25,8 +25,12 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
         Region,
         ExternBlock,
 
-        /// <summary>An element of a <c>.kbview</c> file (its tag decides the icon family).</summary>
-        ViewElement,
+        /// <summary>
+        /// An element of a file in another language than Rust (a <c>.kbview</c> view element of the desktop layer): its
+        /// tag decides its icon, which the layer providing the file's symbols supplies (Kubuno.Rust's
+        /// ISolutionSymbolProvider).
+        /// </summary>
+        Element,
     }
 
     /// <summary>
@@ -95,7 +99,7 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
                     case SolutionSymbolKind.Const:
                     case SolutionSymbolKind.Static:
                         return string.IsNullOrEmpty(Detail) ? Name : $"{Name}: {Detail}";
-                    case SolutionSymbolKind.ViewElement:
+                    case SolutionSymbolKind.Element:
                         return string.IsNullOrEmpty(Detail) ? Name : $"{Name} ({Detail})";
                     default:
                         return Name;
@@ -104,7 +108,7 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
         }
 
         /// <summary>The element tag of a view element (its detail when named, else its name).</summary>
-        public string ElementTag => Kind == SolutionSymbolKind.ViewElement && !string.IsNullOrEmpty(Detail) ? Detail! : Name;
+        public string ElementTag => Kind == SolutionSymbolKind.Element && !string.IsNullOrEmpty(Detail) ? Detail! : Name;
 
         /// <summary>A key identifying "the same" symbol across two parses of a file (used to keep expansion state on refresh).</summary>
         public string MergeKey => Kind + "|" + Name + "|" + Detail;

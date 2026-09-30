@@ -5,13 +5,13 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
 using System.Windows;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.Internal.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.SolutionExplorer
+namespace Kubuno.Rust.SolutionExplorer
 {
     /// <summary>
     /// Base of every node this extension attaches to Solution Explorer (docs/RSPROJ.md lot 8), shaped
@@ -19,7 +19,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
     /// attached collection (the provider hands the item back as its own <see cref="IAttachedCollectionSource"/>),
     /// and a priority/order so siblings keep source order instead of being sorted alphabetically.
     /// </summary>
-    internal abstract class KubunoTreeItem : ITreeDisplayItem, ITreeDisplayItemWithImages, IAttachedCollectionSource, IPrioritizedComparable, IInteractionPatternProvider, INotifyPropertyChanged
+    public abstract class KubunoTreeItem : ITreeDisplayItem, ITreeDisplayItemWithImages, IAttachedCollectionSource, IPrioritizedComparable, IInteractionPatternProvider, INotifyPropertyChanged
     {
         private static readonly Dictionary<string, ImageMoniker> MonikerCache = new Dictionary<string, ImageMoniker>(StringComparer.Ordinal);
 
@@ -75,11 +75,8 @@ namespace Kubuno.VisualStudio.SolutionExplorer
 
         public int CompareTo(object obj) => obj is KubunoTreeItem other ? Order.CompareTo(other.Order) : 0;
 
-        /// <summary>The Kubuno control icon (<see cref="ControlIcons"/>, KubunoControls.imagemanifest) of a <c>.kbview</c> element tag.</summary>
-        internal static ImageMoniker ControlIcon(string? tag) => new ImageMoniker { Guid = ControlIcons.ImagesGuid, Id = ControlIcons.IdFor(tag) };
-
         /// <summary>A <c>KnownMonikers</c> property by name (see <see cref="SymbolMonikerNames"/>), cached.</summary>
-        internal static ImageMoniker Moniker(string name)
+        public static ImageMoniker Moniker(string name)
         {
             lock (MonikerCache)
             {
@@ -111,33 +108,37 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         }
     }
 
-    /// <summary>A Rust item or a <c>.kbview</c> element under its file; double-click navigates to it.</summary>
+    /// <summary>A Rust item, or an element of another language's file (its provider's icon), under its file; double-click navigates to it.</summary>
     internal sealed class SymbolTreeItem : KubunoTreeItem, IInvocationPattern
     {
         private readonly ObservableCollection<SymbolTreeItem> _children = new ObservableCollection<SymbolTreeItem>();
 
-        public SymbolTreeItem(string filePath, SolutionSymbol symbol, int order)
+        public SymbolTreeItem(string filePath, SolutionSymbol symbol, int order, Extensibility.ISolutionSymbolProvider? provider)
             : base(order)
         {
             FilePath = filePath;
             Symbol = symbol;
-            SymbolTreeMerger.Merge(_children, filePath, symbol.Children);
+            Provider = provider;
+            SymbolTreeMerger.Merge(_children, filePath, symbol.Children, provider);
         }
 
         public string FilePath { get; }
+
+        /// <summary>The layer that provides this file's symbols, or null for a Rust file.</summary>
+        public Extensibility.ISolutionSymbolProvider? Provider { get; }
 
         public SolutionSymbol Symbol { get; private set; }
 
         public override string Text => Symbol.DisplayText;
 
-        public override string ToolTipText => Symbol.Kind == SolutionSymbolKind.ViewElement
-            ? $"<{Symbol.ElementTag}> - line {Symbol.Line + 1}"
+        public override string ToolTipText => Provider is not null
+            ? Provider.GetToolTip(Symbol)
             : $"{Symbol.Name}{(string.IsNullOrEmpty(Symbol.Detail) ? string.Empty : " - " + Symbol.Detail)} ({Symbol.Visibility.ToString().ToLowerInvariant()}, line {Symbol.Line + 1})";
 
-        // .kbview elements: the Kubuno control icon of their tag (the same as in the designer's Toolbox);
+        // Other files' elements: their provider's icon (the desktop layer's Kubuno control icons for .kbview elements);
         // Rust symbols: Visual Studio's own catalog glyphs, like Roslyn.
-        public override ImageMoniker IconMoniker => Symbol.Kind == SolutionSymbolKind.ViewElement
-            ? ControlIcon(Symbol.ElementTag)
+        public override ImageMoniker IconMoniker => Provider is not null
+            ? Provider.GetIcon(Symbol)
             : Moniker(SymbolMonikerNames.For(Symbol));
 
         public override bool HasItems => _children.Count > 0;
@@ -153,7 +154,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         {
             bool hadItems = HasItems;
             Symbol = symbol;
-            SymbolTreeMerger.Merge(_children, FilePath, symbol.Children);
+            SymbolTreeMerger.Merge(_children, FilePath, symbol.Children, Provider);
             RaiseDisplayChanged();
             if (hadItems != HasItems)
             {
@@ -173,7 +174,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
             {
                 if (item is SymbolTreeItem symbol)
                 {
-                    SymbolNavigator.Navigate(symbol.FilePath, symbol.Symbol.Line, symbol.Symbol.Column);
+                    SymbolNavigator.Navigate(symbol.FilePath, symbol.Symbol.Line, symbol.Symbol.Column, symbol.Provider);
                     return true;
                 }
             }
@@ -188,7 +189,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
     /// </summary>
     internal static class SymbolTreeMerger
     {
-        public static void Merge(ObservableCollection<SymbolTreeItem> target, string filePath, IReadOnlyList<SolutionSymbol> fresh)
+        public static void Merge(ObservableCollection<SymbolTreeItem> target, string filePath, IReadOnlyList<SolutionSymbol> fresh, Extensibility.ISolutionSymbolProvider? provider)
         {
             var available = new List<SymbolTreeItem>(target);
             for (int i = 0; i < fresh.Count; i++)
@@ -208,7 +209,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
                 }
                 else
                 {
-                    target.Insert(i, new SymbolTreeItem(filePath, symbol, i));
+                    target.Insert(i, new SymbolTreeItem(filePath, symbol, i, provider));
                 }
             }
 

@@ -8,7 +8,7 @@ using System.Windows.Media;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.Designer.UI
+namespace Kubuno.Desktop.Designer.UI
 {
     /// <summary>One non-visual component shown in the <see cref="ComponentTray"/>.</summary>
     public sealed class ComponentTrayItem

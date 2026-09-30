@@ -1,16 +1,16 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Outline;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Outline;
 
-namespace Kubuno.VisualStudio.Designer.Selection
+namespace Kubuno.Desktop.Designer.Selection
 {
     /// <summary>
     /// The seam <see cref="SelectionSyncService"/> (and <see cref="Outline"/>'s tree builder's caller)
     /// depend on instead of a raw <c>StreamJsonRpc.JsonRpc</c> - mirroring
     /// <see cref="Handlers.IKubunoViewsLanguageServerClient"/>'s own reasoning (unit-testable with a
-    /// fake, see tests/Kubuno.VisualStudio.Designer.Tests/Selection/Fakes/FakeViewsSelectionLanguageServerClient.cs).
+    /// fake, see tests/Kubuno.Desktop.Tests/Designer/Selection/Fakes/FakeViewsSelectionLanguageServerClient.cs).
     ///
     /// Deliberately a SEPARATE interface from <see cref="Handlers.IKubunoViewsLanguageServerClient"/>
     /// rather than extending that one: that interface's own doc comment scopes it to DSG-10's

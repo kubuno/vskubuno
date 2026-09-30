@@ -4,17 +4,17 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Editing.Infrastructure;
-using Kubuno.VisualStudio.Designer.Outline;
-using Kubuno.VisualStudio.Designer.Properties;
-using Kubuno.VisualStudio.Designer.Registry;
-using Kubuno.VisualStudio.Designer.Registry.Infrastructure;
-using Kubuno.VisualStudio.Designer.Selection;
-using Kubuno.VisualStudio.Designer.Selection.Infrastructure;
-using Kubuno.VisualStudio.Designer.UI;
-using Kubuno.VisualStudio.Views.LanguageService;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing.Infrastructure;
+using Kubuno.Desktop.Designer.Outline;
+using Kubuno.Desktop.Designer.Properties;
+using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Desktop.Designer.Registry.Infrastructure;
+using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Desktop.Designer.Selection.Infrastructure;
+using Kubuno.Desktop.Designer.UI;
+using Kubuno.Desktop.Views.LanguageService;
+using Kubuno.Desktop.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -28,14 +28,14 @@ using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The VSIX integration step's own caller for <c>IDesignSurfaceHost.EditRequested</c>/
     /// <c>SetDocumentText</c> (INTEGRATION.md &sect;6/&sect;8): turns design mode on, forwards a
     /// Delete/nudge <see cref="DesignSurfaceEditOp"/> to <c>kubuno-views-ls</c>'s <c>kubuno/applyEdit</c>
     /// over the SAME <c>StreamJsonRpc.JsonRpc</c> object
-    /// <c>Kubuno.VisualStudio.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> exposes once
+    /// <c>Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> exposes once
     /// <c>AttachForCustomMessageAsync</c> has run (docs/DESIGNER.md &sect;3), and applies the resulting
     /// <c>{range, newText}</c> edits through <see cref="BufferEditApplier"/> - one <c>ITextEdit</c>, one
     /// undo unit, per <see cref="BufferEditApplier"/>'s own doc comment (a Delete/nudge is always a
@@ -49,9 +49,9 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// Lives in this library (not the VSIX project) because every type it needs -
     /// <c>Microsoft.VisualStudio.ComponentModelHost.IComponentModel</c>,
     /// <c>Microsoft.VisualStudio.Editor.IVsEditorAdaptersFactoryService</c>,
-    /// <c>Kubuno.VisualStudio.Views.LanguageService.KubunoViewsLanguageClient</c> - is already reachable
+    /// <c>Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient</c> - is already reachable
     /// from here (this project already references <c>Microsoft.VisualStudio.SDK</c> and
-    /// <c>Kubuno.VisualStudio.Views</c>, see this project's own csproj top comment); no dependency on
+    /// <c>Kubuno.Desktop.Views</c>, see this project's own csproj top comment); no dependency on
     /// the VSIX assembly itself is needed. <see cref="UI.DesignerSplitView"/> only owns a small field of
     /// this type and forwards <see cref="Dispose"/> - see that class's own, minimal edit for this.
     ///

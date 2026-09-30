@@ -1,4 +1,4 @@
-namespace Kubuno.Cargo.Commands
+namespace Kubuno.Rust.Cargo.Commands
 {
     /// <summary>Cargo subcommands the extension drives.</summary>
     public enum CargoCommandKind
@@ -10,7 +10,7 @@ namespace Kubuno.Cargo.Commands
         Run,
         Fetch,
 
-        /// <summary>`cargo add`: the "Référence de projet.../Dépendance Cargo (crate)..." Add-submenu commands (Kubuno.VisualStudio.Commands).</summary>
+        /// <summary>`cargo add`: the "Référence de projet.../Dépendance Cargo (crate)..." Add-submenu commands (Kubuno.Rust.Commands).</summary>
         Add,
 
         /// <summary>`cargo remove`: the Dependencies node's own "Supprimer" command.</summary>

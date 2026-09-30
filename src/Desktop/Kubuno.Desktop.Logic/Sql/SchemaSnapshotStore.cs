@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 
-namespace Kubuno.VisualStudio.Core.Sql
+namespace Kubuno.Desktop.Logic.Sql
 {
     /// <summary>What changed in the schema snapshot store.</summary>
     public sealed class SchemaSnapshotChangedEventArgs : EventArgs

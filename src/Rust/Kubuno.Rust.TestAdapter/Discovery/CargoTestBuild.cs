@@ -6,11 +6,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Processes;
 
-namespace Kubuno.TestAdapter.Discovery
+namespace Kubuno.Rust.TestAdapter.Discovery
 {
     /// <summary>Outcome of building a package's test binaries.</summary>
     public sealed class CargoTestBuildResult
@@ -46,7 +46,7 @@ namespace Kubuno.TestAdapter.Discovery
     /// `&lt;target-dir&gt;/debug/deps/&lt;name&gt;-&lt;hash&gt;.exe` with `profile.test = true` -
     /// the actual libtest harness to run - and a second, ordinary one at
     /// `&lt;target-dir&gt;/debug/&lt;name&gt;.exe` with `profile.test = false` - the normal binary,
-    /// which does not understand `--list`/`--exact` and must not be picked). Kubuno.Cargo is
+    /// which does not understand `--list`/`--exact` and must not be picked). Kubuno.Rust.Cargo is
     /// owned by another agent and out of scope here (read-only), so this parses that one missing
     /// field itself with a small, purpose-built raw DTO instead.
     /// </summary>
@@ -191,7 +191,7 @@ namespace Kubuno.TestAdapter.Discovery
 
         /// <summary>
         /// Test-harness executables always land at `&lt;target-dir&gt;/[&lt;triple&gt;/]&lt;profile-dir&gt;/deps/&lt;file&gt;`
-        /// (see Kubuno.Launch's `CargoLayout`/`ExecutableResolver` doc comments for the general
+        /// (see Kubuno.Rust.Launch's `CargoLayout`/`ExecutableResolver` doc comments for the general
         /// shape) - walking up three directories from the executable recovers `&lt;target-dir&gt;`
         /// without needing a separate `cargo metadata` call. Host-triple builds only: a
         /// cross-compiled `--target &lt;triple&gt;` executable would need four levels, which this

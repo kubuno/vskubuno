@@ -10,12 +10,12 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Kubuno.VisualStudio.Commands;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Core.Migrations;
-using Kubuno.VisualStudio.DataExplorer;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.SolutionExplorer;
+using Kubuno.Rust.Commands;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Desktop.Logic.Migrations;
+using Kubuno.Desktop.DataExplorer;
+using Kubuno.Core.Logging;
+using Kubuno.Rust.SolutionExplorer;
 using Microsoft.Internal.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Imaging.Interop;
@@ -25,7 +25,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.VisualStudio.Migrations
+namespace Kubuno.Desktop.Migrations
 {
     /// <summary>
     /// A <c>.rsproj</c> project node whose crate has a <c>migrations</c> folder or <c>.kbdata</c> data sources gets a

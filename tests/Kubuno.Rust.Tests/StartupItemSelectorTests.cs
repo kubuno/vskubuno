@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Kubuno.Cargo.Metadata;
-using Kubuno.VisualStudio.Core;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Logic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests
+namespace Kubuno.Rust.Tests
 {
     [TestClass]
     public class StartupItemSelectorTests

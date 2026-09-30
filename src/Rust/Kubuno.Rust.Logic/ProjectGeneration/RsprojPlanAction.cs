@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Core.ProjectGeneration
+namespace Kubuno.Rust.Logic.ProjectGeneration
 {
     /// <summary>
     /// What <see cref="RsprojGenerationPlanner"/> decided for one workspace member's <c>.rsproj</c>.

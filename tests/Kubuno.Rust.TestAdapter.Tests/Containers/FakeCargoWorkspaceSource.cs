@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.TestAdapter.Containers;
+using Kubuno.Rust.TestAdapter.Containers;
 
-namespace Kubuno.TestAdapter.Tests.Containers
+namespace Kubuno.Rust.TestAdapter.Tests.Containers
 {
     /// <summary>A settable <see cref="ICargoWorkspaceSource"/>, so container-discovery logic is testable without a running Visual Studio (see INTEGRATION.md).</summary>
     internal sealed class FakeCargoWorkspaceSource : ICargoWorkspaceSource

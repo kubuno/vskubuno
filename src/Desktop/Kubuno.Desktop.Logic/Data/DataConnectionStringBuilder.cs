@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace Kubuno.VisualStudio.Core.Data
+namespace Kubuno.Desktop.Logic.Data
 {
     /// <summary>What the Add Connection dialog collects (the password only for the instant a string is built).</summary>
     public sealed class DataConnectionSettings

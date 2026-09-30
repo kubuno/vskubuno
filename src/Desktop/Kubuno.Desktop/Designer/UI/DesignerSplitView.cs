@@ -3,13 +3,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
-using Kubuno.VisualStudio.Designer.DesignSurface;
+using Kubuno.Desktop.Designer.DesignSurface;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TextManager.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.VisualStudio.Designer.UI
+namespace Kubuno.Desktop.Designer.UI
 {
     /// <summary>
     /// The whole content of <see cref="EditorFactory.DesignerWindowPane"/>: the Design/XML/Split

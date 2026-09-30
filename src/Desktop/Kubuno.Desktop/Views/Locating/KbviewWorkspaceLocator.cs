@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.VisualStudio.Views.Locating
+namespace Kubuno.Desktop.Views.Locating
 {
     /// <summary>
     /// Finds the Cargo workspace root to hand <c>kubuno-views-ls</c> as its project root: the
@@ -12,7 +12,7 @@ namespace Kubuno.VisualStudio.Views.Locating
     /// would resolve to.
     ///
     /// Takes file-system access as delegates, exactly like the sibling VSIX project's
-    /// <c>Kubuno.VisualStudio.Core.CargoWorkspaceLocator</c>, so the traversal logic can be
+    /// <c>Kubuno.Rust.Logic.CargoWorkspaceLocator</c>, so the traversal logic can be
     /// unit-tested without touching disk. Deliberately duplicated here rather than referenced from
     /// that project: this library will itself be referenced BY the VSIX once integrated (see
     /// INTEGRATION.md), so a reference the other way would be circular, and the two are developed

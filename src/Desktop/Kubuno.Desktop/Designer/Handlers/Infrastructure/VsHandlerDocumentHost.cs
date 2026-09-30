@@ -1,6 +1,6 @@
 using System;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Editing.Infrastructure;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing.Infrastructure;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 
-namespace Kubuno.VisualStudio.Designer.Handlers.Infrastructure
+namespace Kubuno.Desktop.Designer.Handlers.Infrastructure
 {
     /// <summary>
     /// The real <see cref="IHandlerDocumentHost"/>: opens (or reuses) a document through
@@ -22,7 +22,7 @@ namespace Kubuno.VisualStudio.Designer.Handlers.Infrastructure
     ///
     /// Not unit-tested here - needs a live `devenv.exe` (a real `IVsUIShellOpenDocument`/`IVsTextView`),
     /// the same reasoning <see cref="UI.CodeWindowHost"/>/<see cref="EditorFactory.DesignerWindowPane"/>'s
-    /// own doc comments already give for staying out of tests/Kubuno.VisualStudio.Designer.Tests; a
+    /// own doc comments already give for staying out of tests/Kubuno.Desktop.Tests/Designer; a
     /// manual check in the experimental instance is this class's test strategy, per docs/DESIGNER.md's
     /// DSG-10 row ("manual check for the VS-side open/insert/caret-jump"). Every method here must run on
     /// the UI thread - see <see cref="HandlerCreationService"/>'s own doc comment for why its caller is

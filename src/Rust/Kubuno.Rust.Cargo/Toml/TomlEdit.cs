@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Cargo.Toml
+namespace Kubuno.Rust.Cargo.Toml
 {
     /// <summary>
     /// One contiguous replacement, expressed against the text as it was BEFORE the edit: the range

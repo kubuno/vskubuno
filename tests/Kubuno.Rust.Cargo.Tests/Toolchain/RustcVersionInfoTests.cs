@@ -1,6 +1,6 @@
-using Kubuno.Cargo.Toolchain;
+using Kubuno.Rust.Cargo.Toolchain;
 
-namespace Kubuno.Cargo.Tests.Toolchain
+namespace Kubuno.Rust.Cargo.Tests.Toolchain
 {
     public class RustcVersionInfoTests
     {

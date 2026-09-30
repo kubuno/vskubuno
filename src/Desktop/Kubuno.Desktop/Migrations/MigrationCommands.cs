@@ -6,15 +6,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Commands;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Core.Migrations;
-using Kubuno.VisualStudio.DataExplorer;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Commands;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Desktop.Logic.Migrations;
+using Kubuno.Desktop.DataExplorer;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Migrations
+namespace Kubuno.Desktop.Migrations
 {
     /// <summary>
     /// The "Database" submenu of a <c>.rsproj</c> project node (docs/DATA.md DATA-7) - Add Migration..., Apply Migrations,

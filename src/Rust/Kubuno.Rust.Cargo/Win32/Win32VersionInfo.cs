@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Cargo.Win32
+namespace Kubuno.Rust.Cargo.Win32
 {
     /// <summary>The data of an RT_VERSION resource (Explorer > Properties > Details).</summary>
     public sealed class Win32VersionInfo

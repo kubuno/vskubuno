@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-namespace Kubuno.VisualStudio.Core.DataSources
+namespace Kubuno.Desktop.Logic.DataSources
 {
     /// <summary>
     /// A typed data source (<c>src/**/*.kbdata</c>, docs/DATA.md DATA-4) as <c>kubuno-data-tool</c>'s <c>kbdata.read</c> returns it:

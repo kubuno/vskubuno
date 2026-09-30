@@ -10,10 +10,10 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using EnvDTE;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Designer;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.Options;
+using Kubuno.Rust.Logic.IntelliSense;
+using Kubuno.Core.Logging;
+using Kubuno.Core.Logic.Localization;
+using Kubuno.Rust.Options;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
@@ -24,7 +24,7 @@ using Microsoft.VisualStudio.Utilities;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.LanguageService.IntelliSense
+namespace Kubuno.Rust.LanguageService.IntelliSense
 {
     /// <summary>
     /// C#-style CodeLens for Rust: "3 references | 1 implementation" above functions, types, traits and variants,
@@ -390,7 +390,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
             var formatMap = _provider.FormatMapService.GetEditorFormatMap(_view);
             var foreground = Brush(formatMap, "Line Number", Brushes.Gray);
             var hover = Brush(formatMap, "urlformat", Brushes.RoyalBlue);
-            bool french = DesignerText.IsFrench;
+            bool french = UiLanguage.IsFrench;
             var snapshot = _view.TextSnapshot;
 
             foreach (var line in _view.TextViewLines)

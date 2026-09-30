@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Launch;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Launch;
 using Microsoft.Build.Framework;
 
 namespace Kubuno.Cargo.MSBuild.Tasks
@@ -82,7 +82,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
             }
         }
 
-        protected override void OnCompleted(Kubuno.Cargo.Processes.ProcessRunResult result)
+        protected override void OnCompleted(Kubuno.Rust.Cargo.Processes.ProcessRunResult result)
         {
             ExecutablePath = _artifactExecutablePath ?? ResolveConventionalExecutablePath();
         }

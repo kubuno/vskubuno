@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Core
+namespace Kubuno.Rust.Logic
 {
     /// <summary>
     /// Outcome of <see cref="RustAnalyzerLocator.Locate"/>: either a usable path and where it came

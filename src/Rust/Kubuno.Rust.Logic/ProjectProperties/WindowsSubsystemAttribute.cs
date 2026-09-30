@@ -1,7 +1,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.ProjectProperties
+namespace Kubuno.Rust.Logic.ProjectProperties
 {
     /// <summary>One contiguous replacement in a text: the minimal unit applied to a Visual Studio text buffer.</summary>
     public readonly struct TextEdit

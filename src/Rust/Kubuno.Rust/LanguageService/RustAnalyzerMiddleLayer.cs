@@ -4,20 +4,19 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Designer.Handlers;
-using Kubuno.VisualStudio.Designer.Handlers.Infrastructure;
-using Kubuno.VisualStudio.LanguageService.IntelliSense;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.Views.LanguageService;
+using Kubuno.Rust.Logic;
+using Kubuno.Rust.Logic.IntelliSense;
+using Kubuno.Rust.LanguageService.IntelliSense;
+using Kubuno.Core.Logging;
+using Kubuno.Core.Logic.Lsp;
+using Kubuno.Rust.Extensibility;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.LanguageService
+namespace Kubuno.Rust.LanguageService
 {
     /// <summary>
     /// <see cref="RustLanguageClient.MiddleLayer"/>, between Visual Studio's LSP client and rust-analyzer:
@@ -35,9 +34,8 @@ namespace Kubuno.VisualStudio.LanguageService
     /// wait for the text they are about;</item>
     /// <item>remaps every semantic token response with <see cref="SemanticTokens"/>, the C#-like legend Kubuno announced
     /// in the handshake (see <see cref="RustSemanticTokenMap"/>);</item>
-    /// <item>adds a view handler's <c>.kbview</c> usages to Find All References, and completes rust-analyzer's
-    /// <c>textDocument/rename</c> of a view handler (docs/EVENTS.md §5.5, EVT-5): the <c>.kbview</c> attributes naming it
-    /// and its <c>handlers!</c> string are renamed with it (<c>kubuno/renameHandler</c>).</item>
+    /// <item>completes Find All References and rust-analyzer's <c>textDocument/rename</c> with what the layers above report in
+    /// their own files (<see cref="IRustReferenceParticipant"/>: the desktop layer's view handlers, docs/EVENTS.md §5.5, EVT-5).</item>
     /// </list>
     /// </summary>
     internal sealed class RustAnalyzerMiddleLayer : ILanguageClientMiddleLayer2<JToken>
@@ -52,9 +50,6 @@ namespace Kubuno.VisualStudio.LanguageService
         private const string DidChangeMethod = "textDocument/didChange";
         private const string DidCloseMethod = "textDocument/didClose";
         private const string InlayHintMethod = "textDocument/inlayHint";
-
-        /// <summary>A name <c>kubuno/renameHandler</c> accepts, used to find a handler's view usages without renaming anything.</summary>
-        private const string ProbeName = "kubuno_find_references_probe";
 
         private readonly PullDiagnosticsResultIds _resultIds = new();
         private int _loggedOnce;
@@ -230,11 +225,18 @@ namespace Kubuno.VisualStudio.LanguageService
         }
 
         /// <summary>
-        /// rust-analyzer renames the Rust side of a handler (the method, its calls); <c>kubuno-views-ls</c> adds the views'
-        /// attributes and the <c>handlers!</c> string (<c>rustRenamed</c>: it leaves the Rust code alone), computed on the open
-        /// editors' texts. Anything unexpected returns rust-analyzer's answer untouched.
+        /// The layers above that add their own files to a rename or to Find All References
+        /// (<see cref="IRustReferenceParticipant"/>, MEF-imported by <see cref="RustLanguageClient"/>).
         /// </summary>
-        private static async Task<JToken?> HandleRenameAsync(JToken methodParam, Func<JToken, Task<JToken?>> sendRequest)
+        internal Func<IEnumerable<IRustReferenceParticipant>> ReferenceParticipants { get; set; } = () => Array.Empty<IRustReferenceParticipant>();
+
+        /// <summary>
+        /// rust-analyzer renames the Rust side of a symbol; each <see cref="IRustReferenceParticipant"/> adds what the
+        /// rename implies in its own files (the desktop layer: a view handler's <c>.kbview</c> attributes and its
+        /// <c>handlers!</c> string, docs/EVENTS.md 5.5), merged into one <c>WorkspaceEdit</c> Visual Studio applies as
+        /// one rename. Anything unexpected returns rust-analyzer's answer untouched.
+        /// </summary>
+        private async Task<JToken?> HandleRenameAsync(JToken methodParam, Func<JToken, Task<JToken?>> sendRequest)
         {
             var response = await sendRequest(methodParam).ConfigureAwait(false);
             if (response is not JObject)
@@ -248,92 +250,90 @@ namespace Kubuno.VisualStudio.LanguageService
                 return response;
             }
 
-            var views = await ViewHandlerEditAsync(methodParam, newName).ConfigureAwait(false);
-            if (views?.Edit is not { } edit)
+            var merged = response.ToString(Newtonsoft.Json.Formatting.None);
+            bool changed = false;
+            foreach (var participant in ReferenceParticipants())
             {
-                return response;
+                var contribution = await TryAsync(() => participant.GetRenameEditAsync(methodParam, newName, CancellationToken.None)).ConfigureAwait(false);
+                if (contribution is null)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    merged = RenameEditMerger.Merge(merged, contribution.Edit.ToString(Newtonsoft.Json.Formatting.None));
+                    changed = true;
+                    KubunoLog.WriteLine($"Rename: {contribution.Description} renamed too.");
+                }
+                catch (Newtonsoft.Json.JsonException ex)
+                {
+                    KubunoLog.WriteLine($"Rename: {contribution.Description} could not be updated: " + ex.Message);
+                }
             }
 
             try
             {
-                KubunoLog.WriteLine($"Rename: handler '{views.Value.OldName}' renamed in the views too.");
-                return JToken.Parse(RenameEditMerger.Merge(response.ToString(Newtonsoft.Json.Formatting.None), edit.ToString(Newtonsoft.Json.Formatting.None)));
+                return changed ? JToken.Parse(merged) : response;
             }
             catch (Newtonsoft.Json.JsonException ex)
             {
-                KubunoLog.WriteLine("Rename: the views could not be updated: " + ex.Message);
+                KubunoLog.WriteLine("Rename: the merged edit could not be read back: " + ex.Message);
                 return response;
             }
         }
 
         /// <summary>
-        /// Find All References on a view handler (the method, or one of its calls) also lists the <c>.kbview</c> attributes
-        /// naming it and its <c>handlers!</c> string: the places a rename of the handler would change (<c>kubuno/renameHandler</c>
-        /// with a probe name), which is exactly where the views use it.
+        /// Find All References also lists what each <see cref="IRustReferenceParticipant"/> reports (the desktop layer: the
+        /// <c>.kbview</c> attributes naming a view handler and its <c>handlers!</c> string - exactly where a rename of the
+        /// handler would change the views).
         /// </summary>
-        private static async Task<JToken?> HandleReferencesAsync(JToken methodParam, Func<JToken, Task<JToken?>> sendRequest)
+        private async Task<JToken?> HandleReferencesAsync(JToken methodParam, Func<JToken, Task<JToken?>> sendRequest)
         {
             var response = await sendRequest(methodParam).ConfigureAwait(false);
-            var views = await ViewHandlerEditAsync(methodParam, ProbeName).ConfigureAwait(false);
-            if (views?.Edit is not { } edit)
+            JArray? locations = null;
+            foreach (var participant in ReferenceParticipants())
             {
-                return response;
-            }
-
-            var locations = response as JArray ?? new JArray();
-            var known = new HashSet<string>(locations.OfType<JObject>().Select(LocationKey), StringComparer.OrdinalIgnoreCase);
-            int added = 0;
-            foreach (var location in EditLocations(edit))
-            {
-                if (known.Add(LocationKey(location)))
+                var contribution = await TryAsync(() => participant.GetReferencesAsync(methodParam, CancellationToken.None)).ConfigureAwait(false);
+                if (contribution is null)
                 {
-                    locations.Add(location);
-                    added++;
+                    continue;
+                }
+
+                locations ??= response as JArray ?? new JArray();
+                var known = new HashSet<string>(locations.OfType<JObject>().Select(LocationKey), StringComparer.OrdinalIgnoreCase);
+                int added = 0;
+                foreach (var location in EditLocations(contribution.Edit))
+                {
+                    if (known.Add(LocationKey(location)))
+                    {
+                        locations.Add(location);
+                        added++;
+                    }
+                }
+
+                if (added > 0)
+                {
+                    KubunoLog.WriteLine($"Find All References: {added} usage(s) of {contribution.Description} added.");
                 }
             }
 
-            if (added > 0)
-            {
-                KubunoLog.WriteLine($"Find All References: {added} view usage(s) of handler '{views.Value.OldName}' added.");
-            }
-
-            return locations;
+            return locations ?? response;
         }
 
-        /// <summary>
-        /// Asks <c>kubuno-views-ls</c> what renaming the handler at the request's position to <paramref name="newName"/> changes
-        /// in the views (null when the position is not on a view handler, or the views server is not running).
-        /// </summary>
-        private static async Task<(JObject Edit, string? OldName)?> ViewHandlerEditAsync(JToken methodParam, string newName)
+        /// <summary>A participant that fails only loses its own contribution.</summary>
+        private static async Task<RustEditContribution?> TryAsync(Func<Task<RustEditContribution?>> contribution)
         {
-            if (KubunoViewsLanguageClient.Current?.ReadyRpc is not { } rpc)
-            {
-                return null;
-            }
-
             try
             {
-                var uri = (string?)methodParam["textDocument"]?["uri"];
-                var position = methodParam["position"];
-                if (uri is null || position is null || !uri.EndsWith(".rs", StringComparison.OrdinalIgnoreCase))
-                {
-                    return null;
-                }
-
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                var folder = Path.GetDirectoryName(new Uri(Uri.UnescapeDataString(uri)).LocalPath) ?? string.Empty;
-                var openFiles = new VsWorkspaceFileHost(ServiceProvider.GlobalProvider).OpenTexts(folder, ".rs");
-                await TaskScheduler.Default;
-                var result = await rpc.InvokeWithParameterObjectAsync<JToken?>("kubuno/renameHandler", new { uri, position, @new = newName, rustRenamed = true, openFiles }).ConfigureAwait(false);
-                return result?["edit"] is JObject edit ? (edit, (string?)result["oldName"]) : null;
+                return await contribution().ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is RemoteInvocationException or ConnectionLostException or OperationCanceledException or UriFormatException or ArgumentException)
+            catch (Exception ex)
             {
-                KubunoLog.WriteLine("Views: kubuno/renameHandler failed: " + ex.Message);
+                KubunoLog.WriteLine("Rename/references: a participant failed: " + ex.Message);
                 return null;
             }
         }
-
         /// <summary>The <c>Location</c>s of a <c>WorkspaceEdit</c>'s text edits (<c>changes</c> or <c>documentChanges</c>).</summary>
         internal static IEnumerable<JObject> EditLocations(JObject edit)
         {

@@ -2,11 +2,11 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Core.Migrations;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Desktop.Logic.Migrations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.Migrations
+namespace Kubuno.Desktop.Tests.Migrations
 {
     [TestClass]
     public sealed class MigrationsTreeModelTests

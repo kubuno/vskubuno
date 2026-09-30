@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Processes;
 using Xunit;
 
-namespace Kubuno.Cargo.Tests.Processes
+namespace Kubuno.Rust.Cargo.Tests.Processes
 {
     /// <summary>
     /// Exercises the real <see cref="ProcessRunner"/> against <c>cmd.exe</c> (always present on

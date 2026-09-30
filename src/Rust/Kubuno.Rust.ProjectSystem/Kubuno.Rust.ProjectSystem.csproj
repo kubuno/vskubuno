@@ -3,25 +3,27 @@
   <!--
     The CPS (Common Project System) host part of the .rsproj project type (docs/RSPROJ.md Â§3, work
     package 3) â€” the counterpart of Microsoft.VisualStudio.JavaScript.ProjectSystem.dll for .esproj.
-    A MEF class library shipped inside the Kubuno.VisualStudio VSIX (MefComponent asset in its
-    source.extension.vsixmanifest); the project type itself is registered by that VSIX's
-    rsproj.pkgdef, and everything MSBuild-side (capabilities, rules, item globs, cargo targets)
+    Rust layer (docs/ARCHITECTURE.md, "Layers (as built)"). A MEF class library shipped inside the Kubuno.VisualStudio
+    VSIX (MefComponent asset in its source.extension.vsixmanifest); the project type itself is registered by this
+    project's rsproj.pkgdef (shipped at the VSIX root), and everything MSBuild-side (capabilities, rules, item globs, cargo targets)
     comes from Kubuno.Rust.Sdk. Every export here is scoped with [AppliesTo] to the
-    RustProjectSystem capability, so it never touches any other CPS project.
+    RustProjectSystem capability, so it never touches any other CPS project. What a Kubuno target adds to a .rsproj
+    (the .kbview designer as default editor, the view file icon, the Kubuno control icons) lives in the target's own
+    CPS assembly - Kubuno.Desktop.ProjectSystem for desktop views - never here.
   -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <RootNamespace>Kubuno.VisualStudio.RustProjectSystem</RootNamespace>
-    <AssemblyName>Kubuno.VisualStudio.RustProjectSystem</AssemblyName>
+    <RootNamespace>Kubuno.Rust.ProjectSystem</RootNamespace>
+    <AssemblyName>Kubuno.Rust.ProjectSystem</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <!-- WPF "Resource" build action, so Resources\*.png are reachable through the pack URI
          Resources\RustProject.imagemanifest declares. -->
     <UseWPF>true</UseWPF>
     <!-- Resolved from the Visual Studio installation that runs this MSBuild (the VSIX solution
          already requires Visual Studio's MSBuild, see README.md). -->
-    <!-- Same benign MSB3277 unification notes as Kubuno.VisualStudio (see its csproj): Kubuno.Cargo's
+    <!-- Same benign MSB3277 unification notes as Kubuno.VisualStudio (see its csproj): Kubuno.Rust.Cargo's
          System.Text.Json 8.x vs. the 10.x the VS-install assemblies reference - the running Visual
          Studio resolves them to its own copies at load time. -->
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
@@ -88,18 +90,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kubuno.Launch\Kubuno.Launch.csproj" />
-    <ProjectReference Include="..\Kubuno.VisualStudio.Core\Kubuno.VisualStudio.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- The themed dialog base shared as source by every assembly that shows a dialog (docs/ARCHITECTURE.md, "Themed dialogs"). -->
-    <Compile Include="..\Shared\UI\*.cs" Link="UI\%(Filename)%(Extension)" />
+    <ProjectReference Include="..\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
+    <ProjectReference Include="..\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
+    <!-- Themed dialogs, host accessors. Kubuno.Core compiles against the NuGet 17.x SDK and keeps its packages private,
+         so this project's 18.x Visual Studio references stay the only ones (a higher version than Kubuno.Core's). -->
+    <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="Resources\RustProject.imagemanifest" />
-    <None Include="Resources\KubunoControls.imagemanifest" />
+    <!-- The .rsproj project type registration, shipped at the VSIX root by src/Kubuno.VisualStudio. -->
+    <None Include="rsproj.pkgdef" />
   </ItemGroup>
 
 </Project>

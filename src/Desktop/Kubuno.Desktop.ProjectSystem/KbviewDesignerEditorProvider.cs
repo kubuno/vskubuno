@@ -3,8 +3,9 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.ProjectSystem;
+using Kubuno.Rust.ProjectSystem;
 
-namespace Kubuno.VisualStudio.RustProjectSystem
+namespace Kubuno.Desktop.ProjectSystem
 {
     /// <summary>
     /// Makes the Kubuno View Designer the DEFAULT editor of <c>.kbview</c> files inside a <c>.rsproj</c>,
@@ -27,7 +28,7 @@ namespace Kubuno.VisualStudio.RustProjectSystem
     [Order(1000)]
     internal sealed class KbviewDesignerEditorProvider : IProjectSpecificEditorProvider
     {
-        /// <summary>Kubuno.VisualStudio.Designer's <c>DesignerConstants.EditorFactoryGuidString</c> (this assembly does not reference the designer library - keep in sync).</summary>
+        /// <summary>Kubuno.Desktop.Designer's <c>DesignerConstants.EditorFactoryGuidString</c> (this assembly does not reference the designer library - keep in sync).</summary>
         internal static readonly Guid DesignerEditorFactory = new Guid("1DCF5C91-A51E-4DE8-B066-680D6636C094");
 
         /// <summary><c>VSConstants.LOGVIEWID_Designer</c> (verified by reflection on Microsoft.VisualStudio.Shell.15.0).</summary>

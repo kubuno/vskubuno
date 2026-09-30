@@ -1,7 +1,7 @@
 using System.Globalization;
-using Kubuno.VisualStudio.Core.ProjectProperties;
+using Kubuno.Rust.Logic.ProjectProperties;
 
-namespace Kubuno.VisualStudio.RustProjectSystem.ProjectProperties
+namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 {
     /// <summary>
     /// Strings the Project Properties code itself produces (computed values, dialogs), in French when Visual

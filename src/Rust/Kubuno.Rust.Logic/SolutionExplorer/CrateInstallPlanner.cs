@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Metadata;
 
-namespace Kubuno.VisualStudio.Core.SolutionExplorer
+namespace Kubuno.Rust.Logic.SolutionExplorer
 {
     /// <summary>
     /// Turns what the crate manager (or a Dependencies menu) asks for into <c>cargo add</c> /

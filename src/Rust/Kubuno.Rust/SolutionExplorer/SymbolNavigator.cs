@@ -1,31 +1,30 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Designer.EditorFactory;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 
-namespace Kubuno.VisualStudio.SolutionExplorer
+namespace Kubuno.Rust.SolutionExplorer
 {
     /// <summary>
     /// Double-click on a Solution Explorer symbol node (docs/RSPROJ.md lot 8): a Rust item opens its
-    /// file with the caret on the item's name; a <c>.kbview</c> element opens (or brings up) the
-    /// Kubuno View Designer and puts its XML caret on the element, which the designer's own selection
-    /// sync turns into a selection on the design surface - the same path a click in the XML pane takes.
+    /// file with the caret on the item's name; an element of another language's file opens in the logical view its
+    /// <see cref="Extensibility.ISolutionSymbolProvider"/> names, with the caret of the text view it names (the desktop
+    /// layer: the Kubuno View Designer, its XML pane's caret on the element).
     /// </summary>
     internal static class SymbolNavigator
     {
-        public static void Navigate(string path, int line, int column) =>
-            NavigateSafeAsync(path, line, column).FileAndForget("Kubuno/SolutionExplorer/Navigate");
+        public static void Navigate(string path, int line, int column, Extensibility.ISolutionSymbolProvider? provider) =>
+            NavigateSafeAsync(path, line, column, provider).FileAndForget("Kubuno/SolutionExplorer/Navigate");
 
-        private static async Task NavigateSafeAsync(string path, int line, int column)
+        private static async Task NavigateSafeAsync(string path, int line, int column, Extensibility.ISolutionSymbolProvider? provider)
         {
             try
             {
-                await NavigateAsync(path, line, column);
+                await NavigateAsync(path, line, column, provider);
             }
             catch (Exception exception)
             {
@@ -33,17 +32,16 @@ namespace Kubuno.VisualStudio.SolutionExplorer
             }
         }
 
-        private static async Task NavigateAsync(string path, int line, int column)
+        private static async Task NavigateAsync(string path, int line, int column, Extensibility.ISolutionSymbolProvider? provider)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var serviceProvider = ServiceProvider.GlobalProvider;
-            bool isView = string.Equals(Path.GetExtension(path), ".kbview", StringComparison.OrdinalIgnoreCase);
 
             if (!VsShellUtilities.IsDocumentOpen(serviceProvider, path, Guid.Empty, out _, out _, out IVsWindowFrame? frame) || frame == null)
             {
-                // A view element opens in the designer (the "select in designer" gesture); Rust code
-                // in the default editor.
-                var logicalView = isView ? VSConstants.LOGVIEWID.Designer_guid : VSConstants.LOGVIEWID.Primary_guid;
+                // Another language's element opens in its provider's view (e.g. the designer, the "select in
+                // designer" gesture); Rust code in the default editor.
+                var logicalView = provider?.NavigationLogicalView ?? VSConstants.LOGVIEWID.Primary_guid;
                 VsShellUtilities.OpenDocument(serviceProvider, path, logicalView, out _, out _, out frame);
             }
 
@@ -54,10 +52,10 @@ namespace Kubuno.VisualStudio.SolutionExplorer
 
             frame.Show();
 
-            // The designer's XML pane (a hosted code window) is created once the frame is laid out.
+            // A provider's text view (the designer's XML pane, a hosted code window) is created once the frame is laid out.
             for (int attempt = 0; attempt < 40; attempt++)
             {
-                var view = GetTextView(frame);
+                var view = provider is not null ? provider.GetTextView(frame) : VsShellUtilities.GetTextView(frame);
                 if (view != null)
                 {
                     view.SetCaretPos(line, column);
@@ -68,18 +66,6 @@ namespace Kubuno.VisualStudio.SolutionExplorer
                 await Task.Delay(50);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             }
-        }
-
-        private static IVsTextView? GetTextView(IVsWindowFrame frame)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            if (frame.GetProperty((int)__VSFPROPID.VSFPROPID_DocView, out var docView) == VSConstants.S_OK
-                && docView is DesignerWindowPane designer)
-            {
-                return designer.XmlTextView;
-            }
-
-            return VsShellUtilities.GetTextView(frame);
         }
     }
 }

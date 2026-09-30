@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Kubuno.Desktop.Logic.Painting;
 
-namespace Kubuno.Launch.Tests
+namespace Kubuno.Desktop.Tests.Painting
 {
     [TestClass]
     public sealed class PaintDebugTests

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.RustProjectSystem.ProjectProperties
+namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 {
     /// <summary>
     /// This assembly's dialogs with sample data, for Kubuno.VisualStudio's "Kubuno: Dialog Gallery" developer

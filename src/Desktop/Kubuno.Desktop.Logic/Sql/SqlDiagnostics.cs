@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Core.Sql
+namespace Kubuno.Desktop.Logic.Sql
 {
     /// <summary>A warning on a SQL name (decoded SQL offsets).</summary>
     public sealed class SqlDiagnostic

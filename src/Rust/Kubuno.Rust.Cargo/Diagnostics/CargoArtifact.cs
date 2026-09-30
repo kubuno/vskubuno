@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Metadata;
 
-namespace Kubuno.Cargo.Diagnostics
+namespace Kubuno.Rust.Cargo.Diagnostics
 {
     /// <summary>A "compiler-artifact" build event: one target finished compiling (or was already up to date).</summary>
     public sealed class CargoArtifact

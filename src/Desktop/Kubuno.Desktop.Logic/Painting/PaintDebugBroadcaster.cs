@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Kubuno.Launch
+namespace Kubuno.Desktop.Logic.Painting
 {
     /// <summary>
     /// Win32 side of the paint-debug toggle: posts the registered "Kubuno.PaintDebug" message to every

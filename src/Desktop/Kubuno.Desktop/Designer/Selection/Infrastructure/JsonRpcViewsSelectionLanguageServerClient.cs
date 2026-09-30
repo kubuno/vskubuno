@@ -2,17 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Outline;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Outline;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.Designer.Selection.Infrastructure
+namespace Kubuno.Desktop.Designer.Selection.Infrastructure
 {
     /// <summary>
     /// The real <c>kubuno/elementAtOffset</c>/<c>kubuno/rangeOfElement</c>/<c>textDocument/documentSymbol</c>
     /// caller, over the same <c>StreamJsonRpc.JsonRpc</c> object
-    /// <c>Kubuno.VisualStudio.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> already exposes -
+    /// <c>Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> already exposes -
     /// the exact precedent <see cref="Handlers.Infrastructure.JsonRpcKubunoViewsLanguageServerClient"/>
     /// already establishes for DSG-10's own method (see that class's own doc comment for the full
     /// reasoning, unchanged here: why a plain camelCase anonymous object for the request, why a weakly-

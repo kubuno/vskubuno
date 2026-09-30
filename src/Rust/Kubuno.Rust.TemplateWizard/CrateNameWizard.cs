@@ -5,7 +5,7 @@ using System.Text;
 using EnvDTE;
 using Microsoft.VisualStudio.TemplateWizard;
 
-namespace Kubuno.VisualStudio.TemplateWizard
+namespace Kubuno.Rust.TemplateWizard
 {
     /// <summary>
     /// "Create a new project" wizard shared by every Rust/Kubuno project template
@@ -165,8 +165,8 @@ namespace Kubuno.VisualStudio.TemplateWizard
                 }
 
                 var extensionDirectory = Path.GetDirectoryName(typeof(CrateNameWizard).Assembly.Location);
-                Kubuno.VisualStudio.Core.ProjectGeneration.SdkFeedDistribution.EnsureUserRegistered(extensionDirectory, _ => { });
-                Kubuno.VisualStudio.Core.ProjectGeneration.SdkFeedDistribution.EnsureSolutionLocal(_solutionDirectory, extensionDirectory, _ => { });
+                Kubuno.Rust.Logic.ProjectGeneration.SdkFeedDistribution.EnsureUserRegistered(extensionDirectory, _ => { });
+                Kubuno.Rust.Logic.ProjectGeneration.SdkFeedDistribution.EnsureSolutionLocal(_solutionDirectory, extensionDirectory, _ => { });
             }
             catch (Exception)
             {

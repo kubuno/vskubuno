@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.SolutionExplorer
+namespace Kubuno.Rust.Logic.SolutionExplorer
 {
     /// <summary>
     /// Parses the output of <c>rust-analyzer symbols</c> (source on stdin, one

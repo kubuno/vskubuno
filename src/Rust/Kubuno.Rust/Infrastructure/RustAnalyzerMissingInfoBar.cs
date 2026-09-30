@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.Infrastructure
+namespace Kubuno.Rust.Infrastructure
 {
     /// <summary>
     /// Shows a main-window info bar with the exact fix when rust-analyzer cannot be found, so the
@@ -24,7 +24,7 @@ namespace Kubuno.VisualStudio.Infrastructure
             // package's own JoinableTaskFactory, which ties the task to the package's lifetime,
             // when the package has already loaded; before that (unlikely - this only runs once a
             // .rs document activates the language client), fall back to the shared one.
-            var joinableTaskFactory = KubunoPackage.Instance?.JoinableTaskFactory ?? ThreadHelper.JoinableTaskFactory;
+            var joinableTaskFactory = Kubuno.Core.KubunoHost.JoinableTaskFactory;
             joinableTaskFactory.RunAsync(ShowIfNeededAsync).Task.Forget();
         }
 

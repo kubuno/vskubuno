@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Kubuno.VisualStudio.Core.DataSources
+namespace Kubuno.Desktop.Logic.DataSources
 {
     /// <summary>
     /// The drop choices of the Data Sources window (a table's Grid / Details mode, a column's control), kept per project in

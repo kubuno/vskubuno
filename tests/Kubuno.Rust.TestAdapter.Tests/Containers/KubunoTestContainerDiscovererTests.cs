@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.TestAdapter.Containers;
-using Kubuno.TestAdapter.Execution;
+using Kubuno.Rust.TestAdapter.Containers;
+using Kubuno.Rust.TestAdapter.Execution;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 
-namespace Kubuno.TestAdapter.Tests.Containers
+namespace Kubuno.Rust.TestAdapter.Tests.Containers
 {
     public class KubunoTestContainerDiscovererTests
     {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Kubuno.Cargo.Commands
+namespace Kubuno.Rust.Cargo.Commands
 {
     /// <summary>
     /// Joins argv-style arguments into a single Windows command-line string using the same

@@ -1,4 +1,4 @@
-namespace Kubuno.TestAdapter
+namespace Kubuno.Rust.TestAdapter
 {
     /// <summary>Identifiers shared between discovery, execution and container discovery.</summary>
     public static class KubunoTestAdapterConstants

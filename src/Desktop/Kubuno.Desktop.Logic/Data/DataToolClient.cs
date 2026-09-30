@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.VisualStudio.Core.Data
+namespace Kubuno.Desktop.Logic.Data
 {
     /// <summary>The raw request/response API of <c>kubuno-data-tool</c> (what <see cref="DataToolService"/> is built on; tests fake it).</summary>
     public interface IDataToolClient

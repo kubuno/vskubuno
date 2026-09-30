@@ -5,17 +5,17 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using Kubuno.VisualStudio.Designer.Outline;
-using Kubuno.VisualStudio.Designer.Registry;
-using Kubuno.VisualStudio.Designer.Registry.Infrastructure;
-using Kubuno.VisualStudio.Designer.Toolbox;
-using Kubuno.VisualStudio.Designer.UI;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Designer.Outline;
+using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Desktop.Designer.Registry.Infrastructure;
+using Kubuno.Desktop.Designer.Toolbox;
+using Kubuno.Desktop.Designer.UI;
+using Kubuno.Desktop.Views.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The project's own controls in the designer (docs/EVENTS.md EVT-7b):

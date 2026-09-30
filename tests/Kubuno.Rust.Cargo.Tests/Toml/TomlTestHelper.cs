@@ -1,6 +1,6 @@
-using Kubuno.Cargo.Toml;
+using Kubuno.Rust.Cargo.Toml;
 
-namespace Kubuno.Cargo.Tests.Toml
+namespace Kubuno.Rust.Cargo.Tests.Toml
 {
     internal static class TomlTestHelper
     {

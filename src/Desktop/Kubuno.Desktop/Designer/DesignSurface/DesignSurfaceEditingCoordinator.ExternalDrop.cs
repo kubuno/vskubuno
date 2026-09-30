@@ -3,10 +3,10 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Views.Logging;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// External drops (<see cref="ExternalDesignerDrop"/>, docs/DATA.md DATA-6): a table or a column dragged from the Data Sources

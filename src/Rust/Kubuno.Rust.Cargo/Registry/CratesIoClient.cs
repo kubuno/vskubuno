@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.Cargo.Registry
+namespace Kubuno.Rust.Cargo.Registry
 {
     /// <summary>
     /// Read-only access to crates.io for the crate manager and the Dependencies node's update/yanked

@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Rust layer, Visual Studio side (docs/ARCHITECTURE.md, "Layers (as built)"): product-agnostic Rust support that
+    every Kubuno target (desktop apps, web module backends, mobile Rust cores) reuses untouched -
+      - LanguageService\  rust-analyzer (ILanguageClient, middle layer), IntelliSense (completion, signature help,
+                          semantic colors, inlay hints, CodeLens, doc comments), QuickInfo;
+      - Workspace\        Open Folder Cargo workspaces: build/rebuild/clean, Error List;
+      - Debugging\        launch targets, native debugging, test at cursor, natvis / Just My Code / step filters and
+                          the panic exception entry (debugging.pkgdef; the Concord component is Kubuno.Rust.Debugger);
+      - Commands\, CrateManager\, SolutionExplorer\  the .rsproj commands, the Dependencies node, the crate manager,
+                          the symbol tree;
+      - Options\          the Rust and Debugging options pages; Infrastructure\ rust-analyzer discovery, rustfmt on
+                          save, the Kubuno.Rust.Sdk feed;
+      - Grammars\, languages.pkgdef, ProjectTemplates\, ItemTemplates\  shipped into the VSIX by src/Kubuno.VisualStudio.
+    RustLayer.cs wires it into the package; RustLanguageExtensions.cs is where the layers above plug target-specific
+    behavior into the Rust editor (embedded languages, rename participants, symbol sources) without this assembly
+    ever referencing them.
+
+    References Kubuno.Core and the Rust assemblies only (enforced by tests/Kubuno.Architecture.Tests).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Kubuno.Rust</RootNamespace>
+    <AssemblyName>Kubuno.Rust</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <!-- Same benign MSB3277 unification notes as Kubuno.VisualStudio (see its csproj). -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <!-- $(VsInstallRoot) is only defined by Microsoft.VsSDK.targets (VSIX projects): the Visual Studio running MSBuild. -->
+    <VsInstallRoot Condition="'$(VsInstallRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildBinPath)\..\..\..'))</VsInstallRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <!--
+      Not published on NuGet: this assembly ships only inside the Visual Studio installation itself
+      (CommonExtensions\Microsoft\OpenFolder). It carries IVsCommandItem, which a build/rebuild/clean
+      IFileContextAction implements to bind itself to VS's well-known Build/Rebuild/Clean command IDs (see
+      Workspace\CargoBuildFileContextAction.cs). Private=False: resolved against the running VS's own copy, never
+      copied into the VSIX.
+    -->
+    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\OpenFolder\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Same versions as every other Visual Studio assembly of the extension (bump them together). -->
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.14.60" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="17.12.19" ExcludeAssets="runtime" />
+    <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
+    <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
+    <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
+    <ProjectReference Include="..\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
+    <ProjectReference Include="..\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
+    <!-- RustProjectPropertiesHost (the Project Properties editor's links), RustDebuggerSettings. -->
+    <ProjectReference Include="..\Kubuno.Rust.ProjectSystem\Kubuno.Rust.ProjectSystem.csproj" />
+    <!-- Workspace\CargoWorkspaceSource implements the Test Explorer adapter's ICargoWorkspaceSource. -->
+    <ProjectReference Include="..\Kubuno.Rust.TestAdapter\Kubuno.Rust.TestAdapter.csproj" />
+    <!-- Preloaded by RustLayer (the template engine loads it by name). -->
+    <ProjectReference Include="..\Kubuno.Rust.TemplateWizard\Kubuno.Rust.TemplateWizard.csproj" />
+  </ItemGroup>
+
+</Project>

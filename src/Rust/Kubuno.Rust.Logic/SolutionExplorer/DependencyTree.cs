@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Registry;
-using Kubuno.Cargo.Toolchain;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Registry;
+using Kubuno.Rust.Cargo.Toolchain;
 
-namespace Kubuno.VisualStudio.Core.SolutionExplorer
+namespace Kubuno.Rust.Logic.SolutionExplorer
 {
     /// <summary>
     /// The category nodes under "Dependencies" - the Cargo counterparts of the .NET project system's

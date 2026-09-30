@@ -8,16 +8,16 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Core.DataSources;
-using Kubuno.VisualStudio.Core.Sql;
-using Kubuno.VisualStudio.DataExplorer;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.Options;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Desktop.Logic.DataSources;
+using Kubuno.Desktop.Logic.Sql;
+using Kubuno.Desktop.DataExplorer;
+using Kubuno.Core.Logging;
+using Kubuno.Desktop.Options;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TaskStatusCenter;
 
-namespace Kubuno.VisualStudio.DataSources
+namespace Kubuno.Desktop.DataSources
 {
     /// <summary>What the last page of the wizard says Finish will change (read from the crate's files).</summary>
     internal sealed class DataSourceSummaryFacts
@@ -121,7 +121,7 @@ namespace Kubuno.VisualStudio.DataSources
                 needsFeature = update.AddedDataFeature;
                 needsId = update.AddedUserSecretsId;
             }
-            catch (Exception exception) when (exception is Kubuno.Cargo.Toml.TomlParseException || exception is InvalidOperationException || exception is NotSupportedException)
+            catch (Exception exception) when (exception is Kubuno.Rust.Cargo.Toml.TomlParseException || exception is InvalidOperationException || exception is NotSupportedException)
             {
                 // Reported by Finish.
             }
@@ -191,7 +191,7 @@ namespace Kubuno.VisualStudio.DataSources
             {
                 cargo = DataSourceCodeWriter.EnsureCargoManifest(ReadOrEmpty(_crate.ManifestPath), () => Guid.NewGuid().ToString());
             }
-            catch (Exception exception) when (exception is Kubuno.Cargo.Toml.TomlParseException || exception is InvalidOperationException || exception is NotSupportedException)
+            catch (Exception exception) when (exception is Kubuno.Rust.Cargo.Toml.TomlParseException || exception is InvalidOperationException || exception is NotSupportedException)
             {
                 return "Cargo.toml: " + exception.Message;
             }
@@ -335,7 +335,7 @@ namespace Kubuno.VisualStudio.DataSources
             }
 
             var token = handler?.UserCancellation ?? CancellationToken.None;
-            string? targetDirectory = Kubuno.VisualStudio.Migrations.RsprojTargetDirectory.Find(crate.ManifestDirectory);
+            string? targetDirectory = Kubuno.Desktop.Migrations.RsprojTargetDirectory.Find(crate.ManifestDirectory);
             var work = Task.Run(async () =>
             {
                 var parameters = new JsonObject

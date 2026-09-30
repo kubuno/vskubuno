@@ -32,7 +32,7 @@
       Combining several first-party Microsoft.VisualStudio.* NuGet packages of slightly different
       vintages (Microsoft.VisualStudio.SDK 17.14.x pulling 18.x-era transitive VS assemblies vs.
       Microsoft.VisualStudio.Workspace.VSIntegration 17.12.19 and the VS-install-only
-      TestWindow/EnvDTE assemblies Kubuno.TestAdapter/Kubuno.Mcp.Bridge resolve against) makes
+      TestWindow/EnvDTE assemblies Kubuno.Rust.TestAdapter/Kubuno.Core.Mcp.Bridge resolve against) makes
       MSBuild's reference unification report an MSB3277 "unresolved conflict" note for each one it
       auto-resolves (always by picking the highest version - the same resolution the running VS
       instance itself performs at load time). This is expected/benign for a VSSDK extension
@@ -61,109 +61,16 @@
     <WarningLevel>4</WarningLevel>
     <DeployExtension>False</DeployExtension>
   </PropertyGroup>
+  <!--
+    The VSIX packaging project and composition root of the extension (docs/ARCHITECTURE.md, "Layers (as built)"): the
+    package class with every registration attribute (KubunoPackage.cs), the command table (KubunoCommands.vsct), the
+    unified settings manifest and its resources, the VSIX manifest - and the layer assemblies, pkgdef fragments,
+    grammars, templates, image manifests and bundled tools it ships. No feature code lives here: each layer
+    (src/Core, src/Rust, src/Desktop, src/Web, src/Mobile) owns its own.
+  -->
   <ItemGroup>
-    <Compile Include="Constants.cs" />
     <Compile Include="PackageGuids.cs" />
     <Compile Include="KubunoPackage.cs" />
-    <!-- The themed dialog base shared as source by every assembly that shows a dialog (docs/ARCHITECTURE.md, "Themed dialogs"). -->
-    <Compile Include="..\Shared\UI\ThemedDialog.cs">
-      <Link>UI\ThemedDialog.cs</Link>
-    </Compile>
-    <Compile Include="LanguageService\ContentDefinition.cs" />
-    <Compile Include="LanguageService\RustLanguageClient.cs" />
-    <Compile Include="LanguageService\RustAnalyzerMiddleLayer.cs" />
-    <Compile Include="LanguageService\RustClientTarget.cs" />
-    <Compile Include="LanguageService\QuickInfo\LspQuickInfoSource.cs" />
-    <Compile Include="LanguageService\QuickInfo\QuickInfoElementFactory.cs" />
-    <Compile Include="LanguageService\QuickInfo\QuickInfoSourceProviders.cs" />
-    <Compile Include="LanguageService\Overrides\OverrideMembersDialog.cs" />
-    <Compile Include="LanguageService\Overrides\OverrideSuggestedActions.cs" />
-    <Compile Include="LanguageService\Overrides\KubunoRustCompletion.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustLsp.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustCompletionSource.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustCompletionCommitManager.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustCompletionItemManager.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustSnippetSession.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustClassifications.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustInlayHintsOption.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustArgumentSnapshots.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustCodeLens.cs" />
-    <Compile Include="LanguageService\IntelliSense\RustDocCommentContinuation.cs" />
-    <Compile Include="LanguageService\IntelliSense\KbviewCrossLanguageCompletion.cs" />
-    <Compile Include="LanguageService\IntelliSense\KbviewDefinitionFallback.cs" />
-    <Compile Include="LanguageService\Sql\SqlBufferState.cs" />
-    <Compile Include="LanguageService\Sql\SqlClassifier.cs" />
-    <Compile Include="LanguageService\Sql\SqlCompletionSource.cs" />
-    <Compile Include="LanguageService\Sql\SqlErrorTagger.cs" />
-    <Compile Include="LanguageService\Sql\SqlSchemaLocator.cs" />
-    <Compile Include="SolutionExplorer\CollectionSources.cs" />
-    <Compile Include="SolutionExplorer\SymbolNavigator.cs" />
-    <Compile Include="SolutionExplorer\SymbolQueries.cs" />
-    <Compile Include="SolutionExplorer\SymbolTreeProvider.cs" />
-    <Compile Include="SolutionExplorer\TreeItems.cs" />
-    <Compile Include="Options\RustOptionsPage.cs" />
-    <Compile Include="Options\LspTraceLevel.cs" />
-    <Compile Include="Logging\KubunoLog.cs" />
-    <Compile Include="Infrastructure\RealRustAnalyzerEnvironment.cs" />
-    <Compile Include="Infrastructure\RustAnalyzerMissingInfoBar.cs" />
-    <Compile Include="Infrastructure\FormatOnSaveDocumentEvents.cs" />
-    <Compile Include="Infrastructure\RustSdkFeedInstaller.cs" />
-    <Compile Include="Workspace\CargoBuildFileContext.cs" />
-    <Compile Include="Workspace\CargoBuildFileContextAction.cs" />
-    <Compile Include="Workspace\CargoBuildMessageReporter.cs" />
-    <Compile Include="Workspace\CargoWorkspaceSource.cs" />
-    <Compile Include="Debugging\RustLaunchTargetsGenerator.cs" />
-    <Compile Include="Debugging\NativeDebugLauncher.cs" />
-    <Compile Include="Debugging\DebugRustTestAtCursorCommand.cs" />
-    <Compile Include="Commands\GenerateRustProjectsCommand.cs" />
-    <Compile Include="Commands\RestartRustAnalyzerCommand.cs" />
-    <Compile Include="Commands\PaintDebugCommand.cs" />
-    <Compile Include="Commands\DialogGalleryCommand.cs" />
-    <!-- Extended "Ajouter" submenu on a .rsproj project node (product request, see KubunoCommands.vsct's own comment). -->
-    <Compile Include="Commands\RsprojSelection.cs" />
-    <Compile Include="Commands\RsprojFileReader.cs" />
-    <Compile Include="Commands\AddProjectItemCommands.cs" />
-    <Compile Include="Commands\NewItemNameDialog.cs" />
-    <Compile Include="Commands\AddProjectReferenceCommand.cs" />
-    <Compile Include="Commands\ReferenceManagerDialog.cs" />
-    <Compile Include="Commands\AddCargoDependencyCommand.cs" />
-    <!-- The Dependencies node (like a .NET project's "Dépendances"): menus, properties, managers. -->
-    <Compile Include="Commands\CargoRunner.cs" />
-    <Compile Include="Commands\DependencyCommands.cs" />
-    <Compile Include="Commands\UnusedDependenciesDialog.cs" />
-    <Compile Include="CrateManager\CrateManagerToolWindow.cs" />
-    <Compile Include="CrateManager\CrateManagerControl.cs" />
-    <Compile Include="SolutionExplorer\DependenciesNodeContextMenu.cs" />
-    <Compile Include="SolutionExplorer\DependencyTreeItems.cs" />
-    <Compile Include="SolutionExplorer\DependencyBrowseObject.cs" />
-    <Compile Include="SolutionExplorer\DependencyDataLoader.cs" />
-    <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §7: shows its two package-registered tool windows. -->
-    <Compile Include="Designer\DesignerToolWindowCommands.cs" />
-    <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md §6: resolves kubuno-views-surface.exe (DSG-7's embedded design surface). -->
-    <Compile Include="Designer\KubunoViewsSurfaceLocator.cs" />
-    <!-- docs/DESIGNER.md section 15: the designer renders with the project's own kubuno_ui.dll (design build). -->
-    <Compile Include="Designer\ProjectDesignSurfaceRuntimeProvider.cs" />
-    <!-- docs/DATA.md DATA-5: the Data Explorer, its query windows and the kubuno-data-tool host (logic in Kubuno.VisualStudio.Core\Data). -->
-    <Compile Include="DataExplorer\DataToolHost.cs" />
-    <Compile Include="DataExplorer\DataUi.cs" />
-    <Compile Include="DataExplorer\DataExplorerControl.cs" />
-    <Compile Include="DataExplorer\DataExplorerToolWindow.cs" />
-    <Compile Include="DataExplorer\AddConnectionDialog.cs" />
-    <Compile Include="DataExplorer\QueryControl.cs" />
-    <Compile Include="DataExplorer\QueryToolWindow.cs" />
-    <Compile Include="DataExplorer\ShowDataExplorerCommand.cs" />
-    <!-- docs/DATA.md DATA-7: migrations and the SQLx cache. -->
-    <Compile Include="Migrations\MigrationCommands.cs" />
-    <Compile Include="Migrations\MigrationDialogs.cs" />
-    <Compile Include="Migrations\MigrationsTree.cs" />
-    <Compile Include="Migrations\SqlxStaleInfoBar.cs" />
-    <Compile Include="Migrations\RsprojTargetDirectory.cs" />
-    <Compile Include="Options\DataOptionsPage.cs" />
-    <Compile Include="DataSources\DataSourcesControl.cs" />
-    <Compile Include="DataSources\DataSourcesToolWindow.cs" />
-    <Compile Include="DataSources\DataSourceGenerator.cs" />
-    <Compile Include="DataSources\DataSourceWizardDialog.cs" />
-    <Compile Include="DataSources\ShowDataSourcesCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="source.extension.cs">
       <AutoGen>True</AutoGen>
@@ -183,18 +90,19 @@
       <LastGenOutput>source.extension.cs</LastGenOutput>
     </None>
     <!--
-      Kubuno.VisualStudio.Designer's own INTEGRATION.md §3: the display-name resource id
-      [ProvideEditorFactory(typeof(KbviewEditorFactory), 110)] needs, resolved through this package's
-      own managed resources (PackageRegistration(UseManagedResourcesOnly = true)). ManifestResourceName
-      is set explicitly to "VSPackage" (rather than the default namespace-qualified name) because that
-      is the exact base name Microsoft.VisualStudio.Shell.Package's own resource lookup expects - the
-      standard VSSDK project template convention for this file.
+      The display-name resource id [ProvideEditorFactory(typeof(KbviewEditorFactory), 110)] needs (Kubuno.Desktop's
+      Designer\INTEGRATION.md section 3) and the key binding table name (#120), resolved through this package's own
+      managed resources (PackageRegistration(UseManagedResourcesOnly = true)). ManifestResourceName is set explicitly
+      to "VSPackage" (rather than the default namespace-qualified name) because that is the exact base name
+      Microsoft.VisualStudio.Shell.Package's own resource lookup expects - the standard VSSDK project template
+      convention for this file.
     -->
     <EmbeddedResource Include="Resources\VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
     </EmbeddedResource>
-    <!-- Labels and descriptions of the unified settings (English, and the French satellite); generated by tools/gen-unified-settings.ps1. -->
+    <!-- Labels and descriptions of the unified settings of every layer (English, and the French satellite); generated
+         by tools/gen-unified-settings.ps1, referenced by the manifest as "@Name;..\Kubuno.VisualStudio.dll". -->
     <EmbeddedResource Include="Resources\Settings.resx" />
     <EmbeddedResource Include="Resources\Settings.fr.resx" />
     <!-- Visual Studio 2026's unified settings page (Tools > Options > Kubuno), registered by KubunoPackage's [ProvideSettingsManifest]. -->
@@ -202,89 +110,38 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="languages.pkgdef">
+  </ItemGroup>
+
+  <!--
+    Each layer's static registrations, grammars, image manifests and templates, shipped at the SAME paths inside the
+    VSIX as before the layers (pkgdef files at the root, Grammars\, ProjectTemplates\, ItemTemplates\): the files live
+    in their layer's folder, only their VSIX path is decided here.
+  -->
+  <ItemGroup>
+    <!-- ==== Rust layer ==== -->
+    <!-- rust-analyzer's TextMate grammar and language configuration (Kubuno.Rust\languages.pkgdef). -->
+    <Content Include="..\Rust\Kubuno.Rust\languages.pkgdef">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>languages.pkgdef</Link>
+    </Content>
+    <Content Include="..\Rust\Kubuno.Rust\Grammars\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Grammars\%(Filename)%(Extension)</Link>
     </Content>
     <!-- .rsproj project type registration (docs/RSPROJ.md work package 3) - see the file's own header. -->
-    <Content Include="rsproj.pkgdef">
+    <Content Include="..\Rust\Kubuno.Rust.ProjectSystem\rsproj.pkgdef">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>rsproj.pkgdef</Link>
     </Content>
-    <!-- .rsproj project node icon: discovered by VS's image service from the extension folder; the
-         PNGs it references are WPF resources of Kubuno.VisualStudio.RustProjectSystem.dll. -->
-    <Content Include="..\Kubuno.VisualStudio.RustProjectSystem\Resources\RustProject.imagemanifest">
+    <!-- .rsproj project node and file icons: discovered by VS's image service from the extension folder; the
+         XAML images it references are WPF resources of Kubuno.Rust.ProjectSystem.dll. -->
+    <Content Include="..\Rust\Kubuno.Rust.ProjectSystem\Resources\RustProject.imagemanifest">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>RustProject.imagemanifest</Link>
-    </Content>
-    <!-- Kubuno control icons (docs/DESIGNER.md section 11): the designer's Toolbox items and the .kbview
-         element nodes of Solution Explorer; the XAML icons are WPF pages of Kubuno.VisualStudio.RustProjectSystem.dll. -->
-    <Content Include="..\Kubuno.VisualStudio.RustProjectSystem\Resources\KubunoControls.imagemanifest">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>KubunoControls.imagemanifest</Link>
-    </Content>
-    <Content Include="Grammars\rust.tmLanguage.json">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Grammars\rust-language-configuration.json">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <!-- The grammar's own TextMate theme (Visual Studio loads <grammar>.tmTheme next to it): C#'s classifications. -->
-    <Content Include="Grammars\rust.tmLanguage.tmTheme">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Grammars\LICENSE-rust-syntax.txt">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Grammars\LICENSE-vscode.txt">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Grammars\THIRD-PARTY-NOTICES.md">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <!--
-      Kubuno.VisualStudio.Views' own grammar (see its INTEGRATION.md #3): shipped under a
-      Grammars\Kbview\ subfolder, not flattened alongside the Rust grammar files above, so each
-      grammar's own THIRD-PARTY-NOTICES.md/LICENSE files stay unambiguous (different upstream
-      licenses/attribution). languages.pkgdef's "KubunoViews" keys (merged below) point here.
-    -->
-    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\kbview.tmLanguage.json">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Grammars\Kbview\kbview.tmLanguage.json</Link>
-    </Content>
-    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\kbview.tmLanguage.tmTheme">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Grammars\Kbview\kbview.tmLanguage.tmTheme</Link>
-    </Content>
-    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\kbview-language-configuration.json">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Grammars\Kbview\kbview-language-configuration.json</Link>
-    </Content>
-    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\LICENSE-vscode.txt">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Grammars\Kbview\LICENSE-vscode.txt</Link>
-    </Content>
-    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\LICENSE-atom-language-xml.txt">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Grammars\Kbview\LICENSE-atom-language-xml.txt</Link>
-    </Content>
-    <Content Include="..\Kubuno.VisualStudio.Views\Grammars\THIRD-PARTY-NOTICES.md">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Grammars\Kbview\THIRD-PARTY-NOTICES.md</Link>
     </Content>
     <!--
       docs/RSPROJ.md Addendum (lot 7): "Create a new project"/"Add New Item" templates. Unlike the
@@ -294,22 +151,57 @@
       source.extension.vsixmanifest do nothing on their own without these explicit, wildcarded
       Content items (verified live: omitting them produced a .vsix with no template files at all).
       %(RecursiveDir) preserves each template's own subfolder under ProjectTemplates/ItemTemplates.
+      Each layer keeps its own templates (Rust: console app, library, module, Rust items; Desktop: desktop
+      application, views, controls, components); the VSIX merges them into one catalog.
     -->
-    <Content Include="ProjectTemplates\**\*.*">
+    <Content Include="..\Rust\Kubuno.Rust\ProjectTemplates\**\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>ProjectTemplates\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
-    <Content Include="ItemTemplates\**\*.*">
+    <Content Include="..\Rust\Kubuno.Rust\ItemTemplates\**\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>ItemTemplates\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
-  </ItemGroup>
 
+    <!-- ==== Desktop layer ==== -->
+    <!-- The .kbview grammar, language configuration, core text editor mapping and Open Folder icon
+         (Kubuno.Desktop\Views\kbview-languages.pkgdef), the grammar under its own Grammars\Kbview\ subfolder so each
+         grammar's THIRD-PARTY-NOTICES.md/LICENSE files stay unambiguous (different upstream licenses/attribution). -->
+    <Content Include="..\Desktop\Kubuno.Desktop\Views\kbview-languages.pkgdef">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>kbview-languages.pkgdef</Link>
+    </Content>
+    <Content Include="..\Desktop\Kubuno.Desktop\Views\Grammars\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Grammars\Kbview\%(Filename)%(Extension)</Link>
+    </Content>
+    <!-- Kubuno control icons (docs/DESIGNER.md section 11): the designer's Toolbox items and the .kbview element nodes
+         of Solution Explorer; the XAML icons are WPF resources of Kubuno.Desktop.ProjectSystem.dll. -->
+    <Content Include="..\Desktop\Kubuno.Desktop.ProjectSystem\Resources\KubunoControls.imagemanifest">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>KubunoControls.imagemanifest</Link>
+    </Content>
+    <Content Include="..\Desktop\Kubuno.Desktop\ProjectTemplates\**\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>ProjectTemplates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\Desktop\Kubuno.Desktop\ItemTemplates\**\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>ItemTemplates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+
+    <!-- ==== Web and Mobile layers: nothing to ship yet. ==== -->
+  </ItemGroup>
   <PropertyGroup>
     <!--
-      kubuno-views-ls.exe (Rust LSP server, Kubuno.VisualStudio.Views' INTEGRATION.md #6) - built
+      kubuno-views-ls.exe (Rust LSP server, Kubuno.Desktop.Views' INTEGRATION.md #6) - built
       out-of-band from the separate `desktop` repo
       (Z:\src\desktop\windows, crate kubuno-views-ls):
         cd Z:\src\desktop\windows
@@ -346,15 +238,15 @@
     <KubunoDataToolExePath Condition="'$(KubunoDataToolExePath)' == ''">C:\kubuno-build\desktop-target\release\kubuno-data-tool.exe</KubunoDataToolExePath>
     <KubunoRustStdDir Condition="'$(KubunoRustStdDir)' == ''">$(USERPROFILE)\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib\</KubunoRustStdDir>
     <!--
-      kubuno-vs-mcp.exe (Kubuno.Mcp, net8.0 - docs/MCP.md "Integration"). Default: this repo's own
+      kubuno-vs-mcp.exe (Kubuno.Core.Mcp, net8.0 - docs/MCP.md "Integration"). Default: this repo's own
       build output for the same $(Configuration) (a ReferenceOutputAssembly=false ProjectReference
       below drives that build as part of this solution/project build - see its own comment for why
       it is not a normal assembly reference). Override with /p:KubunoMcpOutputDir=<path> to ship a
       self-contained `dotnet publish` output instead.
     -->
-    <KubunoMcpOutputDir Condition="'$(KubunoMcpOutputDir)' == ''">$(MSBuildThisFileDirectory)..\Kubuno.Mcp\bin\$(Configuration)\net8.0\</KubunoMcpOutputDir>
+    <KubunoMcpOutputDir Condition="'$(KubunoMcpOutputDir)' == ''">$(MSBuildThisFileDirectory)..\Core\Kubuno.Core.Mcp\bin\$(Configuration)\net8.0\</KubunoMcpOutputDir>
     <!--
-      kubuno-views-surface.exe (Kubuno.VisualStudio.Designer's own INTEGRATION.md §6, DSG-7's embedded
+      kubuno-views-surface.exe (Kubuno.Desktop.Designer's own INTEGRATION.md §6, DSG-7's embedded
       design surface): built out-of-band from the desktop repo, same workspace as kubuno-views-ls but a
       SEPARATE CARGO_TARGET_DIR (this crate is still examples-only, see kubuno-views/examples/view_embed.rs -
       built on its own rather than sharing desktop-target's in-flight build):
@@ -362,7 +254,7 @@
         $env:CARGO_TARGET_DIR = "C:\kubuno-build\agent-dsgint"
         cargo build -r -p kubuno-print -j 1 (the wrapper of kubuno-views' surface with the library components linked - kubuno-data's and kubuno-print's - so views holding data or printing components render before a design build - docs/DATA.md, docs/PRINTING.md; plus the cargo "example" flag, spelled with two dashes,
         naming view_embed - omitted above only because a doubled dash is not valid inside an XML
-        comment; see src/Kubuno.VisualStudio.Designer/INTEGRATION.md §6 for the literal command)
+        comment; see src/Desktop/Kubuno.Desktop/Designer/INTEGRATION.md §6 for the literal command)
       Shipped under its OWN tools\surface\ subfolder (see the Content items below), never merged with
       kubuno-views-ls.exe's own tools\kubuno_ui.dll/std-*.dll: a Rust dylib has no stable ABI, and this
       exe comes from a DIFFERENT CARGO_TARGET_DIR, so it needs its OWN matching kubuno_ui.dll copied
@@ -460,13 +352,13 @@
     OUTSIDE this solution, before this project is even opened, so they already exist on disk the
     moment MSBuild evaluates this file's items - which happens once, during the static EVALUATION
     pass, before any target (including this project's own ProjectReference-driven build of
-    Kubuno.Mcp) executes. kubuno-vs-mcp.exe, by contrast, is built AS PART of this same solution
+    Kubuno.Core.Mcp) executes. kubuno-vs-mcp.exe, by contrast, is built AS PART of this same solution
     build (the ReferenceOutputAssembly=false ProjectReference below) - on a clean checkout, nothing
     has built it yet at evaluation time, so a static `Content Include="$(KubunoMcpOutputDir)**\*.*"`
     silently matches ZERO files and the VSIX ships without the MCP bridge, with no error (found live:
     a full clean build produced a Kubuno.VisualStudio.vsix missing tools\kubuno-vs-mcp\ entirely,
     despite 0 build errors/warnings - KubunoCheckToolExes's own Error above never caught it either,
-    since by the time THAT target ran - BeforeTargets="Build" - Kubuno.Mcp had, by then, already been
+    since by the time THAT target ran - BeforeTargets="Build" - Kubuno.Core.Mcp had, by then, already been
     built by ResolveProjectReferences, so the exists-check passed; only the item glob's own timing
     was wrong). Fixed by moving the glob into a target - AfterTargets="ResolveProjectReferences" ONLY,
     deliberately WITHOUT also pinning it BeforeTargets="Build": found live, by comparing MSBuild
@@ -482,15 +374,15 @@
     be on disk, well before GetVsixSourceItems collects them - not matched once at evaluation time
     (too early, exe does not exist yet) and not added too late either (past GetVsixSourceItems).
     Verified live end to end: a genuinely clean `msbuild Kubuno.VisualStudio.sln -t:Restore` then
-    `-t:Build` (no manual pre-build of Kubuno.Mcp.csproj) produced a Kubuno.VisualStudio.vsix whose
+    `-t:Build` (no manual pre-build of Kubuno.Core.Mcp.csproj) produced a Kubuno.VisualStudio.vsix whose
     tools\kubuno-vs-mcp\ contains kubuno-vs-mcp.exe and its full dependency closure. Every file
-    Kubuno.Mcp's own build produces (kubuno-vs-mcp.exe/.dll/.deps.json/.runtimeconfig.json and its
+    Kubuno.Core.Mcp's own build produces (kubuno-vs-mcp.exe/.dll/.deps.json/.runtimeconfig.json and its
     dependency DLLs, e.g. ModelContextProtocol*.dll) - it is a framework-dependent net8.0 exe, not
     self-contained, so all of these are required for it to actually run once shipped.
   -->
   <Target Name="KubunoAddMcpContent" AfterTargets="ResolveProjectReferences">
     <Error Condition="!Exists('$(KubunoMcpOutputDir)kubuno-vs-mcp.exe')"
-           Text="kubuno-vs-mcp.exe not found under '$(KubunoMcpOutputDir)'. It should have been built automatically as part of this solution (src\Kubuno.Mcp\Kubuno.Mcp.csproj) - build that project first, or pass /p:KubunoMcpOutputDir=&lt;its output folder&gt;." />
+           Text="kubuno-vs-mcp.exe not found under '$(KubunoMcpOutputDir)'. It should have been built automatically as part of this solution (src\Core\Kubuno.Core.Mcp\Kubuno.Core.Mcp.csproj) - build that project first, or pass /p:KubunoMcpOutputDir=&lt;its output folder&gt;." />
     <ItemGroup>
       <KubunoMcpOutputFile Include="$(KubunoMcpOutputDir)**\*.*" />
       <Content Include="@(KubunoMcpOutputFile)">
@@ -529,7 +421,7 @@
   </ItemGroup>
   <ItemGroup>
     <!--
-      Kubuno.Cargo (netstandard2.0) depends on System.Text.Json 9.0.0, which - unlike
+      Kubuno.Rust.Cargo (netstandard2.0) depends on System.Text.Json 9.0.0, which - unlike
       Newtonsoft.Json - .NET Framework 4.8 does not ship, plus its own netstandard2.0 polyfill
       closure. These resolve and copy-local correctly into bin\Debug (proving the reference
       itself is fine), but - unlike a project's own direct <Reference>/<ProjectReference> output -
@@ -570,12 +462,12 @@
       <Link>System.Runtime.CompilerServices.Unsafe.dll</Link>
     </Content>
     <!--
-      Added after a live Test Explorer smoke test: discovery (Kubuno.TestAdapter.dll, loaded by
+      Added after a live Test Explorer smoke test: discovery (Kubuno.Rust.TestAdapter.dll, loaded by
       VSTest's UnitTestExtension host, not the in-proc VSSDK AppDomain the six DLLs above were
-      first added for - see Kubuno.TestAdapter/AssemblyResolution.cs for why that host needs its
+      first added for - see Kubuno.Rust.TestAdapter/AssemblyResolution.cs for why that host needs its
       *own* fix too) failed with the exact same "file not found" pattern this whole ItemGroup
       exists to prevent, this time for Microsoft.Bcl.AsyncInterfaces (IAsyncEnumerable support -
-      needed once Kubuno.Cargo's JSON parsing/CargoWorkspaceSource's IWorkspace4.GetFilesAsync are
+      needed once Kubuno.Rust.Cargo's JSON parsing/CargoWorkspaceSource's IWorkspace4.GetFilesAsync are
       actually exercised, not just referenced).
     -->
     <Content Include="$(NuGetPackageRoot)microsoft.bcl.asyncinterfaces\9.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll">
@@ -583,7 +475,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Microsoft.Bcl.AsyncInterfaces.dll</Link>
     </Content>
-    <!-- Also part of Kubuno.TestAdapter's own dependency closure (confirmed via its plain `dotnet build` output, which does copy every transitive dependency correctly - only VSIX packaging drops them, per this ItemGroup's opening comment). -->
+    <!-- Also part of Kubuno.Rust.TestAdapter's own dependency closure (confirmed via its plain `dotnet build` output, which does copy every transitive dependency correctly - only VSIX packaging drops them, per this ItemGroup's opening comment). -->
     <Content Include="$(NuGetPackageRoot)system.valuetuple\4.5.0\lib\net47\System.ValueTuple.dll">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -600,34 +492,14 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
-    <!-- RsprojFileReader.cs: a plain XDocument read of another .rsproj's own <CargoManifestPath>. -->
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xaml" />
-    <!-- Package.GetDialogPage(...) (used for Kubuno.VisualStudio.Views' KbviewOptionsPage - see KubunoPackage.InitializeAsync) returns a DialogPage, which implements System.Windows.Forms.IWin32Window. -->
+    <!-- Package.GetDialogPage(...) returns a DialogPage, which implements System.Windows.Forms.IWin32Window. -->
     <Reference Include="System.Windows.Forms" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
-    <!--
-      Not published on NuGet: this assembly ships only inside the Visual Studio installation
-      itself (CommonExtensions\Microsoft\OpenFolder), unlike the rest of the Open Folder
-      workspace API (Microsoft.VisualStudio.Workspace(.Extensions), restored from NuGet below).
-      It carries IVsCommandItem, which a build/rebuild/clean IFileContextAction implements to
-      bind itself to VS's well-known Build/Rebuild/Clean command IDs (see
-      Workspace\CargoBuildFileContextAction.cs). Private=False and SuppressFromVsix (below):
-      resolved against the *running* VS's own copy at both compile and run time, never copied
-      into the VSIX - the version here only needs to satisfy the compiler.
-    -->
-    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
-      <!--
-        $(VsInstallRoot) (defined by Microsoft.VsSDK.targets, imported below) rather than
-        $(DevEnvDir): the latter is only set when MSBuild is itself launched from inside
-        devenv.exe, which is not the case for a plain command-line build (see README).
-      -->
-      <HintPath>$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\OpenFolder\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
@@ -638,9 +510,9 @@
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.14.60" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="17.12.19" ExcludeAssets="runtime" />
     <!--
-      Kubuno.Cargo (netstandard2.0) hard-depends on System.Text.Json 9.0.0, which - unlike
+      Kubuno.Rust.Cargo (netstandard2.0) hard-depends on System.Text.Json 9.0.0, which - unlike
       Newtonsoft.Json - .NET Framework 4.8 does not ship: referencing it directly here (rather
-      than relying on it flowing transitively from the Kubuno.Cargo ProjectReference below) is
+      than relying on it flowing transitively from the Kubuno.Rust.Cargo ProjectReference below) is
       what makes NuGet's own version-unification keep a runtime copy of it, and its netstandard2.0
       polyfill closure (System.Buffers/System.Memory/System.Numerics.Vectors/
       System.Runtime.CompilerServices.Unsafe/System.Threading.Tasks.Extensions/
@@ -649,13 +521,13 @@
       version: Microsoft.VisualStudio.SDK's own net462 dependency closure already resolves
       System.Text.Json to 9.0.0, and pinning this project's own reference below that floor made
       NuGet's version-unification report a downgrade (NU1605) on every build - fixed at the
-      source (this pin, and Kubuno.Cargo.csproj's own matching one) rather than left standing.
+      source (this pin, and Kubuno.Rust.Cargo.csproj's own matching one) rather than left standing.
     -->
     <PackageReference Include="System.Text.Json" Version="9.0.0" />
     <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
-    <!-- DTE2 (EnvDTE80), needed for the MCP bridge start (docs/MCP.md "Integration") - same version as Kubuno.Mcp.Bridge.csproj's own net48 leg. -->
+    <!-- Same version as every other Visual Studio assembly of the extension. -->
     <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" />
-    <!-- CPS itself (compiled against by Kubuno.VisualStudio.RustProjectSystem): always the running VS's own copy. -->
+    <!-- CPS itself (compiled against by Kubuno.Rust.ProjectSystem and Kubuno.Desktop.ProjectSystem), Open Folder and the debugger interop: always the running VS's own copies. -->
     <SuppressFromVsix Include="Microsoft.VisualStudio.ProjectSystem.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.Extensions.dll" />
@@ -663,122 +535,166 @@
     <SuppressFromVsix Include="Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.dll" />
     <SuppressFromVsix Include="Microsoft.VisualStudio.Debugger.Interop*.dll" />
   </ItemGroup>
+  <!--
+    Every layer assembly, each shipped in the VSIX folder (one binding path covers them all - KubunoPackage.cs):
+    BuiltProjectOutputGroupDependencies pulls their own dependency DLLs (notably System.Text.Json and its netstandard2.0
+    polyfill set, which net48 does not have) into the VSIX alongside them, so they actually load in Visual Studio and
+    not just at `dotnet build` time. The layer rules (Core <- Rust <- Desktop/Web/Mobile, no reference between
+    Desktop, Web and Mobile) are enforced by tests/Kubuno.Architecture.Tests; only this project references them all.
+  -->
   <ItemGroup>
-    <ProjectReference Include="..\Kubuno.VisualStudio.Core\Kubuno.VisualStudio.Core.csproj">
-      <Project>{F70EA62B-E3C4-4FF3-8DA4-176C2EEB6577}</Project>
-      <Name>Kubuno.VisualStudio.Core</Name>
+    <!-- ==== Core layer ==== -->
+    <!-- Layer contracts and host, themed dialogs, unified settings plumbing, Output pane, dialog gallery, MCP bridge start. -->
+    <ProjectReference Include="..\Core\Kubuno.Core\Kubuno.Core.csproj">
+      <Project>{9C31551F-795A-4B62-93CD-D35F0D91F73E}</Project>
+      <Name>Kubuno.Core</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
-    <!--
-      Kubuno.Cargo/Kubuno.Launch are netstandard2.0 (see their own csproj comments): referencing
-      them here, rather than only from the pure test projects, is what actually drives the Cargo
-      workspace integration (1b) and launch/debug (1c) at runtime. BuiltProjectOutputGroupDependencies
-      pulls their own dependency DLLs (notably System.Text.Json and its netstandard2.0 polyfill
-      set - System.Buffers/System.Memory/System.Numerics.Vectors/System.Runtime.CompilerServices.Unsafe/
-      System.Text.Encodings.Web/System.Threading.Tasks.Extensions - none of which net48 has built
-      in) into the VSIX alongside them, so they actually load in Visual Studio and not just at
-      `dotnet build` time.
-    -->
-    <ProjectReference Include="..\Kubuno.Cargo\Kubuno.Cargo.csproj">
-      <Project>{6A81CEC0-A903-4831-8F16-CF6D2A9F58BA}</Project>
-      <Name>Kubuno.Cargo</Name>
+    <ProjectReference Include="..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj">
+      <Project>{3AA9F22E-A5B8-4716-A81B-46B5CFDD3CD3}</Project>
+      <Name>Kubuno.Core.Logic</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
-    <ProjectReference Include="..\Kubuno.Launch\Kubuno.Launch.csproj">
-      <Project>{869D6510-4C5E-4840-B50D-9847B2B1AAE7}</Project>
-      <Name>Kubuno.Launch</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
-    <!-- Kubuno.VisualStudio.Views' INTEGRATION.md #1: the .kbview language client. -->
-    <ProjectReference Include="..\Kubuno.VisualStudio.Views\Kubuno.VisualStudio.Views.csproj">
-      <Project>{324405db-70e8-4fbb-b583-301706fc6c15}</Project>
-      <Name>Kubuno.VisualStudio.Views</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
-    <!-- docs/RSPROJ.md work package 3: the CPS host part of the .rsproj project type (MEF exports). -->
-    <ProjectReference Include="..\Kubuno.VisualStudio.RustProjectSystem\Kubuno.VisualStudio.RustProjectSystem.csproj">
-      <Project>{0C294240-346F-488C-96E3-6B84144828DB}</Project>
-      <Name>Kubuno.VisualStudio.RustProjectSystem</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
-    <!-- Kubuno.VisualStudio.Designer's own INTEGRATION.md #1: the .kbview split Design|XML editor, its Toolbox/Properties tool windows and the DSG-7 design surface host. -->
-    <ProjectReference Include="..\Kubuno.VisualStudio.Designer\Kubuno.VisualStudio.Designer.csproj">
-      <Project>{1d196ab0-036f-4db8-bcdb-1ad232d81966}</Project>
-      <Name>Kubuno.VisualStudio.Designer</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
-    <!--
-      docs/RSPROJ.md Addendum (lot 7), "Crate-name casing, revisited": the separate IWizard assembly
-      the "Create a new project" templates' <WizardExtension> load - see its own csproj header for
-      why it is a standalone project rather than folded into this one.
-    -->
-    <ProjectReference Include="..\Kubuno.VisualStudio.TemplateWizard\Kubuno.VisualStudio.TemplateWizard.csproj">
-      <Project>{13d74529-e7f0-4520-bc27-818544cd788b}</Project>
-      <Name>Kubuno.VisualStudio.TemplateWizard</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
-    <!-- Kubuno.TestAdapter's own INTEGRATION.md #3.1: the Cargo Test Explorer adapter. -->
-    <ProjectReference Include="..\Kubuno.TestAdapter\Kubuno.TestAdapter.csproj">
-      <Project>{6bd0b996-c446-4040-a5a3-0052b5864ed6}</Project>
-      <Name>Kubuno.TestAdapter</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
-    <!--
-      docs/MCP.md "Integration": the net48 leg is picked up automatically (multi-targeted
-      net48;net8.0 project - see its own csproj comment); this is what provides
-      Kubuno.Mcp.Bridge.Dte.DteVsContextProvider/PipeProtocol.VsMcpBridgeHost to KubunoPackage.
-    -->
-    <ProjectReference Include="..\Kubuno.Mcp.Bridge\Kubuno.Mcp.Bridge.csproj">
+    <!-- docs/MCP.md "Integration": the net48 leg (multi-targeted net48;net8.0 project), started in-proc by Kubuno.Core. -->
+    <ProjectReference Include="..\Core\Kubuno.Core.Mcp.Bridge\Kubuno.Core.Mcp.Bridge.csproj">
       <Project>{cb4d8d70-b802-48ee-ba00-5d9cc66a6339}</Project>
-      <Name>Kubuno.Mcp.Bridge</Name>
+      <Name>Kubuno.Core.Mcp.Bridge</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
     <!--
       kubuno-vs-mcp.exe (net8.0, standalone process - never in-proc, never assembly-referenced from
       this net48 VSIX): ReferenceOutputAssembly=false makes this a build-ordering-only reference, so
-      `msbuild Kubuno.VisualStudio.sln`/building this project also builds Kubuno.Mcp first, into
+      `msbuild Kubuno.VisualStudio.sln`/building this project also builds Kubuno.Core.Mcp first, into
       $(KubunoMcpOutputDir) (see the Content item above that ships it under tools\).
     -->
-    <ProjectReference Include="..\Kubuno.Mcp\Kubuno.Mcp.csproj">
+    <ProjectReference Include="..\Core\Kubuno.Core.Mcp\Kubuno.Core.Mcp.csproj">
       <Project>{be214089-0974-4c47-95ea-eb1a059eb17a}</Project>
-      <Name>Kubuno.Mcp</Name>
+      <Name>Kubuno.Core.Mcp</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <!-- Kubuno.Mcp targets net8.0 (see its own csproj comment); this legacy net48 project would
+      <!-- Kubuno.Core.Mcp targets net8.0 (see its own csproj comment); this legacy net48 project would
            otherwise fail the target-framework compatibility check MSBuild runs for every
            ProjectReference regardless of ReferenceOutputAssembly. Build-ordering-only reference -
-           no assembly/type from Kubuno.Mcp is ever compiled against here. -->
+           no assembly/type from Kubuno.Core.Mcp is ever compiled against here. -->
       <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
     </ProjectReference>
-  </ItemGroup>
-  <!--
-    Debugging Rust like C# (docs/DEBUGGING.md): the Tools > Options > Kubuno > Debugging page; the Concord component
-    that shows a panic's message in the exception helper (DebuggerEngineExtension asset: its .vsdconfig comes with
-    BuiltProjectOutputGroup); Kubuno.natvis (NativeVisualizer asset); the Just My Code/step-filter files
-    RustDebuggerFiles copies into the per-user Visualizers folder; the Rust panic entry of Exception Settings.
-  -->
-  <ItemGroup>
-    <Compile Include="Options\DebuggingOptionsPage.cs" />
-    <Content Include="Debugging\Visualizers\*.natvis;Debugging\Visualizers\*.natjmc;Debugging\Visualizers\*.natstepfilter">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="debugging.pkgdef">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <ProjectReference Include="..\Kubuno.VisualStudio.Debugger\Kubuno.VisualStudio.Debugger.csproj">
+    <!-- ==== Rust layer ==== -->
+    <!-- rust-analyzer, IntelliSense, Cargo workspaces, debugging, .rsproj commands, Dependencies node, crate manager. -->
+    <ProjectReference Include="..\Rust\Kubuno.Rust\Kubuno.Rust.csproj">
+      <Project>{AD8A66D1-43F0-42CB-9BA4-D456C2A9C3E0}</Project>
+      <Name>Kubuno.Rust</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\Rust\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj">
+      <Project>{F70EA62B-E3C4-4FF3-8DA4-176C2EEB6577}</Project>
+      <Name>Kubuno.Rust.Logic</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- netstandard2.0: cargo metadata, build messages, TOML (also used by Kubuno.Rust.Sdk's tasks). -->
+    <ProjectReference Include="..\Rust\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj">
+      <Project>{6A81CEC0-A903-4831-8F16-CF6D2A9F58BA}</Project>
+      <Name>Kubuno.Rust.Cargo</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- netstandard2.0: launch/debug environment of Rust targets. -->
+    <ProjectReference Include="..\Rust\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj">
+      <Project>{869D6510-4C5E-4840-B50D-9847B2B1AAE7}</Project>
+      <Name>Kubuno.Rust.Launch</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- docs/RSPROJ.md work package 3: the CPS host part of the .rsproj project type (MEF exports). -->
+    <ProjectReference Include="..\Rust\Kubuno.Rust.ProjectSystem\Kubuno.Rust.ProjectSystem.csproj">
+      <Project>{0C294240-346F-488C-96E3-6B84144828DB}</Project>
+      <Name>Kubuno.Rust.ProjectSystem</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- Kubuno.Rust.TestAdapter's own INTEGRATION.md #3.1: the Cargo Test Explorer adapter. -->
+    <ProjectReference Include="..\Rust\Kubuno.Rust.TestAdapter\Kubuno.Rust.TestAdapter.csproj">
+      <Project>{6bd0b996-c446-4040-a5a3-0052b5864ed6}</Project>
+      <Name>Kubuno.Rust.TestAdapter</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- docs/RSPROJ.md Addendum (lot 7): the crate-name IWizard the "Create a new project" templates' <WizardExtension> load. -->
+    <ProjectReference Include="..\Rust\Kubuno.Rust.TemplateWizard\Kubuno.Rust.TemplateWizard.csproj">
+      <Project>{13d74529-e7f0-4520-bc27-818544cd788b}</Project>
+      <Name>Kubuno.Rust.TemplateWizard</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!--
+      Debugging Rust like C# (docs/DEBUGGING.md): the Concord component that shows a panic's message in the exception
+      helper (DebuggerEngineExtension asset: its .vsdconfig comes with BuiltProjectOutputGroup).
+    -->
+    <ProjectReference Include="..\Rust\Kubuno.Rust.Debugger\Kubuno.Rust.Debugger.csproj">
       <Project>{4E9C2A7B-1D3F-4B8E-A5C6-7D8E9F0A1B2C}</Project>
-      <Name>Kubuno.VisualStudio.Debugger</Name>
+      <Name>Kubuno.Rust.Debugger</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
+    <!-- ==== Desktop layer ==== -->
+    <!-- The .kbview language client, the view designer, the data tooling. -->
+    <ProjectReference Include="..\Desktop\Kubuno.Desktop\Kubuno.Desktop.csproj">
+      <Project>{1d196ab0-036f-4db8-bcdb-1ad232d81966}</Project>
+      <Name>Kubuno.Desktop</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\Desktop\Kubuno.Desktop.Logic\Kubuno.Desktop.Logic.csproj">
+      <Project>{F52EDA76-67AE-447E-B84C-854EDBB3A146}</Project>
+      <Name>Kubuno.Desktop.Logic</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- The .kbview default editor and icon in a .rsproj (CPS exports), the Kubuno control icons. -->
+    <ProjectReference Include="..\Desktop\Kubuno.Desktop.ProjectSystem\Kubuno.Desktop.ProjectSystem.csproj">
+      <Project>{4D195EEA-AC60-48B6-913D-BEE1D35A6E51}</Project>
+      <Name>Kubuno.Desktop.ProjectSystem</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- The control item IWizard of the desktop item templates. -->
+    <ProjectReference Include="..\Desktop\Kubuno.Desktop.TemplateWizard\Kubuno.Desktop.TemplateWizard.csproj">
+      <Project>{AAB642BF-FD1C-480B-A767-A1311FEDCE81}</Project>
+      <Name>Kubuno.Desktop.TemplateWizard</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <!-- ==== Web and Mobile layers (skeletons, registered through the same contract) ==== -->
+    <ProjectReference Include="..\Web\Kubuno.Web\Kubuno.Web.csproj">
+      <Project>{9E9B7555-EAE9-490E-84D7-7CFFE22323E2}</Project>
+      <Name>Kubuno.Web</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\Mobile\Kubuno.Mobile\Kubuno.Mobile.csproj">
+      <Project>{DF64BC4D-3BAD-4C4E-8BAF-F2CEDA4E0782}</Project>
+      <Name>Kubuno.Mobile</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+  </ItemGroup>
+  <!--
+    Debugging Rust like C# (docs/DEBUGGING.md): Kubuno.natvis (NativeVisualizer asset); the Just My Code/step-filter
+    files Kubuno.Rust's RustDebuggerFiles copies into the per-user Visualizers folder; the Rust panic entry of Exception
+    Settings (debugging.pkgdef). Files of the Rust layer, shipped at their former VSIX paths.
+  -->
+  <ItemGroup>
+    <Content Include="..\Rust\Kubuno.Rust\Debugging\Visualizers\*.natvis;..\Rust\Kubuno.Rust\Debugging\Visualizers\*.natjmc;..\Rust\Kubuno.Rust\Debugging\Visualizers\*.natstepfilter">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>Debugging\Visualizers\%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\Rust\Kubuno.Rust\Debugging\debugging.pkgdef">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>debugging.pkgdef</Link>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />

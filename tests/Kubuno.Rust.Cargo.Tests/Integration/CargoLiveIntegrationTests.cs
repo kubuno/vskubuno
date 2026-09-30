@@ -4,13 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
 using Xunit;
 
-namespace Kubuno.Cargo.Tests.Integration
+namespace Kubuno.Rust.Cargo.Tests.Integration
 {
     /// <summary>
     /// End-to-end tests against a *real* "cargo" process (the fixture-based tests elsewhere in

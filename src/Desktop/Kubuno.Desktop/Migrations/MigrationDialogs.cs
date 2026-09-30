@@ -7,14 +7,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Core.Migrations;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Desktop.Logic.Migrations;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.Migrations
+namespace Kubuno.Desktop.Migrations
 {
     /// <summary>
     /// "Add Migration" (docs/DATA.md DATA-7): a description (validated with the helper's own rules,
@@ -192,7 +192,7 @@ namespace Kubuno.VisualStudio.Migrations
             _copy.Content = MigrationText.CopyToSecrets;
             _copy.HorizontalAlignment = HorizontalAlignment.Left;
             _copy.Margin = new Thickness(0, 6, 0, 0);
-            _copy.Click += (_, _) => Kubuno.VisualStudio.DataExplorer.DataUi.RunUi(CopyAsync, "Migrations/CopySecret");
+            _copy.Click += (_, _) => Kubuno.Desktop.DataExplorer.DataUi.RunUi(CopyAsync, "Migrations/CopySecret");
             _secretPanel.Children.Add(_copy);
             root.Children.Add(_secretPanel);
 
@@ -256,7 +256,7 @@ namespace Kubuno.VisualStudio.Migrations
             if (!_explorerLoaded)
             {
                 _explorerLoaded = true;
-                Kubuno.VisualStudio.DataExplorer.DataUi.RunUi(LoadExplorerAsync, "Migrations/ExplorerList");
+                Kubuno.Desktop.DataExplorer.DataUi.RunUi(LoadExplorerAsync, "Migrations/ExplorerList");
             }
         }
 

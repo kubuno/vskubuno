@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Cargo.DesignSurface;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Desktop.Logic.DesignSurface;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Metadata;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Cargo.Tests.DesignSurface
+namespace Kubuno.Desktop.Tests.DesignSurface
 {
     /// <summary>docs/EVENTS.md EVT-7b: the project crate the design surface links (its controls render for real).</summary>
+    [TestClass]
     public class DesignProjectCrateTests
     {
         private const string Profile = @"C:\t\rsproj\app\debug";
@@ -66,65 +68,65 @@ namespace Kubuno.Cargo.Tests.DesignSurface
 
         private static CargoResolveDep Dep(string name, string pkg) => new CargoResolveDep { Name = name, Pkg = pkg, DepKinds = new[] { new CargoDepKindInfo { Kind = null } } };
 
-        [Fact]
+        [TestMethod]
         public void The_crate_root_is_compiled_as_an_rlib_against_the_build_s_own_libraries()
         {
             var crate = DesignProjectCrate.From(Metadata(), Artifacts(), Manifest, null, out var reason);
 
-            Assert.NotNull(crate);
-            Assert.Null(reason);
-            Assert.Equal("app", crate!.CrateName);
-            Assert.Equal(@"C:\p\app\src\main.rs", crate.SourcePath);
-            Assert.Equal(Profile + @"\app.exe", crate.StampFile);
-            Assert.Equal(new[] { "kubuno_ui", "kubuno_views", "kubuno_controls", "tracing", "gauges", "my_derive" }, crate.Externs.Select(e => e.Key));
-            Assert.Equal(Deps + @"\kubuno_ui.dll", crate.Externs[0].Value);
+            Assert.IsNotNull(crate);
+            Assert.IsNull(reason);
+            Assert.AreEqual("app", crate!.CrateName);
+            Assert.AreEqual(@"C:\p\app\src\main.rs", crate.SourcePath);
+            Assert.AreEqual(Profile + @"\app.exe", crate.StampFile);
+            CollectionAssert.AreEqual(new[] { "kubuno_ui", "kubuno_views", "kubuno_controls", "tracing", "gauges", "my_derive" }, crate.Externs.Select(e => e.Key).ToArray());
+            Assert.AreEqual(Deps + @"\kubuno_ui.dll", crate.Externs[0].Value);
 
             var inputs = DesignSurfaceInputs.From(Artifacts(), _ => true, out _) ?? throw new System.InvalidOperationException("inputs");
             var args = crate.RustcArguments(inputs, @"C:\d\libapp.rlib", "debug");
-            Assert.Equal(new[] { "--edition", "2021", "--crate-name", "app", "--crate-type", "rlib", @"C:\p\app\src\main.rs" }, args.Take(7));
-            Assert.Contains("feature=\"fancy\"", args);
-            Assert.Contains("gauges=" + Deps + @"\libgauges-11.rlib", args);
-            Assert.Contains("dependency=" + Deps, args);
-            Assert.Equal(@"C:\d\libapp.rlib", args.Last());
+            CollectionAssert.AreEqual(new[] { "--edition", "2021", "--crate-name", "app", "--crate-type", "rlib", @"C:\p\app\src\main.rs" }, args.Take(7).ToArray());
+            CollectionAssert.Contains(args.ToList(), "feature=\"fancy\"");
+            CollectionAssert.Contains(args.ToList(), "gauges=" + Deps + @"\libgauges-11.rlib");
+            CollectionAssert.Contains(args.ToList(), "dependency=" + Deps);
+            Assert.AreEqual(@"C:\d\libapp.rlib", args.Last());
 
             var env = crate.Environment();
-            Assert.Equal(@"C:\p\app", env["CARGO_MANIFEST_DIR"]);
-            Assert.Equal("app", env["CARGO_CRATE_NAME"]);
-            Assert.Equal(("0", "2", "1", "beta.1"), (env["CARGO_PKG_VERSION_MAJOR"], env["CARGO_PKG_VERSION_MINOR"], env["CARGO_PKG_VERSION_PATCH"], env["CARGO_PKG_VERSION_PRE"]));
+            Assert.AreEqual(@"C:\p\app", env["CARGO_MANIFEST_DIR"]);
+            Assert.AreEqual("app", env["CARGO_CRATE_NAME"]);
+            Assert.AreEqual(("0", "2", "1", "beta.1"), (env["CARGO_PKG_VERSION_MAJOR"], env["CARGO_PKG_VERSION_MINOR"], env["CARGO_PKG_VERSION_PATCH"], env["CARGO_PKG_VERSION_PRE"]));
         }
 
-        [Fact]
+        [TestMethod]
         public void The_surface_links_the_crate_and_its_other_libraries()
         {
             var crate = DesignProjectCrate.From(Metadata(), Artifacts(), Manifest, "app", out _)!;
-            Assert.Equal(new[] { "tracing", "gauges" }, crate.LinkedDependencies);
+            CollectionAssert.AreEqual(new[] { "tracing", "gauges" }, crate.LinkedDependencies.ToArray());
             var include = crate.SurfaceIncludeSource();
-            Assert.Contains("extern crate app as _;", include);
-            Assert.Contains("extern crate gauges as _;", include);
-            Assert.DoesNotContain("my_derive", include);
+            StringAssert.Contains(include, "extern crate app as _;");
+            StringAssert.Contains(include, "extern crate gauges as _;");
+            Assert.IsFalse(include.Contains("my_derive"));
 
             var inputs = DesignSurfaceInputs.From(Artifacts(), _ => true, out _)!;
             var args = DesignSurfaceBuilder.RustcArgumentsFor(inputs, @"C:\d\surface.exe", "debug", crate, @"C:\d\libapp.rlib");
-            Assert.Contains("kubuno_design_project", args);
-            Assert.Contains(@"app=C:\d\libapp.rlib", args);
-            Assert.Contains("gauges=" + Deps + @"\libgauges-11.rlib", args);
-            Assert.Equal(new[] { "-o", @"C:\d\surface.exe" }, args.Skip(args.Count - 2));
-            Assert.Equal(DesignSurfaceBuilder.RustcArgumentsFor(inputs, "x.exe", "debug"), DesignSurfaceBuilder.RustcArgumentsFor(inputs, "x.exe", "debug", null, null));
+            CollectionAssert.Contains(args.ToList(), "kubuno_design_project");
+            CollectionAssert.Contains(args.ToList(), @"app=C:\d\libapp.rlib");
+            CollectionAssert.Contains(args.ToList(), "gauges=" + Deps + @"\libgauges-11.rlib");
+            CollectionAssert.AreEqual(new[] { "-o", @"C:\d\surface.exe" }, args.Skip(args.Count - 2).ToArray());
+            CollectionAssert.AreEqual(DesignSurfaceBuilder.RustcArgumentsFor(inputs, "x.exe", "debug").ToArray(), DesignSurfaceBuilder.RustcArgumentsFor(inputs, "x.exe", "debug", null, null).ToArray());
         }
 
-        [Fact]
+        [TestMethod]
         public void Without_its_program_or_a_library_there_is_no_crate_to_link()
         {
             var noBin = Artifacts().Where(a => a.PackageId != AppId).ToArray();
-            Assert.Null(DesignProjectCrate.From(Metadata(), noBin, Manifest, null, out var reason));
-            Assert.Contains("not built", reason);
+            Assert.IsNull(DesignProjectCrate.From(Metadata(), noBin, Manifest, null, out var reason));
+            StringAssert.Contains(reason, "not built");
 
             var noLib = Artifacts().Where(a => a.PackageId != "gauges").ToArray();
-            Assert.Null(DesignProjectCrate.From(Metadata(), noLib, Manifest, null, out reason));
-            Assert.Contains("gauges", reason);
+            Assert.IsNull(DesignProjectCrate.From(Metadata(), noLib, Manifest, null, out reason));
+            StringAssert.Contains(reason, "gauges");
 
-            Assert.Null(DesignProjectCrate.From(Metadata(), Artifacts(), @"C:\other\Cargo.toml", null, out reason));
-            Assert.Contains("metadata", reason);
+            Assert.IsNull(DesignProjectCrate.From(Metadata(), Artifacts(), @"C:\other\Cargo.toml", null, out reason));
+            StringAssert.Contains(reason, "metadata");
         }
     }
 }

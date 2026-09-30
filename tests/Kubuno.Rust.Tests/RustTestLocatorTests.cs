@@ -1,8 +1,8 @@
 using System;
-using Kubuno.VisualStudio.Core;
+using Kubuno.Rust.Logic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests
+namespace Kubuno.Rust.Tests
 {
     [TestClass]
     public class RustTestLocatorTests

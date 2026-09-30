@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.Desktop.Designer.Registry;
 
-namespace Kubuno.VisualStudio.Designer.PropertyBrowser
+namespace Kubuno.Desktop.Designer.PropertyBrowser
 {
     /// <summary>
     /// What a <see cref="KbviewElementObject"/> shown in Visual Studio's Properties window needs from the

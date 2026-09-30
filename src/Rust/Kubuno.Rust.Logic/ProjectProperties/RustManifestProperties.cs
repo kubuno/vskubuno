@@ -4,9 +4,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Kubuno.Cargo.Toml;
+using Kubuno.Rust.Cargo.Toml;
 
-namespace Kubuno.VisualStudio.Core.ProjectProperties
+namespace Kubuno.Rust.Logic.ProjectProperties
 {
     /// <summary>A property value as the Project Properties editor shows it: what is written, and what it means.</summary>
     public sealed class PropertyValue

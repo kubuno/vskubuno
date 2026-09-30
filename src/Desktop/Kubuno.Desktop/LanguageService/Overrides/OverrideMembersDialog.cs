@@ -3,12 +3,12 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Kubuno.VisualStudio.Core.Overrides;
-using Kubuno.VisualStudio.Designer;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Desktop.Logic.Overrides;
+using Kubuno.Desktop.Designer;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.VisualStudio.LanguageService.Overrides
+namespace Kubuno.Desktop.LanguageService.Overrides
 {
     /// <summary>
     /// "Substituer des membres…" (docs/EVENTS.md EVT-7b): the overridable members of a Kubuno control class, grouped

@@ -9,11 +9,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Rust.Logic.SolutionExplorer;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>Where a <see cref="ReferenceCandidate"/> was found: the Reference Manager's left-hand categories.</summary>
     internal enum ReferenceOrigin

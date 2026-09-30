@@ -5,11 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Designer.Handlers.Infrastructure;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.Views;
-using Kubuno.VisualStudio.Views.LanguageService;
+using Kubuno.Desktop.Logic.IntelliSense;
+using Kubuno.Desktop.Designer.Handlers.Infrastructure;
+using Kubuno.Core.Logging;
+using Kubuno.Rust.LanguageService;
+using Kubuno.Rust.LanguageService.IntelliSense;
+using Kubuno.Desktop.Views;
+using Kubuno.Desktop.Views.LanguageService;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Threading;
@@ -17,7 +19,7 @@ using Microsoft.VisualStudio.Utilities;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.LanguageService.IntelliSense
+namespace Kubuno.Desktop.LanguageService.IntelliSense
 {
     /// <summary>
     /// Go To Definition (F12) / Peek (Alt+F12) from a <c>.kbview</c> into Rust where kubuno-views-ls has no answer

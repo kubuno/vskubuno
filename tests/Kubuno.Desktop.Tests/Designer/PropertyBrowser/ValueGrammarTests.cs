@@ -3,11 +3,11 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using Kubuno.VisualStudio.Designer.PropertyBrowser;
-using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.Desktop.Designer.PropertyBrowser;
+using Kubuno.Desktop.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
+namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
 {
     /// <summary>The colour, font and composite value grammars shared with the runtime, and the WCAG contrast math.</summary>
     [TestClass]

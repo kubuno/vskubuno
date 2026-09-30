@@ -4,18 +4,18 @@ using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.SolutionExplorer;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Logic.SolutionExplorer;
+using Kubuno.Core.Logging;
+using Kubuno.Rust.SolutionExplorer;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>
     /// "Référence de projet..." (the extended "Ajouter" submenu) and "Ajouter une référence de

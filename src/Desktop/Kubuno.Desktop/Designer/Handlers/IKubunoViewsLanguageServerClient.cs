@@ -1,13 +1,13 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.VisualStudio.Designer.Handlers
+namespace Kubuno.Desktop.Designer.Handlers
 {
     /// <summary>
     /// The seam <see cref="HandlerCreationService"/> depends on instead of a raw
     /// <c>StreamJsonRpc.JsonRpc</c>, mirroring <see cref="Editing.IEditableTextBuffer"/>'s own reasoning:
     /// unit-testable with a fake (see
-    /// tests/Kubuno.VisualStudio.Designer.Tests/Handlers/Fakes/FakeKubunoViewsLanguageServerClient.cs).
+    /// tests/Kubuno.Desktop.Tests/Designer/Handlers/Fakes/FakeKubunoViewsLanguageServerClient.cs).
     /// <see cref="Infrastructure.JsonRpcKubunoViewsLanguageServerClient"/> is the real, JsonRpc-dependent
     /// implementation calling <c>kubuno/createHandler</c> (docs/DESIGNER.md §6/§8, DSG-10).
     /// </summary>

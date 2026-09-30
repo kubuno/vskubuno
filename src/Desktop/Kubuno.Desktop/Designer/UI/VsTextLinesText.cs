@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.TextManager.Interop;
 
-namespace Kubuno.VisualStudio.Designer.UI
+namespace Kubuno.Desktop.Designer.UI
 {
     /// <summary>
     /// Reads the whole current contents of an <c>IVsTextLines</c> buffer, the standard

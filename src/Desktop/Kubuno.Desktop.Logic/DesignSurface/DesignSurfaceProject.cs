@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Kubuno.Cargo.DesignSurface
+namespace Kubuno.Desktop.Logic.DesignSurface
 {
     /// <summary>
     /// The cargo build of one <c>.rsproj</c> configuration, exactly as <c>Kubuno.Rust.Sdk</c>'s

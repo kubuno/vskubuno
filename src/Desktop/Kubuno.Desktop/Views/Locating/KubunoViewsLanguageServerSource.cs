@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Views.Locating
+namespace Kubuno.Desktop.Views.Locating
 {
     /// <summary>
     /// Where the <c>kubuno-views-ls.exe</c> path returned by <see cref="KubunoViewsLanguageServerLocator"/>

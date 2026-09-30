@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 
-namespace Kubuno.VisualStudio.Designer.Tests
+namespace Kubuno.Desktop.Tests.Designer
 {
-    /// <summary>Locates fixture files under Fixtures/ (copied next to the test assembly by the .csproj) - mirrors tests/Kubuno.Cargo.Tests/TestFixtures.cs's own shape.</summary>
+    /// <summary>Locates fixture files under Fixtures/ (copied next to the test assembly by the .csproj) - mirrors tests/Kubuno.Rust.Cargo.Tests/TestFixtures.cs's own shape.</summary>
     internal static class TestFixtures
     {
         private static readonly string RootDirectory = System.IO.Path.Combine(AppContext.BaseDirectory, "Fixtures");

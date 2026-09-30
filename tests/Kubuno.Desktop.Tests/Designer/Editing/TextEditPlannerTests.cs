@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Editing
+namespace Kubuno.Desktop.Tests.Designer.Editing
 {
     [TestClass]
     public class TextEditPlannerTests

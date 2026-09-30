@@ -1,24 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.VisualStudio.Core.QuickInfo;
-using Kubuno.VisualStudio.SolutionExplorer;
+using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Rust.SolutionExplorer;
 using Microsoft.VisualStudio.Core.Imaging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Adornments;
 using Microsoft.VisualStudio.Text.Classification;
 
-namespace Kubuno.VisualStudio.LanguageService.QuickInfo
+namespace Kubuno.Rust.LanguageService.QuickInfo
 {
     /// <summary>
-    /// Turns the SDK-free QuickInfo model (Kubuno.VisualStudio.Core.QuickInfo) into Visual Studio's own
+    /// Turns the SDK-free QuickInfo model (Kubuno.Core.Logic.QuickInfo) into Visual Studio's own
     /// tooltip elements - <see cref="ContainerElement"/>, <see cref="ClassifiedTextElement"/>,
     /// <see cref="ImageElement"/> - the same ones Roslyn builds for C#. Runs are classified with Roslyn's
     /// classification names (<c>keyword</c>, <c>struct name</c>, <c>method name</c>...) so the colors
     /// follow Tools &gt; Options &gt; Fonts and Colors exactly like a C# tooltip; a name that is not
     /// registered (no C# support installed) falls back to a predefined one.
     /// </summary>
-    internal sealed class QuickInfoElementFactory
+    public sealed class QuickInfoElementFactory
     {
         private readonly IClassificationTypeRegistryService _registry;
         private readonly Dictionary<QuickInfoTextKind, string> _names = new Dictionary<QuickInfoTextKind, string>();
@@ -37,7 +37,9 @@ namespace Kubuno.VisualStudio.LanguageService.QuickInfo
                 case QuickInfoText text:
                     return new ClassifiedTextElement(text.Runs.Select(CreateRun));
                 case QuickInfoImage image:
-                    var moniker = image.ControlTag != null ? KubunoTreeItem.ControlIcon(image.ControlTag) : KubunoTreeItem.Moniker(image.MonikerName ?? "Type");
+                    var moniker = image.ImageGuid != Guid.Empty
+                        ? new Microsoft.VisualStudio.Imaging.Interop.ImageMoniker { Guid = image.ImageGuid, Id = image.ImageId }
+                        : KubunoTreeItem.Moniker(image.MonikerName ?? "Type");
                     return new ImageElement(new ImageId(moniker.Guid, moniker.Id));
                 default:
                     throw new ArgumentOutOfRangeException(nameof(element), element?.GetType().Name, "Unknown QuickInfo element.");
@@ -74,7 +76,7 @@ namespace Kubuno.VisualStudio.LanguageService.QuickInfo
 
         private static void OpenUrl(string url)
         {
-            if (Core.QuickInfo.Markdown.IsWebUrl(url))
+            if (Kubuno.Core.Logic.QuickInfo.Markdown.IsWebUrl(url))
             {
                 VsShellUtilities.OpenSystemBrowser(url);
             }

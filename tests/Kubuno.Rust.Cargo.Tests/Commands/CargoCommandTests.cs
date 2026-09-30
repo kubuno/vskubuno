@@ -1,7 +1,7 @@
-using Kubuno.Cargo.Commands;
+using Kubuno.Rust.Cargo.Commands;
 using Xunit;
 
-namespace Kubuno.Cargo.Tests.Commands
+namespace Kubuno.Rust.Cargo.Tests.Commands
 {
     public class CargoCommandTests
     {

@@ -2,12 +2,12 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Core.Migrations;
-using Kubuno.VisualStudio.Tests.Data;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Desktop.Logic.Migrations;
+using Kubuno.Desktop.Tests.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.Migrations
+namespace Kubuno.Desktop.Tests.Migrations
 {
     /// <summary>The <c>migrate.*</c> / <c>sqlx.*</c> requests as the protocol (and the helper's e2e test) shapes them.</summary>
     [TestClass]

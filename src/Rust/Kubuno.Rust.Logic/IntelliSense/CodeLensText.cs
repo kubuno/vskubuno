@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.IntelliSense
+namespace Kubuno.Rust.Logic.IntelliSense
 {
     /// <summary>What a rust-analyzer code lens counts.</summary>
     public enum CodeLensKind

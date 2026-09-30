@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace Kubuno.Cargo.Internal
+namespace Kubuno.Rust.Cargo.Internal
 {
     /// <summary>
     /// Converts PascalCase C# property names to Cargo's snake_case JSON field names

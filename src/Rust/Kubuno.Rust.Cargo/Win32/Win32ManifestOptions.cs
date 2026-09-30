@@ -1,4 +1,4 @@
-namespace Kubuno.Cargo.Win32
+namespace Kubuno.Rust.Cargo.Win32
 {
     /// <summary>Oldest Windows version the application declares support for.</summary>
     public enum Win32MinimumWindows

@@ -1,13 +1,18 @@
 using System.IO;
-using Kubuno.Cargo.DesignSurface;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.Cargo.Tests.Fakes;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Kubuno.Desktop.Logic.DesignSurface;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Cargo.Tests.Fakes;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Cargo.Tests.DesignSurface
+namespace Kubuno.Desktop.Tests.DesignSurface
 {
     /// <summary>docs/DESIGNER.md section 15: the design build of the .kbview designer's surface.</summary>
+    [TestClass]
     public class DesignSurfaceBuilderTests
     {
         private const string Profile = @"C:\t\rsproj\app\debug";
@@ -30,40 +35,40 @@ namespace Kubuno.Cargo.Tests.DesignSurface
             Artifact("app", "bin", Profile + @"\app.exe", Profile + @"\app.pdb"),
         };
 
-        [Fact]
+        [TestMethod]
         public void Inputs_pick_the_exact_artifacts_and_the_deps_copy_of_the_dll()
         {
             var inputs = DesignSurfaceInputs.From(RealArtifacts(), _ => true, out var reason);
 
-            Assert.NotNull(inputs);
-            Assert.Null(reason);
-            Assert.Equal(Deps + @"\kubuno_ui.dll", inputs!.UiDll);
-            Assert.Equal(Deps + @"\libkubuno_views-8cdbad53981d1b62.rlib", inputs.ViewsRlib);
-            Assert.Equal(Deps + @"\libkubuno_controls-6de35b5c49a7da48.rlib", inputs.ControlsRlib);
-            Assert.Equal(Deps, inputs.DepsDirectory);
-            Assert.Equal(Profile, inputs.ProfileDirectory);
-            Assert.Equal(@"C:\t\rsproj\app", inputs.TargetDirectory);
-            Assert.Equal(Views + @"\examples\view_embed.rs", inputs.SurfaceSource);
+            Assert.IsNotNull(inputs);
+            Assert.IsNull(reason);
+            Assert.AreEqual(Deps + @"\kubuno_ui.dll", inputs!.UiDll);
+            Assert.AreEqual(Deps + @"\libkubuno_views-8cdbad53981d1b62.rlib", inputs.ViewsRlib);
+            Assert.AreEqual(Deps + @"\libkubuno_controls-6de35b5c49a7da48.rlib", inputs.ControlsRlib);
+            Assert.AreEqual(Deps, inputs.DepsDirectory);
+            Assert.AreEqual(Profile, inputs.ProfileDirectory);
+            Assert.AreEqual(@"C:\t\rsproj\app", inputs.TargetDirectory);
+            Assert.AreEqual(Views + @"\examples\view_embed.rs", inputs.SurfaceSource);
         }
 
-        [Fact]
+        [TestMethod]
         public void Inputs_fall_back_to_the_uplifted_dll()
         {
             var inputs = DesignSurfaceInputs.From(RealArtifacts(), path => !path.EndsWith(@"deps\kubuno_ui.dll"), out _);
-            Assert.Equal(Profile + @"\kubuno_ui.dll", inputs!.UiDll);
+            Assert.AreEqual(Profile + @"\kubuno_ui.dll", inputs!.UiDll);
         }
 
-        [Fact]
+        [TestMethod]
         public void Inputs_explain_a_project_without_kubuno_views_or_without_a_surface()
         {
-            Assert.Null(DesignSurfaceInputs.From(new[] { Artifact("app", "bin", Profile + @"\app.exe") }, _ => true, out var reason));
-            Assert.Contains("kubuno-views", reason);
+            Assert.IsNull(DesignSurfaceInputs.From(new[] { Artifact("app", "bin", Profile + @"\app.exe") }, _ => true, out var reason));
+            StringAssert.Contains(reason, "kubuno-views");
 
-            Assert.Null(DesignSurfaceInputs.From(RealArtifacts(), path => !path.EndsWith("view_embed.rs"), out reason));
-            Assert.Contains("no design surface", reason);
+            Assert.IsNull(DesignSurfaceInputs.From(RealArtifacts(), path => !path.EndsWith("view_embed.rs"), out reason));
+            StringAssert.Contains(reason, "no design surface");
         }
 
-        [Fact]
+        [TestMethod]
         public void Cargo_command_is_the_sdk_build_command()
         {
             var project = new DesignSurfaceProject(@"C:\p\app\Cargo.toml", "release")
@@ -75,45 +80,45 @@ namespace Kubuno.Cargo.Tests.DesignSurface
 
             var line = DesignSurfaceBuilder.CargoCommandFor(project);
 
-            Assert.Equal("cargo", line.FileName);
-            Assert.Equal(
+            Assert.AreEqual("cargo", line.FileName);
+            CollectionAssert.AreEqual(
                 new[] { "build", "--manifest-path", @"C:\p\app\Cargo.toml", "-p", "app", "--bin", "app", "--release", "--message-format", "json-diagnostic-rendered-ansi", "--locked", "--offline" },
-                line.ArgumentList);
+                line.ArgumentList.ToArray());
         }
 
-        [Fact]
+        [TestMethod]
         public void Rustc_links_the_three_kubuno_crates_by_path_and_the_rest_through_deps()
         {
             var inputs = DesignSurfaceInputs.From(RealArtifacts(), _ => true, out _)!;
 
             var args = DesignSurfaceBuilder.RustcArgumentsFor(inputs, @"C:\out\kubuno-design-surface.exe", "debug");
 
-            Assert.Contains("prefer-dynamic", args);
-            Assert.Contains("opt-level=0", args);
-            Assert.Contains("dependency=" + Deps, args);
-            Assert.Contains("kubuno_ui=" + Deps + @"\kubuno_ui.dll", args);
-            Assert.Contains("kubuno_views=" + Deps + @"\libkubuno_views-8cdbad53981d1b62.rlib", args);
-            Assert.Contains("kubuno_controls=" + Deps + @"\libkubuno_controls-6de35b5c49a7da48.rlib", args);
-            Assert.Equal(Views + @"\examples\view_embed.rs", args[6]);
-            Assert.Equal(@"C:\out\kubuno-design-surface.exe", args[args.Count - 1]);
-            Assert.Contains("opt-level=3", DesignSurfaceBuilder.RustcArgumentsFor(inputs, "x.exe", "release"));
+            CollectionAssert.Contains(args.ToList(), "prefer-dynamic");
+            CollectionAssert.Contains(args.ToList(), "opt-level=0");
+            CollectionAssert.Contains(args.ToList(), "dependency=" + Deps);
+            CollectionAssert.Contains(args.ToList(), "kubuno_ui=" + Deps + @"\kubuno_ui.dll");
+            CollectionAssert.Contains(args.ToList(), "kubuno_views=" + Deps + @"\libkubuno_views-8cdbad53981d1b62.rlib");
+            CollectionAssert.Contains(args.ToList(), "kubuno_controls=" + Deps + @"\libkubuno_controls-6de35b5c49a7da48.rlib");
+            Assert.AreEqual(Views + @"\examples\view_embed.rs", args[6]);
+            Assert.AreEqual(@"C:\out\kubuno-design-surface.exe", args[args.Count - 1]);
+            CollectionAssert.Contains(DesignSurfaceBuilder.RustcArgumentsFor(inputs, "x.exe", "release").ToList(), "opt-level=3");
         }
 
-        [Fact]
+        [TestMethod]
         public void Key_changes_with_every_input()
         {
             var inputs = new[] { new DesignSurfaceStampInput { Path = "a", Length = 1, LastWriteUtcTicks = 2 } };
             var key = DesignSurfaceBuilder.ComputeKey("AB", inputs, "rustc 1.98.1", "debug");
 
-            Assert.Equal(16, key.Length);
-            Assert.Equal(key, DesignSurfaceBuilder.ComputeKey("AB", inputs, "rustc 1.98.1", "debug"));
-            Assert.NotEqual(key, DesignSurfaceBuilder.ComputeKey("AC", inputs, "rustc 1.98.1", "debug"));
-            Assert.NotEqual(key, DesignSurfaceBuilder.ComputeKey("AB", new[] { new DesignSurfaceStampInput { Path = "a", Length = 1, LastWriteUtcTicks = 3 } }, "rustc 1.98.1", "debug"));
-            Assert.NotEqual(key, DesignSurfaceBuilder.ComputeKey("AB", inputs, "rustc 1.99.0", "debug"));
-            Assert.NotEqual(key, DesignSurfaceBuilder.ComputeKey("AB", inputs, "rustc 1.98.1", "release"));
+            Assert.AreEqual(16, key.Length);
+            Assert.AreEqual(key, DesignSurfaceBuilder.ComputeKey("AB", inputs, "rustc 1.98.1", "debug"));
+            Assert.AreNotEqual(key, DesignSurfaceBuilder.ComputeKey("AC", inputs, "rustc 1.98.1", "debug"));
+            Assert.AreNotEqual(key, DesignSurfaceBuilder.ComputeKey("AB", new[] { new DesignSurfaceStampInput { Path = "a", Length = 1, LastWriteUtcTicks = 3 } }, "rustc 1.98.1", "debug"));
+            Assert.AreNotEqual(key, DesignSurfaceBuilder.ComputeKey("AB", inputs, "rustc 1.99.0", "debug"));
+            Assert.AreNotEqual(key, DesignSurfaceBuilder.ComputeKey("AB", inputs, "rustc 1.98.1", "release"));
         }
 
-        [Fact]
+        [TestMethod]
         public void Stamp_round_trips_and_detects_a_changed_input()
         {
             var stamp = new DesignSurfaceStamp
@@ -126,16 +131,16 @@ namespace Kubuno.Cargo.Tests.DesignSurface
 
             var parsed = DesignSurfaceStamp.TryParse(stamp.ToJson());
 
-            Assert.NotNull(parsed);
-            Assert.Equal("0123456789abcdef", parsed!.Key);
-            Assert.True(parsed.InputsUnchanged(_ => (10, 20)));
-            Assert.False(parsed.InputsUnchanged(_ => (11, 20)));
-            Assert.False(parsed.InputsUnchanged(_ => null));
-            Assert.Null(DesignSurfaceStamp.TryParse("{}"));
-            Assert.Null(DesignSurfaceStamp.TryParse("not json"));
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual("0123456789abcdef", parsed!.Key);
+            Assert.IsTrue(parsed.InputsUnchanged(_ => (10, 20)));
+            Assert.IsFalse(parsed.InputsUnchanged(_ => (11, 20)));
+            Assert.IsFalse(parsed.InputsUnchanged(_ => null));
+            Assert.IsNull(DesignSurfaceStamp.TryParse("{}"));
+            Assert.IsNull(DesignSurfaceStamp.TryParse("not json"));
         }
 
-        [Fact]
+        [TestMethod]
         public async Task A_project_without_kubuno_views_is_not_applicable()
         {
             var runner = new FakeProcessRunner(new ProcessRunResult(0, new[] { @"{""reason"":""build-finished"",""success"":true}" }, new string[0]));
@@ -143,11 +148,11 @@ namespace Kubuno.Cargo.Tests.DesignSurface
 
             var result = await new DesignSurfaceBuilder(runner).BuildAsync(project, null, CancellationToken.None);
 
-            Assert.Equal(DesignSurfaceBuildStatus.NotApplicable, result.Status);
-            Assert.StartsWith("build --manifest-path", runner.LastRequest!.Arguments);
+            Assert.AreEqual(DesignSurfaceBuildStatus.NotApplicable, result.Status);
+            StringAssert.StartsWith(runner.LastRequest!.Arguments, "build --manifest-path");
         }
 
-        [Fact]
+        [TestMethod]
         public async Task A_failed_project_build_without_inputs_fails()
         {
             var runner = new FakeProcessRunner(new ProcessRunResult(101, new string[0], new[] { "error: could not compile `app`" }));
@@ -155,20 +160,20 @@ namespace Kubuno.Cargo.Tests.DesignSurface
 
             var result = await new DesignSurfaceBuilder(runner).BuildAsync(project, null, CancellationToken.None);
 
-            Assert.Equal(DesignSurfaceBuildStatus.Failed, result.Status);
-            Assert.Equal(@"C:\t", runner.LastRequest!.EnvironmentVariables!["CARGO_TARGET_DIR"]);
+            Assert.AreEqual(DesignSurfaceBuildStatus.Failed, result.Status);
+            Assert.AreEqual(@"C:\t", runner.LastRequest!.EnvironmentVariables!["CARGO_TARGET_DIR"]);
         }
 
-        [Fact]
+        [TestMethod]
         public void Profile_folder_and_identity_follow_the_project_properties()
         {
             var project = new DesignSurfaceProject(@"C:\p\app\Cargo.toml", "release") { TargetDirectory = @"C:\t\rsproj\app" };
 
-            Assert.Equal("release", project.EffectiveProfileDirectoryName);
-            Assert.Equal(@"C:\t\rsproj\app", project.EffectiveExpectedTargetDirectory);
-            Assert.Equal(@"C:\t\rsproj\app\kubuno-design\release", DesignSurfaceBuilder.DesignDirectory(project.EffectiveExpectedTargetDirectory, project.EffectiveProfileDirectoryName));
-            Assert.NotEqual(project.Identity, new DesignSurfaceProject(@"C:\p\app\Cargo.toml", "debug").Identity);
-            Assert.Equal(@"C:\p\app\target", new DesignSurfaceProject(@"C:\p\app\Cargo.toml", "debug").EffectiveExpectedTargetDirectory);
+            Assert.AreEqual("release", project.EffectiveProfileDirectoryName);
+            Assert.AreEqual(@"C:\t\rsproj\app", project.EffectiveExpectedTargetDirectory);
+            Assert.AreEqual(@"C:\t\rsproj\app\kubuno-design\release", DesignSurfaceBuilder.DesignDirectory(project.EffectiveExpectedTargetDirectory, project.EffectiveProfileDirectoryName));
+            Assert.AreNotEqual(project.Identity, new DesignSurfaceProject(@"C:\p\app\Cargo.toml", "debug").Identity);
+            Assert.AreEqual(@"C:\p\app\target", new DesignSurfaceProject(@"C:\p\app\Cargo.toml", "debug").EffectiveExpectedTargetDirectory);
         }
     }
 }

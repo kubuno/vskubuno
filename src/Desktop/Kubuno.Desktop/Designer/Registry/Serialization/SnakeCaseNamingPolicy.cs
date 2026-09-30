@@ -1,13 +1,13 @@
 using System.Text;
 using System.Text.Json;
 
-namespace Kubuno.VisualStudio.Designer.Registry.Serialization
+namespace Kubuno.Desktop.Designer.Registry.Serialization
 {
     /// <summary>
     /// Converts PascalCase C# property names to Rust's own snake_case field names (e.g.
     /// "LayoutKind" -&gt; "layout_kind"). A local copy of the exact same policy
-    /// <c>Kubuno.Cargo.Internal.SnakeCaseNamingPolicy</c> already uses for Cargo's own JSON - not a
-    /// shared reference, since this library and <c>Kubuno.Cargo</c> don't reference each other, but the
+    /// <c>Kubuno.Rust.Cargo.Internal.SnakeCaseNamingPolicy</c> already uses for Cargo's own JSON - not a
+    /// shared reference, since this library and <c>Kubuno.Rust.Cargo</c> don't reference each other, but the
     /// same convention: Rust identifiers (both here and Cargo's) are snake_case by convention, and
     /// <c>serde</c> serializes a struct field using its literal Rust name unless the struct carries an
     /// explicit <c>#[serde(rename...)]</c> - which docs/DESIGNER.md §5's registry export does not.

@@ -1,4 +1,4 @@
-namespace Kubuno.Cargo.Metadata
+namespace Kubuno.Rust.Cargo.Metadata
 {
     /// <summary>Well-known values found in <see cref="CargoTarget.Kind"/>.</summary>
     public static class CargoTargetKind

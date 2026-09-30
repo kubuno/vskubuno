@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Utilities.UnifiedSettings;
 
-namespace Kubuno.VisualStudio.Views.Options
+namespace Kubuno.Core.Settings
 {
     /// <summary>
     /// The Visual Studio service of Visual Studio 2026's unified settings (<c>SVsUnifiedSettingsManager</c>, an internal

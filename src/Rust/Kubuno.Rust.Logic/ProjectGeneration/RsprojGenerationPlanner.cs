@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Metadata;
 
-namespace Kubuno.VisualStudio.Core.ProjectGeneration
+namespace Kubuno.Rust.Logic.ProjectGeneration
 {
     /// <summary>
     /// The pure part of "Generate Visual Studio Projects" (docs/RSPROJ.md work package 5): from an
@@ -94,7 +94,7 @@ namespace Kubuno.VisualStudio.Core.ProjectGeneration
         /// <c>&lt;CargoBin&gt;</c> only when the package has more than one <c>[[bin]]</c> target -
         /// a single bin (or none) is already what <c>Kubuno.Rust.Sdk/Sdk.props</c>'s own empty
         /// default resolves to, so writing it out would just be noise. The pick mirrors
-        /// <c>Kubuno.VisualStudio.Core.StartupItemSelector.SelectDefaultBinTarget</c>'s exact
+        /// <c>Kubuno.Rust.Logic.StartupItemSelector.SelectDefaultBinTarget</c>'s exact
         /// fallback chain (default-run, then the bin named after the package, then the first bin
         /// in `cargo metadata`'s own order) - duplicated rather than shared because that selector
         /// lives in the same assembly but takes a whole <see cref="CargoPackage"/> and this call

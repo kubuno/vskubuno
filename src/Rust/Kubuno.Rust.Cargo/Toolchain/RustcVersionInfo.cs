@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Toolchain
+namespace Kubuno.Rust.Cargo.Toolchain
 {
     /// <summary>
     /// The toolchain a package builds with, from <c>rustc -vV</c> (run in the package directory, so a

@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 
-namespace Kubuno.VisualStudio.Core.Overrides
+namespace Kubuno.Desktop.Logic.Overrides
 {
     /// <summary>
     /// One overridable member of the Kubuno control hierarchy (docs/EVENTS.md EVT-7a/EVT-7b): a method of a level

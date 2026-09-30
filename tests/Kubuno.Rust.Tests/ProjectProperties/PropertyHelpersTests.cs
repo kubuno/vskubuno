@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.VisualStudio.Core.ProjectProperties;
+using Kubuno.Rust.Logic.ProjectProperties;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.ProjectProperties
+namespace Kubuno.Rust.Tests.ProjectProperties
 {
     [TestClass]
     public class PropertyListEncodingTests

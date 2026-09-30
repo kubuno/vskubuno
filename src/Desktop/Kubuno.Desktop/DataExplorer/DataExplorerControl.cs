@@ -7,14 +7,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Core.Logging;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.DataExplorer
+namespace Kubuno.Desktop.DataExplorer
 {
     /// <summary>
     /// The Data Explorer tree: connections (from <c>explorer.list</c>) → schemas → Tables / Vues / Fonctions → tables and

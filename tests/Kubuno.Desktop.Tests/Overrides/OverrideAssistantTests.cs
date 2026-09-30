@@ -1,8 +1,8 @@
 using System.Linq;
-using Kubuno.VisualStudio.Core.Overrides;
+using Kubuno.Desktop.Logic.Overrides;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.Overrides
+namespace Kubuno.Desktop.Tests.Overrides
 {
     /// <summary>docs/EVENTS.md EVT-7b, "Override assistance": "Substituer des membres…" without rust-analyzer.</summary>
     [TestClass]

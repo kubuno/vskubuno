@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using Kubuno.Cargo.Diagnostics.Internal;
-using Kubuno.Cargo.Internal;
+using Kubuno.Rust.Cargo.Diagnostics.Internal;
+using Kubuno.Rust.Cargo.Internal;
 
-namespace Kubuno.Cargo.Diagnostics
+namespace Kubuno.Rust.Cargo.Diagnostics
 {
     /// <summary>
     /// Parses <c>cargo build/check/test --message-format=json[-diagnostic-rendered-ansi]</c>

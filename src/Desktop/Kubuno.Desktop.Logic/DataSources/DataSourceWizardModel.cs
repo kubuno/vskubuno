@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.VisualStudio.Core.Data;
+using Kubuno.Desktop.Logic.Data;
 
-namespace Kubuno.VisualStudio.Core.DataSources
+namespace Kubuno.Desktop.Logic.DataSources
 {
     /// <summary>The pages of the "Add Data Source" wizard.</summary>
     public enum DataSourceWizardStep

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.VisualStudio.Core.Sql
+namespace Kubuno.Desktop.Logic.Sql
 {
     /// <summary>
     /// The live schema of one crate: the snapshots (<see cref="SchemaSnapshotStore"/>) of the connections its

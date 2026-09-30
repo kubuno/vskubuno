@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Selection;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Selection;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Selection.Fakes
+namespace Kubuno.Desktop.Tests.Designer.Selection.Fakes
 {
     internal sealed class FakeTextViewSelectionAdapter : ITextViewSelectionAdapter
     {

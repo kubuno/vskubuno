@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Kubuno.VisualStudio.Core.ProjectGeneration
+namespace Kubuno.Rust.Logic.ProjectGeneration
 {
     /// <summary>
     /// Builds the text of one generated <c>.rsproj</c> (docs/RSPROJ.md work package 5). Mirrors

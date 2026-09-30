@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Kubuno.VisualStudio.Core.SolutionExplorer
+namespace Kubuno.Rust.Logic.SolutionExplorer
 {
     /// <summary>
     /// User-visible strings of the Dependencies node, its commands, the Properties window rows and the

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace Kubuno.Cargo.Registry
+namespace Kubuno.Rust.Cargo.Registry
 {
     /// <summary>
     /// A SemVer 2.0 version as crates use it (<c>1.0.229</c>, <c>0.4.0-alpha.2</c>, <c>1.2.3+build</c>),

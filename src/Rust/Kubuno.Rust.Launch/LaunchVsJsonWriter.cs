@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// Generates `launch.vs.json` configuration text for Visual Studio's Open Folder native

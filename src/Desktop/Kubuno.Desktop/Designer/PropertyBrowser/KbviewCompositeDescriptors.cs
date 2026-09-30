@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using Kubuno.VisualStudio.Designer.Properties;
+using Kubuno.Desktop.Designer.Properties;
 
-namespace Kubuno.VisualStudio.Designer.PropertyBrowser
+namespace Kubuno.Desktop.Designer.PropertyBrowser
 {
     /// <summary>
     /// How one expandable Properties-window row (WinForms' <c>Location</c>, <c>Size</c>, <c>Padding</c>...) maps onto

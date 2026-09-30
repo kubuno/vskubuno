@@ -5,20 +5,20 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.Launch;
-using Kubuno.VisualStudio.Core;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Launch;
+using Kubuno.Rust.Logic;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 
-namespace Kubuno.VisualStudio.Debugging
+namespace Kubuno.Rust.Debugging
 {
     /// <summary>
     /// Generates <c>.vs\launch.vs.json</c> (phase 1c) from `cargo metadata`'s bin and example
-    /// targets, using <c>Kubuno.Launch</c> end to end (<see cref="RustToolchain"/> for the
+    /// targets, using <c>Kubuno.Rust.Launch</c> end to end (<see cref="RustToolchain"/> for the
     /// sysroot/host triple, <see cref="LaunchDescriptionBuilder"/> for the PATH/environment a
     /// `-C prefer-dynamic` build needs, <see cref="LaunchVsJsonWriter"/> for the file itself).
     ///
@@ -90,9 +90,9 @@ namespace Kubuno.VisualStudio.Debugging
 
                 // Standard-library natvis is embedded in every PDB rustc links and Kubuno.natvis is a
                 // VSIX asset; Just My Code and the step filters are per-user files (see RustDebuggerFiles).
-                Kubuno.VisualStudio.RustProjectSystem.RustDebuggerSettings.EnsureDebuggerFilesInstalled(KubunoLog.WriteLine);
+                Kubuno.Rust.ProjectSystem.RustDebuggerSettings.EnsureDebuggerFilesInstalled(KubunoLog.WriteLine);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-                Kubuno.VisualStudio.RustProjectSystem.RustDebuggerSettings.EnsurePanicExceptionSetting(KubunoLog.WriteLine);
+                Kubuno.Rust.ProjectSystem.RustDebuggerSettings.EnsurePanicExceptionSetting(KubunoLog.WriteLine);
                 await TaskScheduler.Default;
 
                 var entries = new List<(LaunchDescription Description, string ProjectPath)>();
@@ -130,9 +130,9 @@ namespace Kubuno.VisualStudio.Debugging
                     }
                 }
 
-                var vsDirectory = Path.Combine(metadata.WorkspaceRoot, Kubuno.VisualStudio.Constants.VsHiddenFolderName);
+                var vsDirectory = Path.Combine(metadata.WorkspaceRoot, Constants.VsHiddenFolderName);
                 Directory.CreateDirectory(vsDirectory);
-                var launchVsJsonPath = Path.Combine(vsDirectory, Kubuno.VisualStudio.Constants.LaunchVsJsonFileName);
+                var launchVsJsonPath = Path.Combine(vsDirectory, Constants.LaunchVsJsonFileName);
 
                 if (entries.Count == 0)
                 {

@@ -1,4 +1,4 @@
-namespace Kubuno.Cargo.Processes
+namespace Kubuno.Rust.Cargo.Processes
 {
     /// <summary>One line of output streamed from a running process, as it happens.</summary>
     public sealed class ProcessOutputLine

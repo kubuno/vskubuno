@@ -1,8 +1,8 @@
 using System;
 using System.IO;
 using System.Threading;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Processes;
 using Microsoft.Build.Framework;
 using MSBuildTask = Microsoft.Build.Utilities.Task;
 

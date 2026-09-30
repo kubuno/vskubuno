@@ -2,16 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.DesignSurface;
-using Kubuno.Cargo.Processes;
-using Kubuno.VisualStudio.Designer.DesignSurface;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Desktop.Logic.DesignSurface;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Desktop.Designer.DesignSurface;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.DesignerIntegration
+namespace Kubuno.Desktop.DesignerIntegration
 {
     /// <summary>
     /// Gives every <c>.kbview</c> designer pane the design surface of its OWN project (docs/DESIGNER.md

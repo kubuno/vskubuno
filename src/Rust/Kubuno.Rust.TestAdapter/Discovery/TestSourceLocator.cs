@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.TestAdapter.Discovery
+namespace Kubuno.Rust.TestAdapter.Discovery
 {
     /// <summary>
     /// Best-effort, "cheap" `fn &lt;name&gt;` lookup for a `TestCase.CodeFilePath`/`LineNumber`:

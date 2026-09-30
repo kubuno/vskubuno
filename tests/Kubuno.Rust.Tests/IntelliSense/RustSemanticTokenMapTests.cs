@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Core.IntelliSense;
+using Kubuno.Rust.Logic.IntelliSense;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.IntelliSense
+namespace Kubuno.Rust.Tests.IntelliSense
 {
     [TestClass]
     public sealed class RustSemanticTokenMapTests

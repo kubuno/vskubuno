@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Core.IntelliSense
+namespace Kubuno.Rust.Logic.IntelliSense
 {
     /// <summary>
     /// Maps rust-analyzer's semantic tokens onto the classifications Visual Studio colors C# with.

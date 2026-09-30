@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Core
+namespace Kubuno.Rust.Logic
 {
     /// <summary>
     /// Finds the Cargo workspace root to hand rust-analyzer as its project root: the directory

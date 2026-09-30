@@ -1,9 +1,9 @@
 using System.Linq;
-using Kubuno.VisualStudio.Core.Sql;
+using Kubuno.Desktop.Logic.Sql;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using static Kubuno.VisualStudio.Tests.Sql.SqlFixtures;
+using static Kubuno.Desktop.Tests.Sql.SqlFixtures;
 
-namespace Kubuno.VisualStudio.Tests.Sql
+namespace Kubuno.Desktop.Tests.Sql
 {
     [TestClass]
     public sealed class SqlDiagnosticsTests

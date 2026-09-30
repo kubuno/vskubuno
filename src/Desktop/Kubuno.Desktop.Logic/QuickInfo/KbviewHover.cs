@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Desktop.Logic.SolutionExplorer;
+using Kubuno.Rust.Logic.QuickInfo;
 
-namespace Kubuno.VisualStudio.Core.QuickInfo
+namespace Kubuno.Desktop.Logic.QuickInfo
 {
     /// <summary>What a <c>.kbview</c> hover is about.</summary>
     public enum KbviewHoverKind
@@ -141,7 +144,7 @@ namespace Kubuno.VisualStudio.Core.QuickInfo
             switch (Kind)
             {
                 case KbviewHoverKind.Element:
-                    icon = QuickInfoImage.Control(Name);
+                    icon = QuickInfoImage.Image(ControlIcons.ImagesGuid, ControlIcons.IdFor(Name), Name);
                     signature.Add(QuickInfoTextKind.Class, Name);
                     container = details.Container;
                     break;

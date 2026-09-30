@@ -1,8 +1,8 @@
 using System.ComponentModel.Design;
-using Kubuno.VisualStudio.Core.Data;
+using Kubuno.Desktop.Logic.Data;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.DataExplorer
+namespace Kubuno.Desktop.DataExplorer
 {
     /// <summary>
     /// View &gt; "Explorateur de données" (next to Server Explorer) and View &gt; Other Windows: shows the

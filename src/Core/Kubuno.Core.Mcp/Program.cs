@@ -1,17 +1,17 @@
 using System.Threading.Tasks;
-using Kubuno.Mcp.Connectivity;
-using Kubuno.Mcp.Tools;
+using Kubuno.Core.Mcp.Connectivity;
+using Kubuno.Core.Mcp.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Protocol;
 
-namespace Kubuno.Mcp
+namespace Kubuno.Core.Mcp
 {
     /// <summary>
     /// Entry point for <c>kubuno-vs-mcp</c>: a stdio MCP server that Claude Code connects to (see
     /// docs/MCP.md "Registering the server with Claude Code"). It speaks MCP over stdin/stdout to
-    /// Claude Code, and Kubuno.Mcp.Bridge's private pipe protocol to whichever Visual Studio
+    /// Claude Code, and Kubuno.Core.Mcp.Bridge's private pipe protocol to whichever Visual Studio
     /// instance's bridge <see cref="PipeBridgeConnector"/> discovers.
     /// </summary>
     internal static class Program

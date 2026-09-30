@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Processes;
 
-namespace Kubuno.TestAdapter.Execution
+namespace Kubuno.Rust.TestAdapter.Execution
 {
     /// <summary>Result of running a batch of tests from a single test executable.</summary>
     public sealed class CargoTestRunResult
@@ -69,7 +69,7 @@ namespace Kubuno.TestAdapter.Execution
             // test selected from this executable is requested in a single process launch.
             args.Add("--exact");
             args.Add("--nocapture");
-            args.Add("--test-threads=1"); // deterministic, single-threaded: see TestLaunchArgs' own doc comment in Kubuno.Launch for the same rationale (debugging story), which applies equally to output attribution here.
+            args.Add("--test-threads=1"); // deterministic, single-threaded: see TestLaunchArgs' own doc comment in Kubuno.Rust.Launch for the same rationale (debugging story), which applies equally to output attribution here.
 
             var commandLine = new CargoCommandLine(executablePath, args);
             var request = new ProcessRunRequest(commandLine.FileName, commandLine.Arguments)

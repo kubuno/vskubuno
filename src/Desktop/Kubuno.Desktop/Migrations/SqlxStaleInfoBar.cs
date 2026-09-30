@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EnvDTE;
-using Kubuno.VisualStudio.Core.Migrations;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Desktop.Logic.Migrations;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Migrations
+namespace Kubuno.Desktop.Migrations
 {
     /// <summary>
     /// After a build, "The SQLx cache of &lt;crate&gt; is stale. [Update]" (docs/DATA.md DATA-7) for each crate whose

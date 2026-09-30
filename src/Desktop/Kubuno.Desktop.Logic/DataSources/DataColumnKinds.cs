@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Core.DataSources
+namespace Kubuno.Desktop.Logic.DataSources
 {
     /// <summary>What a column holds, as far as the designer cares (control, format, alignment).</summary>
     public enum DataColumnKind

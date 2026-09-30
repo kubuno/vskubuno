@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Designer.Registry
+namespace Kubuno.Desktop.Designer.Registry
 {
     /// <summary>Discriminant for <see cref="PropKind"/> - see that type's own doc comment.</summary>
     public enum PropKindTag

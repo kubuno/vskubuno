@@ -4,8 +4,8 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.Overrides;
-using Kubuno.VisualStudio.Designer;
+using Kubuno.Desktop.Logic.Overrides;
+using Kubuno.Desktop.Designer;
 using Microsoft.VisualStudio.Core.Imaging;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;
@@ -15,7 +15,7 @@ using Microsoft.VisualStudio.Text.Adornments;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.VisualStudio.LanguageService.Overrides
+namespace Kubuno.Desktop.LanguageService.Overrides
 {
     /// <summary>
     /// Kubuno completion items in Rust files, next to rust-analyzer's (docs/EVENTS.md EVT-7b): inside
@@ -25,7 +25,7 @@ namespace Kubuno.VisualStudio.LanguageService.Overrides
     /// </summary>
     [Export(typeof(IAsyncCompletionSourceProvider))]
     [Name("Kubuno Rust Control Members")]
-    [ContentType(Constants.RustContentType)]
+    [ContentType(Kubuno.Rust.Constants.RustContentType)]
     internal sealed class KubunoRustCompletionSourceProvider : IAsyncCompletionSourceProvider
     {
         public IAsyncCompletionSource GetOrCreate(ITextView textView) =>

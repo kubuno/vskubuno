@@ -6,10 +6,10 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Views.Infrastructure;
-using Kubuno.VisualStudio.Views.Locating;
-using Kubuno.VisualStudio.Views.Logging;
-using Kubuno.VisualStudio.Views.Options;
+using Kubuno.Desktop.Views.Infrastructure;
+using Kubuno.Desktop.Views.Locating;
+using Kubuno.Desktop.Views.Logging;
+using Kubuno.Desktop.Views.Options;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -18,7 +18,7 @@ using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using StreamJsonRpc;
 using Process = System.Diagnostics.Process;
 
-namespace Kubuno.VisualStudio.Views.LanguageService
+namespace Kubuno.Desktop.Views.LanguageService
 {
     /// <summary>
     /// Hosts <c>kubuno-views-ls</c> as an LSP server for <c>.kbview</c> files (content type "kbview",
@@ -31,7 +31,7 @@ namespace Kubuno.VisualStudio.Views.LanguageService
     /// forced by this library not being able to reference that project (see INTEGRATION.md): logging
     /// goes through <see cref="KubunoViewsLogHost"/>/<see cref="IKubunoLog"/> instead of the VSIX's
     /// own static <c>KubunoLog</c>, and options come from <see cref="KubunoViewsOptionsHost"/> instead
-    /// of <c>KubunoPackage.Instance.GetDialogPage</c>.
+    /// of <c>Kubuno.Core.KubunoHost.Package.GetDialogPage</c>.
     /// </summary>
     [ContentType(KbviewConstants.ContentType)]
     [Export(typeof(ILanguageClient))]

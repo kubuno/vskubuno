@@ -1,8 +1,9 @@
 using System;
 using System.Linq;
 using System.Text.Json.Nodes;
+using Kubuno.Core.Logic.Lsp;
 
-namespace Kubuno.VisualStudio.Core.IntelliSense
+namespace Kubuno.Rust.Logic.IntelliSense
 {
     /// <summary>
     /// What Kubuno changes in the <c>initialize</c> handshake between Visual Studio and rust-analyzer

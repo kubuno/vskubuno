@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Windows.Media;
-using Kubuno.VisualStudio.Core.Sql;
-using Kubuno.VisualStudio.LanguageService.IntelliSense;
+using Kubuno.Desktop.Logic.Sql;
+using Kubuno.Rust.LanguageService.IntelliSense;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.VisualStudio.LanguageService.Sql
+namespace Kubuno.Desktop.LanguageService.Sql
 {
     /// <summary>
     /// The classifications of SQL inside Rust strings (docs/DATA.md DATA-8), listed in Tools &gt; Options &gt; Environment &gt;
@@ -113,7 +113,7 @@ namespace Kubuno.VisualStudio.LanguageService.Sql
         protected SqlFormat(string name, string english, string french)
         {
             DisplayName = Designer.DesignerText.IsFrench ? "Kubuno SQL - " + french : "Kubuno SQL - " + english;
-            ForegroundColor = SqlClassificationTypes.DefaultColor(name, RustClassificationTypes.IsDarkTheme());
+            ForegroundColor = SqlClassificationTypes.DefaultColor(name, Kubuno.Core.UI.VsTheme.IsDark());
         }
     }
 
@@ -231,7 +231,7 @@ namespace Kubuno.VisualStudio.LanguageService.Sql
 
     /// <summary>Colours the SQL of <c>query!</c>/<c>query_as!</c>/<c>DbCommand::with_text</c>... strings.</summary>
     [Export(typeof(IClassifierProvider))]
-    [ContentType(Constants.RustContentType)]
+    [ContentType(Kubuno.Rust.Constants.RustContentType)]
     [Name("Kubuno SQL in Rust strings")]
     internal sealed class SqlClassifierProvider : IClassifierProvider
     {
@@ -325,7 +325,7 @@ namespace Kubuno.VisualStudio.LanguageService.Sql
     /// colour still at the other theme's default moves to this theme's; a colour the user chose is left alone.
     /// </summary>
     [Export(typeof(IWpfTextViewCreationListener))]
-    [ContentType(Constants.RustContentType)]
+    [ContentType(Kubuno.Rust.Constants.RustContentType)]
     [TextViewRole(PredefinedTextViewRoles.Document)]
     internal sealed class SqlClassificationThemeListener : IWpfTextViewCreationListener
     {
@@ -352,7 +352,7 @@ namespace Kubuno.VisualStudio.LanguageService.Sql
         private void Apply()
         {
             var map = FormatMapService.GetClassificationFormatMap("text");
-            var dark = RustClassificationTypes.IsDarkTheme();
+            var dark = Kubuno.Core.UI.VsTheme.IsDark();
             foreach (var (name, darkColor, lightColor) in SqlClassificationTypes.Colors)
             {
                 var type = Registry.GetClassificationType(name);

@@ -6,14 +6,14 @@ using VsImageAttributes = Microsoft.VisualStudio.Imaging.Interop.ImageAttributes
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Kubuno.VisualStudio.Designer.Registry;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Desktop.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Designer.Toolbox
+namespace Kubuno.Desktop.Designer.Toolbox
 {
     /// <summary>
     /// Fills Visual Studio's OWN Toolbox window with the Kubuno components, grouped by registry family
@@ -95,7 +95,7 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
                 }
 
                 var background = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolWindowBackgroundColorKey);
-                var uri = new Uri($"/Kubuno.VisualStudio.RustProjectSystem;component/Resources/Icons/Controls/{iconName}.{IconVariantFor(background)}.xaml", UriKind.Relative);
+                var uri = new Uri($"/Kubuno.Desktop.ProjectSystem;component/Resources/Icons/Controls/{iconName}.{IconVariantFor(background)}.xaml", UriKind.Relative);
                 return System.Windows.Application.LoadComponent(uri) as System.Windows.FrameworkElement;
             }
             catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException or System.Windows.Markup.XamlParseException)
@@ -599,10 +599,10 @@ namespace Kubuno.VisualStudio.Designer.Toolbox
             return r == 255 && g == 0 && b == 255 ? (254, 0, 255) : (r, g, b);
         }
 
-        /// <summary>Renders an icon's XAML (compiled into Kubuno.VisualStudio.RustProjectSystem) pixel-hinted at 16x16 (<see cref="ToolboxIconRasterizer"/>), premultiplied BGRA; null when the resource is missing.</summary>
+        /// <summary>Renders an icon's XAML (compiled into Kubuno.Rust.ProjectSystem) pixel-hinted at 16x16 (<see cref="ToolboxIconRasterizer"/>), premultiplied BGRA; null when the resource is missing.</summary>
         private static byte[]? RenderIcon(string iconName, string variant)
         {
-            var uri = new Uri($"/Kubuno.VisualStudio.RustProjectSystem;component/Resources/Icons/Controls/{iconName}.{variant}.xaml", UriKind.Relative);
+            var uri = new Uri($"/Kubuno.Desktop.ProjectSystem;component/Resources/Icons/Controls/{iconName}.{variant}.xaml", UriKind.Relative);
             return System.Windows.Application.LoadComponent(uri) is System.Windows.FrameworkElement icon ? ToolboxIconRasterizer.Render(icon) : null;
         }
         /// <summary>Re-renders every Kubuno item's icon for the current theme (<c>IVsToolbox.SetItemInfo</c>); returns how many icons could not be rendered.</summary>

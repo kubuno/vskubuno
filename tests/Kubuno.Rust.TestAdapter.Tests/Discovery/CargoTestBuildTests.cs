@@ -2,12 +2,12 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Processes;
-using Kubuno.TestAdapter.Discovery;
-using Kubuno.TestAdapter.Tests.Fakes;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.TestAdapter.Discovery;
+using Kubuno.Rust.TestAdapter.Tests.Fakes;
 
-namespace Kubuno.TestAdapter.Tests.Discovery
+namespace Kubuno.Rust.TestAdapter.Tests.Discovery
 {
     /// <summary>
     /// Parses real `cargo test --no-run --message-format=json` output, captured from
@@ -20,7 +20,7 @@ namespace Kubuno.TestAdapter.Tests.Discovery
     /// produces an ordinary (non-test) build artifact at `.../debug/hello-rust.exe`
     /// (`profile.test: false`), and the lib's own rlib/rmeta artifact has `executable: null`.
     /// <see cref="CargoTestBuild"/> must filter both of those out - see its own class remarks for
-    /// why `profile.test` (not modeled by Kubuno.Cargo's public API) is what makes that possible.
+    /// why `profile.test` (not modeled by Kubuno.Rust.Cargo's public API) is what makes that possible.
     /// </summary>
     public class CargoTestBuildTests
     {

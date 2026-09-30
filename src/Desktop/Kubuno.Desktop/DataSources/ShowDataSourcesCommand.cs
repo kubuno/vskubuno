@@ -1,9 +1,9 @@
 using System.ComponentModel.Design;
-using Kubuno.VisualStudio.Core.DataSources;
-using Kubuno.VisualStudio.DataExplorer;
+using Kubuno.Desktop.Logic.DataSources;
+using Kubuno.Desktop.DataExplorer;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.DataSources
+namespace Kubuno.Desktop.DataSources
 {
     /// <summary>
     /// View &gt; Other Windows &gt; "Sources de données" (Shift+Alt+D, like Visual Studio's own Data Sources window): shows the

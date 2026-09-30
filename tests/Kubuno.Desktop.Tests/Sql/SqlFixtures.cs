@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.VisualStudio.Core.Sql;
+using Kubuno.Desktop.Logic.Sql;
 
-namespace Kubuno.VisualStudio.Tests.Sql
+namespace Kubuno.Desktop.Tests.Sql
 {
     /// <summary>The schema snapshot fixtures (Fixtures/Sql, the <c>schema.load</c> format) and caret helpers.</summary>
     internal static class SqlFixtures

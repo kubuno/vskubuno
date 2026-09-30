@@ -1,4 +1,4 @@
-namespace Kubuno.Cargo.Diagnostics
+namespace Kubuno.Rust.Cargo.Diagnostics
 {
     /// <summary>Base type for one line of <c>--message-format=json</c> output, parsed by <see cref="CargoMessageParser"/>.</summary>
     public abstract class CargoBuildEvent

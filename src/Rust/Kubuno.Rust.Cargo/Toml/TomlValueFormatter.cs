@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Text;
 
-namespace Kubuno.Cargo.Toml
+namespace Kubuno.Rust.Cargo.Toml
 {
     /// <summary>Single-line TOML rendering of values.</summary>
     public static class TomlValueFormatter

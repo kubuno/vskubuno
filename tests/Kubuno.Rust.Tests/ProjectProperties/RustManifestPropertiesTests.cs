@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.VisualStudio.Core.ProjectProperties;
+using Kubuno.Rust.Logic.ProjectProperties;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.ProjectProperties
+namespace Kubuno.Rust.Tests.ProjectProperties
 {
     /// <summary>An in-memory file system for the property model (paths are compared case-insensitively, like Windows).</summary>
     internal sealed class FakeFiles : IPropertyFileReader

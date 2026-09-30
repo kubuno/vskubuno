@@ -2,17 +2,17 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Registry;
-using Kubuno.Cargo.Toolchain;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Registry;
+using Kubuno.Rust.Cargo.Toolchain;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.SolutionExplorer
+namespace Kubuno.Rust.Tests.SolutionExplorer
 {
     /// <summary>
     /// The Dependencies node mapping, fed real `cargo metadata` output (cargo 1.98.1) of a package that
-    /// has every kind of dependency: see Kubuno.Cargo.Tests' DependencyMetadataParsingTests.
+    /// has every kind of dependency: see Kubuno.Rust.Cargo.Tests' DependencyMetadataParsingTests.
     /// </summary>
     [TestClass]
     public class DependencyTreeBuilderTests

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.VisualStudio.Core;
+using Kubuno.Rust.Logic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests
+namespace Kubuno.Rust.Tests
 {
     [TestClass]
     public class CargoWorkspaceLocatorTests

@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The seam DSG-7 plugs into: everything <see cref="UI.DesignerSplitView"/> needs from "the thing

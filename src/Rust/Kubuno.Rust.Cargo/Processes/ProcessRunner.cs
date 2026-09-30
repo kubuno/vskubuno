@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.Cargo.Processes
+namespace Kubuno.Rust.Cargo.Processes
 {
     /// <summary>Default <see cref="IProcessRunner"/>, backed by <see cref="Process"/>.</summary>
     public sealed class ProcessRunner : IProcessRunner

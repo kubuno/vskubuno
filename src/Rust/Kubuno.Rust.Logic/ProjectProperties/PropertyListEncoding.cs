@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.VisualStudio.Core.ProjectProperties
+namespace Kubuno.Rust.Logic.ProjectProperties
 {
     /// <summary>
     /// The value format of the Project Properties editor's list editors (docs/RSPROJ.md, "Project properties
@@ -65,7 +65,7 @@ namespace Kubuno.VisualStudio.Core.ProjectProperties
 
         /// <summary>
         /// Converts the one-<c>NAME=value</c>-per-line environment text the debugger reads
-        /// (<c>RustDebuggerEnvironment</c>, see <c>Kubuno.Launch.DebugEnvironmentText</c>) to a <c>NameValueList</c> value.
+        /// (<c>RustDebuggerEnvironment</c>, see <c>Kubuno.Rust.Launch.DebugEnvironmentText</c>) to a <c>NameValueList</c> value.
         /// </summary>
         public static string EnvironmentLinesToPairs(string? lines)
         {

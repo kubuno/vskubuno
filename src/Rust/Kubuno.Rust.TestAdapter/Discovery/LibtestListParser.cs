@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.TestAdapter.Discovery
+namespace Kubuno.Rust.TestAdapter.Discovery
 {
     /// <summary>One entry from `&lt;test-exe&gt; --list --format terse`.</summary>
     public sealed class LibtestListEntry

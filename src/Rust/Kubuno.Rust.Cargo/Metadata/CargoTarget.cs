@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace Kubuno.Cargo.Metadata
+namespace Kubuno.Rust.Cargo.Metadata
 {
     /// <summary>
     /// A single build target of a package: a lib, a bin, an example, a test or a bench.

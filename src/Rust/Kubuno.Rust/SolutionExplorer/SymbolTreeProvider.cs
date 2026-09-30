@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.VisualStudio.SolutionExplorer
+namespace Kubuno.Rust.SolutionExplorer
 {
     /// <summary>
     /// Attaches Kubuno nodes to Solution Explorer (docs/RSPROJ.md lot 8), through the same seam Roslyn
@@ -20,7 +20,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
     /// extra children for the <see cref="KnownRelationships.Contains"/> relationship. Sources are
     /// cached per node and disposed (file watchers stopped) when the node goes away.
     /// </summary>
-    internal abstract class HierarchyItemSourceProviderBase : AttachedCollectionSourceProvider<object>
+    public abstract class HierarchyItemSourceProviderBase : AttachedCollectionSourceProvider<object>
     {
         private readonly ConditionalWeakTable<object, IAttachedCollectionSource> _sources = new ConditionalWeakTable<object, IAttachedCollectionSource>();
 
@@ -95,8 +95,9 @@ namespace Kubuno.VisualStudio.SolutionExplorer
     }
 
     /// <summary>
-    /// A <c>.rs</c> file gets its Rust items (<see cref="RustSymbolQuery"/>), a <c>.kbview</c> file its
-    /// element tree (<see cref="KbviewSymbolQuery"/>) - in a <c>.rsproj</c>. Ordered after the
+    /// A <c>.rs</c> file gets its Rust items (<see cref="RustSymbolQuery"/>), a file of another language the tree its
+    /// <see cref="Extensibility.ISolutionSymbolProvider"/> computes (the desktop layer's <c>.kbview</c> element trees) -
+    /// in a <c>.rsproj</c>. Ordered after the
     /// hierarchy's own children, so a nested code-behind file comes first (like
     /// <c>Form1.Designer.cs</c> above the <c>Form1</c> class node). Also the children source of every
     /// node this extension creates.
@@ -116,7 +117,10 @@ namespace Kubuno.VisualStudio.SolutionExplorer
     internal sealed class SymbolTreeProvider : HierarchyItemSourceProviderBase
     {
         private readonly RustSymbolQuery _rustQuery = new RustSymbolQuery();
-        private readonly KbviewSymbolQuery _kbviewQuery = new KbviewSymbolQuery();
+
+        /// <summary>The symbol trees of other languages' files, exported by the layers above (MEF).</summary>
+        [ImportMany]
+        internal IEnumerable<Extensibility.ISolutionSymbolProvider> Providers { get; set; } = Array.Empty<Extensibility.ISolutionSymbolProvider>();
 
         protected override bool OwnsTreeItems => true;
 
@@ -143,11 +147,18 @@ namespace Kubuno.VisualStudio.SolutionExplorer
                 return null;
             }
 
-            ISymbolQuery? query =
-                string.Equals(extension, ".rs", StringComparison.OrdinalIgnoreCase) ? _rustQuery
-                : string.Equals(extension, ".kbview", StringComparison.OrdinalIgnoreCase) ? _kbviewQuery
-                : null;
-            return query != null && Path.IsPathRooted(path) ? new FileSymbolsSource(item, path, query) : null;
+            if (!Path.IsPathRooted(path))
+            {
+                return null;
+            }
+
+            if (string.Equals(extension, ".rs", StringComparison.OrdinalIgnoreCase))
+            {
+                return new FileSymbolsSource(item, path, _rustQuery, provider: null);
+            }
+
+            var provider = Providers.FirstOrDefault(p => string.Equals(p.FileExtension, extension, StringComparison.OrdinalIgnoreCase));
+            return provider != null ? new FileSymbolsSource(item, path, new ProviderSymbolQuery(provider), provider) : null;
         }
     }
 

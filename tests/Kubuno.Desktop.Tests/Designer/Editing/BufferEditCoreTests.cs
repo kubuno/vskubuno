@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Tests.Editing.Fakes;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Tests.Designer.Editing.Fakes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Editing
+namespace Kubuno.Desktop.Tests.Designer.Editing
 {
     [TestClass]
     public class BufferEditCoreTests

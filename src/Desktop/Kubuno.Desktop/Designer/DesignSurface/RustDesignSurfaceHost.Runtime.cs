@@ -3,9 +3,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Views.Logging;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// A host whose surface can run different runtimes (docs/DESIGNER.md section 15) - what

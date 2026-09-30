@@ -1,10 +1,10 @@
 using System.Linq;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Core.QuickInfo;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Logic.IntelliSense;
+using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.IntelliSense
+namespace Kubuno.Rust.Tests.IntelliSense
 {
     [TestClass]
     public sealed class RustCompletionPresentationTests

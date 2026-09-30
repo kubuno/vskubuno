@@ -3,11 +3,11 @@
   Image manifest for the .rsproj project node icon (docs/RSPROJ.md §3) and the .rs/.kbview/Cargo.toml file icons (lot 8). Shipped at the root of the
   Kubuno.VisualStudio VSIX, where Visual Studio's image service discovers *.imagemanifest files on
   its own (no registration needed). The XAML sources are WPF resources of
-  Kubuno.VisualStudio.RustProjectSystem.dll; the GUID/ID must match RustProjectImages.cs.
+  Kubuno.Rust.ProjectSystem.dll; the GUID/ID must match RustProjectImages.cs.
 -->
 <ImageManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/VisualStudio/ImageManifestSchema/2014">
   <Symbols>
-    <String Name="Resources" Value="/Kubuno.VisualStudio.RustProjectSystem;Component/Resources" />
+    <String Name="Resources" Value="/Kubuno.Rust.ProjectSystem;Component/Resources" />
     <Guid Name="RustProjectImagesGuid" Value="{7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57}" />
     <ID Name="RustProject" Value="1" />
     <ID Name="RustFile" Value="2" />

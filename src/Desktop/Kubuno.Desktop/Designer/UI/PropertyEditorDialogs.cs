@@ -9,22 +9,22 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Kubuno.VisualStudio.Designer.PropertyBrowser;
-using Kubuno.VisualStudio.Designer.Registry;
-using Kubuno.VisualStudio.Designer.Selection;
+using Kubuno.Desktop.Designer.PropertyBrowser;
+using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Desktop.Designer.Selection;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Designer.UI
+namespace Kubuno.Desktop.Designer.UI
 {
     /// <summary>
     /// The base of the Properties window's modal editors (image, binding, string list, collection): the extension's shared
-    /// <see cref="Kubuno.VisualStudio.UI.ThemedDialog"/> (themed-dialog colours, implicit <see cref="VsResourceKeys"/>
+    /// <see cref="Kubuno.Core.UI.ThemedDialog"/> (themed-dialog colours, implicit <see cref="VsResourceKeys"/>
     /// styles, themed title bar), so it looks native in the dark, light, blue and high contrast themes, with the
     /// content above an OK/Cancel row at the bottom right, like every Visual Studio dialog.
     /// </summary>
-    internal abstract class ThemedEditorDialog : Kubuno.VisualStudio.UI.ThemedDialog
+    internal abstract class ThemedEditorDialog : Kubuno.Core.UI.ThemedDialog
     {
         private readonly DockPanel _root;
 

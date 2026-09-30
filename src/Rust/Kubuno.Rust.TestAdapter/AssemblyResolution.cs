@@ -2,18 +2,18 @@ using System;
 using System.IO;
 using System.Reflection;
 
-namespace Kubuno.TestAdapter
+namespace Kubuno.Rust.TestAdapter
 {
     /// <summary>
     /// Works around VSTest's out-of-process discovery/execution host not adding this adapter's own
     /// directory to its assembly-probing path - live-verified in an experimental Visual Studio
     /// instance: test discovery for a real Cargo.toml manifest failed with
     /// <c>FileNotFoundException: Could not load file or assembly 'System.Text.Json, Version=8.0.0.0'</c>
-    /// the moment <c>Kubuno.TestAdapter</c> called into <c>Kubuno.Cargo</c> (whose JSON parsing
+    /// the moment <c>Kubuno.Rust.TestAdapter</c> called into <c>Kubuno.Rust.Cargo</c> (whose JSON parsing
     /// needs it), even though <c>System.Text.Json.dll</c> and its netstandard2.0 polyfill closure
     /// (<c>System.Buffers</c>/<c>System.Memory</c>/<c>System.Numerics.Vectors</c>/
     /// <c>System.Runtime.CompilerServices.Unsafe</c>/<c>System.Threading.Tasks.Extensions</c>/
-    /// <c>System.Text.Encodings.Web</c>) sit right next to <c>Kubuno.TestAdapter.dll</c> in the
+    /// <c>System.Text.Encodings.Web</c>) sit right next to <c>Kubuno.Rust.TestAdapter.dll</c> in the
     /// deployed VSIX's extension folder - the same set of files
     /// <c>Kubuno.VisualStudio.csproj</c> already has to ship as explicit <c>Content</c> items for
     /// the in-proc VSSDK host, for an analogous but distinct reason (see that file's own comment).

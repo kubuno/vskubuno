@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Windows;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// DSG-9 (`vskubuno/docs/DESIGNER.md`'s "DSG-9 protocol" section): move/resize drag, Flow reorder
@@ -305,7 +305,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// <summary>
     /// The pure encode/parse half of DSG-9's protocol additions - no process, no event, no threading, so
     /// it is directly unit-testable (see this project's test suite,
-    /// `Kubuno.VisualStudio.Designer.Tests/DesignSurface/RustDesignSurfaceHostDragDropTests.cs`), exactly
+    /// `Kubuno.Desktop.Tests/DesignSurface/RustDesignSurfaceHostDragDropTests.cs`), exactly
     /// mirroring how `DesignSurfaceProtocol` (`RustDesignSurfaceHost.Protocol.cs`) is structured for
     /// DSG-6's own messages - kept as a SEPARATE static class rather than added to that one, since this
     /// package must not touch that file.

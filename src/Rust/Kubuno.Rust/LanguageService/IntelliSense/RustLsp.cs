@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.Text;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.LanguageService.IntelliSense
+namespace Kubuno.Rust.LanguageService.IntelliSense
 {
     /// <summary>
     /// Requests Kubuno's own editor features (completion, code lenses) send to rust-analyzer over the client's
@@ -15,7 +15,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
     /// text the request is about (<see cref="RustDocumentVersions"/>, fed by <see cref="RustAnalyzerMiddleLayer"/>),
     /// and the answer's positions are read against the snapshot rust-analyzer had.
     /// </summary>
-    internal static class RustLsp
+    public static class RustLsp
     {
         private static readonly TimeSpan SyncTimeout = TimeSpan.FromSeconds(2);
 

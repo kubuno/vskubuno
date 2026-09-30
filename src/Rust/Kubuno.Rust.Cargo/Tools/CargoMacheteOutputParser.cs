@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Tools
+namespace Kubuno.Rust.Cargo.Tools
 {
     /// <summary>The unused dependencies <c>cargo machete</c> reported for one package.</summary>
     public sealed class UnusedDependencies

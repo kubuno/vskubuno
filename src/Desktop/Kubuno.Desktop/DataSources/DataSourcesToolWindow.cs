@@ -9,12 +9,12 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Core.DataSources;
-using Kubuno.VisualStudio.Core.Sql;
-using Kubuno.VisualStudio.DataExplorer;
-using Kubuno.VisualStudio.Designer.DesignSurface;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Desktop.Logic.DataSources;
+using Kubuno.Desktop.Logic.Sql;
+using Kubuno.Desktop.DataExplorer;
+using Kubuno.Desktop.Designer.DesignSurface;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Imaging;
@@ -23,7 +23,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 
-namespace Kubuno.VisualStudio.DataSources
+namespace Kubuno.Desktop.DataSources
 {
     /// <summary>
     /// View &gt; Other Windows &gt; "Sources de données" / "Data Sources" (docs/DATA.md §9, DATA-6): the typed data sources
@@ -338,7 +338,7 @@ namespace Kubuno.VisualStudio.DataSources
                 // No active document.
             }
 
-            if (Commands.RsprojSelection.TryGetCurrent() is { } project && DataSourceCrate.Find(project.ManifestPath) is { } fromProject)
+            if (Kubuno.Rust.Commands.RsprojSelection.TryGetCurrent() is { } project && DataSourceCrate.Find(project.ManifestPath) is { } fromProject)
             {
                 return fromProject;
             }
@@ -625,7 +625,7 @@ namespace Kubuno.VisualStudio.DataSources
         internal static async Task<DataSourcesToolWindow?> ShowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var package = KubunoPackage.Instance;
+            var package = Kubuno.Core.KubunoHost.Package;
             if (package is null)
             {
                 return null;

@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.Cargo.Toml;
+using Kubuno.Rust.Cargo.Toml;
 
-namespace Kubuno.VisualStudio.Core.Sql
+namespace Kubuno.Desktop.Logic.Sql
 {
     /// <summary>A connection a <c>.kbdata</c> file names (its top-level <c>connection</c> and <c>provider</c> keys).</summary>
     public sealed class KbdataConnection

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Kubuno.Mcp.Bridge.Contracts
+namespace Kubuno.Core.Mcp.Bridge.Contracts
 {
     // -----------------------------------------------------------------------------------------
-    // Request parameter DTOs (Kubuno.Mcp -> bridge). All fields optional: a tool call with no
+    // Request parameter DTOs (Kubuno.Core.Mcp -> bridge). All fields optional: a tool call with no
     // arguments still round-trips through JsonSerializer to an instance with defaults.
     // -----------------------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ namespace Kubuno.Mcp.Bridge.Contracts
     }
 
     // -----------------------------------------------------------------------------------------
-    // Result DTOs (bridge -> Kubuno.Mcp -> MCP client).
+    // Result DTOs (bridge -> Kubuno.Core.Mcp -> MCP client).
     // -----------------------------------------------------------------------------------------
 
     public sealed class ActiveDocumentInfo

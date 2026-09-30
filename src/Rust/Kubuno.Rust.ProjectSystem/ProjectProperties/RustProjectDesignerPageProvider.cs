@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.ProjectSystem;
 using Microsoft.VisualStudio.ProjectSystem.VS.Properties;
 
-namespace Kubuno.VisualStudio.RustProjectSystem.ProjectProperties
+namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 {
     /// <summary>
     /// Opts a <c>.rsproj</c> into the modern Project Properties editor (the searchable document tab

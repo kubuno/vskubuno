@@ -1,11 +1,11 @@
 using System;
 using System.IO;
-using Kubuno.VisualStudio.Commands;
+using Kubuno.Rust.Commands;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Migrations
+namespace Kubuno.Desktop.Migrations
 {
     /// <summary>
     /// The cargo target directory a crate's <c>.rsproj</c> builds into (its evaluated <c>CargoTargetDir</c>), so

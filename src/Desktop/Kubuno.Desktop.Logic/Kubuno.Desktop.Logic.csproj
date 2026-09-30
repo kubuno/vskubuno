@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Desktop layer, pure logic (docs/ARCHITECTURE.md, "Layers (as built)"): what Kubuno.Desktop computes without Visual
+    Studio - the data tooling models (Data, DataSources, Migrations, Sql: docs/DATA.md), the .kbview editor helpers
+    (IntelliSense, QuickInfo), the override members of the control hierarchy (Overrides), the Kubuno control icons
+    (SolutionExplorer\ControlIcons), the design build of a project's own kubuno_ui (DesignSurface, docs/DESIGNER.md
+    section 15) and the paint debug switch (PaintDebug). No dependency on the VS SDK: plain `dotnet test`
+    (tests/Kubuno.Desktop.Tests). References the Core and Rust pure assemblies only.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Desktop.Logic</RootNamespace>
+    <AssemblyName>Kubuno.Desktop.Logic</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- docs/EVENTS.md EVT-7b: the overridable members of the control hierarchy, generated from kubuno-views
+         (the ignored Rust test kubuno-views component::overrides::tests::write_overrides_fixture). -->
+    <EmbeddedResource Include="Overrides\OverridableMembers.json" LogicalName="Kubuno.OverridableMembers.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
+  </ItemGroup>
+
+</Project>

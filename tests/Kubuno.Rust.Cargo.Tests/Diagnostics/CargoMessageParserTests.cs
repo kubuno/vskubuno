@@ -1,13 +1,13 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.Cargo.Tests.Fakes;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Cargo.Tests.Fakes;
 using Xunit;
 
-namespace Kubuno.Cargo.Tests.Diagnostics
+namespace Kubuno.Rust.Cargo.Tests.Diagnostics
 {
     /// <summary>
     /// Parses real <c>cargo build --message-format=json-diagnostic-rendered-ansi</c> output,

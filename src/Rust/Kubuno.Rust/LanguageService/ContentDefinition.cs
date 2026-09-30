@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.VisualStudio.LanguageService
+namespace Kubuno.Rust.LanguageService
 {
     /// <summary>
     /// MEF exports that declare the "rust" content type and associate it with the .rs file

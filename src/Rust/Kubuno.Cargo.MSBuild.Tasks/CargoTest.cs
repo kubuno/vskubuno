@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Metadata;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -12,7 +12,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
     /// <c>cargo test</c> (or, with <see cref="NoRun"/>, <c>cargo test --no-run</c>: build the test
     /// binaries without executing them, matching <c>cargo test --no-run --message-format=json</c>
     /// as already used to find a test binary's hash-suffixed path for the native debugger — see
-    /// <c>Kubuno.Launch.ExecutableResolver</c>'s own remarks).
+    /// <c>Kubuno.Rust.Launch.ExecutableResolver</c>'s own remarks).
     /// </summary>
     public sealed class CargoTest : CargoBuildTaskBase
     {
@@ -63,7 +63,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
             _testBinaries.Add(item);
         }
 
-        protected override void OnCompleted(Kubuno.Cargo.Processes.ProcessRunResult result)
+        protected override void OnCompleted(Kubuno.Rust.Cargo.Processes.ProcessRunResult result)
         {
             TestBinaries = _testBinaries.ToArray();
         }

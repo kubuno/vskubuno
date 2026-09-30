@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Designer.Editing
+namespace Kubuno.Desktop.Designer.Editing
 {
     /// <summary>
     /// The pure version-check + plan + apply algorithm behind DSG-5, over the narrow

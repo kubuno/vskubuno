@@ -1,10 +1,10 @@
 using System;
-using Kubuno.VisualStudio.Core;
+using Kubuno.Rust.Logic;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 
-namespace Kubuno.VisualStudio.RustProjectSystem
+namespace Kubuno.Rust.ProjectSystem
 {
     /// <summary>
     /// The Kubuno debugging settings (Tools &gt; Options &gt; Kubuno &gt; Rust, "Debugging" group), kept in Visual
@@ -60,7 +60,7 @@ namespace Kubuno.VisualStudio.RustProjectSystem
 
         /// <summary>
         /// The Exception Settings entry of Rust panics: <c>rust_panic</c> as Visual Studio undecorates it (see
-        /// Kubuno.VisualStudio.Debugger's <c>RustPanicPayload.VisualStudioExceptionName</c> and debugging.pkgdef).
+        /// Kubuno.Rust.Debugger's <c>RustPanicPayload.VisualStudioExceptionName</c> and debugging.pkgdef).
         /// </summary>
         public const string RustPanicExceptionName = " ?? ::st_panic";
 

@@ -1,8 +1,8 @@
 using System;
 using System.ComponentModel;
-using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.Desktop.Designer.Registry;
 
-namespace Kubuno.VisualStudio.Designer.Properties
+namespace Kubuno.Desktop.Designer.Properties
 {
     /// <summary>
     /// One row of the Properties tab: a <see cref="PropertyMeta"/> plus the selected element's current

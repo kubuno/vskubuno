@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.Data;
+using Kubuno.Desktop.Logic.Data;
 
-namespace Kubuno.VisualStudio.Core.Migrations
+namespace Kubuno.Desktop.Logic.Migrations
 {
     /// <summary>One migration as <c>migrate.status</c> reports it (docs/DATA.md DATA-7).</summary>
     public sealed class MigrationInfo

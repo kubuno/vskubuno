@@ -1,11 +1,11 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.Designer.UI
+namespace Kubuno.Desktop.Designer.UI
 {
     /// <summary>
     /// "Design Size..." on the design canvas' context menu (docs/DESIGNER.md §12): the view's width and height

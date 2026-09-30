@@ -5,14 +5,14 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>
     /// The <c>.rsproj</c> project node currently selected/right-clicked in Solution Explorer, resolved
     /// for the extended "Ajouter" submenu commands (<see cref="AddProjectItemCommands"/>,
     /// <see cref="AddProjectReferenceCommand"/>, <see cref="AddCargoDependencyCommand"/>).
     /// </summary>
-    internal sealed class RsprojProjectContext
+    public sealed class RsprojProjectContext
     {
         public RsprojProjectContext(IVsHierarchy hierarchy, EnvDTE.Project project, string manifestPath, string? packageName)
         {
@@ -36,7 +36,7 @@ namespace Kubuno.VisualStudio.Commands
 
         /// <summary>
         /// Resolves a context directly from an already-known hierarchy (the Dependencies node's own
-        /// context menu, <see cref="Kubuno.VisualStudio.SolutionExplorer.DependenciesNodeCommandTarget"/>,
+        /// context menu, <see cref="Kubuno.Rust.SolutionExplorer.DependenciesNodeCommandTarget"/>,
         /// already has the <see cref="IVsHierarchy"/> it was constructed with - no need to go back
         /// through <see cref="IVsMonitorSelection"/> the way <see cref="RsprojSelection.TryGetCurrent"/> does).
         /// </summary>
@@ -79,7 +79,7 @@ namespace Kubuno.VisualStudio.Commands
     /// selected *item*, would also work here but ties the caller to EnvDTE for something the shell
     /// already exposes more directly for a *project* node).
     /// </summary>
-    internal static class RsprojSelection
+    public static class RsprojSelection
     {
         public static RsprojProjectContext? TryGetCurrent()
         {
@@ -121,8 +121,8 @@ namespace Kubuno.VisualStudio.Commands
             }
         }
 
-        /// <summary>Mirrors <c>Kubuno.VisualStudio.SolutionExplorer.CollectionSources.ProjectDependenciesSource.GetProperty</c>.</summary>
-        internal static string? GetBuildProperty(IVsHierarchy hierarchy, string name)
+        /// <summary>Mirrors <c>Kubuno.Rust.SolutionExplorer.ProjectDependenciesSource.GetProperty</c>.</summary>
+        public static string? GetBuildProperty(IVsHierarchy hierarchy, string name)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             return hierarchy is IVsBuildPropertyStorage storage

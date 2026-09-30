@@ -1,14 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
+    Rust layer (docs/ARCHITECTURE.md, "Layers (as built)"): the crate-name wizard of the "Create a new project" Rust
+    templates ($cratename$ and the other project tokens). The control item wizard of the desktop templates lives in
+    Kubuno.Desktop.TemplateWizard, the same kind of assembly one layer up.
+
     docs/RSPROJ.md Addendum (lot 7): a SEPARATE, small wizard assembly, deliberately not folded into
-    Kubuno.VisualStudio.dll. Root cause it fixes: Microsoft.VisualStudio.TemplateWizard.Wizard.
+    Kubuno.Rust.dll. Root cause it fixes: Microsoft.VisualStudio.TemplateWizard.Wizard.
     CreateManagedInstance ("Create a new project"'s own host for a <WizardExtension>) loads the
     wizard assembly with a plain Assembly.Load, which cannot see a VSIX's own private extension
-    folder on its own. Registering Kubuno.VisualStudio.dll's OWN name with a code base (tried first)
+    folder on its own. Registering the package assembly's OWN name with a code base (tried first)
     broke KubunoPackage's load instead. The package now declares one binding path for its folder
     (KubunoPackage.cs, top-of-file comment: per-assembly code bases for unsigned assemblies fail with
-    0x80131041 in a regular install), and additionally preloads this assembly at initialization.
+    0x80131041 in a regular install), and the Rust layer additionally preloads this assembly (RustLayer).
 
     net48 (not net8.0): devenv.exe is a .NET Framework process; a wizard assembly loaded in-proc by
     Microsoft.VisualStudio.TemplateWizard.Wizard must target the same runtime.
@@ -16,7 +20,7 @@
     References only Microsoft.VisualStudio.TemplateWizardInterface (IWizard's own assembly, via a
     HintPath into this Visual Studio install - there is no NuGet package for it) plus EnvDTE/EnvDTE80
     (IWizard's method signatures take EnvDTE.Project/EnvDTE.ProjectItem - unavoidable, not optional).
-    Nothing else: no Microsoft.VisualStudio.Shell, no reference to Kubuno.VisualStudio.dll itself -
+    Nothing else: no Microsoft.VisualStudio.Shell, no reference to another Kubuno assembly -
     keeping this assembly's own dependency closure minimal keeps loading it inert with respect to
     the package's own load.
   -->
@@ -24,27 +28,19 @@
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <RootNamespace>Kubuno.VisualStudio.TemplateWizard</RootNamespace>
-    <AssemblyName>Kubuno.VisualStudio.TemplateWizard</AssemblyName>
+    <RootNamespace>Kubuno.Rust.TemplateWizard</RootNamespace>
+    <AssemblyName>Kubuno.Rust.TemplateWizard</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <!-- The shared-as-source files (below) declare their types internal here, so Kubuno.VisualStudio.dll (which references this
-         assembly) does not see two SdkFeedDistribution types. -->
+    <!-- The shared-as-source files (below) declare their types internal here, so Kubuno.Rust.dll (which references this
+         assembly and Kubuno.Rust.Logic) does not see two SdkFeedDistribution types. -->
     <DefineConstants>$(DefineConstants);KUBUNO_SHARED_AS_SOURCE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- EVT-7b: ControlItemWizard's base-class picker (an inherited control) is a small WPF window. -->
-    <Reference Include="PresentationFramework" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="WindowsBase" />
-    <Reference Include="System.Xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
     <!-- The SDK-feed distribution logic (docs/RSPROJ.md, "SDK feed"): shared as source, not as an assembly reference, to keep this
          assembly's dependency closure minimal (see the comment above). Its NuGet.Config merge is a pure XML function. -->
-    <Compile Include="..\Kubuno.VisualStudio.Core\ProjectGeneration\SdkFeedDistribution.cs" Link="Shared\SdkFeedDistribution.cs" />
-    <Compile Include="..\Kubuno.VisualStudio.Core\ProjectGeneration\NuGetLocalFeedRegistration.cs" Link="Shared\NuGetLocalFeedRegistration.cs" />
+    <Compile Include="..\Kubuno.Rust.Logic\ProjectGeneration\SdkFeedDistribution.cs" Link="Shared\SdkFeedDistribution.cs" />
+    <Compile Include="..\Kubuno.Rust.Logic\ProjectGeneration\NuGetLocalFeedRegistration.cs" Link="Shared\NuGetLocalFeedRegistration.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -63,7 +59,7 @@
     <!--
       Microsoft.VisualStudio.TemplateWizardInterface (VS 2026, v18.0.0.0) depends on
       Microsoft.VisualStudio.Interop v18.0.0.0. The rest of this repo's net48 projects reference
-      EnvDTE/EnvDTE80 through NuGet (Kubuno.Mcp.Bridge, Kubuno.VisualStudio's own csproj), but those
+      EnvDTE/EnvDTE80 through NuGet (Kubuno.Core.Mcp.Bridge, Kubuno.Core, Kubuno.Rust), but those
       packages only ship v17.0.0.0 of Interop, and mixing that with the v18 reference above is a hard
       compile error (CS1705 "uses a higher version than the referenced assembly") that an explicit
       higher-version Reference alone does not resolve, because NuGet-authored references keep
@@ -84,20 +80,6 @@
       <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\envdte80.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <!-- The themed dialog base (docs/ARCHITECTURE.md, "Themed dialogs"): DialogWindow and the theme keys, from
-         the same Visual Studio install for the same reason as the interop assemblies above. -->
-    <Reference Include="Microsoft.VisualStudio.Shell.15.0">
-      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.15.0.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Framework">
-      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\Shared\UI\*.cs" Link="UI\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <PropertyGroup>

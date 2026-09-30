@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Mcp.Bridge.Contracts;
+using Kubuno.Core.Mcp.Bridge.Contracts;
 
-namespace Kubuno.Mcp.Bridge
+namespace Kubuno.Core.Mcp.Bridge
 {
     /// <summary>
     /// What the VS-side bridge (running in-proc in devenv.exe) exposes to
@@ -43,7 +43,7 @@ namespace Kubuno.Mcp.Bridge
         Task<OutputPaneInfo> GetOutputPaneAsync(OutputPaneParams parameters, CancellationToken cancellationToken);
     }
 
-    /// <summary>The seven MCP tool / bridge method names, shared by the dispatcher, the pipe client and Kubuno.Mcp's tool type.</summary>
+    /// <summary>The seven MCP tool / bridge method names, shared by the dispatcher, the pipe client and Kubuno.Core.Mcp's tool type.</summary>
     public static class BridgeMethods
     {
         public const string ActiveDocument = "vs_active_document";

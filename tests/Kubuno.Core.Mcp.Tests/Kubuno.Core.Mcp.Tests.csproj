@@ -2,7 +2,7 @@
 
   <!--
     Runs with plain `dotnet test`, no Visual Studio host required (same reasoning as
-    tests/Kubuno.Launch.Tests - see its csproj comment). On Z: (a mapped drive), MSTest's use of
+    tests/Kubuno.Rust.Launch.Tests - see its csproj comment). On Z: (a mapped drive), MSTest's use of
     Assembly.LoadFrom for the test host can hit .NET's "remote sources" block; per CLAUDE.md,
     set COMPLUS_LoadFromRemoteSources=1 before running `dotnet test` from this drive.
   -->
@@ -11,7 +11,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Mcp.Tests</RootNamespace>
+    <RootNamespace>Kubuno.Core.Mcp.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -20,13 +20,13 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.4.1" />
     <PackageReference Include="MSTest.TestFramework" Version="4.4.1" />
-    <!-- Both the server side (Kubuno.Mcp, via ProjectReference below) and the McpClient side (used directly here for protocol round-trip tests) come from this one package. -->
+    <!-- Both the server side (Kubuno.Core.Mcp, via ProjectReference below) and the McpClient side (used directly here for protocol round-trip tests) come from this one package. -->
     <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Kubuno.Mcp\Kubuno.Mcp.csproj" />
-    <ProjectReference Include="..\..\src\Kubuno.Mcp.Bridge\Kubuno.Mcp.Bridge.csproj" />
+    <ProjectReference Include="..\..\src\Core\Kubuno.Core.Mcp\Kubuno.Core.Mcp.csproj" />
+    <ProjectReference Include="..\..\src\Core\Kubuno.Core.Mcp.Bridge\Kubuno.Core.Mcp.Bridge.csproj" />
   </ItemGroup>
 
 </Project>

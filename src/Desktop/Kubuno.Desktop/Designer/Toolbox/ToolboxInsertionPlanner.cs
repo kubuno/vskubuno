@@ -1,10 +1,10 @@
 using System;
 using System.Globalization;
 using System.Linq;
-using Kubuno.VisualStudio.Designer.Registry;
-using Kubuno.VisualStudio.Designer.Selection;
+using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Desktop.Designer.Selection;
 
-namespace Kubuno.VisualStudio.Designer.Toolbox
+namespace Kubuno.Desktop.Designer.Toolbox
 {
     /// <summary>Where a Toolbox double-click inserts a component - see <see cref="ToolboxInsertionPlanner.Plan"/>.</summary>
     public sealed class ToolboxInsertion

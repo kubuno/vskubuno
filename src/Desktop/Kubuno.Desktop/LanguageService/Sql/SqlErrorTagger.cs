@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Runtime.CompilerServices;
-using Kubuno.VisualStudio.Core.Sql;
-using Kubuno.VisualStudio.Designer;
+using Kubuno.Desktop.Logic.Sql;
+using Kubuno.Desktop.Designer;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Adornments;
@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 
-namespace Kubuno.VisualStudio.LanguageService.Sql
+namespace Kubuno.Desktop.LanguageService.Sql
 {
     /// <summary>
     /// Warning squiggles on SQL names the connection's schema snapshot does not know (docs/DATA.md DATA-8): an unknown
@@ -19,7 +19,7 @@ namespace Kubuno.VisualStudio.LanguageService.Sql
     /// fail. Only when a snapshot is loaded, and conservative (<see cref="SqlDiagnostics"/>).
     /// </summary>
     [Export(typeof(ITaggerProvider))]
-    [ContentType(Constants.RustContentType)]
+    [ContentType(Kubuno.Rust.Constants.RustContentType)]
     [TagType(typeof(IErrorTag))]
     [Name("Kubuno SQL unknown names")]
     internal sealed class SqlErrorTaggerProvider : ITaggerProvider

@@ -1,6 +1,6 @@
-using Kubuno.TestAdapter.Execution;
+using Kubuno.Rust.TestAdapter.Execution;
 
-namespace Kubuno.TestAdapter.Tests.Execution
+namespace Kubuno.Rust.TestAdapter.Tests.Execution
 {
     /// <summary>
     /// Parses real `--nocapture --test-threads=1` libtest runs, captured from a throwaway

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using Microsoft.VisualStudio.Text;
 
-namespace Kubuno.VisualStudio.LanguageService.IntelliSense
+namespace Kubuno.Rust.LanguageService.IntelliSense
 {
     /// <summary>Reads the text that follows an inlay hint in the open document (callable from any thread).</summary>
     internal static class RustArgumentSnapshots

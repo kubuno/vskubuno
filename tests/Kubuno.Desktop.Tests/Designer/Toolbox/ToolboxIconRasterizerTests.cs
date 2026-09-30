@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Markup;
-using Kubuno.VisualStudio.Designer.Toolbox;
+using Kubuno.Desktop.Designer.Toolbox;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Toolbox
+namespace Kubuno.Desktop.Tests.Designer.Toolbox
 {
     [TestClass]
     public class ToolboxIconRasterizerTests
@@ -102,10 +102,10 @@ namespace Kubuno.VisualStudio.Designer.Tests.Toolbox
         [TestMethod]
         public void EveryShippedIconRenders()
         {
-            var dir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\..\src\Kubuno.VisualStudio.RustProjectSystem\Resources\Icons\Controls"));
+            var dir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\..\src\Desktop\Kubuno.Desktop.ProjectSystem\Resources\Icons\Controls"));
             if (!Directory.Exists(dir))
             {
-                dir = @"Z:\src\vskubuno\src\Kubuno.VisualStudio.RustProjectSystem\Resources\Icons\Controls";
+                dir = @"Z:\src\vskubuno\src\Desktop\Kubuno.Desktop.ProjectSystem\Resources\Icons\Controls";
             }
 
             if (!Directory.Exists(dir))

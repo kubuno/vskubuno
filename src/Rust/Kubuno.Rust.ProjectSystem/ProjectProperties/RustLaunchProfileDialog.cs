@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Core.UI;
 
-namespace Kubuno.VisualStudio.RustProjectSystem.ProjectProperties
+namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 {
     /// <summary>The values <see cref="RustLaunchProfileDialog"/> edits (the <c>RustDebugger*</c> user-file properties F5 reads).</summary>
     internal sealed class RustLaunchProfile

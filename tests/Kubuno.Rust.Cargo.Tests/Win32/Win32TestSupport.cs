@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Kubuno.Cargo.Tests.Win32
+namespace Kubuno.Rust.Cargo.Tests.Win32
 {
     /// <summary>One resource parsed back from a RES file.</summary>
     internal sealed class ResEntry

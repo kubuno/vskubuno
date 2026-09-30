@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Properties;
-using Kubuno.VisualStudio.Designer.Registry;
-using Kubuno.VisualStudio.Designer.Selection;
-using Kubuno.VisualStudio.Designer.Tests.Selection.Fakes;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Properties;
+using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Desktop.Tests.Designer.Selection.Fakes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Selection
+namespace Kubuno.Desktop.Tests.Designer.Selection
 {
     [TestClass]
     public class SelectionSyncServiceTests

@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.ProjectProperties
+namespace Kubuno.Rust.Tests.ProjectProperties
 {
     /// <summary>
     /// Guards the French copies of the Project Properties rule files (Rules\fr\): they must stay

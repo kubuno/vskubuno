@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Core
+namespace Kubuno.Rust.Logic
 {
     /// <summary>
     /// Everything <see cref="RustAnalyzerLocator"/> needs to ask about the outside world (the file

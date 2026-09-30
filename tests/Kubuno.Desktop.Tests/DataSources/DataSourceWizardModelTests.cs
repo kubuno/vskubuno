@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Core.DataSources;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Desktop.Logic.DataSources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.DataSources
+namespace Kubuno.Desktop.Tests.DataSources
 {
     [TestClass]
     public sealed class DataSourceWizardModelTests

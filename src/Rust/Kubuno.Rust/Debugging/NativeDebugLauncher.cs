@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Kubuno.Launch;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Launch;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Debugging
+namespace Kubuno.Rust.Debugging
 {
     /// <summary>
     /// Launches a <see cref="LaunchDescription"/> under Visual Studio's native (MSVC/PDB) debug
@@ -47,8 +47,8 @@ namespace Kubuno.VisualStudio.Debugging
             var results = new VsDebugTargetProcessInfo[1];
 
             // Just My Code and step filters for Rust (docs/DEBUGGING.md), read at the start of the session.
-            Kubuno.VisualStudio.RustProjectSystem.RustDebuggerSettings.EnsureDebuggerFilesInstalled(KubunoLog.WriteLine);
-            Kubuno.VisualStudio.RustProjectSystem.RustDebuggerSettings.EnsurePanicExceptionSetting(KubunoLog.WriteLine);
+            Kubuno.Rust.ProjectSystem.RustDebuggerSettings.EnsureDebuggerFilesInstalled(KubunoLog.WriteLine);
+            Kubuno.Rust.ProjectSystem.RustDebuggerSettings.EnsurePanicExceptionSetting(KubunoLog.WriteLine);
 
             KubunoLog.WriteLine($"Kubuno: launching '{description.ExecutablePath}' {info.bstrArg} under the native debugger (cwd: {description.WorkingDirectory}).");
             try
@@ -68,9 +68,9 @@ namespace Kubuno.VisualStudio.Debugging
                 return string.Empty;
             }
 
-            // Reuses the same Windows command-line quoting rules Kubuno.Cargo already applies to
+            // Reuses the same Windows command-line quoting rules Kubuno.Rust.Cargo already applies to
             // its own commands (CommandLineToArgvW-compatible); duplicated here in miniature
-            // rather than taking a Kubuno.Cargo dependency from Kubuno.Launch's call site just
+            // rather than taking a Kubuno.Rust.Cargo dependency from Kubuno.Rust.Launch's call site just
             // for this one helper.
             var builder = new StringBuilder();
             for (var i = 0; i < arguments.Count; i++)
@@ -101,7 +101,7 @@ namespace Kubuno.VisualStudio.Debugging
             // CreateProcess's own lpEnvironment, a *non-empty* block REPLACES the child's
             // environment entirely rather than being layered on top of it. LaunchDescription's
             // own EnvironmentVariables deliberately contains only PATH/RUST_BACKTRACE/explicit
-            // overrides (Kubuno.Launch stays pure and never reads the ambient environment - see
+            // overrides (Kubuno.Rust.Launch stays pure and never reads the ambient environment - see
             // RustDebugEnvironment's remarks) - passing just that would start the debuggee
             // missing SystemRoot/TEMP/USERPROFILE/etc. and likely fail outright. So this merges
             // it on top of the *current* (devenv's own) environment here, at the one call site

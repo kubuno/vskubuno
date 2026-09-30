@@ -1,10 +1,10 @@
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using Kubuno.VisualStudio.Core.Data;
+using Kubuno.Desktop.Logic.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.Data
+namespace Kubuno.Desktop.Tests.Data
 {
     [TestClass]
     public sealed class DataExplorerTreeTests

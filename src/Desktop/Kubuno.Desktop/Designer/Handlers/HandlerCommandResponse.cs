@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace Kubuno.VisualStudio.Designer.Handlers
+namespace Kubuno.Desktop.Designer.Handlers
 {
     /// <summary>
     /// The answer of <c>kubuno/renameHandler</c>, <c>kubuno/removeHandler</c> and <c>kubuno/convertHandlers</c>

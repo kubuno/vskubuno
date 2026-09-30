@@ -1,23 +1,33 @@
-; Registers the Grammars folder shipped by Kubuno.VisualStudio.Views as a TextMate repository, so
-; .kbview files get syntax coloring from kbview.tmLanguage.json (see LanguageService/ContentDefinition.cs
-; for the "kbview" content type these keys are paired with). This is a STANDALONE pkgdef fragment:
-; it is not consumed directly. Once this library is referenced by the VSIX (see INTEGRATION.md),
-; these keys must be merged into the VSIX's own languages.pkgdef (src/Kubuno.VisualStudio/languages.pkgdef),
-; following the exact pattern already used there for the Rust grammar - one [$RootKey$\TextMate\Repositories]
-; entry per extension, keyed by a distinct name so the two grammars do not collide.
-;
-; $PackageFolder$ below resolves relative to the VSIX's own install folder (see
-; Microsoft.VisualStudio.Shell's pkgdef $PackageFolder$ token), so on merge the "Grammars" path
-; must point at wherever this library's Grammars folder is actually shipped inside the VSIX - see
-; INTEGRATION.md ("Grammar folder inclusion") for the exact Content/VSIX Asset entries this requires.
-
+; Desktop layer (docs/ARCHITECTURE.md, "Layers (as built)"): what Visual Studio needs to know about .kbview files
+; before any Kubuno assembly loads. Shipped at the VSIX root by src/Kubuno.VisualStudio (the grammar files under
+; Grammars\Kbview\, next to the Rust grammar of the Rust layer's languages.pkgdef, under a distinct key/subfolder so
+; the two never collide).
 [$RootKey$\TextMate\Repositories]
-"KubunoViews"="$PackageFolder$\Grammars"
+"KubunoViews"="$PackageFolder$\Grammars\Kbview"
 
-; Brackets/comments/indentation for the grammar's scope (text.xml.kbview) and for the LSP content
-; type (kbview, see LanguageService\ContentDefinition.cs) - both keys point at the same file.
+; Brackets/comments/indentation for the grammar's scope (text.xml.kbview) and for the LSP content type (kbview, see
+; Views\LanguageService\ContentDefinition.cs) - both keys point at the same file.
 [$RootKey$\TextMate\LanguageConfiguration\GrammarMapping]
-"text.xml.kbview"="$PackageFolder$\Grammars\kbview-language-configuration.json"
+"text.xml.kbview"="$PackageFolder$\Grammars\Kbview\kbview-language-configuration.json"
 
 [$RootKey$\TextMate\LanguageConfiguration\ContentTypeMapping]
-"kbview"="$PackageFolder$\Grammars\kbview-language-configuration.json"
+"kbview"="$PackageFolder$\Grammars\Kbview\kbview-language-configuration.json"
+
+; Opens .kbview files in VS's own core text editor ("Source Code (Text) Editor",
+; VSConstants.CLSID.VsTextEditorFactory), so the buffer gets the "kbview" content type from
+; Views\LanguageService\ContentDefinition.cs's FileExtensionToContentTypeDefinition - the content type the kbview
+; ILanguageClient (kubuno-views-ls) is bound to. Without an explicit entry, .kbview is an unknown
+; extension and, because its content looks like XML, VS opens it in its XML editor instead
+; (verified live: DTE Document.Language = "XML"): the buffer then gets the XML language service and
+; content type, and the kbview language client is never activated. .rs has no such issue - it opens
+; in the core editor ("Plain Text" language service, "rust" content type) without any entry.
+; The HIGHEST value wins the double-click default, so 0x64 must stay above any other editor
+; registered for "kbview" that should stay opt-in (e.g. the Kubuno View Designer's 0x60, see
+; Designer\INTEGRATION.md).
+[$RootKey$\Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions]
+"kbview"=dword:00000064
+
+; docs/RSPROJ.md lot 8: the .kbview file icon for Open Folder (guid:id of RustProject.imagemanifest's KbviewFile image,
+; the moniker Kubuno.Desktop.ProjectSystem's KbviewTreePropertiesProvider gives .kbview items of a .rsproj).
+[$RootKey$\ShellFileAssociations\.kbview]
+"DefaultIconMoniker"="7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57:3"

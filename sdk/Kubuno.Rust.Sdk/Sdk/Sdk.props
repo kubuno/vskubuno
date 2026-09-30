@@ -28,12 +28,12 @@
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <!-- A Rust executable is native code for one architecture: x64 is the only platform offered and
          maps to the x86_64-pc-windows-msvc host triple (no cargo target flag, so artifacts stay in
-         cargo's default <target dir>\<profile>, where Kubuno.Launch expects them). -->
+         cargo's default <target dir>\<profile>, where Kubuno.Rust.Launch expects them). -->
     <Platform Condition="'$(Platform)' == '' or '$(Platform)' == 'AnyCPU'">x64</Platform>
     <PlatformTarget>x64</PlatformTarget>
 
     <!-- The CPS debugger used for F5/Ctrl+F5 (docs/RSPROJ.md work package 4): the name
-         Kubuno.VisualStudio.RustProjectSystem's RustDebugLaunchProvider is exported under, the same
+         Kubuno.Rust.ProjectSystem's RustDebugLaunchProvider is exported under, the same
          way the JS SDK sets ScriptDebugger. -->
     <DebuggerFlavor Condition="'$(DebuggerFlavor)' == ''">RustDebugger</DebuggerFlavor>
 

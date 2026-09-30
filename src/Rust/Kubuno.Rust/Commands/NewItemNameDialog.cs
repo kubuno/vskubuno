@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Core.UI;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>
     /// A small, VS-styled name prompt for the five "Ajouter" item-template entries

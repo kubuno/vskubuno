@@ -1,8 +1,8 @@
 using System.IO;
 using System.Linq;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Metadata;
 
-namespace Kubuno.VisualStudio.Core
+namespace Kubuno.Rust.Logic
 {
     /// <summary>
     /// Picks a sensible default "Select Startup Item" for a Cargo package that has never had one
@@ -15,7 +15,7 @@ namespace Kubuno.VisualStudio.Core
     /// one) never considers examples/tests; a developer who wants those keeps using the dropdown
     /// or "Kubuno: Debug Rust Test at Cursor". Pure/VS-SDK-free (see this project's own csproj
     /// comment) so it is unit-tested with plain <c>dotnet test</c> - the actual "apply the
-    /// selection" side effects live in <c>Kubuno.VisualStudio.Debugging.RustLaunchTargetsGenerator</c>.
+    /// selection" side effects live in <c>Kubuno.Rust.Debugging.RustLaunchTargetsGenerator</c>.
     /// </summary>
     public static class StartupItemSelector
     {
@@ -69,7 +69,7 @@ namespace Kubuno.VisualStudio.Core
         /// cref="SelectDefaultBinTarget"/> has nothing to work from then, since a virtual manifest never
         /// appears in `cargo metadata`'s <c>packages</c> list (it is not itself a package), which used to
         /// mean F5 was never pre-selected at all for exactly this - very common - workspace shape (see
-        /// <c>Kubuno.VisualStudio.Debugging.RustLaunchTargetsGenerator.GenerateAsync</c>'s own remarks).
+        /// <c>Kubuno.Rust.Debugging.RustLaunchTargetsGenerator.GenerateAsync</c>'s own remarks).
         /// Falls back, in order:
         /// 1. Restrict to `cargo`'s own <see cref="CargoMetadata.WorkspaceDefaultMembers"/> when that
         ///    narrows anything down (an explicit <c>[workspace] default-members</c> in the manifest) -

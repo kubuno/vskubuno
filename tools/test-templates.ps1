@@ -1,8 +1,8 @@
 <#
   Pre-release check of the "Create a new project" templates (docs/RSPROJ.md, "Template build check"):
-  instantiates every project template of src/Kubuno.VisualStudio/ProjectTemplates into a fresh folder on
+  instantiates every project template of src/Rust/Kubuno.Rust/ProjectTemplates and src/Desktop/Kubuno.Desktop/ProjectTemplates into a fresh folder on
   a local disk, the way Visual Studio does (same files, same $token$ replacements, including the ones
-  Kubuno.VisualStudio.TemplateWizard adds), then builds each one:
+  Kubuno.Rust.TemplateWizard and Kubuno.Desktop.TemplateWizard add), then builds each one:
 
     1. `cargo build` in the generated project (own target directory), failing on any warning;
     2. with -Run: runs what the template produces (console: exit code 0; desktop app: its window must
@@ -33,13 +33,14 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2
 
 $repo = Split-Path -Parent $PSScriptRoot
-$templatesRoot = Join-Path $repo 'src\Kubuno.VisualStudio\ProjectTemplates'
+# Each layer ships its own templates (docs/ARCHITECTURE.md, "Layers (as built)"): the Rust ones and the desktop ones.
+$templatesRoots = @((Join-Path $repo 'src\Rust\Kubuno.Rust\ProjectTemplates'), (Join-Path $repo 'src\Desktop\Kubuno.Desktop\ProjectTemplates'))
 
 # The user's full PATH (machine + user), so cargo is found from any shell.
 $env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User') + ';' + $env:PATH
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) { throw 'cargo was not found on PATH (install Rust with rustup).' }
 
-# ---- Template token values, computed exactly like Kubuno.VisualStudio.TemplateWizard.CrateNameWizard ----
+# ---- Template token values, computed exactly like Kubuno.Rust.TemplateWizard.CrateNameWizard ----
 
 function Get-CrateName([string]$name) {
     if ([string]::IsNullOrWhiteSpace($name)) { return 'app' }
@@ -119,9 +120,10 @@ function New-FromTemplate([string]$vstemplatePath, [string]$projectName, [string
 #      application the way ControlItemWizard does it (struct name, file name, `mod` in main.rs), used in its view,
 #      and checked by a test of the generated crate that compiles the view against the registered controls ----
 
-$itemTemplatesRoot = Join-Path $repo 'src\Kubuno.VisualStudio\ItemTemplates'
+# The control item templates are the desktop layer's.
+$itemTemplatesRoot = Join-Path $repo 'src\Desktop\Kubuno.Desktop\ItemTemplates'
 
-# Same rules as Kubuno.VisualStudio.TemplateWizard.ControlItemNames.
+# Same rules as Kubuno.Desktop.TemplateWizard.ControlItemNames.
 function Get-ItemWords([string]$name) {
     $stem = [IO.Path]::GetFileNameWithoutExtension($name)
     $spaced = [regex]::Replace($stem, '([a-z0-9])([A-Z])', '$1 $2')
@@ -262,12 +264,12 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $runRoot = Join-Path $WorkRoot $stamp
 $sharedTarget = Join-Path $runRoot 'shared-target'
 New-Item -ItemType Directory -Force $runRoot | Out-Null
-"Templates: $templatesRoot"
+"Templates: $($templatesRoots -join ", ")"
 "Work root: $runRoot"
 "Desktop sources: $(Resolve-DesktopSource $DesktopSrc)"
 
 $results = @()
-foreach ($dir in Get-ChildItem $templatesRoot -Directory) {
+foreach ($dir in Get-ChildItem $templatesRoots -Directory) {
     if ($Template.Count -and $Template -notcontains $dir.Name) { continue }
     $vstemplate = Get-ChildItem $dir.FullName -Filter '*.vstemplate' | Select-Object -First 1
     if (-not $vstemplate) { continue }
@@ -322,7 +324,7 @@ foreach ($dir in Get-ChildItem $templatesRoot -Directory) {
                     foreach ($dll in @((Join-Path $profileDir 'kubuno_ui.dll'))) { if (-not (Test-Path $dll)) { $failures += "run: $dll missing" } }
                     if (-not (Get-ChildItem $stdDir -Filter 'std-*.dll')) { $failures += "run: no std-*.dll in $stdDir" }
                     if (-not $failures) {
-                        # Same PATH as F5 (Kubuno.Launch.RustDebugEnvironment): profile dir, deps, Rust std.
+                        # Same PATH as F5 (Kubuno.Rust.Launch.RustDebugEnvironment): profile dir, deps, Rust std.
                         $savedPath = $env:PATH
                         $env:PATH = "$profileDir;$profileDir\deps;$stdDir;$env:PATH"
                         try { $proc = Start-Process -FilePath $exe -PassThru } finally { $env:PATH = $savedPath }

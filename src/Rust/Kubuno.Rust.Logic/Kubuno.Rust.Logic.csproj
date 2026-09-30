@@ -1,30 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Pure logic shared by the VSIX project and its unit tests: no dependency on the VS SDK,
-    so it can be unit-tested with plain `dotnet test` without a Visual Studio host.
-    Targets net48 to match the VSIX project's runtime (classic VSSDK extensions are
-    .NET Framework 4.8 in-proc); nothing here is Framework-specific, but keeping the same
-    TFM avoids any binding-redirect surprises when Kubuno.VisualStudio references this project.
+    Rust layer, pure logic (docs/ARCHITECTURE.md, "Layers (as built)"): what Kubuno.Rust and
+    Kubuno.Rust.ProjectSystem compute without Visual Studio (rust-analyzer discovery and handshake, completion and
+    hover presentation, .rsproj generation and properties, the Dependencies tree, test location, startup items).
+    No dependency on the VS SDK, so it is unit-tested with plain `dotnet test` (tests/Kubuno.Rust.Tests).
+    Nothing here knows a Kubuno target (desktop views, web modules, mobile apps): those live in the layers above.
+    Targets net48 to match the in-proc extension's runtime (classic VSSDK extensions are .NET Framework 4.8).
   -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.VisualStudio.Core</RootNamespace>
-    <AssemblyName>Kubuno.VisualStudio.Core</AssemblyName>
+    <RootNamespace>Kubuno.Rust.Logic</RootNamespace>
+    <AssemblyName>Kubuno.Rust.Logic</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- docs/EVENTS.md EVT-7b: the overridable members of the control hierarchy, generated from kubuno-views
-         (the ignored Rust test kubuno-views component::overrides::tests::write_overrides_fixture). -->
-    <EmbeddedResource Include="Overrides\OverridableMembers.json" LogicalName="Kubuno.OverridableMembers.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- StartupItemSelector needs Kubuno.Cargo's CargoPackage/CargoTarget metadata model - still no VS SDK dependency, so plain `dotnet test` keeps working. -->
-    <ProjectReference Include="..\Kubuno.Cargo\Kubuno.Cargo.csproj" />
+    <!-- StartupItemSelector needs Kubuno.Rust.Cargo's CargoPackage/CargoTarget metadata model - still no VS SDK dependency, so plain `dotnet test` keeps working. -->
+    <ProjectReference Include="..\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
+    <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
   </ItemGroup>
 
 </Project>

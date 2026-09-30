@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.VisualStudio.Core.ProjectGeneration
+namespace Kubuno.Rust.Logic.ProjectGeneration
 {
     /// <summary>
     /// Recognizes a <c>[workspace]</c> Cargo.toml without a full TOML parser - the same

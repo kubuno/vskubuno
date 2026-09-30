@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// Isolates every direct reference to a VS SDK assembly type
@@ -129,11 +129,11 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
         }
 
         /// <summary>
-        /// <see cref="Kubuno.VisualStudio.Views.Logging.KubunoViewsLogHost"/> is safe to call from here
+        /// <see cref="Kubuno.Desktop.Views.Logging.KubunoViewsLogHost"/> is safe to call from here
         /// (it is a plain, VS-free interface - see its own doc), unlike everything else in this class;
         /// named separately only so a reader scanning for "does this class touch VS types outside its two
         /// public methods" can tell at a glance that it does not.
         /// </summary>
-        private static void LogSafely(string message) => Kubuno.VisualStudio.Views.Logging.KubunoViewsLogHost.Current.WriteLine(message);
+        private static void LogSafely(string message) => Kubuno.Desktop.Views.Logging.KubunoViewsLogHost.Current.WriteLine(message);
     }
 }

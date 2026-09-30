@@ -1,6 +1,6 @@
-# Wiring Kubuno.TestAdapter into the VSIX
+# Wiring Kubuno.Rust.TestAdapter into the VSIX
 
-This library (`src/Kubuno.TestAdapter/`) is a self-contained VSTest adapter and does not touch
+This library (`src/Rust/Kubuno.Rust.TestAdapter/`) is a self-contained VSTest adapter and does not touch
 `src/Kubuno.VisualStudio/`, the `.sln`, or any VS package/command registration - by design (see
 the task split). This document is the exact recipe for the orchestrator to make Rust tests show
 up in Test Explorer for an Open Folder Cargo workspace.
@@ -33,11 +33,11 @@ library:
     <Asset Type="UnitTestExtension" Path="Microsoft.VisualStudio.CMake.Linux.TestAdapter.dll" />
   </Assets>
   ```
-  i.e. **one DLL, declared as both a MEF component and a UnitTestExtension.** Kubuno.TestAdapter.dll
+  i.e. **one DLL, declared as both a MEF component and a UnitTestExtension.** Kubuno.Rust.TestAdapter.dll
   should be registered the same way.
 
 Two independent registrations combine:
-1. **`UnitTestExtension`** tells VSTest's extension manager to load Kubuno.TestAdapter.dll and
+1. **`UnitTestExtension`** tells VSTest's extension manager to load Kubuno.Rust.TestAdapter.dll and
    reflect over it for `ITestDiscoverer`/`ITestExecutor` implementations (found via their
    `[FileExtension]`/`[DefaultExecutorUri]`/`[ExtensionUri]` attributes - see
    `Discovery/KubunoTestDiscoverer.cs` and `Execution/KubunoTestExecutor.cs`). This is what makes
@@ -66,12 +66,12 @@ access to). That is the whole integration surface below.
 ### 3.1. Reference the project
 
 In `src/Kubuno.VisualStudio/Kubuno.VisualStudio.csproj`, add a `<ProjectReference>` to
-`Kubuno.TestAdapter.csproj`, following the exact same pattern already used for Kubuno.Cargo/Kubuno.Launch
+`Kubuno.Rust.TestAdapter.csproj`, following the exact same pattern already used for Kubuno.Rust.Cargo/Kubuno.Rust.Launch
 (`IncludeOutputGroupsInVSIX` = `BuiltProjectOutputGroup;BuiltProjectOutputGroupDependencies;GetCopyToOutputDirectoryItems;SatelliteDllsProjectOutputGroup;`,
 `IncludeOutputGroupsInVSIXLocalOnly` = `DebugSymbolsProjectOutputGroup;`). Add the project to
-`Kubuno.VisualStudio.sln` (new solution folder entry under `src`, mirroring Kubuno.Cargo/Kubuno.Launch).
+`Kubuno.VisualStudio.sln` (new solution folder entry under `src`, mirroring Kubuno.Rust.Cargo/Kubuno.Rust.Launch).
 
-Kubuno.TestAdapter.csproj references two VS-install-only assemblies
+Kubuno.Rust.TestAdapter.csproj references two VS-install-only assemblies
 (`Microsoft.VisualStudio.TestWindow.Interfaces.dll` and the VS copy of
 `Microsoft.VisualStudio.TestPlatform.ObjectModel.dll`, both `Private=False` - resolved by its own
 `KubunoResolveVsTestWindowAssemblies` MSBuild target, no NuGet package needed). Nothing extra is
@@ -84,25 +84,25 @@ time, which is always true for a VS extension.
 
 In `src/Kubuno.VisualStudio/source.extension.vsixmanifest`, add two `<Asset>` entries next to the
 existing ones (which use the VS-project-system-generated `d:Source="Project"` shorthand for
-"this VSIX's own project's output" - Kubuno.TestAdapter is a *different* project, so its assets
-need `d:ProjectName="Kubuno.TestAdapter"` pointing at that project specifically):
+"this VSIX's own project's output" - Kubuno.Rust.TestAdapter is a *different* project, so its assets
+need `d:ProjectName="Kubuno.Rust.TestAdapter"` pointing at that project specifically):
 
 ```xml
 <Assets>
   <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
   <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
   <!-- New: registers KubunoTestContainerDiscoverer's [Export(typeof(ITestContainerDiscoverer))]. -->
-  <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.TestAdapter" Path="|Kubuno.TestAdapter|" />
+  <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Rust.TestAdapter" Path="|Kubuno.Rust.TestAdapter|" />
   <!-- New: registers KubunoTestDiscoverer/KubunoTestExecutor with VSTest's extension manager. -->
-  <Asset Type="UnitTestExtension" d:Source="Project" d:ProjectName="Kubuno.TestAdapter" Path="|Kubuno.TestAdapter|" />
+  <Asset Type="UnitTestExtension" d:Source="Project" d:ProjectName="Kubuno.Rust.TestAdapter" Path="|Kubuno.Rust.TestAdapter|" />
 </Assets>
 ```
 (`d:ProjectName` must match the project name exactly as added to the `.sln` in &sect;3.1.)
 
 ### 3.3. Implement `ICargoWorkspaceSource`
 
-Add a new MEF-exported class in `src/Kubuno.VisualStudio/Workspace/` (e.g.
-`CargoWorkspaceSource.cs`) implementing `Kubuno.TestAdapter.Containers.ICargoWorkspaceSource`:
+Add a new MEF-exported class in `src/Rust/Kubuno.Rust/Workspace/` (e.g.
+`CargoWorkspaceSource.cs`) implementing `Kubuno.Rust.TestAdapter.Containers.ICargoWorkspaceSource`:
 
 ```csharp
 [Export(typeof(ICargoWorkspaceSource))]
@@ -144,8 +144,8 @@ What it needs to do:
 
 `KubunoTestExecutor` is entirely self-contained once discovered `TestCase`s reach it (VSTest
 routes runs to it via `TestCase.ExecutorUri`, set during discovery - see
-`Discovery/CargoTestCaseFactory.cs`). It reuses Kubuno.Cargo (process running, command-line
-quoting) and Kubuno.Launch (sysroot/host-triple resolution, `RustDebugEnvironment`,
+`Discovery/CargoTestCaseFactory.cs`). It reuses Kubuno.Rust.Cargo (process running, command-line
+quoting) and Kubuno.Rust.Launch (sysroot/host-triple resolution, `RustDebugEnvironment`,
 `LaunchDescriptionBuilder`) directly; no additional VSIX-side glue is needed for either running or
 debugging a test.
 
@@ -160,13 +160,13 @@ debugging a test.
   needs to actually run travels instead as a hidden `TestCase` property
   (`KubunoTestProperties.ExecutablePath`, set during discovery, read during execution) - see
   `KubunoTestProperties.cs`.
-- **`profile.test` is not modeled by Kubuno.Cargo's public `CargoArtifact`.** `CargoTestBuild.cs`
-  parses `cargo test --no-run --message-format=json` itself (reusing Kubuno.Cargo's
+- **`profile.test` is not modeled by Kubuno.Rust.Cargo's public `CargoArtifact`.** `CargoTestBuild.cs`
+  parses `cargo test --no-run --message-format=json` itself (reusing Kubuno.Rust.Cargo's
   `CargoMessageParser` only for diagnostics/build-finished) because that field is the only
   reliable way to tell a target's *test-harness* artifact apart from its *ordinary* build artifact
   - both are emitted as separate `"compiler-artifact"` events for the same `[[bin]]` target. This
-  is a real gap in Kubuno.Cargo's public model, not a workaround that should be copied elsewhere;
-  if Kubuno.Cargo's owner ever adds `profile.test` to `CargoArtifact`, `CargoTestBuild.cs` should
+  is a real gap in Kubuno.Rust.Cargo's public model, not a workaround that should be copied elsewhere;
+  if Kubuno.Rust.Cargo's owner ever adds `profile.test` to `CargoArtifact`, `CargoTestBuild.cs` should
   switch to it and delete its own local raw-JSON parse.
 - **Libtest output parsing does not trust the per-line "test &lt;name&gt; ... ok/FAILED" text** as
   its primary signal, because `--nocapture` (used for every run, per spec) interleaves a test's
@@ -174,7 +174,7 @@ debugging a test.
   `Execution/LibtestOutputParser.cs` for the actual algorithm (trailing `failures:` block +
   `... ignored` lines for the verdict; the panic hook's own `thread '&lt;name&gt;' panicked at`
   header - which names the test via its thread name - for per-test message attribution even under
-  interleaving) and `tests/Kubuno.TestAdapter.Tests/Fixtures/Execution/*.txt` for the real
+  interleaving) and `tests/Kubuno.Rust.TestAdapter.Tests/Fixtures/Execution/*.txt` for the real
   captures this was built and tested against.
 - **Debugging never batches.** Each selected test gets its own
   `IFrameworkHandle.LaunchProcessWithDebuggerAttached` call, run one after another - see the

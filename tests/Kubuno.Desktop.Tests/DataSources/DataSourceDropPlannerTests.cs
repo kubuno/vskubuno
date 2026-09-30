@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Kubuno.VisualStudio.Core.DataSources;
+using Kubuno.Desktop.Logic.DataSources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.DataSources
+namespace Kubuno.Desktop.Tests.DataSources
 {
     [TestClass]
     public sealed class DataSourceDropPlannerTests

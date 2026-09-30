@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Kubuno.Cargo.Internal
+namespace Kubuno.Rust.Cargo.Internal
 {
     /// <summary>Shared JSON options for everything that talks to Cargo's JSON output.</summary>
     internal static class CargoJsonOptions

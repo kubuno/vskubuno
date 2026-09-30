@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Designer.Registry
+namespace Kubuno.Desktop.Designer.Registry
 {
     /// <summary>
     /// Mirrors <c>kubuno_views::registry::ChildrenModel</c> (docs/DESIGNER.md §5: "children:

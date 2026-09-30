@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Diagnostics;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace.Build;
 
-namespace Kubuno.VisualStudio.Workspace
+namespace Kubuno.Rust.Workspace
 {
     /// <summary>
     /// Turns <c>cargo build/clean --message-format=json-diagnostic-rendered-ansi</c> output

@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Designer.PropertyBrowser
+namespace Kubuno.Desktop.Designer.PropertyBrowser
 {
     /// <summary>
     /// The <see cref="IEventBindingService"/> behind the Properties window's Events tab (⚡) for

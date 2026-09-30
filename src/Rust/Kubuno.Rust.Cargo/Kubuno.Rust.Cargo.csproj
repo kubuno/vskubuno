@@ -11,8 +11,8 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Cargo</RootNamespace>
-    <AssemblyName>Kubuno.Cargo</AssemblyName>
+    <RootNamespace>Kubuno.Rust.Cargo</RootNamespace>
+    <AssemblyName>Kubuno.Rust.Cargo</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 
-namespace Kubuno.TestAdapter.Discovery
+namespace Kubuno.Rust.TestAdapter.Discovery
 {
     /// <summary>
     /// An <see cref="ITestCaseDiscoverySink"/> that just buffers every <see cref="TestCase"/> it

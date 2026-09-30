@@ -4,12 +4,12 @@ using System.ComponentModel;
 using System.Drawing.Design;
 using System.Globalization;
 using System.Linq;
-using Kubuno.VisualStudio.Designer.Properties;
-using Kubuno.VisualStudio.Designer.Registry;
-using Kubuno.VisualStudio.Designer.Selection;
+using Kubuno.Desktop.Designer.Properties;
+using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Desktop.Designer.Selection;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.Designer.PropertyBrowser
+namespace Kubuno.Desktop.Designer.PropertyBrowser
 {
     /// <summary>The <c>{Binding ...}</c> text a binding editor writes. Pure.</summary>
     public static class BindingText

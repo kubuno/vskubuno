@@ -1,0 +1,112 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Desktop layer (docs/ARCHITECTURE.md, "Layers (as built)"): the control item wizard (EVT-7b) of the desktop item
+    templates - views, user/custom/inherited controls, components: it names the struct and the file after the entered
+    name, asks the base class of an inherited control and declares the module. Same kind of assembly as
+    Kubuno.Rust.TemplateWizard (the crate-name wizard), for the same reasons:
+
+    docs/RSPROJ.md Addendum (lot 7): a SEPARATE, small wizard assembly, deliberately not folded into
+    Kubuno.Desktop.dll. Root cause it fixes: Microsoft.VisualStudio.TemplateWizard.Wizard.
+    CreateManagedInstance ("Create a new project"'s own host for a <WizardExtension>) loads the
+    wizard assembly with a plain Assembly.Load, which cannot see a VSIX's own private extension
+    folder on its own. Registering the package assembly's OWN name with a code base (tried first)
+    broke KubunoPackage's load instead. The package now declares one binding path for its folder
+    (KubunoPackage.cs, top-of-file comment: per-assembly code bases for unsigned assemblies fail with
+    0x80131041 in a regular install), and the Desktop layer additionally preloads this assembly (DesktopLayer).
+
+    net48 (not net8.0): devenv.exe is a .NET Framework process; a wizard assembly loaded in-proc by
+    Microsoft.VisualStudio.TemplateWizard.Wizard must target the same runtime.
+
+    References only Microsoft.VisualStudio.TemplateWizardInterface (IWizard's own assembly, via a
+    HintPath into this Visual Studio install - there is no NuGet package for it) plus EnvDTE/EnvDTE80
+    (IWizard's method signatures take EnvDTE.Project/EnvDTE.ProjectItem - unavoidable, not optional).
+    Nothing else but the Shell assemblies of the themed base-class dialog, no reference to another Kubuno assembly -
+    keeping this assembly's own dependency closure minimal keeps loading it inert with respect to
+    the package's own load.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Kubuno.Desktop.TemplateWizard</RootNamespace>
+    <AssemblyName>Kubuno.Desktop.TemplateWizard</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- The shared-as-source ThemedDialog (below) is internal here, so Kubuno.Desktop.dll (which references this
+         assembly and Kubuno.Core) does not see two ThemedDialog types. -->
+    <DefineConstants>$(DefineConstants);KUBUNO_SHARED_AS_SOURCE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EVT-7b: ControlItemWizard's base-class picker (an inherited control) is a small WPF window. -->
+    <Reference Include="PresentationFramework" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      HintPath rather than a PackageReference: no NuGet package ships this interop assembly, it only
+      exists inside a Visual Studio install (verified: absent from every restored package in this
+      repo's NuGet cache, including Microsoft.VisualStudio.SDK - present under
+      Common7\IDE\PublicAssemblies\, which is on devenv.exe's own default probing path, so
+      Private=False (never copied into this project's own output/the VSIX: devenv.exe already has
+      it loaded).
+    -->
+    <Reference Include="Microsoft.VisualStudio.TemplateWizardInterface">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.TemplateWizardInterface.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!--
+      Microsoft.VisualStudio.TemplateWizardInterface (VS 2026, v18.0.0.0) depends on
+      Microsoft.VisualStudio.Interop v18.0.0.0. The rest of this repo's net48 projects reference
+      EnvDTE/EnvDTE80 through NuGet (Kubuno.Core.Mcp.Bridge, Kubuno.Core, Kubuno.Desktop), but those
+      packages only ship v17.0.0.0 of Interop, and mixing that with the v18 reference above is a hard
+      compile error (CS1705 "uses a higher version than the referenced assembly") that an explicit
+      higher-version Reference alone does not resolve, because NuGet-authored references keep
+      resolution priority over a plain Reference. Referencing EnvDTE/EnvDTE80/Interop all three
+      straight from this Visual Studio install instead (same HintPath/Private=False pattern as the
+      interface assembly above) keeps every interop assembly this project touches on the SAME v18
+      identity, with nothing left to conflict.
+    -->
+    <Reference Include="Microsoft.VisualStudio.Interop">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Interop.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="EnvDTE">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\envdte.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="EnvDTE80">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\envdte80.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- The themed dialog base (docs/ARCHITECTURE.md, "Themed dialogs"): DialogWindow and the theme keys, from
+         the same Visual Studio install for the same reason as the interop assemblies above. -->
+    <Reference Include="Microsoft.VisualStudio.Shell.15.0">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.15.0.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Framework">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The themed dialog base (docs/ARCHITECTURE.md, "Themed dialogs"), compiled here as source (internal) to keep the
+         dependency closure minimal. -->
+    <Compile Include="..\..\Core\Kubuno.Core\UI\ThemedDialog.cs" Link="UI\ThemedDialog.cs" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!--
+      $(VsInstallRoot) is not defined outside an SDK-project build driven by Visual Studio itself;
+      resolve it the same way the rest of this repo's docs point at MSBuild.exe (docs/RSPROJ.md,
+      vskubuno/CLAUDE.md section 2) when building from the command line.
+    -->
+    <VsInstallRoot Condition="'$(VsInstallRoot)' == ''">C:\Program Files\Microsoft Visual Studio\18\Community</VsInstallRoot>
+  </PropertyGroup>
+
+</Project>

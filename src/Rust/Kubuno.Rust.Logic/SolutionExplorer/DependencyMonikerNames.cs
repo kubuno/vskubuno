@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Core.SolutionExplorer
+namespace Kubuno.Rust.Logic.SolutionExplorer
 {
     /// <summary>
     /// <c>KnownMonikers</c> names of the Dependencies tree, the ones Visual Studio's .NET project system

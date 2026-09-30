@@ -1,17 +1,17 @@
 using System.Globalization;
 using System.Linq;
-using Kubuno.Cargo.Metadata;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.SolutionExplorer
+namespace Kubuno.Rust.Tests.SolutionExplorer
 {
     [TestClass]
     public class CrateInstallPlannerTests
     {
         private const string Manifest = @"C:\app\Cargo.toml";
 
-        private static string[] Args(System.Collections.Generic.IReadOnlyList<Kubuno.Cargo.Commands.CargoCommand> commands) =>
+        private static string[] Args(System.Collections.Generic.IReadOnlyList<Kubuno.Rust.Cargo.Commands.CargoCommand> commands) =>
             commands.Select(c => c.ToCommandLine().Arguments).ToArray();
 
         private static DependencyItem Installed(params CargoDependency[] declarations) =>

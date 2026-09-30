@@ -1,4 +1,4 @@
-namespace Kubuno.Cargo.Diagnostics
+namespace Kubuno.Rust.Cargo.Diagnostics
 {
     /// <summary>A child of a diagnostic: rustc's "note:" and "help:" sub-messages.</summary>
     public sealed class CargoDiagnosticNote

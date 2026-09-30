@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.ProjectSystem.VS.PropertyPages.Designer;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.RustProjectSystem.ProjectProperties
+namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 {
     /// <summary>
     /// The <c>LinkAction</c> commands of Kubuno.Rust.Sdk's pages (docs/RSPROJ.md, "Project properties like .NET"):

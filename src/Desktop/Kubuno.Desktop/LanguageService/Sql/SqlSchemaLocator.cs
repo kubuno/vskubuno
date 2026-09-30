@@ -1,12 +1,12 @@
 using System;
-using Kubuno.VisualStudio.Core.Sql;
+using Kubuno.Desktop.Logic.Sql;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 
-namespace Kubuno.VisualStudio.LanguageService.Sql
+namespace Kubuno.Desktop.LanguageService.Sql
 {
     /// <summary>
     /// The schema a Rust buffer's SQL is checked and completed against: the crate of the file (nearest <c>Cargo.toml</c>),
@@ -52,7 +52,7 @@ namespace Kubuno.VisualStudio.LanguageService.Sql
             }
             catch (Exception exception) when (exception is ArgumentException or System.IO.IOException or UnauthorizedAccessException or NotSupportedException)
             {
-                Logging.KubunoLog.WriteLine("SQL IntelliSense: no schema for " + path + ": " + exception.Message);
+                Kubuno.Core.Logging.KubunoLog.WriteLine("SQL IntelliSense: no schema for " + path + ": " + exception.Message);
                 source = null;
             }
 

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Commands
+namespace Kubuno.Rust.Cargo.Commands
 {
     /// <summary>
     /// Fluent builder for a Cargo invocation (build/check/test/clean/run). Building never

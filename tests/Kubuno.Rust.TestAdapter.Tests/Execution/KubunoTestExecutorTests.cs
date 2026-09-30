@@ -1,13 +1,13 @@
 using System;
 using System.Linq;
-using Kubuno.Cargo.Processes;
-using Kubuno.TestAdapter;
-using Kubuno.TestAdapter.Discovery;
-using Kubuno.TestAdapter.Execution;
-using Kubuno.TestAdapter.Tests.Fakes;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.TestAdapter;
+using Kubuno.Rust.TestAdapter.Discovery;
+using Kubuno.Rust.TestAdapter.Execution;
+using Kubuno.Rust.TestAdapter.Tests.Fakes;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
-namespace Kubuno.TestAdapter.Tests.Execution
+namespace Kubuno.Rust.TestAdapter.Tests.Execution
 {
     /// <summary>Exercises the non-debug `RunTests(IEnumerable&lt;TestCase&gt;, ...)` path end-to-end, batching both of a fake executable's tests into one process invocation and replaying a captured libtest run (Fixtures/Execution/fixture-crate-run-batch-pass-fail.txt).</summary>
     public class KubunoTestExecutorTests

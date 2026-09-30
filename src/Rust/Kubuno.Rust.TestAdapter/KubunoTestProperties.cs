@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
-namespace Kubuno.TestAdapter
+namespace Kubuno.Rust.TestAdapter
 {
     /// <summary>
     /// Custom <see cref="TestProperty"/>s this adapter stashes on every <see cref="TestCase"/> it
@@ -12,6 +12,8 @@ namespace Kubuno.TestAdapter
     /// </summary>
     public static class KubunoTestProperties
     {
+        // The property IDs keep the adapter's original "Kubuno.TestAdapter." prefix (the assembly is now
+        // Kubuno.Rust.TestAdapter): they identify properties of test cases Test Explorer may have cached.
         /// <summary>Full path of the built test executable that contains this test (see Discovery/CargoTestBuild.cs).</summary>
         public static readonly TestProperty ExecutablePath = TestProperty.Register(
             "Kubuno.TestAdapter.ExecutablePath", "Executable Path", typeof(string), TestPropertyAttributes.Hidden, typeof(TestCase));

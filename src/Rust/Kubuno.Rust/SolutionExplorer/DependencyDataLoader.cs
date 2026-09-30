@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.Cargo.Registry;
-using Kubuno.Cargo.Toolchain;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Cargo.Registry;
+using Kubuno.Rust.Cargo.Toolchain;
+using Kubuno.Rust.Logic.SolutionExplorer;
+using Kubuno.Core.Logging;
 
-namespace Kubuno.VisualStudio.SolutionExplorer
+namespace Kubuno.Rust.SolutionExplorer
 {
     /// <summary>
     /// The slow parts of the Dependencies node, always off the UI thread: <c>cargo metadata</c> with the

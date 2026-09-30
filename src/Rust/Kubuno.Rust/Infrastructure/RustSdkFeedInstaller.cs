@@ -1,7 +1,7 @@
-using Kubuno.VisualStudio.Core.ProjectGeneration;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Logic.ProjectGeneration;
+using Kubuno.Core.Logging;
 
-namespace Kubuno.VisualStudio.Infrastructure
+namespace Kubuno.Rust.Infrastructure
 {
     /// <summary>
     /// Registers this VSIX's bundled <c>Kubuno.Rust.Sdk</c> feed (docs/RSPROJ.md work package 5's SDK-distribution

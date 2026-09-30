@@ -1,7 +1,7 @@
 using System.Linq;
-using Kubuno.Cargo.Tools;
+using Kubuno.Rust.Cargo.Tools;
 
-namespace Kubuno.Cargo.Tests.Tools
+namespace Kubuno.Rust.Cargo.Tests.Tools
 {
     public class CargoMacheteOutputParserTests
     {

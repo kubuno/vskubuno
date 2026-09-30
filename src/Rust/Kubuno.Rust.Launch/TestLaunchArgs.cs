@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// Builds the argument list passed directly to a `cargo test --no-run` test binary

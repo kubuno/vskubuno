@@ -1,8 +1,9 @@
 using System.Linq;
-using Kubuno.VisualStudio.Core.QuickInfo;
+using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Desktop.Logic.QuickInfo;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.QuickInfo
+namespace Kubuno.Desktop.Tests.QuickInfo
 {
     /// <summary>kubuno-views-ls hovers (formats of crates/kubuno-views-ls/src/hover.rs) turned into C#-style QuickInfo.</summary>
     [TestClass]
@@ -16,8 +17,8 @@ namespace Kubuno.VisualStudio.Tests.QuickInfo
             Assert.AreEqual("Button", hover.Name);
 
             var tooltip = hover.ToQuickInfo(new KbviewSymbolDetails { Documentation = "Un bouton qui déclenche `OnClick`.", Container = "Contrôles communs" });
-            var (icon, signature, path) = RustHoverTests.Header(tooltip);
-            Assert.AreEqual("Button", icon.ControlTag);
+            var (icon, signature, path) = QuickInfoAssertions.Header(tooltip);
+            Assert.AreEqual("Button", icon.Tag);
             Assert.AreEqual("Button", signature.ToPlainText());
             Assert.AreEqual(QuickInfoTextKind.Class, signature.Runs.Single().Kind);
             Assert.AreEqual("Contrôles communs", path);
@@ -33,12 +34,12 @@ namespace Kubuno.VisualStudio.Tests.QuickInfo
             Assert.AreEqual(string.Empty, hover.Default);
 
             var tooltip = hover.ToQuickInfo(new KbviewSymbolDetails { TypeName = "String" });
-            var (icon, signature, path) = RustHoverTests.Header(tooltip);
+            var (icon, signature, path) = QuickInfoAssertions.Header(tooltip);
             Assert.AreEqual("PropertyPublic", icon.MonikerName);
             Assert.AreEqual("Text: String = \"\"", signature.ToPlainText());
-            Assert.AreEqual(QuickInfoTextKind.Property, RustHoverTests.KindOf(signature.Runs, "Text"));
-            Assert.AreEqual(QuickInfoTextKind.Class, RustHoverTests.KindOf(signature.Runs, "String"));
-            Assert.AreEqual(QuickInfoTextKind.String, RustHoverTests.KindOf(signature.Runs, "\"\""));
+            Assert.AreEqual(QuickInfoTextKind.Property, QuickInfoAssertions.KindOf(signature.Runs, "Text"));
+            Assert.AreEqual(QuickInfoTextKind.Class, QuickInfoAssertions.KindOf(signature.Runs, "String"));
+            Assert.AreEqual(QuickInfoTextKind.String, QuickInfoAssertions.KindOf(signature.Runs, "\"\""));
             Assert.AreEqual("Button", path);
             Assert.AreEqual("Text displayed on the button.", ((QuickInfoContainer)tooltip).Children[1].ToPlainText());
         }
@@ -47,11 +48,11 @@ namespace Kubuno.VisualStudio.Tests.QuickInfo
         public void NumbersAndBooleansAreNotQuoted()
         {
             var width = KbviewHover.Parse("**`Width`** on `<Button>`\n\nWidth.\n\n*Default: `0`*")!.ToQuickInfo(new KbviewSymbolDetails { TypeName = "f32" });
-            Assert.AreEqual("Width: f32 = 0", RustHoverTests.Header(width).Signature.ToPlainText());
-            Assert.AreEqual(QuickInfoTextKind.Keyword, RustHoverTests.KindOf(RustHoverTests.Header(width).Signature.Runs, "f32"));
+            Assert.AreEqual("Width: f32 = 0", QuickInfoAssertions.Header(width).Signature.ToPlainText());
+            Assert.AreEqual(QuickInfoTextKind.Keyword, QuickInfoAssertions.KindOf(QuickInfoAssertions.Header(width).Signature.Runs, "f32"));
 
             var enabled = KbviewHover.Parse("**`Enabled`** on `<Button>`\n\nOn.\n\n*Default: `true`*")!.ToQuickInfo(new KbviewSymbolDetails { TypeName = "bool" });
-            Assert.AreEqual(QuickInfoTextKind.Keyword, RustHoverTests.KindOf(RustHoverTests.Header(enabled).Signature.Runs, "true"));
+            Assert.AreEqual(QuickInfoTextKind.Keyword, QuickInfoAssertions.KindOf(QuickInfoAssertions.Header(enabled).Signature.Runs, "true"));
         }
 
         [TestMethod]
@@ -62,7 +63,7 @@ namespace Kubuno.VisualStudio.Tests.QuickInfo
             var tooltip = (QuickInfoContainer)hover.ToQuickInfo(new KbviewSymbolDetails { ValidValuesLabel = "Valeurs possibles :" });
             var values = (QuickInfoText)tooltip.Children.Last();
             Assert.AreEqual("Valeurs possibles : Primary, Secondary, Ghost", values.ToPlainText());
-            Assert.AreEqual(QuickInfoTextKind.EnumMember, RustHoverTests.KindOf(values.Runs, "Ghost"));
+            Assert.AreEqual(QuickInfoTextKind.EnumMember, QuickInfoAssertions.KindOf(values.Runs, "Ghost"));
         }
 
         [TestMethod]
@@ -73,11 +74,11 @@ namespace Kubuno.VisualStudio.Tests.QuickInfo
             Assert.AreEqual("MouseEventArgs", hover.EventArgs);
             Assert.AreEqual("Action", hover.EventCategory);
 
-            var (icon, signature, path) = RustHoverTests.Header(hover.ToQuickInfo(new KbviewSymbolDetails { EventCategory = "Action" }));
+            var (icon, signature, path) = QuickInfoAssertions.Header(hover.ToQuickInfo(new KbviewSymbolDetails { EventCategory = "Action" }));
             Assert.AreEqual("EventPublic", icon.MonikerName);
             Assert.AreEqual("event OnClick(MouseEventArgs)", signature.ToPlainText());
-            Assert.AreEqual(QuickInfoTextKind.Keyword, RustHoverTests.KindOf(signature.Runs, "event"));
-            Assert.AreEqual(QuickInfoTextKind.Event, RustHoverTests.KindOf(signature.Runs, "OnClick"));
+            Assert.AreEqual(QuickInfoTextKind.Keyword, QuickInfoAssertions.KindOf(signature.Runs, "event"));
+            Assert.AreEqual(QuickInfoTextKind.Event, QuickInfoAssertions.KindOf(signature.Runs, "OnClick"));
             Assert.AreEqual("Button · Action", path);
         }
 
@@ -97,7 +98,7 @@ namespace Kubuno.VisualStudio.Tests.QuickInfo
 
             var name = KbviewHover.Parse("**`x:Name`**\n\nName of the element.")!;
             Assert.AreEqual(KbviewHoverKind.XName, name.Kind);
-            var (icon, signature, _) = RustHoverTests.Header(name.ToQuickInfo());
+            var (icon, signature, _) = QuickInfoAssertions.Header(name.ToQuickInfo());
             Assert.AreEqual("FieldPublic", icon.MonikerName);
             Assert.AreEqual("x:Name: String", signature.ToPlainText());
 

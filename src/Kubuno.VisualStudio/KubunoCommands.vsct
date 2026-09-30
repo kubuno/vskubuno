@@ -38,7 +38,7 @@
       <!--
         The .kbview design surface's context menus (docs/DESIGNER.md Â§12), shown by
         DesignSurfaceEditingCoordinator.Commands.cs through IVsUIShell.ShowContextMenu with a
-        DesignerContextMenuCommandTarget (Kubuno.VisualStudio.Designer), which answers every item's
+        DesignerContextMenuCommandTarget (Kubuno.Desktop.Designer), which answers every item's
         state and - for our own commands (TextChanges) - its text in VS's UI language; the English
         texts below are the fallback. Ids MUST match DesignerCommandIds. Cut/Copy/Paste/Delete, View
         Code and Bring to Front/Send to Back are VS's own standard commands (CommandPlacements below),
@@ -1592,7 +1592,7 @@
       <IDSymbol name="KubunoDataSourcesControlGroup" value="0x10A4" />
       <IDSymbol name="KubunoDataSourcesActionGroup" value="0x10A5" />
 
-      <!-- .kbview design surface context menus - MUST match Kubuno.VisualStudio.Designer's DesignerCommandIds. -->
+      <!-- .kbview design surface context menus - MUST match Kubuno.Desktop.Designer's DesignerCommandIds. -->
       <IDSymbol name="KubunoDesignerElementContextMenu" value="0x1030" />
       <IDSymbol name="KubunoDesignerViewContextMenu" value="0x1031" />
       <IDSymbol name="KubunoDesignerCreateHandlerMenu" value="0x1032" />

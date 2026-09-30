@@ -1,12 +1,12 @@
 using System;
 using System.ComponentModel.Design;
 using System.Globalization;
-using Kubuno.VisualStudio.LanguageService;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.LanguageService;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>
     /// Tools &gt; "Kubuno: Restart rust-analyzer" ("Kubuno : Redémarrer rust-analyzer" in a French Visual

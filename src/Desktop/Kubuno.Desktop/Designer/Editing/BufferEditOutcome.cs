@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Designer.Editing
+namespace Kubuno.Desktop.Designer.Editing
 {
     public enum BufferEditOutcome
     {

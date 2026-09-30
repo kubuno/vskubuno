@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Core.DataSources;
+using Kubuno.Desktop.Logic.DataSources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.DataSources
+namespace Kubuno.Desktop.Tests.DataSources
 {
     [TestClass]
     public sealed class DataSourceCodeWriterTests
@@ -132,7 +132,7 @@ namespace Kubuno.VisualStudio.Tests.DataSources
             StringAssert.Contains(update.Text, "# Kubuno, the one dependency of a Kubuno desktop application.\n", "comments kept");
             StringAssert.Contains(update.Text, "kubuno = { path = \"Z:/src/desktop/windows/src/crates/kubuno\", features = [\"data\"] }");
             StringAssert.Contains(update.Text, "user-secrets-id = \"11111111-2222-3333-4444-555555555555\"");
-            var reparsed = Kubuno.Cargo.Toml.TomlDocument.Parse(update.Text);
+            var reparsed = Kubuno.Rust.Cargo.Toml.TomlDocument.Parse(update.Text);
             Assert.AreEqual("11111111-2222-3333-4444-555555555555", reparsed.GetValue("package", "metadata", "kubuno", "user-secrets-id")!.AsString());
             Assert.AreEqual("app", reparsed.GetValue("package", "name")!.AsString());
 
@@ -153,7 +153,7 @@ namespace Kubuno.VisualStudio.Tests.DataSources
 
             string version = "[package]\nname = \"a\"\n\n[dependencies]\nkubuno = \"0.1\"\n";
             var converted = DataSourceCodeWriter.EnsureCargoManifest(version, () => "id");
-            var document = Kubuno.Cargo.Toml.TomlDocument.Parse(converted.Text);
+            var document = Kubuno.Rust.Cargo.Toml.TomlDocument.Parse(converted.Text);
             Assert.AreEqual("0.1", document.GetValue("dependencies", "kubuno", "version")!.AsString());
             Assert.AreEqual("data", document.GetValue("dependencies", "kubuno", "features")!.AsArray()![0].AsString());
 

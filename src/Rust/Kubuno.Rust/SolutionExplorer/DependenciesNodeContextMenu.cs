@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
-using Kubuno.VisualStudio.Commands;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Commands;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.Internal.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.SolutionExplorer
+namespace Kubuno.Rust.SolutionExplorer
 {
     /// <summary>
     /// Shows the floating context menus of the Dependencies tree (<c>KubunoDependenciesNodeContextMenu</c>

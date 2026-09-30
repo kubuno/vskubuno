@@ -4,18 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using EnvDTE;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.VisualStudio.Core;
-using Kubuno.VisualStudio.Core.ProjectGeneration;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Logic;
+using Kubuno.Rust.Logic.ProjectGeneration;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>
     /// "Kubuno: Generate Visual Studio Projects" (docs/RSPROJ.md work package 5): from

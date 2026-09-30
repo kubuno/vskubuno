@@ -1,11 +1,11 @@
-using Kubuno.VisualStudio.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing;
 
-namespace Kubuno.VisualStudio.Designer.Handlers
+namespace Kubuno.Desktop.Designer.Handlers
 {
     /// <summary>
     /// The seam <see cref="HandlerCreationService"/> depends on instead of raw VS document/editor
     /// services, mirroring <see cref="IEditableTextBuffer"/>'s own reasoning: unit-testable with a fake
-    /// (see tests/Kubuno.VisualStudio.Designer.Tests/Handlers/Fakes/FakeHandlerDocumentHost.cs).
+    /// (see tests/Kubuno.Desktop.Tests/Designer/Handlers/Fakes/FakeHandlerDocumentHost.cs).
     /// <see cref="Infrastructure.VsHandlerDocumentHost"/> is the real implementation.
     /// </summary>
     public interface IHandlerDocumentHost

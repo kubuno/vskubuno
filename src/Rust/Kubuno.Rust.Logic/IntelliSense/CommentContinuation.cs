@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.IntelliSense
+namespace Kubuno.Rust.Logic.IntelliSense
 {
     /// <summary>What Enter continues in a Rust comment (see the VSIX's <c>RustDocCommentContinuation</c>).</summary>
     public static class CommentContinuation

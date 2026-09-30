@@ -1,7 +1,7 @@
-using Kubuno.Cargo.Commands;
+using Kubuno.Rust.Cargo.Commands;
 using Xunit;
 
-namespace Kubuno.Cargo.Tests.Commands
+namespace Kubuno.Rust.Cargo.Tests.Commands
 {
     /// <summary>The cargo options behind the .rsproj Project Properties (docs/RSPROJ.md, "Project properties like .NET").</summary>
     public class CargoCommandPropertiesTests

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.Text;
 
-namespace Kubuno.VisualStudio.Designer.Editing.Infrastructure
+namespace Kubuno.Desktop.Designer.Editing.Infrastructure
 {
     /// <summary>
     /// The only VS-dependent piece of this file: adapts a real <c>Microsoft.VisualStudio.Text.ITextBuffer</c>
@@ -10,7 +10,7 @@ namespace Kubuno.VisualStudio.Designer.Editing.Infrastructure
     /// version-check + plan + apply algorithm runs unchanged against it. Not unit-tested here - it needs
     /// a live <c>ITextBuffer</c> from a real editor document, the same reasoning
     /// UI/CodeWindowHost.cs and EditorFactory/DesignerWindowPane.cs already give for staying out of
-    /// tests/Kubuno.VisualStudio.Designer.Tests (see that project's own csproj comment); a manual
+    /// tests/Kubuno.Desktop.Tests/Designer (see that project's own csproj comment); a manual
     /// Ctrl+Z check in the experimental instance is this class's test strategy, per docs/DESIGNER.md's
     /// DSG-5 row.
     ///

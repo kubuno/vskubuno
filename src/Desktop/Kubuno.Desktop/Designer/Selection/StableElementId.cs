@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Kubuno.VisualStudio.Designer.Selection
+namespace Kubuno.Desktop.Designer.Selection
 {
     /// <summary>
     /// Pure helpers over the stable element id scheme docs/DESIGNER.md §8 documents ("a dot-separated

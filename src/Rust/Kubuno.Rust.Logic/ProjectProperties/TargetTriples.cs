@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.VisualStudio.Core.ProjectProperties
+namespace Kubuno.Rust.Logic.ProjectProperties
 {
     /// <summary>
     /// Human-readable descriptions of Rust target triples (<c>arch-vendor-os[-env]</c>) for the Application page's

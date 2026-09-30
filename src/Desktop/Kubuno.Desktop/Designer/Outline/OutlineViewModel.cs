@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using Kubuno.VisualStudio.Designer.Selection;
+using Kubuno.Desktop.Designer.Selection;
 
-namespace Kubuno.VisualStudio.Designer.Outline
+namespace Kubuno.Desktop.Designer.Outline
 {
     /// <summary>
     /// The Document Outline tool window's whole state (docs/DESIGNER.md §1: "a WPF tree view bound to

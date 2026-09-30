@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
-using Kubuno.Cargo.Processes;
-using Kubuno.TestAdapter.Discovery;
-using Kubuno.TestAdapter.Tests.Fakes;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.TestAdapter.Discovery;
+using Kubuno.Rust.TestAdapter.Tests.Fakes;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
-namespace Kubuno.TestAdapter.Tests.Discovery
+namespace Kubuno.Rust.TestAdapter.Tests.Discovery
 {
     /// <summary>
     /// End-to-end discovery over the real samples/hello-rust fixtures: builds (cargo test

@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Kubuno.VisualStudio.Core.DataSources;
+using Kubuno.Desktop.Logic.DataSources;
 
-namespace Kubuno.VisualStudio.Tests.DataSources
+namespace Kubuno.Desktop.Tests.DataSources
 {
     /// <summary>A real `kbdata.read` answer of kubuno-data-tool (SQLite: customers, orders, v_orders) and views to drop onto.</summary>
     internal static class DataSourceFixtures

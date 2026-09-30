@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.Launch;
+using Kubuno.Rust.Launch;
 
-namespace Kubuno.Launch.Tests
+namespace Kubuno.Rust.Launch.Tests
 {
     /// <summary>
     /// A scripted <see cref="IProcessRunner"/> for unit tests: never spawns a real process.

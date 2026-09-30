@@ -162,10 +162,10 @@
     <CargoProfile Condition="'$(CargoProfile)' == ''">$(Configuration.ToLowerInvariant())</CargoProfile>
 
     <!-- Cargo's own on-disk directory name for $(CargoProfile) ("debug"/"release" are already their
-         own directory names â€” see Kubuno.Launch.CargoLayout.ResolveProfileDirectoryName). -->
+         own directory names â€” see Kubuno.Rust.Launch.CargoLayout.ResolveProfileDirectoryName). -->
     <CargoProfileDirName>$(CargoProfile)</CargoProfileDirName>
 
-    <!-- Effective target dir (mirrors Kubuno.Launch.CargoLayout.ResolveTargetDir): an explicit
+    <!-- Effective target dir (mirrors Kubuno.Rust.Launch.CargoLayout.ResolveTargetDir): an explicit
          $(CargoTargetDir)/CARGO_TARGET_DIR wins outright, else "<manifest dir>/target". -->
     <_KubunoEffectiveTargetDir Condition="'$(CargoTargetDir)' != ''">$(CargoTargetDir)</_KubunoEffectiveTargetDir>
     <_KubunoEffectiveTargetDir Condition="'$(_KubunoEffectiveTargetDir)' == ''">$(_KubunoManifestDir)\target</_KubunoEffectiveTargetDir>
@@ -179,7 +179,7 @@
       Output location, expressed through Microsoft.Common's own properties so its TargetDir/
       TargetPath computation lands on cargo's artifact (docs/RSPROJ.md Â§2: unlike the JS SDK, a
       .rsproj has one real executable): <target dir>\<profile>\<bin>.exe â€” the same convention
-      Kubuno.Launch.ExecutableResolver falls back to. CoreCompile below still overwrites
+      Kubuno.Rust.Launch.ExecutableResolver falls back to. CoreCompile below still overwrites
       $(TargetPath) with cargo's own authoritative compiler-artifact path whenever it runs.
     -->
     <OutputType Condition="'$(OutputType)' == ''">Exe</OutputType>

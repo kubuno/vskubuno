@@ -1,13 +1,13 @@
 using System.Diagnostics;
 
-namespace Kubuno.VisualStudio.Views.Logging
+namespace Kubuno.Desktop.Views.Logging
 {
     /// <summary>
     /// Static gateway to the <see cref="IKubunoLog"/> this library logs through. MEF-constructed
     /// components (<see cref="LanguageService.KubunoViewsLanguageClient"/>, the missing-server info
     /// bar) read <see cref="Current"/> rather than importing a logger, since nothing here is built by
     /// the VSIX's package class. See <see cref="IKubunoLog"/>'s remarks for why the VSIX supplies the
-    /// implementation instead of this library depending on <c>Kubuno.VisualStudio.Logging.KubunoLog</c>
+    /// implementation instead of this library depending on <c>Kubuno.Core.Logging.KubunoLog</c>
     /// directly.
     /// </summary>
     public static class KubunoViewsLogHost

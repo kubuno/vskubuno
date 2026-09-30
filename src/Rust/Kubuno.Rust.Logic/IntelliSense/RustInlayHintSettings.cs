@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json.Nodes;
 
-namespace Kubuno.VisualStudio.Core.IntelliSense
+namespace Kubuno.Rust.Logic.IntelliSense
 {
     /// <summary>When rust-analyzer shows closure return types (<c>inlayHints.closureReturnTypeHints.enable</c>).</summary>
     public enum RustClosureReturnTypeHints
@@ -238,7 +238,7 @@ namespace Kubuno.VisualStudio.Core.IntelliSense
     }
 }
 
-namespace Kubuno.VisualStudio.Core.IntelliSense
+namespace Kubuno.Rust.Logic.IntelliSense
 {
     /// <summary>When rust-analyzer's inlay hints are shown in .rs editors.</summary>
     public enum RustInlayHintsMode

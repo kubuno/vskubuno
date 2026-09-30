@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.Cargo.Tests
+namespace Kubuno.Rust.Cargo.Tests
 {
     /// <summary>
     /// Locates the real captured `cargo metadata` / build-message fixtures under

@@ -5,9 +5,9 @@ using System.IO;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Views.Logging;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The DSG-6 IPC protocol (`vskubuno/docs/DESIGNER.md`'s "DSG-6 protocol" section): line-delimited
@@ -287,7 +287,7 @@ namespace Kubuno.VisualStudio.Designer.DesignSurface
     /// <summary>
     /// The pure encode/parse half of the DSG-6 protocol - no process, no event, no threading, so it is
     /// directly unit-testable (see this project's test suite,
-    /// `Kubuno.VisualStudio.Designer.Tests/DesignSurface/RustDesignSurfaceHostProtocolTests.cs`) with a
+    /// `Kubuno.Desktop.Tests/DesignSurface/RustDesignSurfaceHostProtocolTests.cs`) with a
     /// plain JSON string in, a plain value out. <see cref="RustDesignSurfaceHost"/>'s own partial class
     /// above is the only production caller.
     /// </summary>

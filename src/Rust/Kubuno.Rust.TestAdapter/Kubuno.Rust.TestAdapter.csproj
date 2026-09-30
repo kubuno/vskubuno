@@ -7,7 +7,7 @@
     how VS finds test containers when there is no project system to enumerate compiled test
     assemblies from.
 
-    Targets net48 (not netstandard2.0 like Kubuno.Cargo/Kubuno.Launch): unlike those two pure
+    Targets net48 (not netstandard2.0 like Kubuno.Rust.Cargo/Kubuno.Rust.Launch): unlike those two pure
     libraries, this assembly is loaded directly by Visual Studio's own MEF composition
     (ITestContainerDiscoverer) and by VSTest's "UnitTestExtension" extension scan, both of which
     run in-process in devenv's .NET Framework 4.8 AppDomain (see docs/ARCHITECTURE.md - "classic
@@ -24,8 +24,8 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.TestAdapter</RootNamespace>
-    <AssemblyName>Kubuno.TestAdapter</AssemblyName>
+    <RootNamespace>Kubuno.Rust.TestAdapter</RootNamespace>
+    <AssemblyName>Kubuno.Rust.TestAdapter</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -81,15 +81,15 @@
 
   <ItemGroup>
     <!--
-      Read-only references, per the task split: Kubuno.Cargo supplies the cargo process runner,
-      command-line builder and Windows quoting (CargoCommandLine); Kubuno.Launch supplies the
+      Read-only references, per the task split: Kubuno.Rust.Cargo supplies the cargo process runner,
+      command-line builder and Windows quoting (CargoCommandLine); Kubuno.Rust.Launch supplies the
       launch/debug-environment computation (sysroot, PATH additions, LaunchDescription) reused
       for "debug this test". Neither is modified by this project - see Discovery/CargoTestBuild.cs
       and Execution/DebugTestLauncher.cs for exactly what is reused vs. deliberately reimplemented
-      (profile.test isn't modeled by Kubuno.Cargo's public CargoArtifact - documented there).
+      (profile.test isn't modeled by Kubuno.Rust.Cargo's public CargoArtifact - documented there).
     -->
-    <ProjectReference Include="..\Kubuno.Cargo\Kubuno.Cargo.csproj" />
-    <ProjectReference Include="..\Kubuno.Launch\Kubuno.Launch.csproj" />
+    <ProjectReference Include="..\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
+    <ProjectReference Include="..\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
   </ItemGroup>
 
 </Project>

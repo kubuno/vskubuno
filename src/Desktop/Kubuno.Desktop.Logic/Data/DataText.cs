@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Kubuno.VisualStudio.Core.Data
+namespace Kubuno.Desktop.Logic.Data
 {
     /// <summary>
     /// User-visible strings of the Data Explorer, its dialogs and the query window, in English and French (Visual Studio's

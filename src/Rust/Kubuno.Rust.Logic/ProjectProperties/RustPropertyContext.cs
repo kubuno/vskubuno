@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Kubuno.Cargo.Toml;
+using Kubuno.Rust.Cargo.Toml;
 
-namespace Kubuno.VisualStudio.Core.ProjectProperties
+namespace Kubuno.Rust.Logic.ProjectProperties
 {
     /// <summary>File access for the property model: the VS layer reads open, possibly unsaved documents first.</summary>
     public interface IPropertyFileReader

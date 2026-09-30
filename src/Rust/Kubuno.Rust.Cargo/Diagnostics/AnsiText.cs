@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Kubuno.Cargo.Diagnostics
+namespace Kubuno.Rust.Cargo.Diagnostics
 {
     /// <summary>
     /// Strips ANSI/VT100 escape sequences (as produced by

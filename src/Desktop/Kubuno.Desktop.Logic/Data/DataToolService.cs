@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.VisualStudio.Core.Data
+namespace Kubuno.Desktop.Logic.Data
 {
     /// <summary>
     /// The typed API of <c>kubuno-data-tool</c> (docs/DATA.md §9) shared by every data feature of the extension: the Data

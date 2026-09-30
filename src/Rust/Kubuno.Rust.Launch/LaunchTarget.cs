@@ -1,13 +1,13 @@
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// The minimal description of a Cargo target this library needs to compute an
     /// executable path, an environment, and a launch description for it.
     ///
     /// This is intentionally a self-contained, dependency-free type rather than something
-    /// shared with Kubuno.Cargo (owned by another agent, built in parallel): the cargo
+    /// shared with Kubuno.Rust.Cargo (owned by another agent, built in parallel): the cargo
     /// metadata/diagnostics crate can map its richer target model onto this one once it
-    /// exists, but Kubuno.Launch must not take a project or assembly dependency on it.
+    /// exists, but Kubuno.Rust.Launch must not take a project or assembly dependency on it.
     /// </summary>
     /// <param name="Package">The owning package name, as reported by `cargo metadata` (e.g. "kubuno-desktop-shell").</param>
     /// <param name="Name">The target name (binary/example/test name), without extension.</param>

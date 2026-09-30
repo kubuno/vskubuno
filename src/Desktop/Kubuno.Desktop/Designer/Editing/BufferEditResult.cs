@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Designer.Editing
+namespace Kubuno.Desktop.Designer.Editing
 {
     /// <summary>Result of <see cref="BufferEditCore.TryApply"/> / <see cref="CompoundEditCoordinator.ApplyAll"/> - never throws for an expected rejection (version mismatch, conflict); the caller decides the UX (e.g. re-request against the fresh buffer).</summary>
     public sealed class BufferEditResult

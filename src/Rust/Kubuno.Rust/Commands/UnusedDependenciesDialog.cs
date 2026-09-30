@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Rust.Logic.SolutionExplorer;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>
     /// "Remove Unused Dependencies" - the checked list .NET's "Remove Unused References" dialog shows,

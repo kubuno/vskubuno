@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Designer.Properties;
-using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.Desktop.Designer.Properties;
+using Kubuno.Desktop.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Properties
+namespace Kubuno.Desktop.Tests.Designer.Properties
 {
     [TestClass]
     public class PropertyRowViewModelTests

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.Overrides
+namespace Kubuno.Desktop.Logic.Overrides
 {
     /// <summary>One text edit (offsets in the original text).</summary>
     public sealed class RustTextEdit
@@ -350,7 +350,7 @@ namespace Kubuno.VisualStudio.Core.Overrides
     }
 }
 
-namespace Kubuno.VisualStudio.Core.Overrides
+namespace Kubuno.Desktop.Logic.Overrides
 {
     /// <summary>A completion position of <see cref="OverrideAssistant.CompletionSiteAt"/>.</summary>
     public sealed class RustCompletionSite

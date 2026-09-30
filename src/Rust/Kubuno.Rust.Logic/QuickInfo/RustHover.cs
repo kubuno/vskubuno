@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Logic.SolutionExplorer;
+using Kubuno.Core.Logic.QuickInfo;
 
-namespace Kubuno.VisualStudio.Core.QuickInfo
+namespace Kubuno.Rust.Logic.QuickInfo
 {
     /// <summary>
     /// A rust-analyzer <c>textDocument/hover</c> markdown, taken apart: rust-analyzer writes the containing

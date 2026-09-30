@@ -1,13 +1,13 @@
 using System;
 using System.ComponentModel.Composition;
 using System.Reflection;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Options;
+using Kubuno.Rust.Logic.IntelliSense;
+using Kubuno.Rust.Options;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.VisualStudio.LanguageService.IntelliSense
+namespace Kubuno.Rust.LanguageService.IntelliSense
 {
     /// <summary>
     /// Shows rust-analyzer's inlay hints in .rs editors according to Tools &gt; Options &gt; Kubuno &gt; Rust &gt; Inlay hints.
@@ -57,7 +57,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
         internal static RustOptionsPage? Options()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            return KubunoPackage.Instance?.GetDialogPage(typeof(RustOptionsPage)) as RustOptionsPage;
+            return Kubuno.Core.KubunoHost.GetDialogPage<RustOptionsPage>();
         }
 
         private static void Apply(ITextView view)

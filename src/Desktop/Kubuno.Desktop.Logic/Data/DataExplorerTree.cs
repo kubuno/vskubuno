@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Core.Data
+namespace Kubuno.Desktop.Logic.Data
 {
     /// <summary>The node kinds of the Data Explorer tree; each maps to one image (KnownMonikers in Visual Studio).</summary>
     public enum DataNodeKind

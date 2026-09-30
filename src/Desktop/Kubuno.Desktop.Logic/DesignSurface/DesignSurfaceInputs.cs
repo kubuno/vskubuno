@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Metadata;
 
-namespace Kubuno.Cargo.DesignSurface
+namespace Kubuno.Desktop.Logic.DesignSurface
 {
     /// <summary>
     /// What the design surface is compiled from, picked out of the project build's

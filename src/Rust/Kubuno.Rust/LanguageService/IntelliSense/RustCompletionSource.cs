@@ -5,11 +5,11 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Designer;
-using Kubuno.VisualStudio.LanguageService.QuickInfo;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.SolutionExplorer;
+using Kubuno.Rust.Logic.IntelliSense;
+using Kubuno.Rust.LanguageService.QuickInfo;
+using Kubuno.Core.Logging;
+using Kubuno.Core.Logic.Localization;
+using Kubuno.Rust.SolutionExplorer;
 using Microsoft.VisualStudio.Core.Imaging;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion.Data;
@@ -22,7 +22,7 @@ using Microsoft.VisualStudio.Utilities;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.LanguageService.IntelliSense
+namespace Kubuno.Rust.LanguageService.IntelliSense
 {
     /// <summary>
     /// rust-analyzer's completion, shown like C#'s IntelliSense (it replaces Visual Studio's generic LSP completion
@@ -41,6 +41,10 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
         [Import]
         internal ITextDocumentFactoryService TextDocumentFactory { get; set; } = null!;
 
+        /// <summary>Languages embedded in Rust strings that complete themselves (the desktop layer's SQL, docs/DATA.md DATA-8).</summary>
+        [ImportMany]
+        internal IEnumerable<Extensibility.IRustEmbeddedLanguage> EmbeddedLanguages { get; set; } = Array.Empty<Extensibility.IRustEmbeddedLanguage>();
+
         public IAsyncCompletionSource GetOrCreate(ITextView textView) =>
             textView.Properties.GetOrCreateSingletonProperty(() => new RustCompletionSource(this));
     }
@@ -55,6 +59,10 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
 
         [Import]
         internal IEditorOperationsFactoryService EditorOperations { get; set; } = null!;
+
+        /// <summary>Languages embedded in Rust strings whose completion sessions commit with their own characters.</summary>
+        [ImportMany]
+        internal IEnumerable<Extensibility.IRustEmbeddedLanguage> EmbeddedLanguages { get; set; } = Array.Empty<Extensibility.IRustEmbeddedLanguage>();
 
         public IAsyncCompletionCommitManager GetOrCreate(ITextView textView) =>
             textView.Properties.GetOrCreateSingletonProperty(() => new RustCompletionCommitManager(textView, this));
@@ -127,9 +135,9 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
             Dbg($"Init reason={trigger.Reason} char='{trigger.Character}' pos={triggerLocation.Position} prev='{(triggerLocation.Position >= 2 ? triggerLocation.Snapshot[triggerLocation.Position - 2] : ' ')}'");
             var snapshot = triggerLocation.Snapshot;
             int position = triggerLocation.Position;
-            if (Sql.SqlCompletionSource.IsInSql(triggerLocation))
+            if (_provider.EmbeddedLanguages.Any(language => language.OwnsPosition(triggerLocation)))
             {
-                // A query string: the SQL completion lists there, rust-analyzer has nothing to add.
+                // An embedded language's text (e.g. a SQL query string): its own completion lists there, rust-analyzer has nothing to add.
                 return CompletionStartData.DoesNotParticipateInCompletion;
             }
 
@@ -262,7 +270,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
                 starRank[starred[i]] = i;
             }
 
-            bool french = DesignerText.IsFrench;
+            bool french = UiLanguage.IsFrench;
 
             // After `Type::`, the constructors (`new`, `with_capacity`, `from`...) lead the list, right after rust-analyzer's own
             // top-relevance items, like C#'s IntelliCode does: rust-analyzer ranks trait constructors (`from`) low.
@@ -352,7 +360,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
                 (string?)data.Item["detail"] ?? (string?)data.Item["labelDetails"]?["description"],
                 documentation,
                 data.ImportPath,
-                DesignerText.IsFrench);
+                UiLanguage.IsFrench);
             return _elements.Create(description);
         }
 
@@ -428,13 +436,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
             }
         }
 
-        internal static void Dbg(string message)
-        {
-            if (Environment.GetEnvironmentVariable("KUBUNO_COMPLETION_TRACE") == "1")
-            {
-                KubunoLog.WriteLine("[completion] " + message);
-            }
-        }
+        internal static void Dbg(string message) => RustCompletionTrace.WriteLine(message);
 
         private static bool IsIdentifierChar(char c) => char.IsLetterOrDigit(c) || c == '_';
 
@@ -507,6 +509,18 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
             }
 
             return filters;
+        }
+    }
+
+    /// <summary>The completion trace (<c>KUBUNO_COMPLETION_TRACE=1</c>), shared with the completion the layers above add to Rust files.</summary>
+    public static class RustCompletionTrace
+    {
+        public static void WriteLine(string message)
+        {
+            if (Environment.GetEnvironmentVariable("KUBUNO_COMPLETION_TRACE") == "1")
+            {
+                KubunoLog.WriteLine("[completion] " + message);
+            }
         }
     }
 }

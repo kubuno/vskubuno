@@ -1,4 +1,4 @@
-namespace Kubuno.Cargo.Diagnostics
+namespace Kubuno.Rust.Cargo.Diagnostics
 {
     /// <summary>Maps rustc/cargo's diagnostic "level" string to an Error-List-ready severity.</summary>
     public enum CargoDiagnosticSeverity

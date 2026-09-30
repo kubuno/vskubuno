@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Commands;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Commands;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.CrateManager
+namespace Kubuno.Rust.CrateManager
 {
     /// <summary>
     /// The crate manager of one <c>.rsproj</c> - the counterpart of NuGet's "Manage NuGet Packages"
@@ -33,7 +33,7 @@ namespace Kubuno.VisualStudio.CrateManager
         internal static async Task ShowAsync(RsprojProjectContext context, string? crateName)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var package = KubunoPackage.Instance;
+            var package = Kubuno.Core.KubunoHost.Package;
             if (package is null)
             {
                 return;

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.Desktop.Designer.Registry;
 
-namespace Kubuno.VisualStudio.Designer.UI
+namespace Kubuno.Desktop.Designer.UI
 {
     /// <summary>
     /// This assembly's dialogs with sample data, for Kubuno.VisualStudio's "Kubuno: Dialog Gallery" developer

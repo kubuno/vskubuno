@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Processes
+namespace Kubuno.Rust.Cargo.Processes
 {
     /// <summary>Final outcome of a completed process run, with its buffered output.</summary>
     public sealed class ProcessRunResult

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Kubuno.VisualStudio.Core.ProjectGeneration;
+using Kubuno.Rust.Logic.ProjectGeneration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.ProjectGeneration
+namespace Kubuno.Rust.Tests.ProjectGeneration
 {
     /// <summary>
     /// docs/RSPROJ.md, "SDK feed": a <c>.rsproj</c> must resolve <c>Sdk="Kubuno.Rust.Sdk/…"</c> without any Kubuno package having

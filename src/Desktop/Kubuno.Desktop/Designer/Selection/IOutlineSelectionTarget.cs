@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Designer.Selection
+namespace Kubuno.Desktop.Designer.Selection
 {
     /// <summary>
     /// The third participant of DSG-8's selection sync (docs/DESIGNER.md §6's package row: "Bidirectional

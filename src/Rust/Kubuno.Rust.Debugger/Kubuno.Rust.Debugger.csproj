@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    A Visual Studio debugger engine (Concord) component shipped inside the Kubuno.VisualStudio VSIX
+    Rust layer (docs/ARCHITECTURE.md, "Layers (as built)"). A Visual Studio debugger engine (Concord) component shipped inside the Kubuno.VisualStudio VSIX
     (docs/DEBUGGING.md): it turns the C++ exception every Rust panic raises on MSVC (`rust_panic`) into a
     readable "Rust panic: <message>" in the exception helper and the Output window, by reading the panic
     payload out of the debuggee. Built into a .vsdconfig by the VSDConfigTool package's own targets
@@ -10,14 +10,14 @@
     Self-contained on purpose: Concord loads this assembly from the .vsdconfig's folder, possibly in a
     remote-debugger worker process, so it references nothing of the extension but the debugger engine
     API itself (taken from the running Visual Studio install, never shipped - like CPS in
-    Kubuno.VisualStudio.RustProjectSystem).
+    Kubuno.Rust.ProjectSystem).
   -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <RootNamespace>Kubuno.VisualStudio.Debugger</RootNamespace>
-    <AssemblyName>Kubuno.VisualStudio.Debugger</AssemblyName>
+    <RootNamespace>Kubuno.Rust.Debugger</RootNamespace>
+    <AssemblyName>Kubuno.Rust.Debugger</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <KubunoVsInstallDir Condition="'$(KubunoVsInstallDir)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildBinPath)\..\..\..'))\</KubunoVsInstallDir>
   </PropertyGroup>
@@ -30,10 +30,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Compiles Kubuno.VisualStudio.Debugger.vsdconfigxml into $(OutDir)Kubuno.VisualStudio.Debugger.vsdconfig and
+    <!-- Compiles Kubuno.Rust.Debugger.vsdconfigxml into $(OutDir)Kubuno.Rust.Debugger.vsdconfig and
          adds it to BuiltProjectOutputGroup, so the VSIX picks it up with the assembly. -->
     <PackageReference Include="Microsoft.VSSDK.Debugger.VSDConfigTool" Version="17.14.1051801" PrivateAssets="all" />
-    <VsdConfigXmlFiles Include="Kubuno.VisualStudio.Debugger.vsdconfigxml" />
+    <VsdConfigXmlFiles Include="Kubuno.Rust.Debugger.vsdconfigxml" />
   </ItemGroup>
 
 </Project>

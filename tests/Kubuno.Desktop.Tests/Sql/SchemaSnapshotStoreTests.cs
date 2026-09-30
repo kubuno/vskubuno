@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
-using Kubuno.VisualStudio.Core.Sql;
+using Kubuno.Desktop.Logic.Sql;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.Sql
+namespace Kubuno.Desktop.Tests.Sql
 {
     [TestClass]
     public sealed class SchemaSnapshotStoreTests

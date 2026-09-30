@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace Kubuno.VisualStudio.Core
+namespace Kubuno.Rust.Logic
 {
     /// <summary>
     /// Makes every <c>textDocument/diagnostic</c> (pull diagnostics) report from rust-analyzer carry a

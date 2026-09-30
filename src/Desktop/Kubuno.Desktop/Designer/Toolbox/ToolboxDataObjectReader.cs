@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using ComTypes = System.Runtime.InteropServices.ComTypes;
 
-namespace Kubuno.VisualStudio.Designer.Toolbox
+namespace Kubuno.Desktop.Designer.Toolbox
 {
     /// <summary>
     /// Reads the <see cref="ToolboxItemFormat"/> payload out of an OLE data object - the Toolbox item's own

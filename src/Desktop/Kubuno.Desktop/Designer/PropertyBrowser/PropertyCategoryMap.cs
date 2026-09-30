@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.Desktop.Designer.Registry;
 
-namespace Kubuno.VisualStudio.Designer.PropertyBrowser
+namespace Kubuno.Desktop.Designer.PropertyBrowser
 {
     /// <summary>
     /// Which Properties-window category a <c>.kbview</c> attribute is listed under, WinForms-style

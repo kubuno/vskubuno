@@ -1,6 +1,6 @@
-using Kubuno.VisualStudio.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing;
 
-namespace Kubuno.VisualStudio.Designer.Handlers
+namespace Kubuno.Desktop.Designer.Handlers
 {
     public enum HandlerCreationOutcome
     {

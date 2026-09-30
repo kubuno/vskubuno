@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace Kubuno.VisualStudio.Debugger
+namespace Kubuno.Rust.Debugger
 {
     /// <summary>
     /// Reads the message of a Rust panic out of the debuggee, starting from the object the MSVC

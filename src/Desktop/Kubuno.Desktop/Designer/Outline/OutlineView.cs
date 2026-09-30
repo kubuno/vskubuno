@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.VisualStudio.Designer.Outline
+namespace Kubuno.Desktop.Designer.Outline
 {
     /// <summary>
     /// The Document Outline tool window's content: a plain <see cref="TreeView"/> over
@@ -12,7 +12,7 @@ namespace Kubuno.VisualStudio.Designer.Outline
     /// <see cref="EnvironmentColors"/>.
     ///
     /// Not unit-tested (a live WPF visual tree, which stays out of
-    /// tests/Kubuno.VisualStudio.Designer.Tests - only <see cref="OutlineViewModel"/>/
+    /// tests/Kubuno.Desktop.Tests/Designer - only <see cref="OutlineViewModel"/>/
     /// <see cref="DocumentSymbolTreeBuilder"/> are).
     /// </summary>
     public sealed class OutlineView : UserControl

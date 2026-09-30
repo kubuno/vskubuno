@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using Kubuno.VisualStudio.Core;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Logic;
+using Kubuno.Core.Logging;
 
-namespace Kubuno.VisualStudio.Infrastructure
+namespace Kubuno.Rust.Infrastructure
 {
     /// <summary>
     /// The real, VS-independent implementation of <see cref="IRustAnalyzerEnvironment"/>: actual

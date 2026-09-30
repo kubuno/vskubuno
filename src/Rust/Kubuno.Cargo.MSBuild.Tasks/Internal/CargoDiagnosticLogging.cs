@@ -1,5 +1,5 @@
 using System;
-using Kubuno.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Diagnostics;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 

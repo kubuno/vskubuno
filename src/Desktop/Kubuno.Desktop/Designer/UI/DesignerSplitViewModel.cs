@@ -1,10 +1,10 @@
 using System.ComponentModel;
 
-namespace Kubuno.VisualStudio.Designer.UI
+namespace Kubuno.Desktop.Designer.UI
 {
     /// <summary>
     /// The view-mode state and its derived pane visibility, kept free of any WPF/VS SDK type so it is
-    /// plain-unit-testable (see tests/Kubuno.VisualStudio.Designer.Tests) without a running Visual
+    /// plain-unit-testable (see tests/Kubuno.Desktop.Tests/Designer) without a running Visual
     /// Studio host or an STA thread. <see cref="DesignerSplitView"/> is the only consumer; it owns one
     /// instance and re-applies <see cref="IsDesignPaneVisible"/>/<see cref="IsXmlPaneVisible"/>/
     /// <see cref="IsSplitterVisible"/> to its Grid column widths whenever <see cref="PropertyChanged"/>

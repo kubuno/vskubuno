@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The surface → host messages of the design surface's context menus and keyboard commands

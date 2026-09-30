@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Editing.Infrastructure;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing.Infrastructure;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
 
-namespace Kubuno.VisualStudio.Designer.Handlers.Infrastructure
+namespace Kubuno.Desktop.Designer.Handlers.Infrastructure
 {
     /// <summary>
     /// The real <see cref="IWorkspaceFileHost"/>, over Visual Studio's running document table: a document open in

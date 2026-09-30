@@ -2,14 +2,14 @@ using System;
 using System.ComponentModel.Composition;
 using System.Windows;
 using System.Windows.Media;
-using Kubuno.VisualStudio.Core.IntelliSense;
+using Kubuno.Rust.Logic.IntelliSense;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.VisualStudio.LanguageService.IntelliSense
+namespace Kubuno.Rust.LanguageService.IntelliSense
 {
     /// <summary>
     /// The Rust-only classifications rust-analyzer's semantic tokens are mapped onto as modifiers
@@ -38,18 +38,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
         /// <summary>The macro color: Visual Studio's C++ macro purple, for the current theme.</summary>
         internal static Color MacroColor(bool dark) => dark ? Color.FromRgb(0xBE, 0xB7, 0xFF) : Color.FromRgb(0x8A, 0x1B, 0xFF);
 
-        internal static bool IsDarkTheme()
-        {
-            try
-            {
-                var background = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
-                return (background.R * 0.299) + (background.G * 0.587) + (background.B * 0.114) < 128;
-            }
-            catch (Exception exception) when (exception is InvalidOperationException or NullReferenceException)
-            {
-                return false;
-            }
-        }
+        internal static bool IsDarkTheme() => Kubuno.Core.UI.VsTheme.IsDark();
     }
 
     [Export(typeof(EditorFormatDefinition))]

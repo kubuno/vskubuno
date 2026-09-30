@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Designer.Properties
+namespace Kubuno.Desktop.Designer.Properties
 {
     /// <summary>
     /// Detects and formats the <c>{Binding Path[, Mode=TwoWay]}</c> shape docs/DESIGNER.md §1 describes

@@ -4,21 +4,21 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.Designer.Handlers.Infrastructure
+namespace Kubuno.Desktop.Designer.Handlers.Infrastructure
 {
     /// <summary>
     /// The real <c>kubuno/createHandler</c> caller, over the same <c>StreamJsonRpc.JsonRpc</c> object
-    /// <c>Kubuno.VisualStudio.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> already exposes
+    /// <c>Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> already exposes
     /// once <c>AttachForCustomMessageAsync</c> runs (docs/DESIGNER.md §3: "the exact hook custom,
     /// non-textDocument/* methods need"; §8 point 2's own note that a later integration step hands this
-    /// class that live object - this library has no dependency of its own on <c>Kubuno.VisualStudio.Views</c>
-    /// beyond what <see cref="Kubuno.VisualStudio.Designer.Editing"/>/this project's csproj comment
+    /// class that live object - this library has no dependency of its own on <c>Kubuno.Desktop.Views</c>
+    /// beyond what <see cref="Kubuno.Desktop.Designer.Editing"/>/this project's csproj comment
     /// already explains, so the caller passes the <see cref="JsonRpc"/> in rather than this class
     /// resolving it itself).
     ///
     /// Not unit-tested here - it needs a live <c>JsonRpc</c> connected to a running <c>kubuno-views-ls</c>
     /// process, the same reasoning <see cref="Editing.Infrastructure.BufferEditApplier"/>'s own doc
-    /// comment gives for staying out of tests/Kubuno.VisualStudio.Designer.Tests; a manual round trip in
+    /// comment gives for staying out of tests/Kubuno.Desktop.Tests/Designer; a manual round trip in
     /// the experimental instance is this class's test strategy, per docs/DESIGNER.md's DSG-10 row
     /// ("manual check for the VS-side open/insert/caret-jump"). See
     /// <see cref="CreateHandlerResponseParser"/> for the pure, unit-tested half of this bridge (JSON -&gt;

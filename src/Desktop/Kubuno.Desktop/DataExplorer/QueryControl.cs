@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.Options;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Core.Logging;
+using Kubuno.Desktop.Options;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.DataExplorer
+namespace Kubuno.Desktop.DataExplorer
 {
     /// <summary>
     /// The content of a query window (<see cref="QueryToolWindow"/>): a SQL editor (monospace, themed), the connection

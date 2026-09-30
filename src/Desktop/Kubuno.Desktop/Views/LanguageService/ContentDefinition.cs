@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.VisualStudio.Views.LanguageService
+namespace Kubuno.Desktop.Views.LanguageService
 {
     /// <summary>
     /// MEF exports that declare the "kbview" content type and associate it with the <c>.kbview</c>
@@ -15,7 +15,7 @@ namespace Kubuno.VisualStudio.Views.LanguageService
     ///
     /// Base content type: <see cref="CodeRemoteContentDefinition.CodeRemoteContentTypeName"/> ("code")
     /// - the exact base the sibling VSIX project's Rust content type already uses successfully for an
-    /// LSP-participating content type (see <c>Kubuno.VisualStudio.LanguageService.ContentDefinition</c>).
+    /// LSP-participating content type (see <c>Kubuno.Rust.LanguageService.ContentDefinition</c>).
     /// Visual Studio's in-box XML editor also exposes a content type named "XML" that would add
     /// bracket-matching/outlining for free if used as an *additional* base - but that could not be
     /// verified from this library alone (no VS instance was run for this task, and an unresolved

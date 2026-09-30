@@ -1,20 +1,20 @@
 using System;
 using System.ComponentModel.Design;
-using Kubuno.VisualStudio.Designer.ToolWindows;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Desktop.Designer.ToolWindows;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.DesignerIntegration
+namespace Kubuno.Desktop.DesignerIntegration
 {
     /// <summary>
     /// "Tools &gt; Kubuno View Outline" (<c>KubunoCommands.vsct</c>): shows the package-registered
-    /// <see cref="OutlineToolWindow"/> that Kubuno.VisualStudio.Designer ships but does not itself
+    /// <see cref="OutlineToolWindow"/> that Kubuno.Desktop.Designer ships but does not itself
     /// register (the former "Kubuno Toolbox"/"Kubuno Properties" fallbacks were removed - the designer
     /// uses Visual Studio's own Toolbox and Properties window, docs/DESIGNER.md §11) (it must not reference this VSIX assembly - see
     /// that library's own csproj top comment). Mirrors
-    /// <see cref="Kubuno.VisualStudio.Debugging.DebugRustTestAtCursorCommand"/>'s own shape for wiring a
+    /// <see cref="Kubuno.Rust.Debugging.DebugRustTestAtCursorCommand"/>'s own shape for wiring a
     /// command into <c>KubunoPackage.InitializeAsync</c>.
     /// </summary>
     internal static class DesignerToolWindowCommands

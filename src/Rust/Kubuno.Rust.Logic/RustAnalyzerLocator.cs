@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.VisualStudio.Core
+namespace Kubuno.Rust.Logic
 {
     /// <summary>
     /// Finds the rust-analyzer executable to launch as the LSP server, in the order documented in

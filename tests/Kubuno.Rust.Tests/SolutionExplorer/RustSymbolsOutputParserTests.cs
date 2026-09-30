@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.SolutionExplorer
+namespace Kubuno.Rust.Tests.SolutionExplorer
 {
     [TestClass]
     public class RustSymbolsOutputParserTests

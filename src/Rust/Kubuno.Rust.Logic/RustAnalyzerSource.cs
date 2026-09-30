@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Core
+namespace Kubuno.Rust.Logic
 {
     /// <summary>
     /// Where the rust-analyzer executable path returned by <see cref="RustAnalyzerLocator"/> came

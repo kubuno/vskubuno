@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Commands
+namespace Kubuno.Rust.Cargo.Commands
 {
     /// <summary>
     /// A ready-to-launch command line: the executable file name, the argv-style argument

@@ -4,16 +4,16 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.Options;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Core.Logging;
+using Kubuno.Desktop.Options;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.DataExplorer
+namespace Kubuno.Desktop.DataExplorer
 {
     /// <summary>
     /// View &gt; "Explorateur de données" / "Data Explorer" (docs/DATA.md §9, DATA-5): the Server Explorer / SQL Server Object
@@ -255,7 +255,7 @@ namespace Kubuno.VisualStudio.DataExplorer
         internal static async Task<DataExplorerToolWindow?> ShowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var package = KubunoPackage.Instance;
+            var package = Kubuno.Core.KubunoHost.Package;
             if (package is null)
             {
                 return null;

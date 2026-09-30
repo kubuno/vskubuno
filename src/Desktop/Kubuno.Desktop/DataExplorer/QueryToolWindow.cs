@@ -3,13 +3,13 @@ using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.DataExplorer
+namespace Kubuno.Desktop.DataExplorer
 {
     /// <summary>
     /// A query window of the Data Explorer ("Requête – Shop"): a multi-instance, transient tool window in the document
@@ -79,7 +79,7 @@ namespace Kubuno.VisualStudio.DataExplorer
         internal static async Task<QueryToolWindow?> ShowAsync(string connection, DataProviderKind? provider, string sql, string? caption = null, Func<QueryControl, Task>? afterShow = null)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var package = KubunoPackage.Instance;
+            var package = Kubuno.Core.KubunoHost.Package;
             if (package is null)
             {
                 return null;

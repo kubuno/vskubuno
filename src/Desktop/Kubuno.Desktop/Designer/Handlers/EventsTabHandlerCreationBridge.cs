@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Designer.Properties;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Designer.Properties;
+using Kubuno.Desktop.Views.Logging;
 
-namespace Kubuno.VisualStudio.Designer.Handlers
+namespace Kubuno.Desktop.Designer.Handlers
 {
     /// <summary>
     /// The one line of wiring docs/DESIGNER.md §1 asks for: "double-click on an empty row to generate a
@@ -19,9 +19,9 @@ namespace Kubuno.VisualStudio.Designer.Handlers
     /// (<see cref="HandlerCreationService"/>, <see cref="PropertiesPanelViewModel"/>) are each already
     /// independently unit-tested; this class only forwards one event to one call, so its own coverage is
     /// the constructor's null-guards and the forwarding itself (see
-    /// tests/Kubuno.VisualStudio.Designer.Tests/Handlers/EventsTabHandlerCreationBridgeTests.cs).
+    /// tests/Kubuno.Desktop.Tests/Designer/Handlers/EventsTabHandlerCreationBridgeTests.cs).
     /// Errors are logged (<see cref="KubunoViewsLogHost"/>, the same gateway
-    /// <see cref="Kubuno.VisualStudio.Views.LanguageService.KubunoViewsLanguageClient"/> already logs
+    /// <see cref="Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient"/> already logs
     /// through - this library may reference it, see its own csproj comment) rather than thrown back into
     /// the WPF event-raising call stack, which a `void`
     /// <see cref="PropertiesPanelViewModel.CreateHandlerRequested"/> handler could not propagate usefully

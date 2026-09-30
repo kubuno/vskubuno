@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.VisualStudio.Core.QuickInfo
+namespace Kubuno.Core.Logic.QuickInfo
 {
     /// <summary>
     /// What a run of QuickInfo text stands for. The VSIX maps each value onto an editor classification
@@ -108,24 +108,36 @@ namespace Kubuno.VisualStudio.Core.QuickInfo
         public override string ToPlainText() => string.Concat(Runs.Select(r => r.Text));
     }
 
-    /// <summary>An icon: a <c>KnownMonikers</c> property name, or the Kubuno control icon of a <c>.kbview</c> tag.</summary>
+    /// <summary>
+    /// An icon: a <c>KnownMonikers</c> property name, or an image of one of the extension's image manifests (e.g. the
+    /// desktop layer's Kubuno control icon of a <c>.kbview</c> tag).
+    /// </summary>
     public sealed class QuickInfoImage : QuickInfoElement
     {
-        private QuickInfoImage(string? monikerName, string? controlTag)
+        private QuickInfoImage(string? monikerName, Guid imageGuid, int imageId, string? tag)
         {
             MonikerName = monikerName;
-            ControlTag = controlTag;
+            ImageGuid = imageGuid;
+            ImageId = imageId;
+            Tag = tag;
         }
 
         /// <summary>A <c>KnownMonikers</c> property name (e.g. <c>MethodPrivate</c>), or null.</summary>
         public string? MonikerName { get; }
 
-        /// <summary>A <c>.kbview</c> element tag whose Kubuno control icon to show (<see cref="SolutionExplorer.ControlIcons"/>), or null.</summary>
-        public string? ControlTag { get; }
+        /// <summary>The image manifest GUID of an extension image, <see cref="Guid.Empty"/> for a <see cref="MonikerName"/>.</summary>
+        public Guid ImageGuid { get; }
 
-        public static QuickInfoImage Moniker(string name) => new QuickInfoImage(name ?? throw new ArgumentNullException(nameof(name)), null);
+        /// <summary>The image manifest ID of an extension image.</summary>
+        public int ImageId { get; }
 
-        public static QuickInfoImage Control(string tag) => new QuickInfoImage(null, tag ?? throw new ArgumentNullException(nameof(tag)));
+        /// <summary>What an extension image stands for (e.g. the <c>.kbview</c> element tag of a control icon), or null.</summary>
+        public string? Tag { get; }
+
+        public static QuickInfoImage Moniker(string name) => new QuickInfoImage(name ?? throw new ArgumentNullException(nameof(name)), Guid.Empty, 0, null);
+
+        /// <summary>An image of an image manifest (<paramref name="imageGuid"/>, <paramref name="imageId"/>), standing for <paramref name="tag"/>.</summary>
+        public static QuickInfoImage Image(Guid imageGuid, int imageId, string? tag = null) => new QuickInfoImage(null, imageGuid, imageId, tag);
 
         public override string ToPlainText() => string.Empty;
     }
@@ -169,7 +181,7 @@ namespace Kubuno.VisualStudio.Core.QuickInfo
     }
 
     /// <summary>Builds lists of runs, merging adjacent runs of identical presentation.</summary>
-    internal sealed class RunBuilder
+    public sealed class RunBuilder
     {
         private readonly List<QuickInfoRun> _runs = new List<QuickInfoRun>();
         private readonly StringBuilder _pending = new StringBuilder();

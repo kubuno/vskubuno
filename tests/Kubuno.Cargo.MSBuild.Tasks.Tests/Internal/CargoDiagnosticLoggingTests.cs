@@ -1,5 +1,5 @@
 using System.Linq;
-using Kubuno.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Diagnostics;
 using Kubuno.Cargo.MSBuild.Tasks.Internal;
 using Kubuno.Cargo.MSBuild.Tasks.Tests.Fakes;
 using Microsoft.Build.Framework;
@@ -11,7 +11,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks.Tests.Internal
     /// to MSBuild's own logging calls — the piece that turns a cargo diagnostic into a clickable
     /// Visual Studio Error List entry. Uses the same real, captured
     /// <c>cargo build --message-format=json-diagnostic-rendered-ansi</c> fixtures
-    /// <c>Kubuno.Cargo.Tests</c> parses, so a regression in either the parser or this mapping
+    /// <c>Kubuno.Rust.Cargo.Tests</c> parses, so a regression in either the parser or this mapping
     /// would be caught the same way.
     /// </summary>
     public class CargoDiagnosticLoggingTests

@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Core.ProjectGeneration
+namespace Kubuno.Rust.Logic.ProjectGeneration
 {
     /// <summary>One workspace member's generation outcome, from <see cref="RsprojGenerationPlanner.Plan"/>.</summary>
     public sealed class RsprojProjectPlanItem

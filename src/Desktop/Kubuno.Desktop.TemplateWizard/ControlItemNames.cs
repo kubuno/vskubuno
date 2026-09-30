@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.TemplateWizard
+namespace Kubuno.Desktop.TemplateWizard
 {
     /// <summary>
     /// The pure logic of <see cref="ControlItemWizard"/> (docs/EVENTS.md EVT-7b), kept free of Visual Studio types so the

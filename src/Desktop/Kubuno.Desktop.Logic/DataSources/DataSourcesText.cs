@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Kubuno.VisualStudio.Core.Data;
+using Kubuno.Desktop.Logic.Data;
 
-namespace Kubuno.VisualStudio.Core.DataSources
+namespace Kubuno.Desktop.Logic.DataSources
 {
     /// <summary>
     /// User-visible strings of the Data Sources window, the "Add Data Source" wizard and the drops, in English and French (Visual

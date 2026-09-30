@@ -1,9 +1,9 @@
 using System.Linq;
-using Kubuno.VisualStudio.Core.IntelliSense;
+using Kubuno.Rust.Logic.IntelliSense;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.LanguageService
+namespace Kubuno.Rust.LanguageService
 {
     /// <summary>
     /// The server-to-client requests rust-analyzer sends that Visual Studio's LSP client does not answer itself. After a

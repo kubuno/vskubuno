@@ -5,10 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
-using Kubuno.VisualStudio.Core.DataSources;
+using Kubuno.Desktop.Logic.DataSources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.DataSources
+namespace Kubuno.Desktop.Tests.DataSources
 {
     /// <summary>
     /// The drop fragments through the real <c>kubuno-views-ls</c> (the designer's edit pipeline: <c>kubuno/applyEdit</c>'s

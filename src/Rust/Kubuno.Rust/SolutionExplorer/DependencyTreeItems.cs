@@ -3,12 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.Internal.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.SolutionExplorer
+namespace Kubuno.Rust.SolutionExplorer
 {
     /// <summary>
     /// The "Dependencies" node of a <c>.rsproj</c>, laid out like the one of an SDK-style .NET project:
@@ -256,7 +256,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
     }
 
     /// <summary>Keyed in-place update of a child collection (kept nodes keep their expansion state).</summary>
-    internal static class TreeMerger
+    public static class TreeMerger
     {
         public static void Merge(ObservableCollection<KubunoTreeItem> target, IReadOnlyList<(string Key, Func<KubunoTreeItem> Create, Action<KubunoTreeItem> Update)> fresh)
         {

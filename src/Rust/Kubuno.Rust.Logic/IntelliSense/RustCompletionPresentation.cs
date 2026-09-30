@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Kubuno.VisualStudio.Core.QuickInfo;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Rust.Logic.QuickInfo;
+using Kubuno.Rust.Logic.SolutionExplorer;
 
-namespace Kubuno.VisualStudio.Core.IntelliSense
+namespace Kubuno.Rust.Logic.IntelliSense
 {
     /// <summary>What a rust-analyzer completion item is, as the completion list shows it (icon and filter).</summary>
     public enum RustCompletionCategory

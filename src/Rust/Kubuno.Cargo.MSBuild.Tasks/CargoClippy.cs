@@ -1,4 +1,4 @@
-using Kubuno.Cargo.Commands;
+using Kubuno.Rust.Cargo.Commands;
 
 namespace Kubuno.Cargo.MSBuild.Tasks
 {

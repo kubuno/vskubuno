@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.ProjectSystem;
 
-namespace Kubuno.VisualStudio.RustProjectSystem.ProjectProperties
+namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 {
     /// <summary>
     /// Reports the configuration dimensions of a <c>.rsproj</c> (Configuration: Debug/Release, Platform: x64,

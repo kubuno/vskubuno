@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Kubuno.Cargo.Win32
+namespace Kubuno.Rust.Cargo.Win32
 {
     /// <summary>
     /// Builder for a binary 32-bit RES file (the format produced by rc.exe and accepted directly

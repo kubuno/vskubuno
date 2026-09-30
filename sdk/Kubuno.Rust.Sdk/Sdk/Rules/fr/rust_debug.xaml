@@ -2,7 +2,7 @@
 <!--
   French copy of ../rust_debug.xaml (same schema; only DisplayName, Description and messages are translated).
   "Debug" page of the .rsproj Project Properties editor (docs/RSPROJ.md, "Project properties like
-  .NET"). The settings are the ones Kubuno.VisualStudio.RustProjectSystem's RustDebugLaunchProvider
+  .NET"). The settings are the ones Kubuno.Rust.ProjectSystem's RustDebugLaunchProvider
   reads for F5/Ctrl+F5 (the same user-file properties as the RustDebugger rule, rust_debugger.xaml),
   shown inline and in the "debug launch profile" dialog the link opens, like .NET's own Debug page.
   The environment is edited as a name/value list; the KubunoRust persistence converts it to and from

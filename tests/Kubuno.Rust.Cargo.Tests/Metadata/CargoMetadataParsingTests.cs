@@ -1,11 +1,11 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.Cargo.Tests.Fakes;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Cargo.Tests.Fakes;
 using Xunit;
 
-namespace Kubuno.Cargo.Tests.Metadata
+namespace Kubuno.Rust.Cargo.Tests.Metadata
 {
     /// <summary>
     /// Exercises <see cref="CargoMetadataReader"/> against real `cargo metadata --format-version

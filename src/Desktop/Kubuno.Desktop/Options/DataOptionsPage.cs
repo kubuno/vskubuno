@@ -1,17 +1,27 @@
 using System;
 using System.ComponentModel;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Views.Options;
+using System.Runtime.InteropServices;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Core.Settings;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.Options
+namespace Kubuno.Desktop.Options
 {
     /// <summary>
     /// Tools &gt; Options &gt; Kubuno &gt; Data (docs/DATA.md §9, DATA-5): the Data Explorer and query window settings, in Visual
     /// Studio 2026's unified settings (<c>kubuno.data.*</c>). Read through <see cref="Current"/>.
     /// </summary>
+    // The identity Visual Studio stored this page under before the layers (docs/ARCHITECTURE.md, "Layers (as built)"):
+    // the page GUID of the pkgdef and profile (formerly derived from the type's full name) and the classic settings
+    // key (DialogPage's default is derived from the full name too), kept so existing settings and exports still apply.
+    [Guid("fd8e3075-5653-3a2d-b423-4a0f9a0afa97")]
     public sealed class DataOptionsPage : KubunoDialogPage
     {
+        public DataOptionsPage()
+            : base(legacyTypeFullName: "Kubuno.VisualStudio.Options.DataOptionsPage")
+        {
+        }
+
         public const int DefaultShowDataRows = 200;
         public const int DefaultMaxQueryRows = 1000;
         public const int DefaultQueryTimeoutSeconds = 30;
@@ -59,7 +69,7 @@ namespace Kubuno.VisualStudio.Options
                 ThreadHelper.ThrowIfNotOnUIThread();
                 try
                 {
-                    if (KubunoPackage.Instance?.GetDialogPage(typeof(DataOptionsPage)) is DataOptionsPage page)
+                    if (Kubuno.Core.KubunoHost.GetDialogPage<DataOptionsPage>() is DataOptionsPage page)
                     {
                         return page;
                     }

@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Core layer, Visual Studio side (docs/ARCHITECTURE.md, "Layers (as built)"): the infrastructure every product layer
+    (Rust, Desktop, Web, Mobile) builds on and that knows nothing about Rust or a Kubuno target - the layer contracts
+    (Extensibility\KubunoLayer, KubunoLayerHost: how the package initializes each layer), the host accessors MEF parts
+    use (KubunoHost), themed dialogs (UI\ThemedDialog), the unified settings plumbing (Settings\KubunoDialogPage), the
+    "Kubuno" Output pane (Logging\KubunoLog), the bundled-tool locator, the dialog gallery and the MCP bridge start.
+
+    References only Kubuno.Core.Logic and Kubuno.Core.Mcp.Bridge - never a product layer (enforced by
+    tests/Kubuno.Architecture.Tests).
+
+    The Visual Studio SDK packages are compile-time only (ExcludeAssets=runtime: devenv.exe supplies them) and private
+    (PrivateAssets=all): each layer compiles against its own Visual Studio references - the NuGet 17.x SDK for most,
+    the installed 18.x assemblies for the CPS project systems - so this assembly must not push its own copies onto them.
+    Compiling against the lowest version (17.x) is what lets both kinds of consumers reference it.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Core</RootNamespace>
+    <AssemblyName>Kubuno.Core</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Same versions as every other Visual Studio assembly of the extension (bump them together). -->
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" PrivateAssets="all" />
+    <!-- DTE2 for the MCP bridge (docs/MCP.md "Integration"), like Kubuno.Core.Mcp.Bridge's net48 leg. -->
+    <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\Kubuno.Core.Mcp.Bridge\Kubuno.Core.Mcp.Bridge.csproj" />
+  </ItemGroup>
+
+</Project>

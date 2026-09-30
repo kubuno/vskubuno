@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 
-namespace Kubuno.VisualStudio.Workspace
+namespace Kubuno.Rust.Workspace
 {
     /// <summary>
     /// MEF entry point for declaring that every <c>Cargo.toml</c> in an Open Folder workspace

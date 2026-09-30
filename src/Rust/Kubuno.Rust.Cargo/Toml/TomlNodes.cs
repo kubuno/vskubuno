@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Toml
+namespace Kubuno.Rust.Cargo.Toml
 {
     /// <summary>A parsed <c>[header]</c> / <c>[[header]]</c> line together with the key/values that follow it.</summary>
     internal sealed class HeaderNode

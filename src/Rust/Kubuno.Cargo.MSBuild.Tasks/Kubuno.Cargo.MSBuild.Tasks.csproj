@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    MSBuild tasks (CargoBuild/CargoTest/CargoFetch) that drive Kubuno.Cargo from a .rsproj build
+    MSBuild tasks (CargoBuild/CargoTest/CargoFetch) that drive Kubuno.Rust.Cargo from a .rsproj build
     (see docs/RSPROJ.md work package 2). A custom task assembly must load in BOTH the classic,
     .NET Framework MSBuild.exe that ships inside Visual Studio AND the .NET (Core) host
     `dotnet build`/`dotnet msbuild` uses.
 
     Multi-targeted net472/net10.0 (net10.0 matching this workspace's installed SDK exactly, same
-    as tests/Kubuno.Cargo.Tests.csproj), selected in Sdk.targets by $(MSBuildRuntimeType) — the
-    approach docs/RSPROJ.md §2 originally called for (it assumed Kubuno.Cargo was net48, which
+    as tests/Kubuno.Rust.Cargo.Tests.csproj), selected in Sdk.targets by $(MSBuildRuntimeType) — the
+    approach docs/RSPROJ.md §2 originally called for (it assumed Kubuno.Rust.Cargo was net48, which
     turned out false, but the "selected by $(MSBuildRuntimeType)" split itself was right).
 
     Getting `dotnet build` to load this in process took a detour worth recording: it first failed
@@ -16,7 +16,7 @@
     Runtime/Architecture or TFM mismatch (and MSBuild's own warning suggests as much) — netstandard2.0
     alone, then net8.0, then explicit Runtime="NET"/Architecture="x64" `<UsingTask>` hints were all
     tried and none of it changed the failure. A minimal repro assembly (same task classes, same
-    Kubuno.Cargo/Kubuno.Launch references, same net10.0 TFM) loaded fine, isolating the real
+    Kubuno.Rust.Cargo/Kubuno.Rust.Launch references, same net10.0 TFM) loaded fine, isolating the real
     variable to WHERE the assembly was loaded from: this workspace sits on a mapped network drive
     (Z:), and `dotnet build` refuses to load a task assembly from there in process — the same class
     of loader-from-remote-source restriction README.md's "Tests" section already documents for
@@ -64,8 +64,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kubuno.Cargo\Kubuno.Cargo.csproj" />
-    <ProjectReference Include="..\Kubuno.Launch\Kubuno.Launch.csproj" />
+    <ProjectReference Include="..\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
+    <ProjectReference Include="..\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
   </ItemGroup>
 
 </Project>

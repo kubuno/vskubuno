@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.VisualStudio.Views.Locating
+namespace Kubuno.Desktop.Views.Locating
 {
     /// <summary>
     /// Finds the <c>kubuno-views-ls.exe</c> executable to launch as the LSP server for <c>.kbview</c>
@@ -11,7 +11,7 @@ namespace Kubuno.VisualStudio.Views.Locating
     /// never returns a path that does not exist - callers must treat
     /// <see cref="KubunoViewsLanguageServerSource.NotFound"/> as a case to surface to the user (info
     /// bar), not to fail on silently. Mirrors the shape of the sibling VSIX project's
-    /// <c>Kubuno.VisualStudio.Core.RustAnalyzerLocator</c>.
+    /// <c>Kubuno.Rust.Logic.RustAnalyzerLocator</c>.
     /// </summary>
     public static class KubunoViewsLanguageServerLocator
     {

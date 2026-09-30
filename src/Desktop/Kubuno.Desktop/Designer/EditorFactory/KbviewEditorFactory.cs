@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -9,12 +9,12 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.VisualStudio.Designer.EditorFactory
+namespace Kubuno.Desktop.Designer.EditorFactory
 {
     /// <summary>
     /// Produces the split Design | XML <see cref="DesignerWindowPane"/> for <c>.kbview</c> files.
     /// Registered alongside - never instead of - the existing plain-text LSP editor (see
-    /// <c>Kubuno.VisualStudio.Views.LanguageService.KubunoViewsLanguageClient</c>, which targets the
+    /// <c>Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient</c>, which targets the
     /// "kbview" content type independently of which editor factory opened the buffer): VS allows more
     /// than one registered editor per extension, and "Open With..." picks between them (docs/DESIGNER.md
     /// §1). See INTEGRATION.md for the exact <c>[ProvideEditorFactory]</c>/<c>[ProvideEditorExtension]</c>/
@@ -190,7 +190,7 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
         /// automatic language/content-type detection turned on - the same mechanism the standard text
         /// editor relies on, which is what lets kubuno-views-ls's MEF <c>ILanguageClient</c> (registered
         /// against the "kbview" content type by file extension, see
-        /// <c>Kubuno.VisualStudio.Views.LanguageService.ContentDefinition</c>) attach to this buffer
+        /// <c>Kubuno.Desktop.Views.LanguageService.ContentDefinition</c>) attach to this buffer
         /// exactly as it would in the plain text editor. The shell loads the file into it
         /// (<c>IVsPersistDocData.LoadDocData</c>) only AFTER <see cref="CreateEditorInstance"/> returns,
         /// so nothing may read it before then - see <c>DesignerSplitView</c>'s deferred initialization.

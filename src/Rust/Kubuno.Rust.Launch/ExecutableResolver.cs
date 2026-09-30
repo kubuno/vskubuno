@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// Resolves the on-disk path of the executable to launch for a <see cref="LaunchTarget"/>.

@@ -1,9 +1,9 @@
 using System.ComponentModel.Design;
-using Kubuno.VisualStudio.CrateManager;
+using Kubuno.Rust.CrateManager;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>
     /// "Dépendance Cargo (crate)..." (the extended "Ajouter" submenu): opens the crate manager

@@ -28,12 +28,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Kubuno.Cargo\Kubuno.Cargo.csproj" />
-    <ProjectReference Include="..\..\src\Kubuno.Cargo.MSBuild.Tasks\Kubuno.Cargo.MSBuild.Tasks.csproj" />
+    <ProjectReference Include="..\..\src\Rust\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
+    <ProjectReference Include="..\..\src\Rust\Kubuno.Cargo.MSBuild.Tasks\Kubuno.Cargo.MSBuild.Tasks.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Real captured cargo build message-format json-diagnostic-rendered-ansi output, shared with Kubuno.Cargo.Tests. -->
+    <!-- Real captured cargo build message-format json-diagnostic-rendered-ansi output, shared with Kubuno.Rust.Cargo.Tests. -->
     <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

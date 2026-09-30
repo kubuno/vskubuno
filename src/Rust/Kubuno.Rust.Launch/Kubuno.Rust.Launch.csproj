@@ -11,8 +11,8 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Launch</RootNamespace>
-    <AssemblyName>Kubuno.Launch</AssemblyName>
+    <RootNamespace>Kubuno.Rust.Launch</RootNamespace>
+    <AssemblyName>Kubuno.Rust.Launch</AssemblyName>
   </PropertyGroup>
 
 </Project>

@@ -6,7 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace Kubuno.VisualStudio.Designer.Toolbox
+namespace Kubuno.Desktop.Designer.Toolbox
 {
     /// <summary>
     /// Renders a Kubuno control icon (the <c>Viewbox</c> › <c>Canvas</c> of 24-unit Lucide shapes of

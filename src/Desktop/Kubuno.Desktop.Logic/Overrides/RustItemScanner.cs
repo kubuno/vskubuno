@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.Overrides
+namespace Kubuno.Desktop.Logic.Overrides
 {
     /// <summary>A <c>struct</c> item of a Rust file.</summary>
     public sealed class RustStructItem

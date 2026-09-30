@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.RustProjectSystem.ProjectProperties
+namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 {
     /// <summary>One rustup target in <see cref="RustTargetsDialog"/>.</summary>
     internal sealed class RustTargetRow : INotifyPropertyChanged

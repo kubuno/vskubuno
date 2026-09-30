@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.Cargo.Metadata
+namespace Kubuno.Rust.Cargo.Metadata
 {
     /// <summary>
     /// The <c>resolve</c> object of <c>cargo metadata</c> (absent with <c>--no-deps</c>): the resolved

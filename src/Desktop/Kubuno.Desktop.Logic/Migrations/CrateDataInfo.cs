@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using Kubuno.Cargo.Toml;
-using Kubuno.VisualStudio.Core.Data;
+using Kubuno.Rust.Cargo.Toml;
+using Kubuno.Desktop.Logic.Data;
 
-namespace Kubuno.VisualStudio.Core.Migrations
+namespace Kubuno.Desktop.Logic.Migrations
 {
     /// <summary>A <c>.kbdata</c> data source of a crate, as far as migrations care: its connection, provider and schema.</summary>
     public sealed class CrateDataSource

@@ -1,4 +1,4 @@
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// The outcome of running an external process to completion.
@@ -24,7 +24,7 @@ namespace Kubuno.Launch
     /// <summary>
     /// Abstraction over launching an external process and waiting for it to exit, so that
     /// code needing to shell out (e.g. `rustc --print sysroot`) stays unit-testable without
-    /// actually spawning a process. Kubuno.Launch is otherwise pure; this is its one
+    /// actually spawning a process. Kubuno.Rust.Launch is otherwise pure; this is its one
     /// deliberate seam onto the outside world.
     /// </summary>
     public interface IProcessRunner

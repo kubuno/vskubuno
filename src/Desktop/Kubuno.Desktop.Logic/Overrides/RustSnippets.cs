@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Core.Overrides
+namespace Kubuno.Desktop.Logic.Overrides
 {
     /// <summary>A code snippet of the Kubuno control authoring (docs/EVENTS.md EVT-7b, "Snippets").</summary>
     public sealed class RustSnippet

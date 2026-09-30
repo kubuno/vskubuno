@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.RustProjectSystem
+namespace Kubuno.Rust.ProjectSystem
 {
     /// <summary>
     /// Project capabilities of a <c>.rsproj</c>, declared as <c>ProjectCapability</c> items by

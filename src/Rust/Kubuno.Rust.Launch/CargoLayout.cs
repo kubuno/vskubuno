@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// Pure helpers for the on-disk layout Cargo produces under a target directory:

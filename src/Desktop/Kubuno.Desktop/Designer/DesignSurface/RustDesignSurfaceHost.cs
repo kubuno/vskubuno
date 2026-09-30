@@ -9,9 +9,9 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Views.Logging;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The production <see cref="IDesignSurfaceHost"/> (DSG-7): embeds the out-of-process design

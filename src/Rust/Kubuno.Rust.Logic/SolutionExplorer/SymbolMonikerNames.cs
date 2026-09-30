@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Core.SolutionExplorer
+namespace Kubuno.Rust.Logic.SolutionExplorer
 {
     /// <summary>
     /// Picks the Visual Studio image catalog moniker (a <c>KnownMonikers</c> property name) for a
@@ -10,8 +10,9 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
     /// accessibility (<c>...Public</c> = no overlay, <c>...Internal</c> = Friend heart,
     /// <c>...Protected</c> = star, <c>...Private</c> = lock). Kept as names so the mapping is
     /// unit-testable without the image catalog; the VSIX resolves them once by reflection.
-    /// Rust symbols only: <c>.kbview</c> element nodes use the Kubuno control icons (<see cref="ControlIcons"/>),
-    /// shared with the designer's Toolbox (docs/DESIGNER.md section 11).
+    /// Rust symbols only: the element nodes of other files get their icon from the layer providing them (the desktop
+    /// layer's <c>.kbview</c> elements use the Kubuno control icons, shared with the designer's Toolbox - docs/DESIGNER.md
+    /// section 11).
     /// </summary>
     public static class SymbolMonikerNames
     {
@@ -26,8 +27,8 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
                 throw new ArgumentNullException(nameof(symbol));
             }
 
-            // .kbview elements use the Kubuno control icons (ControlIcons), not the image catalog.
-            return symbol.Kind == SolutionSymbolKind.ViewElement ? Fallback : ForRust(symbol.Kind, symbol.Visibility);
+            // Elements of other files get their icons from their provider, not the image catalog.
+            return symbol.Kind == SolutionSymbolKind.Element ? Fallback : ForRust(symbol.Kind, symbol.Visibility);
         }
 
         public static string ForRust(SolutionSymbolKind kind, SymbolVisibility visibility)
@@ -64,7 +65,7 @@ namespace Kubuno.VisualStudio.Core.SolutionExplorer
         {
             foreach (SolutionSymbolKind kind in Enum.GetValues(typeof(SolutionSymbolKind)))
             {
-                if (kind == SolutionSymbolKind.ViewElement)
+                if (kind == SolutionSymbolKind.Element)
                 {
                     continue;
                 }

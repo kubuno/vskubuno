@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Core.ProjectGeneration
+namespace Kubuno.Rust.Logic.ProjectGeneration
 {
     /// <summary>
     /// How a <c>.rsproj</c>'s <c>Sdk="Kubuno.Rust.Sdk/…"</c> is found without any Kubuno package having been loaded.

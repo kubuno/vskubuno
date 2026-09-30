@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Kubuno.Core.Logic.QuickInfo;
 
-namespace Kubuno.VisualStudio.Core.QuickInfo
+namespace Kubuno.Rust.Logic.QuickInfo
 {
     /// <summary>What a rust-analyzer hover is about (decides the icon and how the signature is shortened).</summary>
     public enum RustItemKind

@@ -1,11 +1,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Processes;
-using Kubuno.TestAdapter.Execution;
-using Kubuno.TestAdapter.Tests.Fakes;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.TestAdapter.Execution;
+using Kubuno.Rust.TestAdapter.Tests.Fakes;
 
-namespace Kubuno.TestAdapter.Tests.Execution
+namespace Kubuno.Rust.TestAdapter.Tests.Execution
 {
     public class CargoTestRunnerTests
     {

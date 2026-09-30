@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Cargo.Metadata
+namespace Kubuno.Rust.Cargo.Metadata
 {
     /// <summary>What <see cref="CargoMetadataReader"/> asks <c>cargo metadata</c> for.</summary>
     [Flags]

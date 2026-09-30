@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.VisualStudio.Core.QuickInfo;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Rust.Logic.QuickInfo;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.QuickInfo
+namespace Kubuno.Rust.Tests.QuickInfo
 {
     /// <summary>Real rust-analyzer hovers (Fixtures/Hover) turned into Visual Studio-style QuickInfo elements.</summary>
     [TestClass]

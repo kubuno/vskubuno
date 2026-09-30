@@ -1,7 +1,7 @@
 using System;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Metadata;
 
-namespace Kubuno.VisualStudio.Core.ProjectGeneration
+namespace Kubuno.Rust.Logic.ProjectGeneration
 {
     /// <summary>
     /// Options for <see cref="RsprojGenerationPlanner.Plan"/> ("Generate Visual Studio projects" -

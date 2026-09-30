@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.Views.Infrastructure
+namespace Kubuno.Desktop.Views.Infrastructure
 {
     /// <summary>
     /// Shows a main-window info bar with the exact fix when <c>kubuno-views-ls.exe</c> cannot be
@@ -29,7 +29,7 @@ namespace Kubuno.VisualStudio.Views.Infrastructure
             // ThreadHelper.JoinableTaskFactory.RunAsync should be awaited/joined rather than only
             // .Forget()'d, because the shared factory has no owning object to join it against on
             // package/solution unload; the sibling VSIX project avoids the warning by using a
-            // package-owned factory (KubunoPackage.Instance.JoinableTaskFactory) instead, which this
+            // package-owned factory (Kubuno.Core.KubunoHost.Package.JoinableTaskFactory) instead, which this
             // library - having no package instance of its own - cannot do (see class remarks). The
             // task itself is short (a few UI-thread service calls), so the suppression is safe.
 #pragma warning disable VSSDK007

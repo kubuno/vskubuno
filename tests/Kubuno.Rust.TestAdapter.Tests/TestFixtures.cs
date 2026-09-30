@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.TestAdapter.Tests
+namespace Kubuno.Rust.TestAdapter.Tests
 {
     /// <summary>Locates the real captured cargo/libtest fixtures under Fixtures/ (copied next to the test assembly by the .csproj).</summary>
     internal static class TestFixtures

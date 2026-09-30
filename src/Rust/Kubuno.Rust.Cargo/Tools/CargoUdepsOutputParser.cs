@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-namespace Kubuno.Cargo.Tools
+namespace Kubuno.Rust.Cargo.Tools
 {
     /// <summary>
     /// Reads <c>cargo +nightly udeps --output json</c> (cargo-udeps' <c>Outcome</c>: <c>success</c>,

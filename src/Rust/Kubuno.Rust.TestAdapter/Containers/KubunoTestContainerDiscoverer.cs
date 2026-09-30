@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
-using Kubuno.TestAdapter.Execution;
+using Kubuno.Rust.TestAdapter.Execution;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 
-namespace Kubuno.TestAdapter.Containers
+namespace Kubuno.Rust.TestAdapter.Containers
 {
     /// <summary>
     /// Tells Visual Studio's Test Explorer which Cargo.toml manifests exist (its "test
@@ -21,7 +21,7 @@ namespace Kubuno.TestAdapter.Containers
     /// <see cref="ICargoWorkspaceSource"/> (see INTEGRATION.md for the orchestrator's export in
     /// Kubuno.VisualStudio) - this project never touches Visual Studio services directly, which
     /// is what keeps this class testable with a fake <see cref="ICargoWorkspaceSource"/> (see
-    /// tests/Kubuno.TestAdapter.Tests/Containers).
+    /// tests/Kubuno.Rust.TestAdapter.Tests/Containers).
     /// </summary>
     [Export(typeof(ITestContainerDiscoverer))]
     public sealed class KubunoTestContainerDiscoverer : ITestContainerDiscoverer

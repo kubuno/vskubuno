@@ -1,12 +1,12 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace Kubuno.Mcp.Bridge.Discovery
+namespace Kubuno.Core.Mcp.Bridge.Discovery
 {
     /// <summary>
     /// One <c>%LOCALAPPDATA%\Kubuno\vs-mcp\&lt;pid&gt;.json</c> discovery file, written by
     /// <see cref="PipeProtocol.VsMcpBridgeHost"/> when a Visual Studio instance's bridge starts
-    /// listening, and read by Kubuno.Mcp to find a pipe to connect to. See docs/MCP.md "Discovery".
+    /// listening, and read by Kubuno.Core.Mcp to find a pipe to connect to. See docs/MCP.md "Discovery".
     /// </summary>
     public sealed class BridgeDiscoveryInfo
     {

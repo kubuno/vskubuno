@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
-namespace Kubuno.TestAdapter.Discovery
+namespace Kubuno.Rust.TestAdapter.Discovery
 {
     /// <summary>Maps a <see cref="CargoTestBinary"/> and its listed tests to VSTest <see cref="TestCase"/>s.</summary>
     public static class CargoTestCaseFactory

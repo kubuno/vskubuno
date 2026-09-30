@@ -1,13 +1,13 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.UI;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.UI;
+using Kubuno.Desktop.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.TextManager.Interop;
 
-namespace Kubuno.VisualStudio.Designer.Selection.Infrastructure
+namespace Kubuno.Desktop.Designer.Selection.Infrastructure
 {
     /// <summary>
     /// The real <see cref="ITextViewSelectionAdapter"/>: wraps the embedded XML pane's own

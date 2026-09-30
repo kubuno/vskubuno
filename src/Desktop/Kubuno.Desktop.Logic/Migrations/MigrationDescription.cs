@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Kubuno.VisualStudio.Core.Migrations
+namespace Kubuno.Desktop.Logic.Migrations
 {
     /// <summary>
     /// The rules <c>kubuno-data-tool</c>'s <c>migrate.add</c> applies to a description (<c>migrate.rs</c>

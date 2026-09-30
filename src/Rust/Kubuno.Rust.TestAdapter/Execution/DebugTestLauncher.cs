@@ -1,12 +1,12 @@
 using System;
-using Kubuno.Cargo.Processes;
-using Kubuno.Launch;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Launch;
 
-namespace Kubuno.TestAdapter.Execution
+namespace Kubuno.Rust.TestAdapter.Execution
 {
     /// <summary>
-    /// Builds the <see cref="LaunchDescription"/> for "debug this test", reusing Kubuno.Launch
-    /// exactly as phase 1c does for a bin/example target (see Kubuno.Launch's own
+    /// Builds the <see cref="LaunchDescription"/> for "debug this test", reusing Kubuno.Rust.Launch
+    /// exactly as phase 1c does for a bin/example target (see Kubuno.Rust.Launch's own
     /// `LaunchDescriptionBuilder`/`TestLaunchArgs`/`RustDebugEnvironment`/`RustToolchain`) rather
     /// than duplicating any of that logic here.
     /// </summary>
@@ -19,7 +19,7 @@ namespace Kubuno.TestAdapter.Execution
         /// <param name="libtestName">The exact test to run under the debugger (`--exact`, single test - see the remarks on <see cref="Execution.KubunoTestExecutor"/> for why debugging never batches).</param>
         /// <param name="existingPath">The current process's own PATH, appended after the computed dylib directories (see <see cref="RustDebugEnvironment.Build"/>).</param>
         public static LaunchDescription Build(
-            Kubuno.Cargo.Processes.IProcessRunner processRunner,
+            Kubuno.Rust.Cargo.Processes.IProcessRunner processRunner,
             string executablePath,
             string workingDirectory,
             string targetDirectory,
@@ -45,7 +45,7 @@ namespace Kubuno.TestAdapter.Execution
                 throw new InvalidOperationException($"Kubuno: could not resolve the Rust host triple for debugging: {hostTriple.Error}");
             }
 
-            // "test": the profile `cargo test` itself builds under (see Kubuno.Launch's
+            // "test": the profile `cargo test` itself builds under (see Kubuno.Rust.Launch's
             // `CargoLayout.ResolveProfileDirectoryName`, which maps it to the "debug" output
             // directory) - not "dev"/"debug", which would be correct for a `cargo build`
             // artifact but is not the profile name Cargo actually used here.

@@ -8,7 +8,7 @@ using System.Windows.Media;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.UI
+namespace Kubuno.Core.UI
 {
     /// <summary>
     /// The base of every modal dialog the extension shows (docs/ARCHITECTURE.md, "Themed dialogs"), so each one
@@ -25,10 +25,16 @@ namespace Kubuno.VisualStudio.UI
     /// Every color is a dynamic resource, so switching the Visual Studio theme while the dialog is open restyles
     /// it. Build content in code as usual; use <see cref="ThemedControls"/> for the few controls that need more
     /// than an implicit style (grid list views, placeholder text boxes, secondary text).
-    /// This file is shared as source by every assembly that shows a dialog (it is linked, not referenced:
-    /// the assemblies compile against different Visual Studio SDK builds).
+    /// Part of Kubuno.Core (every layer references it). The two template wizard assemblies, which keep a minimal
+    /// dependency closure (they are loaded by the template engine, not by the package), compile this file as source
+    /// instead, with KUBUNO_SHARED_AS_SOURCE defined so the types stay internal to them.
     /// </summary>
-    internal class ThemedDialog : DialogWindow
+#if KUBUNO_SHARED_AS_SOURCE
+    internal
+#else
+    public
+#endif
+    class ThemedDialog : DialogWindow
     {
         private const int DwmwaUseImmersiveDarkMode = 20;
 
@@ -72,7 +78,7 @@ namespace Kubuno.VisualStudio.UI
             }
         }
 
-        internal static bool IsDark(object? color) =>
+        public static bool IsDark(object? color) =>
             color is Color c && (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) < 128;
 
         [DllImport("dwmapi.dll", PreserveSig = true)]
@@ -82,7 +88,12 @@ namespace Kubuno.VisualStudio.UI
     /// <summary>
     /// Visual Studio-themed controls for code-built dialogs and tool-window content (see <see cref="ThemedDialog"/>).
     /// </summary>
-    internal static class ThemedControls
+#if KUBUNO_SHARED_AS_SOURCE
+    internal
+#else
+    public
+#endif
+    static class ThemedControls
     {
         /// <summary>
         /// Adds Visual Studio's themed-dialog styles as implicit (type-keyed) styles to <paramref name="resources"/>, so
@@ -182,7 +193,12 @@ namespace Kubuno.VisualStudio.UI
     }
 
     /// <summary>Visible for an empty string, collapsed otherwise (placeholder text).</summary>
-    internal sealed class EmptyToVisibleConverter : System.Windows.Data.IValueConverter
+#if KUBUNO_SHARED_AS_SOURCE
+    internal
+#else
+    public
+#endif
+    sealed class EmptyToVisibleConverter : System.Windows.Data.IValueConverter
     {
         public static EmptyToVisibleConverter Instance { get; } = new EmptyToVisibleConverter();
 

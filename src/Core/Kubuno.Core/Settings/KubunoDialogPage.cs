@@ -3,19 +3,38 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.Win32;
 
-namespace Kubuno.VisualStudio.Views.Options
+namespace Kubuno.Core.Settings
 {
     /// <summary>
     /// An options page whose values live in Visual Studio 2026's unified settings (Tools &gt; Options &gt; Kubuno, see
     /// <c>UnifiedSettings/kubuno.registration.json</c>). The page object stays the code's view of the options; it
     /// (1) loads its classic values and, once, copies the ones the user had changed into the unified store,
     /// (2) reads the unified store, (3) follows the store's changes live. Without unified settings (Visual Studio 2022,
-    /// classic mode) it behaves as a plain <see cref="DialogPage"/>.
+    /// classic mode) it behaves as a plain <see cref="DialogPage"/>. Part of Kubuno.Core: every layer's options page
+    /// derives from it (and binds its properties with <see cref="UnifiedSettingAttribute"/>).
     /// </summary>
     public abstract class KubunoDialogPage : DialogPage
     {
         private const string MigrationKey = @"Kubuno\UnifiedSettingsMigrated";
         private IDisposable? _subscription;
+
+        protected KubunoDialogPage()
+        {
+        }
+
+        /// <param name="legacyTypeFullName">
+        /// The page type's full name before it moved to its layer (docs/ARCHITECTURE.md, "Layers (as built)"): the
+        /// classic settings key <see cref="DialogPage"/> derives from the type name keeps using it, so values saved by
+        /// an earlier version (and the unified settings migration below) still find them.
+        /// </param>
+        protected KubunoDialogPage(string legacyTypeFullName)
+        {
+            var current = GetType().FullName;
+            if (current is { Length: > 0 } && SettingsRegistryPath is { } path && path.Contains(current))
+            {
+                SettingsRegistryPath = path.Replace(current, legacyTypeFullName);
+            }
+        }
 
         /// <summary>Loads the classic storage (the registry, unless the page keeps its values elsewhere).</summary>
         protected virtual void LoadLegacySettings() => base.LoadSettingsFromStorage();

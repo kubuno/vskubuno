@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Processes
+namespace Kubuno.Rust.Cargo.Processes
 {
     /// <summary>Everything needed to launch one process: no Cargo-specific knowledge here.</summary>
     public sealed class ProcessRunRequest

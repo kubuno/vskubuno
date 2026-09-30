@@ -1,7 +1,7 @@
 using System;
-using Kubuno.VisualStudio.Designer.DesignSurface;
+using Kubuno.Desktop.Designer.DesignSurface;
 
-namespace Kubuno.VisualStudio.Designer.Selection.Infrastructure
+namespace Kubuno.Desktop.Designer.Selection.Infrastructure
 {
     /// <summary>
     /// The real <see cref="IDesignSurfaceSelectionTarget"/>: forwards to

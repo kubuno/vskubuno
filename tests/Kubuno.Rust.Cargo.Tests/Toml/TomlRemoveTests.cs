@@ -1,7 +1,7 @@
-using Kubuno.Cargo.Toml;
-using static Kubuno.Cargo.Tests.Toml.TomlTestHelper;
+using Kubuno.Rust.Cargo.Toml;
+using static Kubuno.Rust.Cargo.Tests.Toml.TomlTestHelper;
 
-namespace Kubuno.Cargo.Tests.Toml
+namespace Kubuno.Rust.Cargo.Tests.Toml
 {
     public class TomlRemoveTests
     {

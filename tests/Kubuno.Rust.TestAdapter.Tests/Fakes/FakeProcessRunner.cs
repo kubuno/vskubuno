@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Processes;
 
-namespace Kubuno.TestAdapter.Tests.Fakes
+namespace Kubuno.Rust.TestAdapter.Tests.Fakes
 {
     /// <summary>
     /// A mock <see cref="IProcessRunner"/> that never spawns anything: a handler decides the
@@ -12,7 +12,7 @@ namespace Kubuno.TestAdapter.Tests.Fakes
     /// <see cref="ProcessRunRequest.FileName"/>/<see cref="ProcessRunRequest.Arguments"/> to tell
     /// a "cargo test --no-run" call apart from a "&lt;exe&gt; --list" or a test-run call), and every
     /// request seen is recorded for assertions. Mirrors
-    /// tests/Kubuno.Cargo.Tests/Fakes/FakeProcessRunner.cs (that one is a different project,
+    /// tests/Kubuno.Rust.Cargo.Tests/Fakes/FakeProcessRunner.cs (that one is a different project,
     /// owned by another agent, and not referenced here - a small mock like this one is cheap
     /// enough to keep local rather than share).
     /// </summary>

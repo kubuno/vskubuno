@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Kubuno.VisualStudio.Core.Data
+namespace Kubuno.Desktop.Logic.Data
 {
     /// <summary>
     /// Finds <c>kubuno-data-tool.exe</c>: the extension's own <c>tools\</c> folder (where the VSIX ships it, beside

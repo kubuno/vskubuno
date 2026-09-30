@@ -10,20 +10,20 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Registry;
-using Kubuno.VisualStudio.Commands;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.SolutionExplorer;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Registry;
+using Kubuno.Rust.Commands;
+using Kubuno.Rust.Logic.SolutionExplorer;
+using Kubuno.Core.Logging;
+using Kubuno.Rust.SolutionExplorer;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.CrateManager
+namespace Kubuno.Rust.CrateManager
 {
     /// <summary>
     /// The crate manager's UI, laid out like NuGet's Package Manager: Browse / Installed / Updates tabs

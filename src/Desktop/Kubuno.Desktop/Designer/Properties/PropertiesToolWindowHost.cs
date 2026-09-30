@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Designer.Properties
+namespace Kubuno.Desktop.Designer.Properties
 {
     /// <summary>
     /// The single, shared <see cref="PropertiesPanelViewModel"/> instance for the whole VS session -

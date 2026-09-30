@@ -4,22 +4,22 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.TestAdapter.Containers;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.TestAdapter.Containers;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 
-namespace Kubuno.VisualStudio.Workspace
+namespace Kubuno.Rust.Workspace
 {
     /// <summary>
-    /// The real, VS-backed implementation of <c>Kubuno.TestAdapter.Containers.ICargoWorkspaceSource</c>
-    /// (see <c>src/Kubuno.TestAdapter/INTEGRATION.md</c> &sect;3.3) - the seam that lets
+    /// The real, VS-backed implementation of <c>Kubuno.Rust.TestAdapter.Containers.ICargoWorkspaceSource</c>
+    /// (see <c>src/Rust/Kubuno.Rust.TestAdapter/INTEGRATION.md</c> &sect;3.3) - the seam that lets
     /// <c>KubunoTestContainerDiscoverer</c> (MEF-composed by Visual Studio itself) learn which
     /// <c>Cargo.toml</c> manifests exist in the current Open Folder workspace, and when that set
-    /// might have changed, without Kubuno.TestAdapter referencing any Visual Studio service
+    /// might have changed, without Kubuno.Rust.TestAdapter referencing any Visual Studio service
     /// directly.
     ///
     /// Manifest enumeration uses <see cref="IWorkspace4.GetFilesAsync(string, bool, string, CancellationToken)"/>
@@ -222,12 +222,12 @@ namespace Kubuno.VisualStudio.Workspace
             UIContext.FromUIContextGuid(PackageGuids.CargoFolderUIContext).IsActive = IsCargo;
         }
 
-        /// <summary>See <see cref="Kubuno.VisualStudio.Core.CargoWorkspaceLocator.IsRustFolder"/>; an unreadable folder is not a Rust one.</summary>
+        /// <summary>See <see cref="Kubuno.Rust.Logic.CargoWorkspaceLocator.IsRustFolder"/>; an unreadable folder is not a Rust one.</summary>
         internal static bool IsCargoFolder(string? root)
         {
             try
             {
-                return Kubuno.VisualStudio.Core.CargoWorkspaceLocator.IsRustFolder(
+                return Kubuno.Rust.Logic.CargoWorkspaceLocator.IsRustFolder(
                     root,
                     File.Exists,
                     folder => Directory.EnumerateFiles(folder, "*", SearchOption.TopDirectoryOnly),

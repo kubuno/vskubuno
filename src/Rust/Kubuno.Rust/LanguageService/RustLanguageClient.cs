@@ -7,12 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
 using Process = System.Diagnostics.Process;
-using Kubuno.VisualStudio.Core;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Infrastructure;
-using Kubuno.VisualStudio.LanguageService.IntelliSense;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.Options;
+using Kubuno.Rust.Logic;
+using Kubuno.Core.Logic.Lsp;
+using Kubuno.Rust.Logic.IntelliSense;
+using Kubuno.Rust.Infrastructure;
+using Kubuno.Rust.LanguageService.IntelliSense;
+using Kubuno.Core.Logging;
+using Kubuno.Rust.Options;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -21,7 +22,7 @@ using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.LanguageService
+namespace Kubuno.Rust.LanguageService
 {
     /// <summary>
     /// Hosts rust-analyzer as an LSP server for .rs files (content type "rust", see
@@ -40,13 +41,14 @@ namespace Kubuno.VisualStudio.LanguageService
         public RustLanguageClient()
         {
             Instance = this;
+            _middleLayer.ReferenceParticipants = () => ReferenceParticipants;
 #pragma warning disable VSSDK007 // fire-and-forget from an event handler; FileAndForget reports faults to the "Kubuno" pane.
             RustOptionsPage.Applied += (_, _) => ThreadHelper.JoinableTaskFactory.RunAsync(PushConfigurationAsync).FileAndForget("kubuno/rust/pushConfiguration");
 #pragma warning restore VSSDK007
         }
 
         /// <summary>The MEF-created instance, for <see cref="Commands.RestartRustAnalyzerCommand"/> (null until a .rs file activated the client).</summary>
-        internal static RustLanguageClient? Instance { get; private set; }
+        public static RustLanguageClient? Instance { get; private set; }
 
         /// <summary>The document versions rust-analyzer was sent (Kubuno's own requests wait for their text).</summary>
         internal RustDocumentVersions DocumentVersions => _middleLayer.DocumentVersions;
@@ -56,6 +58,10 @@ namespace Kubuno.VisualStudio.LanguageService
 
         [Import]
         internal SVsServiceProvider? ServiceProvider { get; set; }
+
+        /// <summary>What the layers above add to a rename or to Find All References (<see cref="Extensibility.IRustReferenceParticipant"/>).</summary>
+        [ImportMany]
+        internal IEnumerable<Extensibility.IRustReferenceParticipant> ReferenceParticipants { get; set; } = Array.Empty<Extensibility.IRustReferenceParticipant>();
 
         /// <summary>The client's name (also how Kubuno's own requests pick this server through Visual Studio's broker).</summary>
         public const string ClientName = "Kubuno Rust Language Server";
@@ -262,7 +268,7 @@ namespace Kubuno.VisualStudio.LanguageService
         private async Task<RustOptionsPage?> GetOptionsAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            return KubunoPackage.Instance?.GetDialogPage(typeof(RustOptionsPage)) as RustOptionsPage;
+            return Kubuno.Core.KubunoHost.GetDialogPage<RustOptionsPage>();
         }
 
         private async Task<string?> GetWorkspaceRootAsync()

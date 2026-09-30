@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Core.Sql
+namespace Kubuno.Desktop.Logic.Sql
 {
     /// <summary>The SQL words the colouring and the completion know (common to PostgreSQL, SQLite, MySQL and SQL Server).</summary>
     public static class SqlLanguage

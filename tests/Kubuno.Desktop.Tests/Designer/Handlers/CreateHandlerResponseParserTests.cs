@@ -1,7 +1,7 @@
-using Kubuno.VisualStudio.Designer.Handlers;
+using Kubuno.Desktop.Designer.Handlers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Handlers
+namespace Kubuno.Desktop.Tests.Designer.Handlers
 {
     /// <summary>
     /// Exercises <see cref="CreateHandlerResponseParser"/> against realistic wire JSON - the exact

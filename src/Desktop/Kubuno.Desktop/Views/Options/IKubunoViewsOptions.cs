@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Views.Options
+namespace Kubuno.Desktop.Views.Options
 {
     /// <summary>
     /// The options <see cref="LanguageService.KubunoViewsLanguageClient"/> reads before starting

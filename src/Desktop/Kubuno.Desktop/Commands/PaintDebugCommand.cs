@@ -1,13 +1,13 @@
 using System;
 using System.ComponentModel.Design;
 using System.Globalization;
-using Kubuno.Launch;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Desktop.Logic.Painting;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Desktop.Commands
 {
     /// <summary>
     /// Debug &gt; Kubuno &gt; "Paint debug" ("Débogage du rendu" in a French Visual Studio), docs/EVENTS.md EVT-8:

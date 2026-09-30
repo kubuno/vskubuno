@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Designer.Properties
+namespace Kubuno.Desktop.Designer.Properties
 {
     /// <summary>A parsed <c>{Binding Path[, Mode=TwoWay]}</c> value (docs/DESIGNER.md §1).</summary>
     public sealed class BindingExpression

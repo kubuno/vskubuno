@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Views
+namespace Kubuno.Desktop.Views
 {
     /// <summary>
     /// Shared identifiers for this library (content type, file extension, options page, remediation
@@ -24,7 +24,7 @@ namespace Kubuno.VisualStudio.Views
         /// <summary>
         /// Title of the existing "Kubuno" Output pane this library logs into, via <see cref="Logging.IKubunoLog"/>
         /// (the pane itself is owned and created by the VSIX's KubunoPackage - see
-        /// src/Kubuno.VisualStudio/Logging/KubunoLog.cs - not by this library).
+        /// src/Core/Kubuno.Core/Logging/KubunoLog.cs - not by this library).
         /// </summary>
         public const string OutputPaneTitle = "Kubuno";
 

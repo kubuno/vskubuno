@@ -1,11 +1,12 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
-using Kubuno.VisualStudio.Designer.PropertyBrowser;
-using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.Desktop.Designer.PropertyBrowser;
+using Kubuno.Desktop.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Kubuno.Desktop.Designer;
 
-namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
+namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
 {
     /// <summary>docs/EVENTS.md, "WinForms-rich property sets": the Properties window's rows for the control hierarchy's properties.</summary>
     [TestClass]
@@ -325,8 +326,8 @@ namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
             var text = "ab\r\ncd\nef\rgh";
             foreach (var offset in new[] { 0, 2, 4, 5, 7, 8, 10, 11, text.Length })
             {
-                var position = Kubuno.VisualStudio.Designer.Editing.LspPositionMapper.FromOffset(text, offset);
-                Assert.AreEqual(offset, Kubuno.VisualStudio.Designer.Editing.LspPositionMapper.ToOffset(text, position), offset.ToString());
+                var position = Kubuno.Desktop.Designer.Editing.LspPositionMapper.FromOffset(text, offset);
+                Assert.AreEqual(offset, Kubuno.Desktop.Designer.Editing.LspPositionMapper.ToOffset(text, position), offset.ToString());
             }
         }
 

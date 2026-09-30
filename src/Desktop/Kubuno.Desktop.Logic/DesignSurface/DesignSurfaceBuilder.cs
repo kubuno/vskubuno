@@ -6,11 +6,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Processes;
 
-namespace Kubuno.Cargo.DesignSurface
+namespace Kubuno.Desktop.Logic.DesignSurface
 {
     /// <summary>Outcome of <see cref="DesignSurfaceBuilder"/>.</summary>
     public enum DesignSurfaceBuildStatus
@@ -488,10 +488,10 @@ namespace Kubuno.Cargo.DesignSurface
             try
             {
                 var environment = string.IsNullOrEmpty(project.TargetDirectory) ? null : new Dictionary<string, string> { ["CARGO_TARGET_DIR"] = project.TargetDirectory! };
-                var metadata = await new Metadata.CargoMetadataReader(_runner).ReadAsync(
+                var metadata = await new Kubuno.Rust.Cargo.Metadata.CargoMetadataReader(_runner).ReadAsync(
                     project.ManifestDirectory,
                     project.ManifestPath,
-                    Metadata.CargoMetadataReadOptions.IncludeDependencies | Metadata.CargoMetadataReadOptions.Offline,
+                    Kubuno.Rust.Cargo.Metadata.CargoMetadataReadOptions.IncludeDependencies | Kubuno.Rust.Cargo.Metadata.CargoMetadataReadOptions.Offline,
                     environment,
                     cancellationToken).ConfigureAwait(false);
                 var crate = DesignProjectCrate.From(metadata, artifacts, project.ManifestPath, project.Bin, out var reason);
@@ -502,7 +502,7 @@ namespace Kubuno.Cargo.DesignSurface
 
                 return crate;
             }
-            catch (Exception ex) when (ex is Metadata.CargoMetadataException or IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
+            catch (Exception ex) when (ex is Kubuno.Rust.Cargo.Metadata.CargoMetadataException or IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
             {
                 log?.Report("[design build] the project's controls are not linked into the preview: cargo metadata failed (" + ex.Message + ")");
                 return null;

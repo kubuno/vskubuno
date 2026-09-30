@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Kubuno.Cargo.Toml;
+using Kubuno.Rust.Cargo.Toml;
 
-namespace Kubuno.VisualStudio.Core.DataSources
+namespace Kubuno.Desktop.Logic.DataSources
 {
     /// <summary>The result of <see cref="DataSourceCodeWriter.EnsureCargoManifest"/>.</summary>
     public sealed class CargoManifestUpdate

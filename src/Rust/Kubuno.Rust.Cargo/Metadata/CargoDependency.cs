@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Metadata
+namespace Kubuno.Rust.Cargo.Metadata
 {
     /// <summary>
     /// One entry of a package's <c>dependencies</c> array in <c>cargo metadata</c> - what the

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Kubuno.Cargo.Commands
+namespace Kubuno.Rust.Cargo.Commands
 {
     /// <summary>
     /// Turns the rustc flags of a <c>.rsproj</c> (its "Additional rustc flags", "Treat warnings as errors" and

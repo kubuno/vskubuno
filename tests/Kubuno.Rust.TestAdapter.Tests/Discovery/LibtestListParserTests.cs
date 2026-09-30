@@ -1,7 +1,7 @@
 using System.Linq;
-using Kubuno.TestAdapter.Discovery;
+using Kubuno.Rust.TestAdapter.Discovery;
 
-namespace Kubuno.TestAdapter.Tests.Discovery
+namespace Kubuno.Rust.TestAdapter.Tests.Discovery
 {
     /// <summary>
     /// Parses real `&lt;test-exe&gt; --list --format terse` output, captured from the

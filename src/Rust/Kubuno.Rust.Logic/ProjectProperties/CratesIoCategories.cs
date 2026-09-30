@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Core.ProjectProperties
+namespace Kubuno.Rust.Logic.ProjectProperties
 {
     /// <summary>
     /// The category slugs crates.io accepts in Cargo.toml's <c>categories</c> (https://crates.io/category_slugs),

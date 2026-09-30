@@ -4,21 +4,21 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Designer.EditorFactory;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Editing.Infrastructure;
-using Kubuno.VisualStudio.Designer.Registry.Infrastructure;
-using Kubuno.VisualStudio.Designer.Selection;
-using Kubuno.VisualStudio.Designer.Selection.Infrastructure;
-using Kubuno.VisualStudio.Designer.UI;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Designer.EditorFactory;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Editing.Infrastructure;
+using Kubuno.Desktop.Designer.Registry.Infrastructure;
+using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Desktop.Designer.Selection.Infrastructure;
+using Kubuno.Desktop.Designer.UI;
+using Kubuno.Desktop.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The design surface's context menus and keyboard commands (docs/DESIGNER.md §12): a right-click on the

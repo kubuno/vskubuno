@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    net48, matching Kubuno.TestAdapter exactly (see its own csproj comment for why: this adapter
+    net48, matching Kubuno.Rust.TestAdapter exactly (see its own csproj comment for why: this adapter
     is loaded in-process by Visual Studio's .NET Framework 4.8 AppDomain). Run with `dotnet test`
     from this directory; on Z: (a mapped/UNC-style drive) set
     COMPLUS_LoadFromRemoteSources=1 first - .NET Framework's loader otherwise refuses to load
@@ -13,7 +13,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.TestAdapter.Tests</RootNamespace>
+    <RootNamespace>Kubuno.Rust.TestAdapter.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <!-- See Kubuno.VisualStudio.csproj's matching comment: combining xunit's own System.Collections.Immutable
@@ -36,7 +36,7 @@
   <!--
     Containers/KubunoTestContainerDiscovererTests.cs exercises ITestContainer/ITestContainerDiscoverer
     directly, so this test project needs its own reference to the same VS-install-only assembly
-    Kubuno.TestAdapter.csproj resolves (see its matching target/comment for the full rationale) -
+    Kubuno.Rust.TestAdapter.csproj resolves (see its matching target/comment for the full rationale) -
     a ProjectReference does not flow a referenced project's own non-NuGet Reference items
     transitively.
   -->
@@ -52,7 +52,7 @@
     </Exec>
     <ItemGroup>
       <!--
-        Private=True here (unlike the same reference in Kubuno.TestAdapter.csproj, which must
+        Private=True here (unlike the same reference in Kubuno.Rust.TestAdapter.csproj, which must
         stay Private=False so the VSIX never ships a copy of a VS-owned assembly): `dotnet test`
         runs this assembly standalone, outside Visual Studio, so the real DLL must be copied
         next to the test host for the CLR to find it at run time.
@@ -65,13 +65,13 @@
   </Target>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Kubuno.TestAdapter\Kubuno.TestAdapter.csproj" />
-    <ProjectReference Include="..\..\src\Kubuno.Cargo\Kubuno.Cargo.csproj" />
-    <ProjectReference Include="..\..\src\Kubuno.Launch\Kubuno.Launch.csproj" />
+    <ProjectReference Include="..\..\src\Rust\Kubuno.Rust.TestAdapter\Kubuno.Rust.TestAdapter.csproj" />
+    <ProjectReference Include="..\..\src\Rust\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
+    <ProjectReference Include="..\..\src\Rust\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Real captured cargo/libtest output (build, list, run), read by tests at run time (same pattern as tests/Kubuno.Cargo.Tests/TestFixtures.cs). -->
+    <!-- Real captured cargo/libtest output (build, list, run), read by tests at run time (same pattern as tests/Kubuno.Rust.Cargo.Tests/TestFixtures.cs). -->
     <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

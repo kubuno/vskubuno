@@ -1,9 +1,9 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Logic.SolutionExplorer;
 
-namespace Kubuno.VisualStudio.SolutionExplorer
+namespace Kubuno.Rust.SolutionExplorer
 {
     /// <summary>
     /// What the Properties window (F4 / Alt+Enter) shows for a dependency node - read-only rows with a

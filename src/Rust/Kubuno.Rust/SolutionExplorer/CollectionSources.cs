@@ -6,19 +6,20 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Logic.SolutionExplorer;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.SolutionExplorer
+namespace Kubuno.Rust.SolutionExplorer
 {
     /// <summary>
-    /// The symbols attached under one <c>.rs</c>/<c>.kbview</c> file node (docs/RSPROJ.md lot 8).
+    /// The symbols attached under one <c>.rs</c> file node, or a file of an <see cref="Extensibility.ISolutionSymbolProvider"/>
+    /// (docs/RSPROJ.md lot 8).
     /// Lazy: nothing runs until Solution Explorer asks for <see cref="Items"/> (the node is expanded
     /// or searched); from then on the file is watched and re-queried, debounced, whenever it is
     /// saved - the tree is merged in place so expanded nodes stay expanded.
@@ -28,17 +29,19 @@ namespace Kubuno.VisualStudio.SolutionExplorer
         private readonly ObservableCollection<SymbolTreeItem> _items = new ObservableCollection<SymbolTreeItem>();
         private readonly string _path;
         private readonly ISymbolQuery _query;
+        private readonly Extensibility.ISolutionSymbolProvider? _provider;
         private DebouncedFileWatcher? _watcher;
         private CancellationTokenSource? _pending;
         private bool _started;
         private bool _loaded;
         private bool _disposed;
 
-        public FileSymbolsSource(object sourceItem, string path, ISymbolQuery query)
+        public FileSymbolsSource(object sourceItem, string path, ISymbolQuery query, Extensibility.ISolutionSymbolProvider? provider)
         {
             SourceItem = sourceItem;
             _path = path;
             _query = query;
+            _provider = provider;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -99,7 +102,7 @@ namespace Kubuno.VisualStudio.SolutionExplorer
 
             bool hadItems = HasItems;
             _loaded = true;
-            SymbolTreeMerger.Merge(_items, _path, symbols);
+            SymbolTreeMerger.Merge(_items, _path, symbols, _provider);
             if (hadItems != HasItems)
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasItems)));

@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Designer.Selection
+namespace Kubuno.Desktop.Designer.Selection
 {
     /// <summary>
     /// The host -&gt; surface half of docs/DESIGNER.md §9's DSG-6 protocol (<c>kubuno/select</c>) -
@@ -10,7 +10,7 @@ namespace Kubuno.VisualStudio.Designer.Selection
     /// interface abstracts - see <see cref="Infrastructure.DesignSurfaceSelectionTarget"/>, the thin
     /// adapter that forwards to it - so <see cref="SelectionSyncService"/> never depends on that concrete
     /// type directly and stays unit-testable with a fake
-    /// (tests/Kubuno.VisualStudio.Designer.Tests/Selection/Fakes/FakeDesignSurfaceSelectionTarget.cs).
+    /// (tests/Kubuno.Desktop.Tests/Designer/Selection/Fakes/FakeDesignSurfaceSelectionTarget.cs).
     /// </summary>
     public interface IDesignSurfaceSelectionTarget
     {

@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
-namespace Kubuno.VisualStudio.Core.Data
+namespace Kubuno.Desktop.Logic.Data
 {
     /// <summary>
     /// An error answered by <c>kubuno-data-tool</c> (<c>{"error": {"kind", "message"}}</c>), or a transport failure of the

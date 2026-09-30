@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
-using Kubuno.VisualStudio.Designer.DesignSurface;
+using Kubuno.Desktop.Designer.DesignSurface;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Selection.Fakes
+namespace Kubuno.Desktop.Tests.Designer.Selection.Fakes
 {
     /// <summary>A scripted <see cref="IDesignSurfaceHost"/> - <see cref="RaiseSelectionChanged"/> drives <see cref="Selection.SelectionSyncService"/>'s "surface -&gt; other views" direction, mirroring this test project's fake-based strategy (e.g. <c>Handlers/Fakes/FakeKubunoViewsLanguageServerClient.cs</c>).</summary>
     internal sealed class FakeDesignSurfaceHost : IDesignSurfaceHost

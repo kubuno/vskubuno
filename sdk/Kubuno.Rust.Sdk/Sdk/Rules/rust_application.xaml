@@ -4,7 +4,7 @@
   like .NET"): the counterpart of the .NET SDK's ApplicationPropertyPage.xaml, with the same three
   categories (General / Win32 resources / Dependencies).
 
-  Persistence="KubunoRust" is Kubuno.VisualStudio.RustProjectSystem's RustProjectPropertiesProvider:
+  Persistence="KubunoRust" is Kubuno.Rust.ProjectSystem's RustProjectPropertiesProvider:
   it reads and SURGICALLY edits Cargo.toml (and src/main.rs for windows_subsystem), never
   regenerating them. Properties with their own ProjectFile/UserFile data source are plain MSBuild
   properties of the .rsproj. A localized copy of this file lives in Rules\<culture>\ (same names,

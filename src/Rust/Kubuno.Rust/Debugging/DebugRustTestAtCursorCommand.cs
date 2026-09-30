@@ -3,17 +3,17 @@ using System.ComponentModel.Design;
 using System.IO;
 using System.Threading.Tasks;
 using EnvDTE;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Processes;
-using Kubuno.Launch;
-using Kubuno.VisualStudio.Core;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Launch;
+using Kubuno.Rust.Logic;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.Debugging
+namespace Kubuno.Rust.Debugging
 {
     /// <summary>
     /// "Kubuno: Debug Rust Test at Cursor" (Tools menu - see <c>KubunoCommands.vsct</c>): finds
@@ -133,7 +133,7 @@ namespace Kubuno.VisualStudio.Debugging
             var runner = new ProcessRunner();
             var request = new ProcessRunRequest(commandLine.FileName, commandLine.Arguments) { WorkingDirectory = workspaceRoot };
 
-            Kubuno.Cargo.Processes.ProcessRunResult result;
+            Kubuno.Rust.Cargo.Processes.ProcessRunResult result;
             try
             {
                 result = await runner.RunAsync(request, onOutput: null, default).ConfigureAwait(false);

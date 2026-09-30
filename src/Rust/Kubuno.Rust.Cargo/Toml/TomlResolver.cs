@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Toml
+namespace Kubuno.Rust.Cargo.Toml
 {
     /// <summary>
     /// A read-only view of one <c>[[array.of.tables]]</c> element. Keys resolve through the element's own

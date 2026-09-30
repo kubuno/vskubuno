@@ -1,6 +1,6 @@
 namespace Kubuno.Cargo.MSBuild.Tasks.Tests
 {
-    /// <summary>Locates the real captured cargo build-message fixtures under Fixtures/, mirroring Kubuno.Cargo.Tests' own helper.</summary>
+    /// <summary>Locates the real captured cargo build-message fixtures under Fixtures/, mirroring Kubuno.Rust.Cargo.Tests' own helper.</summary>
     internal static class TestFixtures
     {
         private static readonly string RootDirectory = System.IO.Path.Combine(AppContext.BaseDirectory, "Fixtures");

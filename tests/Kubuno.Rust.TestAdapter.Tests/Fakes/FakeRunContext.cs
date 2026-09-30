@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 
-namespace Kubuno.TestAdapter.Tests.Fakes
+namespace Kubuno.Rust.TestAdapter.Tests.Fakes
 {
     internal sealed class FakeRunContext : IRunContext
     {

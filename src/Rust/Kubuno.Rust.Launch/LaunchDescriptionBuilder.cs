@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// Composes <see cref="ExecutableResolver"/>, <see cref="RustDebugEnvironment"/> and

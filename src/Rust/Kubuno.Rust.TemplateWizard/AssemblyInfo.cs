@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("Kubuno.VisualStudio.TemplateWizard")]
+[assembly: AssemblyTitle("Kubuno.Rust.TemplateWizard")]
 [assembly: AssemblyDescription("Crate-name sanitisation wizard for Kubuno's \"Create a new project\" Rust templates.")]
 [assembly: AssemblyProduct("Kubuno for Visual Studio")]
 [assembly: AssemblyCompany("Kubuno")]

@@ -1,8 +1,8 @@
 using System.Text;
 using System.Xml.Linq;
-using Kubuno.Cargo.Win32;
+using Kubuno.Rust.Cargo.Win32;
 
-namespace Kubuno.Cargo.Tests.Win32
+namespace Kubuno.Rust.Cargo.Tests.Win32
 {
     public class Win32ResourceFileTests
     {

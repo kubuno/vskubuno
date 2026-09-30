@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Kubuno.Cargo.Win32;
+using Kubuno.Rust.Cargo.Win32;
 
-namespace Kubuno.Cargo.Tests.Win32
+namespace Kubuno.Rust.Cargo.Tests.Win32
 {
     /// <summary>
     /// End-to-end: a generated .res is passed to the real MSVC linker through

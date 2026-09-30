@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Metadata;
 
-namespace Kubuno.Cargo.DesignSurface
+namespace Kubuno.Desktop.Logic.DesignSurface
 {
     /// <summary>
     /// The project's own crate, as the design surface links it (docs/EVENTS.md EVT-7b, docs/DESIGNER.md

@@ -6,15 +6,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using Kubuno.VisualStudio.Core.DataSources;
-using Kubuno.VisualStudio.DataExplorer;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Desktop.Logic.DataSources;
+using Kubuno.Desktop.DataExplorer;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.DataSources
+namespace Kubuno.Desktop.DataSources
 {
     /// <summary>What a node of the Data Sources tree is.</summary>
     internal enum DataSourceNodeKind

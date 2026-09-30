@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using Kubuno.TestAdapter.Discovery;
+using Kubuno.Rust.TestAdapter.Discovery;
 
-namespace Kubuno.TestAdapter.Tests.Discovery
+namespace Kubuno.Rust.TestAdapter.Tests.Discovery
 {
     public class TestSourceLocatorTests : IDisposable
     {

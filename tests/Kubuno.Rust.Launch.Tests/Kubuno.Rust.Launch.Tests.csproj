@@ -10,7 +10,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Launch.Tests</RootNamespace>
+    <RootNamespace>Kubuno.Rust.Launch.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Kubuno.Launch\Kubuno.Launch.csproj" />
+    <ProjectReference Include="..\..\src\Rust\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
   </ItemGroup>
 
 </Project>

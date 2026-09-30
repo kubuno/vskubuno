@@ -1,17 +1,27 @@
 using System.ComponentModel;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.RustProjectSystem;
-using Kubuno.VisualStudio.Views.Options;
+using System.Runtime.InteropServices;
+using Kubuno.Core.Logging;
+using Kubuno.Rust.ProjectSystem;
+using Kubuno.Core.Settings;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.Options
+namespace Kubuno.Rust.Options
 {
     /// <summary>
     /// Tools &gt; Options &gt; Kubuno &gt; Debugging (docs/DEBUGGING.md). The value lives in the user settings store
     /// (<see cref="RustDebuggerSettings"/>), where the <c>.rsproj</c> and Open Folder launch providers read it at F5.
     /// </summary>
+    // The identity Visual Studio stored this page under before the layers (docs/ARCHITECTURE.md, "Layers (as built)"):
+    // the page GUID of the pkgdef and profile (formerly derived from the type's full name) and the classic settings
+    // key (DialogPage's default is derived from the full name too), kept so existing settings and exports still apply.
+    [Guid("f8f76810-3c61-3c8b-b61c-9caecf9760c8")]
     public sealed class DebuggingOptionsPage : KubunoDialogPage
     {
+        public DebuggingOptionsPage()
+            : base(legacyTypeFullName: "Kubuno.VisualStudio.Options.DebuggingOptionsPage")
+        {
+        }
+
         [Category("Just My Code")]
         [DisplayName("Treat the Kubuno framework as external code")]
         [Description("Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno " +

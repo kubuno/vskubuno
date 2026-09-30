@@ -2,7 +2,7 @@ using System;
 using System.Security;
 using System.Text;
 
-namespace Kubuno.Cargo.Win32
+namespace Kubuno.Rust.Cargo.Win32
 {
     /// <summary>Generates an application manifest (RT_MANIFEST payload) from <see cref="Win32ManifestOptions"/>.</summary>
     public static class Win32ManifestBuilder

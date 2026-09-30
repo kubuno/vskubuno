@@ -1,24 +1,24 @@
 using System;
 using System.Linq;
-using Kubuno.Cargo.Processes;
-using Kubuno.Launch;
-using Kubuno.TestAdapter.Execution;
-using Kubuno.TestAdapter.Tests.Fakes;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Launch;
+using Kubuno.Rust.TestAdapter.Execution;
+using Kubuno.Rust.TestAdapter.Tests.Fakes;
 
-namespace Kubuno.TestAdapter.Tests.Execution
+namespace Kubuno.Rust.TestAdapter.Tests.Execution
 {
-    /// <summary>Builds a debug <see cref="LaunchDescription"/> purely (no real process ever spawned - `rustc` calls go through a <see cref="FakeProcessRunner"/>, matching how RustToolchainTests likely fakes Kubuno.Launch's own IProcessRunner).</summary>
+    /// <summary>Builds a debug <see cref="LaunchDescription"/> purely (no real process ever spawned - `rustc` calls go through a <see cref="FakeProcessRunner"/>, matching how RustToolchainTests likely fakes Kubuno.Rust.Launch's own IProcessRunner).</summary>
     public class DebugTestLauncherTests
     {
         private static FakeProcessRunner CreateRustcRunner() => new FakeProcessRunner(request =>
         {
             if (request.Arguments.Contains("--print sysroot"))
             {
-                return new Kubuno.Cargo.Processes.ProcessRunResult(0, new[] { @"C:\Users\me\.rustup\toolchains\stable-x86_64-pc-windows-msvc" }, Array.Empty<string>());
+                return new Kubuno.Rust.Cargo.Processes.ProcessRunResult(0, new[] { @"C:\Users\me\.rustup\toolchains\stable-x86_64-pc-windows-msvc" }, Array.Empty<string>());
             }
             if (request.Arguments.Contains("-vV"))
             {
-                return new Kubuno.Cargo.Processes.ProcessRunResult(0, new[]
+                return new Kubuno.Rust.Cargo.Processes.ProcessRunResult(0, new[]
                 {
                     "rustc 1.98.1 (797e8a9bc 2026-08-05)",
                     "host: x86_64-pc-windows-msvc",
@@ -69,7 +69,7 @@ namespace Kubuno.TestAdapter.Tests.Execution
         [Fact]
         public void Throws_a_clear_error_when_the_toolchain_cannot_be_resolved()
         {
-            var runner = new FakeProcessRunner(new Kubuno.Cargo.Processes.ProcessRunResult(1, Array.Empty<string>(), new[] { "rustc: command not found" }));
+            var runner = new FakeProcessRunner(new Kubuno.Rust.Cargo.Processes.ProcessRunResult(1, Array.Empty<string>(), new[] { "rustc: command not found" }));
 
             var ex = Assert.Throws<InvalidOperationException>(() =>
                 DebugTestLauncher.Build(runner, @"C:\exe.exe", @"C:\root", @"C:\target", "tests::it_passes", existingPath: null));

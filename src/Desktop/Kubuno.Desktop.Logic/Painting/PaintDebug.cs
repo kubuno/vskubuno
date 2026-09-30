@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.Launch
+namespace Kubuno.Desktop.Logic.Painting
 {
     /// <summary>
     /// Pure helpers for the Kubuno runtime's paint-debug overlay (docs/EVENTS.md EVT-8): the flag

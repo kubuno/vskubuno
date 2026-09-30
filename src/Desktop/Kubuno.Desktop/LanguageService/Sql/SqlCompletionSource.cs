@@ -4,9 +4,9 @@ using System.Collections.Immutable;
 using System.ComponentModel.Composition;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.Sql;
-using Kubuno.VisualStudio.Designer;
-using Kubuno.VisualStudio.SolutionExplorer;
+using Kubuno.Desktop.Logic.Sql;
+using Kubuno.Desktop.Designer;
+using Kubuno.Rust.SolutionExplorer;
 using Microsoft.VisualStudio.Core.Imaging;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion.Data;
@@ -16,7 +16,7 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 
-namespace Kubuno.VisualStudio.LanguageService.Sql
+namespace Kubuno.Desktop.LanguageService.Sql
 {
     /// <summary>
     /// SQL completion inside the query strings of Rust code (docs/DATA.md DATA-8): keywords, and from the connection's
@@ -26,7 +26,7 @@ namespace Kubuno.VisualStudio.LanguageService.Sql
     /// </summary>
     [Export(typeof(IAsyncCompletionSourceProvider))]
     [Name("Kubuno SQL Completion")]
-    [ContentType(Constants.RustContentType)]
+    [ContentType(Kubuno.Rust.Constants.RustContentType)]
     [Order(Before = "Kubuno Rust Completion")]
     internal sealed class SqlCompletionSourceProvider : IAsyncCompletionSourceProvider
     {

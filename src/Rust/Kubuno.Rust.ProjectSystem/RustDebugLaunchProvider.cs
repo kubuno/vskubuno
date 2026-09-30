@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Processes;
-using Kubuno.Launch;
-using Kubuno.VisualStudio.Core;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Launch;
+using Kubuno.Rust.Logic;
 using Microsoft.VisualStudio.ProjectSystem;
 using Microsoft.VisualStudio.ProjectSystem.Debug;
 using Microsoft.VisualStudio.ProjectSystem.Properties;
@@ -14,7 +14,7 @@ using Microsoft.VisualStudio.ProjectSystem.VS.Debug;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.RustProjectSystem
+namespace Kubuno.Rust.ProjectSystem
 {
     /// <summary>
     /// F5/Ctrl+F5 for a <c>.rsproj</c> (docs/RSPROJ.md work package 4). CPS's own debug seam, the

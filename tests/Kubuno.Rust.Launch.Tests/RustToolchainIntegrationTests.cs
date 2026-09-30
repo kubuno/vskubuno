@@ -1,10 +1,10 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
-using Kubuno.Launch;
+using Kubuno.Rust.Launch;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Launch.Tests
+namespace Kubuno.Rust.Launch.Tests
 {
     /// <summary>
     /// Exercises <see cref="RustToolchain"/> against the real `rustc` on this machine, via

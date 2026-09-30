@@ -1,9 +1,10 @@
 using System;
-using Kubuno.VisualStudio.Designer.PropertyBrowser;
-using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.Desktop.Designer.PropertyBrowser;
+using Kubuno.Desktop.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Kubuno.Desktop.Designer;
 
-namespace Kubuno.VisualStudio.Designer.Tests.PropertyBrowser
+namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
 {
     [TestClass]
     public class AttributeValueRulesTests

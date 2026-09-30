@@ -1,11 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    Tests of the desktop layer (docs/ARCHITECTURE.md, "Layers (as built)"): the view designer (Designer\), the .kbview
+    language client's locators (Views\), and the pure logic of Kubuno.Desktop.Logic (Data\, DataSources\, Migrations\,
+    Sql\, Overrides\, QuickInfo\, DesignSurface\, PaintDebug\, Wizard\).
+  -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <RootNamespace>Kubuno.VisualStudio.Designer.Tests</RootNamespace>
+    <RootNamespace>Kubuno.Desktop.Tests</RootNamespace>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <!--
@@ -17,14 +22,18 @@
     -->
     <RunSettingsFilePath>$(MSBuildThisFileDirectory).runsettings</RunSettingsFilePath>
     <!--
-      Selection/Fakes/FakeDesignSurfaceHost.cs (IDesignSurfaceHost's own Content : FrameworkElement)
+      Designer\Selection\Fakes\FakeDesignSurfaceHost.cs (IDesignSurfaceHost's own Content : FrameworkElement)
       needs WPF - a plain net48 SDK-style project does not reference PresentationCore/
-      PresentationFramework/WindowsBase by default the way the old-style VSIX/Designer library
-      projects do (see their own csproj <Reference> items); UseWPF is the SDK-style equivalent.
+      PresentationFramework/WindowsBase by default; UseWPF is the SDK-style equivalent.
     -->
     <UseWPF>true</UseWPF>
-    <!-- The Dock/Anchor pickers (PropertyBrowser/LayoutAttributeEditors.cs) wrap the Windows Forms designer's own editors. -->
+    <!-- The Dock/Anchor pickers (Designer\PropertyBrowser\LayoutAttributeEditors.cs) wrap the Windows Forms designer's own editors. -->
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- Same benign MSB3277 unification notes as the Visual Studio assemblies under test. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <!-- The Visual Studio threading analyzers come with the SDK package of Kubuno.Desktop; the tests (which await their own
+         fakes' tasks and run without Visual Studio's main thread) are not code they are meant for. -->
+    <NoWarn>$(NoWarn);VSTHRD003;VSTHRD200</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,18 +41,15 @@
     <PackageReference Include="MSTest.TestAdapter" Version="4.4.1" />
     <PackageReference Include="MSTest.TestFramework" Version="4.4.1" />
     <!--
-      Kubuno.VisualStudio.Designer.csproj itself only gets System.Text.Json (used by
-      Registry/Serialization/*) transitively through Microsoft.VisualStudio.SDK, whose
-      ExcludeAssets="runtime" (see that csproj's own PackageReference comment - devenv.exe supplies
-      those assemblies at runtime, so the VSIX never ships its own copy) cascades to every package it
-      pulls in, System.Text.Json included. That is fine inside devenv.exe, but this test project runs
-      as a plain net48 executable with no devenv.exe to supply it, so System.Text.Json's own DLL would
-      otherwise be missing from the test output directory (FileNotFoundException at run time, not a
-      build error). Referencing it here directly - at the SAME version Microsoft.VisualStudio.SDK
-      already resolves to, not a lower one - forces its runtime assets to actually deploy, without
-      triggering the "explicit downgrade" NU1605-as-error this repo already documents elsewhere
-      (src/Kubuno.Mcp.Bridge/Kubuno.Mcp.Bridge.csproj's own PackageReference comment) for an SDK-style
-      project that pins a LOWER version than what flows in transitively.
+      Kubuno.Desktop.csproj itself only gets System.Text.Json (used by Designer\Registry\Serialization\*)
+      transitively through Microsoft.VisualStudio.SDK, whose ExcludeAssets="runtime" (devenv.exe supplies those
+      assemblies at runtime, so the VSIX never ships its own copy) cascades to every package it pulls in, System.Text.Json
+      included. That is fine inside devenv.exe, but this test project runs as a plain net48 executable with no
+      devenv.exe to supply it, so System.Text.Json's own DLL would otherwise be missing from the test output directory
+      (FileNotFoundException at run time, not a build error). Referencing it here directly - at the SAME version
+      Microsoft.VisualStudio.SDK already resolves to, not a lower one - forces its runtime assets to actually deploy,
+      without triggering the "explicit downgrade" NU1605-as-error for an SDK-style project that pins a LOWER version
+      than what flows in transitively.
     -->
     <PackageReference Include="System.Text.Json" Version="9.0.0" />
     <!-- Same reason, for the OLE command types (IOleCommandTarget, OLECMD) the context-menu command target tests use. -->
@@ -52,23 +58,31 @@
 
   <ItemGroup>
     <!--
-      References the whole library: this test project exercises both the VS-SDK-free view-models
-      (UI/DesignerSplitViewModel.cs, Toolbox/*, Properties/*, Registry/* - all plain unit-testable) and
-      the pure Editing/* pieces DSG-5 adds (LspPositionMapper, TextEditPlanner, BufferEditCore,
-      CompoundEditCoordinator - see tests/.../Editing/). Everything else in this library (the editor
-      factory, DesignerWindowPane, CodeWindowHost, and Editing/Infrastructure/*'s real
-      ITextBuffer/ITextUndoHistory adapters) either needs a live IVsTextLines/IVsCodeWindow/ITextBuffer
-      COM/editor object or a hosted WPF Dispatcher/visual tree it only gets inside a real devenv.exe
-      process - see those classes' own doc comments, and INTEGRATION.md/docs/DESIGNER.md's DSG-3/DSG-5
-      rows ("Manual, experimental instance - visual check" / "manual Ctrl+Z check"), for why those stay
-      out of this project.
+      References the whole Visual Studio assembly: this test project exercises both the VS-SDK-free view-models
+      (Designer\UI\DesignerSplitViewModel.cs, Toolbox\*, Properties\*, Registry\* - all plain unit-testable), the pure
+      Designer\Editing\* pieces, and the views locators. Everything else in it (the editor factory, DesignerWindowPane,
+      CodeWindowHost, Editing\Infrastructure\*'s real ITextBuffer/ITextUndoHistory adapters) either needs a live
+      IVsTextLines/IVsCodeWindow/ITextBuffer COM/editor object or a hosted WPF Dispatcher/visual tree it only gets inside
+      a real devenv.exe process - see those classes' own doc comments, and Designer\INTEGRATION.md/docs/DESIGNER.md's
+      DSG-3/DSG-5 rows ("Manual, experimental instance - visual check" / "manual Ctrl+Z check").
     -->
-    <ProjectReference Include="..\..\src\Kubuno.VisualStudio.Designer\Kubuno.VisualStudio.Designer.csproj" />
+    <ProjectReference Include="..\..\src\Desktop\Kubuno.Desktop\Kubuno.Desktop.csproj" />
+    <ProjectReference Include="..\..\src\Desktop\Kubuno.Desktop.Logic\Kubuno.Desktop.Logic.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- A checked-in, schema-faithful registry.sample.json (docs/DESIGNER.md §5) for Registry/ComponentRegistryTests.cs and the Toolbox/Properties view-model tests - not real kubuno-views output (DSG-1 hasn't landed), copied next to the test assembly like tests/Kubuno.Cargo.Tests' own Fixtures/. -->
+    <!-- The fake process runner of the Cargo tests (DesignSurface\ builds a project through Kubuno.Rust.Cargo's IProcessRunner). -->
+    <Compile Include="..\Kubuno.Rust.Cargo.Tests\Fakes\FakeProcessRunner.cs" Link="Fakes\FakeProcessRunner.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Checked-in fixtures copied next to the test assembly: the schema-faithful registry samples (docs/DESIGNER.md 5),
+         the theme tokens, the schema snapshots of SQL IntelliSense (docs/DATA.md DATA-8). -->
     <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- kubuno-data-tool schema.load answers (Data Explorer tree tests, docs/DATA.md DATA-5). -->
+    <None Update="Data\Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- A real kubuno-data-tool migrate.status answer, paths normalized (docs/DATA.md DATA-7: the Migrations node). -->
+    <None Update="Migrations\Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -1,12 +1,12 @@
 using System;
-using Kubuno.VisualStudio.Designer.UI;
-using Kubuno.VisualStudio.Views.Logging;
+using Kubuno.Desktop.Designer.UI;
+using Kubuno.Desktop.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.VisualStudio.Designer.EditorFactory
+namespace Kubuno.Desktop.Designer.EditorFactory
 {
     /// <summary>
     /// "View Code" (F7, <c>View.ViewCode</c>) and "View Designer" (Shift+F7, <c>View.ViewDesigner</c>) for
@@ -122,7 +122,7 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
                 return null;
             }
 
-            var view = System.IO.Path.ChangeExtension(rsPath, "." + Kubuno.VisualStudio.Views.KbviewConstants.FileExtension.TrimStart('.'));
+            var view = System.IO.Path.ChangeExtension(rsPath, "." + Kubuno.Desktop.Views.KbviewConstants.FileExtension.TrimStart('.'));
             return fileExists(view) ? view : null;
         }
 
@@ -161,7 +161,7 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
                 !(type is int frameType && frameType == (int)__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document) ||
                 ErrorHandler.Failed(frame.GetProperty((int)__VSFPROPID.VSFPROPID_pszMkDocument, out var moniker)) ||
                 moniker is not string path ||
-                !path.EndsWith("." + Kubuno.VisualStudio.Views.KbviewConstants.FileExtension.TrimStart('.'), StringComparison.OrdinalIgnoreCase))
+                !path.EndsWith("." + Kubuno.Desktop.Views.KbviewConstants.FileExtension.TrimStart('.'), StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }

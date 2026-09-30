@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Internal;
-using Kubuno.Cargo.Processes;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Internal;
+using Kubuno.Rust.Cargo.Processes;
 
-namespace Kubuno.Cargo.Metadata
+namespace Kubuno.Rust.Cargo.Metadata
 {
     /// <summary>Runs <c>cargo metadata --format-version 1</c> (by default with <c>--no-deps</c>) and parses its output.</summary>
     public sealed class CargoMetadataReader

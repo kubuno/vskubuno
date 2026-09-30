@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Core.SolutionExplorer
+namespace Kubuno.Desktop.Logic.SolutionExplorer
 {
     /// <summary>
     /// The Kubuno control icons of <c>KubunoControls.imagemanifest</c> (docs/DESIGNER.md section 11): one

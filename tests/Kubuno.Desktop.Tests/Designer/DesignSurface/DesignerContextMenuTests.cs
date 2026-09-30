@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.VisualStudio.Designer.DesignSurface;
-using Kubuno.VisualStudio.Designer.Editing;
-using Kubuno.VisualStudio.Designer.Registry;
+using Kubuno.Desktop.Designer.DesignSurface;
+using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Desktop.Designer.Registry;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Kubuno.Desktop.Designer;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.VisualStudio.Designer.Tests.DesignSurface
+namespace Kubuno.Desktop.Tests.Designer.DesignSurface
 {
     /// <summary>docs/DESIGNER.md §12: the context-menu wire shapes, the menu model and its command target.</summary>
     [TestClass]

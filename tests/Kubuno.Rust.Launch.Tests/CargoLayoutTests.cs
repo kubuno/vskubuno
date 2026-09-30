@@ -1,8 +1,8 @@
 using System;
-using Kubuno.Launch;
+using Kubuno.Rust.Launch;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Launch.Tests
+namespace Kubuno.Rust.Launch.Tests
 {
     [TestClass]
     public sealed class CargoLayoutTests

@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.Cargo.Processes
+namespace Kubuno.Rust.Cargo.Processes
 {
     /// <summary>
     /// Abstraction over launching a process and streaming its output line by line. Kept

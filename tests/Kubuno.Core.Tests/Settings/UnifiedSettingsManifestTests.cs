@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.IntelliSense
+namespace Kubuno.Core.Tests.Settings
 {
     /// <summary>The unified settings manifest (Tools &gt; Options &gt; Kubuno) agrees with the options pages and the resources.</summary>
     [TestClass]

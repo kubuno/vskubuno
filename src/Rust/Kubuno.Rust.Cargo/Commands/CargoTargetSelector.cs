@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.Cargo.Commands
+namespace Kubuno.Rust.Cargo.Commands
 {
     /// <summary>
     /// Which target(s) within a package a Cargo command applies to: a single named

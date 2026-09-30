@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.VisualStudio.Designer.UI
+namespace Kubuno.Desktop.Designer.UI
 {
     /// <summary>
     /// Hosts the real Visual Studio text editor (<c>IVsCodeWindow</c>) inside WPF, bound to the same
@@ -25,7 +25,7 @@ namespace Kubuno.VisualStudio.Designer.UI
     /// the code window comes from <c>IVsEditorAdaptersFactoryService.CreateVsCodeWindowAdapter</c>, which
     /// only exists inside a running <c>devenv.exe</c> - this class cannot be usefully unit-tested
     /// outside a real VS process (see this project's
-    /// tests/Kubuno.VisualStudio.Designer.Tests for what IS covered without one).
+    /// tests/Kubuno.Desktop.Tests/Designer for what IS covered without one).
     /// </summary>
     public sealed class CodeWindowHost : HwndHost
     {

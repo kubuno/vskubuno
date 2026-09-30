@@ -3,10 +3,10 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Mcp.Bridge.PipeProtocol;
+using Kubuno.Core.Mcp.Bridge.PipeProtocol;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Mcp.Tests
+namespace Kubuno.Core.Mcp.Tests
 {
     /// <summary>
     /// Wire-level tests for <see cref="PipeMessageFraming"/>: the 4-byte-length-prefix framing

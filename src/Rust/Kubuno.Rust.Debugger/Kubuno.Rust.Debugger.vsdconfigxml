@@ -9,8 +9,8 @@
   <ManagedComponent
     ComponentId="7C2E4B1A-4F7D-4E0B-9A3E-6B1D2C8F5A10"
     ComponentLevel="80000"
-    AssemblyName="Kubuno.VisualStudio.Debugger">
-    <Class Name="Kubuno.VisualStudio.Debugger.RustPanicExceptionFormatter">
+    AssemblyName="Kubuno.Rust.Debugger">
+    <Class Name="Kubuno.Rust.Debugger.RustPanicExceptionFormatter">
       <Implements>
         <InterfaceGroup>
           <Filter>

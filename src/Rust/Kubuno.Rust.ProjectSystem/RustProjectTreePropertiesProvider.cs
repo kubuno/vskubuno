@@ -1,12 +1,12 @@
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.ProjectSystem;
 
-namespace Kubuno.VisualStudio.RustProjectSystem
+namespace Kubuno.Rust.ProjectSystem
 {
     /// <summary>
     /// Gives <c>.rsproj</c> nodes in Solution Explorer their icons: the orange "R" on the project
-    /// node, and (docs/RSPROJ.md lot 8) the Rust source, Kubuno view and Cargo manifest file icons -
-    /// the counterparts of the C# file and Windows Forms form icons. CPS asks every exported
+    /// node, and (docs/RSPROJ.md lot 8) the Rust source and Cargo manifest file icons - the counterparts of the C#
+    /// file icons (the Kubuno view icon comes from the desktop layer, Kubuno.Desktop.ProjectSystem). CPS asks every exported
     /// <see cref="IProjectTreePropertiesProvider"/> whose <see cref="AppliesToAttribute"/> expression
     /// matches the project's capabilities to adjust each tree node's properties.
     /// </summary>

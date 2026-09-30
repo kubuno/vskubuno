@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-namespace Kubuno.VisualStudio.Core.Sql
+namespace Kubuno.Desktop.Logic.Sql
 {
     /// <summary>
     /// The schema of one connection as <c>kubuno-data-tool</c>'s <c>schema.load</c> returns it (the snapshot file

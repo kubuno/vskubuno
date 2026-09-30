@@ -1,12 +1,12 @@
 using System;
 using System.IO;
 using System.Linq;
-using Kubuno.Cargo.Metadata;
-using Kubuno.Cargo.Toolchain;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
+using Kubuno.Rust.Cargo.Metadata;
+using Kubuno.Rust.Cargo.Toolchain;
+using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.SolutionExplorer
+namespace Kubuno.Rust.Tests.SolutionExplorer
 {
     [TestClass]
     public class DependencyPropertiesTests

@@ -1,7 +1,7 @@
 using System;
 using Microsoft.VisualStudio.Text.Operations;
 
-namespace Kubuno.VisualStudio.Designer.Editing.Infrastructure
+namespace Kubuno.Desktop.Designer.Editing.Infrastructure
 {
     /// <summary>
     /// The real <c>ITextUndoHistory</c>-backed <see cref="IUndoTransactionHost"/> (docs/DESIGNER.md §2:
@@ -14,7 +14,7 @@ namespace Kubuno.VisualStudio.Designer.Editing.Infrastructure
     /// host, typically via <c>ITextUndoHistoryRegistry</c>); see
     /// tests/.../Editing/CompoundEditCoordinatorTests.cs for the fake-backed coverage of the
     /// orchestration logic this wraps, and this library's own test-strategy note in
-    /// Kubuno.VisualStudio.Designer.Tests.csproj for the general pattern.
+    /// Kubuno.Desktop.Tests.csproj for the general pattern.
     /// </summary>
     public sealed class DesignerUndoScope : IUndoTransactionHost
     {

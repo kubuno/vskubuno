@@ -1,15 +1,15 @@
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.Views.Locating
+namespace Kubuno.Desktop.Views.Locating
 {
     /// <summary>
     /// Everything <see cref="KubunoViewsLanguageServerLocator"/> needs to ask about the outside world
     /// (the file system, the PATH variable, the fixed dev-build folders), kept as an interface so the
     /// locator's decision logic can be unit-tested against fakes instead of the real machine - the
-    /// same split as <c>Kubuno.VisualStudio.Core.IRustAnalyzerEnvironment</c> in the sibling VSIX
+    /// same split as <c>Kubuno.Rust.Logic.IRustAnalyzerEnvironment</c> in the sibling VSIX
     /// project. The real implementation (<see cref="Infrastructure.RealKubunoViewsLanguageServerEnvironment"/>)
     /// lives in this same library (unlike the Rust one, which lives in the VSIX project) because this
-    /// library, unlike <c>Kubuno.VisualStudio.Core</c>, already depends on nothing that would make a
+    /// library, unlike <c>Kubuno.Rust.Logic</c>, already depends on nothing that would make a
     /// real file-system implementation untestable - it just is not exercised by the unit tests, which
     /// use a fake instead.
     /// </summary>

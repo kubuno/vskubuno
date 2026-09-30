@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Core.Logic.Lsp;
+using Kubuno.Rust.Logic.IntelliSense;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion.Data;
@@ -14,7 +15,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Newtonsoft.Json.Linq;
 
-namespace Kubuno.VisualStudio.LanguageService.IntelliSense
+namespace Kubuno.Rust.LanguageService.IntelliSense
 {
     /// <summary>
     /// Commits <see cref="RustCompletionSource"/>'s items: rust-analyzer's text edit (snippets expanded, with a Tab
@@ -38,10 +39,18 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
 
         public IEnumerable<char> PotentialCommitCharacters => CommitCharacters;
 
-        public bool ShouldCommitCompletion(IAsyncCompletionSession session, SnapshotPoint location, char typedChar, CancellationToken token) =>
-            Sql.SqlCompletionSource.IsSqlSession(session)
-                ? Sql.SqlCompletionSource.CommitCharacters.IndexOf(typedChar) >= 0
-                : RustCompletionPresentation.CommitCharacters.IndexOf(typedChar) >= 0;
+        public bool ShouldCommitCompletion(IAsyncCompletionSession session, SnapshotPoint location, char typedChar, CancellationToken token)
+        {
+            foreach (var language in _provider.EmbeddedLanguages)
+            {
+                if (language.CommitCharactersFor(session) is { } commitCharacters)
+                {
+                    return commitCharacters.IndexOf(typedChar) >= 0;
+                }
+            }
+
+            return RustCompletionPresentation.CommitCharacters.IndexOf(typedChar) >= 0;
+        }
 
         public CommitResult TryCommit(IAsyncCompletionSession session, ITextBuffer buffer, CompletionItem item, char typedChar, CancellationToken token)
         {
@@ -208,6 +217,6 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
     /// <summary>Undo labels of the completion commit (Edit &gt; Undo shows it).</summary>
     internal static class RustCompletionText
     {
-        public static string UndoDescription => Kubuno.VisualStudio.Designer.DesignerText.IsFrench ? "Saisie semi-automatique" : "IntelliSense";
+        public static string UndoDescription => Kubuno.Core.Logic.Localization.UiLanguage.IsFrench ? "Saisie semi-automatique" : "IntelliSense";
     }
 }

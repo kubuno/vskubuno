@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.VisualStudio.Core.QuickInfo
+namespace Kubuno.Core.Logic.QuickInfo
 {
     /// <summary>The block kinds of <see cref="Markdown"/>.</summary>
     public enum MarkdownBlockKind
@@ -595,6 +595,6 @@ namespace Kubuno.VisualStudio.Core.QuickInfo
         /// <summary>Removes markdown syntax, keeping the text (used for plain-text comparisons and headings).</summary>
         public static string ToPlainText(string inline) => string.Concat(ParseInline(inline).Select(r => r.Text));
 
-        internal static IEnumerable<string> SplitLines(string text) => text.Replace("\r\n", "\n").Split('\n');
+        public static IEnumerable<string> SplitLines(string text) => text.Replace("\r\n", "\n").Split('\n');
     }
 }

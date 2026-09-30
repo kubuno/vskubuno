@@ -1,11 +1,11 @@
 using System;
 using System.IO;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.Options;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Core.Logging;
+using Kubuno.Desktop.Options;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.DataExplorer
+namespace Kubuno.Desktop.DataExplorer
 {
     /// <summary>
     /// The package-wide <c>kubuno-data-tool</c> helper (docs/DATA.md §9): one long-lived process, started by the first

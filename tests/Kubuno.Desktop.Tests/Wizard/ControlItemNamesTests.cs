@@ -1,8 +1,8 @@
 using System.IO;
-using Kubuno.VisualStudio.TemplateWizard;
+using Kubuno.Desktop.TemplateWizard;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Tests.Wizard
+namespace Kubuno.Desktop.Tests.Wizard
 {
     /// <summary>docs/EVENTS.md EVT-7b: the control item templates' wizard (names, and the module declared in the crate root).</summary>
     [TestClass]

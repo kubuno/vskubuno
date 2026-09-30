@@ -5,12 +5,12 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Mcp.Bridge;
-using Kubuno.Mcp.Bridge.Contracts;
-using Kubuno.Mcp.Bridge.Discovery;
-using Kubuno.Mcp.Bridge.PipeProtocol;
+using Kubuno.Core.Mcp.Bridge;
+using Kubuno.Core.Mcp.Bridge.Contracts;
+using Kubuno.Core.Mcp.Bridge.Discovery;
+using Kubuno.Core.Mcp.Bridge.PipeProtocol;
 
-namespace Kubuno.Mcp.Connectivity
+namespace Kubuno.Core.Mcp.Connectivity
 {
     /// <summary>
     /// Production <see cref="IBridgeConnector"/>: finds a live Visual Studio instance via the

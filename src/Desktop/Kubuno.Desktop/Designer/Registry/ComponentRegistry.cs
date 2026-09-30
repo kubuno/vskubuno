@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
-using Kubuno.VisualStudio.Designer.Registry.Serialization;
+using Kubuno.Desktop.Designer.Registry.Serialization;
 
-namespace Kubuno.VisualStudio.Designer.Registry
+namespace Kubuno.Desktop.Designer.Registry
 {
     /// <summary>
     /// The whole <c>kubuno/registry</c> response (docs/DESIGNER.md §5), loaded from a JSON string -
-    /// today always a checked-in test fixture (tests/Kubuno.VisualStudio.Designer.Tests/Fixtures/
+    /// today always a checked-in test fixture (tests/Kubuno.Desktop.Tests/Designer/Fixtures/
     /// registry.sample.json); once DSG-1/DSG-3 land, the real caller feeds this the language client's
     /// live JSON-RPC response instead (§5: "Query it live from kubuno-views-ls via kubuno/registry, not
     /// a JSON file generated at VSIX build time"), with no change needed here - this type only knows how

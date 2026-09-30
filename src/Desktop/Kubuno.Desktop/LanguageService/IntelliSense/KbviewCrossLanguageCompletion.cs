@@ -6,13 +6,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Designer;
-using Kubuno.VisualStudio.Designer.Handlers.Infrastructure;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.SolutionExplorer;
-using Kubuno.VisualStudio.Views;
-using Kubuno.VisualStudio.Views.LanguageService;
+using Kubuno.Desktop.Logic.IntelliSense;
+using Kubuno.Desktop.Designer;
+using Kubuno.Desktop.Designer.Handlers.Infrastructure;
+using Kubuno.Core.Logging;
+using Kubuno.Rust.LanguageService;
+using Kubuno.Rust.LanguageService.IntelliSense;
+using Kubuno.Rust.SolutionExplorer;
+using Kubuno.Desktop.Views;
+using Kubuno.Desktop.Views.LanguageService;
 using Microsoft.VisualStudio.Core.Imaging;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion.Data;
@@ -25,7 +27,7 @@ using Microsoft.VisualStudio.Utilities;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.VisualStudio.LanguageService.IntelliSense
+namespace Kubuno.Desktop.LanguageService.IntelliSense
 {
     /// <summary>
     /// Completions in <c>.kbview</c> attribute values that come from the Rust code-behind, like XAML's: the handlers
@@ -74,7 +76,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
             }
 
             var context = ContextAt(triggerLocation);
-            RustCompletionSource.Dbg($"Views init reason={trigger.Reason} context={context?.Kind.ToString() ?? "none"} ready={KubunoViewsLanguageClient.Current?.ReadyRpc != null}");
+            RustCompletionTrace.WriteLine($"Views init reason={trigger.Reason} context={context?.Kind.ToString() ?? "none"} ready={KubunoViewsLanguageClient.Current?.ReadyRpc != null}");
             if (context is null || KubunoViewsLanguageClient.Current?.ReadyRpc is null)
             {
                 return CompletionStartData.DoesNotParticipateInCompletion;
@@ -110,7 +112,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
                     names = await HandlersAsync(rpc, uri, triggerLocation, context.Attribute, openFiles, token).ConfigureAwait(false);
                 }
 
-                RustCompletionSource.Dbg($"Views {context.Kind} '{context.Attribute}': {string.Join(", ", names)}");
+                RustCompletionTrace.WriteLine($"Views {context.Kind} '{context.Attribute}': {string.Join(", ", names)}");
                 if (names.Count == 0)
                 {
                     return CompletionContext.Empty;

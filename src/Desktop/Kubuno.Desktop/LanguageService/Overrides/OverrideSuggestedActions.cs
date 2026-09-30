@@ -4,9 +4,9 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.Overrides;
-using Kubuno.VisualStudio.Designer;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Desktop.Logic.Overrides;
+using Kubuno.Desktop.Designer;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Shell;
@@ -14,7 +14,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.VisualStudio.LanguageService.Overrides
+namespace Kubuno.Desktop.LanguageService.Overrides
 {
     /// <summary>
     /// The light bulb (Ctrl+.) "Substituer des membres…" in a Rust file (docs/EVENTS.md EVT-7b, "Override
@@ -23,7 +23,7 @@ namespace Kubuno.VisualStudio.LanguageService.Overrides
     /// </summary>
     [Export(typeof(ISuggestedActionsSourceProvider))]
     [Name("Kubuno Override Members")]
-    [ContentType(Constants.RustContentType)]
+    [ContentType(Kubuno.Rust.Constants.RustContentType)]
     internal sealed class OverrideSuggestedActionsSourceProvider : ISuggestedActionsSourceProvider
     {
         public ISuggestedActionsSource? CreateSuggestedActionsSource(ITextView textView, ITextBuffer textBuffer) =>

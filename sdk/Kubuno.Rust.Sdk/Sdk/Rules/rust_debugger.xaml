@@ -8,7 +8,7 @@
      settings (arguments/working dir/env) live directly here, not on a standalone page - there is no
      separate "Debug" page. DisplayName is also the label of the Start button and of this entry in
      the debugger-flavor dropdown; the launch itself is
-     Kubuno.VisualStudio.RustProjectSystem's RustDebugLaunchProvider (exported under the same Name). -->
+     Kubuno.Rust.ProjectSystem's RustDebugLaunchProvider (exported under the same Name). -->
 <Rule Name="RustDebugger"
       DisplayName="Local Rust Debugger"
       PageTemplate="debugger"

@@ -1,7 +1,7 @@
-using Kubuno.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Diagnostics;
 using Xunit;
 
-namespace Kubuno.Cargo.Tests.Diagnostics
+namespace Kubuno.Rust.Cargo.Tests.Diagnostics
 {
     public class AnsiTextTests
     {

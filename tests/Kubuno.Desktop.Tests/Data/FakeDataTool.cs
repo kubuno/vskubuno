@@ -5,9 +5,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.VisualStudio.Core.Data;
+using Kubuno.Desktop.Logic.Data;
 
-namespace Kubuno.VisualStudio.Tests.Data
+namespace Kubuno.Desktop.Tests.Data
 {
     /// <summary>
     /// An in-memory kubuno-data-tool: each started "process" is a <see cref="FakeConnection"/> whose requests go to

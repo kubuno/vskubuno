@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.TestAdapter.Discovery
+namespace Kubuno.Rust.TestAdapter.Discovery
 {
     /// <summary>Which kind of Cargo target a built test binary came from.</summary>
     public enum CargoTestBinaryKind
@@ -55,7 +55,7 @@ namespace Kubuno.TestAdapter.Discovery
         /// <summary>Absolute path to the target's entry source file (lib.rs / main.rs / tests/basic.rs / ...), used for the "cheap" `fn name` lookup (see <see cref="TestSourceLocator"/>).</summary>
         public string SourcePath { get; }
 
-        /// <summary>Absolute path to the built, hash-suffixed test binary (`cargo`'s own `executable` field - authoritative, see Kubuno.Launch's `ExecutableResolver` doc comment).</summary>
+        /// <summary>Absolute path to the built, hash-suffixed test binary (`cargo`'s own `executable` field - authoritative, see Kubuno.Rust.Launch's `ExecutableResolver` doc comment).</summary>
         public string ExecutablePath { get; }
 
         /// <summary>Absolute path to the owning package's Cargo.toml - this is the discovery/execution "container" (see Containers/).</summary>

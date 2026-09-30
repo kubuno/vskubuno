@@ -18,7 +18,7 @@
     <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">Component.rs</ProjectItem>
   </TemplateContent>
   <WizardExtension>
-    <Assembly>Kubuno.VisualStudio.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
-    <FullClassName>Kubuno.VisualStudio.TemplateWizard.ControlItemWizard</FullClassName>
+    <Assembly>Kubuno.Desktop.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>Kubuno.Desktop.TemplateWizard.ControlItemWizard</FullClassName>
   </WizardExtension>
 </VSTemplate>

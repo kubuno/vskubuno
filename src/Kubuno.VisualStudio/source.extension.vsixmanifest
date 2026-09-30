@@ -44,29 +44,36 @@
     </Prerequisites>
     <Assets>
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
         <!--
-          Kubuno.VisualStudio.Views' own INTEGRATION.md #2's documented fallback: composition from
-          %CurrentProject% alone was live-verified NOT sufficient for kubuno-views-ls.exe to start
-          for a .kbview file (rust-analyzer starts fine for .rs files the same way, so this is
-          specific to the Views assembly, not a general MEF/VSIX wiring problem) - add an explicit
-          second MefComponent asset for it, exactly as that document anticipated.
+          One MefComponent asset per assembly that exports MEF parts (docs/ARCHITECTURE.md, "Layers (as built)"):
+          Visual Studio only composes the assemblies a manifest names - composition from %CurrentProject% alone was
+          live-verified NOT sufficient for kubuno-views-ls.exe to start for a .kbview file when its language client
+          lived in another assembly. Core exports nothing today; the Web and Mobile layers are listed already so their
+          first MEF part needs no manifest change.
         -->
-        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.VisualStudio.Views" Path="|Kubuno.VisualStudio.Views|" />
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Core" Path="|Kubuno.Core|" />
+        <!-- Rust layer: rust-analyzer, IntelliSense, Cargo workspaces... -->
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Rust" Path="|Kubuno.Rust|" />
         <!-- docs/RSPROJ.md work package 3: CPS exports of the .rsproj project type (the counterpart of
              Microsoft.VisualStudio.JavaScript.ProjectSystem.dll's own MefComponent asset). -->
-        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.VisualStudio.RustProjectSystem" Path="|Kubuno.VisualStudio.RustProjectSystem|" />
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Rust.ProjectSystem" Path="|Kubuno.Rust.ProjectSystem|" />
+        <!-- Desktop layer: the .kbview language client and content type, .kbview IntelliSense in Rust files, SQL in Rust strings... -->
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Desktop" Path="|Kubuno.Desktop|" />
+        <!-- The desktop target's CPS exports in a .rsproj (the .kbview default editor and icon). -->
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Desktop.ProjectSystem" Path="|Kubuno.Desktop.ProjectSystem|" />
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Web" Path="|Kubuno.Web|" />
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Mobile" Path="|Kubuno.Mobile|" />
         <!--
-          Kubuno.TestAdapter's own INTEGRATION.md #3.2: two registrations for the SAME assembly
-          (Kubuno.TestAdapter.dll, copied into this VSIX's output by the ProjectReference in
+          Kubuno.Rust.TestAdapter's own INTEGRATION.md #3.2: two registrations for the SAME assembly
+          (Kubuno.Rust.TestAdapter.dll, copied into this VSIX's output by the ProjectReference in
           Kubuno.VisualStudio.csproj) - MefComponent registers KubunoTestContainerDiscoverer
           ([Export(typeof(ITestContainerDiscoverer))], what makes Test Explorer know Cargo.toml
           files exist); UnitTestExtension registers KubunoTestDiscoverer/KubunoTestExecutor with
           VSTest's extension manager (what makes a run/debug actually work), matching the real,
           currently-shipping "CMake Linux and Mac Test Adapter" extension's own manifest shape.
         -->
-        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.TestAdapter" Path="|Kubuno.TestAdapter|" />
-        <Asset Type="UnitTestExtension" d:Source="Project" d:ProjectName="Kubuno.TestAdapter" Path="|Kubuno.TestAdapter|" />
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Rust.TestAdapter" Path="|Kubuno.Rust.TestAdapter|" />
+        <Asset Type="UnitTestExtension" d:Source="Project" d:ProjectName="Kubuno.Rust.TestAdapter" Path="|Kubuno.Rust.TestAdapter|" />
         <!--
           docs/RSPROJ.md Addendum (lot 7): "Create a new project"/"Add New Item" templates. Path is
           relative to this manifest's own folder (d:Source defaults to "File" - unlike the
@@ -80,7 +87,7 @@
           package"), and the Concord component that gives a Rust panic its message in the exception helper.
         -->
         <Asset Type="NativeVisualizer" Path="Debugging\Visualizers\Kubuno.natvis" />
-        <Asset Type="DebuggerEngineExtension" Path="Kubuno.VisualStudio.Debugger.vsdconfig" />
+        <Asset Type="DebuggerEngineExtension" Path="Kubuno.Rust.Debugger.vsdconfig" />
         <Asset Type="Microsoft.VisualStudio.ProjectTemplate" Path="ProjectTemplates" />
         <Asset Type="Microsoft.VisualStudio.ItemTemplate" Path="ItemTemplates" />
     </Assets>

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace Kubuno.Launch
+namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// The real <see cref="IProcessRunner"/>, backed by <see cref="Process"/>. Not used by

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.VisualStudio.TemplateWizard
+namespace Kubuno.Desktop.TemplateWizard
 {
     /// <summary>
-    /// This assembly's dialogs with sample data, for Kubuno.VisualStudio's "Kubuno: Dialog Gallery" developer
+    /// This assembly's dialogs with sample data, for Kubuno.Core's "Kubuno: Dialog Gallery" developer
     /// command (docs/ARCHITECTURE.md, "Themed dialogs"): re-checking every dialog in each Visual Studio theme.
     /// </summary>
     public static class TemplateWizardDialogGallery

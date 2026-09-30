@@ -10,13 +10,13 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using Kubuno.VisualStudio.Core.Data;
-using Kubuno.VisualStudio.UI;
+using Kubuno.Desktop.Logic.Data;
+using Kubuno.Core.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.DataExplorer
+namespace Kubuno.Desktop.DataExplorer
 {
     /// <summary>
     /// "Ajouter une connexion" (Data Explorer, docs/DATA.md §9): name, provider and its fields, SSL/TLS, an "Advanced"

@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.VisualStudio.Core.IntelliSense
+namespace Kubuno.Desktop.Logic.IntelliSense
 {
     /// <summary>What the caret is on inside a <c>.kbview</c> attribute value, for the cross-language completions.</summary>
     public enum KbviewValueKind

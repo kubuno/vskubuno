@@ -1,13 +1,13 @@
 using System;
 using System.IO;
 using EnvDTE;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.Options;
+using Kubuno.Core.Logging;
+using Kubuno.Rust.Options;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Infrastructure
+namespace Kubuno.Rust.Infrastructure
 {
     /// <summary>
     /// Implements the "Format on save" option: when enabled and a .rs document is about to be

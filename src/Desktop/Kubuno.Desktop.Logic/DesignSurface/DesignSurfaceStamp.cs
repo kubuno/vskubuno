@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 
-namespace Kubuno.Cargo.DesignSurface
+namespace Kubuno.Desktop.Logic.DesignSurface
 {
     /// <summary>
     /// <c>surface.json</c>, written last into a design surface folder (so its presence means "complete"):

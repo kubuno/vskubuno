@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>Where an external drop landed on a view (see <see cref="IExternalDropSource.Plan"/>).</summary>
     public sealed class ExternalDropRequest

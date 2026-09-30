@@ -7,7 +7,7 @@
 ; for std::exception or Platform::COMException ^ in its own VSDebugEng_Impl_Engine.pkgdef (the category GUID below
 ; is DkmExceptionCategory::Cpp there). State 1 = "Break When Thrown" checked by default, like the Platform::*
 ; entries: a panic stops the debugger at the line that panicked (Kubuno.Rust.natjmc marks the panic machinery as
-; ExceptionImplementation), and the exception helper shows its message (Kubuno.VisualStudio.Debugger's
+; ExceptionImplementation), and the exception helper shows its message (Kubuno.Rust.Debugger's
 ; RustPanicExceptionFormatter). Unchecking it lets the panic run its course (a Kubuno application then shows its
 ; crash window).
 [$RootKey$\AD7Metrics\Exception\{3A12D0B7-C26C-11D0-B442-00A0244A1DD2}\C++ Exceptions\ ?? ::st_panic]

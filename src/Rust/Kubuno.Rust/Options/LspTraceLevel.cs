@@ -1,4 +1,4 @@
-namespace Kubuno.VisualStudio.Options
+namespace Kubuno.Rust.Options
 {
     /// <summary>
     /// How much raw LSP traffic <see cref="LanguageService.RustLanguageClient"/> forwards to the

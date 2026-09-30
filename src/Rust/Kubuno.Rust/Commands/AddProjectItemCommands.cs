@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.IO;
 using System.Reflection;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>
     /// The five item-template entries of the extended "Ajouter" submenu on a <c>.rsproj</c> project
@@ -26,33 +27,24 @@ namespace Kubuno.VisualStudio.Commands
     /// dialog only got stuck forever on "Chargement des modèles..." (confirmed even after a full
     /// template-cache rebuild - restart-once, delete `ExtensionMetadata*.mpack`, restart again), so
     /// this instead matches the *current* stock command's own shape with a themed equivalent.
+    ///
+    /// The entries come from the layers: the Rust layer adds the plain Rust items (module, integration test, example,
+    /// binary), a target layer adds its own (the desktop layer: Kubuno views, controls, components), each with a
+    /// command ID of <c>KubunoCommands.vsct</c>'s "Ajouter" submenu.
     /// </summary>
-    internal static class AddProjectItemCommands
+    public static class AddProjectItemCommands
     {
-        private static readonly ItemTemplate[] Templates =
-        {
-            new ItemTemplate(PackageIds.AddKubunoViewCommand, "KubunoView", "Vue Kubuno", "Nom de la vue :", "NewView", ".kbview"),
-            // docs/EVENTS.md EVT-7b: the control templates (the wizard names the struct and the file, and declares the module).
-            new ItemTemplate(PackageIds.AddKubunoCustomControlCommand, "KubunoCustomControl", "Contrôle personnalisé Kubuno", "Nom du contrôle :", "CustomControl", ".rs", controlItem: true),
-            new ItemTemplate(PackageIds.AddKubunoUserControlCommand, "KubunoUserControl", "Contrôle utilisateur Kubuno", "Nom du contrôle utilisateur :", "UserControl", ".kbview", controlItem: true),
-            new ItemTemplate(PackageIds.AddKubunoInheritedControlCommand, "KubunoInheritedControl", "Contrôle hérité Kubuno", "Nom du contrôle :", "InheritedControl", ".rs", controlItem: true),
-            new ItemTemplate(PackageIds.AddKubunoComponentCommand, "KubunoComponent", "Composant Kubuno", "Nom du composant :", "Component", ".rs", controlItem: true),
-            new ItemTemplate(PackageIds.AddRustModuleCommand, "RustModule", "Module Rust", "Nom du module :", "module", ".rs"),
-            new ItemTemplate(PackageIds.AddRustIntegrationTestCommand, "RustIntegrationTest", "Test d'intégration", "Nom du test :", "integration_test", ".rs"),
-            new ItemTemplate(PackageIds.AddRustExampleCommand, "RustExample", "Exemple", "Nom de l'exemple :", "example", ".rs"),
-            new ItemTemplate(PackageIds.AddRustBinaryCommand, "RustBinary", "Binaire", "Nom du binaire :", "tool", ".rs"),
-        };
-
-        public static void Initialize(AsyncPackage package, OleMenuCommandService commandService)
+        /// <summary>Wires one command per template (UI thread).</summary>
+        public static void Initialize(OleMenuCommandService commandService, IEnumerable<ProjectItemTemplate> templates)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            foreach (var template in Templates)
+            foreach (var template in templates)
             {
                 AddCommand(commandService, template);
             }
         }
 
-        private static void AddCommand(OleMenuCommandService commandService, ItemTemplate template)
+        private static void AddCommand(OleMenuCommandService commandService, ProjectItemTemplate template)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var id = new CommandID(PackageGuids.KubunoCommandSet, template.CommandId);
@@ -73,7 +65,7 @@ namespace Kubuno.VisualStudio.Commands
             command.Visible = command.Enabled = RsprojSelection.TryGetCurrent() is not null;
         }
 
-        private static void Execute(ItemTemplate template)
+        private static void Execute(ProjectItemTemplate template)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -102,20 +94,20 @@ namespace Kubuno.VisualStudio.Commands
                 return;
             }
 
-            var fileName = template.ControlItem
-                ? Kubuno.VisualStudio.TemplateWizard.ControlItemNames.ModuleName(dialog.EnteredName) + template.PrimaryExtension
+            var fileName = template.FileStem is { } fileStem
+                ? fileStem(dialog.EnteredName) + template.PrimaryExtension
                 : dialog.EnteredName.EndsWith(template.PrimaryExtension, StringComparison.OrdinalIgnoreCase)
                     ? dialog.EnteredName
                     : dialog.EnteredName + template.PrimaryExtension;
 
             try
             {
-                var items = template.ControlItem ? SourceFolderItems(context.Project) ?? context.Project.ProjectItems : context.Project.ProjectItems;
+                var items = template.IntoSourceFolder ? SourceFolderItems(context.Project) ?? context.Project.ProjectItems : context.Project.ProjectItems;
                 items.AddFromTemplate(templatePath, fileName);
             }
             catch (Exception exception)
             {
-                Kubuno.VisualStudio.Logging.KubunoLog.WriteException($"Kubuno: adding \"{fileName}\" from the {template.DisplayName} template", exception);
+                Kubuno.Core.Logging.KubunoLog.WriteException($"Kubuno: adding \"{fileName}\" from the {template.DisplayName} template", exception);
                 VsShellUtilities.ShowMessageBox(
                     ServiceProvider.GlobalProvider,
                     $"Impossible d'ajouter \"{fileName}\" - voir le panneau de sortie \"Kubuno\" pour le détail.",
@@ -172,44 +164,51 @@ namespace Kubuno.VisualStudio.Commands
                 return null;
             }
         }
+    }
 
-        private readonly struct ItemTemplate
+    /// <summary>One entry of the extended "Ajouter" submenu of a <c>.rsproj</c>: a loose item template of the VSIX.</summary>
+    public sealed class ProjectItemTemplate
+    {
+        public ProjectItemTemplate(int commandId, string folderName, string displayName, string promptLabel, string defaultName, string primaryExtension, Func<string, string>? fileStem = null, bool intoSourceFolder = false)
         {
-            public ItemTemplate(int commandId, string folderName, string displayName, string promptLabel, string defaultName, string primaryExtension, bool controlItem = false)
-            {
-                ControlItem = controlItem;
-                CommandId = commandId;
-                FolderName = folderName;
-                DisplayName = displayName;
-                PromptLabel = promptLabel;
-                DefaultName = defaultName;
-                PrimaryExtension = primaryExtension;
-            }
-
-            public int CommandId { get; }
-
-            /// <summary>The template's own folder name under <c>ItemTemplates\</c> - also its <c>.vstemplate</c> file's base name.</summary>
-            public string FolderName { get; }
-
-            public string DisplayName { get; }
-
-            public string PromptLabel { get; }
-
-            public string DefaultName { get; }
-
-            /// <summary>
-            /// The extension of the file whose name identifies the whole template to
-            /// <c>AddFromTemplate</c> (e.g. <c>.kbview</c> for Kubuno View, even though it also
-            /// creates a same-stem <c>.rs</c> code-behind - <c>$fileinputname$</c> is derived from
-            /// this one file name).
-            /// </summary>
-            public string PrimaryExtension { get; }
-
-            /// <summary>
-            /// A control template (docs/EVENTS.md EVT-7b): its files are named after the Rust module (<c>RoundButton</c> →
-            /// <c>round_button.rs</c>) and go to the crate's <c>src</c> folder, where the wizard declares the module.
-            /// </summary>
-            public bool ControlItem { get; }
+            CommandId = commandId;
+            FolderName = folderName;
+            DisplayName = displayName;
+            PromptLabel = promptLabel;
+            DefaultName = defaultName;
+            PrimaryExtension = primaryExtension;
+            FileStem = fileStem;
+            IntoSourceFolder = intoSourceFolder;
         }
+
+        /// <summary>The command ID (<c>KubunoCommands.vsct</c>), in <see cref="Kubuno.Core.KubunoGuids.CommandSet"/>.</summary>
+        public int CommandId { get; }
+
+        /// <summary>The template's own folder name under <c>ItemTemplates\</c> - also its <c>.vstemplate</c> file's base name.</summary>
+        public string FolderName { get; }
+
+        public string DisplayName { get; }
+
+        public string PromptLabel { get; }
+
+        public string DefaultName { get; }
+
+        /// <summary>
+        /// The extension of the file whose name identifies the whole template to
+        /// <c>AddFromTemplate</c> (e.g. <c>.kbview</c> for Kubuno View, even though it also
+        /// creates a same-stem <c>.rs</c> code-behind - <c>$fileinputname$</c> is derived from
+        /// this one file name).
+        /// </summary>
+        public string PrimaryExtension { get; }
+
+        /// <summary>
+        /// The file name (without extension) for the entered name, when the template names its files itself (the
+        /// desktop control templates, docs/EVENTS.md EVT-7b: <c>RoundButton</c> becomes <c>round_button.rs</c>); null
+        /// to use the entered name.
+        /// </summary>
+        public Func<string, string>? FileStem { get; }
+
+        /// <summary>The files go to the crate's <c>src</c> folder (where a control template's wizard declares the module).</summary>
+        public bool IntoSourceFolder { get; }
     }
 }

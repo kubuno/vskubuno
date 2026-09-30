@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Kubuno.Rust.Logic;
 
-namespace Kubuno.VisualStudio.Core.Sql
+namespace Kubuno.Desktop.Logic.Sql
 {
     /// <summary>
     /// Finds the Rust string literals that hold SQL: the query of the sqlx macros (<c>query!</c>, <c>query_as!</c> after

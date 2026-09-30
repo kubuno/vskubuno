@@ -1,7 +1,7 @@
 using System;
 using Microsoft.VisualStudio.ProjectSystem;
 
-namespace Kubuno.VisualStudio.RustProjectSystem
+namespace Kubuno.Rust.ProjectSystem
 {
     /// <summary>
     /// Image monikers declared by <c>Resources\RustProject.imagemanifest</c> (shipped in the VSIX,
@@ -20,7 +20,10 @@ namespace Kubuno.VisualStudio.RustProjectSystem
         /// <summary>The <c>RustFile</c> image id (a source page with the Rust badge).</summary>
         public const int RustFileId = 2;
 
-        /// <summary>The <c>KbviewFile</c> image id (a form-like window).</summary>
+        /// <summary>
+        /// The <c>KbviewFile</c> image id (a form-like window). The image stays in this manifest so the moniker never
+        /// changes; the desktop layer applies it to <c>.kbview</c> items (Kubuno.Desktop.ProjectSystem).
+        /// </summary>
         public const int KbviewFileId = 3;
 
         /// <summary>The <c>CargoManifest</c> image id (Cargo's crate).</summary>
@@ -54,7 +57,8 @@ namespace Kubuno.VisualStudio.RustProjectSystem
                 return RustFile;
             }
 
-            return string.Equals(extension, ".kbview", StringComparison.OrdinalIgnoreCase) ? KbviewFile : null;
+            // .kbview items get KbviewFile from the desktop layer (Kubuno.Desktop.ProjectSystem.KbviewTreePropertiesProvider).
+            return null;
         }
     }
 }

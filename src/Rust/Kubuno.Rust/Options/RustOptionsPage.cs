@@ -1,18 +1,28 @@
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows.Forms.Design;
-using Kubuno.VisualStudio.Core.IntelliSense;
-using Kubuno.VisualStudio.Views.Options;
+using Kubuno.Rust.Logic.IntelliSense;
+using Kubuno.Core.Settings;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.VisualStudio.Options
+namespace Kubuno.Rust.Options
 {
     /// <summary>
     /// Tools &gt; Options &gt; Kubuno &gt; Rust. <see cref="LanguageService.RustLanguageClient"/> reads
     /// <see cref="RustAnalyzerPathOverride"/> when starting rust-analyzer; the format-on-save
     /// document-save hook reads <see cref="FormatOnSave"/>.
     /// </summary>
+    // The identity Visual Studio stored this page under before the layers (docs/ARCHITECTURE.md, "Layers (as built)"):
+    // the page GUID of the pkgdef and profile (formerly derived from the type's full name) and the classic settings
+    // key (DialogPage's default is derived from the full name too), kept so existing settings and exports still apply.
+    [Guid("038ac86f-881c-3765-8011-46a3dd0967e2")]
     public sealed class RustOptionsPage : KubunoDialogPage
     {
+        public RustOptionsPage()
+            : base(legacyTypeFullName: "Kubuno.VisualStudio.Options.RustOptionsPage")
+        {
+        }
+
         [Category("rust-analyzer")]
         [DisplayName("Path override")]
         [Description("Full path to rust-analyzer.exe. When empty, Kubuno tries 'rustup which rust-analyzer', " +

@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Diagnostics;
-using Kubuno.Cargo.Processes;
-using Kubuno.VisualStudio.Debugging;
-using Kubuno.VisualStudio.Logging;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Diagnostics;
+using Kubuno.Rust.Cargo.Processes;
+using Kubuno.Rust.Debugging;
+using Kubuno.Core.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Extensions.VS;
 
-namespace Kubuno.VisualStudio.Workspace
+namespace Kubuno.Rust.Workspace
 {
     /// <summary>
     /// MEF entry point creating the actual Build/Rebuild/Clean behavior for the file contexts

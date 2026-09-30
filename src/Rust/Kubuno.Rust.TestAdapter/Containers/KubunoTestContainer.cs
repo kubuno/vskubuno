@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.TestWindow.Extensibility.Model;
 
-namespace Kubuno.TestAdapter.Containers
+namespace Kubuno.Rust.TestAdapter.Containers
 {
     /// <summary>
     /// One Cargo.toml manifest, wrapped as a Test Explorer container. <see cref="Source"/> is

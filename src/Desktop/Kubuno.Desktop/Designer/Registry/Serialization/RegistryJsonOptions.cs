@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Kubuno.VisualStudio.Designer.Registry.Serialization
+namespace Kubuno.Desktop.Designer.Registry.Serialization
 {
     /// <summary>Shared <see cref="JsonSerializerOptions"/> for reading a <c>kubuno/registry</c> export (docs/DESIGNER.md §5).</summary>
     public static class RegistryJsonOptions

@@ -1,8 +1,8 @@
-using Kubuno.VisualStudio.Designer.PropertyBrowser;
-using Kubuno.VisualStudio.Designer.Selection;
+using Kubuno.Desktop.Designer.PropertyBrowser;
+using Kubuno.Desktop.Designer.Selection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.VisualStudio.Designer.Tests.Selection
+namespace Kubuno.Desktop.Tests.Designer.Selection
 {
     [TestClass]
     public class XmlCharacterReferencesTests

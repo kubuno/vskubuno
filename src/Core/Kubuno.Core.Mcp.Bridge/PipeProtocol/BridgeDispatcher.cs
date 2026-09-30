@@ -2,9 +2,9 @@ using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Mcp.Bridge.Contracts;
+using Kubuno.Core.Mcp.Bridge.Contracts;
 
-namespace Kubuno.Mcp.Bridge.PipeProtocol
+namespace Kubuno.Core.Mcp.Bridge.PipeProtocol
 {
     /// <summary>
     /// Routes a decoded <see cref="BridgeRequest"/> to the matching <see cref="IVsContextProvider"/>
@@ -13,7 +13,7 @@ namespace Kubuno.Mcp.Bridge.PipeProtocol
     /// <remarks>
     /// Pure request-in/response-out logic with no I/O of its own, so it is unit-testable directly
     /// against a fake <see cref="IVsContextProvider"/> without a pipe (see
-    /// tests/Kubuno.Mcp.Tests/BridgeDispatcherTests.cs) - the pipe transport itself is exercised
+    /// tests/Kubuno.Core.Mcp.Tests/BridgeDispatcherTests.cs) - the pipe transport itself is exercised
     /// separately by <see cref="VsMcpBridgeHost"/>/<see cref="VsMcpBridgeClient"/> end-to-end tests.
     /// </remarks>
     public sealed class BridgeDispatcher

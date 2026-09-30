@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.VisualStudio.Designer.DesignSurface
+namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The production <see cref="IDesignSurfaceHostFactory"/>: one <see cref="RustDesignSurfaceHost"/>

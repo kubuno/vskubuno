@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Kubuno.VisualStudio.Core.Migrations
+namespace Kubuno.Desktop.Logic.Migrations
 {
     /// <summary>
     /// User-visible strings of the migration and SQLx cache tooling (docs/DATA.md DATA-7), in English and French, picked

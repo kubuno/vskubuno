@@ -5,15 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using Kubuno.Cargo.Commands;
-using Kubuno.Cargo.Tools;
-using Kubuno.VisualStudio.Core.SolutionExplorer;
-using Kubuno.VisualStudio.Logging;
-using Kubuno.VisualStudio.SolutionExplorer;
+using Kubuno.Rust.Cargo.Commands;
+using Kubuno.Rust.Cargo.Tools;
+using Kubuno.Rust.Logic.SolutionExplorer;
+using Kubuno.Core.Logging;
+using Kubuno.Rust.SolutionExplorer;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.VisualStudio.Commands
+namespace Kubuno.Rust.Commands
 {
     /// <summary>
     /// What the Dependencies menus do (<see cref="DependenciesNodeCommandTarget"/>): <c>cargo update</c>,
@@ -167,13 +167,13 @@ namespace Kubuno.VisualStudio.Commands
             {
                 var item = model.AllItems.FirstOrDefault(i => i.ItemKind == DependencyItemKind.Crate && !i.IsTransitive
                     && (string.Equals(i.DisplayName, name, StringComparison.Ordinal) || string.Equals(i.DisplayName.Replace('-', '_'), name.Replace('-', '_'), StringComparison.Ordinal)));
-                await RemoveCoreAsync(context, item?.DisplayName ?? name, item?.Declarations ?? Array.Empty<Kubuno.Cargo.Metadata.CargoDependency>());
+                await RemoveCoreAsync(context, item?.DisplayName ?? name, item?.Declarations ?? Array.Empty<Kubuno.Rust.Cargo.Metadata.CargoDependency>());
             }
 
             await ReloadAsync(context);
         }
 
-        private static async Task RemoveCoreAsync(RsprojProjectContext context, string localName, IReadOnlyList<Kubuno.Cargo.Metadata.CargoDependency> declarations)
+        private static async Task RemoveCoreAsync(RsprojProjectContext context, string localName, IReadOnlyList<Kubuno.Rust.Cargo.Metadata.CargoDependency> declarations)
         {
             foreach (var command in CrateInstallPlanner.Uninstall(context.ManifestPath, context.PackageName, localName, declarations))
             {
@@ -270,7 +270,7 @@ namespace Kubuno.VisualStudio.Commands
             return result?.Succeeded == true && result.StandardOutputLines.Any(l => l.TrimStart().StartsWith("nightly", StringComparison.Ordinal));
         }
 
-        private static bool IsMissingSubcommand(Kubuno.Cargo.Processes.ProcessRunResult result) =>
+        private static bool IsMissingSubcommand(Kubuno.Rust.Cargo.Processes.ProcessRunResult result) =>
             result.ExitCode != 0 && result.StandardErrorLines.Concat(result.StandardOutputLines)
                 .Any(l => l.IndexOf("no such command", StringComparison.OrdinalIgnoreCase) >= 0
                     || l.IndexOf("toolchain 'nightly", StringComparison.OrdinalIgnoreCase) >= 0

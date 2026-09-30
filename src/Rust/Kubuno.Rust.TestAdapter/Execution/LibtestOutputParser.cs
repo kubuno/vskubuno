@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.TestAdapter.Execution
+namespace Kubuno.Rust.TestAdapter.Execution
 {
     public enum LibtestVerdict
     {

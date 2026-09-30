@@ -4,11 +4,11 @@ using Microsoft.VisualStudio.Debugger.ComponentInterfaces;
 using Microsoft.VisualStudio.Debugger.Exceptions;
 using Microsoft.VisualStudio.Debugger.Native;
 
-namespace Kubuno.VisualStudio.Debugger
+namespace Kubuno.Rust.Debugger
 {
     /// <summary>
     /// <see cref="IDkmExceptionFormatter"/> for the C++ exception category (the filter in
-    /// Kubuno.VisualStudio.Debugger.vsdconfigxml): a <c>rust_panic</c> - the C++ exception every Rust
+    /// Kubuno.Rust.Debugger.vsdconfigxml): a <c>rust_panic</c> - the C++ exception every Rust
     /// panic raises on MSVC - is described as "Rust panic: &lt;message&gt;", the message read from the
     /// panic payload (<see cref="RustPanicPayload"/>), like the Message of a .NET exception in the exception
     /// helper; every other exception goes to the next formatter unchanged.

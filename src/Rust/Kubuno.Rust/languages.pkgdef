@@ -1,43 +1,21 @@
-; Registers the Grammars folder shipped in this VSIX as a TextMate repository, so .rs files
-; get syntax coloring from rust.tmLanguage.json even before (or without) rust-analyzer running.
+; Rust layer (docs/ARCHITECTURE.md, "Layers (as built)"). Registers the Grammars folder shipped in this VSIX as a
+; TextMate repository, so .rs files get syntax coloring from rust.tmLanguage.json even before (or without)
+; rust-analyzer running. The .kbview grammar of the desktop layer has its own kbview-languages.pkgdef.
 [$RootKey$\TextMate\Repositories]
 "Kubuno"="$PackageFolder$\Grammars"
-; Kubuno.VisualStudio.Views' own grammar (see its kbview-languages.pkgdef and INTEGRATION.md #3),
-; merged here under a distinct key/subfolder so it never collides with the Rust one above.
-"KubunoViews"="$PackageFolder$\Grammars\Kbview"
 
-; Brackets/comments/indentation for the grammar's scope (source.rust / text.xml.kbview) and for
-; the LSP content type (rust / kbview, see LanguageService\ContentDefinition.cs in each project) -
-; each pair of keys points at the same file.
+; Brackets/comments/indentation for the grammar's scope (source.rust) and for the LSP content type (rust, see
+; LanguageService\ContentDefinition.cs) - both keys point at the same file.
 [$RootKey$\TextMate\LanguageConfiguration\GrammarMapping]
 "source.rust"="$PackageFolder$\Grammars\rust-language-configuration.json"
-"text.xml.kbview"="$PackageFolder$\Grammars\Kbview\kbview-language-configuration.json"
 
 [$RootKey$\TextMate\LanguageConfiguration\ContentTypeMapping]
 "rust"="$PackageFolder$\Grammars\rust-language-configuration.json"
-"kbview"="$PackageFolder$\Grammars\Kbview\kbview-language-configuration.json"
 
-; Opens .kbview files in VS's own core text editor ("Source Code (Text) Editor",
-; VSConstants.CLSID.VsTextEditorFactory), so the buffer gets the "kbview" content type from
-; Kubuno.VisualStudio.Views' FileExtensionToContentTypeDefinition - the content type the kbview
-; ILanguageClient (kubuno-views-ls) is bound to. Without an explicit entry, .kbview is an unknown
-; extension and, because its content looks like XML, VS opens it in its XML editor instead
-; (verified live: DTE Document.Language = "XML"): the buffer then gets the XML language service and
-; content type, and the kbview language client is never activated. .rs has no such issue - it opens
-; in the core editor ("Plain Text" language service, "rust" content type) without any entry.
-; The HIGHEST value wins the double-click default, so 0x64 must stay above any other editor
-; registered for "kbview" that should stay opt-in (e.g. the Kubuno View Designer's 0x60, see
-; Kubuno.VisualStudio.Designer/INTEGRATION.md).
-[$RootKey$\Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions]
-"kbview"=dword:00000064
-
-; docs/RSPROJ.md lot 8: file icons by extension, from Kubuno.VisualStudio.RustProjectSystem's
-; RustProject.imagemanifest (guid:id, the same format VS's own ModelBuilder icons.pkgdef uses). Used by
-; Solution Explorer wherever no project system sets an icon itself - notably Open Folder; .rsproj items
-; get the same monikers from RustProjectTreePropertiesProvider. Cargo.toml is not associated here: the
-; key is per extension, and every other .toml file would get the Cargo icon too.
+; docs/RSPROJ.md lot 8: file icons by extension, from Kubuno.Rust.ProjectSystem's RustProject.imagemanifest
+; (guid:id, the same format VS's own ModelBuilder icons.pkgdef uses). Used by Solution Explorer wherever no
+; project system sets an icon itself - notably Open Folder; .rsproj items get the same monikers from
+; RustProjectTreePropertiesProvider. Cargo.toml is not associated here: the key is per extension, and every
+; other .toml file would get the Cargo icon too.
 [$RootKey$\ShellFileAssociations\.rs]
 "DefaultIconMoniker"="7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57:2"
-
-[$RootKey$\ShellFileAssociations\.kbview]
-"DefaultIconMoniker"="7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57:3"

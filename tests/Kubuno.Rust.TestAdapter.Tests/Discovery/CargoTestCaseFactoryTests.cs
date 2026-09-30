@@ -1,7 +1,7 @@
-using Kubuno.TestAdapter.Discovery;
+using Kubuno.Rust.TestAdapter.Discovery;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
-namespace Kubuno.TestAdapter.Tests.Discovery
+namespace Kubuno.Rust.TestAdapter.Tests.Discovery
 {
     public class CargoTestCaseFactoryTests
     {

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Web layer (docs/ARCHITECTURE.md, "Layers (as built)" and "Roadmap - Kubuno web modules in the same VSIX"): the
+    Visual Studio side of Kubuno WEB MODULES (a Rust/Axum backend .rsproj + a React/TypeScript frontend loaded by the
+    core host). Today a skeleton: WebLayer is already registered with the package (src/Kubuno.VisualStudio) through
+    the same contract as the Rust and Desktop layers (Kubuno.Core.Extensibility.KubunoLayer), with no feature yet -
+    see README.md for what goes here and where each piece plugs in.
+
+    References Kubuno.Core and the Rust layer only - never Kubuno.Desktop or Kubuno.Mobile (enforced by
+    tests/Kubuno.Architecture.Tests): a web module reuses the Rust support (rust-analyzer, Cargo, .rsproj,
+    debugging) untouched.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Kubuno.Web</RootNamespace>
+    <AssemblyName>Kubuno.Web</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Same versions as every other Visual Studio assembly of the extension (bump them together). -->
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
+    <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust\Kubuno.Rust.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
+  </ItemGroup>
+
+</Project>
