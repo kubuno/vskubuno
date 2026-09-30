@@ -122,6 +122,9 @@ $table = @(
     @{ Name = 'PictureBox';       Icon = 'images';               Accent = 0 }
     @{ Name = 'Popover';          Icon = 'message-square-dot';   Accent = 1 }
     @{ Name = 'TableLayoutPanel'; Icon = 'grid-3x3';             Accent = 'none' }
+    @{ Name = 'GradientField';    Custom = @(
+        @('circle', @{ cx = '9'; cy = '9'; r = '7' }),
+        @('circle', @{ cx = '15'; cy = '15'; r = '7' })) }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS

@@ -89,6 +89,7 @@
     <ID Name="PictureBox" Value="78" />
     <ID Name="Popover" Value="79" />
     <ID Name="TableLayoutPanel" Value="80" />
+    <ID Name="GradientField" Value="81" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -490,6 +491,11 @@
       <Source Uri="$(Controls)/TableLayoutPanel.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/TableLayoutPanel.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/TableLayoutPanel.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(GradientField)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/GradientField.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/GradientField.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/GradientField.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

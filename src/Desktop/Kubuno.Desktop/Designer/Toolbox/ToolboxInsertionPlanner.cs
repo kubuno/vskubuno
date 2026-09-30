@@ -119,6 +119,7 @@ namespace Kubuno.Desktop.Designer.Toolbox
                 case "MaskedField":
                 case "NumericField":
                 case "ColorField":
+                case "GradientField":
                 case "DatePicker":
                 case "ComboBox":
                 case "Dropdown":

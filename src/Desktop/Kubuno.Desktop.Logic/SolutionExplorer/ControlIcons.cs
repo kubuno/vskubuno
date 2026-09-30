@@ -102,6 +102,7 @@ namespace Kubuno.Desktop.Logic.SolutionExplorer
             ["PictureBox"] = 78, // Lucide "images"
             ["Popover"] = 79, // Lucide "message-square-dot"
             ["TableLayoutPanel"] = 80, // Lucide "grid-3x3"
+            ["GradientField"] = 81, // custom (Lucide style)
         };
 
         /// <summary>The image id for element <paramref name="tag"/> (<see cref="FallbackId"/> when unknown).</summary>
