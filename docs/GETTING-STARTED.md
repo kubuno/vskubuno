@@ -56,14 +56,17 @@ TypeScript in the language dropdown) or just search "rust". Four project templat
 - **Rust Console Application** - a plain `cargo new --bin` equivalent, wired to build/debug through
   Visual Studio.
 - **Rust Library** - a plain `cargo new --lib` equivalent.
-- **Kubuno Desktop Application** - a `kubuno_ui`/`kubuno_controls`/`kubuno_views` window with a
-  starter `.kbview` view (see "The view designer" below). Its generated `Cargo.toml` depends on
-  those crates as **path dependencies pointing at a `desktop/windows` checkout on your own
+- **Kubuno Desktop Application** - a native Kubuno window written like a Windows Forms project, in
+  three short files (`docs/PROGRAMMING-MODEL.md`): `main.rs` (`kubuno::Application::run(MainView::new())`,
+  the `Program.cs`), `main_view.kbview` (the window's design) and `main_view.rs` (`MainView`, the `Form1`:
+  `#[kubuno::view("main_view.kbview")]` gives it a field per control - `self.status`, `self.hello` - and
+  its event handlers are plain methods, `fn main_view_load(&mut self, …)`). Its generated `Cargo.toml` has
+  one dependency, `kubuno`, a **path dependency pointing at a `desktop/windows` checkout on your own
   machine**. **Single prerequisite**: a checkout of `github.com/kubuno/desktop`, and - unless it
   is at the default `Z:\src\desktop\windows` - the `KUBUNO_DESKTOP_SRC` environment variable set
   to its `windows` folder (or to the repository root) **before** you create the project, e.g.
   `setx KUBUNO_DESKTOP_SRC D:\src\desktop\windows`, then restart Visual Studio. The path is written
-  into the new project once, at creation (`Cargo.toml`'s three `kubuno-*` paths and the `.rsproj`'s
+  into the new project once, at creation (`Cargo.toml`'s `kubuno` path and the `.rsproj`'s
   `<KubunoDesktopSrc>`, to be changed together if you move the checkout later); a build with that
   folder missing stops with error `KUBUNO0001` saying exactly this. The project then builds and
   runs with F5 as created, with no other step: its `.rsproj` gives it its own cargo target
@@ -78,8 +81,23 @@ invalid characters folded to `-`, forced to start with a letter - `My App 2` bec
 for a Kubuno Module, a matching `module.toml` id (`my_app_2`) is derived the same way. You do not
 need to sanitize the project name yourself.
 
-*Add New Item* on a created project adds three more templates: **Kubuno View** (a new `.kbview`
-plus its same-stem `.rs` code-behind), **Rust Module**, and **Rust Integration Test**.
+*Add New Item* on a created project adds three more templates: **Kubuno View** (another form: a new
+`.kbview` plus its same-stem `.rs`, a `#[kubuno::view]` struct you open with `SettingsView::new().show()` or
+`.show_dialog(self)` from a handler), **Rust Module**, and **Rust Integration Test**.
+
+**Forms and controls in code.** A window can also be built entirely in code, the Windows Forms way, and
+mixed with a designed view (controls added to `self.controls()`):
+
+```rust
+let form = Form::new().text("Hello").client_size(800.0, 450.0);
+let ok = Button::new().text("OK").location(10.0, 10.0).size(75.0, 23.0).anchor(Anchor::TOP | Anchor::RIGHT);
+ok.click().subscribe(|_sender, _e| { MessageBox::show("Clicked"); });
+form.controls().add(&ok);
+kubuno::Application::run(form)
+```
+
+`docs/PROGRAMMING-MODEL.md` describes the whole model (dialogs and `DialogResult`, `MessageBox`, several
+windows, bindings, the generated members).
 
 ## 4. The `.rsproj` model
 
@@ -241,10 +259,14 @@ Visual Studio's own tool windows, the same way the WinForms designer works:
   events. Double-click an event with no handler yet to generate one (adds the `On*="..."` XML
   attribute and a matching Rust function stub in the code-behind, then opens the code-behind at
   that new function); double-click an already-bound event to jump straight to its existing handler;
-  or type a name into an unbound row to create a handler with that specific name.
-- **F7** ("View Code") switches to the raw XML in a normal code window; **Shift+F7** ("View
-  Designer") switches back - also available from Solution Explorer's right-click menu and from the
-  code-behind `.rs` file. The Design/XML/Split tabs inside the designer itself stay available too,
+  or type a name into an unbound row to create a handler with that specific name. In a form class
+  (`#[kubuno::view]`, the templates' `main_view.rs`) the handler is a method of the struct named the
+  Windows Forms way - double-clicking the `hello` button writes `OnClick="hello_click"` and
+  `fn hello_click(&mut self, _sender: &Button, _e: &MouseEventArgs)`.
+- **F7** ("View Code") opens the view's code, its same-stem `.rs` file (`main_view.rs`), like Windows
+  Forms opening `Form1.cs` (a view without one: its raw XML in a normal code window); **Shift+F7** ("View
+  Designer") switches back, from the XML or from the `.rs` file - also available from Solution Explorer's
+  right-click menu. The Design/XML/Split tabs inside the designer itself stay available too,
   if you want both views open side by side.
 - **Ctrl+Z / Ctrl+Y** undo and redo designer edits (drags, drops, property edits) the same way they
   undo a text edit, while the design surface has focus.

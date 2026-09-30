@@ -1368,6 +1368,8 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   `.rsproj`, `Kubuno.Rust.Sdk` also sets `SubType=Designer` on `.kbview` items, which is what CPS's
   own command handler checks (`DefaultCommandSetHandlerBase.HasDesignerAsync`) to offer "View Designer"
   / "View Code" in Solution Explorer - including "View Designer" on the nested code-behind `.rs`.
+  **Since 2026-09-30** (`docs/PROGRAMMING-MODEL.md` §7) F7 in the designer opens the same-stem `.rs` (the XML when
+  there is none), and Shift+F7 in that `.rs` file opens the designer (`CodeFileOf`, `ViewFileOf`).
 - **Ctrl+Z / Ctrl+Y** in the designer: the pane handles `Edit.Undo`/`Edit.Redo` on the document's
   text undo history. With the keyboard focus inside the Rust surface, keys come back through the
   `unhandledKey` protocol; *found live* that `IVsFilterKeys2.TranslateAcceleratorEx` leaves Ctrl+Z

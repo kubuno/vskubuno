@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  docs/RSPROJ.md Addendum (lot 7): "Add New Item > Kubuno view" - a .kbview plus its code-behind
-  handlers .rs, SAME STEM ($fileinputname$.kbview / $fileinputname$.rs) so docs/RSPROJ.md's "lot 8"
-  addendum can nest one under the other in Solution Explorer later (do not rename one without the
-  other - see that addendum).
+  "Add New Item > Kubuno View": a form - a .kbview (its design) and its code, a #[kubuno::view] struct
+  (docs/PROGRAMMING-MODEL.md), SAME STEM ($fileinputname$.kbview / $fileinputname$.rs) so Solution
+  Explorer nests the code under the view. ControlItemWizard names the struct ($classname$) and the load
+  handler ($modulename$), declares the module in the crate root and, in a project that has no `kubuno`
+  dependency yet, adds it next to its kubuno-views one.
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
     <Name>Kubuno View</Name>
-    <Description>A declarative Kubuno view (.kbview) with its code-behind (view model + handlers, same-named .rs file next to it).</Description>
+    <Description>A Kubuno form: a declarative view (.kbview) and its code, a struct whose fields are the view's controls and whose methods are its event handlers - like a Windows Forms Form.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoView</TemplateID>
     <LanguageTag>Rust</LanguageTag>
@@ -22,4 +23,8 @@
     <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.kbview">View.kbview</ProjectItem>
     <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">View.rs</ProjectItem>
   </TemplateContent>
+  <WizardExtension>
+    <Assembly>Kubuno.VisualStudio.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>Kubuno.VisualStudio.TemplateWizard.ControlItemWizard</FullClassName>
+  </WizardExtension>
 </VSTemplate>

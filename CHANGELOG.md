@@ -8,6 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Kubuno desktop applications written like Windows Forms (`docs/PROGRAMMING-MODEL.md`)**:
+  - A new *Kubuno Desktop Application* is three short files, like a Windows Forms project: `main.rs`
+    (`kubuno::Application::run(MainView::new())`), `main_view.kbview` (the window's design) and `main_view.rs` (the
+    `MainView` struct, with `new()` calling `initialize_component()` and a `main_view_load` handler). Its
+    `Cargo.toml` has a single Kubuno dependency, `kubuno`.
+  - `#[kubuno::view("main_view.kbview")]` turns a struct into the view's form: a field per named control
+    (`self.status.set_text("Ready.")`, `self.hello.set_enabled(false)`), generated when the project builds (no
+    generated file, the `.kbview` stays the only source), and event handlers that are plain methods
+    (`fn hello_click(&mut self, sender: &Button, e: &MouseEventArgs)`). Mistakes are compile errors naming the view's
+    line (an unknown control, a name that is not an identifier, a missing handler, a handler signature that does not
+    fit).
+  - Forms and controls can be created in code (`Form::new().text("Hello")`, `Button::new().text("OK").location(…)
+    .anchor(Anchor::TOP | Anchor::RIGHT)`, `ok.click().subscribe(…)`, `form.controls().add(&ok)`) and mixed with a
+    designed view; several windows (`form.show()`), modal dialogs owned by their window with a `DialogResult`
+    (`form.show_dialog(self)`), and `MessageBox::show` in Kubuno's style.
+  - The designer's double-click on a control of such a form creates its handler as a method named the Windows Forms
+    way (`hello_click`, `main_view_load` for the view's own events); F7, the ⚡ tab, rename and the missing-handler
+    warnings work on these methods.
+  - *Kubuno View* (Add New Item) creates a form of the same shape, named after the item and declared in the crate;
+    in a project created before this model it adds the `kubuno` dependency. The control item templates adapt their
+    paths to a `kubuno`-only project.
 - **C#-grade IntelliSense for Rust and `.kbview` (`docs/INTELLISENSE.md`, a feature matrix against C#)**:
   - **Completion like C#'s**: rust-analyzer's items with the same icons as QuickInfo and Solution Explorer, filter
     buttons (Structures, Traits, Methods and functions, Fields, Locals...), the "unimported crates and modules"
@@ -122,6 +143,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **F7 in the view designer opens the view's code** (`main_view.rs`), like Windows Forms opening `Form1.cs`; a view
+  without a same-stem `.rs` file still shows its XML. Shift+F7 in the code goes back to the designer.
 - **Inline hints follow C#'s defaults**: rust-analyzer's grey hints (`: FileWatcher`, `title:`, `opts:`...) are no longer
   always on. They appear only while Alt+F1 is held, like C#'s "display inline hints when pressing Alt+F1". Tools >
   Options > Kubuno > Rust > Inline hints now has per-kind switches like C#'s "Inline Parameter Name Hints" and "Inline Type

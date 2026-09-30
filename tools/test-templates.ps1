@@ -147,7 +147,9 @@ function Add-ControlItems($p) {
         @{ Template = 'KubunoCustomControl'; Name = 'RoundButton'; Xml = '<RoundButton x:Name="round" Text="Round" CornerRadius="18" X="24" Y="84" Width="160" Height="40" Anchor="Top, Left"/>' },
         @{ Template = 'KubunoUserControl'; Name = 'RatingPanel'; Xml = '<RatingPanel x:Name="panel" Caption="Rate this" X="24" Y="140" Width="320" Height="48" Anchor="Top, Left"/>' },
         @{ Template = 'KubunoInheritedControl'; Name = 'CountingButton'; Base = 'Button'; Xml = '<CountingButton x:Name="counting" Text="Count" Variant="Secondary" X="200" Y="84" Width="120" Height="36" Anchor="Top, Left"/>' },
-        @{ Template = 'KubunoComponent'; Name = 'Heartbeat'; Xml = '<Heartbeat x:Name="beat" Enabled="true"/>' }
+        @{ Template = 'KubunoComponent'; Name = 'Heartbeat'; Xml = '<Heartbeat x:Name="beat" Enabled="true"/>' },
+        # A second form (docs/PROGRAMMING-MODEL.md), opened by the main one below.
+        @{ Template = 'KubunoView'; Name = 'SettingsView'; Xml = $null }
     )
     $xml = @()
     foreach ($item in $items) {
@@ -167,24 +169,35 @@ function Add-ControlItems($p) {
         foreach ($pi in $vst.VSTemplate.TemplateContent.ProjectItem) {
             $target = Join-Path $src (Expand-Tokens $pi.GetAttribute('TargetFileName') $tokens)
             Copy-TemplateFile (Join-Path $dir $pi.InnerText.Trim()) $target ($pi.GetAttribute('ReplaceParameters') -eq 'true') $tokens
-            if ($target.EndsWith('.rs')) { Add-ModuleDeclaration (Join-Path $src 'main.rs') ([IO.Path]::GetFileNameWithoutExtension($target)) }
+            if ($target.EndsWith('.rs')) {
+                Add-ModuleDeclaration (Join-Path $src 'main.rs') ([IO.Path]::GetFileNameWithoutExtension($target))
+                # Like ControlItemNames.AdaptToProjectOnDisk: the application reaches kubuno_views through the kubuno facade.
+                $rs = [IO.File]::ReadAllText($target)
+                [IO.File]::WriteAllText($target, [regex]::Replace($rs, '(?<![\w:])kubuno_views::', 'kubuno::views::'))
+            }
         }
-        $xml += '  ' + $item.Xml
+        if ($item.Xml) { $xml += '  ' + $item.Xml }
         "   item template $($item.Template): $($tokens['$classname$']) ($($tokens['$modulename$']))"
     }
 
-    # The controls in the starter view, and a test compiling it (their derives registered them).
+    # The controls in the starter view, and a test compiling it (their derives registered them); the main form
+    # opens the second one.
     $view = Join-Path $src 'main_view.kbview'
     $text = [IO.File]::ReadAllText($view)
     $nl = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
     [IO.File]::WriteAllText($view, $text.Replace('</Panel>', ($xml -join $nl) + $nl + '</Panel>'))
     $code = Join-Path $src 'main_view.rs'
     $check = @(
+        '', 'impl MainView {', '    #[allow(dead_code)]', '    fn open_settings(&mut self) -> DialogResult {',
+        '        crate::settings_view::SettingsView::new().show_dialog(self)', '    }', '}',
         '', '#[cfg(test)]', 'mod kubuno_template_check {', '    #[test]', '    fn the_view_compiles_with_the_project_controls() {',
-        '        if let Err(diagnostics) = kubuno_views::compile::compile(include_str!("main_view.kbview")) {',
+        '        if let Err(diagnostics) = kubuno::views::compile::compile(include_str!("main_view.kbview")) {',
         '            panic!("main_view.kbview does not compile: {diagnostics:?}");', '        }',
         '        for name in ["RoundButton", "RatingPanel", "CountingButton", "Heartbeat"] {',
-        '            assert!(kubuno_views::registry::project_info(name).is_some(), "{name} is not registered");', '        }', '    }', '}')
+        '            assert!(kubuno::views::registry::project_info(name).is_some(), "{name} is not registered");', '        }', '    }',
+        '', '    #[test]', '    fn the_forms_link_their_controls() {',
+        '        let main = super::MainView::new();', '        assert_eq!(main.hello.get_text(), "Say hello");',
+        '        let settings = crate::settings_view::SettingsView::new();', '        assert_eq!(settings.get_text(), "SettingsView");', '    }', '}')
     [IO.File]::AppendAllText($code, ($check -join $nl) + $nl)
 }
 

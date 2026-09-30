@@ -142,6 +142,101 @@ namespace Kubuno.VisualStudio.TemplateWizard
                 : text.Substring(0, lineEnd + 1) + line + newline + text.Substring(lineEnd + 1);
         }
 
+        /// <summary>
+        /// Whether the manifest text <paramref name="cargoToml"/> declares a dependency named <paramref name="crate"/>
+        /// (<c>name = …</c> in a <c>[*dependencies]</c> table, or a <c>[dependencies.name]</c> table).
+        /// </summary>
+        public static bool DependsOn(string cargoToml, string crate)
+        {
+            var section = string.Empty;
+            foreach (var raw in (cargoToml ?? string.Empty).Split('\n'))
+            {
+                var line = raw.Trim();
+                if (line.StartsWith("[", StringComparison.Ordinal) && line.EndsWith("]", StringComparison.Ordinal))
+                {
+                    section = line.Substring(1, line.Length - 2).Trim();
+                    var dot = section.LastIndexOf('.');
+                    if (dot > 0 && section.Substring(0, dot).EndsWith("dependencies", StringComparison.Ordinal) && section.Substring(dot + 1).Trim('"') == crate)
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                var eq = line.IndexOf('=');
+                if (eq > 0 && section.EndsWith("dependencies", StringComparison.Ordinal) && line.Substring(0, eq).Trim().Trim('"') == crate)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// A project that reaches Kubuno through the <c>kubuno</c> facade only (docs/PROGRAMMING-MODEL.md: one
+        /// Kubuno dependency) names <c>kubuno_views</c> as <c>kubuno::views</c>: the paths of a generated file are
+        /// rewritten (<c>use kubuno_views::prelude::*;</c> → <c>use kubuno::views::prelude::*;</c>).
+        /// </summary>
+        public static string RetargetToFacade(string rsText) => Regex.Replace(rsText ?? string.Empty, @"(?<![\w:])kubuno_views::", "kubuno::views::");
+
+        /// <summary>
+        /// <paramref name="cargoToml"/> with a <c>kubuno</c> dependency added next to its <c>kubuno-views</c> one (same
+        /// checkout: <c>…/crates/kubuno-views</c> → <c>…/crates/kubuno</c>), for a form (<c>#[kubuno::view]</c>) added to a
+        /// project created before the facade; null when there is nothing to add or no <c>kubuno-views</c> path to derive it from.
+        /// </summary>
+        public static string? AddFacadeDependency(string cargoToml)
+        {
+            if (DependsOn(cargoToml, "kubuno"))
+            {
+                return null;
+            }
+
+            var match = Regex.Match(cargoToml ?? string.Empty, @"(?m)^(?<indent>[ \t]*)kubuno-views(?<pad>[ \t]*)=[^\n]*?path[ \t]*=[ \t]*""(?<path>[^""]*?)kubuno-views""[^\n]*$");
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            var newline = cargoToml!.Contains("\r\n") ? "\r\n" : "\n";
+            var line = match.Groups["indent"].Value + "kubuno" + new string(' ', Math.Max(1, match.Groups["pad"].Value.Length + 6)) + "= { path = \"" + match.Groups["path"].Value + "kubuno\" }";
+            var lineEnd = cargoToml.IndexOf('\n', match.Index + match.Length);
+            return lineEnd < 0 ? cargoToml + newline + line + newline : cargoToml.Substring(0, lineEnd + 1) + line + newline + cargoToml.Substring(lineEnd + 1);
+        }
+
+        /// <summary>
+        /// Adapts a generated Rust file to its project (on disk): in a <c>kubuno</c>-only project its
+        /// <c>kubuno_views::</c> paths become <c>kubuno::views::</c>; a file using <c>kubuno::</c> in a project without that
+        /// dependency gets it added to <c>Cargo.toml</c>. Returns whether something changed.
+        /// </summary>
+        public static bool AdaptToProjectOnDisk(string rsPath)
+        {
+            var src = Path.GetDirectoryName(rsPath);
+            var package = src is null ? null : Path.GetDirectoryName(src);
+            var manifest = package is null ? null : Path.Combine(package, "Cargo.toml");
+            if (manifest is null || !File.Exists(manifest) || !File.Exists(rsPath))
+            {
+                return false;
+            }
+
+            var toml = File.ReadAllText(manifest);
+            var text = File.ReadAllText(rsPath);
+            if (DependsOn(toml, "kubuno") && !DependsOn(toml, "kubuno-views") && text.Contains("kubuno_views::"))
+            {
+                File.WriteAllText(rsPath, RetargetToFacade(text), new UTF8Encoding(false));
+                return true;
+            }
+
+            if (Regex.IsMatch(text, @"(?<![\w:])kubuno::") && AddFacadeDependency(toml) is { } updated)
+            {
+                File.WriteAllText(manifest, updated, new UTF8Encoding(false));
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>Declares the module of <paramref name="rsPath"/> in its crate root on disk (keeping its encoding); whether it did.</summary>
         public static bool DeclareModuleOnDisk(string rsPath)
         {

@@ -375,8 +375,9 @@ cache with *only* the bundled feed configured restores `Kubuno.Rust.Sdk` and bui
 ### "Create a new project" templates (lot 7)
 
 File > New > Project, filtered by Language = **Rust**, offers four project templates - **Rust
-Console Application**, **Rust Library**, **Kubuno Desktop Application** (a `kubuno_ui`/
-`kubuno_controls`/`kubuno_views` window with a starter view, path-dependent on your own
+Console Application**, **Rust Library**, **Kubuno Desktop Application** (a Windows Forms-like
+project in three files - `main.rs`, `main_view.kbview` and its `#[kubuno::view]` form class `main_view.rs`,
+`docs/PROGRAMMING-MODEL.md` - with one dependency, `kubuno`, path-dependent on your own
 `desktop/windows` checkout found at creation through `KUBUNO_DESKTOP_SRC`, default
 `Z:\src\desktop\windows`, and built into a cargo target directory of its own - see
 `docs/GETTING-STARTED.md`),

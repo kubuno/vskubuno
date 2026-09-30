@@ -10,9 +10,10 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
 {
     /// <summary>
     /// "View Code" (F7, <c>View.ViewCode</c>) and "View Designer" (Shift+F7, <c>View.ViewDesigner</c>) for
-    /// <c>.kbview</c> documents, like the WinForms designer: from the designer window, F7 opens the XML in
-    /// its own code window (<c>main_view.kbview</c>); from that code window, Shift+F7 goes back to
-    /// <c>main_view.kbview [Design]</c>. Registered by the package as a PRIORITY command target
+    /// <c>.kbview</c> documents, like the WinForms designer: from the designer window, F7 opens the view's code
+    /// (<c>main_view.rs</c>, as Windows Forms opens <c>Form1.cs</c>) - or, for a view without one, the XML in its
+    /// own code window; from the XML or from the code, Shift+F7 goes back to <c>main_view.kbview [Design]</c>
+    /// (<see cref="CodeFileOf"/>, <see cref="ViewFileOf"/>). Registered by the package as a PRIORITY command target
     /// (<c>IVsRegisterPriorityCommandTarget</c>) so it works the same in a <c>.rsproj</c> (where the
     /// project system would also handle these commands for items with <c>SubType=Designer</c>) and in Open
     /// Folder (where nobody else does). It only claims the two commands when the ACTIVE window is a
@@ -35,7 +36,8 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (pguidCmdGroup != VSConstants.GUID_VSStandardCommandSet97 || prgCmds is null || prgCmds.Length == 0 ||
-                (prgCmds[0].cmdID != ViewForm && prgCmds[0].cmdID != ViewCode) || ActiveKbviewDocument() is null)
+                (prgCmds[0].cmdID != ViewForm && prgCmds[0].cmdID != ViewCode) ||
+                (ActiveKbviewDocument() is null && (prgCmds[0].cmdID != ViewForm || ActiveCodeBehindView() is null)))
             {
                 return (int)OleInterop.Constants.OLECMDERR_E_NOTSUPPORTED;
             }
@@ -47,14 +49,27 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
         public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (pguidCmdGroup != VSConstants.GUID_VSStandardCommandSet97 || (nCmdID != ViewForm && nCmdID != ViewCode) ||
-                ActiveKbviewDocument() is not { } active)
+            if (pguidCmdGroup != VSConstants.GUID_VSStandardCommandSet97 || (nCmdID != ViewForm && nCmdID != ViewCode))
             {
                 return (int)OleInterop.Constants.OLECMDERR_E_NOTSUPPORTED;
             }
 
+            var editor = new Guid(DesignerConstants.EditorFactoryGuidString);
             try
             {
+                if (ActiveKbviewDocument() is not { } active)
+                {
+                    // Shift+F7 in a view's code (`main_view.rs`): the view's designer, like Form1.cs → Form1 [Design].
+                    if (nCmdID != ViewForm || ActiveCodeBehindView() is not { } view)
+                    {
+                        return (int)OleInterop.Constants.OLECMDERR_E_NOTSUPPORTED;
+                    }
+
+                    VsShellUtilities.OpenDocumentWithSpecificEditor(_serviceProvider, view, editor, VSConstants.LOGVIEWID_Designer, out _, out _, out var designerFrame);
+                    designerFrame?.Show();
+                    return VSConstants.S_OK;
+                }
+
                 if (nCmdID == ViewForm && active.DocView is DesignerWindowPane designer)
                 {
                     // Already the designer: Shift+F7 brings back the plain Design tab (from XML/Split).
@@ -62,17 +77,77 @@ namespace Kubuno.VisualStudio.Designer.EditorFactory
                     return VSConstants.S_OK;
                 }
 
+                if (nCmdID == ViewCode && CodeFileOf(active.Path, System.IO.File.Exists) is { } code)
+                {
+                    // F7: the view's code (`main_view.rs`, a `#[kubuno::view]` form class or a code-behind), like
+                    // Windows Forms opening Form1.cs; the XML stays one click away (the designer's XML tab).
+                    // Its own editor (the Rust editor), in its primary view: a .rs file has no "code" view of its own.
+                    VsShellUtilities.OpenDocument(_serviceProvider, code, VSConstants.LOGVIEWID_Primary, out _, out _, out var codeFrame);
+                    codeFrame?.Show();
+                    return VSConstants.S_OK;
+                }
+
                 var logicalView = nCmdID == ViewForm ? VSConstants.LOGVIEWID_Designer : VSConstants.LOGVIEWID_Code;
-                var editor = new Guid(DesignerConstants.EditorFactoryGuidString);
                 VsShellUtilities.OpenDocumentWithSpecificEditor(_serviceProvider, active.Path, editor, logicalView, out _, out _, out var frame);
                 frame?.Show();
             }
             catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidOperationException or ArgumentException)
             {
-                KubunoViewsLogHost.Current.WriteException("[designer] switching between the designer and the XML failed", ex);
+                KubunoViewsLogHost.Current.WriteException("[designer] switching between the designer and the code failed", ex);
             }
 
             return VSConstants.S_OK;
+        }
+
+        /// <summary>
+        /// The code of a view: the same-stem <c>.rs</c> file next to it (<c>main_view.kbview</c> → <c>main_view.rs</c>),
+        /// when it exists; null otherwise (F7 then shows the XML).
+        /// </summary>
+        public static string? CodeFileOf(string kbviewPath, Func<string, bool> fileExists)
+        {
+            if (string.IsNullOrEmpty(kbviewPath))
+            {
+                return null;
+            }
+
+            var code = System.IO.Path.ChangeExtension(kbviewPath, ".rs");
+            return fileExists(code) ? code : null;
+        }
+
+        /// <summary>The view of a code file: the same-stem <c>.kbview</c> next to a <c>.rs</c> file, when it exists.</summary>
+        public static string? ViewFileOf(string rsPath, Func<string, bool> fileExists)
+        {
+            if (string.IsNullOrEmpty(rsPath) || !rsPath.EndsWith(".rs", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var view = System.IO.Path.ChangeExtension(rsPath, "." + Kubuno.VisualStudio.Views.KbviewConstants.FileExtension.TrimStart('.'));
+            return fileExists(view) ? view : null;
+        }
+
+        /// <summary>The view of the active document when it is a view's code (<c>main_view.rs</c>), else null.</summary>
+        private string? ActiveCodeBehindView()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return ActiveDocumentPath() is { } path ? ViewFileOf(path, System.IO.File.Exists) : null;
+        }
+
+        /// <summary>The path of the active window when it is a document frame.</summary>
+        private string? ActiveDocumentPath()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (_serviceProvider.GetService(typeof(SVsShellMonitorSelection)) is not IVsMonitorSelection selection ||
+                ErrorHandler.Failed(selection.GetCurrentElementValue((uint)VSConstants.VSSELELEMID.SEID_WindowFrame, out var windowObject)) ||
+                windowObject is not IVsWindowFrame frame ||
+                ErrorHandler.Failed(frame.GetProperty((int)__VSFPROPID.VSFPROPID_Type, out var type)) ||
+                !(type is int frameType && frameType == (int)__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document) ||
+                ErrorHandler.Failed(frame.GetProperty((int)__VSFPROPID.VSFPROPID_pszMkDocument, out var moniker)))
+            {
+                return null;
+            }
+
+            return moniker as string;
         }
 
         /// <summary>The active window when it is a <c>.kbview</c> document frame: its path and doc view.</summary>

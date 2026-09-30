@@ -68,6 +68,7 @@ namespace Kubuno.VisualStudio.TemplateWizard
                 try
                 {
                     ControlItemNames.DeclareModuleOnDisk(file);
+                    ControlItemNames.AdaptToProjectOnDisk(file);
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {

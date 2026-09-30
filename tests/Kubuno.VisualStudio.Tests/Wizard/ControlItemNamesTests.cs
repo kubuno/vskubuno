@@ -49,6 +49,35 @@ namespace Kubuno.VisualStudio.Tests.Wizard
         }
 
         [TestMethod]
+        public void Dependencies_are_read_from_every_dependency_table()
+        {
+            const string toml = "[package]\nname = \"app\"\n\n[dependencies]\nkubuno = { path = \"x\" }\n\n[dev-dependencies.kubuno-views]\npath = \"y\"\n";
+            Assert.IsTrue(ControlItemNames.DependsOn(toml, "kubuno"));
+            Assert.IsTrue(ControlItemNames.DependsOn(toml, "kubuno-views"));
+            Assert.IsFalse(ControlItemNames.DependsOn(toml, "kubuno-ui"));
+            Assert.IsFalse(ControlItemNames.DependsOn("[package]\nname = \"kubuno\"\n", "kubuno"), "the package's own name is no dependency");
+        }
+
+        [TestMethod]
+        public void A_facade_project_names_kubuno_views_through_kubuno()
+        {
+            Assert.AreEqual(
+                "use kubuno::views::prelude::*;\n#[kubuno::views::event_handlers]\nimpl X {}\nfn f() { crate::kubuno_views::g(); }\n",
+                ControlItemNames.RetargetToFacade("use kubuno_views::prelude::*;\n#[kubuno_views::event_handlers]\nimpl X {}\nfn f() { crate::kubuno_views::g(); }\n"));
+        }
+
+        [TestMethod]
+        public void A_form_added_to_an_older_project_brings_the_facade_next_to_kubuno_views()
+        {
+            const string toml = "[dependencies]\r\nkubuno-ui       = { path = \"Z:/src/desktop/windows/src/crates/kubuno-ui\" }\r\nkubuno-views    = { path = \"Z:/src/desktop/windows/src/crates/kubuno-views\" }\r\n";
+            Assert.AreEqual(
+                toml + "kubuno          = { path = \"Z:/src/desktop/windows/src/crates/kubuno\" }\r\n",
+                ControlItemNames.AddFacadeDependency(toml));
+            Assert.IsNull(ControlItemNames.AddFacadeDependency(toml + "kubuno = { path = \"k\" }\r\n"), "already there");
+            Assert.IsNull(ControlItemNames.AddFacadeDependency("[dependencies]\nserde = \"1\"\n"), "no kubuno-views path to derive it from");
+        }
+
+        [TestMethod]
         public void Only_a_file_directly_in_src_of_a_package_has_a_crate_root()
         {
             var root = Path.Combine(Path.GetTempPath(), "app");

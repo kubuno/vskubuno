@@ -1,13 +1,9 @@
 <!--
-  $fileinputname$.kbview - code-behind in the same folder: $fileinputname$.rs. Double-click this file
-  in Solution Explorer for the designer (F7 shows this XML); kubuno-views-ls (installed with the
-  desktop workspace) gives you IntelliSense/diagnostics.
-
-  Like a Windows Forms form, the view is an absolute surface: the root <Panel> is designed at
-  DesignWidth x DesignHeight, each control has its X/Y/Width/Height, and its Anchor says which edges
-  it stays attached to when the view is resized (Top, Left by default).
+  $fileinputname$.kbview - its code is $fileinputname$.rs (F7). Like a Windows Forms form, the view
+  is an absolute surface: the window opens at DesignWidth x DesignHeight, each control has its
+  X/Y/Width/Height and its Anchor. Double-click a control to add its event handler.
 -->
-<Panel DesignWidth="800" DesignHeight="450">
-  <TextField x:Name="status" Text="{Binding Status}" Placeholder="Status" X="24" Y="24" Width="632" Height="36" Anchor="Top, Left, Right"/>
-  <Button x:Name="action" Text="Run" Variant="Primary" OnClick="on_action_click" X="672" Y="24" Width="104" Height="36" Anchor="Top, Right"/>
+<Panel DesignWidth="480" DesignHeight="240" Title="$classname$" OnLoad="$modulename$_load">
+  <Label x:Name="message" Text="$classname$" X="24" Y="24" Width="432" Height="24" Anchor="Top, Left, Right"/>
+  <Button x:Name="close" Text="Close" Variant="Primary" X="368" Y="180" Width="88" Height="36" Anchor="Bottom, Right"/>
 </Panel>

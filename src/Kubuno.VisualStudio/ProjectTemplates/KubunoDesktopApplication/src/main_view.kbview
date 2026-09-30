@@ -1,15 +1,11 @@
 <!--
-  Starter view for $safeprojectname$, loaded by src/main.rs through kubuno_views::runtime::Runtime.
-  Its code-behind (view model + handlers) lives in the SAME folder, under the SAME stem:
-  main_view.rs - see that file. Double-click this file in Solution Explorer for the designer (F7 shows
-  this XML); kubuno-views-ls (installed with the desktop workspace) gives you IntelliSense/diagnostics.
-
-  Like a Windows Forms form, the view is an absolute surface: the root <Panel> is designed at
-  DesignWidth x DesignHeight (the window opens at that size), each control has its X/Y/Width/Height,
-  and its Anchor says which edges of the window it stays attached to when the window is resized
-  (Top, Left by default; Left and Right together stretch it).
+  The main window of $safeprojectname$: double-click this file in Solution Explorer for the designer
+  (F7 shows its code, main_view.rs). Like a Windows Forms form, the view is an absolute surface: the
+  window opens at DesignWidth x DesignHeight, each control has its X/Y/Width/Height and its Anchor
+  (the edges of the window it follows when the window is resized). Each x:Name is a field of
+  MainView (self.status, self.hello); double-click a control to add its event handler.
 -->
-<Panel DesignWidth="800" DesignHeight="450">
-  <TextField x:Name="status" Text="{Binding Status}" Placeholder="Status" X="24" Y="24" Width="632" Height="36" Anchor="Top, Left, Right"/>
-  <Button x:Name="hello" Text="Say hello" Variant="Primary" OnClick="on_hello_click" X="672" Y="24" Width="104" Height="36" Anchor="Top, Right"/>
+<Panel DesignWidth="800" DesignHeight="450" Title="$safeprojectname$" OnLoad="main_view_load">
+  <TextField x:Name="status" Placeholder="Status" X="24" Y="24" Width="632" Height="36" Anchor="Top, Left, Right"/>
+  <Button x:Name="hello" Text="Say hello" Variant="Primary" X="672" Y="24" Width="104" Height="36" Anchor="Top, Right"/>
 </Panel>
