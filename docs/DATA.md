@@ -27,8 +27,8 @@ No credentials in source, logs or `.kbview`; secrets via settings with user-secr
 
 > Scope: the requirements above, mapped onto the existing Kubuno desktop stack: `kubuno-views` (XML views,
 > the binding engine, the EVT-6 executor, the EVT-7 component hierarchy and registry), the designer (component
-> tray, Properties window, ⚡ tab) and `vskubuno`. Status: **DATA-1 is built** (see "DATA-1 as built" at the end);
-> the other lots are planned.
+> tray, Properties window, ⚡ tab) and `vskubuno`. Status: **DATA-1, DATA-2 and DATA-3 are built** (see the
+> "as built" sections at the end — §12, §13, §14); the other lots are planned.
 
 ## 1. Principles
 
@@ -255,6 +255,8 @@ async fn save_click(ui: UiHandle<Self>) { let _ = kubuno_data::save(&ui, "custom
 (`V: HasDataContext`, a one-method trait returning the view model's `DataContext`). DATA-2 moves the ownership of the
 components into the view runtime (the XML-created instances become the live ones, reachable as
 `runtime.component::<BindingSource>("customers")`), after which the forwarding in `get`/`set` is no longer needed.
+*As built (§13): the runtime owns them; `runtime.with_component::<BindingSource, _>("customers", |bs| …)`, the
+helpers `kubuno_data::fill/save/save_all(&ui, …)` need no trait, and `DataContext` remains for code outside a view.*
 
 ## 8. BindingNavigator (DATA-2)
 
@@ -303,8 +305,8 @@ designer's "drag a table from Data Sources" drops one above the grid.
 | Lot | Content | Size | Depends on | Tests / live verification |
 |---|---|---|---|---|
 | **DATA-1** ✅ | `kubuno-data` crate: private runtime + `DataTask`, secrets chain (env, Credential Manager, user secrets) and `ConnectionStringBuilder`, `DbConnection` (PostgreSQL + SQLite, pools, states, retry, schema, TLS default), `DbCommand`, `Table`/row states, `TableAdapter` Fill/Update (transactional generated DML), `BindingSource` (position, filter, sort, edit, events), `ErrorProvider`, `DataContext` (paths, event pump, async fill/save), registry metadata; `parse_binding` `Source=`/`Path=` | L | EVT-6, EVT-7b | Unit tests; SQLite in-memory integration tests; PostgreSQL tests gated on `KUBUNO_TEST_PG_URL`; live: scratch desktop app on a SQLite file (grid + detail, add/edit/delete, Save persists, ErrorProvider shows a validation error) |
-| DATA-2 | Runtime integration: view-owned data components (`runtime.component::<T>()`), `Source=` resolved by the runtime, XML `On*` of data components dispatched by the runtime, typed binding conversions (`F32`, dates, `NullValue`, `FormatString`), `BindingNavigator` control, ErrorProvider adornment (glyph + tooltip), in-place editing in `DataTable` cells | L | DATA-1 | Runtime tests with a fake host (bind, edit a cell, navigate, error glyph hit-test); live: the DATA-1 app without forwarding code |
-| DATA-3 | Providers and depth: MySQL/MariaDB, SQL Server (`tiberius` + pool), `TransactionScope`-like transactions across adapters, stored procedures/functions, paging (keyset and offset), cancellation tokens and progress, optimistic concurrency (original values, `xmin`, rowversion), custom DML commands, master/detail relations, hierarchical update manager | L | DATA-1 | Integration tests per provider gated by `KUBUNO_TEST_<PROVIDER>_URL`; SQLite always |
+| **DATA-2** ✅ | Runtime integration: view-owned data components (`runtime.component::<T>()`), `Source=` resolved by the runtime, XML `On*` of data components dispatched by the runtime, typed binding conversions (`F32`, dates, `NullValue`, `FormatString`), `BindingNavigator` control, ErrorProvider adornment (glyph + tooltip), in-place editing in `DataTable` cells (*not built, see §13*) | L | DATA-1 | Runtime tests with a fake host (bind, edit a cell, navigate, error glyph hit-test); live: the DATA-1 app without forwarding code |
+| **DATA-3** ✅ | Providers and depth: MySQL/MariaDB, SQL Server (`tiberius` + pool), `TransactionScope`-like transactions across adapters, stored procedures/functions, paging (keyset and offset), cancellation tokens and progress, optimistic concurrency (original values, `xmin`, rowversion), custom DML commands, master/detail relations, hierarchical update manager | L | DATA-1 | Integration tests per provider gated by `KUBUNO_TEST_<PROVIDER>_URL`; SQLite always |
 | DATA-4 | Typed data sources: `.kbdata` format, `data_source!` proc macro (typed rows, `query_as!`), `.sqlx` offline cache flow, typed adapters feeding the same `BindingSource` | M | DATA-1 | `trybuild` pass/fail, offline build with a committed `.sqlx` fixture |
 | DATA-5 | Data Explorer tool window + `kubuno-data-tool` helper (connections, secrets dialog, schema tree, view data, query window, script generation) | L | DATA-1 | Helper unit tests on SQLite; C# tests of the protocol; live in VS on a SQLite file and, when available, a dev PostgreSQL |
 | DATA-6 | Data Sources window, "Ajouter une source de données…" wizard, drag and drop onto views (surgical `.kbview` edits), designer property editors and smart tags for data components | L | DATA-2, DATA-4, DATA-5 | LS edit tests (inserted XML round-trips), C# wizard tests; live: drag a table, F5, edit and save |
@@ -391,3 +393,192 @@ back); `age = "abc"` → the field kept "abc", `errors.age = "Enter a whole numb
 with a `DataError`; a bad e-mail → refused by `RowValidating`, message on `errors.email`; fixed → `1 change(s) saved`,
 the database updated, `HasErrors = false`. `OnLoad` (async fill), `OnCurrentChanged`, `OnDataError`, `OnStateChange`
 handlers of the view ran through `pump`.
+
+## 13. DATA-2 as built (2026-09-30)
+
+In `Z:\src\desktop\windows` (uncommitted there): `kubuno-views` (two new modules, `scope` and `format`, and changes to
+`binding`, `compile`, `design`, `runtime`, `component`, `events::executor`/`typed`) and `kubuno-data`. `kubuno_ui` and
+`kubuno-controls` are unchanged (no dylib rebuild).
+
+**Components owned by the runtime (`kubuno_views::scope`).**
+- `compile` gives every non-visual class of an application or a library (`ClassKind::Component`, linked) a place in
+  the view's `ComponentScope` — its `x:Name`, else `<class>N` for the n-th element of its class (`bindingSource2`, the
+  names `DataContext` gives) — and every *named* linked control too (a `BindingNavigator`). The instance is sited and
+  its literal attributes are applied **when the view is built**, so the view's `OnLoad` finds it configured (bound
+  attributes follow at every paint, so `Filter="{Binding …}"` now works on a data component). A hot reload reuses the
+  instance of an element with the same name and class (its rows survive); `DesignSlot` disposes an instance only when
+  it is its last owner. The scope holds the instances weakly (the slots own them).
+- Reaching them: `Runtime::components()` / `Runtime::with_component::<T, _>(name, f)`, `kubuno_views::scope::current()`
+  inside a frame (handlers, timer ticks, tasks, posted closures), `UiHandle::components()` in an async handler;
+  `ComponentScope::with/with_ref/with_dispatch`. *Deviation:* no `runtime.component::<T>()` returning a guard (the
+  scope holds `Weak`s): a closure-based accessor instead. After `with`, the dependent components are synced (a
+  detail list follows its master at once).
+- **Bindings**: `Component::as_binding_provider()` (default: the base object's) exposes a `BindingProvider`
+  (`binding_get(path, want, format)`, `binding_set`, `binding_sync`, `field_error`). The runtime paints with a
+  `ScopedViewModel` around the application's view model: a path whose first segment names a provider goes to it,
+  every other path to the view model — no forwarding code in the view model any more. After every binding write and
+  once per frame (before the paint), `binding_sync` lets providers follow each other (master/detail, bound
+  `Filter`/`Sort`, page requests).
+- **Events**: a data component raises to its Rust subscribers, then `kubuno_views::scope::raise_now(name, event,
+  args)`: while the runtime or a binding is calling the component, a thread-local *sync sink* (scoped like
+  `UiHandle::update`'s view-model pointer, `unsafe` confined to `scope.rs` with its SAFETY notes) runs the element's
+  `.kbview` handler **synchronously** through the view model's typed handlers — `OnRowValidating` adds errors that
+  refuse the row, `OnAddingNew` cancels. Called from code (the view model is borrowed there), the event is queued on
+  the component (`ComponentCore::queue_event`) and the runtime delivers it after the frame's jobs/tasks and after the
+  paint (a legacy `handlers!` table entry is reached this way too). `DesignSlot` now releases the instance before
+  delivering its queued events (a handler may use its component).
+
+**Typed conversions (`kubuno_views::format`, `binding`).** `BindingSpec` gains `format: BindingFormat`
+(`FormatString=`/`StringFormat=`, `NullValue=`/`TargetNullValue=`, `Culture=`/`ConverterCulture=`; values may be quoted
+`'#,##0.00'`). `FromValue::KIND` says what a property wants; `PropSource::resolve` calls `ViewModel::get_bound(spec,
+want)`, and the two-way writes (TextField, NumericField, CheckBox, sliders, lists…) call `set_bound` — defaults convert
+generically (`to_target`/`from_target`: a text that parses reaches a numeric property, a number shown in a text
+property is formatted instead of falling back to empty; numeric formats `N/F/D/C/P/G` with precision and custom
+`0/#/,/.` patterns; date formats `d/D/t/T/g/G/f/F/s` and custom `yyyy MM dd HH mm ss tt` with French/German/English
+month names; `NullValue` both ways). Cultures: `fr`, `de`, `es/it/nl/pt`, `en-US`, `en-GB`, `fr-CH`, `fr-CA`, invariant
+(ISO dates); default = `set_default_culture`, else the user's locale (`GetUserDefaultLocaleName`, declared by hand —
+no new `windows` feature). Without a `FormatString` and a `Culture`, values are shown as held (DATA-1 behaviour). The
+`BindingSource` answers typed reads itself (`to_bound`: integers formatted from `i64`, never through `f32`; dates
+formatted from their ISO text; `NULL` → `NullValue`, or the numeric property's fallback) and parses typed writes
+(`from_bound`: `1 234,50`, `10/12/1815` with `d` in French → `1815-12-10`, a 31st of February refused with "Enter a date
+as dd/MM/yyyy." kept as proposed text).
+
+**`<BindingNavigator>`** (`kubuno-data`, a linked `Control`, Toolbox *Data*): first / previous | position box (type a
+number, Enter moves, Escape gives up) `/ count` | next / last | add / delete | save, Lucide icons (`ChevronsLeft`,
+`ChevronLeft`, `ChevronRight`, `ChevronsRight`, `Plus`, `Trash2`, `Save`), hover/pressed fills from the theme, items
+disabled where the action is impossible (and while a fill or save runs). `ShowAddItem`, `ShowDeleteItem`,
+`ShowSaveItem`; `AutoSave` (default true: Save saves through the adapter on the view's executor); events `ItemClicked`
+(`NavigatorItemClickedEventArgs.item`) and `SaveItemClick` (with `AutoSave="false"`, the view model saves, e.g.
+`save_all` of a master and its details). *Deviation from §8:* `SaveItemClick` event + `AutoSave` instead of a
+`SaveCommand` handler-name property. It paints unbuffered (it shows another component's state) and reads its binding
+source through `scope::current()`; `perform(item)` is what a click runs.
+
+**ErrorProvider adornment.** After the paint, the runtime asks the providers `field_error(path)` for every path each
+painted element is bound to (collected once per element from its attributes) and draws, for a field in error, a 16 DIP
+danger-coloured round badge with a white exclamation mark at the control's `IconAlignment` (six positions,
+`IconPadding`), blinking per `BlinkStyle` (`BlinkIfDifferentError`: three blinks when it appears or its message changes;
+`AlwaysBlink`; `NeverBlink`) at `BlinkRate`; hovering the badge shows the message as the tooltip (it wins over the
+control's own). `ErrorProvider.field_error` answers for the fields of its `DataSource` (`customers.email`,
+`customers.Current.email`), not for the source's own paths (`Position`…).
+
+**Also**: `kubuno_data::fill/save/save_all(&ui, …)` (and `fill_scope`/`save_scope` without a view model) work on the
+view's scope (`V: ViewModel + EventSink`, no `HasDataContext`); the operations themselves live in `kubuno_data::ops`
+(`begin_*`/`end_*` over a `ComponentScope`). `DataContext` is now a standalone `ComponentScope` it owns (accessors
+return `Ref`/`RefMut` guards; `set`/`get` go through the same `ScopedViewModel`; `take_events`/`pump` drain the
+components' queues); its async helpers moved to `kubuno_data::context::{fill, save}`.
+
+**Not built**: in-place editing in `DataTable` cells (it needs editing support in `kubuno_ui::tables::DataTable`, i.e.
+a `kubuno_ui` change — left for a lot of its own); column `FormatString`s in a `DataTable` (cells show the held text);
+the binding options in the language server's completion.
+
+### Tests (DATA-2)
+
+`kubuno-views`: 599 unit tests (the new ones: `format` — numbers, custom patterns, parsing per culture, dates, binding reads and
+writes, cultures; `binding` — formatting options, typed reads; `scope` — paths routed to a provider, an XML handler
+cancelling synchronously, queued events delivered, a busy component; `runtime` with the fake host — a registered test
+provider: scope names, synchronous `Changing` handler cancelling, events from code delivered by the next frame, the
+error glyph recorded at `(114,17,130,33)` next to the bound `TextField` on a `RecordingCanvas` and gone when fixed,
+the instance kept by a hot reload; glyph placement and blink phases), 24 doc tests, `custom_controls` 4, `roundtrip`
+7, `showcase` 1; `kubuno-views-ls` 146. `kubuno-data` (DATA-2 part): `binding_source` typed reads/writes, detail list,
+paging requests, queued events of a named component; `error_provider` paths; `navigator` item states, layout and hit
+test; `tests/sqlite.rs` — an `OnRowValidating` XML handler (a view model's `dispatch_event`) refuses a move
+synchronously through the scope, typed bindings with `N0`/`fr-FR`/`NullValue` save `1234` and NULL; `tests/registry.rs`
+— `BindingNavigator` is a linked Data control, the new properties are declared, and a real `Runtime` owns the
+components of a view (configured before the first paint, kept by a hot reload, a renamed element is a new instance).
+
+## 14. DATA-3 as built (2026-09-30)
+
+- **Providers.** `mysql` feature: sqlx MySQL/MariaDB (`?` placeholders — a repeated `@name` is bound again, backtick
+  quoting, `LAST_INSERT_ID()` for generated keys, a follow-up `SELECT` for what `RETURNING` would give, schema from
+  `information_schema.COLUMNS` (`COLUMN_KEY`, `EXTRA`), decoding of BOOLEAN/TINYINT(1), signed and unsigned integers,
+  DECIMAL as its exact text, dates, JSON, blobs; `Schema` = `USE` on every pooled connection; TLS `Required` for remote
+  servers unless `SslMode` says otherwise). Not in the defaults: sqlx's MySQL driver brings `rsa` (RUSTSEC-2023-0071).
+  `mssql` feature: `tiberius` 0.12 (`tds73`, `native-tls`, `winauth`, `chrono`) in `mssql.rs` — its own pool (idle
+  clients, a semaphore of `MaxPoolSize`, a client whose operation failed is dropped), ADO.NET connection strings
+  (`Config::from_ado_string`, `Integrated Security=true`), encryption `Required` for a remote server when `Encrypt` is
+  unset, `@P1` placeholders, `[bracket]` quoting, `OUTPUT INSERTED.[col]` for generated keys and row versions,
+  `BEGIN TRANSACTION`/`COMMIT` on one client, schema from `INFORMATION_SCHEMA` + `COLUMNPROPERTY` (identity, computed,
+  `rowversion` read-only), decoding by TDS column type (DECIMAL/NUMERIC as text, `datetimeoffset` as RFC 3339).
+  `Schema` is ignored with a warning (no search path). Transient codes extended (MySQL 1213/2006/2013, SQL Server
+  1205 and Azure throttling).
+- **Transactions across adapters.** `DbTransaction::begin(&handle)` → `execute`, `query`, `update(&plan)`, `commit`,
+  `rollback` (dropped: rolled back); it holds one pooled connection and a key map, so a master saved then its details in
+  the same transaction pass the generated keys on. `Pool::run_in_transaction` and `TxConn` share one statement runner
+  per driver.
+- **Master/detail and the hierarchical update.** `BindingSource.DataMember = "child = parent"` (qualifiers dropped;
+  a single name = the child column, the parent being the master's key) with `DataSource` = the master binding source
+  and `TableAdapter` = the detail's adapter. The detail shows nothing until it follows a master row, then only the
+  rows whose child column equals the master's current key; `add_new` fills that key; a detail edit that does not
+  validate is cancelled when the master moves. A select parameterized by the relation (`WHERE customer_id =
+  @customer_id`) makes the detail refill on each master change (the runtime starts the fill on its executor; a
+  `DataContext` exposes it as the next `current_request()`). New rows with a generated key get **temporary negative
+  keys** (process-wide counter, ADO.NET's seed/step -1); `save_all(&ui, &["customers", "orders"])` (or
+  `save_all_blocking`) plans each list (a detail's plan knows its foreign-key column) and runs them in **one
+  transaction**: deletes (details first), updates, inserts (masters first); each insert maps its temporary key to the
+  generated one and later statements' foreign-key parameters take it; after the commit the tables rewrite their
+  foreign keys and the detail's master key. A detail saved alone with a reference to an unsaved master fails as a whole
+  (the foreign key refuses the temporary key).
+- **Paging.** `TableAdapter.PageSize` (0: all), `PagingMode` `Offset` (`LIMIT/OFFSET`, `OFFSET … FETCH NEXT` on SQL
+  Server with `ORDER BY (SELECT NULL)` when there is none) or `Keyset` (`SELECT * FROM (<select without its ORDER
+  BY>) AS kubuno_page WHERE key > @kubuno_after ORDER BY key LIMIT n`, `TOP (n)` on SQL Server, `KeysetColumn` default
+  the key; pages read in order, the binding source remembers each page's start key), plus `SELECT COUNT(*)` of the
+  select for the total. `BindingSource` paths `PageIndex` (two-way: asks for a page — refused while there are unsaved
+  changes), `PageCount`, `PageText`, `TotalCount`, `CanPreviousPage`, `CanNextPage`.
+- **Cancellation and progress.** `DataTask::canceller()` → `Canceller` (`Send + Sync`, `cancel()` from any thread);
+  fills stream their rows (`futures::TryStreamExt`) and count them in a `Progress` (`TableAdapter::fill_page(…,
+  Some(progress))`; the binding source's `RowsRead`, `IsBusy`).
+- **Optimistic concurrency.** `ConflictOption`: `OverwriteChanges` (default, DATA-1), `CompareAllSearchableValues`
+  (the WHERE clause also matches every original value — `IS NULL` for a NULL — except bytes/JSON/unknown types),
+  `CompareRowVersion` with `RowVersionColumn` (read-only in DML; PostgreSQL `xmin` read as `xmin::text AS xmin`,
+  compared and returned as `"xmin"::text`; SQL Server `rowversion` through `OUTPUT INSERTED`; MySQL through a
+  follow-up `SELECT`); the new version is read back in the same statement, so the next edit passes. SQLite's
+  `RETURNING` does not see what AFTER triggers change, so a trigger-maintained version is not re-read there.
+- **Custom DML.** `InsertCommand`/`UpdateCommand`/`DeleteCommand`: parameterized text; `@column` takes the row's value,
+  `@Original_column` its original value; an unknown parameter is a validation error; an insert returning its key
+  (`RETURNING`/`OUTPUT`) writes it back.
+- **Stored procedures.** `DbCommand.CommandType = StoredProcedure` (`DbCommand::procedure(name)`): parameters in the
+  order they were set — PostgreSQL `CALL name($1…)` (`SELECT * FROM name(…)` for `query`/`execute_scalar`), MySQL
+  `CALL`, SQL Server `EXEC name @p = @P1…`; refused on SQLite; the name is validated.
+
+### Tests (DATA-3)
+
+`kubuno-data`: 63 unit tests (64 with `--features mysql,mssql`) + 1 ignored (Credential Manager round trip), among them: MySQL/SQL Server placeholders and
+quoting, top-level `ORDER BY`, generated DML per provider (backticks + `LAST_INSERT_ID`, brackets + `OUTPUT INSERTED`),
+`CompareAllSearchableValues` and `xmin` row versions, custom commands with `@Original_…`, paged/keyset selects,
+dependency order of master/detail plans and foreign-key rewriting, stored procedure calls per provider, transient
+codes. `tests/sqlite.rs` 16 (the 7 of DATA-1 adapted to the `Ref`/`RefMut` accessors, plus: master/detail follow and
+hierarchical `save_all` of a new customer and its order — the generated key reaches the order in the database and the
+local rows; a parameterized detail; a `DbTransaction` rolled back then committed across a command and an adapter; paging
+by offset and keyset over 25 rows; `CompareAllSearchableValues` catching another writer; custom insert/delete commands
+and a stored procedure refused by SQLite; 20 000 rows counted by `Progress` and a 5-million-row recursive query
+cancelled from another thread, the connection still usable). `tests/postgres.rs` 2 (gated on `KUBUNO_TEST_PG_URL`: adds
+`xmin` row versions, a customer and its order in one `DbTransaction`, paging), `tests/mysql.rs` 1 (feature `mysql`,
+gated on `KUBUNO_TEST_MYSQL_URL`), `tests/mssql.rs` 1 (feature `mssql`, gated on `KUBUNO_TEST_MSSQL_URL`: identity,
+`rowversion` read back and a stale version refused): **no PostgreSQL, MySQL or SQL Server server was reachable
+without looking for credentials, so these ran as skips**; the `mysql`/`mssql` code is compiled, clippy-clean and unit
+tested, not exercised against a server. `cargo clippy --all-targets -D warnings` clean on `kubuno-views` and
+`kubuno-data`, with and without `--features mysql,mssql`; no `unwrap` outside tests; the `kubuno` facade crate
+(`--features data`) still builds.
+
+### Live verification (2026-09-30)
+
+Scratch app `C:\kubuno-build\data2` (`user-secrets-id = "data2-live-check"`, `ConnectionStrings:Shop` = a SQLite file in
+the user secrets), built into `E:\cargo-target\data2`, run from `C:\kubuno-build\data2\run` with its `kubuno_ui.dll`
+(md5 identical to the build's) and `std-44a584f44bc3dd65.dll` (identical to the toolchain's), the exe importing exactly
+those two. The view declares a connection, two adapters, `customers` and `orders` (`DataSource="customers"
+DataMember="customer_id = id" TableAdapter="ordersAdapter"`), two ErrorProviders, two `BindingNavigator`s (the orders
+one with `AutoSave="false" OnSaveItemClick="save_all_click"`), two DataTables, and typed detail fields — `NumericField
+Value` bound to `age`, `TextField` bound to `birth_date` with `FormatString=d, Culture=fr-FR`, a `CheckBox` on `vip`,
+the order's `amount` with `FormatString=N2, Culture=fr-FR` and `ordered` with `d` and `NullValue='-'`. The view model
+has only a status line and handlers (no forwarding). With `DATA2_SCRIPT=1` a background thread drove the window
+through the UI dispatcher — binding writes through `scope::current().view_model(…)` (what the controls write),
+navigator items through `BindingNavigator::perform` (what a click runs). Log: `StateChange Closed → Connecting → Open`,
+`fill customers=Ok(3) orders=Ok(4)`; age read as `F32(36.0)`, birth date shown `10/12/1815`, amount `1 250,50`;
+MoveNext → Linus, the detail followed at once (`Kernel 0.99`); typed writes (29, `28/12/1969`, VIP) committed by
+MoveFirst (the XML `OnRowValidating` ran); AddNew → id `-1`, the order's `customer_id` `-1`, amount typed `1 234,50`;
+the orders navigator's Save → `save_all: Ok(3)` and, read through a separate connection, customer 4 Grace Hopper
+(`1906-12-09`) and order 5 `A-0 compiler | 1234.5 | 1952-05-01` with `customer_id = 4`, Linus `29 | 1969-12-28 | true`;
+the local rows then showed id 4 / customer_id 4. An e-mail without `@` → the XML handler refused the move
+synchronously (`position 4 / 4`, `errors.email = "Enter a valid e-mail address."`); a birth date `31/02/1906` → kept
+as typed, error "Enter a date as dd/MM/yyyy.". The window is left in that state for the visual check of the navigators
+and the two error glyphs.
