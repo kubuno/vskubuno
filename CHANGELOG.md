@@ -23,8 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     the same classifications.
   - **CodeLens**: "3 references | 1 implementation" above functions, types, traits and variants; a click opens Find
     All References or Go To Implementation (Tools > Options > Kubuno > Rust > CodeLens).
-  - **Inlay hints** (inferred types, parameter names, method chains) shown by default, or only while Alt+F1 is held
-    like C#'s option (Tools > Options > Kubuno > Rust > Inlay hints).
+  - **Inline hints** (inferred types, parameter names, method chains), hidden until Alt+F1 is held like C#'s default
+    (see "Changed"; Tools > Options > Kubuno > Rust > Inline hints).
   - **Go To All (Ctrl+T)** finds functions and methods too; Enter continues `///` and `//!` doc comments.
   - **`.kbview` ⇄ Rust**: completion of the compatible code-behind handlers in `OnClick="..."` and of the view
     model's paths in `{Binding ...}`; F12 on a control's tag opens its Rust type (a user control's own struct, else
@@ -121,6 +121,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   property (and the view's own on the root element), say which level it comes from, and note older names.
 
 ### Changed
+
+- **Inline hints follow C#'s defaults**: rust-analyzer's grey hints (`: FileWatcher`, `title:`, `opts:`...) are no longer
+  always on. They appear only while Alt+F1 is held, like C#'s "display inline hints when pressing Alt+F1". Tools >
+  Options > Kubuno > Rust > Inline hints now has per-kind switches like C#'s "Inline Parameter Name Hints" and "Inline Type
+  Hints": parameter names (with "for literals" / "for everything else"), types (hide when the type is apparent, hide on
+  variables holding a closure, closure parameter types), method chains, closure return types, elided lifetimes, binding
+  modes and names after closing braces. A change applies to the open editors immediately, without restarting
+  rust-analyzer. A stored choice of "Always" (the first release's default) moves to the new default once; any other
+  stored choice is kept.
+- **Options are native Visual Studio 2026 settings**: Tools > Options > Kubuno (Rust, Views, Designer, Debugging) no
+  longer shows "These settings have not been migrated yet" with links to the legacy dialog. The pages are searchable,
+  editable as JSON ("Modify user settings in JSON"), available in English and French, and take effect live where they can
+  (inline hints, CodeLens). Values from earlier versions are copied over once. Visual Studio 2022 keeps the classic pages.
 
 - The Rust standard library's natvis files are no longer copied into `Documents\Visual Studio 2022|18\Visualizers`
   (rustc already embeds them in every PDB); the copies earlier versions put there are removed.

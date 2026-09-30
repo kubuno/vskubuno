@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="S_kubuno_Title" xml:space="preserve"><value>Kubuno</value></data>
+  <data name="S_kubuno_Description" xml:space="preserve"><value>Rust and Kubuno views development in Visual Studio.</value></data>
+  <data name="S_kubuno_rust_Title" xml:space="preserve"><value>Rust</value></data>
+  <data name="S_kubuno_rust_Description" xml:space="preserve"><value>rust-analyzer, editor features and inline hints for .rs files.</value></data>
+  <data name="S_kubuno_rust_rustAnalyzer_Title" xml:space="preserve"><value>rust-analyzer</value></data>
+  <data name="S_kubuno_rust_rustAnalyzer_Description" xml:space="preserve"><value>The Rust language server.</value></data>
+  <data name="S_kubuno_rust_editor_Title" xml:space="preserve"><value>Editor</value></data>
+  <data name="S_kubuno_rust_editor_Description" xml:space="preserve"><value>Editing features of .rs files.</value></data>
+  <data name="S_kubuno_rust_diagnostics_Title" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="S_kubuno_rust_diagnostics_Description" xml:space="preserve"><value>Logging of the Rust language server.</value></data>
+  <data name="S_kubuno_rust_inlayHints_Title" xml:space="preserve"><value>Inline hints</value></data>
+  <data name="S_kubuno_rust_inlayHints_Description" xml:space="preserve"><value>The grey hints rust-analyzer adds inside the code (types, parameter names...), like C#&apos;s inline hints.</value></data>
+  <data name="S_kubuno_rust_inlayHints_parameterNames_Title" xml:space="preserve"><value>Parameter names</value></data>
+  <data name="S_kubuno_rust_inlayHints_parameterNames_Description" xml:space="preserve"><value>Inline parameter name hints.</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_Title" xml:space="preserve"><value>Types</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_Description" xml:space="preserve"><value>Inline type hints.</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_Title" xml:space="preserve"><value>Other hints</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_Description" xml:space="preserve"><value>Other inline hints.</value></data>
+  <data name="S_kubuno_views_Title" xml:space="preserve"><value>Views</value></data>
+  <data name="S_kubuno_views_Description" xml:space="preserve"><value>The .kbview language server.</value></data>
+  <data name="S_kubuno_views_languageServer_Title" xml:space="preserve"><value>kubuno-views-ls</value></data>
+  <data name="S_kubuno_views_languageServer_Description" xml:space="preserve"><value>The .kbview language server.</value></data>
+  <data name="S_kubuno_designer_Title" xml:space="preserve"><value>Designer</value></data>
+  <data name="S_kubuno_designer_Description" xml:space="preserve"><value>The Kubuno View Designer.</value></data>
+  <data name="S_kubuno_designer_editor_Title" xml:space="preserve"><value>Editor</value></data>
+  <data name="S_kubuno_designer_editor_Description" xml:space="preserve"><value>How .kbview files are opened.</value></data>
+  <data name="S_kubuno_debugging_Title" xml:space="preserve"><value>Debugging</value></data>
+  <data name="S_kubuno_debugging_Description" xml:space="preserve"><value>Debugging of Rust and Kubuno applications.</value></data>
+  <data name="S_kubuno_debugging_justMyCode_Title" xml:space="preserve"><value>Just My Code</value></data>
+  <data name="S_kubuno_debugging_justMyCode_Description" xml:space="preserve"><value>Which frames the debugger shows.</value></data>
+  <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Title" xml:space="preserve"><value>Path override</value></data>
+  <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Description" xml:space="preserve"><value>Full path to rust-analyzer.exe. When empty, Kubuno tries &quot;rustup which rust-analyzer&quot;, then %USERPROFILE%\.cargo\bin\rust-analyzer.exe, then the PATH environment variable. Applies the next time the server starts.</value></data>
+  <data name="S_kubuno_rust_editor_formatOnSave_Title" xml:space="preserve"><value>Format on save</value></data>
+  <data name="S_kubuno_rust_editor_formatOnSave_Description" xml:space="preserve"><value>Run Format Document (rustfmt, through rust-analyzer) on every .rs file before it is saved.</value></data>
+  <data name="S_kubuno_rust_editor_codeLens_Title" xml:space="preserve"><value>Show CodeLens</value></data>
+  <data name="S_kubuno_rust_editor_codeLens_Description" xml:space="preserve"><value>Show reference and implementation counts (&quot;3 references&quot;) above Rust items, like C#&apos;s CodeLens. Click a count to open Find All References or the implementations.</value></data>
+  <data name="S_kubuno_rust_diagnostics_lspTrace_Title" xml:space="preserve"><value>LSP trace</value></data>
+  <data name="S_kubuno_rust_diagnostics_lspTrace_Description" xml:space="preserve"><value>How much of the traffic between Visual Studio and rust-analyzer is logged in the Kubuno Output pane. Off logs only the startup line and errors; Messages adds one line per request and response; Verbose adds the raw JSON.</value></data>
+  <data name="S_kubuno_rust_diagnostics_lspTrace_Item_off" xml:space="preserve"><value>Off</value></data>
+  <data name="S_kubuno_rust_diagnostics_lspTrace_Item_messages" xml:space="preserve"><value>Messages</value></data>
+  <data name="S_kubuno_rust_diagnostics_lspTrace_Item_verbose" xml:space="preserve"><value>Verbose</value></data>
+  <data name="S_kubuno_rust_inlayHints_show_Title" xml:space="preserve"><value>Show inline hints</value></data>
+  <data name="S_kubuno_rust_inlayHints_show_Description" xml:space="preserve"><value>When the hints are shown in .rs files. &quot;While pressing Alt+F1&quot; is C#&apos;s default (hold Alt+F1 to see them); &quot;Visual Studio setting&quot; follows Text Editor &gt; All Languages &gt; Inlay Hints. Which hints exist is chosen below.</value></data>
+  <data name="S_kubuno_rust_inlayHints_show_Item_whilePressingAltF1" xml:space="preserve"><value>While pressing Alt+F1</value></data>
+  <data name="S_kubuno_rust_inlayHints_show_Item_always" xml:space="preserve"><value>Always</value></data>
+  <data name="S_kubuno_rust_inlayHints_show_Item_visualStudioSetting" xml:space="preserve"><value>Visual Studio setting</value></data>
+  <data name="S_kubuno_rust_inlayHints_show_Item_never" xml:space="preserve"><value>Never</value></data>
+  <data name="S_kubuno_rust_inlayHints_parameterNames_enabled_Title" xml:space="preserve"><value>Display inline parameter name hints</value></data>
+  <data name="S_kubuno_rust_inlayHints_parameterNames_enabled_Description" xml:space="preserve"><value>Show the parameter&apos;s name before each argument (&quot;title: name&quot;). rust-analyzer already leaves the hint out when the argument is named like the parameter.</value></data>
+  <data name="S_kubuno_rust_inlayHints_parameterNames_forLiterals_Title" xml:space="preserve"><value>Show hints for literals</value></data>
+  <data name="S_kubuno_rust_inlayHints_parameterNames_forLiterals_Description" xml:space="preserve"><value>Keep the parameter name hint when the argument is a literal (5, &quot;text&quot;, true, &apos;c&apos;).</value></data>
+  <data name="S_kubuno_rust_inlayHints_parameterNames_forOtherArguments_Title" xml:space="preserve"><value>Show hints for everything else</value></data>
+  <data name="S_kubuno_rust_inlayHints_parameterNames_forOtherArguments_Description" xml:space="preserve"><value>Keep the parameter name hint when the argument is a variable, a call or any other expression that is not a literal.</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_enabled_Title" xml:space="preserve"><value>Display inline type hints</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_enabled_Description" xml:space="preserve"><value>Show the inferred type after a variable (&quot;: Vec&lt;u8&gt;&quot;).</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_hideApparent_Title" xml:space="preserve"><value>Suppress hints when the type is apparent</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_hideApparent_Description" xml:space="preserve"><value>No type hint when the initializer names the type (let w = Widget::new()).</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_hideClosureVariables_Title" xml:space="preserve"><value>Suppress hints on variables holding a closure</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_hideClosureVariables_Description" xml:space="preserve"><value>No type hint on a variable initialized with a closure (let f = |x| x + 1): the closure&apos;s own type is unreadable noise.</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_closureParameters_Title" xml:space="preserve"><value>Show hints for closure parameter types</value></data>
+  <data name="S_kubuno_rust_inlayHints_types_closureParameters_Description" xml:space="preserve"><value>Show the type of a closure&apos;s parameters, like C#&apos;s lambda parameter types.</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_methodChains_Title" xml:space="preserve"><value>Show types at the end of method chains</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_methodChains_Description" xml:space="preserve"><value>Show the type at the end of each line of a method chain.</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_closureReturnTypes_Title" xml:space="preserve"><value>Closure return types</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_closureReturnTypes_Description" xml:space="preserve"><value>Show a closure&apos;s return type: never, only when its body is a block, or always.</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_closureReturnTypes_Item_never" xml:space="preserve"><value>Never</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_closureReturnTypes_Item_withBlock" xml:space="preserve"><value>Only for closures with a block</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_closureReturnTypes_Item_always" xml:space="preserve"><value>Always</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_lifetimeElision_Title" xml:space="preserve"><value>Elided lifetimes</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_lifetimeElision_Description" xml:space="preserve"><value>Show the lifetimes Rust infers in signatures (fn f&lt;&apos;a&gt;(x: &amp;&apos;a T) -&gt; &amp;&apos;a U): never, skipping the trivial ones, or always.</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_lifetimeElision_Item_never" xml:space="preserve"><value>Never</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_lifetimeElision_Item_skipTrivial" xml:space="preserve"><value>Skip trivial cases</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_lifetimeElision_Item_always" xml:space="preserve"><value>Always</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_bindingModes_Title" xml:space="preserve"><value>Binding modes</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_bindingModes_Description" xml:space="preserve"><value>Show the implicit &amp; and ref of patterns matched through a reference.</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_closingBraces_Title" xml:space="preserve"><value>Names after closing braces</value></data>
+  <data name="S_kubuno_rust_inlayHints_other_closingBraces_Description" xml:space="preserve"><value>Show the name of the item after the closing brace of a long block (&quot;// fn main&quot;).</value></data>
+  <data name="S_kubuno_views_languageServer_pathOverride_Title" xml:space="preserve"><value>Path override</value></data>
+  <data name="S_kubuno_views_languageServer_pathOverride_Description" xml:space="preserve"><value>Full path to kubuno-views-ls.exe. When empty, Kubuno tries the extension&apos;s own tools folder, then the PATH environment variable, then the local development build folders.</value></data>
+  <data name="S_kubuno_designer_editor_useAsDefault_Title" xml:space="preserve"><value>Use the View Designer as the default editor</value></data>
+  <data name="S_kubuno_designer_editor_useAsDefault_Description" xml:space="preserve"><value>A double-click on a .kbview file opens the Kubuno View Designer (Design | XML split view) instead of the plain XML editor. Either way the designer is reachable through Open With.</value></data>
+  <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Title" xml:space="preserve"><value>Treat the Kubuno framework as external code</value></data>
+  <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Description" xml:space="preserve"><value>Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno framework (kubuno_views, kubuno_controls, kubuno_ui.dll, the event-handler dispatch glue) into [External Code] and Step Into (F11) goes straight to your handlers. Turn it off to see and debug Kubuno&apos;s own code. The Rust standard library is always stepped over. Takes effect at the next debug session.</value></data>
+</root>

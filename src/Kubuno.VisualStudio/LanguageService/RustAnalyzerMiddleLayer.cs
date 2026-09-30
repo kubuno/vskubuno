@@ -51,6 +51,7 @@ namespace Kubuno.VisualStudio.LanguageService
         private const string DidOpenMethod = "textDocument/didOpen";
         private const string DidChangeMethod = "textDocument/didChange";
         private const string DidCloseMethod = "textDocument/didClose";
+        private const string InlayHintMethod = "textDocument/inlayHint";
 
         /// <summary>A name <c>kubuno/renameHandler</c> accepts, used to find a handler's view usages without renaming anything.</summary>
         private const string ProbeName = "kubuno_find_references_probe";
@@ -74,7 +75,8 @@ namespace Kubuno.VisualStudio.LanguageService
         public bool CanHandle(string methodName) =>
             methodName == DocumentDiagnosticMethod || methodName == HoverMethod || methodName == RenameMethod || methodName == CompletionMethod
             || methodName == ReferencesMethod || methodName.StartsWith(SemanticTokensPrefix, StringComparison.Ordinal)
-            || methodName == DidOpenMethod || methodName == DidChangeMethod || methodName == DidCloseMethod;
+            || methodName == DidOpenMethod || methodName == DidChangeMethod || methodName == DidCloseMethod
+            || methodName == InlayHintMethod;
 
         public async Task HandleNotificationAsync(string methodName, JToken methodParam, Func<JToken, Task> sendNotification)
         {
@@ -106,6 +108,12 @@ namespace Kubuno.VisualStudio.LanguageService
             }
 
             var response = await sendRequest(methodParam).ConfigureAwait(false);
+            if (methodName == InlayHintMethod)
+            {
+                FilterParameterHints(methodParam, response);
+                return response;
+            }
+
             if (methodName.StartsWith(SemanticTokensPrefix, StringComparison.Ordinal))
             {
                 RemapSemanticTokens(response);
@@ -116,6 +124,40 @@ namespace Kubuno.VisualStudio.LanguageService
             }
 
             return response;
+        }
+
+        /// <summary>
+        /// Drops the parameter name hints of the argument kinds switched off in the options (literals, other arguments):
+        /// rust-analyzer has no such switch. An hint is kept whenever its argument text cannot be read.
+        /// </summary>
+        private static void FilterParameterHints(JToken methodParam, JToken? response)
+        {
+            var settings = RustInlayHintSettings.Current;
+            if (!settings.FiltersParameterNames || response is not JArray hints || (string?)methodParam["textDocument"]?["uri"] is not { } uri)
+            {
+                return;
+            }
+
+            var snapshot = RustArgumentSnapshots.Find(uri);
+            if (snapshot is null)
+            {
+                return;
+            }
+
+            foreach (var hint in hints.ToList())
+            {
+                // InlayHintKind.Parameter = 2.
+                if ((int?)hint["kind"] != 2 || hint["position"] is not JObject position)
+                {
+                    continue;
+                }
+
+                string? argument = RustArgumentSnapshots.TextAt(snapshot, (int?)position["line"] ?? -1, (int?)position["character"] ?? -1);
+                if (argument is not null && !settings.KeepsParameterHint(argument))
+                {
+                    hint.Remove();
+                }
+            }
         }
 
         /// <summary>Remaps the tokens of a full, delta or range response (<c>data</c>, or each edit's <c>data</c>).</summary>

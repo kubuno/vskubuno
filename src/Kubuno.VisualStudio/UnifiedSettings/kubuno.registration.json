@@ -1,0 +1,272 @@
+{
+    "$schema":  "registration.schema.json",
+    "properties":  {
+                       "kubuno.rust.rustAnalyzer.pathOverride":  {
+                                                                     "type":  "string",
+                                                                     "title":  "@S_kubuno_rust_rustAnalyzer_pathOverride_Title;..\\Kubuno.VisualStudio.dll",
+                                                                     "description":  "@S_kubuno_rust_rustAnalyzer_pathOverride_Description;..\\Kubuno.VisualStudio.dll",
+                                                                     "default":  "",
+                                                                     "order":  0,
+                                                                     "pathKind":  "file",
+                                                                     "format":  "path"
+                                                                 },
+                       "kubuno.rust.editor.formatOnSave":  {
+                                                               "type":  "boolean",
+                                                               "title":  "@S_kubuno_rust_editor_formatOnSave_Title;..\\Kubuno.VisualStudio.dll",
+                                                               "description":  "@S_kubuno_rust_editor_formatOnSave_Description;..\\Kubuno.VisualStudio.dll",
+                                                               "default":  false,
+                                                               "order":  10
+                                                           },
+                       "kubuno.rust.editor.codeLens":  {
+                                                           "type":  "boolean",
+                                                           "title":  "@S_kubuno_rust_editor_codeLens_Title;..\\Kubuno.VisualStudio.dll",
+                                                           "description":  "@S_kubuno_rust_editor_codeLens_Description;..\\Kubuno.VisualStudio.dll",
+                                                           "default":  true,
+                                                           "order":  20
+                                                       },
+                       "kubuno.rust.diagnostics.lspTrace":  {
+                                                                "type":  "string",
+                                                                "title":  "@S_kubuno_rust_diagnostics_lspTrace_Title;..\\Kubuno.VisualStudio.dll",
+                                                                "description":  "@S_kubuno_rust_diagnostics_lspTrace_Description;..\\Kubuno.VisualStudio.dll",
+                                                                "default":  "off",
+                                                                "order":  30,
+                                                                "enum":  [
+                                                                             "off",
+                                                                             "messages",
+                                                                             "verbose"
+                                                                         ],
+                                                                "enumItemLabels":  [
+                                                                                       "@S_kubuno_rust_diagnostics_lspTrace_Item_off;..\\Kubuno.VisualStudio.dll",
+                                                                                       "@S_kubuno_rust_diagnostics_lspTrace_Item_messages;..\\Kubuno.VisualStudio.dll",
+                                                                                       "@S_kubuno_rust_diagnostics_lspTrace_Item_verbose;..\\Kubuno.VisualStudio.dll"
+                                                                                   ]
+                                                            },
+                       "kubuno.rust.inlayHints.show":  {
+                                                           "type":  "string",
+                                                           "title":  "@S_kubuno_rust_inlayHints_show_Title;..\\Kubuno.VisualStudio.dll",
+                                                           "description":  "@S_kubuno_rust_inlayHints_show_Description;..\\Kubuno.VisualStudio.dll",
+                                                           "default":  "whilePressingAltF1",
+                                                           "order":  40,
+                                                           "enum":  [
+                                                                        "whilePressingAltF1",
+                                                                        "always",
+                                                                        "visualStudioSetting",
+                                                                        "never"
+                                                                    ],
+                                                           "enumItemLabels":  [
+                                                                                  "@S_kubuno_rust_inlayHints_show_Item_whilePressingAltF1;..\\Kubuno.VisualStudio.dll",
+                                                                                  "@S_kubuno_rust_inlayHints_show_Item_always;..\\Kubuno.VisualStudio.dll",
+                                                                                  "@S_kubuno_rust_inlayHints_show_Item_visualStudioSetting;..\\Kubuno.VisualStudio.dll",
+                                                                                  "@S_kubuno_rust_inlayHints_show_Item_never;..\\Kubuno.VisualStudio.dll"
+                                                                              ]
+                                                       },
+                       "kubuno.rust.inlayHints.parameterNames.enabled":  {
+                                                                             "type":  "boolean",
+                                                                             "title":  "@S_kubuno_rust_inlayHints_parameterNames_enabled_Title;..\\Kubuno.VisualStudio.dll",
+                                                                             "description":  "@S_kubuno_rust_inlayHints_parameterNames_enabled_Description;..\\Kubuno.VisualStudio.dll",
+                                                                             "default":  true,
+                                                                             "order":  50
+                                                                         },
+                       "kubuno.rust.inlayHints.parameterNames.forLiterals":  {
+                                                                                 "type":  "boolean",
+                                                                                 "title":  "@S_kubuno_rust_inlayHints_parameterNames_forLiterals_Title;..\\Kubuno.VisualStudio.dll",
+                                                                                 "description":  "@S_kubuno_rust_inlayHints_parameterNames_forLiterals_Description;..\\Kubuno.VisualStudio.dll",
+                                                                                 "default":  true,
+                                                                                 "order":  60,
+                                                                                 "enableWhen":  "${config:kubuno.rust.inlayHints.parameterNames.enabled} == 'true'"
+                                                                             },
+                       "kubuno.rust.inlayHints.parameterNames.forOtherArguments":  {
+                                                                                       "type":  "boolean",
+                                                                                       "title":  "@S_kubuno_rust_inlayHints_parameterNames_forOtherArguments_Title;..\\Kubuno.VisualStudio.dll",
+                                                                                       "description":  "@S_kubuno_rust_inlayHints_parameterNames_forOtherArguments_Description;..\\Kubuno.VisualStudio.dll",
+                                                                                       "default":  true,
+                                                                                       "order":  70,
+                                                                                       "enableWhen":  "${config:kubuno.rust.inlayHints.parameterNames.enabled} == 'true'"
+                                                                                   },
+                       "kubuno.rust.inlayHints.types.enabled":  {
+                                                                    "type":  "boolean",
+                                                                    "title":  "@S_kubuno_rust_inlayHints_types_enabled_Title;..\\Kubuno.VisualStudio.dll",
+                                                                    "description":  "@S_kubuno_rust_inlayHints_types_enabled_Description;..\\Kubuno.VisualStudio.dll",
+                                                                    "default":  true,
+                                                                    "order":  80
+                                                                },
+                       "kubuno.rust.inlayHints.types.hideApparent":  {
+                                                                         "type":  "boolean",
+                                                                         "title":  "@S_kubuno_rust_inlayHints_types_hideApparent_Title;..\\Kubuno.VisualStudio.dll",
+                                                                         "description":  "@S_kubuno_rust_inlayHints_types_hideApparent_Description;..\\Kubuno.VisualStudio.dll",
+                                                                         "default":  true,
+                                                                         "order":  90,
+                                                                         "enableWhen":  "${config:kubuno.rust.inlayHints.types.enabled} == 'true'"
+                                                                     },
+                       "kubuno.rust.inlayHints.types.hideClosureVariables":  {
+                                                                                 "type":  "boolean",
+                                                                                 "title":  "@S_kubuno_rust_inlayHints_types_hideClosureVariables_Title;..\\Kubuno.VisualStudio.dll",
+                                                                                 "description":  "@S_kubuno_rust_inlayHints_types_hideClosureVariables_Description;..\\Kubuno.VisualStudio.dll",
+                                                                                 "default":  true,
+                                                                                 "order":  100,
+                                                                                 "enableWhen":  "${config:kubuno.rust.inlayHints.types.enabled} == 'true'"
+                                                                             },
+                       "kubuno.rust.inlayHints.types.closureParameters":  {
+                                                                              "type":  "boolean",
+                                                                              "title":  "@S_kubuno_rust_inlayHints_types_closureParameters_Title;..\\Kubuno.VisualStudio.dll",
+                                                                              "description":  "@S_kubuno_rust_inlayHints_types_closureParameters_Description;..\\Kubuno.VisualStudio.dll",
+                                                                              "default":  true,
+                                                                              "order":  110
+                                                                          },
+                       "kubuno.rust.inlayHints.other.methodChains":  {
+                                                                         "type":  "boolean",
+                                                                         "title":  "@S_kubuno_rust_inlayHints_other_methodChains_Title;..\\Kubuno.VisualStudio.dll",
+                                                                         "description":  "@S_kubuno_rust_inlayHints_other_methodChains_Description;..\\Kubuno.VisualStudio.dll",
+                                                                         "default":  true,
+                                                                         "order":  120
+                                                                     },
+                       "kubuno.rust.inlayHints.other.closureReturnTypes":  {
+                                                                               "type":  "string",
+                                                                               "title":  "@S_kubuno_rust_inlayHints_other_closureReturnTypes_Title;..\\Kubuno.VisualStudio.dll",
+                                                                               "description":  "@S_kubuno_rust_inlayHints_other_closureReturnTypes_Description;..\\Kubuno.VisualStudio.dll",
+                                                                               "default":  "never",
+                                                                               "order":  130,
+                                                                               "enum":  [
+                                                                                            "never",
+                                                                                            "withBlock",
+                                                                                            "always"
+                                                                                        ],
+                                                                               "enumItemLabels":  [
+                                                                                                      "@S_kubuno_rust_inlayHints_other_closureReturnTypes_Item_never;..\\Kubuno.VisualStudio.dll",
+                                                                                                      "@S_kubuno_rust_inlayHints_other_closureReturnTypes_Item_withBlock;..\\Kubuno.VisualStudio.dll",
+                                                                                                      "@S_kubuno_rust_inlayHints_other_closureReturnTypes_Item_always;..\\Kubuno.VisualStudio.dll"
+                                                                                                  ]
+                                                                           },
+                       "kubuno.rust.inlayHints.other.lifetimeElision":  {
+                                                                            "type":  "string",
+                                                                            "title":  "@S_kubuno_rust_inlayHints_other_lifetimeElision_Title;..\\Kubuno.VisualStudio.dll",
+                                                                            "description":  "@S_kubuno_rust_inlayHints_other_lifetimeElision_Description;..\\Kubuno.VisualStudio.dll",
+                                                                            "default":  "never",
+                                                                            "order":  140,
+                                                                            "enum":  [
+                                                                                         "never",
+                                                                                         "skipTrivial",
+                                                                                         "always"
+                                                                                     ],
+                                                                            "enumItemLabels":  [
+                                                                                                   "@S_kubuno_rust_inlayHints_other_lifetimeElision_Item_never;..\\Kubuno.VisualStudio.dll",
+                                                                                                   "@S_kubuno_rust_inlayHints_other_lifetimeElision_Item_skipTrivial;..\\Kubuno.VisualStudio.dll",
+                                                                                                   "@S_kubuno_rust_inlayHints_other_lifetimeElision_Item_always;..\\Kubuno.VisualStudio.dll"
+                                                                                               ]
+                                                                        },
+                       "kubuno.rust.inlayHints.other.bindingModes":  {
+                                                                         "type":  "boolean",
+                                                                         "title":  "@S_kubuno_rust_inlayHints_other_bindingModes_Title;..\\Kubuno.VisualStudio.dll",
+                                                                         "description":  "@S_kubuno_rust_inlayHints_other_bindingModes_Description;..\\Kubuno.VisualStudio.dll",
+                                                                         "default":  false,
+                                                                         "order":  150
+                                                                     },
+                       "kubuno.rust.inlayHints.other.closingBraces":  {
+                                                                          "type":  "boolean",
+                                                                          "title":  "@S_kubuno_rust_inlayHints_other_closingBraces_Title;..\\Kubuno.VisualStudio.dll",
+                                                                          "description":  "@S_kubuno_rust_inlayHints_other_closingBraces_Description;..\\Kubuno.VisualStudio.dll",
+                                                                          "default":  false,
+                                                                          "order":  160
+                                                                      },
+                       "kubuno.views.languageServer.pathOverride":  {
+                                                                        "type":  "string",
+                                                                        "title":  "@S_kubuno_views_languageServer_pathOverride_Title;..\\Kubuno.VisualStudio.dll",
+                                                                        "description":  "@S_kubuno_views_languageServer_pathOverride_Description;..\\Kubuno.VisualStudio.dll",
+                                                                        "default":  "",
+                                                                        "order":  170,
+                                                                        "pathKind":  "file",
+                                                                        "format":  "path"
+                                                                    },
+                       "kubuno.designer.editor.useAsDefault":  {
+                                                                   "type":  "boolean",
+                                                                   "title":  "@S_kubuno_designer_editor_useAsDefault_Title;..\\Kubuno.VisualStudio.dll",
+                                                                   "description":  "@S_kubuno_designer_editor_useAsDefault_Description;..\\Kubuno.VisualStudio.dll",
+                                                                   "default":  false,
+                                                                   "order":  180
+                                                               },
+                       "kubuno.debugging.justMyCode.frameworkIsExternalCode":  {
+                                                                                   "type":  "boolean",
+                                                                                   "title":  "@S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Title;..\\Kubuno.VisualStudio.dll",
+                                                                                   "description":  "@S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Description;..\\Kubuno.VisualStudio.dll",
+                                                                                   "default":  true,
+                                                                                   "order":  190
+                                                                               }
+                   },
+    "categories":  {
+                       "kubuno":  {
+                                      "title":  "@S_kubuno_Title;..\\Kubuno.VisualStudio.dll",
+                                      "description":  "@S_kubuno_Description;..\\Kubuno.VisualStudio.dll",
+                                      "order":  0
+                                  },
+                       "kubuno.rust":  {
+                                           "title":  "@S_kubuno_rust_Title;..\\Kubuno.VisualStudio.dll",
+                                           "description":  "@S_kubuno_rust_Description;..\\Kubuno.VisualStudio.dll",
+                                           "order":  10
+                                       },
+                       "kubuno.rust.rustAnalyzer":  {
+                                                        "title":  "@S_kubuno_rust_rustAnalyzer_Title;..\\Kubuno.VisualStudio.dll",
+                                                        "description":  "@S_kubuno_rust_rustAnalyzer_Description;..\\Kubuno.VisualStudio.dll",
+                                                        "order":  20
+                                                    },
+                       "kubuno.rust.editor":  {
+                                                  "title":  "@S_kubuno_rust_editor_Title;..\\Kubuno.VisualStudio.dll",
+                                                  "description":  "@S_kubuno_rust_editor_Description;..\\Kubuno.VisualStudio.dll",
+                                                  "order":  30
+                                              },
+                       "kubuno.rust.diagnostics":  {
+                                                       "title":  "@S_kubuno_rust_diagnostics_Title;..\\Kubuno.VisualStudio.dll",
+                                                       "description":  "@S_kubuno_rust_diagnostics_Description;..\\Kubuno.VisualStudio.dll",
+                                                       "order":  40
+                                                   },
+                       "kubuno.rust.inlayHints":  {
+                                                      "title":  "@S_kubuno_rust_inlayHints_Title;..\\Kubuno.VisualStudio.dll",
+                                                      "description":  "@S_kubuno_rust_inlayHints_Description;..\\Kubuno.VisualStudio.dll",
+                                                      "order":  50
+                                                  },
+                       "kubuno.rust.inlayHints.parameterNames":  {
+                                                                     "title":  "@S_kubuno_rust_inlayHints_parameterNames_Title;..\\Kubuno.VisualStudio.dll",
+                                                                     "description":  "@S_kubuno_rust_inlayHints_parameterNames_Description;..\\Kubuno.VisualStudio.dll",
+                                                                     "order":  60
+                                                                 },
+                       "kubuno.rust.inlayHints.types":  {
+                                                            "title":  "@S_kubuno_rust_inlayHints_types_Title;..\\Kubuno.VisualStudio.dll",
+                                                            "description":  "@S_kubuno_rust_inlayHints_types_Description;..\\Kubuno.VisualStudio.dll",
+                                                            "order":  70
+                                                        },
+                       "kubuno.rust.inlayHints.other":  {
+                                                            "title":  "@S_kubuno_rust_inlayHints_other_Title;..\\Kubuno.VisualStudio.dll",
+                                                            "description":  "@S_kubuno_rust_inlayHints_other_Description;..\\Kubuno.VisualStudio.dll",
+                                                            "order":  80
+                                                        },
+                       "kubuno.views":  {
+                                            "title":  "@S_kubuno_views_Title;..\\Kubuno.VisualStudio.dll",
+                                            "description":  "@S_kubuno_views_Description;..\\Kubuno.VisualStudio.dll",
+                                            "order":  90
+                                        },
+                       "kubuno.views.languageServer":  {
+                                                           "title":  "@S_kubuno_views_languageServer_Title;..\\Kubuno.VisualStudio.dll",
+                                                           "description":  "@S_kubuno_views_languageServer_Description;..\\Kubuno.VisualStudio.dll",
+                                                           "order":  100
+                                                       },
+                       "kubuno.designer":  {
+                                               "title":  "@S_kubuno_designer_Title;..\\Kubuno.VisualStudio.dll",
+                                               "description":  "@S_kubuno_designer_Description;..\\Kubuno.VisualStudio.dll",
+                                               "order":  110
+                                           },
+                       "kubuno.designer.editor":  {
+                                                      "title":  "@S_kubuno_designer_editor_Title;..\\Kubuno.VisualStudio.dll",
+                                                      "description":  "@S_kubuno_designer_editor_Description;..\\Kubuno.VisualStudio.dll",
+                                                      "order":  120
+                                                  },
+                       "kubuno.debugging":  {
+                                                "title":  "@S_kubuno_debugging_Title;..\\Kubuno.VisualStudio.dll",
+                                                "description":  "@S_kubuno_debugging_Description;..\\Kubuno.VisualStudio.dll",
+                                                "order":  130
+                                            },
+                       "kubuno.debugging.justMyCode":  {
+                                                           "title":  "@S_kubuno_debugging_justMyCode_Title;..\\Kubuno.VisualStudio.dll",
+                                                           "description":  "@S_kubuno_debugging_justMyCode_Description;..\\Kubuno.VisualStudio.dll",
+                                                           "order":  140
+                                                       }
+                   }
+}

@@ -17,7 +17,7 @@ namespace Kubuno.VisualStudio.Views.Options
     /// <see cref="LanguageService.KubunoViewsLanguageClient"/> (MEF-constructed, independent of the
     /// package) can read them.
     /// </summary>
-    public sealed class KbviewOptionsPage : DialogPage, IKubunoViewsOptions
+    public sealed class KbviewOptionsPage : KubunoDialogPage, IKubunoViewsOptions
     {
         [Category("kubuno-views-ls")]
         [DisplayName("Path override")]
@@ -25,6 +25,7 @@ namespace Kubuno.VisualStudio.Views.Options
             "'tools' folder, then the PATH environment variable, then the local dev build output folders " +
             "(C:\\kubuno-build\\desktop-target\\debug\\ and C:\\kubuno-build\\agent-views-ls\\debug\\).")]
         [Editor(typeof(FileNameEditor), typeof(System.Drawing.Design.UITypeEditor))]
+        [UnifiedSetting("kubuno.views.languageServer.pathOverride")]
         public string LanguageServerPathOverride { get; set; } = string.Empty;
     }
 }

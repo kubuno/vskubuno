@@ -88,12 +88,19 @@ Kubuno.VisualStudio.sln
   `Cargo.toml` in Solution Explorer/Open Folder): see "Building Rust with MSBuild (`.rsproj`)"
   below.
 
-### Options (Tools > Options > Kubuno > Rust)
+### Options (Tools > Options > Kubuno)
+
+In Visual Studio 2026 the options are native pages of the unified settings ("All settings" > Kubuno > Rust, Views,
+Designer, Debugging): searchable, edited in the document-style page or in the settings JSON file, with English and
+French labels. Visual Studio 2022 keeps the classic Tools > Options pages. Values set in an earlier version are
+copied to the new settings once. Rust settings:
 
 | Option | Default | Effect |
 |---|---|---|
 | Path override | (empty) | Force a specific `rust-analyzer.exe` path, skipping auto-discovery. |
 | Format on save | Off | Format `.rs` documents with rustfmt right before they are saved. |
+| Show CodeLens | On | "3 references" above Rust items. |
+| Inline hints | While pressing Alt+F1 | When rust-analyzer's grey hints show, like C#'s: hold Alt+F1 (default), always, follow Visual Studio's setting, or never. The kinds (parameter names, types, method chains, closure return types, elided lifetimes...) are chosen under "Inline hints"; see `docs/INTELLISENSE.md`. Changes apply live. |
 | LSP trace | Off | `Off` logs only the startup line and errors. `Messages` adds one line per LSP request/response/notification. `Verbose` adds full StreamJsonRpc detail (raw JSON payloads). Startup and errors are always logged regardless of this setting. |
 
 ## Prerequisites

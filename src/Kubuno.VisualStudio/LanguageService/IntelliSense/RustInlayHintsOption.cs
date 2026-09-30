@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.Composition;
 using System.Reflection;
+using Kubuno.VisualStudio.Core.IntelliSense;
 using Kubuno.VisualStudio.Options;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
@@ -11,8 +12,8 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
     /// <summary>
     /// Shows rust-analyzer's inlay hints in .rs editors according to Tools &gt; Options &gt; Kubuno &gt; Rust &gt; Inlay hints.
     /// Visual Studio's LSP client draws them (types, parameter names, chains) only when the editor's global
-    /// "inlay hints" option allows it - off by default - so the option is set on each Rust view; "While pressing
-    /// Alt+F1" is Visual Studio's own hold-to-show mode, the one C# offers.
+    /// "inlay hints" option allows it - off by default - so the option is set on each Rust view (Kubuno's default: "While pressing
+    /// Alt+F1", Visual Studio's own hold-to-show mode, the one C# offers).
     /// </summary>
     [Export(typeof(IWpfTextViewCreationListener))]
     [ContentType(Constants.RustContentType)]
@@ -25,9 +26,17 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
         /// <summary>The option's value type (<c>Microsoft.VisualStudio.Text.Editor.InlayHintsEnableKind</c>, internal in that SDK), or null.</summary>
         private static readonly Type? InlayHintsEnableKind = typeof(DefaultTextViewOptions).Assembly.GetType("Microsoft.VisualStudio.Text.Editor.InlayHintsEnableKind", throwOnError: false);
 
+        [Import]
+        internal Microsoft.VisualStudio.Text.ITextDocumentFactoryService TextDocumentFactory { get; set; } = null!;
+
         public void TextViewCreated(IWpfTextView textView)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            if (TextDocumentFactory.TryGetTextDocument(textView.TextBuffer, out var document))
+            {
+                RustArgumentSnapshots.Register(document.FilePath, textView.TextBuffer);
+            }
+
             Apply(textView);
             EventHandler onApplied = (_, _) =>
             {
@@ -54,7 +63,7 @@ namespace Kubuno.VisualStudio.LanguageService.IntelliSense
         private static void Apply(ITextView view)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            var mode = Options()?.InlayHints ?? RustInlayHintsMode.Always;
+            var mode = Options()?.InlayHints ?? RustInlayHintsMode.WhilePressingAltF1;
             if (!view.Options.IsOptionDefined(OptionName, false) || InlayHintsEnableKind is null)
             {
                 return;

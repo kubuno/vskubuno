@@ -92,10 +92,10 @@ namespace Kubuno.VisualStudio.Core.IntelliSense
         /// rust-analyzer's settings (its <c>initializationOptions</c>, the same keys as the <c>rust-analyzer.*</c>
         /// settings of other editors): reference and implementation counts on the code lenses Kubuno draws, no
         /// Run/Debug lenses (Visual Studio has its own test and launch commands), argument placeholders when a
-        /// function is completed, symbol search over functions and methods too, and C#-like inlay hints (no closing-brace
-        /// hints).
+        /// function is completed, symbol search over functions and methods too, and the inlay hints chosen in the options
+        /// (<see cref="RustInlayHintSettings"/>).
         /// </summary>
-        public static JsonObject InitializationOptions() => new JsonObject
+        public static JsonObject InitializationOptions(RustInlayHintSettings? inlayHints = null) => new JsonObject
         {
             ["lens"] = new JsonObject
             {
@@ -123,13 +123,7 @@ namespace Kubuno.VisualStudio.Core.IntelliSense
             {
                 ["symbol"] = new JsonObject { ["search"] = new JsonObject { ["kind"] = "all_symbols", ["limit"] = 256 } },
             },
-            ["inlayHints"] = new JsonObject
-            {
-                ["closingBraceHints"] = new JsonObject { ["enable"] = false },
-                ["typeHints"] = new JsonObject { ["enable"] = true },
-                ["parameterHints"] = new JsonObject { ["enable"] = true },
-                ["chainingHints"] = new JsonObject { ["enable"] = true },
-            },
+            ["inlayHints"] = (inlayHints ?? RustInlayHintSettings.Current).ToRustAnalyzerSettings(),
         };
     }
 }

@@ -96,11 +96,11 @@ namespace Kubuno.VisualStudio
             "ActiveEditorContentType:kbview",
             "{" + PackageGuids.CargoFolderUIContextString + "}",
         })]
-    [ProvideOptionPage(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, supportsAutomation: true)]
+    [ProvideOptionPage(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.rust")]
     [ProvideProfile(typeof(RustOptionsPage), Constants.OptionsCategoryName, Constants.OptionsRustPageName, 0, 0, isToolsOptionPage: true)]
-    [ProvideOptionPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true)]
+    [ProvideOptionPage(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.views")]
     [ProvideProfile(typeof(Kubuno.VisualStudio.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
-    [ProvideOptionPage(typeof(DebuggingOptionsPage), Constants.OptionsCategoryName, "Debugging", 0, 0, supportsAutomation: true)]
+    [ProvideOptionPage(typeof(DebuggingOptionsPage), Constants.OptionsCategoryName, "Debugging", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.debugging")]
     // Kubuno.VisualStudio.Designer's own INTEGRATION.md Â§3: the split Design|XML editor for .kbview
     // files, registered alongside - never instead of - languages.pkgdef's plain core text editor
     // (that pkgdef entry's own comment: "the HIGHEST value wins the double-click default", 0x64 there
@@ -119,7 +119,7 @@ namespace Kubuno.VisualStudio
     // plain code window of this factory (KbviewEditorFactory.CodePhysicalView), like WinForms' Form1.cs.
     [ProvideEditorLogicalView(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
     [ProvideEditorExtension(typeof(Kubuno.VisualStudio.Designer.EditorFactory.KbviewEditorFactory), Kubuno.VisualStudio.Views.KbviewConstants.FileExtension, Kubuno.VisualStudio.Designer.DesignerConstants.EditorExtensionPriority)]
-    [ProvideOptionPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true)]
+    [ProvideOptionPage(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.designer")]
     [ProvideProfile(typeof(Kubuno.VisualStudio.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.VisualStudio.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
     // The View Outline tool window (Tools menu, KubunoCommands.vsct). The former fallback "Kubuno
     // Toolbox"/"Kubuno Properties" tool windows were removed: the designer fills Visual Studio's own
@@ -128,6 +128,7 @@ namespace Kubuno.VisualStudio
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow))]
     // The crate manager (NuGet-like, one per .rsproj, in the document well): CrateManager/CrateManagerToolWindow.cs.
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.CrateManager.CrateManagerToolWindow), MultiInstances = true, Style = VsDockStyle.MDI, Transient = true)]
+    [ProvideSettingsManifest(PackageRelativeManifestFile = @"UnifiedSettings\kubuno.registration.json")]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     // Extended "Ajouter" submenu on a .rsproj project node (KubunoCommands.vsct's
     // VisibilityConstraints, guidRustProjectUIContext): the CPS-native way to scope a menu group to

@@ -40,6 +40,9 @@ namespace Kubuno.VisualStudio.LanguageService
         public RustLanguageClient()
         {
             Instance = this;
+#pragma warning disable VSSDK007 // fire-and-forget from an event handler; FileAndForget reports faults to the "Kubuno" pane.
+            RustOptionsPage.Applied += (_, _) => ThreadHelper.JoinableTaskFactory.RunAsync(PushConfigurationAsync).FileAndForget("kubuno/rust/pushConfiguration");
+#pragma warning restore VSSDK007
         }
 
         /// <summary>The MEF-created instance, for <see cref="Commands.RestartRustAnalyzerCommand"/> (null until a .rs file activated the client).</summary>
@@ -68,7 +71,7 @@ namespace Kubuno.VisualStudio.LanguageService
 
         public object? MiddleLayer => _middleLayer;
 
-        public object? CustomMessageTarget => null;
+        public object? CustomMessageTarget { get; } = new RustClientTarget();
 
         public bool ShowNotificationOnInitializeFailed => true;
 
@@ -231,6 +234,30 @@ namespace Kubuno.VisualStudio.LanguageService
         }
 
         public Task StopServerAsync() => StopAsync?.InvokeAsync(this, EventArgs.Empty) ?? Task.CompletedTask;
+
+        /// <summary>
+        /// Sends rust-analyzer the current settings (<c>workspace/didChangeConfiguration</c>) so an options change - the
+        /// inlay hints kinds - applies to the running server without a restart. No-op until the server is connected.
+        /// </summary>
+        internal async Task PushConfigurationAsync()
+        {
+            var rpc = Rpc;
+            if (rpc is null)
+            {
+                return;
+            }
+
+            try
+            {
+                var settings = JObject.Parse(RustAnalyzerHandshake.InitializationOptions().ToJsonString());
+                await rpc.NotifyWithParameterObjectAsync("workspace/didChangeConfiguration", new { settings }).ConfigureAwait(false);
+                KubunoLog.WriteLine("rust-analyzer settings updated (inlay hints).");
+            }
+            catch (Exception ex)
+            {
+                KubunoLog.WriteException("Could not send rust-analyzer its new settings", ex);
+            }
+        }
 
         private async Task<RustOptionsPage?> GetOptionsAsync()
         {

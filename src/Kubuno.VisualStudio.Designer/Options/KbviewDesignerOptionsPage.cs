@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Kubuno.VisualStudio.Views.Options;
 using Microsoft.VisualStudio.Shell;
 
 namespace Kubuno.VisualStudio.Designer.Options
@@ -12,7 +13,7 @@ namespace Kubuno.VisualStudio.Designer.Options
     /// registration", for the exact attributes the VSIX's <c>KubunoPackage</c> must add, and how its
     /// <c>InitializeAsync</c> should publish this page into <see cref="DesignerOptionsHost.Current"/>.
     /// </summary>
-    public sealed class KbviewDesignerOptionsPage : DialogPage, IDesignerOptions
+    public sealed class KbviewDesignerOptionsPage : KubunoDialogPage, IDesignerOptions
     {
         [Category("Kubuno View Designer")]
         [DisplayName("Use as default editor")]
@@ -21,6 +22,8 @@ namespace Kubuno.VisualStudio.Designer.Options
             "Off by default: the design surface is a placeholder until DSG-6/DSG-7 land a real, " +
             "embedded rendering surface. Either way, the designer is always reachable via " +
             "Open With... > " + DesignerConstants.EditorName + ".")]
+        [DefaultValue(false)]
+        [UnifiedSetting("kubuno.designer.editor.useAsDefault")]
         public bool UseDesignerAsDefaultEditor { get; set; } = false;
     }
 }

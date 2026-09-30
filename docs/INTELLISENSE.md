@@ -17,7 +17,7 @@ itself (the reason is given); "Not available" says why.
     removed so Visual Studio's generic completion stays out of Rust sessions (Kubuno's replaces it).
 - **rust-analyzer's settings** go in `initializationOptions` (`RustAnalyzerHandshake.InitializationOptions`): reference
   and implementation lenses on, Run/Debug lenses off, `fill_arguments` call snippets, symbol search over all symbols,
-  closing-brace hints off.
+  and the inlay hints chosen in the options (below), re-sent live with `workspace/didChangeConfiguration`.
 - **Kubuno's own requests** (completion, code lenses) use the client's connection directly and first wait until
   rust-analyzer has been sent the document version they are about (`RustDocumentVersions`, fed by the middle layer's
   `didOpen`/`didChange`): Visual Studio hands its notifications to the connection asynchronously.
@@ -44,7 +44,7 @@ itself (the reason is given); "Not available" says why.
 | Ctrl+Space / Ctrl+J | yes | yes (never auto-inserts rust-analyzer's "preselected" item) | Kubuno |
 | Parameter Info (Ctrl+Shift+Space), current parameter bold | yes | yes, also reopened after completing a call | Built-in (`signatureHelp`), Kubuno triggers it after a commit |
 | QuickInfo | yes | yes, C#-style | Kubuno (commit f1aabf4) |
-| Inlay hints (types, parameter names, chains) | yes, Alt+F1 | yes; Tools > Options > Kubuno > Rust > Inlay hints: Always (default) / While pressing Alt+F1 / Visual Studio setting / Never | Built-in rendering; Kubuno sets the editor option on Rust views |
+| Inlay hints (types, parameter names, chains) | yes, hold Alt+F1 (C# default: off) | yes, the same: off until Alt+F1 is held; Tools > Options > Kubuno > Rust > Inline hints: per-kind switches like C#'s "Inline Parameter Name Hints" / "Inline Type Hints" (see "Inline hints" below) | Built-in rendering and Alt+F1; Kubuno sets the editor option on Rust views and maps the kinds to rust-analyzer's `inlayHints.*` |
 | Semantic colorization | yes | yes, with C#'s colors: structs, enums, traits = interfaces, type parameters, methods, locals, parameters, fields, constants, `keyword - control`, doc comments, `u32`/`bool`/`self` as keywords; plus "Rust - Macro", "Rust - Lifetime" (italic), "Rust - Mutable variable" (underlined), "Rust - Unsafe operation" (bold) in Fonts and Colors | Built-in tagger + Kubuno legend/remap (`RustSemanticTokenMap`) + Kubuno TextMate theme (`rust.tmLanguage.tmTheme`) for the instant, pre-analysis colors |
 | Go To Definition (F12), Peek (Alt+F12), Go To Implementation (Ctrl+F12), Go To Type Definition | yes | yes | Built-in |
 | Find All References (Shift+F12), grouped window | yes | yes; a view handler also lists its `.kbview` usages | Built-in + Kubuno middle layer |
@@ -63,6 +63,42 @@ itself (the reason is given); "Not available" says why.
 | `///` continuation on Enter | yes | yes (`///`, `//!`, and `//` when Enter splits a comment) | Kubuno `RustDocCommentContinuation` |
 | Squiggles by severity, Error List | yes | yes, fixed errors disappear (unique `resultId`, fdf4460) | Built-in + Kubuno middle layer |
 | Error List "IntelliSense" source, quick fix from the Error List | yes | Not available: the Error List shows Visual Studio's LSP entries as they are; fixes are offered in the editor (Ctrl+.) | - |
+
+## Inline hints (rust-analyzer's inlay hints)
+
+Like C# in Visual Studio 2026, the hints (`: FileWatcher`, `title:`, `opts:`...) are **not shown by default**: hold
+**Alt+F1** to see them (Visual Studio's own "display inline hints when pressing Alt+F1"). Tools > Options > Kubuno > Rust
+> Inline hints:
+
+- **Show inline hints**: While pressing Alt+F1 (default) / Always / Visual Studio setting (Text Editor > All Languages >
+  Inlay Hints) / Never.
+- **Parameter names** (C#'s "Inline Parameter Name Hints"): on/off, and whether to keep the hint for literal arguments
+  (`5`, `"text"`, `true`) and for every other argument. rust-analyzer already drops the hint when the argument is named
+  like the parameter or the call is obvious; the literal / other-argument split has no rust-analyzer switch, so Kubuno
+  filters `textDocument/inlayHint` answers itself (`RustAnalyzerMiddleLayer`, reading the argument text from the open
+  buffer; a hint is kept whenever the text cannot be read).
+- **Types** (C#'s "Inline Type Hints"): `let` bindings, hide when the type is apparent (`let w = Widget::new()`), hide on
+  variables holding a closure, closure parameter types.
+- **Other**: types at the end of method chains, closure return types (never / with a block / always), elided lifetimes
+  (never / skip trivial / always), binding modes, names after closing braces. Off by default: those that C# has no
+  equivalent for.
+
+`RustInlayHintSettings` (Core) turns the choices into rust-analyzer's `inlayHints.*` settings: they are part of
+`initializationOptions` at startup and are sent again with `workspace/didChangeConfiguration` whenever an option changes,
+so open editors update without restarting the server. The drawing (colors, size, Alt+F1 handling) is Visual Studio's own
+inline hint adornment, the one C# uses, so it follows the theme. An installation that still had the first release's
+stored default ("Always") moves to the new default once; any other stored choice is kept.
+
+## Where the options live (Visual Studio 2026 unified settings)
+
+The options pages are registered in Visual Studio 2026's **unified settings** (`UnifiedSettings/kubuno.registration.json`,
+declared by `[ProvideSettingsManifest]`; labels in `Resources/Settings.resx` and `Settings.fr.resx`, both generated with the
+manifest by `tools/gen-unified-settings.ps1`). Each `DialogPage` (`KubunoDialogPage`) is still the code's view of the
+options: its `[UnifiedSetting("moniker")]` properties are read from the unified store (`ISettingsReader`), changes made in
+the settings page or the JSON file reach the code live (`SubscribeToChanges`), and `[ProvideOptionPage(IsInUnifiedSettings
+= true, UnifiedSettingsCategoryMoniker = ...)]` keeps the classic pages out of the legacy dialog. Values stored by earlier
+versions in the classic storage are copied once to the unified store (only the ones different from the default). Visual
+Studio 2022 has no unified settings: the same pages stay classic property grids.
 
 ## Views (`.kbview`) and the Rust code-behind
 
