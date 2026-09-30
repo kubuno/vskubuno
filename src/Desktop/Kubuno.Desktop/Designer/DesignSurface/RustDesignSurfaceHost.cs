@@ -297,6 +297,10 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             // so no other build of kubuno_ui can be picked up - the surfaceInfo handshake checks it anyway.
             var parentDir = Path.GetDirectoryName(dir);
             psi.EnvironmentVariables["PATH"] = dir + ";" + (string.IsNullOrEmpty(parentDir) ? string.Empty : parentDir + ";") + psi.EnvironmentVariables["PATH"];
+            // The paint-debug overlay (Debug > Kubuno > Paint debug) is for the running application only:
+            // a design surface draws every control exactly as it looks at run time, so it never inherits the
+            // switch (a surface built from an older checkout would otherwise box every element in cyan).
+            psi.EnvironmentVariables.Remove(Kubuno.Desktop.Logic.Painting.PaintDebug.EnvironmentVariableName);
             _handshake = HandshakeState.Waiting;
 
             Process proc;

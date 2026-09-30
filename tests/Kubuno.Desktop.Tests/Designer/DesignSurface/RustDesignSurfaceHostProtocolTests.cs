@@ -29,6 +29,14 @@ namespace Kubuno.Desktop.Tests.Designer.DesignSurface
         }
 
         [TestMethod]
+        public void EncodeSetDesignOptions_MatchesTheRustWireShape()
+        {
+            // kubuno_views::protocol's set_design_options_round_trips_and_defaults_to_outlines_on.
+            Assert.AreEqual(@"{""type"":""setDesignOptions"",""containerOutlines"":false}", DesignSurfaceProtocol.EncodeSetDesignOptions(false));
+            Assert.AreEqual(@"{""type"":""setDesignOptions"",""containerOutlines"":true}", DesignSurfaceProtocol.EncodeSetDesignOptions(true));
+        }
+
+        [TestMethod]
         public void EncodeSelect_WithAnIdMatchesTheRustWireShape()
         {
             Assert.AreEqual(@"{""type"":""select"",""id"":""0.1""}", DesignSurfaceProtocol.EncodeSelect("0.1"));

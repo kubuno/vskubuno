@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **GradientField** in the `.kbview` designer: a Toolbox item with its own icon (two overlapping circles, the
+  accent on the second) next to ColorField, the same default drop size, and override support for the new class.
 - **Desktop migration foundations (lot F1, `docs/DESKTOP-MIGRATION.md`)** in the designer: Toolbox items with their
   own icons for **Repeater** (Data tab), **Sidebar**, **SidebarItem**, **SidebarSection**, **StatusBar** and
   **StatusLabel** (a new **Navigation** tab), **Avatar** and **PictureBox** (Display), **Popover** and
@@ -418,6 +420,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Light-blue boxes around every control in the View Designer**: *Debug › Kubuno › Paint debug*, a setting that
+  is remembered, also reached the design surfaces, whose layout overlay framed each Label, TextField, grid and
+  navigator. The overlay is now for running applications only; a design surface never inherits it, and controls
+  look exactly as they do at run time.
+- New designer option *Show design outlines* (Tools › Options › Kubuno › Designer › Design surface, on by
+  default): a faint dashed outline around the containers that are otherwise invisible (a `Panel` or `Stack` with
+  no surface, border or background), like Windows Forms' dotted border around a borderless `Panel`. Controls are
+  never outlined.
+- Designer edits keep the `.kbview`'s own line endings (CRLF or LF), so Visual Studio no longer finds mixed line
+  endings after a drop into a CRLF view.
 - The Error List pointed at wrong files for a crate of a larger Cargo workspace (paths were read from the crate's
   folder instead of the workspace's).
 - F5 did not find the executable of a package whose only program has another name (Drive's `drive.exe`).

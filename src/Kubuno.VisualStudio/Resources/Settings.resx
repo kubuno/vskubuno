@@ -30,6 +30,8 @@
   <data name="S_kubuno_designer_Description" xml:space="preserve"><value>The Kubuno View Designer.</value></data>
   <data name="S_kubuno_designer_editor_Title" xml:space="preserve"><value>Editor</value></data>
   <data name="S_kubuno_designer_editor_Description" xml:space="preserve"><value>How .kbview files are opened.</value></data>
+  <data name="S_kubuno_designer_surface_Title" xml:space="preserve"><value>Design surface</value></data>
+  <data name="S_kubuno_designer_surface_Description" xml:space="preserve"><value>What the design surface draws.</value></data>
   <data name="S_kubuno_debugging_Title" xml:space="preserve"><value>Debugging</value></data>
   <data name="S_kubuno_debugging_Description" xml:space="preserve"><value>Debugging of Rust and Kubuno applications.</value></data>
   <data name="S_kubuno_debugging_justMyCode_Title" xml:space="preserve"><value>Just My Code</value></data>
@@ -93,6 +95,8 @@
   <data name="S_kubuno_views_languageServer_pathOverride_Description" xml:space="preserve"><value>Full path to kubuno-views-ls.exe. When empty, Kubuno tries the extension&apos;s own tools folder, then the PATH environment variable, then the local development build folders.</value></data>
   <data name="S_kubuno_designer_editor_useAsDefault_Title" xml:space="preserve"><value>Use the View Designer as the default editor</value></data>
   <data name="S_kubuno_designer_editor_useAsDefault_Description" xml:space="preserve"><value>A double-click on a .kbview file opens the Kubuno View Designer (Design | XML split view) instead of the plain XML editor. Either way the designer is reachable through Open With.</value></data>
+  <data name="S_kubuno_designer_surface_showDesignOutlines_Title" xml:space="preserve"><value>Show design outlines</value></data>
+  <data name="S_kubuno_designer_surface_showDesignOutlines_Description" xml:space="preserve"><value>Draws a faint dashed outline around the containers that are otherwise invisible (a Panel or Stack with no surface, border or background), so they can be found and dropped into, like the dotted border Windows Forms shows around a borderless Panel. Controls always look exactly as at run time. Applies to the designers opened afterwards.</value></data>
   <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Title" xml:space="preserve"><value>Treat the Kubuno framework as external code</value></data>
   <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Description" xml:space="preserve"><value>Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno framework (kubuno_views, kubuno_controls, kubuno_ui.dll, the event-handler dispatch glue) into [External Code] and Step Into (F11) goes straight to your handlers. Turn it off to see and debug Kubuno&apos;s own code. The Rust standard library is always stepped over. Takes effect at the next debug session.</value></data>
   <data name="S_kubuno_data_explorer_showDataRows_Title" xml:space="preserve"><value>Rows shown by Show Table Data</value></data>

@@ -18,5 +18,13 @@ namespace Kubuno.Desktop.Designer.Options
         /// how far) the VSIX can act on this flag today.
         /// </summary>
         bool UseDesignerAsDefaultEditor { get; }
+
+        /// <summary>
+        /// When <see langword="true"/> (the default), the design surface draws a faint dashed outline
+        /// around the containers that are otherwise invisible (a <c>Panel</c> or <c>Stack</c> with no
+        /// surface, border or background), like the dotted border Windows Forms shows around a
+        /// borderless <c>Panel</c>. Controls themselves always look exactly as at run time.
+        /// </summary>
+        bool ShowDesignOutlines { get; }
     }
 }

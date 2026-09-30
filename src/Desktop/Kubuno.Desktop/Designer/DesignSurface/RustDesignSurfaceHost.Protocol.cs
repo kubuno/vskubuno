@@ -145,6 +145,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             proc.OutputDataReceived += OnSurfaceProtocolLine;
             proc.BeginOutputReadLine();
 
+            // The canvas around the view in the colours of Visual Studio's theme (and on every theme change).
+            SendCanvasTheme();
+
+            // The designer options that change what the surface draws, before anything is drawn.
+            SendLine(DesignSurfaceProtocol.EncodeSetDesignOptions(Options.DesignerOptionsHost.Current?.ShowDesignOutlines ?? true));
+
             // The project's controls first: the text then compiles against them.
             if (_lastProjectComponents != null)
             {
@@ -312,6 +318,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             string.IsNullOrEmpty(baseDir) ? EncodeSetText(text) : JsonSerializer.Serialize(new { type = "setText", text, baseDir }, WireOptions);
 
         public static string EncodeSetDesignMode(bool on) => JsonSerializer.Serialize(new { type = "setDesignMode", on }, WireOptions);
+
+        /// <summary>
+        /// <c>setDesignOptions {containerOutlines}</c>: the designer options that change what the surface draws
+        /// (Tools &gt; Options &gt; Kubuno &gt; Designer; <c>kubuno_views::protocol::HostMessage::SetDesignOptions</c>).
+        /// </summary>
+        public static string EncodeSetDesignOptions(bool containerOutlines) => JsonSerializer.Serialize(new { type = "setDesignOptions", containerOutlines }, WireOptions);
 
         public static string EncodeSelect(string? id) => JsonSerializer.Serialize(new { type = "select", id }, WireOptions);
 

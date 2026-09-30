@@ -1734,9 +1734,11 @@ magenta, fading over 600 ms), the layout bounds of every view element (cyan) wit
 (orange), and the frame's paint time and frames per second (top right). On with `KUBUNO_PAINT_DEBUG` (`1`/`all`, or
 `invalidate,layout,fps`), live with the registered window message `Kubuno.PaintDebug` (`wParam` = the bits 1/2/4), or
 `paint_debug::set_flags`. Visual Studio: **Debug › Kubuno › Paint debug** (*Débogage › Kubuno › Débogage du rendu*,
-checkable, persisted) posts the message to every `KubunoControlsHost` window — running apps and the designer's
-surfaces — and sets `KUBUNO_PAINT_DEBUG=all` in Visual Studio's own environment, which F5/Ctrl+F5 launches and new
-design surfaces inherit (a value the user set is kept).
+checkable, persisted) posts the message to every `KubunoControlsHost` window and sets `KUBUNO_PAINT_DEBUG=all` in
+Visual Studio's own environment, which F5/Ctrl+F5 launches inherit (a value the user set is kept). It is a run-time
+diagnostic only: the designer's surfaces are started without the variable, ignore the message, and never report
+layout bounds (a designed control looks exactly as at run time; when the overlay reached them, it boxed every Label
+and TextField of the designed view in cyan).
 
 ### Tooling
 

@@ -35,5 +35,15 @@ namespace Kubuno.Desktop.Designer.Options
         [DefaultValue(false)]
         [UnifiedSetting("kubuno.designer.editor.useAsDefault")]
         public bool UseDesignerAsDefaultEditor { get; set; } = false;
+
+        [Category("Kubuno View Designer")]
+        [DisplayName("Show design outlines")]
+        [Description("Draws a faint dashed outline around the containers that are otherwise invisible " +
+            "(a Panel or Stack with no surface, border or background), so they can be found and dropped " +
+            "into, like the dotted border Windows Forms shows around a borderless Panel. Controls always " +
+            "look exactly as at run time. Applies to the designers opened afterwards.")]
+        [DefaultValue(true)]
+        [UnifiedSetting("kubuno.designer.surface.showDesignOutlines")]
+        public bool ShowDesignOutlines { get; set; } = true;
     }
 }

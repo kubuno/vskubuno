@@ -726,6 +726,7 @@ Host → surface (`kubuno_views::protocol::HostMessage`):
 | `setText` | `text: string` | Re-parses and renders `text` as the current document — replaces the temp-file bridge. |
 | `setDesignMode` | `on: bool` | Turns design mode on/off. |
 | `select` | `id: string \| null` | Host-driven selection (XML pane → Design surface sync, §1); `null` clears it. |
+| `setDesignOptions` | `containerOutlines: bool` (default `true`) | The designer options that change what the surface draws, sent first to every started surface. `containerOutlines` (*Show design outlines*): a faint dashed outline, in the theme's divider colour, around a container that paints nothing of its own (a `Panel` or `Stack` with no `Surface`, `BorderStyle` or background) — like Windows Forms' dotted border around a borderless `Panel`. Controls are never outlined: they look exactly as at run time. |
 
 Surface → host (`kubuno_views::protocol::SurfaceMessage`):
 

@@ -23,6 +23,7 @@ $categories = @(
     @('kubuno.views.languageServer', 'kubuno-views-ls', 'kubuno-views-ls', 'The .kbview language server.', 'Le serveur de langage des fichiers .kbview.'),
     @('kubuno.designer', 'Designer', 'Concepteur', 'The Kubuno View Designer.', 'Le concepteur de vues Kubuno.'),
     @('kubuno.designer.editor', 'Editor', 'Editeur', 'How .kbview files are opened.', 'Comment les fichiers .kbview sont ouverts.'),
+    @('kubuno.designer.surface', 'Design surface', 'Surface de conception', 'What the design surface draws.', 'Ce que la surface de conception dessine.'),
     @('kubuno.debugging', 'Debugging', 'Debogage', 'Debugging of Rust and Kubuno applications.', 'Debogage des applications Rust et Kubuno.'),
     @('kubuno.debugging.justMyCode', 'Just My Code', 'Uniquement mon code', 'Which frames the debugger shows.', 'Les cadres que le debogueur affiche.'),
     @('kubuno.data', 'Data', 'Donnees', 'The Data Explorer and its query windows.', 'L''Explorateur de donnees et ses fenetres de requete.'),
@@ -110,6 +111,10 @@ $properties = @(
        en = 'Use the View Designer as the default editor'; fr = 'Utiliser le concepteur de vues comme editeur par defaut'
        den = 'A double-click on a .kbview file opens the Kubuno View Designer (Design | XML split view) instead of the plain XML editor. Either way the designer is reachable through Open With.'
        dfr = 'Un double-clic sur un fichier .kbview ouvre le concepteur de vues Kubuno (vue fractionnee Design | XML) au lieu de l''editeur XML simple. Dans les deux cas, le concepteur reste accessible par Ouvrir avec.' },
+    @{ m = 'kubuno.designer.surface.showDesignOutlines'; t = 'boolean'; d = $true
+       en = 'Show design outlines'; fr = 'Afficher les contours de conception'
+       den = 'Draws a faint dashed outline around the containers that are otherwise invisible (a Panel or Stack with no surface, border or background), so they can be found and dropped into, like the dotted border Windows Forms shows around a borderless Panel. Controls always look exactly as at run time. Applies to the designers opened afterwards.'
+       dfr = 'Dessine un fin contour en pointilles autour des conteneurs autrement invisibles (un Panel ou un Stack sans surface, bordure ni fond), pour les reperer et y deposer des controles, comme la bordure pointillee de Windows Forms autour d''un Panel sans bordure. Les controles gardent toujours leur apparence d''execution. Pris en compte par les concepteurs ouverts ensuite.' },
     @{ m = 'kubuno.debugging.justMyCode.frameworkIsExternalCode'; t = 'boolean'; d = $true
        en = 'Treat the Kubuno framework as external code'; fr = 'Traiter le framework Kubuno comme du code externe'
        den = 'Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno framework (kubuno_views, kubuno_controls, kubuno_ui.dll, the event-handler dispatch glue) into [External Code] and Step Into (F11) goes straight to your handlers. Turn it off to see and debug Kubuno''s own code. The Rust standard library is always stepped over. Takes effect at the next debug session.'
@@ -208,6 +213,11 @@ envoyee a => envoyée à
 methode et => méthode et
 (1 a 1 => (1 à 1
 (1 a 8 => (1 à 8
+pointilles => pointillés
+pointillee => pointillée
+les reperer => les repérer
+deposer des controles => déposer des contrôles
+Les controles => Les contrôles
 '@
 $accents = @(); foreach ($line in ($accentPairs -split "`r?`n")) { if ($line -match ' => ') { $p = $line -split ' => ', 2; $accents += ,@($p[0], $p[1]) } }
 function Fr([string]$s) { foreach ($a in $accents) { $s = $s -creplace [regex]::Escape($a[0]), $a[1] }; $s }
