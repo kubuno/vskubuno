@@ -27,6 +27,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             Accessibility,
             Focus,
             WindowStyle,
+            TitleBar,
         }
 
         private static readonly Dictionary<string, Category> ByName = new Dictionary<string, Category>(StringComparer.Ordinal)
@@ -151,6 +152,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 case Category.Accessibility: return DesignerText.CategoryAccessibility;
                 case Category.Focus: return DesignerText.CategoryFocus;
                 case Category.WindowStyle: return DesignerText.CategoryWindowStyle;
+                case Category.TitleBar: return DesignerText.CategoryTitleBar;
                 default: return DesignerText.CategoryMisc;
             }
         }

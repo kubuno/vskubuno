@@ -12,6 +12,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   dock, group as tabs, split, float, resize, close and reopen), **DockPanel** (one of its panels) and
   **WorkspaceShell** (an editor's frame: top bar, status bar, body), each with its own icon in the Toolbox and in
   Solution Explorer; override support knows their classes.
+- **Every kind of Kubuno window in "Add > New Item"**: *Kubuno Form* (formerly *Kubuno View*), *Kubuno Dialog* (an
+  action bar with OK and Cancel, `show_dialog`), *Kubuno Tool Window*, *Kubuno MDI Parent Form*, *Kubuno MDI Child
+  Form*, *Kubuno Splash Screen* and *Kubuno Flyout*, each a `.kbview` and its code, next to *Kubuno User Control*.
+- **The designer draws a form's window exactly as it runs**: the same painter as the running window (the web
+  `FloatingWindow`'s band, icon, title and subtitle, caption buttons, square or rounded corners, border, resize grip),
+  following the view's window properties live — `WindowKind`, `FormBorderStyle` (a tool window's slim band, no band
+  for a borderless window), `TitleBarHeight`, `TitleBarBackground`/`Foreground`, `Subtitle`, `TitleAlignment`,
+  `CaptionButtonStyle`, `CaptionButtons`, `HelpButton`, `ShowIcon`, `ExtendContentIntoTitleBar`, `CornerPreference`,
+  `BorderColor`, `SizeGripStyle`.
+- **Controls in the title bar, designed**: a control with `TitleBar.Region` is drawn, selected and moved in the
+  window's band; dropping a Toolbox item on the band places it in the region under the pointer (left, centre, right).
+  Buttons with `ActionBar.Region` are laid out in the window's action bar.
+- Properties window: the new window properties, with a *Title Bar* category ("Barre de titre" in French), colour
+  editors for the title bar, border, accent and transparency colours, and drop-downs for the enumerations.
+- Toolbox: **FloatingWindow**, a window drawn inside a view (with its own icon).
 - **Printing in Kubuno desktop applications (`docs/PRINTING.md`)**, the Windows Forms way:
   - A **Printing** Toolbox tab ("Impression" in French) in every Kubuno desktop project: `PrintDocument`,
     `PrintPreviewDialog`, `PrintDialog`, `PageSetupDialog` (component tray) and `PrintPreviewControl`, with their own

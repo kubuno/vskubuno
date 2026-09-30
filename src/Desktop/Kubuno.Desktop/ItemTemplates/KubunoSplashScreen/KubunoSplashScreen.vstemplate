@@ -1,23 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  "Add New Item > Kubuno View": a form - a .kbview (its design) and its code, a #[kubuno::view] struct
-  (docs/PROGRAMMING-MODEL.md), SAME STEM ($fileinputname$.kbview / $fileinputname$.rs) so Solution
-  Explorer nests the code under the view. ControlItemWizard names the struct ($classname$) and the load
-  handler ($modulename$), declares the module in the crate root and, in a project that has no `kubuno`
-  dependency yet, adds it next to its kubuno-views one.
+  "Add New Item > Kubuno Splash Screen": A splash screen. A .kbview (its design) and its code, a #[kubuno::view] struct,
+  SAME STEM so Solution Explorer nests the code under the view (docs/PROGRAMMING-MODEL.md).
+  ControlItemWizard names the struct ($classname$) and the load handler ($modulename$) and declares the module.
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Form</Name>
-    <Description>A Kubuno form: a declarative view (.kbview) and its code, a struct whose fields are the view's controls and whose methods are its event handlers - like a Windows Forms Form.</Description>
+    <Name>Kubuno Splash Screen</Name>
+    <Description>A splash screen: borderless, centred on the screen, on top of the other windows; it closes itself after SplashDuration milliseconds.</Description>
     <ProjectType>Rust</ProjectType>
-    <TemplateID>Kubuno.Rust.KubunoView</TemplateID>
+    <TemplateID>Kubuno.Rust.KubunoSplashScreen</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
-    <SortOrder>10</SortOrder>
-    <DefaultName>NewView.kbview</DefaultName>
+    <SortOrder>17</SortOrder>
+    <DefaultName>SplashScreen.kbview</DefaultName>
   </TemplateData>
   <TemplateContent>
     <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.kbview">View.kbview</ProjectItem>

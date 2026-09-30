@@ -1,0 +1,10 @@
+<!--
+  $fileinputname$.kbview - a modal dialog (WindowKind="Dialog": fixed border, no minimize/maximize,
+  centred on its owner, no task bar button). The buttons with ActionBar.Region go to the window's
+  action bar, like the web's dialogs: the action on the left of Cancel, both on the right.
+-->
+<Panel DesignWidth="400" DesignHeight="192" Title="$classname$" WindowKind="Dialog" AcceptButton="ok" CancelButton="cancel" OnLoad="$modulename$_load">
+  <Label x:Name="message" Text="$classname$" X="24" Y="24" Width="352" Height="24" Anchor="Top, Left, Right"/>
+  <Button x:Name="ok" Text="OK" Variant="Text" Width="96" Height="36" ActionBar.Region="Right" OnClick="ok_click"/>
+  <Button x:Name="cancel" Text="Cancel" Variant="Ghost" Width="96" Height="36" ActionBar.Region="Right" OnClick="cancel_click"/>
+</Panel>

@@ -88,6 +88,10 @@ namespace Kubuno.Desktop.Logic.SolutionExplorer
             ["PrintPreviewDialog"] = 64, // Lucide "scan-eye"
             ["PrintDialog"] = 65, // Lucide "printer-check"
             ["PageSetupDialog"] = 66, // Lucide "file-sliders"
+            ["FloatingWindow"] = 67, // Lucide "picture-in-picture-2"
+            ["DockArea"] = 68, // Lucide "panels-left-bottom"
+            ["DockPanel"] = 69, // Lucide "panel-right"
+            ["WorkspaceShell"] = 70, // Lucide "app-window-mac"
         };
 
         /// <summary>The image id for element <paramref name="tag"/> (<see cref="FallbackId"/> when unknown).</summary>

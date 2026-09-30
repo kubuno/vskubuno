@@ -75,6 +75,10 @@
     <ID Name="PrintPreviewDialog" Value="64" />
     <ID Name="PrintDialog" Value="65" />
     <ID Name="PageSetupDialog" Value="66" />
+    <ID Name="FloatingWindow" Value="67" />
+    <ID Name="DockArea" Value="68" />
+    <ID Name="DockPanel" Value="69" />
+    <ID Name="WorkspaceShell" Value="70" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -406,6 +410,26 @@
       <Source Uri="$(Controls)/PageSetupDialog.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/PageSetupDialog.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/PageSetupDialog.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(FloatingWindow)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/FloatingWindow.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/FloatingWindow.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/FloatingWindow.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(DockArea)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/DockArea.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/DockArea.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/DockArea.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(DockPanel)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/DockPanel.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/DockPanel.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/DockPanel.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(WorkspaceShell)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/WorkspaceShell.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/WorkspaceShell.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/WorkspaceShell.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

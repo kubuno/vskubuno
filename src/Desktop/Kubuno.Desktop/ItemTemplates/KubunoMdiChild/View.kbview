@@ -1,0 +1,7 @@
+<!--
+  $fileinputname$.kbview - an MDI document (WindowKind="MdiChild"), drawn inside its parent's
+  client area: `let doc = $classname$::new(); doc.form().set_mdi_parent(parent); doc.show();`
+-->
+<Panel DesignWidth="420" DesignHeight="260" Title="$classname$" WindowKind="MdiChild" Icon="FileText" OnLoad="$modulename$_load">
+  <TextArea x:Name="text" X="12" Y="12" Width="396" Height="236" Anchor="Top, Bottom, Left, Right"/>
+</Panel>

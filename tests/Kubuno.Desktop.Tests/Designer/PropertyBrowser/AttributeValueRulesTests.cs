@@ -120,5 +120,19 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
             Assert.AreEqual("Other", DesignerText.ToolboxTabName("other"));
             Assert.AreEqual(" [Design]", DesignerText.DesignCaptionSuffix);
         }
+
+        [TestMethod]
+        public void DockingFamily_HasItsToolboxTabAndIcons()
+        {
+            DesignerText.ForceFrench = true;
+            Assert.AreEqual("Ancrage", DesignerText.ToolboxTabName("docking"));
+            DesignerText.ForceFrench = false;
+            Assert.AreEqual("Docking", DesignerText.ToolboxTabName("docking"));
+            CollectionAssert.Contains(DesignerText.AllToolboxTabNames(), "Ancrage");
+            foreach (var name in new[] { "DockArea", "DockPanel", "WorkspaceShell" })
+            {
+                Assert.AreNotEqual(Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.FallbackId, Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.IdFor(name), name);
+            }
+        }
     }
 }

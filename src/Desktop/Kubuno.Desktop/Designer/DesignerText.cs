@@ -84,6 +84,9 @@ namespace Kubuno.Desktop.Designer
         /// <summary>The view's window properties (the "Vue/Form" category: ControlBox, TopMost, Opacity...).</summary>
         public static string CategoryWindowStyle => T("Window Style", "Style de fenêtre");
 
+        /// <summary>The view's title bar properties (TitleBarHeight, TitleBarBackground, Subtitle, CaptionButtons...).</summary>
+        public static string CategoryTitleBar => T("Title Bar", "Barre de titre");
+
         // ---- Rich property editors (docs/EVENTS.md, "WinForms-rich property sets") ----
 
         public static string InvalidColor(string value) => T(

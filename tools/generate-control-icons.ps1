@@ -1,4 +1,4 @@
-<#
+﻿<#
   Generates the Kubuno control icons (one per kubuno-views component) used by the .kbview designer's
   Toolbox and by the .kbview element nodes in Solution Explorer (docs/DESIGNER.md section 11).
 
@@ -105,6 +105,12 @@ $table = @(
     @{ Name = 'PrintPreviewDialog'; Icon = 'scan-eye' }
     @{ Name = 'PrintDialog';      Icon = 'printer-check';        Accent = 1 }
     @{ Name = 'PageSetupDialog';  Icon = 'file-sliders' }
+    # The in-window FloatingWindow: a window drawn inside a view.
+    @{ Name = 'FloatingWindow';   Icon = 'picture-in-picture-2'; Accent = 0 }
+    # The docking family (kubuno-views registry/families/docking.rs): the Toolbox's Docking tab.
+    @{ Name = 'DockArea';         Icon = 'panels-left-bottom' }
+    @{ Name = 'DockPanel';        Icon = 'panel-right';          Accent = 1 }
+    @{ Name = 'WorkspaceShell';   Icon = 'app-window-mac' }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS

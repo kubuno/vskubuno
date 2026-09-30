@@ -1,0 +1,7 @@
+<!--
+  $fileinputname$.kbview - a tool window (WindowKind="ToolWindow": SizableToolWindow, the slim
+  32 px title band, close button only). Show it owned by a form so it stays above it.
+-->
+<Panel DesignWidth="260" DesignHeight="320" Title="$classname$" WindowKind="ToolWindow" OnLoad="$modulename$_load">
+  <Label x:Name="message" Text="$classname$" X="16" Y="16" Width="228" Height="24" Anchor="Top, Left, Right"/>
+</Panel>

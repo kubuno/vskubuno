@@ -1,0 +1,9 @@
+<!--
+  $fileinputname$.kbview - a splash screen (WindowKind="Splash": no border, centred, top-most, no
+  task bar button). It closes itself after SplashDuration milliseconds.
+-->
+<Panel DesignWidth="420" DesignHeight="240" Title="$classname$" WindowKind="Splash" SplashDuration="3000" BackColor="Primary" OnLoad="$modulename$_load">
+  <Icon Name="Cloud" Size="56" ForeColor="OnPrimary" X="182" Y="56" Width="56" Height="56"/>
+  <Label x:Name="title" Text="$classname$" ForeColor="OnPrimary" Font="Segoe UI, 16pt" TextAlign="MiddleCenter" X="0" Y="128" Width="420" Height="32" Anchor="Top, Left, Right"/>
+  <Label x:Name="status" Text="Loading..." ForeColor="OnPrimary" TextAlign="MiddleCenter" X="0" Y="168" Width="420" Height="24" Anchor="Top, Left, Right"/>
+</Panel>
