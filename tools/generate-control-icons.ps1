@@ -111,6 +111,17 @@ $table = @(
     @{ Name = 'DockArea';         Icon = 'panels-left-bottom' }
     @{ Name = 'DockPanel';        Icon = 'panel-right';          Accent = 1 }
     @{ Name = 'WorkspaceShell';   Icon = 'app-window-mac' }
+    # Desktop migration lot F1: lists of views, navigation, status bar, pictures, popover, grid.
+    @{ Name = 'Repeater';         Icon = 'gallery-vertical-end'; Accent = 0 }
+    @{ Name = 'Sidebar';          Icon = 'panel-left';           Accent = 1 }
+    @{ Name = 'SidebarItem';      Icon = 'square-mouse-pointer'; Accent = 0 }
+    @{ Name = 'SidebarSection';   Icon = 'heading';              Accent = 'none' }
+    @{ Name = 'StatusBar';        Icon = 'panel-bottom';         Accent = 1 }
+    @{ Name = 'StatusLabel';      Icon = 'text-quote';           Accent = 0 }
+    @{ Name = 'Avatar';           Icon = 'circle-user-round';    Accent = 1 }
+    @{ Name = 'PictureBox';       Icon = 'images';               Accent = 0 }
+    @{ Name = 'Popover';          Icon = 'message-square-dot';   Accent = 1 }
+    @{ Name = 'TableLayoutPanel'; Icon = 'grid-3x3';             Accent = 'none' }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS

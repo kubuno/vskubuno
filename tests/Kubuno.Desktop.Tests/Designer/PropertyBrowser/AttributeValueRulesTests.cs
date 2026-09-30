@@ -134,5 +134,16 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
                 Assert.AreNotEqual(Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.FallbackId, Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.IdFor(name), name);
             }
         }
+
+        [TestMethod]
+        public void MigrationFoundationElements_HaveTheirToolboxTabsAndIcons()
+        {
+            Assert.AreEqual("Navigation", DesignerText.ToolboxTabName("navigation"));
+            CollectionAssert.Contains(DesignerText.AllToolboxTabNames(), "Navigation");
+            foreach (var name in new[] { "Repeater", "Sidebar", "SidebarItem", "SidebarSection", "StatusBar", "StatusLabel", "Avatar", "PictureBox", "Popover", "TableLayoutPanel" })
+            {
+                Assert.AreNotEqual(Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.FallbackId, Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.IdFor(name), name);
+            }
+        }
     }
 }

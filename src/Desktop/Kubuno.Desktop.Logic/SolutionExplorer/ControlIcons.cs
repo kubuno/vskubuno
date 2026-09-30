@@ -92,6 +92,16 @@ namespace Kubuno.Desktop.Logic.SolutionExplorer
             ["DockArea"] = 68, // Lucide "panels-left-bottom"
             ["DockPanel"] = 69, // Lucide "panel-right"
             ["WorkspaceShell"] = 70, // Lucide "app-window-mac"
+            ["Repeater"] = 71, // Lucide "gallery-vertical-end"
+            ["Sidebar"] = 72, // Lucide "panel-left"
+            ["SidebarItem"] = 73, // Lucide "square-mouse-pointer"
+            ["SidebarSection"] = 74, // Lucide "heading"
+            ["StatusBar"] = 75, // Lucide "panel-bottom"
+            ["StatusLabel"] = 76, // Lucide "text-quote"
+            ["Avatar"] = 77, // Lucide "circle-user-round"
+            ["PictureBox"] = 78, // Lucide "images"
+            ["Popover"] = 79, // Lucide "message-square-dot"
+            ["TableLayoutPanel"] = 80, // Lucide "grid-3x3"
         };
 
         /// <summary>The image id for element <paramref name="tag"/> (<see cref="FallbackId"/> when unknown).</summary>

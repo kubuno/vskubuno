@@ -35,6 +35,11 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 return new ReferenceNamesConverter(editor.Substring("reference:".Length));
             }
 
+            if (meta?.Editor is { } classEditor && classEditor.StartsWith("class:", StringComparison.Ordinal))
+            {
+                return new ClassNamesConverter(classEditor.Substring("class:".Length));
+            }
+
             return meta?.TypeConverter == "Opacity" ? new OpacityConverter() : null;
         }
 
@@ -131,6 +136,43 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 .Distinct(StringComparer.Ordinal)
                 .ToList()
             ?? (IReadOnlyList<string>)Array.Empty<string>();
+    }
+
+    /// <summary>
+    /// A class of the project by its name (<c>ItemTemplate</c>: a user control): the dropdown lists the classes of the
+    /// registry of that kind (<c>UserControl</c> → the <c>#[derive(UserControl)]</c> classes). Not exclusive (a class can be
+    /// named before it is written).
+    /// </summary>
+    public sealed class ClassNamesConverter : StringConverter
+    {
+        public ClassNamesConverter(string kind)
+        {
+            Kind = kind;
+        }
+
+        public string Kind { get; }
+
+        public override bool GetStandardValuesSupported(ITypeDescriptorContext? context) => RichEditors.Elements(context).Count > 0;
+
+        public override bool GetStandardValuesExclusive(ITypeDescriptorContext? context) => false;
+
+        public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext? context)
+        {
+            var element = RichEditors.Elements(context).FirstOrDefault();
+            return new StandardValuesCollection(element is null ? Array.Empty<string>() : Names(element.Host.Registry, Kind).ToArray());
+        }
+
+        /// <summary>The names of the registry's project classes of <paramref name="kind"/> (<c>UserControl</c>: <c>kind == "user_control"</c>).</summary>
+        public static IReadOnlyList<string> Names(ComponentRegistry registry, string kind)
+        {
+            var wanted = kind == "UserControl" ? "user_control" : kind == "Component" ? "component" : "control";
+            return registry.Components
+                .Where(c => c.IsProject && string.Equals(c.Kind, wanted, StringComparison.Ordinal))
+                .Select(c => c.Name)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(n => n, StringComparer.Ordinal)
+                .ToList();
+        }
     }
 
     /// <summary>An opacity: the attribute holds a percentage (<c>80</c>), shown <c>80 %</c> like WinForms' <c>OpacityConverter</c>.</summary>

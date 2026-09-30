@@ -416,7 +416,7 @@ namespace Kubuno.Desktop.Designer
         {
             "Common Controls", "Contrôles communs", "Display", "Affichage", "Choice", "Choix", "Text", "Texte",
             "Containers", "Conteneurs", "Data", "Données", "Components", "Composants", "Printing", "Impression",
-            "Docking", "Ancrage",
+            "Docking", "Ancrage", "Navigation",
         };
 
         /// <summary>The Toolbox tab of a project's own controls (docs/EVENTS.md EVT-7b), like WinForms' "&lt;Project&gt; Components".</summary>
@@ -433,6 +433,7 @@ namespace Kubuno.Desktop.Designer
                 case "containers": return T("Containers", "Conteneurs");
                 case "data": return T("Data", "Données");
                 case "docking": return T("Docking", "Ancrage");
+                case "navigation": return "Navigation";
                 case "printing": return CategoryPrinting;
                 case "components": return T("Components", "Composants");
                 default:

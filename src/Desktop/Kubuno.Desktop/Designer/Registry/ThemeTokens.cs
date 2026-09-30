@@ -72,6 +72,9 @@ namespace Kubuno.Desktop.Designer.Registry
             new ThemeToken("LinkVisited", "#663399", "#C5A0E8", "HotTrack", "A link that has already been followed.", "Lien déjà suivi."),
             new ThemeToken("Selection", "#E8F0FE", "#22344D", "Highlight", "The background of selected items.", "Fond des éléments sélectionnés."),
             new ThemeToken("Hover", "#E4ECF7", "#2B2C30", "Window", "The background of an item under the mouse pointer.", "Fond d'un élément sous le pointeur de la souris."),
+            new ThemeToken("ListSelected", "#E8F0FE", "#22344D", "Highlight", "The background of a selected item of a list (the same colour as Selection).", "Fond d'un élément sélectionné d'une liste (même couleur que Selection)."),
+            new ThemeToken("ControlFillHover", "#E8EAED", "#35363A", "Window", "The background of a subtle control (an icon button, a menu row) under the mouse pointer.", "Fond d'un contrôle discret (bouton icône, ligne de menu) sous le pointeur de la souris."),
+            new ThemeToken("TitleBarBackground", "#00000000", "#00000000", "ActiveCaption", "The background of the window's title bar (transparent: the window's backdrop shows through).", "Fond de la barre de titre de la fenêtre (transparent : le fond de la fenêtre transparaît)."),
             new ThemeToken("TooltipBackground", "#3C4043F2", "#3C4043F2", "Info", "The background of tooltips.", "Fond des info-bulles."),
             new ThemeToken("TooltipForeground", "#FFFFFF", "#FFFFFF", "InfoText", "The text of tooltips.", "Texte des info-bulles."),
         };

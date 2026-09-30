@@ -1,0 +1,22 @@
+[package]
+name = "foundations-desktop"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# The Kubuno desktop foundations sample (docs/DESKTOP-MIGRATION.md, lot F1): every element the
+# migration of the Kubuno apps needs, in `.kbview` views editable in the Visual Studio designer —
+# a Sidebar and a StatusBar around the pages, a Repeater of 10 000 messages shown by a user control
+# (MessageRow) next to a ListView of 10 000 rows, a wrapped Repeater of cards, Avatars, PictureBoxes,
+# a Popover, menus with sub-menus, a TableLayoutPanel form, wrapping and filling Stacks, and a
+# custom control declared in another crate (`foundations-controls`, the ChipBar).
+#
+#   foundations-desktop.exe --dark         the dark theme
+#   foundations-desktop.exe --page <n>     opens on page n (0 lists, 1 cards, 2 people, 3 form)
+
+[dependencies]
+# Kubuno, from a local checkout of github.com/kubuno/desktop (its `windows` workspace), like the
+# Kubuno Desktop Application template (change it here AND <KubunoDesktopSrc> in the .rsproj).
+kubuno = { path = "Z:/src/desktop/windows/src/crates/kubuno" }
+# The custom controls of another crate of the application: usable in the views like its own.
+foundations-controls = { path = "controls" }

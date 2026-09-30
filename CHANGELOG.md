@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Desktop migration foundations (lot F1, `docs/DESKTOP-MIGRATION.md`)** in the designer: Toolbox items with their
+  own icons for **Repeater** (Data tab), **Sidebar**, **SidebarItem**, **SidebarSection**, **StatusBar** and
+  **StatusLabel** (a new **Navigation** tab), **Avatar** and **PictureBox** (Display), **Popover** and
+  **TableLayoutPanel** (Containers); the Properties window offers the project's user controls for a Repeater's
+  `ItemTemplate`; the designer shows a Repeater's sample items; the `ListSelected`, `ControlFillHover` and
+  `TitleBarBackground` colours in the colour editor; override support knows the new classes.
+- `samples/foundations-desktop`: every F1 element in `.kbview` views (a Sidebar and a StatusBar around four pages, a
+  Repeater of 10 000 messages shown by a user control next to a ListView of 10 000 rows, a wrapped Repeater of cards,
+  Avatars, PictureBoxes, a Popover, menus with sub-menus, radio groups and items from a list, a TableLayoutPanel form
+  with a paged DataTable, wrapping and filling Stacks) and a custom control declared in another crate of the
+  application (`foundations-controls`, typed `Custom<ChipBar>` in the form's code).
 - **The Kubuno desktop applications open, build, run and debug as a Visual Studio solution**
   (`docs/GETTING-STARTED.md`, "Working on the Kubuno desktop apps"; `docs/RSPROJ.md`, "Cargo workspaces"):
   *Generate Visual Studio Projects* on the `desktop/windows` workspace gives one project per crate and a

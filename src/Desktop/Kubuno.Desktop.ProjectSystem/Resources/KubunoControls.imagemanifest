@@ -79,6 +79,16 @@
     <ID Name="DockArea" Value="68" />
     <ID Name="DockPanel" Value="69" />
     <ID Name="WorkspaceShell" Value="70" />
+    <ID Name="Repeater" Value="71" />
+    <ID Name="Sidebar" Value="72" />
+    <ID Name="SidebarItem" Value="73" />
+    <ID Name="SidebarSection" Value="74" />
+    <ID Name="StatusBar" Value="75" />
+    <ID Name="StatusLabel" Value="76" />
+    <ID Name="Avatar" Value="77" />
+    <ID Name="PictureBox" Value="78" />
+    <ID Name="Popover" Value="79" />
+    <ID Name="TableLayoutPanel" Value="80" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -430,6 +440,56 @@
       <Source Uri="$(Controls)/WorkspaceShell.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/WorkspaceShell.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/WorkspaceShell.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Repeater)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Repeater.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Repeater.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Repeater.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Sidebar)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Sidebar.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Sidebar.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Sidebar.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(SidebarItem)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/SidebarItem.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/SidebarItem.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/SidebarItem.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(SidebarSection)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/SidebarSection.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/SidebarSection.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/SidebarSection.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(StatusBar)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/StatusBar.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/StatusBar.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/StatusBar.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(StatusLabel)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/StatusLabel.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/StatusLabel.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/StatusLabel.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Avatar)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Avatar.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Avatar.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Avatar.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(PictureBox)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/PictureBox.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/PictureBox.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/PictureBox.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Popover)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Popover.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Popover.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Popover.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(TableLayoutPanel)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/TableLayoutPanel.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/TableLayoutPanel.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/TableLayoutPanel.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

@@ -186,6 +186,13 @@ pill — a `CellRenderer` attribute that names a handler installed on
 Inventing a richer per-cell XAML `DataTemplate` would model something
 `kubuno_ui::tables::DataTable` does not have.
 
+**As built (lot F1, 2026-09-30):** a list of *views* is `<Repeater ItemsSource="{Binding Messages}"
+ItemTemplate="MessageRow" ItemKey="Id"/>` (or the item's element written inside the `<Repeater>`): one user control
+instance and one live tree per item in view (virtualised, identified by `ItemKey` across changes), bindings read
+the row, then the user control, then the page. `Value::List` holds `Rows`, a shared snapshot with a stamp, and
+every list element rebuilds its items only when the stamp (or, for a list converted anew each frame, the rows)
+changed.
+
 Conditionals reuse a field the layout engine already carries:
 `kubuno_controls::layout::Item::visible` (`containers.rs:430`) is read by
 `Panel::paint_children_unclipped` to skip a child outright. So

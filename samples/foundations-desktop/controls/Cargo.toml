@@ -1,0 +1,11 @@
+[package]
+name = "foundations-controls"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# A library of custom controls of the foundations sample: its classes are elements of the views of
+# the application that depends on it (`<ChipBar>`), and appear in the designer's Toolbox.
+
+[dependencies]
+kubuno = { path = "Z:/src/desktop/windows/src/crates/kubuno" }

@@ -1,0 +1,128 @@
+<!--
+  The foundations sample's window: a Sidebar (its rows pick the page) and a StatusBar around four pages.
+  Every element here is edited in the designer: the Repeaters show sample items at design time.
+-->
+<Panel DesignWidth="1120" DesignHeight="720" Title="Kubuno foundations" OnLoad="main_view_load">
+  <Sidebar x:Name="nav" Dock="Left" Width="232" SelectedItem="{Binding Page, Mode=TwoWay}" OnSelectionChanged="nav_selection_changed">
+    <SidebarSection Text="Démo"/>
+    <SidebarItem x:Name="nav_lists" Key="lists" Text="Listes" Icon="List"/>
+    <SidebarItem x:Name="nav_cards" Key="cards" Text="Cartes" Icon="LayoutGrid"/>
+    <SidebarItem x:Name="nav_people" Key="people" Text="Personnes" Icon="Users"/>
+    <SidebarSection Text="Compte"/>
+    <SidebarItem Text="Réglages" Icon="Settings2" Expanded="true">
+      <SidebarItem x:Name="nav_form" Key="form" Text="Formulaire" Icon="FileText"/>
+    </SidebarItem>
+  </Sidebar>
+  <StatusBar x:Name="status_bar" Dock="Bottom" Height="28">
+    <StatusLabel x:Name="status_label" Text="{Binding Status}" Spring="true"/>
+    <StatusLabel Text="-"/>
+    <StatusLabel x:Name="count_label" Text="{Binding CountText}"/>
+    <StatusLabel Text="-"/>
+    <StatusLabel x:Name="branch" Text="main" Icon="GitBranch" Clickable="true" OnClick="branch_click"/>
+  </StatusBar>
+  <Tabs x:Name="pages" Dock="Fill" SelectedIndex="{Binding PageIndex, Mode=TwoWay}">
+    <TabItem Header="Listes">
+      <TableLayoutPanel x:Name="lists_grid" ColumnCount="2" RowCount="2" ColumnStyles="Percent 55; Percent 45" RowStyles="Absolute 28; Percent 100" CellSpacing="12" Padding="16">
+        <Label Text="Repeater : 10 000 messages (MessageRow)" Role="Heading"/>
+        <Label Text="ListView : 10 000 fichiers" Role="Heading"/>
+        <Repeater x:Name="message_list" ItemsSource="{Binding Messages}" ItemTemplate="MessageRow" ItemKey="Id" ItemHeight="64" SelectionMode="Single" SelectedIndex="{Binding SelectedMessage, Mode=TwoWay}" OnItemClick="messages_item_click" EmptyText="Aucun message"/>
+        <ListView x:Name="file_list" ItemsSource="{Binding Files}">
+          <Column Header="Nom" Binding="{Binding Text}" Width="220"/>
+          <Column Header="Taille" Binding="{Binding Size}" Width="100"/>
+        </ListView>
+      </TableLayoutPanel>
+    </TabItem>
+    <TabItem Header="Cartes">
+      <Stack Direction="TopDown" Gap="12" Padding="16">
+        <Label Text="Étiquettes (Stack WrapContents)" Role="Heading" Height="24"/>
+        <Stack x:Name="tags" Direction="LeftToRight" WrapContents="true" CrossAlign="Center" Gap="8" Height="72">
+          <Badge Text="Rust"/>
+          <Badge Text="Kubuno"/>
+          <Badge Text="Windows Forms"/>
+          <Badge Text="Visual Studio"/>
+          <Badge Text="Direct2D"/>
+          <Badge Text="Vues .kbview"/>
+          <Badge Text="Liaisons"/>
+          <Badge Text="Concepteur"/>
+        </Stack>
+        <Stack Direction="LeftToRight" CrossAlign="Center" Gap="8" Height="40">
+          <SearchField x:Name="search" Placeholder="Rechercher" Stack.Fill="true"/>
+          <Button x:Name="add_card" Text="Ajouter" Variant="Secondary" OnClick="add_card_click"/>
+        </Stack>
+        <ChipBar x:Name="chips" Items="{Binding Chips}" Accent="true" Height="36"/>
+        <Repeater x:Name="card_grid" ItemsSource="{Binding Cards}" ItemKey="Id" Wrap="true" ItemWidth="200" ItemHeight="96" Spacing="12" SelectionMode="Single" Height="320" DesignItemCount="6">
+          <Panel Surface="Card" Width="200" Height="96">
+            <Avatar DisplayName="{Binding Name}" Presence="{Binding Presence}" X="12" Y="12" Width="36" Height="36"/>
+            <Label Text="{Binding Name}" Role="Heading" X="56" Y="12" Width="132" Height="20"/>
+            <Label Text="{Binding Role}" Role="Meta" X="56" Y="34" Width="132" Height="18"/>
+            <Label Text="{Binding ItemIndex}" Role="Micro" X="12" Y="68" Width="176" Height="16"/>
+          </Panel>
+        </Repeater>
+      </Stack>
+    </TabItem>
+    <TabItem Header="Personnes">
+      <Panel x:Name="people_page" Padding="16">
+        <Label Text="Avatars" Role="Heading" X="16" Y="16" Width="300" Height="24"/>
+        <Avatar x:Name="me" DisplayName="Martinien Olinga" Presence="Online" AvatarSize="56" X="16" Y="48" Width="56" Height="56"/>
+        <Avatar DisplayName="Alice Martin" Presence="Away" AvatarSize="40" X="88" Y="56" Width="40" Height="40"/>
+        <Avatar DisplayName="Bob" Presence="Busy" Tint="Accent" AvatarSize="40" X="140" Y="56" Width="40" Height="40"/>
+        <Avatar x:Name="photo" ImageData="{Binding Portrait}" DisplayName="Chloé" Presence="Offline" AvatarSize="40" X="192" Y="56" Width="40" Height="40"/>
+        <Avatar Image="images/portrait.png" Shape="Rounded" AvatarSize="40" X="244" Y="56" Width="40" Height="40"/>
+        <Label Text="PictureBox (Zoom, Cover, Center)" Role="Heading" X="16" Y="124" Width="400" Height="24"/>
+        <PictureBox x:Name="picture" Image="images/landscape.png" SizeMode="Zoom" CornerRadius="8" X="16" Y="156" Width="240" Height="150"/>
+        <PictureBox Image="images/landscape.png" SizeMode="Cover" CornerRadius="8" X="272" Y="156" Width="150" Height="150"/>
+        <PictureBox Image="images/portrait.png" SizeMode="Center" X="438" Y="156" Width="150" Height="150" BorderStyle="FixedSingle"/>
+        <Label Text="Menus et popover" Role="Heading" X="16" Y="324" Width="400" Height="24"/>
+        <Button x:Name="view_menu" Text="Affichage" Icon="chevron-down" Variant="Secondary" DropDownMenu="view_options" X="16" Y="356" Width="140" Height="36"/>
+        <IconButton x:Name="more" Icon="more-vertical" DropDownMenu="more_menu" ToolTip="Plus d'actions" X="168" Y="358" Width="32" Height="32"/>
+        <Button x:Name="profile_button" Text="Profil…" Variant="Primary" OnClick="profile_button_click" X="216" Y="356" Width="120" Height="36"/>
+        <Label x:Name="menu_result_label" Text="{Binding MenuResult}" X="352" Y="364" Width="480" Height="20"/>
+        <ContextMenu x:Name="view_options" ItemsSource="{Binding Recent}" OnItemClicked="recent_clicked">
+          <MenuItem Text="Trier par" Icon="ArrowDownUp">
+            <MenuItem Text="Nom" RadioGroup="sort" Checked="true" OnCheckedChanged="sort_changed"/>
+            <MenuItem Text="Date" RadioGroup="sort" OnCheckedChanged="sort_changed"/>
+            <MenuItem Text="Taille" RadioGroup="sort" OnCheckedChanged="sort_changed"/>
+          </MenuItem>
+          <MenuItem Text="Fichiers masqués" CheckOnClick="true" Checked="{Binding ShowHidden, Mode=TwoWay}"/>
+          <MenuItem Kind="Separator"/>
+          <MenuItem Text="Ouvrir récents" Icon="Clock" OnDropDownOpening="recent_opening" ItemsSource="{Binding RecentFiles}"/>
+          <MenuItem Kind="Header" Text="Récents"/>
+        </ContextMenu>
+        <ContextMenu x:Name="more_menu">
+          <MenuItem Text="Copier" Icon="Copy" ShortcutKeys="Ctrl+C" OnClick="copy_click"/>
+          <MenuItem Text="Renommer" Icon="Pencil" ShortcutKeys="F2"/>
+          <MenuItem Text="-"/>
+          <MenuItem Text="Supprimer" Icon="Trash2" Danger="true" OnClick="delete_click"/>
+        </ContextMenu>
+        <Popover x:Name="profile" Target="profile_button" IsOpen="{Binding ProfileOpen, Mode=TwoWay}" Placement="Bottom" PopupWidth="280" PopupHeight="132" OnClosed="profile_closed" X="640" Y="16" Width="280" Height="132">
+          <Panel Padding="12">
+            <Avatar DisplayName="Martinien Olinga" Presence="Online" AvatarSize="48" X="16" Y="16" Width="48" Height="48"/>
+            <Label Text="Martinien Olinga" Role="Heading" X="76" Y="18" Width="190" Height="20"/>
+            <Label Text="admin@kubuno.local" Role="Meta" X="76" Y="40" Width="190" Height="18"/>
+            <Button x:Name="sign_out" Text="Se déconnecter" Variant="Ghost" OnClick="sign_out_click" X="16" Y="84" Width="248" Height="32"/>
+          </Panel>
+        </Popover>
+      </Panel>
+    </TabItem>
+    <TabItem Header="Formulaire">
+      <TableLayoutPanel x:Name="form_grid" ColumnCount="2" ColumnStyles="Absolute 160; Percent 100" RowStyles="Absolute 40; Absolute 40; Absolute 40; Absolute 96; Absolute 48; Percent 100" CellSpacing="8" Padding="16">
+        <Label Text="Nom" TextAlign="MiddleLeft"/>
+        <TextField x:Name="name" Placeholder="Votre nom"/>
+        <Label Text="Rôle" TextAlign="MiddleLeft"/>
+        <Dropdown x:Name="role" SelectedValue="member">
+          <Option Value="admin" Label="Administrateur"/>
+          <Option Value="member" Label="Membre"/>
+        </Dropdown>
+        <Label Text="Notifications" TextAlign="MiddleLeft"/>
+        <Switch x:Name="notify" On="true"/>
+        <Label Text="Note" TextAlign="TopLeft"/>
+        <TextArea x:Name="note" Placeholder="Quelques mots…" MinLines="2" MaxLines="4"/>
+        <Button x:Name="save" Text="Enregistrer" Variant="Primary" OnClick="save_click" Width="160" Height="36" TableLayoutPanel.Column="1" TableLayoutPanel.Row="4"/>
+        <DataTable x:Name="file_table" ItemsSource="{Binding Files}" PageSize="8" PageIndex="{Binding FilePage, Mode=TwoWay}" SortColumn="Text" SortOrder="Descending" Density="Compact" EmptyText="Aucun fichier" OnPageChanged="file_page_changed" TableLayoutPanel.Column="0" TableLayoutPanel.Row="5" TableLayoutPanel.ColumnSpan="2">
+          <Column Header="Fichier" Binding="{Binding Text}" Width="260"/>
+          <Column Header="Taille" Binding="{Binding Size}" Width="120"/>
+        </DataTable>
+      </TableLayoutPanel>
+    </TabItem>
+  </Tabs>
+</Panel>

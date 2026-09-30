@@ -272,8 +272,10 @@ in one crate (a project may depend on `kubuno-views` and `kubuno` together).
   composition's.
 - A handler added to the view while the application runs (hot reload) is only called after a rebuild (the
   `match` is compiled); the runtime logs "`x` is not a method of the view (rebuild after adding it)".
-- The unknown-element check knows the built-in elements and the crate's own controls; a control of another crate
-  would need to be declared in `BUILTIN_ELEMENTS` (none exists yet).
+- The unknown-element check knows the built-in elements, the Kubuno libraries' components, the crate's own controls
+  (its `src`, and the file declaring the view) and those of its path dependencies (a `path = "…"` or `workspace = true`
+  dependency whose workspace entry has a path, §11); a control of a registry dependency must be named in a view of its
+  own crate.
 
 ## 10. As built (2026-09-30): tests and live verification
 
@@ -330,3 +332,23 @@ queried over LSP on the same project): hover on `self.status` shows `status: Tex
 ("The `<TextField x:Name="status">` of main_view.kbview (line 9)"), go to definition lands on the attribute's
 `"main_view.kbview"`, and completion after `self.status.` lists the handle's methods (`set_text`, `get_text`,
 `set_enabled`, `is_enabled`, `set_placeholder`, `set_read_only`, `text_changed`…).
+
+## 11. Custom controls from code, lists and Rust values (lot F1, 2026-09-30)
+
+- **Typed access.** An `x:Name`d custom control is a `kubuno::forms::Control` field; to type it, declare the field
+  yourself with `#[control]` — `#[control] thread: Custom<MessageThread>` — and `#[kubuno::view]` links it to the
+  element of that name instead of generating one (an error names a `#[control]` field without an element). `Custom<T>`
+  derefs to `Control` and reaches the instance: `self.thread.with(|t| t.append(message))`, `with_ref`; any handle
+  answers `control.with::<T, _>(|t| …)` (Windows Forms' cast of a `Control` to its class). `None` before the window
+  opens, or while the instance is busy (its own handler is running). A handler may take `&Custom<T>` as its sender.
+- **Controls of another crate.** A view names the `#[derive(Component)]` / `#[derive(UserControl)]` classes of its
+  package's path dependencies (and workspace dependencies with a path) like its own; the macro references the crate
+  (`use ::the_crate as _;`) so that it is linked and its classes register at start-up (their static constructors).
+  The language server and the designer already scanned path dependencies (§7).
+- **List and object properties.** A custom control property may be `Rows` (a list) or `Shared<T>` (any Rust value,
+  `Arc`-shared); both are set with a binding only (`Messages="{Binding Messages}"`, the validator refuses a literal)
+  and the tools mark them bindable (`editor` `"list"` / `"object"`). The view model answers them with `#[bind]
+  messages: Rows` / `#[bind] settings: Shared<Settings>`, or `Value::from(…)`. A `Rows` handed back unchanged costs
+  nothing per frame (its stamp): keep one in the view model and change it in place (`push`, `set`, `make_mut`).
+- **`<Repeater>`** shows a list with a user control per row (`ItemTemplate="MessageRow"`) or an element written
+  inside it; see `XML_VIEWS.md` §3.

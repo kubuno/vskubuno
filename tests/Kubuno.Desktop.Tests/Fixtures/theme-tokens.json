@@ -200,6 +200,30 @@
     "name": "Hover"
   },
   {
+    "dark": "#22344D",
+    "doc": "The background of a selected item of a list (the same colour as Selection).",
+    "doc_fr": "Fond d'un élément sélectionné d'une liste (même couleur que Selection).",
+    "high_contrast": "Highlight",
+    "light": "#E8F0FE",
+    "name": "ListSelected"
+  },
+  {
+    "dark": "#35363A",
+    "doc": "The background of a subtle control (an icon button, a menu row) under the mouse.",
+    "doc_fr": "Fond d'un contrôle discret (bouton icône, ligne de menu) sous la souris.",
+    "high_contrast": "Window",
+    "light": "#E8EAED",
+    "name": "ControlFillHover"
+  },
+  {
+    "dark": "#00000000",
+    "doc": "The background of the window's title bar.",
+    "doc_fr": "Fond de la barre de titre de la fenêtre.",
+    "high_contrast": "ActiveCaption",
+    "light": "#00000000",
+    "name": "TitleBarBackground"
+  },
+  {
     "dark": "#3C4043F2",
     "doc": "The background of tooltips.",
     "doc_fr": "Fond des info-bulles.",
