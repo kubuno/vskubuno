@@ -170,8 +170,9 @@ namespace Kubuno.VisualStudio.Core.DataSources
                 return DataControlKind.CheckBox;
             }
 
-            // A value the database generates or that cannot be written is shown, not edited.
-            return column.AutoIncrement || column.ReadOnly ? DataControlKind.Label : DataControlKind.TextField;
+            // A value the database generates or that cannot be written is shown in a read-only field (WinForms: a
+            // ReadOnly TextBox for the key), not edited.
+            return DataControlKind.TextField;
         }
 
         /// <summary>The <c>FormatString</c> of a grid column or a detail field (dates <c>d</c>, date-times <c>g</c>, decimals <c>N2</c>), null for none.</summary>

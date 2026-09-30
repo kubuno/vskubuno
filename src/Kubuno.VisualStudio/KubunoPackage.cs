@@ -128,14 +128,15 @@ namespace Kubuno.VisualStudio
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.Designer.ToolWindows.OutlineToolWindow))]
     // The crate manager (NuGet-like, one per .rsproj, in the document well): CrateManager/CrateManagerToolWindow.cs.
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.CrateManager.CrateManagerToolWindow), MultiInstances = true, Style = VsDockStyle.MDI, Transient = true)]
-    // docs/DATA.md DATA-5: the Data Explorer (docked with Server Explorer, {74946827-37a0-11d2-a273-00c04f8ef4ec}) and its
+    // docs/DATA.md DATA-5: the Data Explorer (docked left, tabbed with the Toolbox {B1E99781-AB81-11D0-B683-00AA00A3EE26}, where
+    // Server Explorer lives - tabbing with Server Explorer itself left it floating in a profile that never opened it) and its
     // query windows (in the document well, one per query, not restored at the next start; their own key binding scope
     // for F5 / Ctrl+Shift+E, KubunoCommands.vsct KeyBindings), and the Data options page.
-    [ProvideToolWindow(typeof(Kubuno.VisualStudio.DataExplorer.DataExplorerToolWindow), Style = VsDockStyle.Tabbed, Window = "74946827-37a0-11d2-a273-00c04f8ef4ec")]
+    [ProvideToolWindow(typeof(Kubuno.VisualStudio.DataExplorer.DataExplorerToolWindow), Style = VsDockStyle.Tabbed, Window = "B1E99781-AB81-11D0-B683-00AA00A3EE26")]
     [ProvideToolWindow(typeof(Kubuno.VisualStudio.DataExplorer.QueryToolWindow), MultiInstances = true, Style = VsDockStyle.MDI, Transient = true)]
     [ProvideKeyBindingTable(PackageGuidStrings.QueryToolWindow, 120)]
-    // docs/DATA.md DATA-6: the Data Sources window (docked with Server Explorer, like the Data Explorer).
-    [ProvideToolWindow(typeof(Kubuno.VisualStudio.DataSources.DataSourcesToolWindow), Style = VsDockStyle.Tabbed, Window = "74946827-37a0-11d2-a273-00c04f8ef4ec")]
+    // docs/DATA.md DATA-6: the Data Sources window, tabbed with Solution Explorer {3AE79031-E1BC-11D0-8F78-00A0C9110057} like Windows Forms'.
+    [ProvideToolWindow(typeof(Kubuno.VisualStudio.DataSources.DataSourcesToolWindow), Style = VsDockStyle.Tabbed, Window = "3AE79031-E1BC-11D0-8F78-00A0C9110057")]
     [ProvideOptionPage(typeof(DataOptionsPage), Constants.OptionsCategoryName, "Data", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.data")]
     [ProvideProfile(typeof(DataOptionsPage), Constants.OptionsCategoryName, "Data", 0, 0, isToolsOptionPage: true)]
     [ProvideSettingsManifest(PackageRelativeManifestFile = @"UnifiedSettings\kubuno.registration.json")]

@@ -859,6 +859,21 @@ crates. Not verified: Open Folder crates, a real Kubuno module (the schema rule 
 property editors and smart tags of §9 (component-reference and `ConnectionStringName` drop-downs, SQL editor with
 "Tester la requête", "Aperçu des données…").
 
+**After the first visual check (2026-09-30).**
+- A drop never lands on existing controls: the block it adds (navigator, grid or detail rows) moves down, below every
+  positioned child of the drop container it would cover (`DataSourceDropPlanner.FreeTop`); a column dropped where its
+  list already has detail rows joins them (same label/field columns, next row). A generated or read-only column is a
+  read-only `TextField` (`Enabled="false"`, one-way binding) like Windows Forms' ReadOnly TextBox for the key, no longer a
+  bare label.
+- In the designer, a bound `DataTable` shows its column headers over three blank rows (the Windows Forms designer's
+  DataGridView) instead of the empty-state illustration (`kubuno-views`, design frames only).
+- The designer surface the VSIX bundles (`tools\surface\view_embed.exe`) is now built from `kubuno-data`'s
+  `examples/view_embed.rs` — kubuno-views' surface unchanged, with the data components linked — so a view holding data
+  components renders before the project's own design build (it showed "Waiting for a view that compiles…").
+- The Data Explorer docks on the left, tabbed with the Toolbox (where Server Explorer lives), and Data Sources is
+  tabbed with Solution Explorer, as in Windows Forms (a hive that already stored a floating position keeps it until
+  Window > Reset Window Layout).
+
 ## 20. DATA-7 as built (2026-09-30): migrations and the SQLx cache
 
 `src/Kubuno.VisualStudio.Core/Migrations/*` (texts, the `migrate.*`/`sqlx.*` calls, description rules, the crate's

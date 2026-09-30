@@ -21,7 +21,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     offline SQLx cache in the background.
   - **Drag and drop from Data Sources onto a view**, as in Windows Forms: a table becomes an editable, formatted
     `DataTable` (or detail fields: a label and a bound control per column) with its `BindingSource` (filled when the
-    window opens), `TableAdapter`, `DbConnection`, `ErrorProvider` and `BindingNavigator`, in one undoable edit.
+    window opens), `TableAdapter`, `DbConnection`, `ErrorProvider` and `BindingNavigator`, in one undoable edit, never
+    on top of existing controls; in the designer a bound grid shows its column headers. The Data Explorer docks with
+    the Toolbox and Data Sources with Solution Explorer.
   - **Migrations**: a *Database* submenu on Rust projects (Add Migration, Apply Migrations, Revert Last Migration,
     Update SQLx Cache) and a *Migrations* node in Solution Explorer showing each migration as applied, pending or
     changed, and whether the SQLx cache is up to date; a stale cache is also a build warning and an info bar.

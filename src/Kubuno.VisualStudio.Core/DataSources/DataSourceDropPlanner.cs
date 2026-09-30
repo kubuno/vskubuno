@@ -189,8 +189,38 @@ namespace Kubuno.VisualStudio.Core.DataSources
             // The visual part.
             var visuals = new List<string>();
             string? mainControl = null;
-            int cursorY = top;
             bool hasNavigator = outline.All().Any(e => e.Name == "BindingNavigator" && e.Attribute("BindingSource") == bindingSource);
+            int gridWidth = Math.Max(NavigatorWidth, Math.Min(900, table.Columns.Sum(DataColumnKinds.GridWidth) + 20));
+            if ((parent.Number("Width") ?? parent.Number("DesignWidth")) is { } availableWidth)
+            {
+                // Within the container (its columns scroll), like a WinForms grid dropped near the form's edge.
+                gridWidth = Math.Min(gridWidth, Math.Max(NavigatorWidth, (int)availableWidth - left - 16));
+            }
+
+            // A column dropped where the same list already has detail rows joins them: same label/field columns, the
+            // next row (a consistent label/field grid rather than a field at another offset).
+            if (request.Column is not null)
+            {
+                string bound = "Source=" + bindingSource + ", Path=";
+                var rows = parent.Children
+                    .Where(c => c.Name != "Label" && c.Number("X") is not null && c.Number("Y") is not null
+                        && c.Attributes.Values.Any(v => v.IndexOf(bound, StringComparison.Ordinal) >= 0))
+                    .ToList();
+                if (rows.Count > 0)
+                {
+                    left = (int)Math.Round(rows.Min(c => c.Number("X")!.Value)) - LabelWidth;
+                    top = (int)Math.Round(rows.Max(c => c.Number("Y")!.Value)) + RowHeight;
+                    if (left < 0)
+                    {
+                        left = 0;
+                    }
+                }
+            }
+
+            // The block the drop adds never lies on existing controls: it moves down, below what it would cover.
+            var (blockWidth, blockHeight) = BlockSize(request, table, hasNavigator, gridWidth);
+            top = FreeTop(parent, left, top, blockWidth, blockHeight);
+            int cursorY = top;
             if (request.Column is null && !hasNavigator)
             {
                 string navigator = CreateName(DataSourceNames.ToFieldName(table.BareName) + "_binding_navigator");
@@ -226,12 +256,7 @@ namespace Kubuno.VisualStudio.Core.DataSources
             else if (request.Mode == DataTableDropMode.Grid)
             {
                 mainControl = CreateName(DataSourceNames.ToFieldName(table.BareName) + "_data_table");
-                int width = Math.Max(NavigatorWidth, Math.Min(900, table.Columns.Sum(DataColumnKinds.GridWidth) + 20));
-                if ((parent.Number("Width") ?? parent.Number("DesignWidth")) is { } available)
-                {
-                    // Within the container (its columns scroll), like a WinForms grid dropped near the form's edge.
-                    width = Math.Min(width, Math.Max(NavigatorWidth, (int)available - left - 16));
-                }
+                int width = gridWidth;
                 var attributes = new List<KeyValuePair<string, string>>
                 {
                     Attr("x:Name", mainControl),
@@ -385,6 +410,12 @@ namespace Kubuno.VisualStudio.Core.DataSources
 
                         text.Append(mode);
                         controlAttributes.Add(Attr("Text", text.ToString()));
+                        if (!writable)
+                        {
+                            // WinForms' ReadOnly TextBox for a generated key: shown, not editable.
+                            controlAttributes.Add(Attr("Enabled", "false"));
+                        }
+
                         break;
                 }
 
@@ -453,6 +484,86 @@ namespace Kubuno.VisualStudio.Core.DataSources
             "sqlserver" => "SqlServer",
             _ => "Postgres",
         };
+
+        /// <summary>The size of the controls a drop adds (navigator, grid or detail rows), for <see cref="FreeTop"/>.</summary>
+        public static (int Width, int Height) BlockSize(DataDropRequest request, KbdataTableInfo table, bool hasNavigator, int gridWidth)
+        {
+            int width = 0;
+            int height = 0;
+            if (request.Column is null && !hasNavigator)
+            {
+                width = NavigatorWidth;
+                height = NavigatorHeight + Gap;
+            }
+
+            if (request.Column is { } name)
+            {
+                if (table.Column(name) is { } column)
+                {
+                    var control = request.ControlOf(column);
+                    if (control == DataControlKind.None)
+                    {
+                        control = DataColumnKinds.DefaultControl(column) is var d && d != DataControlKind.None ? d : DataControlKind.Label;
+                    }
+
+                    width = Math.Max(width, LabelWidth + DataColumnKinds.DetailWidth(column, control));
+                    height += RowHeight;
+                }
+            }
+            else if (request.Mode == DataTableDropMode.Grid)
+            {
+                width = Math.Max(width, gridWidth);
+                height += GridHeight;
+            }
+            else
+            {
+                foreach (var column in table.Columns)
+                {
+                    var control = request.ControlOf(column);
+                    if (control != DataControlKind.None)
+                    {
+                        width = Math.Max(width, LabelWidth + DataColumnKinds.DetailWidth(column, control));
+                        height += RowHeight;
+                    }
+                }
+            }
+
+            return (width, height);
+        }
+
+        /// <summary>
+        /// The first top, from <paramref name="top"/> down, where a block of <paramref name="width"/> x <paramref name="height"/> at
+        /// <paramref name="left"/> covers none of <paramref name="parent"/>'s positioned children (like the Windows Forms designer, a
+        /// drop never lands on existing controls): each time the block would cover a child, it moves below it.
+        /// </summary>
+        public static int FreeTop(KbviewElement parent, int left, int top, int width, int height)
+        {
+            var occupied = parent.Children
+                .Where(c => !DataComponents.Contains(c.Name) && c.Number("X") is not null && c.Number("Y") is not null)
+                .Select(c => (X: c.Number("X")!.Value, Y: c.Number("Y")!.Value, W: c.Number("Width") ?? 100, H: c.Number("Height") ?? 30))
+                .ToList();
+            for (int guard = 0; guard <= occupied.Count; guard++)
+            {
+                double bottom = -1;
+                foreach (var r in occupied)
+                {
+                    bool overlaps = left < r.X + r.W && r.X < left + width && top < r.Y + r.H && r.Y < top + height;
+                    if (overlaps)
+                    {
+                        bottom = Math.Max(bottom, r.Y + r.H);
+                    }
+                }
+
+                if (bottom < 0)
+                {
+                    break;
+                }
+
+                top = (int)Math.Ceiling(bottom) + Gap;
+            }
+
+            return top;
+        }
 
         /// <summary>A free place for a drop without a point: below the lowest positioned child of <paramref name="parent"/>.</summary>
         public static (int X, int Y) DefaultDropPoint(KbviewOutline outline, KbviewElement parent)

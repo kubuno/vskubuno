@@ -360,7 +360,7 @@
       built on its own rather than sharing desktop-target's in-flight build):
         cd Z:\src\desktop\windows
         $env:CARGO_TARGET_DIR = "C:\kubuno-build\agent-dsgint"
-        cargo build -r -p kubuno-views -j 1 (plus the cargo "example" flag, spelled with two dashes,
+        cargo build -r -p kubuno-data -j 1 (the data-enabled wrapper of kubuno-views' surface, so views holding data components render before a design build - docs/DATA.md; plus the cargo "example" flag, spelled with two dashes,
         naming view_embed - omitted above only because a doubled dash is not valid inside an XML
         comment; see src/Kubuno.VisualStudio.Designer/INTEGRATION.md §6 for the literal command)
       Shipped under its OWN tools\surface\ subfolder (see the Content items below), never merged with
@@ -387,7 +387,7 @@
 
   <Target Name="KubunoCheckSurfaceExe" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoViewsSurfaceExePath)')"
-           Text="kubuno-views-surface.exe (view_embed.exe) not found at '$(KubunoViewsSurfaceExePath)'. Build it: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-views -j 1 -- or pass /p:KubunoViewsSurfaceExePath=&lt;path&gt;." />
+           Text="kubuno-views-surface.exe (view_embed.exe) not found at '$(KubunoViewsSurfaceExePath)'. Build it: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-data -j 1 (kubuno-data wraps kubuno-views' surface with the data components linked) -- or pass /p:KubunoViewsSurfaceExePath=&lt;path&gt;." />
     <Error Condition="!Exists('$(KubunoViewsSurfaceProfileDir)kubuno_ui.dll')"
            Text="kubuno_ui.dll not found at '$(KubunoViewsSurfaceProfileDir)' (kubuno-views-surface.exe's own profile root). It must ship with the kubuno_ui.dll of the SAME cargo build (own CARGO_TARGET_DIR, do not reuse kubuno-views-ls's copy)." />
   </Target>

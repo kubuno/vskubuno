@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -137,9 +138,10 @@ namespace Kubuno.VisualStudio.Tests.DataSources
             Assert.AreEqual(1, plan.Insertions.Count, "the connection, adapter, binding source, error provider and navigator exist already");
             string xml = plan.Insertions[0].Xml;
             Assert.IsFalse(xml.Contains("<DbConnection") || xml.Contains("<TableAdapter") || xml.Contains("<BindingSource") || xml.Contains("<BindingNavigator"), xml);
-            StringAssert.Contains(xml, "<Label x:Name=\"id_label\" Text=\"Id\" X=\"520\" Y=\"84\" Width=\"112\" Height=\"26\"/>");
-            StringAssert.Contains(xml, "<Label x:Name=\"id_value_label\" Text=\"{Binding Source=customers_binding_source, Path=id}\" X=\"640\" Y=\"80\"");
-            StringAssert.Contains(xml, "<TextField x:Name=\"name_text_field\" Text=\"{Binding Source=customers_binding_source, Path=name, Mode=TwoWay}\" X=\"640\" Y=\"120\"");
+            // The grid of the first drop covers (520, 80): the rows move below it (a drop never lands on controls).
+            StringAssert.Contains(xml, "<Label x:Name=\"id_label\" Text=\"Id\" X=\"520\" Y=\"354\" Width=\"112\" Height=\"26\"/>");
+            StringAssert.Contains(xml, "<TextField x:Name=\"id_text_field\" Text=\"{Binding Source=customers_binding_source, Path=id}\" Enabled=\"false\" X=\"640\" Y=\"350\"");
+            StringAssert.Contains(xml, "<TextField x:Name=\"name_text_field\" Text=\"{Binding Source=customers_binding_source, Path=name, Mode=TwoWay}\" X=\"640\" Y=\"390\"");
             StringAssert.Contains(xml, "<TextField x:Name=\"email_text_field\" Text=\"{Binding Source=customers_binding_source, Path=email, NullValue='', Mode=TwoWay}\"");
             StringAssert.Contains(xml, "<TextField x:Name=\"birth_date_text_field\" Text=\"{Binding Source=customers_binding_source, Path=birth_date, FormatString=d, NullValue='', Mode=TwoWay}\"");
             StringAssert.Contains(xml, "<CheckBox x:Name=\"vip_check_box\" Text=\"Vip\" Checked=\"{Binding Source=customers_binding_source, Path=vip, Mode=TwoWay}\"");
@@ -294,6 +296,42 @@ namespace Kubuno.VisualStudio.Tests.DataSources
             CollectionAssert.AreEquivalent(new[] { "root", "c" }, outline.Names().ToArray());
             Assert.IsNull(KbviewOutline.TryParse("<A><B></A>"));
             Assert.IsNull(KbviewOutline.TryParse("<A/><B/>"));
+        }
+
+        [TestMethod]
+        public void ADropOnExistingControlsMovesBelowThem()
+        {
+            // Dropped at (24, 30), on the template's Status field / Say hello row (y 24..60): the navigator starts below it.
+            var plan = Plan(DataSourceFixtures.TemplateView, Grid("customers"), x: 24, y: 30);
+            string xml = plan.Insertions.Last().Xml;
+            StringAssert.Contains(xml, "<BindingNavigator x:Name=\"customers_binding_navigator\" BindingSource=\"customers_binding_source\" X=\"24\" Y=\"68\"");
+            var outline = KbviewOutline.TryParse(Apply(DataSourceFixtures.TemplateView, plan))!;
+            var status = outline.All().First(e => e.XName == "status");
+            foreach (var added in outline.All().Where(e => e.XName is "customers_binding_navigator" or "customers_data_table"))
+            {
+                Assert.IsTrue(added.Number("Y") >= status.Number("Y") + status.Number("Height"), added.XName + " below the existing row");
+            }
+        }
+
+        [TestMethod]
+        public void AColumnJoinsTheDetailRowsOfItsList()
+        {
+            var first = Apply(DataSourceFixtures.TemplateView, Plan(DataSourceFixtures.TemplateView, Details("orders"), x: 24, y: 80));
+            var outline = KbviewOutline.TryParse(first)!;
+            var fields = outline.All().Where(e => e.Name != "Label" && e.Attributes.Values.Any(v => v.Contains("Source=orders_binding_source, Path="))).ToList();
+            double fieldX = fields.Min(e => e.Number("X")!.Value);
+            double lastY = fields.Max(e => e.Number("Y")!.Value);
+
+            // Dropped far away: the column still lines up with the rows of `orders`, as their next row.
+            var shop = DataSourceFixtures.Shop();
+            var plan = Plan(first, new DataDropRequest(shop, shop.Table("orders")!, DataTableDropMode.Details, null, column: "item"), x: 600, y: 20);
+            var after = KbviewOutline.TryParse(Apply(first, plan))!;
+            var added = after.All().Where(e => e.XName is not null && e.XName.StartsWith("item_", StringComparison.Ordinal) && e.XName.EndsWith("1", StringComparison.Ordinal)).ToList();
+            var label = added.Single(e => e.Name == "Label");
+            var field = added.Single(e => e.Name != "Label");
+            Assert.AreEqual(fieldX - DataSourceDropPlanner.LabelWidth, label.Number("X"));
+            Assert.AreEqual(fieldX, field.Number("X"));
+            Assert.AreEqual(lastY + DataSourceDropPlanner.RowHeight, field.Number("Y"));
         }
     }
 }

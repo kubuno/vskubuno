@@ -141,7 +141,7 @@ namespace Kubuno.VisualStudio.Tests.DataSources
         public void DefaultControlsFollowWindowsForms()
         {
             var customers = DataSourceFixtures.Shop().Table("customers")!;
-            Assert.AreEqual(DataControlKind.Label, DataColumnKinds.DefaultControl(customers.Column("id")!), "a generated key is shown, not edited");
+            Assert.AreEqual(DataControlKind.TextField, DataColumnKinds.DefaultControl(customers.Column("id")!), "a generated key is a read-only text field (WinForms' ReadOnly TextBox)");
             Assert.AreEqual(DataControlKind.TextField, DataColumnKinds.DefaultControl(customers.Column("age")!));
             Assert.AreEqual(DataControlKind.TextField, DataColumnKinds.DefaultControl(customers.Column("birth_date")!));
             Assert.AreEqual(DataControlKind.CheckBox, DataColumnKinds.DefaultControl(customers.Column("vip")!));

@@ -77,7 +77,7 @@ namespace Kubuno.VisualStudio.Tests.DataSources
                 outline = KbviewOutline.TryParse(text)!;
                 Assert.IsNotNull(outline, text);
                 Assert.AreEqual(1, outline.All().Count(e => e.Name == "BindingSource"), "one binding source for the grid and the details");
-                Assert.AreEqual("id_value_label", outline.Find(details.SelectElementId)!.XName);
+                Assert.AreEqual("id_text_field", outline.Find(details.SelectElementId)!.XName);
                 Assert.AreEqual(outline.All().Count(e => e.XName != null), outline.Names().Count, "no duplicate x:Name");
                 AssertNoNewErrors(baseline, server.WaitDiagnostics(uri, 3), text);
 
