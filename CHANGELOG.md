@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **GradientField** in the `.kbview` designer: a Toolbox item with its own icon (two overlapping circles, the
   accent on the second) next to ColorField, the same default drop size, and override support for the new class.
-- **GradientField** in the `.kbview` designer: a Toolbox item with its own icon (two overlapping circles, the
-  accent on the second) next to ColorField, the same default drop size, and override support for the new class.
 - **Desktop migration foundations (lot F1, `docs/DESKTOP-MIGRATION.md`)** in the designer: Toolbox items with their
   own icons for **Repeater** (Data tab), **Sidebar**, **SidebarItem**, **SidebarSection**, **StatusBar** and
   **StatusLabel** (a new **Navigation** tab), **Avatar** and **PictureBox** (Display), **Popover** and

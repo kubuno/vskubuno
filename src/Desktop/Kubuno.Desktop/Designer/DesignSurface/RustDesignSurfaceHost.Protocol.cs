@@ -145,9 +145,6 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             proc.OutputDataReceived += OnSurfaceProtocolLine;
             proc.BeginOutputReadLine();
 
-            // The canvas around the view in the colours of Visual Studio's theme (and on every theme change).
-            SendCanvasTheme();
-
             // The designer options that change what the surface draws, before anything is drawn.
             SendLine(DesignSurfaceProtocol.EncodeSetDesignOptions(Options.DesignerOptionsHost.Current?.ShowDesignOutlines ?? true));
 
