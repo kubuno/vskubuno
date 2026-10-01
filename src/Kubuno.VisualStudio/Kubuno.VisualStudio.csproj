@@ -252,6 +252,13 @@
     <!-- The kubuno_ui build it imports: must be kubuno-views-ls.exe's (KubunoCheckToolExes). -->
     <KubunoDataToolUiDllName Condition="Exists('$(KubunoDataToolExePath)')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(KubunoDataToolExePath)')), 'kubuno_ui-[0-9a-f]{16}\.dll').Value)</KubunoDataToolUiDllName>
     <KubunoDataToolUiDllName Condition="'$(KubunoDataToolUiDllName)' == ''">kubuno_ui.dll</KubunoDataToolUiDllName>
+    <!--
+      kubuno-resources-tool.exe (docs/RESOURCES.md: import-locales, import-resx, check; crate kubuno-resources-tool of the desktop repo).
+      Shipped in tools\ so a developer can run it from a terminal. It imports only Rust's std-*.dll (not kubuno_ui), shipped beside it below:
+        cd Z:\src\desktop\windows ; cargo build -r -p kubuno-resources-tool
+      Override with /p:KubunoResourcesToolExePath=<path>.
+    -->
+    <KubunoResourcesToolExePath Condition="'$(KubunoResourcesToolExePath)' == ''">$(KubunoViewsLsDir)kubuno-resources-tool.exe</KubunoResourcesToolExePath>
     <KubunoRustStdDir Condition="'$(KubunoRustStdDir)' == ''">$(USERPROFILE)\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib\</KubunoRustStdDir>
     <!--
       kubuno-vs-mcp.exe (Kubuno.Core.Mcp, net8.0 - docs/MCP.md "Integration"). Default: this repo's own
@@ -339,6 +346,8 @@
            Text="kubuno-data-tool.exe imports $(KubunoDataToolUiDllName) but kubuno-views-ls.exe imports $(KubunoViewsLsUiDllName): they share tools\ and must come from the same cargo build (cargo build --release -p kubuno-views-ls -p kubuno-data-tool)." />
     <Error Condition="'@(KubunoRustStdDll)' == ''"
            Text="Rust's std-*.dll not found in '$(KubunoRustStdDir)'. kubuno-views-ls.exe imports it (-C prefer-dynamic); pass /p:KubunoRustStdDir=&lt;rustc --print sysroot&gt;\lib\rustlib\x86_64-pc-windows-msvc\lib\ for the toolchain that built it." />
+    <Error Condition="!Exists('$(KubunoResourcesToolExePath)')"
+           Text="kubuno-resources-tool.exe not found at '$(KubunoResourcesToolExePath)'. Build it from the desktop repo: cd Z:\src\desktop\windows ; cargo build --release -p kubuno-resources-tool -- or pass /p:KubunoResourcesToolExePath=&lt;path to kubuno-resources-tool.exe&gt;." />
     <Error Condition="!Exists('$(KubunoDataToolExePath)')"
            Text="kubuno-data-tool.exe not found at '$(KubunoDataToolExePath)'. Build it from the desktop repo in the SAME cargo build as kubuno-views-ls.exe (they share tools\kubuno_ui-&lt;hash&gt;.dll): cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -p kubuno-data-tool -- or pass /p:KubunoDataToolExePath=&lt;path to kubuno-data-tool.exe&gt;." />
   </Target>
@@ -354,6 +363,12 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>tools\kubuno-data-tool.exe</Link>
+    </Content>
+    <!-- docs/RESOURCES.md: the resources command-line tool (imports std-*.dll only). -->
+    <Content Include="$(KubunoResourcesToolExePath)" Condition="Exists('$(KubunoResourcesToolExePath)')">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\kubuno-resources-tool.exe</Link>
     </Content>
     <!-- kubuno-views-ls.exe's runtime DLLs - see KubunoViewsLsDir/KubunoRustStdDir above. -->
     <KubunoRustStdDll Include="$(KubunoRustStdDir)std-*.dll" />

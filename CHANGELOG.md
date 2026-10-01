@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The extension ships kubuno-resources-tool.exe** (docs/RESOURCES.md) in its `tools\` folder, next to the language server and the data tool: `import-locales`, `import-resx` and `check` can be run from a terminal without building the desktop workspace.
+
 - **Data bindings are first-class in the designer** (`docs/DESIGNER.md` §18): every bindable row of the Properties
   window now has a drop-down arrow in its value cell (categorised and alphabetical views alike) that opens a
   **binding picker** — the template's row, the view's data context (its `#[bind]` fields, a user control's
