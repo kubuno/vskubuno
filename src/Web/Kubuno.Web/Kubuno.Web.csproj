@@ -38,6 +38,33 @@
     <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- $(VsInstallRoot) is only defined by Microsoft.VsSDK.targets (VSIX projects): the Visual Studio running MSBuild. -->
+    <VsInstallRoot Condition="'$(VsInstallRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildBinPath)\..\..\..'))</VsInstallRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      WebView2 (docs/WEB-VIEWS.md, WV-9a spike): Visual Studio's OWN copy, compiled against and never shipped
+      (Private=False). devenv.exe.config redirects Microsoft.Web.WebView2.Core/Wpf 0.0.0.0-<its version> to the copy in
+      PrivateAssemblies, so building against that same file can neither bind to a second copy nor use an API newer than
+      the one loaded at run time (1.0.3967.48 in Visual Studio 18.0). Its WebView2Loader.dll sits next to it.
+    -->
+    <Reference Include="Microsoft.Web.WebView2.Core">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PrivateAssemblies\Microsoft.Web.WebView2.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Web.WebView2.Wpf">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\PrivateAssemblies\Microsoft.Web.WebView2.Wpf.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The spike surface's test page, served from the assembly (no network, nothing extra in the VSIX). -->
+    <EmbeddedResource Include="WebDesigner\Spike\Assets\**\*.*" LogicalName="WebSurfaceSpike/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
     <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />

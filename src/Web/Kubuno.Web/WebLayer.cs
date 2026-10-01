@@ -23,6 +23,10 @@ namespace Kubuno.Web
                 PackModuleCommand.Initialize(context.Package, commandService);
             }
 
+            // SPIKE (docs/WEB-VIEWS.md, WV-9a): the WebView2 design surface in a document pane, for .kbwebspike files
+            // (registered by KubunoPackage's [ProvideEditorFactory]; Visual Studio needs the live instance too).
+            context.RegisterEditorFactory(new WebDesigner.Spike.WebDesignSpikeEditorFactory());
+
             // The dialog gallery (docs/ARCHITECTURE.md, "Themed dialogs"): built only when the gallery opens.
             Kubuno.Core.UI.DialogGallery.Register("Kubuno Core Web: Multi-Repository Solution (RepositoryPickerDialog)", () => new RepositoryPickerDialog(@"Z:\src", new[]
             {

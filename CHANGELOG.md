@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Web design surface spike (WebView2 in a document pane)** (`docs/WEB-VIEWS.md` §11, lot WV-9a): opening a
+  `.kbwebspike` file (sample in `samples/web-design-spike`) shows a WebView2 design surface in the document well,
+  rendering a few Kubuno web elements with the production web fonts (Plus Jakarta Sans, Outfit, DM Mono, shipped with
+  their SIL OFL licences; pixel-identical to the live web app at 100 % and 175 %). Selection shows in the Properties
+  window and property edits update the page; Visual Studio's shortcuts keep working while the page has the focus
+  (Ctrl+S, Ctrl+Z/Ctrl+Y on the document's undo history, F4, F7, Ctrl+Shift+B, Del); Toolbox items drag onto the page
+  with an insertion marker; the page follows Visual Studio's theme live; a missing WebView2 runtime shows an info bar.
+  Uses Visual Studio's own WebView2 assemblies (nothing added to the VSIX) and a profile in
+  `%LOCALAPPDATA%\Kubuno\webview2\<hive>`. A prototype for the web view designer, not a feature.
+
 - **Shared `.kbview` specification for desktop and web views** (`docs/VIEWS-SPEC.md`, lot WV-0): the canonical
   element names (the desktop's) and their web components, the grammar (`x:` and `d:` attributes, attached
   properties, property elements, size-class suffixes), values and the theme-token styling rule with the web-only

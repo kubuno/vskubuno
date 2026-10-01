@@ -1,0 +1,11 @@
+<!-- WV-9a spike (docs/WEB-VIEWS.md): open in Visual Studio to get the WebView2 design surface. -->
+<Stack Direction="TopDown" Gap="12" Padding="20">
+  <Label Text="Notes settings" TextStyle="Title"/>
+  <Label Text="Edit the elements, drop Toolbox items, undo with Ctrl+Z." TextStyle="Caption"/>
+  <TextField Placeholder="Display name"/>
+  <CheckBox Text="Save automatically" Checked="true"/>
+  <Stack Direction="LeftToRight" Gap="8">
+    <Button Text="Save changes" Variant="Primary"/>
+    <Button Text="Cancel" Variant="Ghost"/>
+  </Stack>
+</Stack>

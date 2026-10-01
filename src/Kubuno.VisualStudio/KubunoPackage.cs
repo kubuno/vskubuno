@@ -150,7 +150,15 @@ namespace Kubuno.VisualStudio
     [ProvideToolWindow(typeof(Kubuno.Desktop.DataSources.DataSourcesToolWindow), Style = VsDockStyle.Tabbed, Window = "3AE79031-E1BC-11D0-8F78-00A0C9110057")]
     [ProvideOptionPage(typeof(Kubuno.Desktop.Options.DataOptionsPage), KubunoConstants.OptionsCategoryName, "Data", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.data")]
     [ProvideProfile(typeof(Kubuno.Desktop.Options.DataOptionsPage), KubunoConstants.OptionsCategoryName, "Data", 0, 0, isToolsOptionPage: true)]
-    // ---- Web layer (Kubuno.Web) and Mobile layer (Kubuno.Mobile): no registration yet. ----
+    // ---- Web layer (Kubuno.Web) ----
+    // SPIKE (docs/WEB-VIEWS.md, WV-9a): the WebView2 design surface in a document pane, the default (and only) editor of
+    // .kbwebspike files; Primary/Designer -> the surface, Code/TextView -> a code window on the same buffer (F7).
+    [ProvideEditorFactory(typeof(Kubuno.Web.WebDesigner.Spike.WebDesignSpikeEditorFactory), 112)]
+    [ProvideEditorLogicalView(typeof(Kubuno.Web.WebDesigner.Spike.WebDesignSpikeEditorFactory), "{7651a702-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
+    [ProvideEditorLogicalView(typeof(Kubuno.Web.WebDesigner.Spike.WebDesignSpikeEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
+    [ProvideEditorLogicalView(typeof(Kubuno.Web.WebDesigner.Spike.WebDesignSpikeEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
+    [ProvideEditorExtension(typeof(Kubuno.Web.WebDesigner.Spike.WebDesignSpikeEditorFactory), Kubuno.Web.WebDesigner.Spike.WebDesignSpikeConstants.FileExtension, 0x60)]
+    // ---- Mobile layer (Kubuno.Mobile): no registration yet. ----
     // ---- Every layer ----
     [ProvideSettingsManifest(PackageRelativeManifestFile = @"UnifiedSettings\kubuno.registration.json")]
     [ProvideMenuResource("Menus.ctmenu", 1)]

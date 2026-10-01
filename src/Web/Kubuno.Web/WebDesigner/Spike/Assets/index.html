@@ -1,0 +1,36 @@
+<!doctype html>
+<!--
+  SPIKE (docs/WEB-VIEWS.md, lot WV-9a): the test page of the WebView2 design surface. Served from Kubuno.Web.dll's
+  embedded resources (no network); it draws a few @kubuno/ui-like elements from the document's markup and the
+  designer adorners, and speaks the design surface protocol with Visual Studio (WebSurfaceProtocol).
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+  <title>Kubuno web design surface (spike)</title>
+  <link rel="stylesheet" href="surface.css">
+</head>
+<body>
+  <div id="canvas" aria-label="Design surface">
+    <div id="view" class="kb-view"></div>
+  </div>
+  <div id="adorners" aria-hidden="true">
+    <div id="hover" class="adorner hover"></div>
+    <div id="parent" class="adorner parent"></div>
+    <div id="selection" class="adorner selection">
+      <i class="grab nw"></i><i class="grab n"></i><i class="grab ne"></i><i class="grab e"></i>
+      <i class="grab se"></i><i class="grab s"></i><i class="grab sw"></i><i class="grab w"></i>
+    </div>
+    <div id="marker" class="marker"></div>
+  </div>
+  <div id="glass" tabindex="0" role="application" aria-label="Kubuno web design surface"></div>
+  <input id="inline-editor" type="text" spellcheck="false" autocomplete="off" aria-label="Edit text">
+  <div id="error" role="alert"></div>
+  <div id="specimen" class="offscreen" aria-hidden="true"></div>
+  <div id="status" aria-live="polite"></div>
+  <script src="font-probe.js"></script>
+  <script src="surface.js"></script>
+</body>
+</html>

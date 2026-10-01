@@ -1,0 +1,132 @@
+/* SPIKE (docs/WEB-VIEWS.md, WV-9a): Kubuno-like tokens for the test elements, plus the designer chrome drawn
+   with Visual Studio's theme colours (sent by the host in setVsTheme).
+
+   Fonts: the production faces of the Kubuno web app, byte-identical copies of core/frontend/public/fonts (SIL OFL 1.1,
+   licence texts in fonts/*-OFL.txt), declared exactly as core/frontend/src/index.css does, with the production stacks
+   (--font-family-sans of index.css, --font-family-mono of theme.css) and the production body/button weights and sizes.
+   Never a system UI face. Roboto (Apache 2.0, the third fallback of the stack) is not shipped yet: core has no licence
+   text for it (see the WV-9a findings). */
+@font-face { font-family: "Plus Jakarta Sans"; font-style: normal; font-weight: 200 800;
+  src: url("fonts/PlusJakartaSans.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Plus Jakarta Sans"; font-style: italic; font-weight: 200 800;
+  src: url("fonts/PlusJakartaSans-Italic.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Outfit"; font-style: normal; font-weight: 100 900;
+  src: url("fonts/Outfit.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "DM Mono"; font-style: normal; font-weight: 400;
+  src: url("fonts/DMMono-Regular.woff2") format("woff2"); font-display: block; }
+:root {
+  color-scheme: light dark;
+  /* Visual Studio chrome (overridden by setVsTheme). */
+  --vs-canvas: #f5f5f5;
+  --vs-text: #1e1e1e;
+  --vs-accent: #005fb8;
+  --vs-border: #cccccc;
+  --vs-panel: #ffffff;
+  /* Kubuno component tokens, light. */
+  --kb-surface: #ffffff;
+  --kb-text: #202124;
+  --kb-text-secondary: #5f6368;
+  --kb-border: #dadce0;
+  --kb-primary: #1a73e8;
+  --kb-primary-text: #ffffff;
+  --kb-hover: #f1f3f4;
+  --kb-danger: #d93025;
+  --kb-radius: 8px;
+  /* Production typography (core/frontend/src/index.css, theme.css). */
+  --font-family-sans: "Plus Jakarta Sans", Outfit, Roboto, Arial, sans-serif;
+  --font-family-mono: "DM Mono", "Fira Code", monospace;
+  --kb-text-meta: 11.5px;
+  --kb-text-body: 13.5px;
+  --kb-text-heading: 15.5px;
+  --kb-text-title: 21.5px;
+}
+:root[data-kb-theme="dark"] {
+  --kb-surface: #202124;
+  --kb-text: #e8eaed;
+  --kb-text-secondary: #9aa0a6;
+  --kb-border: #3c4043;
+  --kb-primary: #8ab4f8;
+  --kb-primary-text: #202124;
+  --kb-hover: #2d2e31;
+  --kb-danger: #f28b82;
+}
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--vs-canvas);
+  color: var(--vs-text);
+  font-family: var(--font-family-sans);
+  font-size: var(--kb-text-body);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+#canvas { position: absolute; inset: 0; overflow: auto; padding: 24px; box-sizing: border-box; }
+.kb-view {
+  display: inline-block;
+  min-width: 360px;
+  background: var(--kb-surface);
+  color: var(--kb-text);
+  border: 1px solid var(--vs-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+}
+.kb-stack { display: flex; box-sizing: border-box; min-height: 24px; min-width: 24px; }
+.kb-stack.empty { outline: 1px dashed var(--kb-border); outline-offset: -1px; }
+.kb-label { color: var(--kb-text); }
+.kb-label.caption { font-size: var(--kb-text-meta); color: var(--kb-text-secondary); }
+.kb-label.title { font-size: var(--kb-text-title); font-weight: 600; }
+.kb-label.heading { font-size: var(--kb-text-heading); font-weight: 600; }
+.kb-button {
+  font: inherit; font-family: var(--font-family-sans); font-weight: 500; border-radius: var(--kb-radius); padding: 6px 14px; cursor: default;
+  border: 1px solid var(--kb-border); background: var(--kb-surface); color: var(--kb-text);
+}
+.kb-button.primary { background: var(--kb-primary); border-color: var(--kb-primary); color: var(--kb-primary-text); }
+.kb-button.ghost { background: transparent; border-color: transparent; }
+.kb-button.text { background: transparent; border-color: transparent; color: var(--kb-primary); padding-inline: 4px; }
+.kb-button.danger { background: var(--kb-danger); border-color: var(--kb-danger); color: #fff; }
+.kb-button:disabled { opacity: .5; }
+.kb-textfield {
+  font: inherit; color: var(--kb-text); background: var(--kb-surface); border: 1px solid var(--kb-border);
+  border-radius: var(--kb-radius); padding: 6px 10px; min-width: 200px;
+}
+.kb-checkbox { display: inline-flex; align-items: center; gap: 6px; }
+.kb-checkbox input { accent-color: var(--kb-primary); margin: 0; }
+.kb-placeholder {
+  border: 1px dashed var(--kb-text-secondary); color: var(--kb-text-secondary); border-radius: 4px;
+  padding: 6px 10px; font-size: 12px; font-style: italic;
+}
+/* Input neutralisation: the glass takes every pointer event of the canvas while design mode is on. */
+#glass { position: absolute; inset: 0; outline: none; }
+#adorners { position: absolute; inset: 0; pointer-events: none; }
+.adorner { position: absolute; display: none; box-sizing: border-box; }
+.adorner.hover { border: 1px solid var(--vs-accent); opacity: .6; }
+.adorner.parent { border: 1px dashed var(--vs-accent); opacity: .55; }
+.adorner.selection { border: 1px solid var(--vs-accent); }
+.grab {
+  position: absolute; width: 7px; height: 7px; box-sizing: border-box;
+  background: var(--vs-panel); border: 1px solid var(--vs-accent);
+}
+.grab.nw { left: -4px; top: -4px; } .grab.n { left: calc(50% - 4px); top: -4px; } .grab.ne { right: -4px; top: -4px; }
+.grab.e { right: -4px; top: calc(50% - 4px); } .grab.se { right: -4px; bottom: -4px; } .grab.s { left: calc(50% - 4px); bottom: -4px; }
+.grab.sw { left: -4px; bottom: -4px; } .grab.w { left: -4px; top: calc(50% - 4px); }
+body.focused .adorner.selection { box-shadow: 0 0 0 1px var(--vs-accent); }
+.marker { position: absolute; display: none; background: var(--vs-accent); border-radius: 1px; }
+.marker.invalid { background: #c42b1c; }
+#inline-editor {
+  position: absolute; display: none; box-sizing: border-box; margin: 0; padding: 2px 4px; z-index: 5;
+  font: inherit; color: var(--kb-text); background: var(--kb-surface); border: 2px solid var(--vs-accent); outline: none;
+}
+#error {
+  position: absolute; left: 24px; right: 24px; bottom: 32px; display: none; padding: 8px 12px; z-index: 6;
+  background: #fde7e9; color: #a4262c; border: 1px solid #a4262c; font-size: 12px; white-space: pre-wrap;
+}
+#specimen {
+  position: absolute; right: 24px; top: 24px; display: none; z-index: 3; border: 1px solid var(--vs-border);
+  background: var(--kb-surface); color: var(--kb-text);
+}
+#specimen.offscreen { display: block; left: -10000px; right: auto; }
+#specimen.shown { display: block; left: 480px; right: auto; } /* integer device-pixel phase at 100/125/150/175 %, like the live probe's 24px */
+#status {
+  position: absolute; right: 6px; bottom: 4px; font-size: 11px; opacity: .65; color: var(--vs-text); z-index: 4;
+}
