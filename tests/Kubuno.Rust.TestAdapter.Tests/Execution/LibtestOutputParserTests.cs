@@ -123,5 +123,22 @@ namespace Kubuno.Rust.TestAdapter.Tests.Execution
 
             Assert.Equal(LibtestVerdict.Passed, outcomes["tests::mystery"].Verdict);
         }
+
+        [Theory]
+        [InlineData("\n")]
+        [InlineData("\r\n")]
+        [InlineData("\r\r\n")] // a CRLF line re-joined with Environment.NewLine by the runner
+        public void A_failing_test_is_Failed_whatever_the_line_endings(string eol)
+        {
+            string output = TestFixtures.ReadAllText("Execution", "fixture-crate-run-batch-pass-fail.txt")
+                .Replace("\r", string.Empty)
+                .Replace("\n", eol);
+
+            var outcomes = LibtestOutputParser.Parse(output, new[] { "tests::it_passes", "tests::it_fails" });
+
+            Assert.Equal(LibtestVerdict.Failed, outcomes["tests::it_fails"].Verdict);
+            Assert.Contains("math is broken", outcomes["tests::it_fails"].ErrorMessage);
+            Assert.Equal(LibtestVerdict.Passed, outcomes["tests::it_passes"].Verdict);
+        }
     }
 }

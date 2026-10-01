@@ -91,6 +91,11 @@ namespace Kubuno.Rust.TestAdapter.Execution
                 throw new ArgumentNullException(nameof(requestedNames));
             }
 
+            // Normalize line endings first: the runner re-joins process lines with Environment.NewLine, so a line that
+            // already ends in CR (CRLF-checked-out captures, a child writing CRLF) became CR CR LF and the optional-CR
+            // patterns below silently missed the failures block - a failed test was then reported Passed.
+            combinedOutput = combinedOutput.Replace("\r", string.Empty);
+
             HashSet<string> failed = ParseFailedNames(combinedOutput);
             HashSet<string> ignored = ParseIgnoredNames(combinedOutput);
             Dictionary<string, (string Message, string Location)> panics = ParsePanics(combinedOutput);
