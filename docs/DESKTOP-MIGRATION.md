@@ -1,0 +1,41 @@
+# Migrating the Kubuno desktop apps to `.kbview` views
+
+Goal (user request, 2026-09-30): every existing Kubuno desktop app (shell, chat, documents, drive) must be
+editable and buildable in Visual Studio, **views included**, rewriting code where needed, and fixing whatever is
+missing in `kubuno_ui`, the `kubuno-views` runtime, the facade and the VSIX along the way.
+
+Sources: the four audits of 2026-09-30 (chat+shell, documents, drive, VS build) and `docs/RIBBON.md`.
+
+## Done
+
+| Item | Where |
+|---|---|
+| The desktop workspace opens/builds/runs/debugs in VS: `Kubuno.Core.Desktop.slnx`, one `.rsproj` per crate, workspace-scoped cargo build, Test Explorer (2923 tests) | vskubuno 56308dd, `docs/RSPROJ.md`, `docs/GETTING-STARTED.md` |
+| Kubuno windows faithful to the web FloatingWindow; every WinForms window kind (dialog, tool, borderless, splash, owned, MDI, flyout, in-window dialog); title-bar slots, custom caption buttons, backdrop, message hooks, live theme | vskubuno 4596fc0 |
+| Web docking ported (`DockArea`, `DockPanel`, `WorkspaceShell`, `MenuBar`), pixel-checked against the web | vskubuno 3cd9a6e |
+| Ribbon design (every element a control, `Command` component, scaling policies, designer UX) | `docs/RIBBON.md` |
+| In progress: build-hash-named `kubuno_ui-<hash>.dll` | — |
+| App lot 1, **chat** (2026-10-01): `Application::run(ChatWindow)`; `chat_window.kbview` (title bar, rail, panes) + user controls `ConversationListPane` (Repeater of `ConversationRow`), `ConversationPane` (header, `MessageThread`, composer, empty state, its two menus); `MessageThread` custom control in the crate's lib target; `UiDispatcher` instead of `WM_CHAT`; `WM_COPYDATA` through `Form::on_message`; resources fr/en; 19 tests (state, view model, protocol, API parsing, MessageThread layout). Design build links a package's lib target. | desktop `src/chat`, vskubuno `DesignProjectCrate` |
+
+Decisions: the desktop keeps the system font (Plus Jakarta Sans stays web-only); property-element syntax
+(`<RibbonTab.ScalingPolicy>`) is adopted in `.kbview`; drive code ported from Files stays MIT-noticed when it moves
+into AGPL crates.
+
+## Foundations (ordered)
+
+| Lot | Content | Needed by |
+|---|---|---|
+| F1 | `kubuno-views` gaps: **repeater** (`ItemsSource` + `ItemTemplate` UserControl, virtualised), **typed access to custom controls** (typed fields / `with::<T>()`, list/object properties) incl. **controls from other crates**, **sub-menus** (MenuItem children, icons, separators, programmatic `show`), `Sidebar`/NavigationView, `StatusBar`/`StatusLabel`, `Avatar`/`PictureBox`, `Popover`/Flyout element, Stack wrap/fill + `TableLayoutPanel`, bindable `ForeColor`/`BackColor`, `ItemHeight`, auto-growing `TextArea`, Splitter drag, DataTable paging/density/loading | chat, shell, drive |
+| F2 | Localisation in views (`{Res Key}` + design-time language) — **done 2026-10-01**: `.kbres` resource files, `kubuno::resources!`, live culture switch, resource editor, Select Resource dialog, drive `.resw` converter (`docs/RESOURCES.md`; drive itself not migrated yet) | drive (49 languages), all |
+| F3 | Virtual regions (a node exposes selectable/routable sub-element rects) + binding of structural children | ribbon, toolbar, tabs |
+| F4 | Ribbon family RIB-1..8 (`docs/RIBBON.md`) + `Command` component + smart-tag infrastructure in vskubuno | documents |
+| F5 | `kubuno-canvas` crate extracted from `drive-app-controls` (canvas, renderer, geometry, themes, themed icons) | drive, whole stack |
+
+## Apps (ordered)
+
+1. **chat** — `Application::run`, 3 views, `MessageThread` custom control in a lib target, dispatcher instead of `WM_CHAT`.
+2. **shell** — window + header + rail + pages, then flyouts (waffle, user panel), then admin console.
+3. **documents** — `PageCanvas`/`Ruler` custom controls, `main_view.kbview` with the ribbon, backstage.
+4. **drive** — one `.kbview` UserControl per Files XAML UserControl (navigation/address toolbar, sidebar, status bar, info-pane sections, Home widgets QuickAccess/Drives/RecentFiles, settings cards/expanders, property pages), reused across views like in Files; dialogs and Properties first, main window on the host wrapping the current engine, then region by region; `FileItemsView`/`ColumnsView` custom controls; one `.kbview` per Files `.xaml`.
+
+Each app lot: before/after screenshots (dark/light, 100 % and 175 %), UIA check, opens in the VS designer, F5.
