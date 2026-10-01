@@ -420,6 +420,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- The View Designer's canvas around the view kept its dark grey after switching Visual Studio to a light theme:
+  it now follows the theme's designer background, live, like the Windows Forms designer's.
+- A custom control declared in another crate of the application (a path dependency of the project, e.g. its
+  control library) is listed in the Toolbox's "<Project> Composants" tab like the project's own controls,
+  without going through *Choisir des éléments…*.
 - **Light-blue boxes around every control in the View Designer**: *Debug › Kubuno › Paint debug*, a setting that
   is remembered, also reached the design surfaces, whose layout overlay framed each Label, TextField, grid and
   navigator. The overlay is now for running applications only; a design surface never inherits it, and controls

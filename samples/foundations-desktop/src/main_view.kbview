@@ -62,6 +62,15 @@
     </TabItem>
     <TabItem Header="Personnes">
       <Panel x:Name="people_page" Padding="16">
+        <!-- Declared first: a Popover paints above the whole view wherever it is declared. -->
+        <Popover x:Name="profile" Target="profile_button" IsOpen="{Binding ProfileOpen, Mode=TwoWay}" Placement="Bottom" PopupWidth="280" PopupHeight="132" OnClosed="profile_closed" X="640" Y="16" Width="280" Height="132">
+          <Panel Padding="12">
+            <Avatar DisplayName="Martinien Olinga" Presence="Online" AvatarSize="48" X="16" Y="16" Width="48" Height="48"/>
+            <Label Text="Martinien Olinga" Role="Heading" X="76" Y="18" Width="190" Height="20"/>
+            <Label Text="admin@kubuno.local" Role="Meta" X="76" Y="40" Width="190" Height="18"/>
+            <Button x:Name="sign_out" Text="Se déconnecter" Variant="Ghost" OnClick="sign_out_click" X="16" Y="84" Width="248" Height="32"/>
+          </Panel>
+        </Popover>
         <Label Text="Avatars" Role="Heading" X="16" Y="16" Width="300" Height="24"/>
         <Avatar x:Name="me" DisplayName="Martinien Olinga" Presence="Online" AvatarSize="56" X="16" Y="48" Width="56" Height="56"/>
         <Avatar DisplayName="Alice Martin" Presence="Away" AvatarSize="40" X="88" Y="56" Width="40" Height="40"/>
@@ -82,6 +91,14 @@
             <MenuItem Text="Nom" RadioGroup="sort" Checked="true" OnCheckedChanged="sort_changed"/>
             <MenuItem Text="Date" RadioGroup="sort" OnCheckedChanged="sort_changed"/>
             <MenuItem Text="Taille" RadioGroup="sort" OnCheckedChanged="sort_changed"/>
+            <MenuItem Kind="Separator"/>
+            <MenuItem Text="Plus de critères" Icon="ListFilter">
+              <MenuItem Text="Auteur" RadioGroup="sort" OnCheckedChanged="sort_changed"/>
+              <MenuItem Text="Type">
+                <MenuItem Text="Documents d'abord" RadioGroup="sort" OnCheckedChanged="sort_changed"/>
+                <MenuItem Text="Images d'abord" RadioGroup="sort" OnCheckedChanged="sort_changed"/>
+              </MenuItem>
+            </MenuItem>
           </MenuItem>
           <MenuItem Text="Fichiers masqués" CheckOnClick="true" Checked="{Binding ShowHidden, Mode=TwoWay}"/>
           <MenuItem Kind="Separator"/>
@@ -94,14 +111,6 @@
           <MenuItem Text="-"/>
           <MenuItem Text="Supprimer" Icon="Trash2" Danger="true" OnClick="delete_click"/>
         </ContextMenu>
-        <Popover x:Name="profile" Target="profile_button" IsOpen="{Binding ProfileOpen, Mode=TwoWay}" Placement="Bottom" PopupWidth="280" PopupHeight="132" OnClosed="profile_closed" X="640" Y="16" Width="280" Height="132">
-          <Panel Padding="12">
-            <Avatar DisplayName="Martinien Olinga" Presence="Online" AvatarSize="48" X="16" Y="16" Width="48" Height="48"/>
-            <Label Text="Martinien Olinga" Role="Heading" X="76" Y="18" Width="190" Height="20"/>
-            <Label Text="admin@kubuno.local" Role="Meta" X="76" Y="40" Width="190" Height="18"/>
-            <Button x:Name="sign_out" Text="Se déconnecter" Variant="Ghost" OnClick="sign_out_click" X="16" Y="84" Width="248" Height="32"/>
-          </Panel>
-        </Popover>
       </Panel>
     </TabItem>
     <TabItem Header="Formulaire">

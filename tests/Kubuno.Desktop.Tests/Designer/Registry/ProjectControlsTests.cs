@@ -145,6 +145,29 @@ namespace Kubuno.Desktop.Tests.Designer.Registry
             Assert.AreEqual(0, ProjectComponentsFile.ReadLinked(path + ".missing").Count);
         }
 
+        [TestMethod]
+        public void TheApplicationsOwnControlLibrariesAreItsPathAndWorkspaceDependencies()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "kubuno-appdeps-" + Guid.NewGuid().ToString("N"));
+            var app = Path.Combine(root, "apps", "chat");
+            Directory.CreateDirectory(app);
+            File.WriteAllText(Path.Combine(root, "Cargo.toml"), "[workspace]\nmembers = [\"apps/*\"]\n\n[workspace.dependencies]\nchat-controls = { path = \"libs/chat-controls\" }\nserde = \"1\"\n");
+            File.WriteAllText(
+                Path.Combine(app, "Cargo.toml"),
+                "[package]\nname = \"chat\"\n\n[dependencies]\n# A comment = \"x\"\nkubuno = { path = \"../../kubuno\" }\nfoundations-controls = { path = \"controls\" }\nrenamed = { package = \"ui-kit\", path = \"../ui\" }\nchat-controls.workspace = true\nserde = { workspace = true }\nregex = \"1\"\n\n[dev-dependencies]\ntest-helpers = { path = \"../h\" }\n");
+            try
+            {
+                var crates = ProjectComponentsFile.ApplicationDependencyCrates(Path.Combine(app, "Cargo.toml"));
+                CollectionAssert.AreEquivalent(new[] { "foundations_controls", "ui_kit", "chat_controls" }, crates.ToList());
+                Assert.AreEqual("foundations_controls", ProjectComponentsFile.Normalize("foundations-controls"));
+                Assert.AreEqual(0, ProjectComponentsFile.ApplicationDependencyCrates(Path.Combine(app, "missing.toml")).Count);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
         private sealed class Host : IKbviewElementHost
         {
             private readonly string _text;

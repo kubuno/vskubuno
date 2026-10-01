@@ -198,8 +198,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
             var linked = ProjectComponentsFile.ReadLinked(path);
             var chosen = ToolboxChoices.Read(runtime.ProjectKey);
+            // The application's own control libraries (its path dependencies) are listed like its own controls.
+            var appCrates = ProjectComponentsFile.ApplicationDependencyCrates(runtime.ProjectKey);
             var shown = linked
-                .Where(c => string.Equals(c.CrateName, runtime.ProjectCrate, StringComparison.Ordinal) || chosen.Contains(ProjectComponentsFile.ChoiceKey(c)))
+                .Where(c => string.Equals(c.CrateName, runtime.ProjectCrate, StringComparison.Ordinal)
+                    || appCrates.Contains(ProjectComponentsFile.Normalize(c.CrateName))
+                    || chosen.Contains(ProjectComponentsFile.ChoiceKey(c)))
                 .ToList();
             LogProjectToolbox($"{linked.Count} linked control(s) in {path}, {shown.Count} shown (crate {runtime.ProjectCrate})");
             NativeToolboxInstaller.SetProjectComponents(DesignerText.ProjectToolboxTabName(runtime.ProjectName ?? runtime.ProjectCrate ?? "Project"), shown);
