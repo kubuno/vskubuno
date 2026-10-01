@@ -514,3 +514,28 @@ Found while freezing the spec against the real desktop registry:
 - The registry JSON keys are snake_case: `prop_map`, `event_map`, `children_to_prop`, `dom_root` (not `propMap`…).
 - The web registry is one file in `@kubuno/ui` covering the `@ui` **and** sdk elements (each with its `module`),
   not one file per package.
+
+## Module isolation (user requirement, 2026-10-01) — normative
+
+Kubuno web modules **never import functions, components or types from one another** in the classic programming sense
+(no `import … from '<other-module>'`, no shared source, no project/package references between module repos). The only
+shared code is the host-provided singletons resolved through the import map (`@kubuno/ui`, `@kubuno/sdk`,
+`@kubuno/drive`, and — new — `@kubuno/views`), and cross-module collaboration goes exclusively through the core's
+extension points (ExtensionRegistry, ModuleServiceRegistry, event bus, routes). Views must not break this:
+
+1. **Generated code** (Vite plugin output, `.d.ts`, `ViewBase`) may only import the module's own files and the
+   `@kubuno/*` host singletons. The compiler rejects (error, not warning) any element, control or code-behind that would
+   resolve to another module.
+2. **Element registry is layered and dynamic**: host elements (from `@kubuno/ui`/`@kubuno/views`) + the module's own
+   custom controls/user controls, registered at **runtime** by the module when it loads (`registerElements()` through
+   `@kubuno/views`), never statically linked from another module. A view can only use host elements and its own
+   module's elements.
+3. **Cross-module UI** uses an extension slot element, e.g. `<ExtensionSlot Point="drive.file-actions" …/>`, rendered
+   by whatever modules contributed to that point at runtime (possibly none); the designer shows a placeholder listing
+   the currently known contributors. No element of module A is ever placed directly in a view of module B.
+4. **Visual Studio**: a multi-repo solution may group the core and several modules, but generates **no project or
+   package reference between modules**; each module builds alone against the published `@kubuno/*` packages and the
+   shared crates' git tags. The designer Toolbox for a module shows host elements + that module's own controls only
+   (+ extension slots), never another module's controls.
+5. **Desktop parity**: the same rule holds for desktop modules/apps — reuse goes through `kubuno_ui`/`kubuno-views`
+   (the shared "host" layer) or through module services, never through one app's crate depending on another's.
