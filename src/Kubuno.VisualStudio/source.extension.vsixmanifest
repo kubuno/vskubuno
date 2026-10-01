@@ -62,6 +62,8 @@
         <!-- The desktop target's CPS exports in a .rsproj (the .kbview default editor and icon). -->
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Desktop.ProjectSystem" Path="|Kubuno.Desktop.ProjectSystem|" />
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Web" Path="|Kubuno.Web|" />
+        <!-- docs/WEB.md: the web target's CPS exports (F5 of a Kubuno core or module .rsproj, KubunoWebDebugLaunchProvider). -->
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Web.ProjectSystem" Path="|Kubuno.Web.ProjectSystem|" />
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Mobile" Path="|Kubuno.Mobile|" />
         <!--
           Kubuno.Rust.TestAdapter's own INTEGRATION.md #3.2: two registrations for the SAME assembly

@@ -1,0 +1,9 @@
+# $moduletitle$ - local configuration for running the module OUTSIDE the core (cargo run). Under a core - F5 in
+# Visual Studio, or an installed instance - the core starts the module and gives it everything through the
+# environment (KUBUNO_INTERNAL_SECRET, KUBUNO_DB_HOST/PORT/USER/PASSWORD/NAME...): this file is not read then.
+# Copy the values you need into environment variables; never commit real credentials.
+
+DATABASE_URL = "postgres://kubuno:<password>@127.0.0.1:5432/kubuno_dev"
+KUBUNO_INTERNAL_SECRET = "change-me"
+PORT = "3199"
+RUST_LOG = "info,$moduleid$=debug"

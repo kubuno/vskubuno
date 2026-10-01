@@ -296,9 +296,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **IntelliSense for the inherited properties**: completion and hover in `.kbview` files now offer every inherited
   property (and the view's own on the root element), say which level it comes from, and note older names.
 
+- **The Kubuno core and web modules in Visual Studio** (`docs/WEB.md`). **Tools > Kubuno Core Web: Generate Solution**
+  turns the core or a module repository into a solution: one `.rsproj` per Cargo package, the frontend as a Visual
+  Studio JavaScript project (`.esproj`, npm/Vite build, TypeScript IntelliSense, browser debugging through
+  `launch.json`), a `.slnx` (`Kubuno.Core.Web.slnx`, `Kubuno.<Module>.slnx`) and shared multi-project launch profiles
+  (`.slnLaunch`). **Generate Multi-Repository Solution...** puts the core and the chosen modules in one
+  solution, with Visual Studio's Git tooling following every repository.
+- **F5 on the core** starts a development core of this machine (`%LOCALAPPDATA%\Kubuno\dev-core`, configured by
+  environment only, no file written) under the debugger; with the frontend project, Vite's dev server and Edge with
+  the script debugger. **F5 on a module** builds the backend and the frontend, deploys them into the dev core (the
+  Windows `deploy_local.sh`), starts the core, attaches the debugger to every module process the core starts and
+  opens the browser on the module; the module's frontend project rebuilds its bundle into the running core on save.
+- **Development database guard**: a core started from Visual Studio connects only to the database named by
+  `KUBUNO_DEV_DATABASE_URL`, and refuses one whose name does not look like a development database (`kubuno_dev`,
+  `kubuno_test`...) unless `KUBUNO_DEV_ALLOW_ANY_DATABASE=1` - the core migrates its database at startup. The
+  password is never shown. `msbuild <project>.rsproj -t:KubunoCheckDevDatabase` gives the same verdict.
+- **Frontends on the Linux server's checkouts build on Windows**: when `node_modules` was installed by Linux, it is
+  left untouched and the Windows builds of its native packages (rolldown, lightningcss, Tailwind's oxide) come from a
+  local overlay, with `.cmd` shims for its commands; Node.js comes from Visual Studio when none is installed.
+- **Kubuno.Web.Sdk** 1.0.0, an additional MSBuild SDK shipped with the extension: the web roles of a `.rsproj`/`.esproj`,
+  `SQLX_OFFLINE` for a package with a `.sqlx` cache, and the command-line targets `KubunoDeployModule` and
+  `KubunoPackModule` (`dist\<id>-<version>-windows-x86_64.kbpkg`, with `SHA256SUMS`, like `build_kbpkg.sh`).
+- **Tools > Kubuno Core Web: Package Module (.kbpkg)**, **Check Versions** (`_tools/check_versions.py`, or its built-in checks
+  when Python is not installed), **Prepare npm Floors...** and **Prepare Shared Crate Tags...** (the edits of
+  `bump_npm_floors.sh` and `bump_shared_crates.sh`, shown and confirmed first; nothing is committed, tagged or pushed).
 ### Changed
 
 - **Kubuno programs never load a `kubuno_ui` library of another build** (`docs/DESIGNER.md`, section 16): every
+- **Kubuno Core Desktop and Kubuno Core Web are named apart in Visual Studio**: the desktop workspace solution is `Kubuno.Core.Desktop.slnx`, the web server solution `Kubuno.Core.Web.slnx`; the docs follow.
+
+- The **"Kubuno Module"** project template is now **"Kubuno Core Web Module"**, laid out like today's modules: the
+  backend `.rsproj` with Kubuno.Web.Sdk (`kubuno-<id>` package, shared crates by git tag, sqlx 0.9, the `KUBUNO_*`
+  environment the core gives a module, migrations in the module's own schema), the frontend `.esproj` (Vite 8,
+  React 19, TypeScript 6, Tailwind v4 in the `kubuno-module` layer, `@kubuno/*` at the published versions) added to
+  the solution with the backend depending on it, `module.toml`, `build_kbpkg.sh`, an English README and CHANGELOG.
+- **Kubuno Core Web and Kubuno Core Desktop are named apart**: "Generate Visual Studio Projects" names a new solution
+  `Kubuno.Core.Web.slnx` for the web server's repository, `Kubuno.Core.Desktop.slnx` for the desktop workspace and
+  `Kubuno.<Module>.slnx` for a module; the desktop templates are tagged "Kubuno Core Desktop" in Create a new project
+  ("Kubuno Core Desktop Application") and Add New Item ("Kubuno Form (Kubuno Core Desktop)"...), the module template
+  "Kubuno Core Web"; template IDs are unchanged. In Solution Explorer, the Kubuno Core Web server project and module
+  backends get web icons.
+- A **library crate's `.rsproj` can no longer be started** (Start and Start Without Debugging are disabled for it)
+  instead of failing with a modal "the Rust executable ... does not exist" message; the web solutions make the
+  program (`kubuno-core`, a module's backend) the startup project.
+
   build of the Kubuno desktop library is now named `kubuno_ui-<hash>.dll` and each program imports its own, so the
   « Point d'entrée introuvable … kubuno_ui » dialog cannot happen any more and a missing library is reported under
   its own name. The extension follows: F5 and the debugger find the library and its symbols in the build's `deps`

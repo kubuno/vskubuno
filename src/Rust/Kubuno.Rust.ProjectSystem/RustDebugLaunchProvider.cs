@@ -49,7 +49,17 @@ namespace Kubuno.Rust.ProjectSystem
         {
         }
 
-        public override Task<bool> CanLaunchAsync(DebugLaunchOptions launchOptions) => Task.FromResult(true);
+        /// <summary>
+        /// A library crate (no <c>[[bin]]</c>, no <c>src/main.rs</c> - Kubuno.Rust.Sdk's <c>_KubunoHasBin</c>) has nothing to
+        /// run: Start and Start Without Debugging are disabled for it instead of failing with a modal "executable does
+        /// not exist" message.
+        /// </summary>
+        public override async Task<bool> CanLaunchAsync(DebugLaunchOptions launchOptions)
+        {
+            var properties = ConfiguredProject.Services.ProjectPropertiesProvider!.GetCommonProperties();
+            var hasBin = await properties.GetEvaluatedPropertyValueAsync("_KubunoHasBin").ConfigureAwait(false);
+            return string.Equals(hasBin, "true", StringComparison.OrdinalIgnoreCase);
+        }
 
         public override async Task<IReadOnlyList<IDebugLaunchSettings>> QueryDebugTargetsAsync(DebugLaunchOptions launchOptions)
         {

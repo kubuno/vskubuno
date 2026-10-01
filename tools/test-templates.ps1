@@ -1,6 +1,6 @@
 <#
   Pre-release check of the "Create a new project" templates (docs/RSPROJ.md, "Template build check"):
-  instantiates every project template of src/Rust/Kubuno.Rust/ProjectTemplates and src/Desktop/Kubuno.Desktop/ProjectTemplates into a fresh folder on
+  instantiates every project template of src/Rust/Kubuno.Rust/ProjectTemplates, src/Desktop/Kubuno.Desktop/ProjectTemplates and src/Web/Kubuno.Web/ProjectTemplates into a fresh folder on
   a local disk, the way Visual Studio does (same files, same $token$ replacements, including the ones
   Kubuno.Rust.TemplateWizard and Kubuno.Desktop.TemplateWizard add), then builds each one:
 
@@ -34,7 +34,7 @@ Set-StrictMode -Version 2
 
 $repo = Split-Path -Parent $PSScriptRoot
 # Each layer ships its own templates (docs/ARCHITECTURE.md, "Layers (as built)"): the Rust ones and the desktop ones.
-$templatesRoots = @((Join-Path $repo 'src\Rust\Kubuno.Rust\ProjectTemplates'), (Join-Path $repo 'src\Desktop\Kubuno.Desktop\ProjectTemplates'))
+$templatesRoots = @((Join-Path $repo 'src\Rust\Kubuno.Rust\ProjectTemplates'), (Join-Path $repo 'src\Desktop\Kubuno.Desktop\ProjectTemplates'), (Join-Path $repo 'src\Web\Kubuno.Web\ProjectTemplates'))
 
 # The user's full PATH (machine + user), so cargo is found from any shell.
 $env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User') + ';' + $env:PATH
@@ -106,6 +106,34 @@ function New-FromTemplate([string]$vstemplatePath, [string]$projectName, [string
         '$cratename$'        = $crate
         '$moduleid$'         = $crate.Replace('-', '_')
         '$kubunodesktopsrc$' = (Resolve-DesktopSource $DesktopSrc)
+    }
+    # The web module template's wizard (Kubuno.Web.TemplateWizard / ModuleTemplateTokens): same rules and fallbacks.
+    if ($xml.VSTemplate.WizardExtension.FullClassName -eq 'Kubuno.Web.TemplateWizard.ModuleWizard') {
+        $id = (($projectName.ToLowerInvariant().ToCharArray() | Where-Object { ($_ -ge 'a' -and $_ -le 'z') -or ($_ -ge '0' -and $_ -le '9') }) -join '')
+        if (-not $id) { $id = 'module' } elseif ($id[0] -lt 'a' -or $id[0] -gt 'z') { $id = 'm' + $id }
+        $crate = "kubuno-$id"
+        $tokens['$moduleid$'] = $id
+        $tokens['$cratename$'] = $crate
+        $tokens['$moduletitle$'] = $projectName
+        $tokens['$kubunouiversion$'] = '0.1.12'
+        $tokens['$kubunosdkversion$'] = '0.1.10'
+        $tokens['$kubunodriveversion$'] = '0.1.7'
+        $tokens['$seccomptag$'] = 'seccomp-v0.1.1'
+        $tokens['$dbtag$'] = 'db-v0.9.0'
+    }
+    # The web module template's wizard (Kubuno.Web.TemplateWizard / ModuleTemplateTokens): same rules and fallbacks.
+    if ($xml.VSTemplate.WizardExtension.FullClassName -eq 'Kubuno.Web.TemplateWizard.ModuleWizard') {
+        $id = (($projectName.ToLowerInvariant().ToCharArray() | Where-Object { ($_ -ge 'a' -and $_ -le 'z') -or ($_ -ge '0' -and $_ -le '9') }) -join '')
+        if (-not $id) { $id = 'module' } elseif ($id[0] -lt 'a' -or $id[0] -gt 'z') { $id = 'm' + $id }
+        $crate = "kubuno-$id"
+        $tokens['$moduleid$'] = $id
+        $tokens['$cratename$'] = $crate
+        $tokens['$moduletitle$'] = $projectName
+        $tokens['$kubunouiversion$'] = '0.1.12'
+        $tokens['$kubunosdkversion$'] = '0.1.10'
+        $tokens['$kubunodriveversion$'] = '0.1.7'
+        $tokens['$seccomptag$'] = 'seccomp-v0.1.1'
+        $tokens['$dbtag$'] = 'db-v0.9.0'
     }
     $projectDir = Join-Path $solutionDir $projectName
     New-Item -ItemType Directory -Force $projectDir | Out-Null

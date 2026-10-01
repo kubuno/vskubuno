@@ -1,0 +1,33 @@
+[package]
+name        = "$cratename$"
+version     = "0.1.0"
+edition     = "2021"
+description = "Kubuno $moduletitle$ - a Kubuno module."
+license     = "AGPL-3.0"
+
+[[bin]]
+name = "$cratename$"
+path = "src/main.rs"
+
+[dependencies]
+# Shared crates come from the core repository by git TAG (never a path, never vendored): a module never links
+# the core itself. `bash _tools/bump_shared_crates.sh` (or Tools > Kubuno Core Web: Prepare Shared Crate Tags) moves them.
+kubuno-seccomp = { git = "https://github.com/kubuno/core", tag = "$seccomptag$", package = "kubuno-seccomp" }
+
+axum               = { version = "0.7", features = ["macros"] }
+tokio              = { version = "1", features = ["full"] }
+tower              = "0.5"
+tower-http         = { version = "0.6", features = ["trace", "set-header"] }
+# PostgreSQL only, with a schema of its own. The real modules open their pool through kubuno-db
+# (git = "https://github.com/kubuno/core", tag = "$dbtag$") to support MySQL/SQLite too.
+sqlx               = { version = "0.9", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "migrate", "macros"] }
+serde              = { version = "1", features = ["derive"] }
+serde_json         = "1"
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow             = "1"
+uuid               = { version = "1", features = ["v4", "serde"] }
+chrono             = { version = "0.4", features = ["serde"] }
+
+# A repository of its own: its own workspace (like every module of the polyrepo).
+[workspace]

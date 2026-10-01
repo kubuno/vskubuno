@@ -6,13 +6,14 @@
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Flyout</Name>
+    <Name>Kubuno Flyout (Kubuno Core Desktop)</Name>
     <Description>A flyout: a small borderless window with rounded corners and the Acrylic material, shown at a point of the screen; it closes when the user clicks outside it.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoFlyout</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>18</SortOrder>
     <DefaultName>NewFlyout.kbview</DefaultName>

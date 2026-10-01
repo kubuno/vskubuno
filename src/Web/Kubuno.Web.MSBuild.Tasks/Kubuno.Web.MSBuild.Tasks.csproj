@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The MSBuild tasks of the Kubuno.Web.Sdk NuGet package (sdk/Kubuno.Web.Sdk, docs/WEB.md): the frontend's node
+    environment (KubunoPrepareNode), the module deployment into the dev core (KubunoDeployModule), .kbpkg packaging
+    (KubunoPackModule), the development database check (KubunoCheckDevDatabase) and SQLX_OFFLINE
+    (KubunoSetProcessEnvironment). Thin wrappers over Kubuno.Web.Logic, which Visual Studio's F5 uses too: one
+    implementation for the IDE and the command line.
+
+    Multi-targeted net472/net10.0 like Kubuno.Cargo.MSBuild.Tasks (same reasons: Visual Studio's MSBuild.exe and
+    `dotnet build`; loaded from the local NuGet cache, never from the Z: share).
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net472;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Web.MSBuild.Tasks</RootNamespace>
+    <AssemblyName>Kubuno.Web.MSBuild.Tasks</AssemblyName>
+    <GenerateDependencyFile Condition="'$(TargetFramework)' == 'net472'">false</GenerateDependencyFile>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <!-- Same advisory as Kubuno.Cargo.MSBuild.Tasks (compile-time-only package, never shipped). -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.8" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kubuno.Web.Logic\Kubuno.Web.Logic.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,16 +1,46 @@
 using Kubuno.Core.Extensibility;
+using Kubuno.Web.Commands;
+using Microsoft.VisualStudio.Shell;
 
 namespace Kubuno.Web
 {
     /// <summary>
-    /// The web layer's part of the package (docs/ARCHITECTURE.md, "Roadmap - Kubuno web modules in the same VSIX"):
-    /// registered with the package today, with no feature yet. The hooks of <see cref="KubunoLayer"/> are where the web
-    /// module features will start (see README.md): the <c>module.toml</c> tooling and the <c>.kbpkg</c> commands in
-    /// <see cref="KubunoLayer.InitializeOnUIThread"/>, the local core deployment in
-    /// <see cref="KubunoLayer.InitializeDeferredAsync"/>...
+    /// The web layer's part of the package (docs/WEB.md): the Tools menu commands of the Kubuno core and web modules -
+    /// web solution generation (single repository and multi-repository), the version tools, module packaging. F5 is
+    /// Kubuno.Web.ProjectSystem's debug launch provider (a MEF part, no package code); the build is Kubuno.Web.Sdk's.
     /// </summary>
     public sealed class WebLayer : KubunoLayer
     {
         public override string Name => "Web";
+
+        public override void InitializeOnUIThread(KubunoLayerContext context)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (context.CommandService is { } commandService)
+            {
+                WebSolutionCommands.Initialize(context.Package, commandService);
+                VersionCommands.Initialize(context.Package, commandService);
+                PackModuleCommand.Initialize(context.Package, commandService);
+            }
+
+            // The dialog gallery (docs/ARCHITECTURE.md, "Themed dialogs"): built only when the gallery opens.
+            Kubuno.Core.UI.DialogGallery.Register("Kubuno Core Web: Multi-Repository Solution (RepositoryPickerDialog)", () => new RepositoryPickerDialog(@"Z:\src", new[]
+            {
+                ("core", "Kubuno Core Web (the server)", true),
+                ("calendar", "module calendar", false),
+                ("drive", "module drive", true),
+            }).ShowModal());
+
+            // The "Kubuno Core Web Module" template's wizard is loaded by the template engine with a plain Assembly.Load:
+            // have it in the AppDomain already (same reason as the Rust and Desktop layers' wizards).
+            try
+            {
+                _ = typeof(Kubuno.Web.TemplateWizard.ModuleWizard).Assembly.GetName();
+            }
+            catch (System.IO.FileNotFoundException exception)
+            {
+                Kubuno.Core.Logging.KubunoLog.WriteLine("Kubuno web: could not preload Kubuno.Web.TemplateWizard.dll (" + exception.Message + ").");
+            }
+        }
     }
 }

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Web layer, pure logic (docs/WEB.md, docs/ARCHITECTURE.md "Layers (as built)"): what the web module tooling computes
+    without Visual Studio - the development database guard, the dev core layout and launch environment, module.toml,
+    the module deployment into the dev core, .kbpkg packaging, node_modules installed by another operating system,
+    the generation of the web solutions (.slnx, .esproj, .slnLaunch, launch.json) and the version audit.
+
+    netstandard2.0, like Kubuno.Rust.Cargo, so the same code runs in Visual Studio (Kubuno.Web, Kubuno.Web.ProjectSystem)
+    and in the Kubuno.Web.Sdk MSBuild tasks (Kubuno.Web.MSBuild.Tasks, net472 and net10.0). No Visual Studio SDK:
+    plain `dotnet test` (tests/Kubuno.Web.Tests).
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Web.Logic</RootNamespace>
+    <AssemblyName>Kubuno.Web.Logic</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- TOML (module.toml, Cargo.toml) and System.Text.Json come from the Rust layer's netstandard2.0 Cargo brain. -->
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
+  </ItemGroup>
+
+</Project>

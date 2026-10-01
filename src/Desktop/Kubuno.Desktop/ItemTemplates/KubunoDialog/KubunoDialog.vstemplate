@@ -6,13 +6,14 @@
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Dialog</Name>
+    <Name>Kubuno Dialog (Kubuno Core Desktop)</Name>
     <Description>A modal dialog in the Kubuno look (the web FloatingWindow): a title band with a close button, a body, and an action bar with its confirm and cancel buttons. Open it with show_dialog, which returns its DialogResult.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoDialog</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>13</SortOrder>
     <DefaultName>NewDialog.kbview</DefaultName>

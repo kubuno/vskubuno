@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "Kubuno Core Web Module" (docs/WEB.md, "The module template"): a module laid out like the modules of the polyrepo
+  today - the Rust/Axum backend (.rsproj, Kubuno.Rust.Sdk + Kubuno.Web.Sdk, shared crates by git tag), the frontend
+  (.esproj: Vite 8, React 19, TypeScript 6, Tailwind v4 in the kubuno-module layer, @kubuno/* from npm at the
+  published versions), module.toml, migrations, build_kbpkg.sh, English README and CHANGELOG.
+  Kubuno.Web.TemplateWizard computes the tokens ($moduleid$, $cratename$ = kubuno-<id>, the @kubuno/* versions read
+  from a core checkout next to the new module when there is one) and, once the project is created, adds the
+  frontend project to the solution (the backend depends on it: F5 deploys its bundle) with a shared launch profile.
+  Same TemplateID as before the web layer existed (it was the Rust layer's backend-only "Kubuno Module").
+-->
+<VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Kubuno Core Web Module</Name>
+    <Description>A module for Kubuno Core Web (the web server, not the desktop apps): Rust/Axum backend and React/TypeScript frontend, module.toml, PostgreSQL migrations and .kbpkg packaging. F5 deploys it into a development core and debugs both sides.</Description>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.KubunoModule</TemplateID>
+    <LanguageTag>Rust</LanguageTag>
+    <LanguageTag>TypeScript</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <PlatformTag>Linux</PlatformTag>
+    <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Web</ProjectTypeTag>
+    <ProjectTypeTag>Web</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>40</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>KubunoModule</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Enabled</LocationField>
+    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+    <CreateInPlace>true</CreateInPlace>
+  </TemplateData>
+  <TemplateContent>
+    <Project TargetFileName="$cratename$.rsproj" File="ProjectTemplate.rsproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true" TargetFileName="Cargo.toml">Cargo.toml</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="module.toml">module.toml</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="config.toml.example">config.toml.example</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="README.md">README.md</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="CHANGELOG.md">CHANGELOG.md</ProjectItem>
+      <ProjectItem ReplaceParameters="false" TargetFileName=".gitignore">gitignore.txt</ProjectItem>
+      <!-- Copied as-is: French comments with accents (an ANSI read would garble them) and no token. -->
+      <ProjectItem ReplaceParameters="false" TargetFileName="build_kbpkg.sh">build_kbpkg.sh</ProjectItem>
+      <Folder Name="src" TargetFolderName="src">
+        <ProjectItem ReplaceParameters="true" TargetFileName="main.rs">main.rs</ProjectItem>
+      </Folder>
+      <Folder Name="migrations" TargetFolderName="migrations">
+        <ProjectItem ReplaceParameters="true" TargetFileName="000001_init.up.sql">000001_init.up.sql</ProjectItem>
+        <ProjectItem ReplaceParameters="true" TargetFileName="000001_init.down.sql">000001_init.down.sql</ProjectItem>
+      </Folder>
+      <Folder Name="frontend" TargetFolderName="frontend">
+        <ProjectItem ReplaceParameters="true" TargetFileName="$moduleid$-frontend.esproj">frontend.esproj</ProjectItem>
+        <ProjectItem ReplaceParameters="true" TargetFileName="package.json">package.json</ProjectItem>
+        <ProjectItem ReplaceParameters="false" TargetFileName="vite.config.ts">vite.config.ts</ProjectItem>
+        <ProjectItem ReplaceParameters="false" TargetFileName="tsconfig.json">tsconfig.json</ProjectItem>
+        <Folder Name="src" TargetFolderName="src">
+          <ProjectItem ReplaceParameters="true" TargetFileName="entry.ts">entry.ts</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="App.tsx">App.tsx</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="index.css">index.css</ProjectItem>
+        </Folder>
+        <Folder Name=".kubuno" TargetFolderName=".kubuno">
+          <ProjectItem ReplaceParameters="true" TargetFileName="launch.json">launch.json</ProjectItem>
+        </Folder>
+      </Folder>
+    </Project>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>Kubuno.Web.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>Kubuno.Web.TemplateWizard.ModuleWizard</FullClassName>
+  </WizardExtension>
+</VSTemplate>

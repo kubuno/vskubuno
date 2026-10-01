@@ -1,0 +1,23 @@
+<Project>
+
+  <!--
+    Kubuno.Web.Sdk (docs/WEB.md): an ADDITIONAL MSBuild SDK, named next to a project's main SDK -
+      <Project Sdk="Kubuno.Rust.Sdk/1.1.0">                       <Sdk Name="Kubuno.Web.Sdk" Version="1.0.0" />  the core or a module
+      <Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/…">     <Sdk Name="Kubuno.Web.Sdk" Version="1.0.0" />  a frontend
+    and driven by the project's KubunoWebRole (Core, Module, CoreFrontend, ModuleFrontend). This file is imported after
+    the main SDK's props and before the project body: defaults only, the body can override any of them.
+  -->
+
+  <PropertyGroup>
+    <KubunoWebSdkDirectory>$(MSBuildThisFileDirectory)</KubunoWebSdkDirectory>
+
+    <!-- The task assembly, picked per MSBuild host like Kubuno.Rust.Sdk's (Visual Studio's MSBuild.exe / dotnet build). -->
+    <_KubunoWebTasksTfm Condition="'$(MSBuildRuntimeType)' == 'Full'">net472</_KubunoWebTasksTfm>
+    <_KubunoWebTasksTfm Condition="'$(_KubunoWebTasksTfm)' == ''">net10.0</_KubunoWebTasksTfm>
+    <_KubunoWebTasksAssembly>$(MSBuildThisFileDirectory)..\tasks\$(_KubunoWebTasksTfm)\Kubuno.Web.MSBuild.Tasks.dll</_KubunoWebTasksAssembly>
+
+    <!-- A frontend's `npm audit` is network traffic and noise on every build: opt back in with ShouldRunNpmAudit=true. -->
+    <ShouldRunNpmAudit>false</ShouldRunNpmAudit>
+  </PropertyGroup>
+
+</Project>

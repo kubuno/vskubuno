@@ -1,13 +1,12 @@
 [module]
 id           = "$moduleid$"
-display_name = "$safeprojectname$"
+display_name = "$moduletitle$"
 version      = "0.1.0"
 description  = "A Kubuno module."
 author       = "Kubuno Contributors"
 license      = "AGPL-3.0"
 homepage_url = "https://github.com/kubuno/$moduleid$"
 runtime      = "rust"
-dependencies = []
 
 [process]
 entrypoint = "$cratename$"
@@ -15,8 +14,8 @@ args       = []
 
 [server]
 host = "127.0.0.1"
-# Placeholder: pick a free port from vskubuno/../CLAUDE.md section 2's allocation table before
-# shipping (drive 3101, calendar 3102, ... the table lists every port already taken).
+# Pick a free port in the platform's allocation table before shipping (core 8080, drive 3101, calendar 3102...
+# books 3121, stt 3122, p2pnas 3123, build 3124 are taken).
 port = 3199
 
 [routes]
@@ -26,7 +25,7 @@ patterns = [
 
 [[sidebar_items]]
 id       = "$moduleid$"
-label    = "$safeprojectname$"
+label    = "$moduletitle$"
 icon     = "Puzzle"
 path     = "/$moduleid$"
 position = 50

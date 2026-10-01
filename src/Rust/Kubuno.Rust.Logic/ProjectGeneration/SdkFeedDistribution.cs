@@ -127,7 +127,9 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
                     return false;
                 }
 
-                var packages = Directory.GetFiles(bundled, "Kubuno.Rust.Sdk.*.nupkg");
+                // Every MSBuild SDK the extension ships (Kubuno.Rust.Sdk, and the target layers' additional SDKs such as
+                // Kubuno.Web.Sdk): a project names its SDKs, the feed folder carries them all.
+                var packages = Directory.GetFiles(bundled, "Kubuno.*Sdk.*.nupkg");
                 if (packages.Length == 0)
                 {
                     return false;

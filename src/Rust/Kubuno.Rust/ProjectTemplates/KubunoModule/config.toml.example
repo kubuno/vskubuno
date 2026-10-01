@@ -1,8 +1,0 @@
-# $safeprojectname$ - example configuration. Copy to config.toml (or set the same names as
-# environment variables - main.rs reads DATABASE_URL/INTERNAL_SECRET/PORT/RUST_LOG from the
-# environment) and fill in real values for local development.
-
-DATABASE_URL = "postgres://kubuno:kubuno@127.0.0.1:5432/kubuno"
-INTERNAL_SECRET = "change-me"
-PORT = "3199"
-RUST_LOG = "info,$cratename$=debug"

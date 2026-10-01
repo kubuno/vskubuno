@@ -3,13 +3,14 @@
      wizard asks which one), inheriting its properties and events, whose behaviour it overrides. -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Inherited Control</Name>
+    <Name>Kubuno Inherited Control (Kubuno Core Desktop)</Name>
     <Description>A control extending a built-in Kubuno control (a Button, a Label...): it keeps everything its base does and overrides its behaviour.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoInheritedControl</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>13</SortOrder>
     <DefaultName>InheritedControl.rs</DefaultName>

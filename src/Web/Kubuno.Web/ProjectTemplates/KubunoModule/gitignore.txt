@@ -1,0 +1,15 @@
+# Rust
+/target/
+# Node
+node_modules/
+/frontend/dist/
+*.tsbuildinfo
+# Visual Studio (per-user files and build state)
+.vs/
+*.user
+obj/
+# Packages
+/dist/
+# Local configuration and secrets (keep the .example files)
+.env
+/config.toml

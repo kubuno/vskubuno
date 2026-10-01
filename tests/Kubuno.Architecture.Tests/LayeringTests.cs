@@ -152,7 +152,8 @@ namespace Kubuno.Architecture.Tests
                 "Kubuno.Rust", "Kubuno.Rust.Logic", "Kubuno.Rust.Cargo", "Kubuno.Rust.Launch", "Kubuno.Rust.ProjectSystem",
                 "Kubuno.Rust.TestAdapter", "Kubuno.Rust.Debugger", "Kubuno.Rust.TemplateWizard", "Kubuno.Cargo.MSBuild.Tasks",
                 "Kubuno.Desktop", "Kubuno.Desktop.Logic", "Kubuno.Desktop.ProjectSystem", "Kubuno.Desktop.TemplateWizard",
-                "Kubuno.Web", "Kubuno.Mobile", "Kubuno.VisualStudio",
+                "Kubuno.Web", "Kubuno.Web.Logic", "Kubuno.Web.ProjectSystem", "Kubuno.Web.MSBuild.Tasks", "Kubuno.Web.TemplateWizard",
+                "Kubuno.Mobile", "Kubuno.VisualStudio",
             })
             {
                 CollectionAssert.Contains(projects, expected, expected + " is missing from src/.");
@@ -215,7 +216,7 @@ namespace Kubuno.Architecture.Tests
         public void Pure_logic_assemblies_do_not_reference_the_Visual_Studio_SDK()
         {
             var pure = SourceProjects().Where(p => p.Name.EndsWith(".Logic", StringComparison.Ordinal) || p.Name is "Kubuno.Rust.Cargo" or "Kubuno.Rust.Launch").ToList();
-            Assert.AreEqual(5, pure.Count, "Kubuno.Core.Logic, Kubuno.Rust.Logic, Kubuno.Rust.Cargo, Kubuno.Rust.Launch, Kubuno.Desktop.Logic");
+            Assert.AreEqual(6, pure.Count, "Kubuno.Core.Logic, Kubuno.Rust.Logic, Kubuno.Rust.Cargo, Kubuno.Rust.Launch, Kubuno.Desktop.Logic, Kubuno.Web.Logic");
             foreach (var project in pure)
             {
                 var assembly = BuiltAssembly(project.Path, project.AssemblyName);
@@ -264,8 +265,9 @@ namespace Kubuno.Architecture.Tests
             var packaging = Path.Combine(root, "src", "Kubuno.VisualStudio", "Kubuno.VisualStudio.csproj");
             var referenced = ProjectReferences(packaging).ToList();
 
-            // Kubuno.Cargo.MSBuild.Tasks ships inside the Kubuno.Rust.Sdk NuGet package (tools\SdkFeed\), not as a VSIX assembly.
-            var shipped = SourceProjects().Select(p => p.Name).Where(n => n is not "Kubuno.VisualStudio" and not "Kubuno.Cargo.MSBuild.Tasks");
+            // Kubuno.Cargo.MSBuild.Tasks and Kubuno.Web.MSBuild.Tasks ship inside the Kubuno.Rust.Sdk and Kubuno.Web.Sdk NuGet
+            // packages (tools\SdkFeed\), not as VSIX assemblies.
+            var shipped = SourceProjects().Select(p => p.Name).Where(n => n is not "Kubuno.VisualStudio" and not "Kubuno.Cargo.MSBuild.Tasks" and not "Kubuno.Web.MSBuild.Tasks");
             foreach (var project in shipped)
             {
                 CollectionAssert.Contains(referenced, project, "src/Kubuno.VisualStudio must reference " + project + " so the VSIX ships it.");

@@ -186,6 +186,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>KubunoControls.imagemanifest</Link>
     </Content>
+    <Content Include="..\Web\Kubuno.Web\ProjectTemplates\**\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>ProjectTemplates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
     <Content Include="..\Desktop\Kubuno.Desktop\ProjectTemplates\**\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -692,6 +697,25 @@
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
+    <!-- docs/WEB.md: the web layer's pure logic, CPS exports (F5) and template wizard. -->
+    <ProjectReference Include="..\Web\Kubuno.Web.Logic\Kubuno.Web.Logic.csproj">
+      <Project>{22D12880-4BD2-4AC0-9927-A4DC01455678}</Project>
+      <Name>Kubuno.Web.Logic</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\Web\Kubuno.Web.ProjectSystem\Kubuno.Web.ProjectSystem.csproj">
+      <Project>{377BE963-83D9-4EE0-9DF0-D33C57979829}</Project>
+      <Name>Kubuno.Web.ProjectSystem</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\Web\Kubuno.Web.TemplateWizard\Kubuno.Web.TemplateWizard.csproj">
+      <Project>{FB37CA6E-98AA-4F42-801C-AB9F100786E3}</Project>
+      <Name>Kubuno.Web.TemplateWizard</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
     <ProjectReference Include="..\Mobile\Kubuno.Mobile\Kubuno.Mobile.csproj">
       <Project>{DF64BC4D-3BAD-4C4E-8BAF-F2CEDA4E0782}</Project>
       <Name>Kubuno.Mobile</Name>
@@ -714,6 +738,25 @@
       <Link>debugging.pkgdef</Link>
     </Content>
   </ItemGroup>
+  <!--
+    docs/WEB.md: Kubuno.Web.Sdk, the additional MSBuild SDK of the web projects, ships next to Kubuno.Rust.Sdk in
+    tools\SdkFeed (and from there into each generated solution's .kubuno\sdk-feed). Pack it with
+    `dotnet pack sdk\Kubuno.Web.Sdk\Kubuno.Web.Sdk.csproj -c Release -o C:\kubuno-build\nuget-local-feed`; a build
+    without it still succeeds (the web projects then need the package from another NuGet source).
+  -->
+  <PropertyGroup>
+    <KubunoWebSdkNupkgPath Condition="'$(KubunoWebSdkNupkgPath)' == ''">C:\kubuno-build\nuget-local-feed\Kubuno.Web.Sdk.1.0.0.nupkg</KubunoWebSdkNupkgPath>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('$(KubunoWebSdkNupkgPath)')">
+    <Content Include="$(KubunoWebSdkNupkgPath)">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\SdkFeed\Kubuno.Web.Sdk.1.0.0.nupkg</Link>
+    </Content>
+  </ItemGroup>
+  <Target Name="KubunoReportWebSdkNupkg" BeforeTargets="Build" Condition="!Exists('$(KubunoWebSdkNupkgPath)')">
+    <Message Importance="high" Text="Kubuno.Web.Sdk.1.0.0.nupkg not found at '$(KubunoWebSdkNupkgPath)': the VSIX ships without it (see docs/WEB.md)." />
+  </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
 </Project>

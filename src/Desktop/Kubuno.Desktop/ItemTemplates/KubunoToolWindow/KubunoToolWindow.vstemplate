@@ -6,13 +6,14 @@
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Tool Window</Name>
+    <Name>Kubuno Tool Window (Kubuno Core Desktop)</Name>
     <Description>A tool window (a palette, an inspector): a slim title band with only a close button, no task bar button, kept above the form that owns it.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoToolWindow</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>14</SortOrder>
     <DefaultName>NewToolWindow.kbview</DefaultName>

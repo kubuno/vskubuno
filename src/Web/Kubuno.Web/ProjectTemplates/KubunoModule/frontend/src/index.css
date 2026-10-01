@@ -1,0 +1,7 @@
+/* The module's Tailwind utilities go into the `kubuno-module` cascade layer, which the host declares below its
+ * own utilities: re-generated base utilities of the module never override the host shell's responsive ones.
+ * The granular imports are needed because @tailwindcss/vite ignores layer() on the `@import "tailwindcss"` shorthand. */
+@layer theme, base, components, kubuno-module;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(kubuno-module) source("../");

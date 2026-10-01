@@ -5,13 +5,14 @@
      translates; the others fall back to the neutral file. -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Localized Resource File</Name>
+    <Name>Kubuno Localized Resource File (Kubuno Core Desktop)</Name>
     <Description>The translations of a resource file for one culture (Fichier de ressources localisé): name it resources.fr.kbres, resources.de-DE.kbres... Entries it does not translate fall back to the neutral file.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoLocalizedResourceFile</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>17</SortOrder>
     <DefaultName>resources.fr.kbres</DefaultName>

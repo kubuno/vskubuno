@@ -1,0 +1,125 @@
+<Project>
+
+  <!--
+    Kubuno.Web.Sdk targets (docs/WEB.md). Imported after the main SDK's targets, so it can replace one of its targets
+    (the JavaScript SDK's RunNpmInstall) and read every property of the project body.
+  -->
+
+  <UsingTask TaskName="Kubuno.Web.MSBuild.Tasks.KubunoPrepareNode" AssemblyFile="$(_KubunoWebTasksAssembly)" />
+  <UsingTask TaskName="Kubuno.Web.MSBuild.Tasks.KubunoDeployModule" AssemblyFile="$(_KubunoWebTasksAssembly)" />
+  <UsingTask TaskName="Kubuno.Web.MSBuild.Tasks.KubunoPackModule" AssemblyFile="$(_KubunoWebTasksAssembly)" />
+  <UsingTask TaskName="Kubuno.Web.MSBuild.Tasks.KubunoCheckDevDatabase" AssemblyFile="$(_KubunoWebTasksAssembly)" />
+  <UsingTask TaskName="Kubuno.Web.MSBuild.Tasks.KubunoSetProcessEnvironment" AssemblyFile="$(_KubunoWebTasksAssembly)" />
+
+  <PropertyGroup>
+    <_KubunoWebBackend Condition="'$(KubunoWebRole)' == 'Core' or '$(KubunoWebRole)' == 'Module'">true</_KubunoWebBackend>
+    <_KubunoWebFrontend Condition="'$(KubunoWebRole)' == 'CoreFrontend' or '$(KubunoWebRole)' == 'ModuleFrontend'">true</_KubunoWebFrontend>
+
+    <!-- The dev core of this machine (docs/WEB.md, "The dev core"). -->
+    <KubunoDevCoreRoot Condition="'$(KubunoDevCoreRoot)' == '' and '$(KUBUNO_DEV_CORE_ROOT)' != ''">$(KUBUNO_DEV_CORE_ROOT)</KubunoDevCoreRoot>
+    <KubunoDevCoreRoot Condition="'$(KubunoDevCoreRoot)' == ''">$(LOCALAPPDATA)\Kubuno\dev-core</KubunoDevCoreRoot>
+    <KubunoDevCorePort Condition="'$(KubunoDevCorePort)' == ''">8080</KubunoDevCorePort>
+  </PropertyGroup>
+
+  <!-- ============================================================ Backend (.rsproj of the core or a module) ===== -->
+
+  <PropertyGroup Condition="'$(_KubunoWebBackend)' == 'true'">
+    <!-- F5 is Kubuno.Web.ProjectSystem's KubunoWebDebugLaunchProvider: the dev core behind the database guard. -->
+    <DebuggerFlavor>KubunoWebDebugger</DebuggerFlavor>
+    <KubunoLaunchBrowser Condition="'$(KubunoLaunchBrowser)' == ''">true</KubunoLaunchBrowser>
+    <KubunoAttachToModule Condition="'$(KubunoAttachToModule)' == ''">true</KubunoAttachToModule>
+    <KubunoModuleDirectory Condition="'$(KubunoModuleDirectory)' == '' and '$(KubunoWebRole)' == 'Module'">$([System.IO.Path]::GetDirectoryName('$(CargoManifestPath)'))</KubunoModuleDirectory>
+    <KubunoKbpkgOutputDirectory Condition="'$(KubunoKbpkgOutputDirectory)' == ''">$(KubunoModuleDirectory)\dist</KubunoKbpkgOutputDirectory>
+    <!-- The frontend is its own .esproj (and node_modules is huge): keep it out of the backend project's tree. -->
+    <DefaultItemExcludes Condition="'$(KubunoWebRole)' == 'Module'">$(DefaultItemExcludes);frontend/**;dist/**;node_modules/**</DefaultItemExcludes>
+    <_KubunoManifestDirectory>$([System.IO.Path]::GetDirectoryName('$(CargoManifestPath)'))</_KubunoManifestDirectory>
+    <_KubunoHasSqlxCache Condition="Exists('$(_KubunoManifestDirectory)\.sqlx')">true</_KubunoHasSqlxCache>
+    <_KubunoHasSqlxCache Condition="'$(CargoWorkspaceRoot)' != '' and Exists('$(CargoWorkspaceRoot)\.sqlx')">true</_KubunoHasSqlxCache>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(_KubunoWebBackend)' == 'true'">
+    <ProjectCapability Include="KubunoWebBackend" />
+    <!-- Kubuno Core Web's server project or a module's backend (their Solution Explorer icons, Kubuno.Web.ProjectSystem). -->
+    <ProjectCapability Include="KubunoWebCore" Condition="'$(KubunoWebRole)' == 'Core'" />
+    <ProjectCapability Include="KubunoWebModule" Condition="'$(KubunoWebRole)' == 'Module'" />
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Rules\kubuno_web_debugger.xaml">
+      <Context>Project</Context>
+    </PropertyPageSchema>
+    <_KubunoFrontendProject Include="$(KubunoModuleDirectory)\frontend\*.esproj" Condition="'$(KubunoModuleDirectory)' != ''" />
+  </ItemGroup>
+
+  <!--
+    SQLX_OFFLINE (CLAUDE.md section 5): a package with a `.sqlx` query cache compiles its query macros from that cache,
+    never against a database. Set for the build process (and the tools it starts) when the variable is not set.
+  -->
+  <Target Name="KubunoSqlxOffline" BeforeTargets="CargoRestore;CoreCompile"
+          Condition="'$(_KubunoWebBackend)' == 'true' and '$(_KubunoHasSqlxCache)' == 'true'">
+    <KubunoSetProcessEnvironment Name="SQLX_OFFLINE" Value="true" />
+  </Target>
+
+  <!-- `msbuild <project>.rsproj -t:KubunoCheckDevDatabase`: what F5 would say about KUBUNO_DEV_DATABASE_URL. -->
+  <Target Name="KubunoCheckDevDatabase" Condition="'$(_KubunoWebBackend)' == 'true'">
+    <KubunoCheckDevDatabase />
+  </Target>
+
+  <!--
+    `msbuild <module>.rsproj -t:KubunoDeployModule`: build, then copy the module into the dev core (deploy_local.sh).
+    F5 does the same from Visual Studio, where the solution has already built the frontend (BuildDependency).
+  -->
+  <Target Name="KubunoDeployModule" DependsOnTargets="Build" Condition="'$(KubunoWebRole)' == 'Module'">
+    <MSBuild Projects="@(_KubunoFrontendProject)" Targets="Build" Properties="Configuration=$(Configuration)" Condition="'$(BuildingInsideVisualStudio)' != 'true' and '@(_KubunoFrontendProject)' != ''" />
+    <KubunoDeployModule ModuleDirectory="$(KubunoModuleDirectory)" Executable="$(TargetPath)" DevCoreRoot="$(KubunoDevCoreRoot)" />
+  </Target>
+
+  <!-- `msbuild <module>.rsproj -t:KubunoPackModule -p:Configuration=Release`: dist\<id>-<version>-windows-x86_64.kbpkg. -->
+  <Target Name="KubunoPackModule" DependsOnTargets="Build" Condition="'$(KubunoWebRole)' == 'Module'">
+    <MSBuild Projects="@(_KubunoFrontendProject)" Targets="Build" Properties="Configuration=$(Configuration)" Condition="'@(_KubunoFrontendProject)' != ''" />
+    <KubunoPackModule ModuleDirectory="$(KubunoModuleDirectory)" Executable="$(TargetPath)" OutputDirectory="$(KubunoKbpkgOutputDirectory)">
+      <Output TaskParameter="Package" PropertyName="KubunoKbpkg" />
+    </KubunoPackModule>
+  </Target>
+
+  <!-- ============================================================ Frontend (.esproj) =========================== -->
+
+  <PropertyGroup Condition="'$(_KubunoWebFrontend)' == 'true'">
+    <!-- Build outputs are not sources: keep them (and they are many) out of Solution Explorer. node_modules already is. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);dist/**;dist-*/**;**/dist/**;**/*.tsbuildinfo</DefaultItemExcludes>
+    <!--
+      Every npm command goes through obj\kubuno-npm.cmd, written by KubunoPrepareNode before the build: npm with the
+      Node.js of Visual Studio when PATH has none, and the Windows overlay when node_modules came from Linux.
+    -->
+    <KubunoNpmCommand>"$(MSBuildProjectDirectory)\obj\kubuno-npm.cmd"</KubunoNpmCommand>
+    <BuildCommand Condition="'$(BuildCommand)' == '' and '$(Configuration)' == 'Debug'">$(KubunoNpmCommand) run build -- --sourcemap</BuildCommand>
+    <BuildCommand Condition="'$(BuildCommand)' == ''">$(KubunoNpmCommand) run build</BuildCommand>
+    <!-- The host: Vite's dev server, which proxies /api, /modules and /ws to the dev core (core/frontend/vite.config.ts). -->
+    <StartupCommand Condition="'$(StartupCommand)' == '' and '$(KubunoWebRole)' == 'CoreFrontend'">$(KubunoNpmCommand) run dev</StartupCommand>
+    <!-- A module: rebuild on every change straight into the dev core's copy of the module (refresh the page to see it). -->
+    <_KubunoDeployedFrontend Condition="'$(KubunoModuleId)' != '' and Exists('$(KubunoDevCoreRoot)\modules-store\$(KubunoModuleId)')">$(KubunoDevCoreRoot)\modules-store\$(KubunoModuleId)\frontend</_KubunoDeployedFrontend>
+    <_KubunoDeployedFrontend Condition="'$(KubunoModuleId)' != '' and '$(_KubunoDeployedFrontend)' == ''">$(KubunoDevCoreRoot)\modules\$(KubunoModuleId)\frontend</_KubunoDeployedFrontend>
+    <StartupCommand Condition="'$(StartupCommand)' == '' and '$(KubunoWebRole)' == 'ModuleFrontend' and '$(_KubunoDeployedFrontend)' != ''">$(KubunoNpmCommand) run build -- --watch --sourcemap --outDir "$(_KubunoDeployedFrontend)"</StartupCommand>
+  </PropertyGroup>
+
+  <Target Name="KubunoPrepareNode" BeforeTargets="RunNpmInstall;CoreCompile;_CleanBuildOutput;ComputeRunArguments"
+          Condition="'$(_KubunoWebFrontend)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+    <KubunoPrepareNode PackageJsonDirectory="$(PackageJsonDirectory)"
+                       IntermediateDirectory="$(MSBuildProjectDirectory)\obj"
+                       FallbackNodeDirectory="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\NodeJs">
+      <Output TaskParameter="IsForeign" PropertyName="_KubunoForeignNodeModules" />
+      <Output TaskParameter="NodeModulesExists" PropertyName="_KubunoNodeModulesExists" />
+    </KubunoPrepareNode>
+  </Target>
+
+  <!--
+    Replaces the JavaScript SDK's RunNpmInstall for a Kubuno frontend: an existing node_modules is never reinstalled by
+    the build (on a checkout shared with the Linux server, `npm install` from Windows would swap its native packages
+    for Windows ones and break the server's builds) - run `npm ci` yourself when package-lock.json changed. A missing
+    node_modules gets `npm ci`.
+  -->
+  <Target Name="RunNpmInstall" DependsOnTargets="KubunoPrepareNode" Condition="'$(_KubunoWebFrontend)' == 'true' and '$(ShouldRunNpmInstall)' == 'true'">
+    <Message Importance="normal" Text="Kubuno: node_modules exists, not reinstalled by the build (run npm ci yourself after a package-lock.json change)." Condition="'$(_KubunoNodeModulesExists)' == 'true'" />
+    <Message Importance="high" Text="Kubuno: restoring the frontend's dependencies (npm ci)..." Condition="'$(_KubunoNodeModulesExists)' != 'true'" />
+    <Exec Command="$(KubunoNpmCommand) ci --no-audit --no-fund" WorkingDirectory="$(PackageJsonDirectory)" Condition="'$(_KubunoNodeModulesExists)' != 'true' and Exists('$(PackageJsonDirectory)package-lock.json')" />
+    <Exec Command="$(KubunoNpmCommand) install --no-audit --no-fund" WorkingDirectory="$(PackageJsonDirectory)" Condition="'$(_KubunoNodeModulesExists)' != 'true' and !Exists('$(PackageJsonDirectory)package-lock.json')" />
+  </Target>
+
+</Project>

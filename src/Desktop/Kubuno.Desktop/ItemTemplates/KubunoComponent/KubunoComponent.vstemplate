@@ -3,13 +3,14 @@
      tray, like a Timer): an element of the views that paints nothing, listed in the designer's component tray. -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Component</Name>
+    <Name>Kubuno Component (Kubuno Core Desktop)</Name>
     <Description>A non-visual component (like a WinForms timer or data source): an element of the project's views that paints nothing and appears in the designer's component tray.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoComponent</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>14</SortOrder>
     <DefaultName>Component.rs</DefaultName>

@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tests of the web layer's pure logic (src/Web/Kubuno.Web.Logic, docs/WEB.md): the development database guard,
+    the dev core layout and environment, module.toml, deployment, .kbpkg packaging, node_modules from another OS,
+    the solution generator, the template tokens and the version audit. Plain `dotnet test`, no Visual Studio.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Web.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.4.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Web\Kubuno.Web.Logic\Kubuno.Web.Logic.csproj" />
+  </ItemGroup>
+
+</Project>

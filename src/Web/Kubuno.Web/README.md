@@ -5,9 +5,7 @@ Kubuno core host loads (docs/ARCHITECTURE.md, "Roadmap - Kubuno web modules in t
 
 ## Status
 
-Skeleton. `WebLayer` is created by `KubunoPackage.CreateLayers` and runs through the same `KubunoLayer` hooks as the Rust
-and Desktop layers; it has no feature yet. The assembly ships in the VSIX and is a `MefComponent` asset, so its first MEF
-part (a language client, a CPS export) needs no manifest change.
+Phases 1 and 2 are built (docs/WEB.md): web solution generation (single and multi-repository), the `.esproj`\nfrontends on top of Visual Studio's JavaScript project system, Kubuno.Web.Sdk, F5 of the core and of a module (dev core,\ndevelopment database guard, deployment, attach to the module process, browser), the `.kbpkg` command, the version\ntools and the "Kubuno Core Web Module" template. Assemblies of the layer: `Kubuno.Web` (this one: commands, template),\n`Kubuno.Web.Logic`, `Kubuno.Web.MSBuild.Tasks`, `Kubuno.Web.ProjectSystem`, `Kubuno.Web.TemplateWizard`.
 
 ## Rules
 

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The "debugger" rule of a Kubuno core or module .rsproj (docs/WEB.md, "F5"), named after its DebuggerFlavor
+     (Kubuno.Web.Sdk sets DebuggerFlavor=KubunoWebDebugger for KubunoWebRole Core/Module); the launch itself is
+     Kubuno.Web.ProjectSystem's KubunoWebDebugLaunchProvider, exported under the same name. Per-user settings
+     (the .rsproj.user file). The database URL is deliberately NOT a property here: it comes from the
+     KUBUNO_DEV_DATABASE_URL environment variable, so no password is written next to the sources. -->
+<Rule Name="KubunoWebDebugger"
+      DisplayName="Kubuno Core Web (serveur)"
+      PageTemplate="debugger"
+      Description="Starts a development Kubuno Core Web server (and deploys this module into it) under the native debugger"
+      xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <Rule.Categories>
+    <Category Name="Debug" DisplayName="Debug" />
+  </Rule.Categories>
+  <Rule.DataSource>
+    <DataSource Persistence="UserFile" HasConfigurationCondition="False" />
+  </Rule.DataSource>
+  <StringProperty Name="KubunoDevCorePort" DisplayName="Core port" Category="Debug"
+                  Description="The dev core's HTTP port (default 8080, the port the core's Vite dev server proxies to)." />
+  <BoolProperty Name="KubunoLaunchBrowser" DisplayName="Open the browser" Category="Debug"
+                Description="Open the default browser on the core (or on the module's page) once it answers. Skipped when a frontend project is also starting (it opens its own browser with the script debugger)." />
+  <StringProperty Name="KubunoLaunchUrl" DisplayName="Browser URL" Category="Debug"
+                  Description="The page to open. Default: http://localhost:&lt;port&gt;/ for the core, the module's first sidebar path for a module." />
+  <StringProperty Name="KubunoDevCoreExecutable" DisplayName="Core executable (module)" Category="Debug" Subtype="file"
+                  Description="For a module: the kubuno-core.exe to start. Default: the one built in the core repository next to this module (..\core), else C:\Program Files\Kubuno\kubuno-core.exe." />
+  <BoolProperty Name="KubunoAttachToModule" DisplayName="Attach to the module process" Category="Debug"
+                Description="For a module: attach the native debugger to the module process each time the core starts it." />
+  <StringProperty Name="KubunoDebugEnvironment" DisplayName="Environment" Category="Debug"
+                  Description="Extra environment variables for the core (and the modules it starts), one NAME=value per line - RUST_LOG for instance.">
+    <StringProperty.ValueEditors>
+      <ValueEditor EditorType="MultiLineString" />
+    </StringProperty.ValueEditors>
+  </StringProperty>
+</Rule>

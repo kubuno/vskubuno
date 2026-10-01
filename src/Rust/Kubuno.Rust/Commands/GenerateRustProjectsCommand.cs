@@ -215,7 +215,8 @@ namespace Kubuno.Rust.Commands
                 return null;
             }
 
-            return Path.Combine(workspaceRoot, new DirectoryInfo(workspaceRoot).Name + ".slnx");
+            // Kubuno.Core.Web.slnx, Kubuno.Core.Desktop.slnx, Kubuno.<Module>.slnx, else the folder's name.
+            return Path.Combine(workspaceRoot, SolutionNaming.DefaultSolutionFileName(workspaceRoot));
         }
 
         private static string? TryResolveWorkspaceRootManifest(AsyncPackage package)

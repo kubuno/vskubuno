@@ -503,6 +503,59 @@
           <ButtonText>Kubuno: Restart rust-analyzer</ButtonText>
         </Strings>
       </Button>
+      <!-- Web layer (docs/WEB.md): Kubuno Core Web (the web server) and its modules - solutions, version tools, .kbpkg. -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidGenerateWebSolution" priority="0x0110" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="WebApplication" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno Core Web: Generate Solution</ButtonText>
+          <CanonicalName>.Kubuno.GenerateWebSolution</CanonicalName>
+          <LocCanonicalName>.Kubuno.GenerateWebSolution</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidGenerateMultiRepoSolution" priority="0x0111" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Strings>
+          <ButtonText>Kubuno Core Web: Generate Multi-Repository Solution...</ButtonText>
+          <CanonicalName>.Kubuno.GenerateMultiRepositoryWebSolution</CanonicalName>
+          <LocCanonicalName>.Kubuno.GenerateMultiRepositoryWebSolution</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidPackModule" priority="0x0112" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="Package" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno Core Web: Package Module (.kbpkg)</ButtonText>
+          <CanonicalName>.Kubuno.PackageModule</CanonicalName>
+          <LocCanonicalName>.Kubuno.PackageModule</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidCheckVersions" priority="0x0113" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Strings>
+          <ButtonText>Kubuno Core Web: Check Versions</ButtonText>
+          <CanonicalName>.Kubuno.CheckVersions</CanonicalName>
+          <LocCanonicalName>.Kubuno.CheckVersions</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidPrepareNpmFloors" priority="0x0114" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Strings>
+          <ButtonText>Kubuno Core Web: Prepare npm Floors...</ButtonText>
+          <CanonicalName>.Kubuno.PrepareNpmFloors</CanonicalName>
+          <LocCanonicalName>.Kubuno.PrepareNpmFloors</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidPrepareSharedCrateTags" priority="0x0115" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Strings>
+          <ButtonText>Kubuno Core Web: Prepare Shared Crate Tags...</ButtonText>
+          <CanonicalName>.Kubuno.PrepareSharedCrateTags</CanonicalName>
+          <LocCanonicalName>.Kubuno.PrepareSharedCrateTags</LocCanonicalName>
+        </Strings>
+      </Button>
       <!-- Developer tool: every dialog with sample data, to re-check their theming (DialogGalleryCommand; shown
            only in an instance started with /rootsuffix). -->
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDialogGallery" priority="0x0105" type="Button">
@@ -1627,6 +1680,13 @@
       <IDSymbol name="cmdidShowKubunoOutline" value="0x0103" />
       <IDSymbol name="cmdidGenerateRustProjects" value="0x0104" />
       <IDSymbol name="cmdidGenerateRustProjectsContext" value="0x0105" />
+      <!-- Web layer (Kubuno.Web.PackageIds): 0x07xx. -->
+      <IDSymbol name="cmdidGenerateWebSolution" value="0x0700" />
+      <IDSymbol name="cmdidGenerateMultiRepoSolution" value="0x0701" />
+      <IDSymbol name="cmdidCheckVersions" value="0x0702" />
+      <IDSymbol name="cmdidPrepareNpmFloors" value="0x0703" />
+      <IDSymbol name="cmdidPrepareSharedCrateTags" value="0x0704" />
+      <IDSymbol name="cmdidPackModule" value="0x0705" />
       <IDSymbol name="cmdidAddKubunoView" value="0x0106" />
       <IDSymbol name="cmdidAddRustModule" value="0x0107" />
       <IDSymbol name="cmdidAddRustIntegrationTest" value="0x0108" />

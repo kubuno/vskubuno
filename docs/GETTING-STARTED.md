@@ -216,6 +216,29 @@ Good to know:
   package on its own: regenerate its `.rsproj` files (delete them and run the command again) to get the
   workspace build.
 
+### Working on Kubuno Core Web (the web server) and its modules
+
+The core (`core`) and the web modules (`drive`, `calendar`, `mail`...) are Cargo packages plus a React/TypeScript
+frontend. `docs/WEB.md` has the details; in short:
+
+1. **Once per machine**: a local cargo target directory when the checkouts are on the share
+   (`setx CARGO_TARGET_DIR C:\kubuno-build\web-target`), and the **development database** the dev core will use -
+   a separate database on the team's PostgreSQL server, never the live one (the core migrates its database at
+   startup): `setx KUBUNO_DEV_DATABASE_URL "postgres://kubuno:<password>@192.168.1.220:5432/kubuno_dev"`. Restart
+   Visual Studio afterwards. A database whose name has no `dev`/`test`/`local`... word is refused.
+2. **Once per checkout**: open a file of the repository (or its folder) and run **Tools > Kubuno: Generate Web
+   Solution**. It writes the `.rsproj` files, `frontend\<name>.esproj`, `Kubuno.Core.Web.slnx` (or `Kubuno.<Module>.slnx`)
+   and its launch profiles. **Tools > Kubuno Core Web: Generate Multi-Repository Solution...** puts the core and the
+   modules you choose in one `Kubuno.Web.slnx` next to them.
+3. **Build** (Ctrl+Shift+B): cargo for the Rust projects, `npm run build` for the frontends. A frontend whose
+   `node_modules` was installed by the Linux server builds as is: the extension never reinstalls it and brings the
+   Windows native packages from a local overlay.
+4. **F5**: on `kubuno-core`, a development core on `http://localhost:8080/` (data under
+   `%LOCALAPPDATA%\Kubuno\dev-core`); the "Core + Vite dev server" launch profile adds Vite and Edge with the script
+   debugger. On a module, the module is deployed into that dev core, the core starts, the debugger attaches to the
+   module process and the browser opens on the module.
+5. **New module**: Create a new project > **Kubuno Core Web Module**.
+
 ### Building, F5, Ctrl+F5
 
 Build/Rebuild/Clean work exactly like any other project type: the project context menu,

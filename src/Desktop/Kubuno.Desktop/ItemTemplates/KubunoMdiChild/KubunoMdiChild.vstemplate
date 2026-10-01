@@ -6,13 +6,14 @@
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno MDI Child Form</Name>
+    <Name>Kubuno MDI Child Form (Kubuno Core Desktop)</Name>
     <Description>An MDI document: a form drawn inside its MDI parent window, with its own title band, minimize, maximize and close buttons.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoMdiChild</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>16</SortOrder>
     <DefaultName>Document.kbview</DefaultName>

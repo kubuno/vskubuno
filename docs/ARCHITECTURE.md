@@ -61,7 +61,9 @@ touching the layers below it and the targets never depend on each other:
 | Desktop | `Kubuno.Desktop` | The `.kbview` language client (`Views\`), the WinForms-like designer with Toolbox, Properties and events (`Designer\`), the design surface host (`DesignerIntegration\`), the data tooling (`DataExplorer\`, `DataSources\`, `Migrations\`, SQL in Rust strings), printing (through the designer's library component tabs), paint debug, desktop templates, `kbview-languages.pkgdef`. |
 | Desktop | `Kubuno.Desktop.Logic` | Pure logic: data, data sources, migrations, SQL, `.kbview` editor helpers, override members, control icons, the design build of a project's `kubuno_ui`, paint debug. |
 | Desktop | `Kubuno.Desktop.ProjectSystem`, `Kubuno.Desktop.TemplateWizard` | The desktop target's CPS exports in a `.rsproj` (the designer as default `.kbview` editor, the `.kbview` icon) and the Kubuno control icons (`KubunoControls.imagemanifest`); the control item wizard. |
-| Web | `Kubuno.Web` | Skeleton: `WebLayer`, registered, no feature yet (src/Web/Kubuno.Web/README.md). |
+| Web | `Kubuno.Web` | The Kubuno core and web modules (docs/WEB.md): Tools commands (web solution generation, multi-repository solution, version tools, `.kbpkg`), the "Kubuno Core Web Module" template (moved here from the Rust layer). |
+| Web | `Kubuno.Web.Logic`, `Kubuno.Web.MSBuild.Tasks` | Pure logic (netstandard2.0: development database guard, dev core, deployment, `.kbpkg`, node_modules from another OS, generation, version audit); the tasks of the `Kubuno.Web.Sdk` NuGet package (sdk/Kubuno.Web.Sdk). |
+| Web | `Kubuno.Web.ProjectSystem`, `Kubuno.Web.TemplateWizard` | F5 of a core or module `.rsproj` (`KubunoWebDebugger`); the module template's wizard. |
 | Mobile | `Kubuno.Mobile` | Skeleton: `MobileLayer`, registered, no feature yet (src/Mobile/Kubuno.Mobile/README.md). |
 
 Each layer keeps its pure logic in a `*.Logic` (or netstandard) assembly without the Visual Studio SDK, tested with plain
@@ -135,8 +137,8 @@ references another one.
 
 Residuals kept on purpose (candidates to move when the Web layer gets features): the crate-name wizard
 (`Kubuno.Rust.TemplateWizard`) also computes the `$kubunodesktopsrc$` and `$moduleid$` tokens of the desktop and module
-templates (plain strings, no reference to those layers); the "Kubuno Module" backend template is still shipped by the
-Rust layer; the `.kbview` file icon image stays in `RustProject.imagemanifest` so its moniker does not change (the desktop
+templates (plain strings, no reference to those layers) - the module template itself moved to the Web layer on
+2026-10-01, with its own wizard (docs/WEB.md); the `.kbview` file icon image stays in `RustProject.imagemanifest` so its moniker does not change (the desktop
 layer applies it).
 
 ## Themed dialogs

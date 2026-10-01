@@ -1,0 +1,12 @@
+<Project Sdk="Kubuno.Rust.Sdk/1.1.0">
+  <!-- The Kubuno web tooling (docs/WEB.md): F5 deploys this module into a dev core and starts it, behind the
+       development database guard (KUBUNO_DEV_DATABASE_URL must name a development database). -->
+  <Sdk Name="Kubuno.Web.Sdk" Version="1.0.0" />
+
+  <!-- Created by Visual Studio's "Kubuno Web Module" template. This file is yours: edit it freely. -->
+  <PropertyGroup>
+    <CargoPackage>$cratename$</CargoPackage>
+    <KubunoWebRole>Module</KubunoWebRole>
+  </PropertyGroup>
+
+</Project>

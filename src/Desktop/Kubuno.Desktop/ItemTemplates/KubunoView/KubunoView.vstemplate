@@ -8,13 +8,14 @@
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Form</Name>
+    <Name>Kubuno Form (Kubuno Core Desktop)</Name>
     <Description>A Kubuno form: a declarative view (.kbview) and its code, a struct whose fields are the view's controls and whose methods are its event handlers - like a Windows Forms Form.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoView</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>10</SortOrder>
     <DefaultName>NewView.kbview</DefaultName>

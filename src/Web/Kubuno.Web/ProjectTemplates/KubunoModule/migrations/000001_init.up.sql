@@ -1,7 +1,5 @@
--- $safeprojectname$ - initial schema.
---
--- CLAUDE.md section 7: "Schema <module> uniquement" - every table this module owns lives in its
--- own dedicated schema, never in `public` or another module's schema.
+-- $moduletitle$ - initial schema. Every table of the module lives in its own schema ("$moduleid$"), never in
+-- public nor in another module's schema.
 CREATE SCHEMA IF NOT EXISTS "$moduleid$";
 
 CREATE TABLE IF NOT EXISTS "$moduleid$".items (
