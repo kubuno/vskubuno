@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Shared `.kbview` specification for desktop and web views** (`docs/VIEWS-SPEC.md`, lot WV-0): the canonical
+  element names (the desktop's) and their web components, the grammar (`x:` and `d:` attributes, attached
+  properties, property elements, size-class suffixes), values and the theme-token styling rule with the web-only
+  `Class` budget, layout (flow by default, `Panel Layout="Absolute"`, Compact/Medium/Expanded size classes),
+  bindings and resources, typography (shared roles, the production web fonts in every web rendering including the
+  designer, text metrics in parity checks), events and EventArgs, the TypeScript code-behind model, and the
+  `kbview-registry.json` schema: the desktop `kubuno/registry` export plus the web block, validated against the real
+  desktop export with a conformance test and an allowlist of reasoned differences.
+
 - **Design build of a project with a library target**: when the package has a `src/lib.rs` next to its
   `src/main.rs` (the migrated Kubuno Chat keeps its views and its `MessageThread` control in its library), the
   designer compiles and links that library, so its controls render for real and appear in the project's
