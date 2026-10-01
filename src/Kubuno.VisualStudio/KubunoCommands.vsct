@@ -1246,6 +1246,40 @@
           <ButtonText>Open</ButtonText>
         </Strings>
       </Button>
+      <!-- docs/RIBBON.md section 9: the ribbon tasks. -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonAddFirst" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddListGroup" />
+        <CommandFlag>DynamicItemStart</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Element</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonCreateCommand" priority="0x0200" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Create Command from this Button</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonEditItems" priority="0x0300" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Edit Items...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonChooseIcon" priority="0x0400" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Choose Icon...</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
 
@@ -1299,40 +1333,6 @@
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewCodeGroup" />
     </CommandPlacement>
     <!-- docs/DESIGNER.md Â§13: the Layout commands, in the context submenus and in the Layout toolbar. -->
-      <!-- docs/RIBBON.md section 9: the ribbon tasks. -->
-      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonAddFirst" priority="0x0100" type="Button">
-        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddListGroup" />
-        <CommandFlag>DynamicItemStart</CommandFlag>
-        <CommandFlag>DynamicVisibility</CommandFlag>
-        <CommandFlag>TextChanges</CommandFlag>
-        <Strings>
-          <ButtonText>Element</ButtonText>
-        </Strings>
-      </Button>
-      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonCreateCommand" priority="0x0200" type="Button">
-        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
-        <CommandFlag>DynamicVisibility</CommandFlag>
-        <CommandFlag>TextChanges</CommandFlag>
-        <Strings>
-          <ButtonText>Create Command from this Button</ButtonText>
-        </Strings>
-      </Button>
-      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonEditItems" priority="0x0300" type="Button">
-        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
-        <CommandFlag>DynamicVisibility</CommandFlag>
-        <CommandFlag>TextChanges</CommandFlag>
-        <Strings>
-          <ButtonText>Edit Items...</ButtonText>
-        </Strings>
-      </Button>
-      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonChooseIcon" priority="0x0400" type="Button">
-        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
-        <CommandFlag>DynamicVisibility</CommandFlag>
-        <CommandFlag>TextChanges</CommandFlag>
-        <Strings>
-          <ButtonText>Choose Icon...</ButtonText>
-        </Strings>
-      </Button>
     <CommandPlacement guid="guidVSStd97" id="cmdidAlignLeft" priority="0x0100">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" />
     </CommandPlacement>
@@ -1706,6 +1706,17 @@
       <IDSymbol name="cmdidDesignerWrapScrollArea" value="0x0214" />
       <IDSymbol name="cmdidDesignerCreateHandlerFirst" value="0x0220" />
       <IDSymbol name="cmdidDesignerSelectFirst" value="0x0240" />
+      <!-- docs/RIBBON.md section 9 - MUST match DesignerCommandIds.Ribbon*. -->
+      <IDSymbol name="KubunoDesignerRibbonTasksMenu" value="0x1100" />
+      <IDSymbol name="KubunoDesignerRibbonAddMenu" value="0x1101" />
+      <IDSymbol name="KubunoDesignerRibbonAddContextMenu" value="0x1102" />
+      <IDSymbol name="KubunoDesignerRibbonGroup" value="0x1103" />
+      <IDSymbol name="KubunoDesignerRibbonTasksGroup" value="0x1104" />
+      <IDSymbol name="KubunoDesignerRibbonAddListGroup" value="0x1105" />
+      <IDSymbol name="cmdidDesignerRibbonCreateCommand" value="0x0600" />
+      <IDSymbol name="cmdidDesignerRibbonEditItems" value="0x0601" />
+      <IDSymbol name="cmdidDesignerRibbonChooseIcon" value="0x0602" />
+      <IDSymbol name="cmdidDesignerRibbonAddFirst" value="0x0620" />
       <!-- docs/DESIGNER.md Â§13: Layout submenus and toolbar. -->
       <IDSymbol name="KubunoDesignerAlignMenu" value="0x1035" />
       <IDSymbol name="KubunoDesignerSizeMenu" value="0x1036" />
@@ -1765,14 +1776,3 @@
 
 
 </CommandTable>
-      <!-- docs/RIBBON.md section 9 - MUST match DesignerCommandIds.Ribbon*. -->
-      <IDSymbol name="KubunoDesignerRibbonTasksMenu" value="0x1100" />
-      <IDSymbol name="KubunoDesignerRibbonAddMenu" value="0x1101" />
-      <IDSymbol name="KubunoDesignerRibbonAddContextMenu" value="0x1102" />
-      <IDSymbol name="KubunoDesignerRibbonGroup" value="0x1103" />
-      <IDSymbol name="KubunoDesignerRibbonTasksGroup" value="0x1104" />
-      <IDSymbol name="KubunoDesignerRibbonAddListGroup" value="0x1105" />
-      <IDSymbol name="cmdidDesignerRibbonCreateCommand" value="0x0600" />
-      <IDSymbol name="cmdidDesignerRibbonEditItems" value="0x0601" />
-      <IDSymbol name="cmdidDesignerRibbonChooseIcon" value="0x0602" />
-      <IDSymbol name="cmdidDesignerRibbonAddFirst" value="0x0620" />
