@@ -90,6 +90,35 @@
     <ID Name="Popover" Value="79" />
     <ID Name="TableLayoutPanel" Value="80" />
     <ID Name="GradientField" Value="81" />
+    <ID Name="Ribbon" Value="82" />
+    <ID Name="RibbonTab" Value="83" />
+    <ID Name="RibbonContextualTabGroup" Value="84" />
+    <ID Name="RibbonGroup" Value="85" />
+    <ID Name="RibbonControlGroup" Value="86" />
+    <ID Name="RibbonBox" Value="87" />
+    <ID Name="RibbonQuickAccessToolbar" Value="88" />
+    <ID Name="RibbonBackstage" Value="89" />
+    <ID Name="BackstageTab" Value="90" />
+    <ID Name="BackstageButton" Value="91" />
+    <ID Name="BackstageSeparator" Value="92" />
+    <ID Name="RibbonButton" Value="93" />
+    <ID Name="RibbonToggleButton" Value="94" />
+    <ID Name="RibbonRadioButton" Value="95" />
+    <ID Name="RibbonMenuButton" Value="96" />
+    <ID Name="RibbonSplitButton" Value="97" />
+    <ID Name="RibbonColorPicker" Value="98" />
+    <ID Name="RibbonMenuItem" Value="99" />
+    <ID Name="RibbonSplitMenuItem" Value="100" />
+    <ID Name="RibbonCheckBox" Value="101" />
+    <ID Name="RibbonComboBox" Value="102" />
+    <ID Name="RibbonTextBox" Value="103" />
+    <ID Name="RibbonNumericField" Value="104" />
+    <ID Name="RibbonGallery" Value="105" />
+    <ID Name="RibbonGalleryCategory" Value="106" />
+    <ID Name="RibbonGalleryItem" Value="107" />
+    <ID Name="RibbonLabel" Value="108" />
+    <ID Name="RibbonSeparator" Value="109" />
+    <ID Name="Command" Value="110" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -496,6 +525,151 @@
       <Source Uri="$(Controls)/GradientField.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/GradientField.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/GradientField.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Ribbon)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Ribbon.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Ribbon.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Ribbon.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonTab)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonTab.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonTab.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonTab.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonContextualTabGroup)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonContextualTabGroup.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonContextualTabGroup.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonContextualTabGroup.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonGroup)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonGroup.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonGroup.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonGroup.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonControlGroup)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonControlGroup.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonControlGroup.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonControlGroup.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonBox)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonBox.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonBox.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonBox.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonQuickAccessToolbar)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonQuickAccessToolbar.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonQuickAccessToolbar.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonQuickAccessToolbar.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonBackstage)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonBackstage.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonBackstage.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonBackstage.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(BackstageTab)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/BackstageTab.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/BackstageTab.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/BackstageTab.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(BackstageButton)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/BackstageButton.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/BackstageButton.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/BackstageButton.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(BackstageSeparator)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/BackstageSeparator.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/BackstageSeparator.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/BackstageSeparator.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonButton)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonButton.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonButton.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonButton.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonToggleButton)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonToggleButton.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonToggleButton.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonToggleButton.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonRadioButton)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonRadioButton.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonRadioButton.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonRadioButton.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonMenuButton)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonMenuButton.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonMenuButton.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonMenuButton.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonSplitButton)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonSplitButton.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonSplitButton.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonSplitButton.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonColorPicker)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonColorPicker.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonColorPicker.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonColorPicker.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonMenuItem)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonMenuItem.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonMenuItem.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonMenuItem.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonSplitMenuItem)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonSplitMenuItem.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonSplitMenuItem.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonSplitMenuItem.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonCheckBox)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonCheckBox.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonCheckBox.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonCheckBox.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonComboBox)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonComboBox.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonComboBox.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonComboBox.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonTextBox)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonTextBox.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonTextBox.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonTextBox.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonNumericField)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonNumericField.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonNumericField.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonNumericField.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonGallery)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonGallery.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonGallery.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonGallery.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonGalleryCategory)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonGalleryCategory.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonGalleryCategory.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonGalleryCategory.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonGalleryItem)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonGalleryItem.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonGalleryItem.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonGalleryItem.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonLabel)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonLabel.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonLabel.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonLabel.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RibbonSeparator)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RibbonSeparator.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RibbonSeparator.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RibbonSeparator.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Command)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Command.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Command.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Command.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

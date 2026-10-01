@@ -125,6 +125,36 @@ $table = @(
     @{ Name = 'GradientField';    Custom = @(
         @('circle', @{ cx = '9'; cy = '9'; r = '7' }),
         @('circle', @{ cx = '15'; cy = '15'; r = '7' })) }
+    # The ribbon family (docs/RIBBON.md): the Toolbox's « Ruban » tab.
+    @{ Name = 'Ribbon';                   Icon = 'layout-panel-top';      Accent = 0 }
+    @{ Name = 'RibbonTab';                Icon = 'panel-top-open';        Accent = 0 }
+    @{ Name = 'RibbonContextualTabGroup'; Icon = 'panels-top-left';       Accent = 0 }
+    @{ Name = 'RibbonGroup';              Icon = 'group';                 Accent = 0 }
+    @{ Name = 'RibbonControlGroup';       Icon = 'bold';                  Accent = 'none' }
+    @{ Name = 'RibbonBox';                Icon = 'rows-2';                Accent = 0 }
+    @{ Name = 'RibbonQuickAccessToolbar'; Icon = 'zap';                   Accent = 0 }
+    @{ Name = 'RibbonBackstage';          Icon = 'folder-open';           Accent = 0 }
+    @{ Name = 'BackstageTab';             Icon = 'file-text';             Accent = 0 }
+    @{ Name = 'BackstageButton';          Icon = 'square-mouse-pointer';  Accent = 1 }
+    @{ Name = 'BackstageSeparator';       Icon = 'minus';                 Accent = 0 }
+    @{ Name = 'RibbonButton';             Icon = 'square-mouse-pointer';  Accent = 0 }
+    @{ Name = 'RibbonToggleButton';       Icon = 'toggle-left';           Accent = 1 }
+    @{ Name = 'RibbonRadioButton';        Icon = 'circle-dot';            Accent = 1 }
+    @{ Name = 'RibbonMenuButton';         Icon = 'square-menu';           Accent = 0 }
+    @{ Name = 'RibbonSplitButton';        Icon = 'square-split-horizontal'; Accent = 1 }
+    @{ Name = 'RibbonColorPicker';        Icon = 'palette';               Accent = 0 }
+    @{ Name = 'RibbonMenuItem';           Icon = 'menu';                  Accent = 1 }
+    @{ Name = 'RibbonSplitMenuItem';      Icon = 'list-tree';             Accent = 0 }
+    @{ Name = 'RibbonCheckBox';           Icon = 'square-check' }
+    @{ Name = 'RibbonComboBox';           Icon = 'square-chevron-down';   Accent = 1 }
+    @{ Name = 'RibbonTextBox';            Icon = 'text-cursor-input' }
+    @{ Name = 'RibbonNumericField';       Icon = 'chevrons-up-down';      Accent = 0 }
+    @{ Name = 'RibbonGallery';            Icon = 'gallery-horizontal-end'; Accent = 0 }
+    @{ Name = 'RibbonGalleryCategory';    Icon = 'tags';                  Accent = 0 }
+    @{ Name = 'RibbonGalleryItem';        Icon = 'tag';                   Accent = 0 }
+    @{ Name = 'RibbonLabel';              Icon = 'type';                  Accent = 'none' }
+    @{ Name = 'RibbonSeparator';          Icon = 'separator-vertical';    Accent = 0 }
+    @{ Name = 'Command';                  Icon = 'command';               Accent = 0 }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS

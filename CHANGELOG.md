@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The ribbon in the designer** (`docs/RIBBON.md`): a new **Ruban** (Ribbon) Toolbox tab lists `Ribbon` and every
+  element composing it — tabs, contextual tab groups, groups, control groups, boxes, the quick access toolbar, the
+  Backstage and its tabs, buttons and separators, buttons, toggle and radio buttons, menu and split buttons, colour
+  pickers, menu items, check boxes, combo boxes, text boxes, numeric fields, galleries with their categories and
+  items, labels, separators — plus the non-visual `Command`, each with its own 16 px icon. Dropping a `Ribbon` on a
+  form inserts a ribbon docked on top with a tab, a group and a button; each element arrives with what makes it
+  usable. On the design surface a click selects a tab (which becomes the shown tab), a group or a control; the
+  Properties window lists their properties (the container layout ones hidden) and events, with the `Command` picker.
+- The designed window's title bar takes the colour of its ribbon on the design surface, as at run time (new view
+  property `TitleBarFollowsRibbon`, on by default; an explicit `TitleBarBackground` wins).
+- `samples/ribbon-desktop`: the Accueil tab of Kubuno Documents as a `.kbview` ribbon (Presse-papiers, Police,
+  Paragraphe, a Styles gallery, a contextual « Outils de tableau » tab, a Backstage and a quick access toolbar), its
+  commands bound to the view and its events handled in code.
 - **GradientField** in the `.kbview` designer: a Toolbox item with its own icon (two overlapping circles, the
   accent on the second) next to ColorField, the same default drop size, and override support for the new class.
 - **Desktop migration foundations (lot F1, `docs/DESKTOP-MIGRATION.md`)** in the designer: Toolbox items with their

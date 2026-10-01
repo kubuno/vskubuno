@@ -1,0 +1,16 @@
+[package]
+name = "ribbon-desktop"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# The Kubuno ribbon sample (docs/RIBBON.md): a `.kbview` window whose ribbon reproduces the Accueil
+# tab of Kubuno Documents - Presse-papiers, Police, Paragraphe, a Styles gallery and a contextual
+# "Outils de tableau" tab - with every element a control of the designer and its commands bound.
+#
+#   ribbon-desktop.exe --dark      the dark theme
+
+[dependencies]
+# Kubuno, from a local checkout of github.com/kubuno/desktop (its `windows` workspace), like the
+# Kubuno Desktop Application template (change it here AND <KubunoDesktopSrc> in the .rsproj).
+kubuno = { path = "Z:/src/desktop/windows/src/crates/kubuno" }

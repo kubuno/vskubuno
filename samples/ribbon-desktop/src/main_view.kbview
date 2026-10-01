@@ -1,0 +1,99 @@
+<!--
+  The ribbon sample's window: the Accueil tab of Kubuno Documents as a designable ribbon. Every
+  element of the ribbon is a control of the designer (select it, set its properties, handle its
+  events); the commands (component tray) hold the shared label, icon, shortcut and state.
+-->
+<Panel DesignWidth="1280" DesignHeight="640" Title="Kubuno Ribbon" OnLoad="main_view_load">
+  <Command x:Name="cmd_paste" Label="Coller" LargeIcon="ClipboardPaste" SmallIcon="ClipboardPaste" Shortcut="Ctrl+Shift+V" OnExecute="paste_execute"/>
+  <Command x:Name="cmd_bold" Label="Gras" SmallIcon="Bold" Shortcut="Ctrl+B" IsCheckable="true" Checked="{Binding Bold, Mode=TwoWay}" OnExecute="bold_execute"/>
+  <Command x:Name="cmd_italic" Label="Italique" SmallIcon="Italic" Shortcut="Ctrl+I" IsCheckable="true" Checked="{Binding Italic, Mode=TwoWay}"/>
+  <Command x:Name="cmd_save" Label="Enregistrer" SmallIcon="Save" Shortcut="Ctrl+S" OnExecute="save_execute"/>
+
+  <Ribbon x:Name="ribbon" Dock="Top" Tone="Documents" OnSelectedTabChanged="ribbon_tab_changed">
+    <RibbonQuickAccessToolbar>
+      <RibbonButton x:Name="qat_save" Command="cmd_save"/>
+      <RibbonButton x:Name="qat_undo" Label="Annuler" SmallIcon="Undo2"/>
+      <RibbonButton x:Name="qat_redo" Label="Rétablir" SmallIcon="Redo2"/>
+    </RibbonQuickAccessToolbar>
+
+    <RibbonBackstage Header="Fichier">
+      <BackstageTab x:Name="bs_info" Header="Informations" Icon="Info">
+        <Label Text="Document sans titre — modifié il y a quelques instants."/>
+      </BackstageTab>
+      <BackstageSeparator/>
+      <BackstageButton x:Name="bs_close" Label="Fermer" SmallIcon="X" OnClick="close_click"/>
+    </RibbonBackstage>
+
+    <RibbonTab x:Name="tab_home" Header="Accueil" KeyTip="H">
+      <RibbonGroup x:Name="grp_clip" Header="Presse-papiers" Icon="ClipboardPaste">
+        <RibbonButton x:Name="paste" Command="cmd_paste" Size="Large"/>
+        <RibbonButton x:Name="cut" Label="Couper" SmallIcon="Scissors" OnClick="cut_click"/>
+        <RibbonButton x:Name="copy" Label="Copier" SmallIcon="Copy" OnClick="copy_click"/>
+        <RibbonToggleButton x:Name="painter" Label="Reproduire la mise en forme" SmallIcon="Paintbrush"/>
+      </RibbonGroup>
+      <RibbonGroup x:Name="grp_font" Header="Police" ShowDialogLauncher="true" OnDialogLauncherClick="font_dialog">
+        <RibbonBox>
+          <RibbonComboBox x:Name="cb_font" Width="105" IsEditable="true" SelectedValue="{Binding FontFamily, Mode=TwoWay}">
+            <Option Value="Arial"/><Option Value="Calibri"/><Option Value="Cambria"/><Option Value="Segoe UI"/><Option Value="Times New Roman"/>
+          </RibbonComboBox>
+          <RibbonComboBox x:Name="cb_size" Width="54" IsEditable="true" SelectedValue="{Binding FontSize, Mode=TwoWay}">
+            <Option Value="9"/><Option Value="10"/><Option Value="11"/><Option Value="12"/><Option Value="14"/><Option Value="18"/><Option Value="24"/>
+          </RibbonComboBox>
+        </RibbonBox>
+        <RibbonControlGroup>
+          <RibbonToggleButton x:Name="tg_bold" Command="cmd_bold" ShowLabel="false"/>
+          <RibbonToggleButton x:Name="tg_italic" Command="cmd_italic" ShowLabel="false"/>
+          <RibbonToggleButton x:Name="tg_underline" Label="Souligné" SmallIcon="Underline" ShowLabel="false" Checked="{Binding Underline, Mode=TwoWay}"/>
+          <RibbonMenuButton x:Name="case_menu" SmallIcon="CaseSensitive" Label="Modifier la casse" ShowLabel="false">
+            <RibbonMenuItem x:Name="case_upper" Label="MAJUSCULES" OnClick="case_click"/>
+            <RibbonMenuItem x:Name="case_lower" Label="minuscules" OnClick="case_click"/>
+            <RibbonSeparator/>
+            <RibbonMenuItem x:Name="case_spacing" Label="Espacement des caractères…" OnClick="case_click"/>
+          </RibbonMenuButton>
+          <RibbonColorPicker x:Name="cp_font_color" SmallIcon="Baseline" Label="Couleur de police" ShowLabel="false" SelectedColor="{Binding FontColor, Mode=TwoWay}" OnSelectedColorChanged="font_color_changed"/>
+        </RibbonControlGroup>
+      </RibbonGroup>
+      <RibbonGroup x:Name="grp_para" Header="Paragraphe">
+        <RibbonRadioButton x:Name="al_left" GroupName="align" Label="Aligner à gauche" SmallIcon="AlignLeft" ShowLabel="false" Checked="true" OnCheckedChanged="align_changed"/>
+        <RibbonRadioButton x:Name="al_center" GroupName="align" Label="Centrer" SmallIcon="AlignCenter" ShowLabel="false" OnCheckedChanged="align_changed"/>
+        <RibbonRadioButton x:Name="al_right" GroupName="align" Label="Aligner à droite" SmallIcon="AlignRight" ShowLabel="false" OnCheckedChanged="align_changed"/>
+        <RibbonSplitButton x:Name="bullets" Label="Puces" SmallIcon="List" ShowLabel="false" OnClick="bullets_click">
+          <RibbonMenuItem Label="Puce ronde"/>
+          <RibbonMenuItem Label="Puce carrée"/>
+        </RibbonSplitButton>
+        <RibbonCheckBox x:Name="cb_marks" Label="Marques ¶" Checked="{Binding ShowMarks, Mode=TwoWay}"/>
+      </RibbonGroup>
+      <RibbonGroup x:Name="grp_styles" Header="Styles">
+        <RibbonGallery x:Name="styles" Columns="3" Rows="1" ItemWidth="72" ItemHeight="56" SelectedValue="{Binding Style, Mode=TwoWay}" OnItemClick="style_pick">
+          <RibbonGalleryItem Value="normal" Label="Normal"/>
+          <RibbonGalleryItem Value="h1" Label="Titre 1"/>
+          <RibbonGalleryItem Value="h2" Label="Titre 2"/>
+          <RibbonGalleryItem Value="title" Label="Titre"/>
+          <RibbonGalleryItem Value="quote" Label="Citation"/>
+          <RibbonGalleryItem Value="code" Label="Code"/>
+        </RibbonGallery>
+      </RibbonGroup>
+    </RibbonTab>
+
+    <RibbonTab x:Name="tab_insert" Header="Insertion">
+      <RibbonGroup x:Name="grp_tables" Header="Tableaux">
+        <RibbonButton x:Name="insert_table" Label="Tableau" LargeIcon="Table" Size="Large" OnClick="insert_table_click"/>
+      </RibbonGroup>
+    </RibbonTab>
+
+    <RibbonContextualTabGroup x:Name="ctx_table" Header="Outils de tableau" Color="#107C41" Visible="{Binding TableSelected}">
+      <RibbonTab x:Name="tab_table" Header="Disposition">
+        <RibbonGroup x:Name="grp_rows" Header="Lignes et colonnes">
+          <RibbonButton Label="Insérer au-dessus" SmallIcon="ArrowUp"/>
+          <RibbonButton Label="Insérer en dessous" SmallIcon="ArrowDown"/>
+          <RibbonButton Label="Supprimer" SmallIcon="Trash2"/>
+        </RibbonGroup>
+      </RibbonTab>
+    </RibbonContextualTabGroup>
+  </Ribbon>
+
+  <Panel Dock="Fill" Surface="Layer" Padding="24">
+    <Label x:Name="lbl_status" Dock="Top" Height="24" Text="{Binding Status}"/>
+    <Label x:Name="lbl_state" Dock="Top" Height="24" Text="{Binding StateText}"/>
+  </Panel>
+</Panel>
