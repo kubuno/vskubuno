@@ -114,6 +114,12 @@ namespace Kubuno.Desktop.Designer.Toolbox
         /// </summary>
         public static string ProjectIconKey(ComponentMeta component)
         {
+            // WinForms' [ToolboxBitmap]: #[toolbox(bitmap = "address_editor.png")] registers the image's absolute path.
+            if (IsImageFile(component.ToolboxIcon))
+            {
+                return ImageKeyPrefix + component.ToolboxIcon;
+            }
+
             if (!string.IsNullOrWhiteSpace(component.ToolboxIcon))
             {
                 var pascal = string.Concat(component.ToolboxIcon!.Split(new[] { '-', '_', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => char.ToUpperInvariant(p[0]) + p.Substring(1)));
@@ -504,13 +510,21 @@ namespace Kubuno.Desktop.Designer.Toolbox
             ThreadHelper.ThrowIfNotOnUIThread();
             try
             {
-                if (IconName?.Invoke(componentName) is not { } iconName)
+                var background = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolWindowBackgroundColorKey);
+                byte[]? pixels;
+                if (componentName.StartsWith(ImageKeyPrefix, StringComparison.Ordinal))
+                {
+                    pixels = ImageFileIcon(componentName.Substring(ImageKeyPrefix.Length));
+                }
+                else if (IconName?.Invoke(componentName) is not { } iconName)
                 {
                     return IntPtr.Zero;
                 }
+                else
+                {
+                    pixels = RenderIcon(iconName, IconVariantFor(background));
+                }
 
-                var background = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolWindowBackgroundColorKey);
-                var pixels = RenderIcon(iconName, IconVariantFor(background));
                 if (pixels is null)
                 {
                     s_iconFailures++;
@@ -542,7 +556,7 @@ namespace Kubuno.Desktop.Designer.Toolbox
                 keyed.SetPixel(IconSize - 1, 0, Color.FromArgb(0, 255, 255));
 
                 return keyed.GetHbitmap();
-            }            catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException or ExternalException or System.Windows.Markup.XamlParseException)
+            }            catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException or ExternalException or OutOfMemoryException or System.Windows.Markup.XamlParseException)
             {
                 s_iconFailures++;
                 KubunoViewsLogHost.Current.WriteException($"[designer] Toolbox: no icon for '{componentName}'", ex);
@@ -598,6 +612,54 @@ namespace Kubuno.Desktop.Designer.Toolbox
             var g = Math.Min(255, (int)Math.Round(premultipliedBgra[o + 1] + (background.G * rest)));
             var b = Math.Min(255, (int)Math.Round(premultipliedBgra[o] + (background.B * rest)));
             return r == 255 && g == 0 && b == 255 ? (254, 0, 255) : (r, g, b);
+        }
+
+        /// <summary>The icon key of a project control whose Toolbox icon is an image file (followed by its path).</summary>
+        internal const string ImageKeyPrefix = "file:";
+
+        /// <summary>Whether <paramref name="icon"/> names an image file (<c>.png</c>, <c>.bmp</c>, <c>.ico</c>, <c>.gif</c>, <c>.jpg</c>) rather than a glyph.</summary>
+        public static bool IsImageFile(string? icon) =>
+            !string.IsNullOrWhiteSpace(icon) && new[] { ".png", ".bmp", ".ico", ".gif", ".jpg", ".jpeg" }.Any(ext => icon!.Trim().EndsWith(ext, StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>
+        /// A project control's own Toolbox bitmap (WinForms' <c>[ToolboxBitmap]</c>), scaled to 16x16 with high quality,
+        /// as premultiplied BGRA like <see cref="RenderIcon"/>; null when the file cannot be read.
+        /// </summary>
+        public static byte[]? ImageFileIcon(string path)
+        {
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            using var source = Image.FromFile(path);
+            using var scaled = new Bitmap(IconSize, IconSize, PixelFormat.Format32bppPArgb);
+            using (var g = Graphics.FromImage(scaled))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                g.Clear(Color.Transparent);
+                // Edge pixels sample the image itself, not the transparent outside (a soft halo otherwise).
+                using var wrap = new System.Drawing.Imaging.ImageAttributes();
+                wrap.SetWrapMode(System.Drawing.Drawing2D.WrapMode.TileFlipXY);
+                g.DrawImage(source, new Rectangle(0, 0, IconSize, IconSize), 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, wrap);
+            }
+
+            var data = scaled.LockBits(new Rectangle(0, 0, IconSize, IconSize), ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
+            try
+            {
+                var bytes = new byte[IconSize * IconSize * 4];
+                for (var y = 0; y < IconSize; y++)
+                {
+                    Marshal.Copy(data.Scan0 + (y * data.Stride), bytes, y * IconSize * 4, IconSize * 4);
+                }
+
+                return bytes;
+            }
+            finally
+            {
+                scaled.UnlockBits(data);
+            }
         }
 
         /// <summary>Renders an icon's XAML (compiled into Kubuno.Rust.ProjectSystem) pixel-hinted at 16x16 (<see cref="ToolboxIconRasterizer"/>), premultiplied BGRA; null when the resource is missing.</summary>

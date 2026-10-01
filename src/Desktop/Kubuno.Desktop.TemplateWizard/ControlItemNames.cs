@@ -63,9 +63,22 @@ namespace Kubuno.Desktop.TemplateWizard
         public static string? CrateRootFor(string rsPath, Func<string, bool> fileExists)
         {
             var directory = Path.GetDirectoryName(rsPath);
-            if (directory is null || !string.Equals(Path.GetFileName(directory), "src", StringComparison.OrdinalIgnoreCase))
+            if (directory is null)
             {
                 return null;
+            }
+
+            if (!string.Equals(Path.GetFileName(directory), "src", StringComparison.OrdinalIgnoreCase))
+            {
+                // A file added outside `src` (Add New Item on the project node puts it next to Cargo.toml, as Windows
+                // Forms puts a new UserControl next to the .csproj): declared from the crate root with a #[path].
+                var package = PackageDirectoryFor(rsPath, fileExists);
+                if (package is null || IsUnder(rsPath, Path.Combine(package, "src")))
+                {
+                    return null;
+                }
+
+                directory = Path.Combine(package, "src");
             }
 
             var packageDirectory = Path.GetDirectoryName(directory);
@@ -84,6 +97,43 @@ namespace Kubuno.Desktop.TemplateWizard
             }
 
             return null;
+        }
+
+        /// <summary>The nearest folder at or above <paramref name="path"/>'s folder holding a <c>Cargo.toml</c>; null when none.</summary>
+        public static string? PackageDirectoryFor(string path, Func<string, bool> fileExists)
+        {
+            var directory = Path.GetDirectoryName(path);
+            while (!string.IsNullOrEmpty(directory))
+            {
+                if (fileExists(Path.Combine(directory, "Cargo.toml")))
+                {
+                    return directory;
+                }
+
+                directory = Path.GetDirectoryName(directory);
+            }
+
+            return null;
+        }
+
+        private static bool IsUnder(string path, string directory) =>
+            path.StartsWith(directory.TrimEnd('\\', '/') + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// How the crate root <paramref name="rootPath"/> names the module file <paramref name="rsPath"/> in a <c>#[path]</c>:
+        /// its file name when they share a folder, else the relative path with <c>/</c> (<c>../address_editor.rs</c>).
+        /// </summary>
+        public static string ModulePathFrom(string rootPath, string rsPath)
+        {
+            var rootDir = Path.GetDirectoryName(rootPath) ?? string.Empty;
+            var fileDir = Path.GetDirectoryName(rsPath) ?? string.Empty;
+            if (string.Equals(rootDir, fileDir, StringComparison.OrdinalIgnoreCase))
+            {
+                return Path.GetFileName(rsPath);
+            }
+
+            var from = new Uri(rootDir.TrimEnd('\\') + "\\");
+            return Uri.UnescapeDataString(from.MakeRelativeUri(new Uri(rsPath)).ToString()).Replace('\\', '/');
         }
 
         /// <summary>
@@ -212,8 +262,7 @@ namespace Kubuno.Desktop.TemplateWizard
         /// </summary>
         public static bool AdaptToProjectOnDisk(string rsPath)
         {
-            var src = Path.GetDirectoryName(rsPath);
-            var package = src is null ? null : Path.GetDirectoryName(src);
+            var package = PackageDirectoryFor(rsPath, File.Exists);
             var manifest = package is null ? null : Path.Combine(package, "Cargo.toml");
             if (manifest is null || !File.Exists(manifest) || !File.Exists(rsPath))
             {
@@ -249,7 +298,7 @@ namespace Kubuno.Desktop.TemplateWizard
             var bytes = File.ReadAllBytes(root);
             var hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
             var text = new UTF8Encoding(false).GetString(bytes, hasBom ? 3 : 0, bytes.Length - (hasBom ? 3 : 0));
-            var updated = DeclareModule(text, ModuleName(Path.GetFileNameWithoutExtension(rsPath)), Path.GetFileName(rsPath));
+            var updated = DeclareModule(text, ModuleName(Path.GetFileNameWithoutExtension(rsPath)), ModulePathFrom(root, rsPath));
             if (updated is null)
             {
                 return false;

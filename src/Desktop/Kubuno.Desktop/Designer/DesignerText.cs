@@ -43,6 +43,9 @@ namespace Kubuno.Desktop.Designer
             DesignSurface.DesignSurfaceRuntimeState.NotApplicable => T(
                 "Preview: bundled runtime - this view is not part of a project that uses kubuno-views.",
                 "Aperçu : runtime intégré — cette vue n'appartient pas à un projet qui utilise kubuno-views."),
+            DesignSurface.DesignSurfaceRuntimeState.OutOfDate => T(
+                "The project's controls changed since the last build: the designer shows their previous version. Build the project to see the changes.",
+                "Les contrôles du projet ont changé depuis la dernière génération : le concepteur montre leur version précédente. Générez le projet pour voir les modifications."),
             _ => string.Empty,
         };
 
@@ -52,6 +55,7 @@ namespace Kubuno.Desktop.Designer
             DesignSurface.DesignSurfaceRuntimeState.NotBuilt => T("Build", "Générer"),
             DesignSurface.DesignSurfaceRuntimeState.Building => T("Cancel", "Annuler"),
             DesignSurface.DesignSurfaceRuntimeState.Failed => T("Build", "Générer"),
+            DesignSurface.DesignSurfaceRuntimeState.OutOfDate => T("Build", "Générer"),
             _ => string.Empty,
         };
 

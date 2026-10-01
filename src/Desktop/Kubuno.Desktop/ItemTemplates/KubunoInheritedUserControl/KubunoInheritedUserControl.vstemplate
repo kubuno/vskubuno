@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/EVENTS.md "User controls", visual inheritance: "Add New Item > Kubuno Inherited User Control" - Windows Forms'
+     Inherited User Control. InheritedViewWizard asks which user control of the project to inherit from and writes a view
+     naming it (x:Inherits) with an element for each control of the base the new one may change, and the code-behind of a
+     user control extending the base one (its properties, events and handlers are inherited). -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Kubuno Inherited User Control (Kubuno Core Desktop)</Name>
+    <Description>A user control that inherits another user control of the project: it shows the base's controls, can change those the base makes Protected or Public, adds its own, and keeps the base's properties, events and handlers - like a Windows Forms Inherited User Control.</Description>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.KubunoInheritedUserControl</TemplateID>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>14</SortOrder>
+    <DefaultName>InheritedUserControl.kbview</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.kbview">InheritedUserControl.kbview</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">InheritedUserControl.rs</ProjectItem>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>Kubuno.Desktop.TemplateWizard, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>Kubuno.Desktop.TemplateWizard.InheritedViewWizard</FullClassName>
+  </WizardExtension>
+  <WizardData>
+    <KubunoInherited kind="user_control" />
+  </WizardData>
+</VSTemplate>

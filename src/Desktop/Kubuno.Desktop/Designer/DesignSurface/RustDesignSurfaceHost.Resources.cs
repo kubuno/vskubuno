@@ -19,6 +19,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     public sealed partial class RustDesignSurfaceHost
     {
         private string _designCulture = string.Empty;
+        // Until the language picker is used, the design culture follows Windows' UI culture when the project has resources
+        // in it (what the application shows at run time); "(Default)" stays selectable.
+        private bool _designCultureChosen;
         private string? _lastSentResources;
         private FileSystemWatcher? _resourceWatcher;
         private System.Threading.Timer? _resourceDebounce;
@@ -27,13 +30,30 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         public event EventHandler? ResourcesChanged;
 
         /// <summary>The design-time culture (<c>""</c> = "(Default)": the neutral values).</summary>
-        public string DesignCulture => _designCulture;
+        public string DesignCulture => _designCultureChosen ? _designCulture : DefaultDesignCulture(ProjectCultures(), System.Globalization.CultureInfo.CurrentUICulture);
 
         /// <summary>Shows the view in <paramref name="culture"/> (<c>""</c>: the neutral values); the application is not changed.</summary>
         public void SetDesignCulture(string culture)
         {
             _designCulture = culture ?? string.Empty;
+            _designCultureChosen = true;
             SendResources();
+        }
+
+        /// <summary>
+        /// The design culture a designer opens with: the project's culture matching Windows' UI culture <paramref name="ui"/>
+        /// (<c>fr-FR</c>, else its language <c>fr</c>, else another region of it), <c>""</c> (the neutral values) when the
+        /// project has none - the language the application starts in on this machine.
+        /// </summary>
+        public static string DefaultDesignCulture(IEnumerable<string> projectCultures, System.Globalization.CultureInfo ui)
+        {
+            var cultures = projectCultures?.ToList() ?? new List<string>();
+            var name = ui?.Name ?? string.Empty;
+            var language = ui?.TwoLetterISOLanguageName ?? string.Empty;
+            return cultures.FirstOrDefault(c => string.Equals(c, name, StringComparison.OrdinalIgnoreCase))
+                ?? cultures.FirstOrDefault(c => string.Equals(c, language, StringComparison.OrdinalIgnoreCase))
+                ?? cultures.FirstOrDefault(c => c.StartsWith(language + "-", StringComparison.OrdinalIgnoreCase))
+                ?? string.Empty;
         }
 
         /// <summary>The cultures of the project's resource files, sorted.</summary>
@@ -68,12 +88,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             {
                 var files = ProjectResources.NeutralFiles(root);
                 WatchResources(root);
-                if (files.Count == 0 && _designCulture.Length == 0 && _lastSentResources is null)
+                if (files.Count == 0 && DesignCulture.Length == 0 && _lastSentResources is null)
                 {
                     return;
                 }
 
-                var message = DesignSurfaceResourcesProtocol.EncodeSetResources(_designCulture, files);
+                var message = DesignSurfaceResourcesProtocol.EncodeSetResources(DesignCulture, files);
                 if (!force && message == _lastSentResources)
                 {
                     return;

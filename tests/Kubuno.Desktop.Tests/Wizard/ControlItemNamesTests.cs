@@ -86,5 +86,24 @@ namespace Kubuno.Desktop.Tests.Wizard
             Assert.IsNull(ControlItemNames.CrateRootFor(Path.Combine(root, "src", "controls", "round_button.rs"), Exists));
             Assert.IsNull(ControlItemNames.CrateRootFor(Path.Combine(root, "src", "main.rs"), Exists), "the root itself");
         }
+
+        /// <summary>
+        /// Found live: Add New Item on the project node writes the user control next to Cargo.toml; it is declared from
+        /// the crate root with a #[path], as Windows Forms compiles a UserControl added anywhere in the project.
+        /// </summary>
+        [TestMethod]
+        public void A_control_added_at_the_project_root_is_declared_with_a_path()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "app");
+            bool Exists(string path) => path == Path.Combine(root, "Cargo.toml") || path == Path.Combine(root, "src", "main.rs");
+            var file = Path.Combine(root, "address_editor.rs");
+            var crateRoot = ControlItemNames.CrateRootFor(file, Exists);
+            Assert.AreEqual(Path.Combine(root, "src", "main.rs"), crateRoot);
+            Assert.AreEqual("../address_editor.rs", ControlItemNames.ModulePathFrom(crateRoot!, file));
+            Assert.AreEqual("address_editor.rs", ControlItemNames.ModulePathFrom(crateRoot!, Path.Combine(root, "src", "address_editor.rs")));
+            var text = ControlItemNames.DeclareModule("mod main_view;\n\nfn main() {}\n", "address_editor", "../address_editor.rs");
+            StringAssert.Contains(text, "mod main_view;\n#[path = \"../address_editor.rs\"]\nmod address_editor;\n");
+            Assert.AreEqual(root, ControlItemNames.PackageDirectoryFor(Path.Combine(root, "ui", "x.rs"), Exists));
+        }
     }
 }

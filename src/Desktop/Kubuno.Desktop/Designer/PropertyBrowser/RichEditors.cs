@@ -26,6 +26,8 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             "image" => new KbviewImageEditor(),
             "icon" => new Icons.KbviewIconEditor(),
             "cursor" => new KbviewCursorEditor(),
+            // A Vec<String> property of a project control (WinForms' string[]): the String Collection Editor.
+            "lines" => new KbviewLinesEditor(),
             _ when Icons.KbviewContentAlignmentEditor.Applies(meta?.Kind?.EnumVariants) => new Icons.KbviewContentAlignmentEditor(),
             _ => null,
         };
@@ -40,6 +42,11 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             if (meta?.Editor is { } classEditor && classEditor.StartsWith("class:", StringComparison.Ordinal))
             {
                 return new ClassNamesConverter(classEditor.Substring("class:".Length));
+            }
+
+            if (meta?.Editor == "lines")
+            {
+                return new LinesConverter();
             }
 
             if (meta?.TypeConverter == "IconSize")
@@ -324,6 +331,50 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 UI.Swatches.PaintImage(e.Graphics, e.Bounds, linked);
             }
         }
+    }
+
+    /// <summary>
+    /// The editor of a string-list property of a project control (<c>#[property] countries: Vec&lt;String&gt;</c>, editor
+    /// <c>"lines"</c>): Windows Forms' String Collection Editor, one item per line, written in the attribute one item per
+    /// line (<c>Countries="France&amp;#10;Belgique"</c>).
+    /// </summary>
+    public sealed class KbviewLinesEditor : UITypeEditor
+    {
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext? context) => UITypeEditorEditStyle.Modal;
+
+        public override object? EditValue(ITypeDescriptorContext? context, IServiceProvider? provider, object? value)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var dialog = new UI.StringListDialog(LinesText.Split(value as string));
+            return RichEditors.ShowDialog(provider, dialog) ? LinesText.Join(dialog.Lines) : value;
+        }
+    }
+
+    /// <summary>The attribute text of a string list (one item per line) and its one-line display in the grid.</summary>
+    public static class LinesText
+    {
+        /// <summary>The items of an attribute value (empty lines dropped).</summary>
+        public static IReadOnlyList<string> Split(string? text) =>
+            (text ?? string.Empty).Replace("\r\n", "\n").Split('\n').Where(l => l.Trim().Length > 0).ToArray();
+
+        /// <summary>The attribute value of <paramref name="lines"/> (empty lines dropped).</summary>
+        public static string Join(IEnumerable<string> lines) => string.Join("\n", lines.Select(l => l.TrimEnd('\r')).Where(l => l.Trim().Length > 0));
+
+        /// <summary>The grid's one-line form: <c>France; Belgique</c>.</summary>
+        public static string Display(string? text) => string.Join("; ", Split(text));
+
+        /// <summary>A value typed in the grid: kept as is when it has line breaks, else split on <c>;</c>.</summary>
+        public static string FromTyped(string text) => text.Contains("\n") ? Join(Split(text)) : Join(text.Split(';').Select(s => s.Trim()));
+    }
+
+    /// <summary>Shows a string list on one line in the grid and reads one typed there (<see cref="LinesText"/>).</summary>
+    public sealed class LinesConverter : StringConverter
+    {
+        public override object? ConvertTo(ITypeDescriptorContext? context, System.Globalization.CultureInfo? culture, object? value, Type destinationType) =>
+            destinationType == typeof(string) && value is string s ? LinesText.Display(s) : base.ConvertTo(context, culture, value, destinationType);
+
+        public override object? ConvertFrom(ITypeDescriptorContext? context, System.Globalization.CultureInfo? culture, object value) =>
+            value is string s ? LinesText.FromTyped(s) : base.ConvertFrom(context, culture, value);
     }
 
     /// <summary>The cursor row's editor: the list of cursors, each drawn next to its name, like WinForms' cursor editor.</summary>

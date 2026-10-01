@@ -17,6 +17,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `kbview-registry.json` schema: the desktop `kubuno/registry` export plus the web block, validated against the real
   desktop export with a conformance test and an allowlist of reasoned differences.
 
+- **User controls, end to end like Windows Forms** (`docs/GETTING-STARTED.md` §6, "User controls"):
+  - **Kubuno Inherited Form** and **Kubuno Inherited User Control** item templates (Windows Forms' Inherited Form and
+    Inherited User Control). An Inheritance Picker lists the project's forms or user controls. The new view names
+    its base (`x:Inherits`) and lists the base controls it may change (those whose `Modifiers` is `Protected` or
+    `Public`). Its code-behind holds the base form (`#[base] base: BaseForm`) or extends the base user control. In
+    the designer, the base's private controls are drawn with a lock and cannot be selected;
+  - a project control's Toolbox icon can be its own image (`#[toolbox(bitmap = "address_editor.png")]`, Windows
+    Forms' `[ToolboxBitmap]`), drawn at 16 × 16 in the "<project> Composants" tab;
+  - a user control added from the Toolbox (double-click or drag) gets the size it was designed at;
+  - a colour property of a project control (`Option<ColorValue>`, `ColorValue`, `Color`) opens the colour editor, and
+    a `Vec<String>` property opens the String Collection Editor (one item per line);
+  - **"control out of date" info bar**: when a file declaring one of the project's controls (a user control's view,
+    a control's Rust code, in the project or in a control library it depends on) is saved after the last build, the
+    designer of the views using it says that they show its previous version, with **Générer** (« Les contrôles du
+    projet ont changé depuis la dernière génération… »). The build refreshes the open designers without reopening them;
+  - the User Control template shows a `Load` handler using `design_mode()` (sample data in the designer) and the
+    `#[toolbox(bitmap)]` option.
+
 - **Design build of a project with a library target**: when the package has a `src/lib.rs` next to its
   `src/main.rs` (the migrated Kubuno Chat keeps its views and its `MessageThread` control in its library), the
   designer compiles and links that library, so its controls render for real and appear in the project's
@@ -548,6 +566,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Add New Item on a project node** put a new control's files next to `Cargo.toml` and did not declare its module,
+  so the control was not compiled and never reached the Toolbox. The module is now declared from the crate root
+  with a `#[path]` (`#[path = "../address_editor.rs"] mod address_editor;`), wherever the file is.
+- The designer of a **user control's own view** drew a window frame (title, caption buttons) around it; it is now a
+  plain surface, like the Windows Forms UserControl designer.
+- A double-click on an event in a **user control's designer** wrote a free function `fn on_…(vm, value)`. It now
+  writes a typed method in the user control's `#[event_handlers]` impl, named `<x:Name>_<event>`, as for a form.
+- The Properties window of a user control declared next to `Cargo.toml` (Add New Item on the project node), of a user
+  control from a library crate of the project, or of a user control extending another one, was empty or missed the
+  base's properties.
+- The designer of an inherited view opens at the size of the merged view, and the padlock of a locked base control no
+  longer covers its text.
+- **Design-time data**: `d:` attributes (`d:Text`, `d:Visible`, `d:ItemsSource` with a JSON array inline or in a file
+  next to the view) apply in the designer only. Without `d:ItemsSource`, a Repeater's sample items follow the bound
+  fields' names and types (initials, counts, booleans, colours, times, dates) instead of « Label 1 ». The designer
+  opens in the language the application starts in (the Windows UI language, when the project has that `.kbres`),
+  and « (Par défaut) » is still offered.
 - The Toolbox could lose the Kubuno tabs' items after a live theme switch (the Toolbox reloads its items while it
   re-themes, and the designer's context may flicker off and on): the designer now checks, once the switch has
   settled, that its items are still there and reinstalls them otherwise.

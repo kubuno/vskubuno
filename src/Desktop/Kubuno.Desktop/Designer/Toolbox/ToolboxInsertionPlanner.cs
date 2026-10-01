@@ -150,6 +150,12 @@ namespace Kubuno.Desktop.Designer.Toolbox
                 case "MonthCalendar":
                     return (280, 300);
                 default:
+                    if (registry?.Find(component) is { DesignSize: { Length: 2 } size } && size[0] > 0 && size[1] > 0)
+                    {
+                        // A user control: the size it was designed at.
+                        return ((int)Math.Round(size[0]), (int)Math.Round(size[1]));
+                    }
+
                     return registry?.Find(component) is { } meta && meta.Children != ChildrenModel.None ? (200, 100) : (120, 36);
             }
         }

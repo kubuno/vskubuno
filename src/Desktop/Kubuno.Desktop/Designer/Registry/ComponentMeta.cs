@@ -127,6 +127,12 @@ namespace Kubuno.Desktop.Designer.Registry
 
         public int? SourceLine { get; set; }
 
+        /// <summary>
+        /// A user control's design size (its view's <c>DesignWidth</c>, <c>DesignHeight</c>): the size it gets when added
+        /// from the Toolbox, as Windows Forms gives a new UserControl its own <c>Size</c>. Null for anything else.
+        /// </summary>
+        public double[]? DesignSize { get; set; }
+
         /// <summary>Whether this is a control of the application.</summary>
         public bool IsProject => string.Equals(Origin, "project", System.StringComparison.Ordinal);
 

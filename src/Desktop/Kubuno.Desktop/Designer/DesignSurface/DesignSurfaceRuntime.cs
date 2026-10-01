@@ -60,6 +60,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>Bundled runtime: the document is not in a project that uses kubuno-views (no action).</summary>
         NotApplicable,
+
+        /// <summary>
+        /// The project's runtime, but a control of the project (a user control's view, a control's code) changed since it
+        /// was built: the views using it show its previous version until the project is built again ("Générer").
+        /// </summary>
+        OutOfDate,
     }
 
     /// <summary>

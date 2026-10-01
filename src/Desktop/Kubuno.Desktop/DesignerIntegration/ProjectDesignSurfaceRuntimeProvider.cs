@@ -193,7 +193,105 @@ namespace Kubuno.Desktop.DesignerIntegration
                 Resolve();
             }
 
-            public void Cancel() => _build?.Cancel();
+            public void Cancel()
+            {
+                _build?.Cancel();
+                StopWatching();
+            }
+
+            // The project's controls changing after its design build (docs/EVENTS.md, "User controls"): the panes show
+            // the OutOfDate bar until the next build, like the Windows Forms designer needs a rebuild to show a
+            // UserControl's changes.
+            private readonly List<System.IO.FileSystemWatcher> _watchers = new List<System.IO.FileSystemWatcher>();
+
+            private void StartWatching()
+            {
+                if (_watchers.Count > 0)
+                {
+                    return;
+                }
+
+                string? manifestText = null;
+                try
+                {
+                    manifestText = System.IO.File.ReadAllText(_project.ManifestPath);
+                }
+                catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+                {
+                    // Only the package folder is watched then.
+                }
+
+                foreach (var directory in DesignSourceWatch.WatchedDirectories(_project.ManifestPath, manifestText))
+                {
+                    if (!System.IO.Directory.Exists(directory))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        var watcher = new System.IO.FileSystemWatcher(directory) { IncludeSubdirectories = true, NotifyFilter = System.IO.NotifyFilters.LastWrite | System.IO.NotifyFilters.FileName };
+                        watcher.Changed += OnSourceChanged;
+                        watcher.Created += OnSourceChanged;
+                        watcher.Renamed += OnSourceChanged;
+                        watcher.EnableRaisingEvents = true;
+                        _watchers.Add(watcher);
+                    }
+                    catch (Exception ex) when (ex is ArgumentException or System.IO.IOException or UnauthorizedAccessException)
+                    {
+                        KubunoLog.WriteLine($"Kubuno: cannot watch '{directory}' for control changes: {ex.Message}");
+                    }
+                }
+            }
+
+            private void StopWatching()
+            {
+                foreach (var watcher in _watchers)
+                {
+                    watcher.EnableRaisingEvents = false;
+                    watcher.Dispose();
+                }
+
+                _watchers.Clear();
+            }
+
+            /// <summary>A file saved on a pool thread: marks the runtime out of date when it declares a control.</summary>
+            private void OnSourceChanged(object sender, System.IO.FileSystemEventArgs e)
+            {
+                if (_state != DesignSurfaceRuntimeState.Project || DesignSourceWatch.IsIgnored(e.FullPath))
+                {
+                    return;
+                }
+
+                string? text = null;
+                for (var attempt = 0; attempt < 3 && text is null; attempt++)
+                {
+                    try
+                    {
+                        text = System.IO.File.ReadAllText(e.FullPath);
+                    }
+                    catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+                    {
+                        Thread.Sleep(50); // the editor may still hold the file it is saving
+                    }
+                }
+
+                if (!DesignSourceWatch.AffectsDesign(e.FullPath, text))
+                {
+                    return;
+                }
+
+                var name = System.IO.Path.GetFileName(e.FullPath);
+                _owner._joinableTaskFactory.RunAsync(async () =>
+                {
+                    await _owner._joinableTaskFactory.SwitchToMainThreadAsync();
+                    if (_state == DesignSurfaceRuntimeState.Project)
+                    {
+                        KubunoLog.WriteLine($"Kubuno: '{name}' changed after the design build: the designer shows the previous version of the project's controls until the project is built again.");
+                        Set(_current, DesignSurfaceRuntimeState.OutOfDate, name);
+                    }
+                }).FileAndForget("Kubuno/Designer/OutOfDate");
+            }
 
             public void RunAction()
             {
@@ -316,6 +414,7 @@ namespace Kubuno.Desktop.DesignerIntegration
                     },
                     DesignSurfaceRuntimeState.Project,
                     null);
+                StartWatching();
             }
 
             private void Set(DesignSurfaceRuntime runtime, DesignSurfaceRuntimeState state, string? detail)

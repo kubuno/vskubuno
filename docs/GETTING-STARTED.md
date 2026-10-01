@@ -382,6 +382,75 @@ two rows are greyed out, like a control inside a WinForms FlowLayoutPanel.)
 The former **"Kubuno Toolbox"** / **"Kubuno Properties"** fallback tool windows were removed: use
 Visual Studio's own Toolbox (View > Toolbox) and Properties window (F4).
 
+### User controls (like Windows Forms `UserControl`)
+
+A user control is a reusable piece of UI with its own designer, its own code and its own properties and events,
+dropped onto forms from the Toolbox. The workflow is the Windows Forms one:
+
+1. **Create it**: *Add > New Item > Kubuno User Control*, name it (`address_editor`). You get
+   `address_editor.kbview` (the designed view, root `<UserControl x:Class="AddressEditor" DesignWidth=… DesignHeight=…>`)
+   and `address_editor.rs` nested under it (`#[derive(UserControl)]`, its `#[event_handlers]` impl, a `Load`
+   handler). The module is declared for you (`mod address_editor;`, or `#[path = "../address_editor.rs"] mod
+   address_editor;` for a file added next to `Cargo.toml`). The designer opens borderless, at the design size;
+   **F7** / **Shift+F7** switch between code and designer.
+2. **Design it** like a form: drop controls, set their properties, double-click an event in the ⚡ tab - the
+   handler is a method of the user control in its `#[event_handlers]` impl, named the Windows Forms way
+   (`<x:Name>_<event>`: `validate_click`), with its typed arguments.
+3. **Expose its API** with attributes on its fields, the Windows Forms ones:
+   ```rust
+   /// The street.                           // the Properties window's description
+   #[property(bindable)]                     // {Binding} allowed
+   #[category("Address")]                    // the Properties window's category
+   pub street: String,
+   #[property(on_change = "update_usage")]   // a method run when the property is set
+   #[default_value("French")]                // not bold at this value (metadata only: Default still sets the field)
+   pub format: AddressFormat,                // an enum: a dropdown
+   #[property] pub accent_color: Option<ColorValue>,   // the colour picker
+   #[property] pub countries: Vec<String>,   // a string list: one item per line
+   #[property] #[browsable(false)] pub free_text: String,   // hidden from the Properties window
+   #[event] #[category("Action")]
+   pub address_validated: Event<AddressValidatedEventArgs>, // `#[derive(EventArgs)]` struct; raise_address_validated(…)
+   ```
+   `#[user_control(view = "…", default_event = "AddressValidated")]` sets the event a double-click on the control
+   generates; `#[toolbox(bitmap = "address_editor.png")]` its Toolbox icon (an image next to the `.rs` file, the
+   `[ToolboxBitmap]` analogue; `#[toolbox(icon = "map-pin")]` takes a Kubuno icon name). In `Load` (`OnLoad` on the view's root),
+   `self.design_mode()` is `true` in the designer: fill sample data there, as in Windows Forms.
+4. **Build** (Ctrl+Shift+B). The control appears in the Toolbox tab **«&lt;project&gt; Composants»**
+   (*Components* in English), with its icon - controls of a library crate the project depends on (`uclib = { path =
+   "../UcLib" }`) too.
+5. **Use it**: drag it onto a form. It is drawn for real (its own code runs, `Load` included, with `design_mode()`
+   true), selected and moved as one control, at its design size. Its properties show in their categories with
+   their editors and update the designer live; its events are in the ⚡ tab (a double-click writes
+   `fn address_address_validated(&mut self, _sender: &Control, _e: &crate::address_editor::AddressValidatedEventArgs)`
+   in the form's code). A click on its surface raises its `Click`; a click on one of its labels or buttons is that
+   control's, as in Windows Forms.
+6. **Change it**: edit the user control then build. Until then, the forms using it show an information bar
+   («out of date, build the project»); the build refreshes them without reopening.
+
+A user control can be nested in another one, in a `TabControl` page, a `DockPanel`, or be a `<Repeater>`'s item
+(written inside the Repeater, or `ItemTemplate="DriveCard"`): each item has its own instance, its own context
+menus, its own events (the page's handler reads the item with `current_item()`).
+
+**Design-time data.** Attributes prefixed with `d:` only apply in the designer, like XAML's: `d:Text="Jean
+Dupont"`, `d:Visible="true"` (a control bound `Visible="{Binding HasError}"` shown while designing),
+`d:ItemsSource="drives.design.json"` (a JSON array of objects, inline or in a file next to the view: the
+Repeater's sample items). Without `d:ItemsSource`, a Repeater shows sample items guessed from the bound field
+names and types (initials, counts, booleans, colours, times, dates, images). The designer opens in the language
+the application starts in (the Windows UI language, when the project has its `.kbres`); the **Langue** /
+**Language** box still offers «(Par défaut)».
+
+**Visual inheritance.** *Add > New Item > Kubuno Inherited Form* / *Kubuno Inherited User Control* opens the
+**Inheritance Picker**: choose the base view. The new view's root says `x:Inherits="base_dialog.kbview"`; the
+designer shows the base's controls with a padlock - locked, unless their **Modifiers** (`Modifiers="Protected"`, set in the base's
+Properties window) is `Protected` or `Public`, in which case they can be selected, moved and their properties
+overridden (the derived view repeats the element with its `x:Name` and only the changed attributes). The derived
+class has a `#[base]` field (`base: BaseDialog`); the base's handlers keep running on it.
+
+**In code.** `Custom::<AddressEditor>::new().property("City", "Lyon").location(24, 80).size(360, 200)`, or
+`Custom::<AddressEditor>::init(|a| a.city = "Lyon".into())`, adds a user control to a form built in code; its
+events are subscribed with `editor.on::<AddressValidatedEventArgs>("OnAddressValidated").subscribe(|sender, e| …)`
+(Windows Forms' `+=`).
+
 ## 7. Open Folder mode and its limitations
 
 You do not have to generate a `.rsproj` to start working: **File > Open > Folder** on any Cargo

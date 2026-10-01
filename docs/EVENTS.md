@@ -1802,3 +1802,151 @@ clippy --all-targets -D warnings` clean on `kubuno_ui`, `kubuno-controls`, `kubu
   columns and rows), **`PrintDialog`** (printer, copies, range) and **`PageSetupDialog`** (paper, orientation, margins);
 - on Windows through the print spooler / XPS, with Direct2D printing (`ID2D1PrintControl` over an XPS print job), the
   page `Graphics` being the EVT-8 `Graphics` over a print surface, and controls rendered onto it through `on_print`.
+
+## 18. User controls as built — Windows Forms parity (2026-10-01)
+
+A pass over the whole user control workflow against Windows Forms' `UserControl`, in a fresh *Kubuno Core Desktop
+Application* in Visual Studio (`GETTING-STARTED.md` §6, "User controls", has the walkthrough). It differs from §4.2
+and §15 as follows.
+
+**Declaring.**
+- A user control's `Load` runs **in the designer too**, with `design_mode()` true, as in Windows Forms (sample data
+  for the designer). The order is: the handler its own view's root names (`<UserControl x:Class="…"
+  OnLoad="address_editor_load">`, a method of its `#[event_handlers]` impl), then `on_load` (the class's override,
+  the `Load` subscribers, the `OnLoad` of the element using it, never run in the designer). A panic there is caught
+  in the designer and shown in the control's box. Repeater items (`ItemTemplate` or an inline template) load the same
+  way (`node::custom::load_user_control`).
+- New property types: `Option<ColorValue>` / `ColorValue` (theme colour, `#RRGGBB`, web or system name) and a fixed
+  `kubuno_ui::graphics::Color` (editor `color`); `Vec<String>` (editor `lines`, one item per line). They are read
+  from the type by the derive (`PropertyValue::EDITOR`) and by the language server's scan (`value_editor`), so a
+  linked and a scanned class agree (golden test). `#[property(on_change = "method")]` calls a method after the
+  property is set: from the view using the control, a binding, a Repeater row, or the user control's own two-way
+  bindings.
+- `#[toolbox(bitmap = "address_editor.png")]` (or an `icon` ending with `.png`/`.bmp`/`.ico`/`.gif`/`.jpg`):
+  Windows Forms' `[ToolboxBitmap]`. The derive resolves the image next to the declaring file, fails the build when
+  it is missing, tracks it, and registers its absolute path as `toolbox_icon`. The Toolbox scales it to 16 × 16
+  (`NativeToolboxInstaller.ImageFileIcon`).
+- The properties an element sets on a project control are applied **when their value changes** (first paint, a
+  binding that moved), not at every frame. Every frame overwrote what the user typed into a field bound two-way to
+  the same property, and the `Load` sample data.
+
+**Placing.** A user control dropped or double-clicked from the Toolbox gets its view's `DesignWidth` ×
+`DesignHeight` (`design::user_control_design_size`, exported as `design_size`). It is one selectable unit, and its
+inner controls are not selectable (unchanged). The designer of a `<UserControl>` root draws no window frame
+(`ViewFrameStyle::user_control`).
+
+**Input inside nested views (router).** The inner views of user controls and Repeater items used to paint without
+the window's input router, so a custom control inside them got no mouse, wheel or key event. They now register with
+the router inside a **dispatch scope** (`events::router::DispatchScope`):
+- `ControlScope`, a user control's instance, whose view model answers first and then falls back to the enclosing
+  scope;
+- `ItemScope`, a Repeater item: its row, its user control, then the page.
+
+The ids are made unique per instance. A user control's view is compiled in an id scope hashed from its element's
+scoped id (`compile::scope_hash`), as Repeater items already were per item key. Router ids, focus ids,
+`AcceptButton`/`CancelButton` and accessibility ids no longer collide (the accessibility tree had duplicate nodes,
+which AccessKit refused). The host also drops duplicate node ids and catches an AccessKit panic in `WM_GETOBJECT`.
+
+**Context menus of a user control.** The `<ContextMenu>`s of a user control's own view (and of an `ItemTemplate`
+user control's view, per item) are offered to the window every frame (`FrameServices::local_menus`, keyed per
+instance). An inner element's `ContextMenu="menu"` opens it, as does `show_context_menu("menu", …)` from the user
+control's code. Its `OnOpening` and item handlers run in its scope.
+
+**Visual inheritance** (Windows Forms' inherited forms and user controls; `kubuno_views_meta::inherit`):
+- A view's root may name a base view, `x:Inherits="base_form.kbview"`, relative to the view's file. The merge puts the
+  derived file's elements first, in order (so their ids, and the designer's edits, stay those of the derived
+  document), then the base controls it does not override, marked `x:Inherited="true"` (descendants `"inner"`). An
+  element of the derived view with the `x:Name` of a base control, at the same place, overrides it: its attributes
+  override the base's, which requires the base control's `Modifiers` to be `Protected`, `Public`, `Internal` or
+  `ProtectedInternal`. A private container written with no attribute, only to reach its protected children, stays
+  locked. Chains merge recursively (depth 8, so a loop is an error).
+- `#[kubuno::view]` embeds the merged view and tracks the view and its bases (no hot reload of an inherited view). A
+  `#[base] base: BaseForm` field shares the derived form's `Form`, lends its controls (`__kubuno_members`), and runs
+  the handlers that only the base view names. Without `#[base]`, the derived struct gets a field for each `Protected`
+  or `Public` base control, and the base's private ones stay out of reach, as in Windows Forms.
+- `#[derive(UserControl)] #[kubuno(extends = AddressEditor)]`, with the base user control as its `base` field, gets
+  `levels(UserControl)` implicitly. Its view model, handlers and properties fall back to the base's. Its view may
+  inherit the base's (`x:Inherits`), and the derive embeds the merged view.
+- The runtime and the design surface merge again (`compile::compile_full` reads the bases next to the view): in the
+  designer, the base's controls show with a padlock and are not selectable (`design::INHERITED_LOCKED_PREFIX`), while
+  the override elements are selected and edited in the derived document.
+- Item templates: **Kubuno Inherited Form** and **Kubuno Inherited User Control** (`InheritedViewWizard`, an
+  Inheritance Picker; the override elements of every changeable base control are pre-written, nested in their named
+  containers).
+
+**Out of date.** After a design build, the project's folder and its control libraries (path dependencies) are
+watched (`DesignSourceWatch`). Saving a file that declares a control (a `derive` of `UserControl`, `Component`,
+`PropertyValue` or `EventArgs`) or a user control's view moves the runtime to `OutOfDate`: an info bar says the views
+show the previous version, with **Générer**. The build's design build brings the designers back to `Project`,
+without reopening them.
+
+**Code first.** `Custom::<T>::new()`, `Custom::<T>::init(|t| …)` and `Custom::from_instance(t)` create a project
+control in code: its declared properties are read from the instance, and those differing from `T::default()` are
+written. They come with `name`/`location`/`size`/`bounds`/`anchor`/`dock`/`property`/`on::<A>(event)`, and the
+control joins a form with `controls().add(&c)`. The struct update syntax (`AddressEditor { street, ..Default::default() }`)
+does not work outside the control's module (its `base` field is private), hence `init`.
+
+**Add New Item at the project root.** A control added next to `Cargo.toml` is declared from the crate root with a
+`#[path]` (`ControlItemNames.ModulePathFrom`). The language server and `#[kubuno::view]` scan the **whole package**
+for control declarations (not only `src/`; `target`, `obj`, `bin`, hidden folders and nested packages are skipped):
+the Properties window of a control declared next to `Cargo.toml` was empty.
+
+**Clicks on a user control.** A user control's own view root is the user control itself, as in Windows Forms: it is
+merged into the element using the user control in the router (`InputRouter::absorb_view_root`), instead of covering
+it. The pointer over the user control's own surface reaches its `on_mouse_…` overrides and raises the `Click` of the
+element using it. The router raises that `Click` (`ProjectInfo::routed_click`), since a user control's node, like a
+custom control's, never raised it. The handlers its root names (`<UserControl OnClick="…">`, Windows Forms'
+`this.Click += …`) run on the user control after the page's. A click on a label or a button of its view is that
+control's (Windows Forms does not raise the user control's `Click` then either). An `ItemTemplate` item's root is
+given the item's instance, so its overrides get the pointer too.
+
+**Handlers of a user control's own view.** A double-click in the ⚡ tab of a user control's designer writes a
+method in its `#[event_handlers]` impl (also when written `#[kubuno::views::event_handlers]`), named
+`<x:Name>_<event>` with its typed arguments, as for a form. A project args type is written `crate::<module>::<Args>`.
+It used to write a legacy free function `fn on_x_click(vm, value)`.
+
+**A user control extending another one** (`FancyAddress` over `AddressEditor`) has the base's properties in the
+registry, so a view may set `Street` on it (`registry::project::merged`, when the base is a project class).
+
+**Library crates.** A user control of a library crate the project depends on (`uclib = { path = "../UcLib" }`)
+appears in the Toolbox's « <project> Composants » tab. The language server scans path dependencies that depend on
+`kubuno-views` **or on the `kubuno` facade**, so its Properties window and ⚡ tab are filled (they were empty).
+
+**Design-time data.**
+- Attributes prefixed with `d:` apply in the designer only (`inherit::apply_design_attributes`, run by
+  `compile_full` when `design::design_time()`): `d:Text`, `d:Visible` (a control bound `Visible="{Binding …}"`
+  shown while designing)…
+- `d:ItemsSource` gives a Repeater's sample items: a JSON array of objects, inline or in a file next to the view.
+  A byte order mark is accepted.
+- Without it, the sample values follow the bound field's name and type (`items::design_sample`): initials, counts,
+  booleans, colours, times, dates, image paths left empty.
+- The design surface opens in the culture the application starts in: the Windows UI culture, or its parent, when
+  the project has that `.kbres` (`RustDesignSurfaceHost.DefaultDesignCulture`). « (Par défaut) » is still offered.
+
+**The inherited view's designer** shows the derived view at the size the merge gives (`compile::designed_view_text`),
+and the padlock sits in the locked control's top-right corner, clear of its text.
+
+**Limits.**
+- The Properties window of an override element shows the attributes the derived view writes, not the base's merged
+  values.
+- An inherited form is not hot-reloaded.
+- Binding a user control's computed text needs an `on_change` method that stores it in a (`#[browsable(false)]`)
+  property.
+- Inside a `<Repeater>`, an item's user control is the item's own instance: with `ItemTemplate`, its row fields set
+  its properties of the same name.
+- `#[default_value]` is metadata (the Properties window's bold / Reset): the field's initial value is the struct's
+  `Default`, as a WinForms `[DefaultValue]` does not set the field either. Derive `Default` by hand when it differs.
+- A project class named like a built-in one (`Card`) is shadowed by the built-in class in views.
+
+**Tests.**
+- `kubuno-views-meta`: `inherit::tests` (4).
+- `kubuno-views`: `tests/custom_controls.rs`, routed events of a custom control inside a user control inside a
+  Repeater; the context menus of a user control and of an `ItemTemplate` user control; unique accessibility ids;
+  the `Click` and override-raised events of a user control on a page and inside a Repeater, and its own `Click`
+  subscription. `items::design_sample_tests` (sample values, a `d:ItemsSource` file with a byte order mark).
+- `kubuno-views-ls`: `a_library_of_the_facade_holds_controls`,
+  `a_user_control_of_a_facade_application_gets_typed_windows_forms_named_methods`.
+- `kubuno-controls`: `duplicate_node_ids_are_left_out_of_the_update`.
+- C#: `UserControlDesignerTests` (design size, colour and lines editors, Toolbox bitmap, out-of-date texts, design
+  culture),
+  `InheritedViewNamesTests`, `DesignSourceWatchTests`, `ControlItemNamesTests.A_control_added_at_the_project_root_is_declared_with_a_path`.

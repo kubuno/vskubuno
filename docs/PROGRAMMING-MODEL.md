@@ -352,3 +352,25 @@ queried over LSP on the same project): hover on `self.status` shows `status: Tex
   nothing per frame (its stamp): keep one in the view model and change it in place (`push`, `set`, `make_mut`).
 - **`<Repeater>`** shows a list with a user control per row (`ItemTemplate="MessageRow"`) or an element written
   inside it; see `XML_VIEWS.md` §3.
+
+## 12. User controls, inherited forms and controls created in code (2026-10-01)
+
+As built (`EVENTS.md` §18, walkthrough in `GETTING-STARTED.md` §6 "User controls"):
+
+- **A user control's code-behind** is a `#[derive(UserControl)]` struct, its own view model. Its `#[property]`
+  fields are its properties (they may be `Option<ColorValue>`, `Vec<String>`, an enum, `Rows`, `Shared<T>`…), and
+  `#[property(on_change = "…")]` is the body of a setter. Its `#[event]` fields are its events, raised with
+  `raise_x(args)`, the args a `#[derive(EventArgs)]` struct. Its view's handlers live in an `#[event_handlers]` impl,
+  and `<UserControl … OnLoad="x_load">` is its `Load`, which also runs in the designer (`self.design_mode()`).
+- **On a form**, an `x:Name`d user control is typed with `#[control] address: Custom<AddressEditor>`
+  (`self.address.with(|a| …)`). A handler of one of its events takes the args type and, optionally,
+  `&Custom<AddressEditor>` as its sender: `fn address_address_validated(&mut self, sender: &Custom<AddressEditor>,
+  e: &AddressValidatedEventArgs)`. The form's code does not see `Component::design_mode` unless it imports the
+  trait (`use kubuno::views::component::Component as _;`).
+- **In code**: `let editor = Custom::<AddressEditor>::init(|e| e.street = "12 rue de la Paix".into()).location(16.0,
+  16.0).size(360.0, 200.0); form.controls().add(&editor);`. Its events are reached with
+  `editor.on::<AddressValidatedEventArgs>("OnAddressValidated").subscribe(|sender, e| …)`.
+- **Inherited form**: `<Panel x:Inherits="base_form.kbview">…</Panel>` and `#[kubuno::view("derived.kbview")] struct
+  Derived { #[base] base: BaseForm }`: the base form's controls are `self.base.ok`, and its handlers keep running.
+  **Inherited user control**: `#[derive(UserControl)] #[kubuno(extends = crate::address_editor::AddressEditor)]
+  #[user_control(view = "fancy_address.kbview")] struct FancyAddress { base: AddressEditor, … }`.
