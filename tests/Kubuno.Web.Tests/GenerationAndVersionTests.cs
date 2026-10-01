@@ -39,9 +39,13 @@ namespace Kubuno.Web.Tests
             Write(Path.Combine(core, "crates", "kubuno-db", "Cargo.toml"), "[package]\nname = \"kubuno-db\"\n");
             Write(Path.Combine(core, "frontend", "package.json"), "{\"version\":\"0.1.12\"}");
             Write(Path.Combine(core, "frontend", "vite.config.ts"), "export default {}");
-            Write(Path.Combine(core, "frontend", "packages", "ui", "package.json"), "{\"version\":\"0.1.12\"}");
-            Write(Path.Combine(core, "frontend", "packages", "sdk", "package.json"), "{\"version\":\"0.1.10\"}");
-            Write(Path.Combine(core, "frontend", "packages", "drive", "package.json"), "{\"version\":\"0.1.7\"}");
+            Write(Path.Combine(core, "frontend", "packages", "ui", "package.json"), "{\"name\":\"@kubuno/ui\",\"version\":\"0.1.12\"}");
+            Write(Path.Combine(core, "frontend", "packages", "sdk", "package.json"), "{\"name\":\"@kubuno/sdk\",\"version\":\"0.1.10\"}");
+            Write(Path.Combine(core, "frontend", "packages", "drive", "package.json"), "{\"name\":\"@kubuno/drive\",\"version\":\"0.1.7\"}");
+            foreach (var folder in new[] { "ui", "sdk", "core", "drive", "app" })
+            {
+                Write(Path.Combine(core, "frontend", "src", folder, "index.ts"), "export {}");
+            }
         }
 
         private string WriteModule(string id, string uiRange, string seccompTag)
@@ -80,16 +84,42 @@ namespace Kubuno.Web.Tests
             Assert.IsFalse(files["kubuno-db.rsproj"].Contains("Kubuno.Web.Sdk"), "a library needs no web tooling");
             StringAssert.Contains(files["kubuno-frontend.esproj"], "Microsoft.VisualStudio.JavaScript.Sdk/");
             StringAssert.Contains(files["kubuno-frontend.esproj"], "<KubunoWebRole>CoreFrontend</KubunoWebRole>");
-            StringAssert.Contains(files["kubuno-frontend.esproj"], "<JavaScriptTestFramework>Vitest</JavaScriptTestFramework>");
+            Assert.IsFalse(files["kubuno-frontend.esproj"].Contains("<JavaScriptTestFramework>"), "vitest is not declared to Test Explorer (docs/WEB.md, Tests)");
             StringAssert.Contains(files["launch.json"], "http://localhost:5173");
 
             var slnx = XDocument.Parse(files["Kubuno.Core.Web.slnx"]);
             var projects = slnx.Descendants("Project").Select(p => (string)p.Attribute("Path")!).ToList();
             CollectionAssert.Contains(projects, "crates/kubuno-core/kubuno-core.rsproj");
             CollectionAssert.Contains(projects, "frontend/kubuno-frontend.esproj");
-            Assert.AreEqual("/Libraries/", (string)slnx.Descendants("Project").Single(p => ((string)p.Attribute("Path")!).EndsWith("kubuno-db.rsproj")).Parent!.Attribute("Name")!);
-            Assert.AreEqual("AnyCPU", (string)slnx.Descendants("Project").Single(p => ((string)p.Attribute("Path")!).EndsWith(".esproj")).Element("Platform")!.Attribute("Project")!);
-            Assert.IsNotNull(slnx.Descendants("Project").Single(p => ((string)p.Attribute("Path")!).EndsWith(".esproj")).Element("Build"), "an esproj mapped to AnyCPU needs <Build /> to be built");
+            XElement Project(string end) => slnx.Descendants("Project").Single(p => ((string)p.Attribute("Path")!).EndsWith(end));
+            string FolderOf(string end) => (string)Project(end).Parent!.Attribute("Name")!;
+            Assert.AreEqual("/Server/", FolderOf("kubuno-core.rsproj"));
+            Assert.AreEqual("/Libraries/", FolderOf("kubuno-db.rsproj"));
+            Assert.AreEqual("/Frontend/", FolderOf("kubuno-frontend.esproj"));
+            Assert.AreEqual("/Packages/", FolderOf("kubuno-ui.esproj"));
+            Assert.AreEqual("/Packages/", FolderOf("kubuno-sdk.esproj"));
+            Assert.AreEqual("/Packages/", FolderOf("kubuno-drive.esproj"));
+            CollectionAssert.AreEqual(new[] { "/Server/", "/Libraries/", "/Frontend/", "/Packages/" }, slnx.Root!.Elements("Folder").Select(f => (string)f.Attribute("Name")!).ToList());
+            Assert.AreEqual("AnyCPU", (string)Project("kubuno-frontend.esproj").Element("Platform")!.Attribute("Project")!);
+            Assert.IsNotNull(Project("kubuno-frontend.esproj").Element("Build"), "an esproj mapped to AnyCPU needs <Build /> to be built");
+
+            // The host app after the packages, the packages one after the other (one shared declaration emit).
+            CollectionAssert.AreEquivalent(
+                new[] { "frontend/packages/ui/kubuno-ui.esproj", "frontend/packages/sdk/kubuno-sdk.esproj", "frontend/packages/drive/kubuno-drive.esproj" },
+                Project("kubuno-frontend.esproj").Elements("BuildDependency").Select(d => (string)d.Attribute("Project")!).ToList());
+            Assert.AreEqual("frontend/packages/ui/kubuno-ui.esproj", (string)Project("kubuno-sdk.esproj").Element("BuildDependency")!.Attribute("Project")!);
+
+            // A package built from the host's sources shows them and builds through kubuno-packages.mjs.
+            StringAssert.Contains(files["kubuno-ui.esproj"], "<KubunoWebRole>Package</KubunoWebRole>");
+            StringAssert.Contains(files["kubuno-ui.esproj"], "<KubunoPackageId>ui</KubunoPackageId>");
+            StringAssert.Contains(files["kubuno-ui.esproj"], "<None Include=\"..\\..\\src\\ui\\**\\*\" Link=\"src\\ui\\%(RecursiveDir)%(Filename)%(Extension)\" />");
+            StringAssert.Contains(files["kubuno-ui.esproj"], "<KubunoNodeModulesDirectory>");
+            StringAssert.Contains(files["kubuno-frontend.esproj"], "src\\ui\\**");
+            StringAssert.Contains(files["kubuno-frontend.esproj"], "packages\\ui\\**");
+            foreach (var file in files.Where(pair => pair.Key.EndsWith("proj") || pair.Key.EndsWith(".slnx")))
+            {
+                XDocument.Parse(file.Value);
+            }
             StringAssert.Contains(files["Kubuno.Core.Web.slnLaunch"], "\"Path\": \"crates\\\\kubuno-core\\\\kubuno-core.rsproj\"");
         }
 
@@ -110,7 +140,7 @@ namespace Kubuno.Web.Tests
                 XDocument.Parse(file.Content);
             }
 
-            Assert.IsTrue(((string)XDocument.Parse(slnx).Root!.Elements("Project").First().Attribute("Path")!).EndsWith(".rsproj"), "the backend comes first (default startup project)");
+            Assert.IsTrue(((string)XDocument.Parse(slnx).Root!.Descendants("Project").First().Attribute("Path")!).EndsWith(".rsproj"), "the backend comes first (default startup project)");
 
             var existing = "<Solution>\n  <!-- mine -->\n  <Project Path=\"kubuno-calendar.rsproj\" />\n  <Project Path=\"tools/other.csproj\" />\n</Solution>\n";
             var merged = WebSolutionGenerator.Plan(new[] { module }, solutionPath, WebSdkVersions.Current, existing).Single(file => file.Mergeable).Content;
@@ -132,7 +162,7 @@ namespace Kubuno.Web.Tests
             var launch = files.Single(file => file.Path.EndsWith(".slnLaunch")).Content;
             Assert.IsFalse(launch.Contains("kubuno-db"), "a library crate is never launched");
             var slnx = XDocument.Parse(files.Single(file => file.Mergeable).Content);
-            Assert.AreEqual("crates/kubuno-core/kubuno-core.rsproj", (string)slnx.Root!.Elements("Project").First().Attribute("Path")!, "the program comes first in the solution (Visual Studio's default startup project)");
+            Assert.AreEqual("crates/kubuno-core/kubuno-core.rsproj", (string)slnx.Root!.Descendants("Project").First().Attribute("Path")!, "the program comes first in the solution (Visual Studio's default startup project)");
             Assert.IsFalse(files.Single(file => file.Path.EndsWith("kubuno-db.rsproj")).Content.Contains("KubunoWebRole"));
         }
 
@@ -143,10 +173,59 @@ namespace Kubuno.Web.Tests
             var files = WebSolutionGenerator.Plan(repositories, Path.Combine(_root, "Kubuno.Web.slnx"), WebSdkVersions.Current, null);
             var slnx = XDocument.Parse(files.Single(file => file.Mergeable).Content);
             var folders = slnx.Descendants("Folder").Select(f => (string)f.Attribute("Name")!).ToList();
-            CollectionAssert.IsSubsetOf(new[] { "/core/", "/core/Libraries/", "/calendar/" }, folders);
+            CollectionAssert.IsSubsetOf(new[] { "/core/", "/core/Server/", "/core/Libraries/", "/core/Frontend/", "/core/Packages/", "/calendar/", "/calendar/Server/", "/calendar/Frontend/" }, folders);
+            foreach (var dependency in slnx.Descendants("BuildDependency"))
+            {
+                var from = (string)dependency.Parent!.Attribute("Path")!;
+                var to = (string)dependency.Attribute("Project")!;
+                Assert.AreEqual(from.Split('/')[0], to.Split('/')[0], "no dependency between two repositories: " + from + " -> " + to);
+            }
             var launch = files.Single(file => file.Path.EndsWith(".slnLaunch")).Content;
             Assert.AreEqual(3, launch.Split(new[] { "\"Name\"" }, StringSplitOptions.None).Length - 1, "the server, the server with Vite, the module");
             StringAssert.Contains(launch, "\"Name\": \"Kubuno Core Web (serveur)\"");
+        }
+
+        [TestMethod]
+        public void Cargo_workspace_members_of_a_module_are_projects_and_the_module_folder_is_kept()
+        {
+            var nas = Path.Combine(_root, "p2pnas");
+            Write(Path.Combine(nas, "Cargo.toml"), "[workspace]\nmembers = [\"crates/core\", \"crates/server\"]\n");
+            Write(Path.Combine(nas, "crates", "core", "Cargo.toml"), "[package]\nname = \"p2pnas-core\"\n");
+            Write(Path.Combine(nas, "crates", "server", "Cargo.toml"), "[package]\nname = \"kubuno-p2pnas\"\n\n[[bin]]\nname = \"kubuno-p2pnas\"\npath = \"src/main.rs\"\n\n[dependencies]\np2pnas-core = { path = \"../core\" }\n");
+            Write(Path.Combine(nas, "module.toml"), "[module]\nid = \"p2pnas\"\n\n[process]\nentrypoint = \"kubuno-p2pnas\"\n");
+            Write(Path.Combine(nas, "frontend", "package.json"), "{\"name\":\"p2pnas-frontend\"}");
+
+            var repository = WebRepository.Detect(nas, out _)!;
+            Assert.AreEqual("kubuno-p2pnas", repository.RunPackage);
+            Assert.AreEqual(0, ModuleIsolation.Violations(repository).Count, "a path dependency inside the module is fine");
+            var files = WebSolutionGenerator.Plan(new[] { repository }, WebSolutionGenerator.DefaultSolutionPath(repository), WebSdkVersions.Current, null)
+                .ToDictionary(file => Path.GetFileName(file.Path), file => file.Content);
+            StringAssert.Contains(files["kubuno-p2pnas.rsproj"], "<KubunoModuleDirectory>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\\..'))</KubunoModuleDirectory>");
+            StringAssert.Contains(files["kubuno-p2pnas.rsproj"], "<CargoBuildScope>Workspace</CargoBuildScope>");
+            var slnx = XDocument.Parse(files["Kubuno.P2pnas.slnx"]);
+            Assert.AreEqual("/Libraries/", (string)slnx.Descendants("Project").Single(p => ((string)p.Attribute("Path")!).EndsWith("p2pnas-core.rsproj")).Parent!.Attribute("Name")!);
+            CollectionAssert.Contains(WebSolutionGenerator.Describe(repository).ToList(), "Libraries: p2pnas-core.rsproj (library)");
+        }
+
+        [TestMethod]
+        public void A_module_reaching_another_module_or_the_core_sources_is_refused()
+        {
+            var calendar = Path.Combine(_root, "calendar");
+            Write(Path.Combine(calendar, "frontend", "vite.config.ts"), "export default { resolve: { alias: { '@core': '../../core/frontend/src' } } }");
+            var tasks = WriteModule("tasks", "^0.1.12", "seccomp-v0.1.1");
+            File.AppendAllText(Path.Combine(tasks, "Cargo.toml"), "\n[dependencies]\nkubuno-calendar = { path = \"../calendar\" }\n");
+
+            var calendarRepository = WebRepository.Detect(calendar, out _)!;
+            var tasksRepository = WebRepository.Detect(tasks, out _)!;
+            Assert.AreEqual(1, ModuleIsolation.Violations(calendarRepository).Count);
+            Assert.AreEqual(1, ModuleIsolation.Violations(tasksRepository).Count);
+            var core = WebRepository.Detect(Path.Combine(_root, "core"), out _)!;
+            var error = Assert.ThrowsExactly<InvalidOperationException>(() =>
+                WebSolutionGenerator.Plan(new[] { core, calendarRepository, tasksRepository }, Path.Combine(_root, "Kubuno.Web.slnx"), WebSdkVersions.Current, null));
+            StringAssert.Contains(error.Message, "Module isolation");
+            Assert.ThrowsExactly<InvalidOperationException>(() => ModuleIsolation.EnsureIsolated(
+                new[] { core, calendarRepository },
+                new[] { (Path.Combine(calendar, "kubuno-calendar.rsproj"), Path.Combine(_root, "core", "frontend", "packages", "ui", "kubuno-ui.esproj")) }));
         }
 
         [TestMethod]

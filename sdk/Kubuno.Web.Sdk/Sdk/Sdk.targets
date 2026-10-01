@@ -13,7 +13,7 @@
 
   <PropertyGroup>
     <_KubunoWebBackend Condition="'$(KubunoWebRole)' == 'Core' or '$(KubunoWebRole)' == 'Module'">true</_KubunoWebBackend>
-    <_KubunoWebFrontend Condition="'$(KubunoWebRole)' == 'CoreFrontend' or '$(KubunoWebRole)' == 'ModuleFrontend'">true</_KubunoWebFrontend>
+    <_KubunoWebFrontend Condition="'$(KubunoWebRole)' == 'CoreFrontend' or '$(KubunoWebRole)' == 'ModuleFrontend' or '$(KubunoWebRole)' == 'Package'">true</_KubunoWebFrontend>
 
     <!-- The dev core of this machine (docs/WEB.md, "The dev core"). -->
     <KubunoDevCoreRoot Condition="'$(KubunoDevCoreRoot)' == '' and '$(KUBUNO_DEV_CORE_ROOT)' != ''">$(KUBUNO_DEV_CORE_ROOT)</KubunoDevCoreRoot>
@@ -89,8 +89,14 @@
       Node.js of Visual Studio when PATH has none, and the Windows overlay when node_modules came from Linux.
     -->
     <KubunoNpmCommand>"$(MSBuildProjectDirectory)\obj\kubuno-npm.cmd"</KubunoNpmCommand>
-    <BuildCommand Condition="'$(BuildCommand)' == '' and '$(Configuration)' == 'Debug'">$(KubunoNpmCommand) run build -- --sourcemap</BuildCommand>
-    <BuildCommand Condition="'$(BuildCommand)' == ''">$(KubunoNpmCommand) run build</BuildCommand>
+    <KubunoNodeCommand>"$(MSBuildProjectDirectory)\obj\kubuno-node.cmd"</KubunoNodeCommand>
+    <!-- The folder whose node_modules the project uses: its own, or the host app's for a core package (packages/ui). -->
+    <KubunoNodeModulesDirectory Condition="'$(KubunoNodeModulesDirectory)' == ''">$(PackageJsonDirectory)</KubunoNodeModulesDirectory>
+    <!-- A core package (@kubuno/ui, sdk, drive) is built from the host's sources: docs/WEB.md, "Packages". -->
+    <BuildCommand Condition="'$(BuildCommand)' == '' and '$(KubunoPackageId)' != ''">$(KubunoNodeCommand) "$(KubunoWebSdkDirectory)tools\kubuno-packages.mjs" "$(KubunoNodeModulesDirectory)." $(KubunoPackageId)</BuildCommand>
+    <ShouldRunNpmInstall Condition="'$(KubunoWebRole)' == 'Package'">false</ShouldRunNpmInstall>
+    <BuildCommand Condition="'$(BuildCommand)' == '' and '$(KubunoWebRole)' != 'Package' and '$(Configuration)' == 'Debug'">$(KubunoNpmCommand) run build -- --sourcemap</BuildCommand>
+    <BuildCommand Condition="'$(BuildCommand)' == '' and '$(KubunoWebRole)' != 'Package'">$(KubunoNpmCommand) run build</BuildCommand>
     <!-- The host: Vite's dev server, which proxies /api, /modules and /ws to the dev core (core/frontend/vite.config.ts). -->
     <StartupCommand Condition="'$(StartupCommand)' == '' and '$(KubunoWebRole)' == 'CoreFrontend'">$(KubunoNpmCommand) run dev</StartupCommand>
     <!-- A module: rebuild on every change straight into the dev core's copy of the module (refresh the page to see it). -->
@@ -101,12 +107,19 @@
 
   <Target Name="KubunoPrepareNode" BeforeTargets="RunNpmInstall;CoreCompile;_CleanBuildOutput;ComputeRunArguments"
           Condition="'$(_KubunoWebFrontend)' == 'true' and '$(DesignTimeBuild)' != 'true'">
-    <KubunoPrepareNode PackageJsonDirectory="$(PackageJsonDirectory)"
+    <KubunoPrepareNode PackageJsonDirectory="$(KubunoNodeModulesDirectory)"
                        IntermediateDirectory="$(MSBuildProjectDirectory)\obj"
                        FallbackNodeDirectory="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\NodeJs">
       <Output TaskParameter="IsForeign" PropertyName="_KubunoForeignNodeModules" />
       <Output TaskParameter="NodeModulesExists" PropertyName="_KubunoNodeModulesExists" />
     </KubunoPrepareNode>
+  </Target>
+
+  <!-- Another package (not built from the host's sources): its own build script, when it has one, through kubuno-npm. -->
+  <Target Name="_KubunoPackageBuildCommand" AfterTargets="EvaluateNPMScripts" Condition="'$(KubunoWebRole)' == 'Package' and '$(KubunoPackageId)' == ''">
+    <PropertyGroup>
+      <BuildCommand Condition="'$(PackageJsonScriptsBuild)' != ''">$(KubunoNpmCommand) run build</BuildCommand>
+    </PropertyGroup>
   </Target>
 
   <!--

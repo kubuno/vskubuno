@@ -138,6 +138,20 @@ namespace Kubuno.Web.Commands
                 report.Append(exists ? "  updated  " : "  created  ").Append(file.Path).Append('\n');
             }
 
+            foreach (var repository in repositories)
+            {
+                report.Append("  ").Append(repository.Name).Append(":\n");
+                foreach (var line in WebSolutionGenerator.Describe(repository))
+                {
+                    report.Append("    ").Append(line).Append('\n');
+                }
+
+                foreach (var violation in ModuleIsolation.Violations(repository))
+                {
+                    report.Append("    WARNING module isolation: ").Append(violation).Append('\n');
+                }
+            }
+
             var solutionDirectory = Path.GetDirectoryName(solutionPath)!;
             WebSdkFeed.EnsureSolutionLocal(solutionDirectory, line => KubunoLog.WriteLine(line));
             KubunoLog.WriteLine("Kubuno web: " + solutionPath + "\n" + report);

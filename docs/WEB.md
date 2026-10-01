@@ -53,6 +53,40 @@ not committed by the tooling: they are small and stable enough to commit (the `.
 launch profiles), but that is the repository owner's decision - the `.user` files and `obj\` must stay out (the
 core's `.gitignore` has no `*.user` / `obj/` entry yet).
 
+**Layout.** Every repository gets the same four solution folders: **Server** (the program F5 starts: `kubuno-core`, a
+module's backend), **Libraries** (the other crates), **Frontend** (the app: the core's host, a module's bundle) and
+**Packages** (npm packages). Visual Studio lists solution folders alphabetically; in the `.slnx` the program comes
+first. In a multi-repository solution they sit under `/<repository>/` (`/core/Server/`, `/drive/Frontend/`...).
+
+**Sub-modules.** The generator reads the shapes generically: the root package and every `[workspace] members` entry
+(`dir/*` globs included), the crates of git submodules (`.gitmodules`), the app of `frontend/` (or of the root), and
+every package of `frontend/packages/*` or `packages/*`. Each is a project of its own. Inventory of `Z:\src`
+(2026-10-01, `WebSolutionGenerator.Describe`): the 24 modules have one backend crate and one frontend each, except
+**p2pnas** (a Cargo workspace: `kubuno-p2pnas` in Server, `p2pnas-core`, `p2pnas-store`, `p2pnas-p2p` in Libraries)
+and **stt** (backend only); no module has git submodules or several frontends; **office** has no separate sub-app
+crates or frontends (its apps are one bundle). The core: `kubuno-core` (Server), 5 libraries, `kubuno-frontend`
+(Frontend), `@kubuno/ui`, `@kubuno/sdk`, `@kubuno/drive` (Packages). The command prints this table per repository in the
+"Kubuno" Output pane.
+
+**Packages of Kubuno Core Web.** `@kubuno/ui`, `@kubuno/sdk` and `@kubuno/drive` are built from the host app's sources
+(`core/frontend/packages/build.sh`): `packages/<id>` is the build/publish wrapper. Each package project
+(`packages/<id>/kubuno-<id>.esproj`, role `Package`) shows its real sources as linked items (`frontend/src/ui`,
+`src/sdk`, `src/drive`), which the host app project no longer shows; its build runs
+`Kubuno.Web.Sdk/tools/kubuno-packages.mjs` with the overlay environment: one emit of the host's declarations
+(`tsc -p tsconfig.emit.json --newLine lf`, reused by the next package of the build), the package's type tree as
+build.sh assembles it and, for `@kubuno/ui`, the ESM library (with `vite.uilib.config.ts`: the package's own
+`vite.config.ts` decides "external" from the shape of the module id and bundles nothing on Windows) - all into
+`packages/<id>/obj/package`. The committed `packages/<id>/types` and `dist` are never rewritten from Windows:
+regenerating and publishing the npm packages stays `build.sh` / `_tools/publish_all.sh`, run by the developer. Build
+order: ui, sdk, drive, then the host app (`BuildDependency`).
+
+**Module isolation** (docs/VIEWS-SPEC.md, "Module isolation"). Modules never import each other nor the core's
+sources; they build alone against the published `@kubuno/*` packages and the shared crates' git tags. The generator
+never writes a reference between two repositories (build dependencies only join projects of the same repository,
+checked by `ModuleIsolation.EnsureIsolated`), and refuses a multi-repository solution in which a module reaches
+outside itself: a Cargo `path` dependency, an npm `file:`/`link:` dependency, a `tsconfig`/Vite path leaving the
+module. A single-repository solution lists such references as warnings in the Output pane. None exists in `Z:\src`
+today.
 **Tools > Kubuno Core Web: Generate Multi-Repository Solution...** lists the Kubuno repositories next to the current one
 (the polyrepo folder, `Z:\src`), with the core and the current module checked, and writes `Kubuno.Web.slnx` in that
 folder: one solution folder per repository (`/core/`, `/core/Libraries/`, `/drive/`...), the same project files, one
@@ -93,12 +127,20 @@ IntelliSense is Visual Studio's own (it reads `tsconfig.json`, including the `@u
 
 ## 4. Tests
 
-The Rust tests are the Rust layer's Test Explorer adapter, unchanged (solution mode lists the `.rsproj` manifests;
-the core's workspace-scope projects give one container). The core's integration tests skip themselves without
-`KUBUNO_TEST_DATABASE_URL`. The core frontend's vitest specs (`src/**/*.spec.ts`, configured in `vite.config.ts`)
-are declared to the JavaScript project system (`<JavaScriptTestFramework>Vitest</JavaScriptTestFramework>`, root
-`src\`); see section 9 for what was verified.
+The Rust tests are the Rust layer's Test Explorer adapter (solution mode lists the `.rsproj` manifests; the core's
+workspace-scope projects give one container, the workspace root). Measured on the core: **1013 tests listed, 1000
+passed, 13 failed** - the 13 are Windows failures of the core itself (11 `kubuno-storage` path tests building
+`/var/...`-style paths, `backup::policy` and `data_export::policy` asserting that `/var/...` is absolute). The
+69-test count of the first session was a discovery run while the very first `cargo test --no-run` of the workspace was
+still building (14 minutes cold); with the test programs built, discovery lists them all. The core's integration tests
+skip themselves without `KUBUNO_TEST_DATABASE_URL`.
 
+The core frontend's vitest specs are **not** declared to Test Explorer: tried (`JavaScriptTestFramework=Vitest`),
+Visual Studio's JavaScript test adapter runs in the same .NET Framework test host as the Rust adapter and fails to
+load ("Failed to parse msbuild output ... FlushAsync ... System.Text.Json 9.0.0.0": the two adapters' System.Text.Json
+closures collide), and it needs a Node.js on the PATH of Visual Studio's test host (Visual Studio's bundled Node.js is
+not used there). Isolating the Rust adapter's dependency closure is a separate task; until then the specs run with
+`npm run test` in the frontend folder.
 ## 5. The development database
 
 A core runs its SQL migrations when it starts. A core started from Visual Studio therefore must never reach the live
@@ -277,3 +319,18 @@ name for now.
 - Not verified: a real development database (no `KUBUNO_DEV_DATABASE_URL` was available: never set nor guessed),
   hence the dev core running, the module attach, the browser opening and Edge script debugging; "Check Versions"
   and the "Prepare" commands inside Visual Studio (covered by unit tests).
+
+### Follow-up (same day): packages, sub-modules, module isolation
+
+- `Kubuno.Core.Web.slnx` regenerated: 10 projects (Server: `kubuno-core`; Libraries: 5 crates; Frontend:
+  `kubuno-frontend`; Packages: `kubuno-ui`, `kubuno-sdk`, `kubuno-drive`), loaded 10/10 and built 10/10 in Visual Studio
+  in the expected order (ui, sdk, drive, then the host app); `node_modules` untouched. Test Explorer: 1013 Rust tests
+  listed, 1000 passed, 13 failed (core issues, section 4).
+- **p2pnas** (Cargo workspace): `Kubuno.P2pnas.slnx` with Server `kubuno-p2pnas`, Libraries `p2pnas-core`,
+  `p2pnas-store`, `p2pnas-p2p`, Frontend `p2pnas-frontend`, loaded 5/5; the frontend builds; the crates do not build
+  anywhere fresh today for the same reason as drive: its `Cargo.lock` pins `kubuno-db` (tag `db-v0.7.0`) to commit
+  `63b51dbc`, which github.com/kubuno/core no longer has. **drive**: regenerated with the same layout (2/2).
+  **stt** and **office** solutions generated (`Kubuno.Stt.slnx`, `Kubuno.Office.slnx`), not opened.
+- While wiring the packages, one run of the first package build script copied freshly emitted declarations into
+  `core/frontend/packages/ui/types` (10 modified `.d.ts`, 3 new ones) and overwrote `packages/ui/dist/index.js`, which
+  was restored from HEAD at once; the build now writes only into `obj/package`.

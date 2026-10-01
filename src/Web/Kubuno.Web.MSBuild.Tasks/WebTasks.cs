@@ -113,8 +113,10 @@ namespace Kubuno.Web.MSBuild.Tasks
                     script.Append("set \"NODE_PATH=").Append(nodePath).Append("\"\r\n");
                 }
 
-                script.Append("npm %*\r\n");
-                WriteIfChanged(NpmCommand, script.ToString());
+                var environment = script.ToString();
+                WriteIfChanged(NpmCommand, environment + "npm %*\r\n");
+                // The same environment for node itself (the core packages' build script, kubuno-packages.mjs).
+                WriteIfChanged(Path.Combine(Path.GetFullPath(IntermediateDirectory), "kubuno-node.cmd"), environment + "node %*\r\n");
                 return true;
             }
             catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is InvalidOperationException || exception is System.ComponentModel.Win32Exception)

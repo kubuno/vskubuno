@@ -380,6 +380,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ("Kubuno Core Desktop Application") and Add New Item ("Kubuno Form (Kubuno Core Desktop)"...), the module template
   "Kubuno Core Web"; template IDs are unchanged. In Solution Explorer, the Kubuno Core Web server project and module
   backends get web icons.
+- **Every part of Kubuno Core Web and of a module is a project** in its solution, grouped in Server / Libraries /
+  Frontend / Packages folders: `@kubuno/ui`, `@kubuno/sdk` and `@kubuno/drive` are projects of their own in
+  `Kubuno.Core.Web.slnx`, showing their real sources (in the host app's tree) and building their type tree and, for
+  `@kubuno/ui`, the library into `obj\package` (the committed package files and `npm publish` stay with `build.sh` and
+  the developer), before the host app. A module's Cargo workspace members (p2pnas), git submodules and extra npm
+  packages become projects too. The generator never references a project of another repository and refuses a
+  multi-repository solution in which a module reaches another module or the core's sources (module isolation).
+- The vitest specs of the host app are no longer declared to Test Explorer: Visual Studio's JavaScript test adapter
+  failed to load next to the Rust one (System.Text.Json conflict) and reported an error on every run.
 - A **library crate's `.rsproj` can no longer be started** (Start and Start Without Debugging are disabled for it)
   instead of failing with a modal "the Rust executable ... does not exist" message; the web solutions make the
   program (`kubuno-core`, a module's backend) the startup project.
