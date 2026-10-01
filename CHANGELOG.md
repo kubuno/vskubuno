@@ -660,6 +660,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- Rust projects: a build whose packages run a build script no longer crashes MSBuild ("Unknown Cargo build event."): the `CargoBuild` task logs the build-script event as a low-importance message.
 - **Identical files on every OS.** The repository now pins line endings to LF
   (`.gitattributes`), so a checkout on Windows no longer turns scripts,
   manifests or sources into CRLF, and what is built or packaged from it is the

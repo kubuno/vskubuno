@@ -138,5 +138,18 @@ namespace Kubuno.Cargo.MSBuild.Tasks.Tests.Internal
             BuildMessageEventArgs message = Assert.Single(engine.Messages);
             Assert.Equal(MessageImportance.Low, message.Importance);
         }
+
+        /// <summary>Found by the shell's F5: a build script's event crashed the whole MSBuild process.</summary>
+        [Fact]
+        public void A_build_script_event_logs_a_low_importance_message()
+        {
+            var (engine, log) = NewLogger();
+
+            CargoDiagnosticLogging.Log(log, new CargoBuildScriptEvent("ring 0.17.0", new[] { @"native=C:\out" }));
+
+            BuildMessageEventArgs message = Assert.Single(engine.Messages);
+            Assert.Equal(MessageImportance.Low, message.Importance);
+            Assert.Empty(engine.Errors);
+        }
     }
 }

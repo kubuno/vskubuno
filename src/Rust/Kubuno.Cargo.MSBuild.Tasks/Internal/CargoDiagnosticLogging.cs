@@ -46,6 +46,10 @@ namespace Kubuno.Cargo.MSBuild.Tasks.Internal
                         "cargo: build finished (success={0})",
                         finishedEvent.Success);
                     return;
+                case CargoBuildScriptEvent buildScriptEvent:
+                    // A build script ran (its link search paths matter to the design build only).
+                    log.LogMessage(MessageImportance.Low, "cargo: build script of {0} ran", buildScriptEvent.PackageId);
+                    return;
                 case CargoUnrecognizedEvent unrecognizedEvent:
                     if (!string.IsNullOrWhiteSpace(unrecognizedEvent.RawLine))
                     {
