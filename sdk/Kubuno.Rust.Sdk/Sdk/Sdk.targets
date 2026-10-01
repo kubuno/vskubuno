@@ -271,6 +271,10 @@
     <!-- Gate CoreCompile's own Inputs/Outputs check â€” cargo still does the fine-grained
          incremental work; this only decides whether to shell out to it at all. -->
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.rs" Condition="Exists('$(_KubunoManifestDir)\src')" />
+    <!-- The views `#[kubuno::view]` and `#[derive(UserControl)]` embed (include_str!), and a control added next to
+         Cargo.toml (Add New Item on the project node, declared with #[path]) with its view and Toolbox bitmap. -->
+    <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.kbview" Condition="Exists('$(_KubunoManifestDir)\src')" />
+    <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\*.rs;$(_KubunoManifestDir)\*.kbview;$(_KubunoManifestDir)\*.png;$(_KubunoManifestDir)\*.bmp;$(_KubunoManifestDir)\*.ico;$(_KubunoManifestDir)\*.gif;$(_KubunoManifestDir)\*.jpg" />
     <!-- docs/DATA.md DATA-7: what `data_source!` reads at compile time (the .kbdata files and the offline query cache),
          and the migrations its stale-cache warning compares that cache with - a change to any of them must reach cargo. -->
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.kbdata" Condition="Exists('$(_KubunoManifestDir)\src')" />

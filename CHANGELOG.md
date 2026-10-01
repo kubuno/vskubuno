@@ -581,6 +581,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   with a `#[path]` (`#[path = "../address_editor.rs"] mod address_editor;`), wherever the file is.
 - The designer of a **user control's own view** drew a window frame (title, caption buttons) around it; it is now a
   plain surface, like the Windows Forms UserControl designer.
+- **Build skipped after editing a view**: `Kubuno.Rust.Sdk`'s up-to-date check only looked at `src/**/*.rs`, so
+  saving only a `.kbview` (embedded by `#[kubuno::view]` and `#[derive(UserControl)]`), or a control added next to
+  `Cargo.toml` (its `.rs`, `.kbview` or Toolbox image), left the build « à jour » with the previous version. They
+  are now inputs of the build.
 - A double-click on an event in a **user control's designer** wrote a free function `fn on_…(vm, value)`. It now
   writes a typed method in the user control's `#[event_handlers]` impl, named `<x:Name>_<event>`, as for a form.
 - The Properties window of a user control declared next to `Cargo.toml` (Add New Item on the project node), of a user

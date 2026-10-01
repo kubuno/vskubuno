@@ -1889,7 +1889,9 @@ does not work outside the control's module (its `base` field is private), hence 
 **Add New Item at the project root.** A control added next to `Cargo.toml` is declared from the crate root with a
 `#[path]` (`ControlItemNames.ModulePathFrom`). The language server and `#[kubuno::view]` scan the **whole package**
 for control declarations (not only `src/`; `target`, `obj`, `bin`, hidden folders and nested packages are skipped):
-the Properties window of a control declared next to `Cargo.toml` was empty.
+the Properties window of a control declared next to `Cargo.toml` was empty. `Kubuno.Rust.Sdk` counts the views
+(`src/**/*.kbview`) and the files next to `Cargo.toml` (`*.rs`, `*.kbview`, images) as build inputs: saving a view
+alone left the build up to date.
 
 **Clicks on a user control.** A user control's own view root is the user control itself, as in Windows Forms: it is
 merged into the element using the user control in the router (`InputRouter::absorb_view_root`), instead of covering
