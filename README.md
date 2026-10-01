@@ -225,7 +225,7 @@ work packages 1-2 of that design (a pure MSBuild SDK, no CPS/VSIX code yet - see
 limitations" below):
 
 - **`sdk/Kubuno.Rust.Sdk/`** (work package 1) - `Sdk/Sdk.props`/`Sdk/Sdk.targets`: `<Project
-  Sdk="Kubuno.Rust.Sdk/1.1.0">` with an optional `<CargoPackage>`/`<CargoBin>` maps
+  Sdk="Kubuno.Rust.Sdk/1.1.1">` with an optional `<CargoPackage>`/`<CargoBin>` maps
   Build/Rebuild/Clean/Run/Test to cargo, `Debug`/`Release` (or any other `$(Configuration)`) to a
   cargo profile, `<CargoTargetDir>` to `CARGO_TARGET_DIR` (falling back to the environment variable
   of the same name, never overriding an explicit value), and exposes `$(TargetPath)` as the built
@@ -270,7 +270,7 @@ matching `Microsoft.VisualStudio.JavaScript.SDK`.
 
 ### Testing `samples/hello-rust.sln`
 
-`samples/hello-rust/hello-rust.rsproj` (`<Project Sdk="Kubuno.Rust.Sdk/1.1.0">`,
+`samples/hello-rust/hello-rust.rsproj` (`<Project Sdk="Kubuno.Rust.Sdk/1.1.1">`,
 `<CargoPackage>hello-rust</CargoPackage>`) and `samples/hello-rust.sln` exercise the SDK against
 this repository's existing manual-testing fixture. `samples/NuGet.config` points the `Sdk="…"`
 resolution at the local feed built above (once published, a real `nuget.org`/private-feed source
@@ -393,8 +393,8 @@ surgically - only the missing project entries are inserted, everything else (sol
 other projects, formatting) is preserved. A member with no `[[bin]]` at all (library-only) is
 skipped by default.
 
-The SDK a generated `.rsproj` needs (`Sdk="Kubuno.Rust.Sdk/1.1.0"`) ships **inside the VSIX**
-(`tools\SdkFeed\Kubuno.Rust.Sdk.1.1.0.nupkg`) - on first package load, the extension registers that
+The SDK a generated `.rsproj` needs (`Sdk="Kubuno.Rust.Sdk/1.1.1"`) ships **inside the VSIX**
+(`tools\SdkFeed\Kubuno.Rust.Sdk.1.1.1.nupkg`) - on first package load, the extension registers that
 folder as a NuGet source in your own `NuGet.Config` (adding to it, never replacing your other
 sources), so the generated project restores/builds with no manual `dotnet pack`/`NuGet.config` setup.
 

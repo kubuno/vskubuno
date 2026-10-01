@@ -24,8 +24,8 @@ adapter untouched. The frontends are Visual Studio's own JavaScript project type
 **Tools > Kubuno Core Web: Generate Solution** (on the repository of the active document or open solution, else a folder
 picker) writes, for a Kubuno repository - recognized by its manifests, no `cargo metadata` needed:
 
-- one `.rsproj` next to each Cargo package (`Kubuno.Rust.Sdk/1.1.0`). The package F5 starts - `kubuno-core` for the
-  core, the module's package for a module - also names `<Sdk Name="Kubuno.Web.Sdk" Version="1.0.0" />` and its
+- one `.rsproj` next to each Cargo package (`Kubuno.Rust.Sdk/1.1.1`). The package F5 starts - `kubuno-core` for the
+  core, the module's package for a module - also names `<Sdk Name="Kubuno.Web.Sdk" Version="1.0.1" />` and its
   `<KubunoWebRole>` (`Core` or `Module`). The core's projects build the workspace once
   (`<CargoBuildScope>Workspace</CargoBuildScope>`); `kubuno-core.rsproj` picks `<CargoBin>kubuno-core</CargoBin>`
   (the crate also builds the `kubuno` CLI). Libraries go to a `/Libraries/` solution folder;

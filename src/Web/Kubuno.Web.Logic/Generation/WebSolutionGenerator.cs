@@ -19,7 +19,7 @@ namespace Kubuno.Web.Logic.Generation
         }
 
         /// <summary>The versions this extension ships (Kubuno.Rust.Sdk, Kubuno.Web.Sdk) and the JavaScript SDK it was verified with.</summary>
-        public static WebSdkVersions Current { get; } = new WebSdkVersions("1.1.0", "1.0.0", "1.0.6887863");
+        public static WebSdkVersions Current { get; } = new WebSdkVersions("1.1.1", "1.0.1", "1.0.6887863");
 
         public string RustSdk { get; }
 

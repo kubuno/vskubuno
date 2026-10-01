@@ -212,7 +212,7 @@ Good to know:
   it for a quick look, the solution for F5, breakpoints and tests.
 - **rust-analyzer** works on the share; the "Kubuno" Output pane may name a member's folder as its
   workspace root - it still loads the whole workspace.
-- The projects use `Kubuno.Rust.Sdk/1.1.0`. A solution generated earlier (1.0.0) keeps building each
+- The projects use `Kubuno.Rust.Sdk/1.1.1`. A solution generated earlier (1.0.0) keeps building each
   package on its own: regenerate its `.rsproj` files (delete them and run the command again) to get the
   workspace build.
 

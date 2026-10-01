@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.6887863">
   <!-- npm/Vite through the Kubuno tooling (docs/WEB.md, "Frontends"). -->
-  <Sdk Name="Kubuno.Web.Sdk" Version="1.0.0" />
+  <Sdk Name="Kubuno.Web.Sdk" Version="1.0.1" />
 
   <!-- Created by Visual Studio's "Kubuno Web Module" template. F5: `vite build \-\-watch` straight into the dev
        core's copy of the module, and Edge on the module with the script debugger (.kubuno\launch.json). -->

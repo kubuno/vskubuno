@@ -1,4 +1,4 @@
-<Project Sdk="Kubuno.Rust.Sdk/1.1.0">
+<Project Sdk="Kubuno.Rust.Sdk/1.1.1">
 
   <!--
     Manually-written .rsproj verifying Kubuno.Rust.Sdk (docs/RSPROJ.md work packages 1-2) against

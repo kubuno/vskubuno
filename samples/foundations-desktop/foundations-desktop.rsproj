@@ -1,4 +1,4 @@
-<Project Sdk="Kubuno.Rust.Sdk/1.1.0">
+<Project Sdk="Kubuno.Rust.Sdk/1.1.1">
 
   <!-- The desktop foundations sample (vskubuno docs/DESKTOP-MIGRATION.md, lot F1), made from the Kubuno Desktop Application template. -->
   <PropertyGroup>

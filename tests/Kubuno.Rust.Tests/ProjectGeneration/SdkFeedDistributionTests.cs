@@ -109,7 +109,7 @@ namespace Kubuno.Rust.Tests.ProjectGeneration
             foreach (var extension in new[] { regular, experimental })
             {
                 Directory.CreateDirectory(Path.Combine(extension, "tools", "SdkFeed"));
-                File.WriteAllBytes(Path.Combine(extension, "tools", "SdkFeed", "Kubuno.Rust.Sdk.1.1.0.nupkg"), new byte[] { 1 });
+                File.WriteAllBytes(Path.Combine(extension, "tools", "SdkFeed", "Kubuno.Rust.Sdk.1.1.1.nupkg"), new byte[] { 1 });
             }
 
             Assert.IsTrue(SdkFeedDistribution.EnsureUserRegistered(regular, _log.Add, config, stamp));

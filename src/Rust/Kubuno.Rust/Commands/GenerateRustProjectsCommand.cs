@@ -37,7 +37,7 @@ namespace Kubuno.Rust.Commands
         /// time) the same way the SDK's own <c>DefaultProjectTypeGuid</c> is a literal in
         /// <c>Sdk.props</c> - bump both together when the SDK is ever re-versioned.
         /// </summary>
-        public const string RsprojSdkVersion = "1.1.0";
+        public const string RsprojSdkVersion = "1.1.1";
 
         public static void Initialize(AsyncPackage package, OleMenuCommandService commandService)
         {

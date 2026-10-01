@@ -465,6 +465,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **`Kubuno.Rust.Sdk` 1.1.1 and `Kubuno.Web.Sdk` 1.0.1** (rebuilt from the current sources): the task assembly packed in
+  `Kubuno.Rust.Sdk` 1.1.0 predated the `Kubuno.Rust.Cargo` / `Kubuno.Rust.Launch` split and the fix of « Unknown Cargo
+  build event », so a build through the SDK could fail with `Unknown Cargo build event` or reject
+  `DiagnosticsAsItems`. NuGet caches an SDK by version, so the stale 1.1.0 package would have kept being served: the
+  fixed tasks ship as 1.1.1 (and `Kubuno.Web.Sdk`, which bundles the same Cargo library and its own tasks, as 1.0.1).
+  New projects, the project templates, the `.rsproj` generator (« Generate Rust projects »), the web solution generator,
+  the samples, the documentation and the SDK feed bundled in the extension all use the new versions; the per-solution
+  feeds (`.kubuno\sdk-feed`) of the existing solutions are regenerated and their projects point at 1.1.1 / 1.0.1.
 - The designer's **Design / XML / Split** buttons use Visual Studio's command-bar colours (rest, hover, selected),
   in the dark and the light themes, instead of WPF's default grey buttons.
 

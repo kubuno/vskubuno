@@ -2,8 +2,8 @@
 
   <!--
     Kubuno.Web.Sdk (docs/WEB.md): an ADDITIONAL MSBuild SDK, named next to a project's main SDK -
-      <Project Sdk="Kubuno.Rust.Sdk/1.1.0">                       <Sdk Name="Kubuno.Web.Sdk" Version="1.0.0" />  the core or a module
-      <Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/…">     <Sdk Name="Kubuno.Web.Sdk" Version="1.0.0" />  a frontend
+      <Project Sdk="Kubuno.Rust.Sdk/1.1.1">                       <Sdk Name="Kubuno.Web.Sdk" Version="1.0.1" />  the core or a module
+      <Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/…">     <Sdk Name="Kubuno.Web.Sdk" Version="1.0.1" />  a frontend
     and driven by the project's KubunoWebRole (Core, Module, CoreFrontend, ModuleFrontend). This file is imported after
     the main SDK's props and before the project body: defaults only, the body can override any of them.
   -->

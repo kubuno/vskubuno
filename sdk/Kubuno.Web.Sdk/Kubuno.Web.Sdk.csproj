@@ -2,7 +2,7 @@
 
   <!--
     Packages Kubuno.Web.Sdk (docs/WEB.md) as a NuGet MSBuildSdk package: an ADDITIONAL SDK a project names next to its
-    main one - `<Sdk Name="Kubuno.Web.Sdk" Version="1.0.0" />` in the .rsproj of the core or of a module
+    main one - `<Sdk Name="Kubuno.Web.Sdk" Version="1.0.1" />` in the .rsproj of the core or of a module
     (Kubuno.Rust.Sdk) and in the .esproj of a frontend (Microsoft.VisualStudio.JavaScript.Sdk). Pure MSBuild
     (Sdk/Sdk.props, Sdk/Sdk.targets, Sdk/Rules) plus its task assembly, Kubuno.Web.MSBuild.Tasks, built by this
     project (unlike Kubuno.Rust.Sdk's, no manual staging step) and packed under tasks\<tfm>.
@@ -16,7 +16,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>true</IsPackable>
     <PackageId>Kubuno.Web.Sdk</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <PackageType>MSBuildSdk</PackageType>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <GenerateDependencyFile>false</GenerateDependencyFile>

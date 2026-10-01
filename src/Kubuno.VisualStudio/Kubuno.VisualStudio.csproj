@@ -451,17 +451,17 @@
     and builds a `.rsproj` successfully.
   -->
   <PropertyGroup>
-    <KubunoRustSdkNupkgPath Condition="'$(KubunoRustSdkNupkgPath)' == ''">C:\kubuno-build\nuget-local-feed\Kubuno.Rust.Sdk.1.1.0.nupkg</KubunoRustSdkNupkgPath>
+    <KubunoRustSdkNupkgPath Condition="'$(KubunoRustSdkNupkgPath)' == ''">C:\kubuno-build\nuget-local-feed\Kubuno.Rust.Sdk.1.1.1.nupkg</KubunoRustSdkNupkgPath>
   </PropertyGroup>
   <Target Name="KubunoCheckSdkNupkg" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoRustSdkNupkgPath)')"
-           Text="Kubuno.Rust.Sdk.1.1.0.nupkg not found at '$(KubunoRustSdkNupkgPath)'. Pack it: dotnet pack sdk\Kubuno.Rust.Sdk\Kubuno.Rust.Sdk.csproj -c Release -o C:\kubuno-build\nuget-local-feed -- or pass /p:KubunoRustSdkNupkgPath=&lt;path to the .nupkg&gt;." />
+           Text="Kubuno.Rust.Sdk.1.1.1.nupkg not found at '$(KubunoRustSdkNupkgPath)'. Pack it: dotnet pack sdk\Kubuno.Rust.Sdk\Kubuno.Rust.Sdk.csproj -c Release -o C:\kubuno-build\nuget-local-feed -- or pass /p:KubunoRustSdkNupkgPath=&lt;path to the .nupkg&gt;." />
   </Target>
   <ItemGroup>
     <Content Include="$(KubunoRustSdkNupkgPath)">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>tools\SdkFeed\Kubuno.Rust.Sdk.1.1.0.nupkg</Link>
+      <Link>tools\SdkFeed\Kubuno.Rust.Sdk.1.1.1.nupkg</Link>
     </Content>
   </ItemGroup>
   <ItemGroup>
@@ -786,17 +786,17 @@
     without it still succeeds (the web projects then need the package from another NuGet source).
   -->
   <PropertyGroup>
-    <KubunoWebSdkNupkgPath Condition="'$(KubunoWebSdkNupkgPath)' == ''">C:\kubuno-build\nuget-local-feed\Kubuno.Web.Sdk.1.0.0.nupkg</KubunoWebSdkNupkgPath>
+    <KubunoWebSdkNupkgPath Condition="'$(KubunoWebSdkNupkgPath)' == ''">C:\kubuno-build\nuget-local-feed\Kubuno.Web.Sdk.1.0.1.nupkg</KubunoWebSdkNupkgPath>
   </PropertyGroup>
   <ItemGroup Condition="Exists('$(KubunoWebSdkNupkgPath)')">
     <Content Include="$(KubunoWebSdkNupkgPath)">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>tools\SdkFeed\Kubuno.Web.Sdk.1.0.0.nupkg</Link>
+      <Link>tools\SdkFeed\Kubuno.Web.Sdk.1.0.1.nupkg</Link>
     </Content>
   </ItemGroup>
   <Target Name="KubunoReportWebSdkNupkg" BeforeTargets="Build" Condition="!Exists('$(KubunoWebSdkNupkgPath)')">
-    <Message Importance="high" Text="Kubuno.Web.Sdk.1.0.0.nupkg not found at '$(KubunoWebSdkNupkgPath)': the VSIX ships without it (see docs/WEB.md)." />
+    <Message Importance="high" Text="Kubuno.Web.Sdk.1.0.1.nupkg not found at '$(KubunoWebSdkNupkgPath)': the VSIX ships without it (see docs/WEB.md)." />
   </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
