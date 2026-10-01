@@ -9,7 +9,7 @@ Created from Visual Studio's "Kubuno Web Module" template (the vskubuno extensio
 
 | Path | What it is |
 |---|---|
-| `src/main.rs` | The module's server: `/health`, `/api/$moduleid$/...`, `/internal/*` (guarded by `X-Internal-Secret`). |
+| `src/main.rs` | The module's server: `/health`, its API (`/api/v1/$moduleid$/hello` through the core reaches `/hello`), `/internal/*` (guarded by `X-Internal-Secret`). |
 | `migrations/` | The module's PostgreSQL schema (`$moduleid$`), applied at startup with `sqlx::migrate!`. |
 | `module.toml` | The manifest the core reads: id, port, routes, sidebar entry, events. |
 | `frontend/` | The frontend bundle (`dist/entry.js`, `dist/entry.css`): Vite 8, React 19, TypeScript 6, Tailwind v4, `@kubuno/sdk`/`@kubuno/ui` from npm (external at run time, resolved by the host's import map). |

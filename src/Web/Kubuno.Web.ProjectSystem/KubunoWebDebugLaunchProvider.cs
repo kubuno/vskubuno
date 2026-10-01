@@ -160,7 +160,8 @@ namespace Kubuno.Web.ProjectSystem
                         "No Kubuno core to start the module in. Build the core (open core\\Kubuno.Core.Web.slnx, or the multi-repository solution, and build it), "
                         + "install Kubuno on this machine, or set \"Core executable\" on this project's Debug page. Looked at: "
                         + string.Join(", ", DevCoreLocator.Candidates(moduleDirectory, explicitCore, cargoTargetDirectory)));
-                coreRepository = DevCoreLocator.SiblingCoreRepository(moduleDirectory);
+                // The core repository next to the module, else the one of the last core F5 (a module checked out elsewhere).
+                coreRepository = DevCoreLocator.SiblingCoreRepository(moduleDirectory) ?? layout.RememberedCoreRepository();
             }
             else
             {
@@ -170,6 +171,8 @@ namespace Kubuno.Web.ProjectSystem
                 {
                     coreRepository = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(await Read("CargoManifestPath").ConfigureAwait(false))!, "..", ".."));
                 }
+
+                layout.RememberCoreRepository(coreRepository);
             }
 
             // 3. The dev core's environment: KV__ settings, generated secrets, the accepted database URL.
@@ -220,14 +223,27 @@ namespace Kubuno.Web.ProjectSystem
 
             var attach = isModule && (launchOptions & DebugLaunchOptions.NoDebug) == 0
                 && !string.Equals(await Read("KubunoAttachToModule").ConfigureAwait(false), "false", StringComparison.OrdinalIgnoreCase);
-            _pending = new LaunchPlan(coreExecutable, port, launchBrowser ? url : null, attach ? deployedExecutable : null);
+            // The core's console goes to a file the Output pane follows (CoreConsoleTail); the previous session's is replaced.
+            var consoleLog = Path.Combine(layout.Root, "logs", "core-console.log");
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(consoleLog)!);
+                File.Delete(consoleLog);
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                // Still held by a core that has not exited yet: the tail starts from the end of what is there.
+            }
+
+            _pending = new LaunchPlan(coreExecutable, port, launchBrowser ? url : null, attach ? deployedExecutable : null, consoleLog, DatabaseSecrets(check.Url.Original), deployedExecutable);
 
             var settings = new DebugLaunchSettings(launchOptions)
             {
                 LaunchOperation = DebugLaunchOperation.CreateProcess,
                 LaunchDebugEngineGuid = NativeEngine,
                 Executable = coreExecutable,
-                Arguments = string.Empty,
+                // Redirection understood by the native debugger's process launch (not passed to the core).
+                Arguments = "> \"" + consoleLog + "\" 2>&1",
                 CurrentDirectory = layout.Root,
             };
 
@@ -279,12 +295,15 @@ namespace Kubuno.Web.ProjectSystem
                 var deadline = DateTime.UtcNow.AddMinutes(10);
                 using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
                 var coreSeen = false;
+                var console = new CoreConsoleTail(plan.ConsoleLog, plan.Masks);
                 while (DateTime.UtcNow < deadline || attached.Count > 0 || coreSeen)
                 {
                     var coreAlive = ProcessesAt(plan.CoreExecutable).Any(process => SafeStartTime(process) >= started);
                     coreSeen |= coreAlive;
+                    await console.PumpAsync(final: coreSeen && !coreAlive).ConfigureAwait(false);
                     if (coreSeen && !coreAlive)
                     {
+                        StopModuleCopies(plan);
                         return; // The debug session ended.
                     }
 
@@ -323,6 +342,38 @@ namespace Kubuno.Web.ProjectSystem
         private static async Task AttachAsync(int processId, string executable)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            // Through the automation model first: IVsDebugger4.LaunchDebugTargets4 with DLO_AlreadyRunning was found live to
+            // refuse a process the core started while the core itself is being debugged (E_INVALIDARG, "operation not
+            // supported"); Process2.Attach2 with the native engine attaches it into the same session.
+            try
+            {
+                if (Package.GetGlobalService(typeof(EnvDTE.DTE)) is EnvDTE80.DTE2 dte)
+                {
+                    foreach (EnvDTE.Process process in dte.Debugger.LocalProcesses)
+                    {
+                        if (process.ProcessID == processId)
+                        {
+                            if (process is EnvDTE80.Process2 process2)
+                            {
+                                process2.Attach2(NativeEngine.ToString("B"));
+                            }
+                            else
+                            {
+                                process.Attach();
+                            }
+
+                            KubunoLog.WriteLine("Kubuno web: debugger attached to " + Path.GetFileName(executable) + " (process " + processId + ").");
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (System.Runtime.InteropServices.COMException exception)
+            {
+                KubunoLog.WriteLine("Kubuno web: attaching through the automation model failed (" + exception.Message + "); trying the debugger service.");
+            }
+
             if (Package.GetGlobalService(typeof(SVsShellDebugger)) is not IVsDebugger4 debugger)
             {
                 return;
@@ -438,6 +489,46 @@ namespace Kubuno.Web.ProjectSystem
             throw new FileNotFoundException("The executable '" + targetPath + "' does not exist. Build the project first.", targetPath);
         }
 
+        /// <summary>
+        /// Ends the copies of the deployed module the core left behind: Stop Debugging terminates the core but only
+        /// detaches from the module process it started, which would keep running (and hold its port and database
+        /// connections) without its core. Only processes whose image lies in the deployed folder are touched.
+        /// </summary>
+        private static void StopModuleCopies(LaunchPlan plan)
+        {
+            if (plan.DeployedModuleExecutable is not { } executable)
+            {
+                return;
+            }
+
+            var stopped = ModuleDeployment.StopProcessesUnder(Path.GetDirectoryName(executable)!, Path.GetFileNameWithoutExtension(executable));
+            if (stopped.Count > 0)
+            {
+                KubunoLog.WriteLine("Kubuno web: the dev core ended - " + Path.GetFileName(executable) + " stopped (process " + string.Join(", ", stopped) + ").");
+            }
+        }
+
+        /// <summary>The database URL and its password (raw and decoded): masked in the core's console pane.</summary>
+        private static IReadOnlyList<string> DatabaseSecrets(string url)
+        {
+            var secrets = new List<string> { url };
+            var scheme = url.IndexOf("://", StringComparison.Ordinal);
+            var at = url.LastIndexOf('@');
+            if (scheme >= 0 && at > scheme)
+            {
+                var userInfo = url.Substring(scheme + 3, at - scheme - 3);
+                var colon = userInfo.IndexOf(':');
+                if (colon >= 0 && colon < userInfo.Length - 1)
+                {
+                    var password = userInfo.Substring(colon + 1);
+                    secrets.Add(password);
+                    secrets.Add(Uri.UnescapeDataString(password));
+                }
+            }
+
+            return secrets;
+        }
+
         /// <summary>A launch stopped on purpose after an info bar said why: <see cref="LaunchAsync"/> ends it without CPS's message box.</summary>
         private sealed class LaunchCancelledException : Exception
         {
@@ -449,8 +540,11 @@ namespace Kubuno.Web.ProjectSystem
 
         private sealed class LaunchPlan
         {
-            public LaunchPlan(string coreExecutable, int port, string? browserUrl, string? moduleExecutable)
+            public LaunchPlan(string coreExecutable, int port, string? browserUrl, string? moduleExecutable, string consoleLog, IReadOnlyList<string> masks, string? deployedModuleExecutable)
             {
+                DeployedModuleExecutable = deployedModuleExecutable;
+                ConsoleLog = consoleLog;
+                Masks = masks;
                 CoreExecutable = coreExecutable;
                 Port = port;
                 BrowserUrl = browserUrl;
@@ -464,6 +558,14 @@ namespace Kubuno.Web.ProjectSystem
             public string? BrowserUrl { get; }
 
             public string? ModuleExecutable { get; }
+
+            public string ConsoleLog { get; }
+
+            /// <summary>Strings never shown in the Output pane (the database password).</summary>
+            public IReadOnlyList<string> Masks { get; }
+
+            /// <summary>The module deployed for this session (stopped with the core), whether or not it is debugged.</summary>
+            public string? DeployedModuleExecutable { get; }
         }
     }
 }

@@ -61,6 +61,21 @@ namespace Kubuno.Web.Tests
         }
 
         [TestMethod]
+        public void The_dev_core_remembers_the_core_repository_of_the_last_core_launch()
+        {
+            var layout = new DevCoreLayout(Path.Combine(_root, "dev-core"));
+            Assert.IsNull(layout.RememberedCoreRepository());
+
+            var core = Path.Combine(_root, "core");
+            layout.RememberCoreRepository(core);
+            Assert.IsNull(layout.RememberedCoreRepository(), "not a core repository (no crates\\kubuno-core\\Cargo.toml)");
+
+            Directory.CreateDirectory(Path.Combine(core, "crates", "kubuno-core"));
+            File.WriteAllText(Path.Combine(core, "crates", "kubuno-core", "Cargo.toml"), "[package]\nname = \"kubuno-core\"\n");
+            Assert.AreEqual(core, layout.RememberedCoreRepository());
+        }
+
+        [TestMethod]
         public void Deployment_copies_like_deploy_local_and_prefers_the_store()
         {
             var module = WriteModule();

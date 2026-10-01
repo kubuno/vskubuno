@@ -62,6 +62,42 @@ namespace Kubuno.Web.Logic.DevCore
 
         public string SecretsFile => Path.Combine(Root, "dev-secrets.json");
 
+        /// <summary>The core repository of the last core F5 (a module outside <c>..\core</c> takes its host frontend from there).</summary>
+        public string CoreRepositoryFile => Path.Combine(Root, "core-repository.txt");
+
+        /// <summary>Records the core repository a core F5 started from. Best effort.</summary>
+        public void RememberCoreRepository(string coreRepository)
+        {
+            try
+            {
+                Directory.CreateDirectory(Root);
+                File.WriteAllText(CoreRepositoryFile, Path.GetFullPath(coreRepository));
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException)
+            {
+                // Only a fallback for later module launches.
+            }
+        }
+
+        /// <summary>The core repository recorded by <see cref="RememberCoreRepository"/>, when it still holds the core; else null.</summary>
+        public string? RememberedCoreRepository()
+        {
+            try
+            {
+                if (!File.Exists(CoreRepositoryFile))
+                {
+                    return null;
+                }
+
+                var path = File.ReadAllText(CoreRepositoryFile).Trim();
+                return path.Length > 0 && File.Exists(Path.Combine(path, "crates", "kubuno-core", "Cargo.toml")) ? path : null;
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException)
+            {
+                return null;
+            }
+        }
+
         /// <summary><c>%LOCALAPPDATA%\Kubuno\dev-core</c>, or <see cref="RootVariable"/> when set.</summary>
         public static DevCoreLayout Default(Func<string, string?>? environment = null)
         {

@@ -246,7 +246,10 @@ administrator and writes its password to `initial-admin-password` (the "Kubuno" 
 
 **The core** (`kubuno-core.rsproj`, debugger "Kubuno Core Web (serveur)"): guard and development database tunnel (section 5), then `kubuno-core.exe` under the native
 debugger with the dev core environment (and `RUST_BACKTRACE=1`, `RUST_LOG=info` unless set); the browser opens on
-`http://localhost:8080/` once the core answers. **Combined launch**: the "Kubuno Core Web (serveur + Vite)" profile of the
+`http://localhost:8080/` once the core answers. The core's console (its tracing log, and what the modules it
+supervises print) is redirected by the native debugger (`> dev-core\logs\core-console.log 2>&1`, never passed to the
+core) and followed into the **"Kubuno Core Web (serveur)"** Output pane, ANSI colours removed and the database
+password masked. **Combined launch**: the "Kubuno Core Web (serveur + Vite)" profile of the
 `.slnLaunch` starts the core and the frontend project; the frontend's F5 runs Vite's dev server (`npm run dev`,
 port 5173, which proxies `/api`, `/internal`, `/modules` and `/ws` to :8080) and opens Edge on
 `http://localhost:5173` with Visual Studio's script debugger. With a frontend project among the startup projects,
@@ -266,9 +269,12 @@ the core does not open a second browser.
    installed `C:\Program Files\Kubuno\kubuno-core.exe`; under the native debugger, with the dev core environment;
 4. the core starts the module (its supervisor, `KUBUNO_*` environment, port of `module.toml`); the launch provider
    **attaches the native debugger to every module process** whose image is the deployed executable, as soon as it
-   appears and again after each restart by the supervisor (`IVsDebugger4.LaunchDebugTargets4`, `DLO_AlreadyRunning`),
-   until the core exits;
-5. the browser opens on the module's first sidebar path (`http://localhost:8080/calendar`).
+   appears and again after each restart by the supervisor (through the automation model, `Process2.Attach2` with the
+   native engine: `IVsDebugger4.LaunchDebugTargets4` with `DLO_AlreadyRunning` refuses a process started by a core
+   that is itself being debugged, E_INVALIDARG), until the core exits. Stop Debugging ends the core and only detaches
+   from the module, so the module copies left in the deployed folder are then stopped too;
+5. the browser opens on the module's first sidebar path (`http://localhost:8080/calendar`). A module checked out
+   outside `..\core` gets the host frontend of the core repository of the last core F5 (`dev-core\core-repository.txt`).
 
 **Frontend debugging.** The "<Module> (Kubuno Core Web + navigateur)" profile also starts the module's frontend project: its
 F5 runs `vite build --watch --sourcemap` straight into the deployed `frontend` folder of the module (edit, save,
@@ -282,7 +288,8 @@ refresh) and opens Edge on the module with the script debugger; `launch.json` ma
 - `kubuno-<id>.rsproj` (`Kubuno.Rust.Sdk` + `Kubuno.Web.Sdk`, role Module), `Cargo.toml` (`kubuno-<id>`, its own
   workspace, `kubuno-seccomp` by tag `seccomp-v0.1.1`, sqlx 0.9 / axum 0.7 like the modules), `module.toml`, a
   `src/main.rs` reading what the core gives a module (`KUBUNO_INTERNAL_SECRET`, `KUBUNO_DB_*`; `DATABASE_URL`/`PORT`
-  when run alone), migrations in the module's own schema (sqlx's migration table too, through `search_path`),
+  when run alone) and registering with the core like the real modules (`POST /internal/modules/register` from the
+  built-in `module.toml`, then a heartbeat every 30 s - without it the core never proxies `/api/v1/<id>/...`), migrations in the module's own schema (sqlx's migration table too, through `search_path`),
   `/internal/*` with a constant-time secret check, security headers, no `unwrap()`;
 - `frontend/`: `<id>-frontend.esproj`, `package.json` with `@kubuno/sdk|ui|drive` at the published versions (read
   from `core/frontend/packages/*/package.json` when a core checkout is next to the new module, else the versions the

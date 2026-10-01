@@ -28,6 +28,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow             = "1"
 uuid               = { version = "1", features = ["v4", "serde"] }
 chrono             = { version = "0.4", features = ["serde"] }
+# Registration with the core (plain HTTP on the loopback) and module.toml read at build time.
+reqwest            = { version = "0.12", default-features = false, features = ["json"] }
+toml               = "0.8"
 
 # A repository of its own: its own workspace (like every module of the polyrepo).
 [workspace]

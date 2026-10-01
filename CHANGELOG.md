@@ -380,6 +380,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   link; host unreachable; local port taken...). A host seen for the first time shows its key fingerprint with an
   **Accept** button; host key checking is never turned off, and a changed host key is refused. The development
   database guard is unchanged (`kubuno_dev` passes).
+- **The dev core's log in the Output window**: F5 of a Kubuno Core Web profile follows the core's console (its tracing
+  log and what its modules print) into a **"Kubuno Core Web (serveur)"** pane, colours removed and the database
+  password masked.
+- **Module F5, checked against a real development database**: the debugger now really attaches to the module process
+  the core starts (it was refused with "operation not supported" while the core itself was being debugged); Stop
+  Debugging no longer leaves the module running without its core; a module checked out outside `..\core` gets the
+  host frontend of the last core launched; the "Kubuno Core Web Module" template's API route and page now go through
+  the core like the real modules (`/api/v1/<id>/hello` with `@kubuno/sdk`'s client, signed in) - the page used to get
+  a 404.
 
 ### Changed
 

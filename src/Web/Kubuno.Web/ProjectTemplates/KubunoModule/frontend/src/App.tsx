@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Puzzle } from 'lucide-react'
+import { api } from '@kubuno/sdk'
 
 interface Hello {
   message: string
   items: number
 }
 
-/** The module's page: calls its own backend through the core (/api/$moduleid$/...). */
+/** The module's page: calls its own backend through the core with @kubuno/sdk's client (/api/v1/$moduleid$/..., signed in). */
 export default function App() {
   const [hello, setHello] = useState<Hello | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/$moduleid$/hello', { credentials: 'include' })
-      .then(response => (response.ok ? response.json() : Promise.reject(new Error(`HTTP ${response.status}`))))
-      .then(setHello)
+    api
+      .get<Hello>('/$moduleid$/hello')
+      .then(({ data }) => setHello(data))
       .catch((reason: Error) => setError(reason.message))
   }, [])
 

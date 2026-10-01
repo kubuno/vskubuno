@@ -44,6 +44,11 @@
       <Private>False</Private>
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
+    <Reference Include="envdte80">
+      <HintPath>$(KubunoVsInstallDir)Common7\IDE\PublicAssemblies\envdte80.dll</HintPath>
+      <Private>False</Private>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
     <Reference Include="Microsoft.Build.Framework">
       <HintPath>$(KubunoVsInstallDir)MSBuild\Current\Bin\Microsoft.Build.Framework.dll</HintPath>
       <Private>False</Private>

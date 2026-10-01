@@ -1,5 +1,6 @@
 //! $moduletitle$ - a Kubuno module: a process of its own that the core starts, supervises and proxies
-//! (`/api/$moduleid$/...` and the routes of module.toml reach it on its `[server] port`).
+//! (the core strips `/api/v1/$moduleid$` from `/api/v1/$moduleid$/...` and forwards the rest to its `[server] port`:
+//! `/api/v1/$moduleid$/hello` reaches the `/hello` route below).
 //!
 //! Under a core, everything comes from the environment the core gives the module: `KUBUNO_INTERNAL_SECRET`,
 //! `KUBUNO_DB_HOST`/`PORT`/`USER`/`PASSWORD`/`NAME`, `KUBUNO_MODULE_DIR`... Run alone (`cargo run`),
@@ -11,6 +12,7 @@
 
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::extract::State;
 use axum::http::{HeaderName, HeaderValue, StatusCode};
@@ -18,7 +20,7 @@ use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::PgPool;
 use tower_http::set_header::SetResponseHeaderLayer;
@@ -62,6 +64,7 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     sqlx::migrate!("./migrations").run(&db).await?;
 
+    let core_secret = Arc::clone(&internal_secret);
     let state = AppState { db, internal_secret };
 
     let internal_routes = Router::new()
@@ -84,7 +87,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/health", get(health))
-        .route("/api/$moduleid$/hello", get(hello))
+        .route("/hello", get(hello))
         .nest("/internal", internal_routes)
         .layer(security_headers)
         .layer(TraceLayer::new_for_http())
@@ -97,6 +100,12 @@ async fn main() -> anyhow::Result<()> {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     tracing::info!(%addr, module = MODULE_ID, "listening");
     let listener = tokio::net::TcpListener::bind(addr).await?;
+
+    // Under a core: announce the module (its routes, sidebar entries...) so the core proxies /api/v1/$moduleid$/...
+    // to it, then keep the registration alive. Run alone (no KUBUNO_CORE_URL), there is nothing to register with.
+    if let Ok(core_url) = std::env::var("KUBUNO_CORE_URL") {
+        tokio::spawn(stay_registered(core_url, core_secret, port));
+    }
     axum::serve(listener, app).await?;
     Ok(())
 }
@@ -124,6 +133,91 @@ fn connect_options() -> anyhow::Result<PgConnectOptions> {
         }
     };
     Ok(options.options([("search_path", MODULE_ID)]))
+}
+
+/// module.toml, built into the executable: what the module announces to the core.
+const MANIFEST: &str = include_str!("../module.toml");
+
+#[derive(Deserialize)]
+struct Manifest {
+    module: ManifestModule,
+    #[serde(default)]
+    routes: Option<ManifestRoutes>,
+    #[serde(default)]
+    sidebar_items: Vec<serde_json::Value>,
+}
+
+#[derive(Deserialize)]
+struct ManifestModule {
+    display_name: Option<String>,
+    description: Option<String>,
+    version: String,
+}
+
+#[derive(Deserialize)]
+struct ManifestRoutes {
+    #[serde(default)]
+    patterns: Vec<serde_json::Value>,
+}
+
+/// The body of `POST /internal/modules/register`, from module.toml.
+fn registration(port: u16) -> anyhow::Result<serde_json::Value> {
+    let manifest: Manifest = toml::from_str(MANIFEST)?;
+    Ok(serde_json::json!({
+        "module_id": MODULE_ID,
+        "display_name": manifest.module.display_name,
+        "description": manifest.module.description,
+        "base_url": format!("http://127.0.0.1:{port}"),
+        "version": manifest.module.version,
+        "routes": manifest.routes.map(|routes| routes.patterns).unwrap_or_default(),
+        "sidebar_items": manifest.sidebar_items,
+        "subscribed_events": [],
+    }))
+}
+
+/// Registers with the core (retrying until it answers), then sends a heartbeat every 30 s and registers again
+/// when the core no longer knows the module (it restarted). Without the registration the core does not proxy the
+/// module's API.
+async fn stay_registered(core_url: String, secret: Arc<str>, port: u16) {
+    let payload = match registration(port) {
+        Ok(payload) => payload,
+        Err(error) => {
+            tracing::error!(%error, "module.toml could not be read: the module is not registered with the core");
+            return;
+        }
+    };
+    let http = reqwest::Client::new();
+    let core_url = core_url.trim_end_matches('/').to_owned();
+    register(&http, &core_url, &secret, &payload).await;
+    let heartbeat = format!("{core_url}/internal/modules/{MODULE_ID}/heartbeat");
+    loop {
+        tokio::time::sleep(Duration::from_secs(30)).await;
+        match http.post(&heartbeat).header("X-Internal-Secret", &*secret).send().await {
+            Ok(response) if response.status() == reqwest::StatusCode::NOT_FOUND => {
+                register(&http, &core_url, &secret, &payload).await;
+            }
+            Ok(response) if !response.status().is_success() => {
+                tracing::warn!(status = %response.status(), "heartbeat refused by the core");
+            }
+            Ok(_) => {}
+            Err(error) => tracing::warn!(%error, "heartbeat: core unreachable"),
+        }
+    }
+}
+
+async fn register(http: &reqwest::Client, core_url: &str, secret: &str, payload: &serde_json::Value) {
+    let url = format!("{core_url}/internal/modules/register");
+    for attempt in 1u64.. {
+        match http.post(&url).header("X-Internal-Secret", secret).json(payload).send().await {
+            Ok(response) if response.status().is_success() => {
+                tracing::info!(module = MODULE_ID, "registered with the core");
+                return;
+            }
+            Ok(response) => tracing::warn!(status = %response.status(), attempt, "registration refused by the core, retrying"),
+            Err(error) => tracing::warn!(%error, attempt, "core unreachable, retrying the registration"),
+        }
+        tokio::time::sleep(Duration::from_secs((attempt * 2).min(30))).await;
+    }
 }
 
 #[derive(Serialize)]
