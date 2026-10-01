@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Kubuno Dev Assistant (« Assistant de développement Kubuno »), lot DA-1** (`docs/AI-ASSISTANT.md` §14): an AI pair
+  programmer for building Kubuno, in its own tool window (View › Other Windows), docked with Solution Explorer, native
+  and theme-following. Claude through the official Anthropic SDK in a separate process (`kubuno-dev-assistant.exe`,
+  .NET 8) with streaming, tool use, prompt caching of the Kubuno rules, the model list from the Models API (Claude
+  Opus 5.5 by default, Sonnet 5.5 one click away), effort, live token and cost display with a hard cost cap per session
+  (5 $ by default), and Stop. `#fichier`, `#sélection` and `#élément` (the element selected in the view designer)
+  attach context; `/vue` creates or changes a view through edits computed and validated by the `.kbview` language
+  server, `/expliquer` explains an error or the selection. Proposed changes are reviewed hunk by hunk and applied to the
+  editors as one undo unit (a single Ctrl+Z). Secrets are masked before anything leaves Visual Studio, « Voir la
+  requête » shows exactly what is sent, conversations are kept masked in the solution's `.vs` folder only, the API key
+  lives in the Windows Credential Manager (never shown again, never passed on a command line), and nothing is sent
+  anywhere but to the chosen provider (no telemetry). An offline test provider replays recorded answers without a key.
 - **The designer always shows a preview of the view** (`docs/DESIGNER.md` §17): a view with errors no longer
   shows « Waiting for a view that compiles… » on a blank page. Everything valid is rendered; an unknown element
   (a typo, a newer control, a project control not built yet) becomes a hatched placeholder with its name at its

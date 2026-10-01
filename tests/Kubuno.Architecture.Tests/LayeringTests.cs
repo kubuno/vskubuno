@@ -149,6 +149,7 @@ namespace Kubuno.Architecture.Tests
             foreach (var expected in new[]
             {
                 "Kubuno.Core", "Kubuno.Core.Logic", "Kubuno.Core.Mcp", "Kubuno.Core.Mcp.Bridge",
+                "Kubuno.Core.DevAssistant", "Kubuno.Core.DevAssistant.Logic", "Kubuno.Core.DevAssistant.Host",
                 "Kubuno.Rust", "Kubuno.Rust.Logic", "Kubuno.Rust.Cargo", "Kubuno.Rust.Launch", "Kubuno.Rust.ProjectSystem",
                 "Kubuno.Rust.TestAdapter", "Kubuno.Rust.Debugger", "Kubuno.Rust.TemplateWizard", "Kubuno.Cargo.MSBuild.Tasks",
                 "Kubuno.Desktop", "Kubuno.Desktop.Logic", "Kubuno.Desktop.ProjectSystem", "Kubuno.Desktop.TemplateWizard",
@@ -216,7 +217,7 @@ namespace Kubuno.Architecture.Tests
         public void Pure_logic_assemblies_do_not_reference_the_Visual_Studio_SDK()
         {
             var pure = SourceProjects().Where(p => p.Name.EndsWith(".Logic", StringComparison.Ordinal) || p.Name is "Kubuno.Rust.Cargo" or "Kubuno.Rust.Launch").ToList();
-            Assert.AreEqual(6, pure.Count, "Kubuno.Core.Logic, Kubuno.Rust.Logic, Kubuno.Rust.Cargo, Kubuno.Rust.Launch, Kubuno.Desktop.Logic, Kubuno.Web.Logic");
+            Assert.AreEqual(7, pure.Count, "Kubuno.Core.Logic, Kubuno.Core.DevAssistant.Logic, Kubuno.Rust.Logic, Kubuno.Rust.Cargo, Kubuno.Rust.Launch, Kubuno.Desktop.Logic, Kubuno.Web.Logic");
             foreach (var project in pure)
             {
                 var assembly = BuiltAssembly(project.Path, project.AssemblyName);

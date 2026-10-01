@@ -417,6 +417,28 @@
   </Target>
 
   <!--
+    docs/AI-ASSISTANT.md: kubuno-dev-assistant.exe (Kubuno.Core.DevAssistant.Host, net8.0, framework-dependent), the Dev
+    Assistant's provider host, shipped exactly like kubuno-vs-mcp.exe above (same timing reason for the target) under
+    tools\kubuno-dev-assistant\, with its dependency closure (the official Anthropic SDK) and the fake provider's
+    recorded responses (Fixtures\). It is never loaded into devenv.exe.
+  -->
+  <PropertyGroup>
+    <KubunoDevAssistantHostOutputDir Condition="'$(KubunoDevAssistantHostOutputDir)' == ''">$(MSBuildThisFileDirectory)..\Core\Kubuno.Core.DevAssistant.Host\bin\$(Configuration)\net8.0\</KubunoDevAssistantHostOutputDir>
+  </PropertyGroup>
+  <Target Name="KubunoAddDevAssistantHostContent" AfterTargets="ResolveProjectReferences">
+    <Error Condition="!Exists('$(KubunoDevAssistantHostOutputDir)kubuno-dev-assistant.exe')"
+           Text="kubuno-dev-assistant.exe not found under '$(KubunoDevAssistantHostOutputDir)'. It is built as part of this solution (src\Core\Kubuno.Core.DevAssistant.Host) - build that project first, or pass /p:KubunoDevAssistantHostOutputDir=&lt;its output folder&gt;." />
+    <ItemGroup>
+      <KubunoDevAssistantHostFile Include="$(KubunoDevAssistantHostOutputDir)**\*.*" Exclude="$(KubunoDevAssistantHostOutputDir)**\*.pdb" />
+      <Content Include="@(KubunoDevAssistantHostFile)">
+        <IncludeInVSIX>true</IncludeInVSIX>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Link>tools\kubuno-dev-assistant\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      </Content>
+    </ItemGroup>
+  </Target>
+
+  <!--
     docs/RSPROJ.md work package 5's SDK-distribution decision: `Kubuno.Rust.Sdk`'s packed .nupkg
     (see README.md's "Building Rust with MSBuild (.rsproj)" for how pack-sdk.ps1/dotnet pack
     produces it) ships INSIDE the VSIX under tools\SdkFeed\, exactly like kubuno-views-ls.exe or
@@ -601,6 +623,25 @@
            otherwise fail the target-framework compatibility check MSBuild runs for every
            ProjectReference regardless of ReferenceOutputAssembly. Build-ordering-only reference -
            no assembly/type from Kubuno.Core.Mcp is ever compiled against here. -->
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+    </ProjectReference>
+    <!-- docs/AI-ASSISTANT.md: the Kubuno Dev Assistant - its Visual Studio side, its pure logic, and its host process (build ordering only, like Kubuno.Core.Mcp). -->
+    <ProjectReference Include="..\Core\Kubuno.Core.DevAssistant\Kubuno.Core.DevAssistant.csproj">
+      <Project>{7D4C2B91-5E3A-4F8B-9C1D-2E6F8A0B3C41}</Project>
+      <Name>Kubuno.Core.DevAssistant</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\Core\Kubuno.Core.DevAssistant.Logic\Kubuno.Core.DevAssistant.Logic.csproj">
+      <Project>{8E5D3CA2-6F4B-4A9C-8D2E-3F7A9B1C4D52}</Project>
+      <Name>Kubuno.Core.DevAssistant.Logic</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\Core\Kubuno.Core.DevAssistant.Host\Kubuno.Core.DevAssistant.Host.csproj">
+      <Project>{9F6E4DB3-7A5C-4BAD-9E3F-4A8B0C2D5E63}</Project>
+      <Name>Kubuno.Core.DevAssistant.Host</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
     </ProjectReference>
     <!-- ==== Rust layer ==== -->

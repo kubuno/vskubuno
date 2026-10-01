@@ -25,10 +25,26 @@ namespace Kubuno.Desktop.Views.LanguageService
         /// </summary>
         public static Func<JToken, Task<JToken?>>? DefinitionFallback { get; set; }
 
-        public bool CanHandle(string methodName) => methodName == HoverMethod || methodName == DefinitionMethod;
+        private const string PublishDiagnosticsMethod = "textDocument/publishDiagnostics";
 
-        public Task HandleNotificationAsync(string methodName, JToken methodParam, Func<JToken, Task> sendNotification) =>
-            sendNotification(methodParam);
+        /// <summary>
+        /// Sees every <c>textDocument/publishDiagnostics</c> the server sends; returning true swallows it (Visual Studio
+        /// never sees it). The Dev Assistant uses it for the scratch documents it validates <c>/vue</c> edits on
+        /// (docs/AI-ASSISTANT.md section 6.2): those URIs are not open in Visual Studio and must not reach the Error List.
+        /// </summary>
+        public static Func<JToken, bool>? DiagnosticsObserver { get; set; }
+
+        public bool CanHandle(string methodName) => methodName == HoverMethod || methodName == DefinitionMethod || methodName == PublishDiagnosticsMethod;
+
+        public Task HandleNotificationAsync(string methodName, JToken methodParam, Func<JToken, Task> sendNotification)
+        {
+            if (methodName == PublishDiagnosticsMethod && DiagnosticsObserver is { } observer && observer(methodParam))
+            {
+                return Task.CompletedTask;
+            }
+
+            return sendNotification(methodParam);
+        }
 
         public async Task<JToken?> HandleRequestAsync(string methodName, JToken methodParam, Func<JToken, Task<JToken?>> sendRequest)
         {

@@ -1,0 +1,41 @@
+{
+  "rounds": [
+    {
+      "events": [
+        { "type": "thinking", "text": "Je dois lire la vue active et vérifier Label et Switch dans le registre avant de proposer des opérations.", "chunk": 18, "delayMs": 8 },
+        { "type": "text", "text": "Je lis la vue active et je vérifie les éléments dans le registre.", "chunk": 6, "delayMs": 12 },
+        { "type": "tool_use", "id": "toolu_fake_vue_1", "name": "vs_active_document", "input": {} },
+        { "type": "tool_use", "id": "toolu_fake_vue_2", "name": "kbview_registry", "input": { "components": [ "Label", "Switch" ] } }
+      ],
+      "usage": { "inputTokens": 900, "outputTokens": 120, "cacheReadInputTokens": 3200, "cacheCreationInputTokens": 0 },
+      "stop": "tool_use"
+    },
+    {
+      "events": [
+        { "type": "text", "text": "\n\nJ'ajoute une étiquette « Notifications » sous le texte d'aide, et un interrupteur en fin de vue, alignés sur la grille des éléments voisins.", "chunk": 6, "delayMs": 12 },
+        {
+          "type": "tool_use",
+          "id": "toolu_fake_vue_3",
+          "name": "kbview_apply_ops",
+          "input": {
+            "path": "{{toolu_fake_vue_1.path}}",
+            "ops": [
+              { "kind": "insertChild", "parentId": "", "index": 4, "xml": "<Label x:Name=\"notifications_label\" Text=\"Notifications\" X=\"120\" Y=\"220\" Width=\"200\" Height=\"24\"/>" },
+              { "kind": "insertChild", "parentId": "", "index": 8, "xml": "<Switch x:Name=\"notifications\" X=\"330\" Y=\"220\" Width=\"60\" Height=\"24\"/>" }
+            ],
+            "summary": "Ligne « Notifications » avec un interrupteur"
+          }
+        }
+      ],
+      "usage": { "inputTokens": 1500, "outputTokens": 260, "cacheReadInputTokens": 3200, "cacheCreationInputTokens": 0 },
+      "stop": "tool_use"
+    },
+    {
+      "events": [
+        { "type": "text", "text": "\n\nJ'ai proposé **2 modifications** dans la vue : l'étiquette `notifications_label` (après `hint`) et l'interrupteur `notifications` (en fin de vue). Le serveur de langage les a validées ; examinez-les bloc par bloc avant de les appliquer.", "chunk": 6, "delayMs": 12 }
+      ],
+      "usage": { "inputTokens": 400, "outputTokens": 90, "cacheReadInputTokens": 4100, "cacheCreationInputTokens": 0 },
+      "stop": "end_turn"
+    }
+  ]
+}

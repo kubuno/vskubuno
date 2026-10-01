@@ -85,6 +85,8 @@ namespace Kubuno.VisualStudio
     // ---- Core layer (Kubuno.Core): the remote Linux host (dev database tunnel, later the Linux builds), docs/WEB.md ----
     [ProvideOptionPage(typeof(Kubuno.Core.Remote.RemoteHostOptionsPage), KubunoConstants.OptionsCategoryName, "Remote Linux host", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.remote")]
     [ProvideProfile(typeof(Kubuno.Core.Remote.RemoteHostOptionsPage), KubunoConstants.OptionsCategoryName, "Remote Linux host", 0, 0, isToolsOptionPage: true)]
+    // docs/AI-ASSISTANT.md: the Kubuno Dev Assistant (« Assistant de développement Kubuno »), docked with Solution Explorer.
+    [ProvideToolWindow(typeof(Kubuno.Core.DevAssistant.UI.DevAssistantToolWindow), Style = VsDockStyle.Tabbed, Window = "3AE79031-E1BC-11D0-8F78-00A0C9110057")]
     // ---- Rust layer (Kubuno.Rust) ----
     [ProvideOptionPage(typeof(Kubuno.Rust.Options.RustOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Rust.Constants.OptionsRustPageName, 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.rust")]
     [ProvideProfile(typeof(Kubuno.Rust.Options.RustOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Rust.Constants.OptionsRustPageName, 0, 0, isToolsOptionPage: true)]
@@ -177,6 +179,7 @@ namespace Kubuno.VisualStudio
         /// </summary>
         internal static KubunoLayer[] CreateLayers() => new KubunoLayer[]
         {
+            new Kubuno.Core.DevAssistant.DevAssistantLayer(),
             new Kubuno.Rust.RustLayer(),
             new Kubuno.Desktop.DesktopLayer(),
             new Kubuno.Web.WebLayer(),

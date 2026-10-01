@@ -1,0 +1,19 @@
+{
+  "rounds": [
+    {
+      "events": [
+        { "type": "text", "text": "Je consulte la liste d'erreurs.", "chunk": 6, "delayMs": 12 },
+        { "type": "tool_use", "id": "toolu_fake_explain_1", "name": "vs_error_list", "input": { "maxItems": 20 } }
+      ],
+      "usage": { "inputTokens": 1100, "outputTokens": 60, "cacheReadInputTokens": 0, "cacheCreationInputTokens": 1800 },
+      "stop": "tool_use"
+    },
+    {
+      "events": [
+        { "type": "text", "text": "\n\n**Explication (fournisseur de test)** : l'erreur vient d'un type attendu différent du type fourni. Corrigez la signature du gestionnaire pour qu'elle corresponde à l'événement déclaré dans la vue, puis reconstruisez.", "chunk": 6, "delayMs": 12 }
+      ],
+      "usage": { "inputTokens": 1600, "outputTokens": 110, "cacheReadInputTokens": 1800, "cacheCreationInputTokens": 0 },
+      "stop": "end_turn"
+    }
+  ]
+}

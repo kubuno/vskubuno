@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Core layer, Visual Studio side of the Kubuno Dev Assistant (docs/AI-ASSISTANT.md section 9.6): the « Assistant de
+    développement Kubuno » tool window (native WPF, Visual Studio themed), the settings dialog and the Credential Manager
+    writes, the host process client (kubuno-dev-assistant.exe), conversations, # references and / commands, the generic
+    tools (VS context, files, anchored edit proposals), secret masking before anything leaves devenv.exe, the change-set
+    review and its one-undo application, « Voir la requête », and the extension contracts (Extensibility\) the higher
+    layers implement - the Desktop layer contributes #élément, /vue and the .kbview tools through MEF.
+
+    References only Core assemblies (enforced by tests/Kubuno.Architecture.Tests). The provider SDK is NOT referenced
+    here: it runs in the net8 host process, out of devenv.exe.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Core.DevAssistant</RootNamespace>
+    <AssemblyName>Kubuno.Core.DevAssistant</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Same versions as every other Visual Studio assembly of the extension (bump them together). Compile-time only. -->
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kubuno.Core\Kubuno.Core.csproj" />
+    <ProjectReference Include="..\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\Kubuno.Core.Mcp.Bridge\Kubuno.Core.Mcp.Bridge.csproj" />
+    <ProjectReference Include="..\Kubuno.Core.DevAssistant.Logic\Kubuno.Core.DevAssistant.Logic.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The rules digest (section 6.1, tier 1): always in the system prompt, cached. Reviewed like code. -->
+    <EmbeddedResource Include="Knowledge\rules.md" LogicalName="Kubuno.Core.DevAssistant.Knowledge.rules.md" />
+  </ItemGroup>
+
+</Project>

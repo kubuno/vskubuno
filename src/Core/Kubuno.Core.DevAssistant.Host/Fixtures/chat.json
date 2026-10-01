@@ -1,0 +1,17 @@
+{
+  "rounds": [
+    {
+      "events": [
+        { "type": "thinking", "text": "La question porte sur une vue Kubuno ; je réponds à partir des références jointes.", "chunk": 16, "delayMs": 10 },
+        {
+          "type": "text",
+          "chunk": 6,
+          "delayMs": 14,
+          "text": "## Réponse (fournisseur de test)\n\nRéférences reçues : {{user.references}}.\n\nUne vue `.kbview` décrit l'interface en XML ; le **code-behind** Rust du même nom porte les gestionnaires. Par exemple, pour réagir au clic d'un bouton :\n\n```rust\nfn ok_click(&mut self, _sender: &Button, _e: &ClickEventArgs) {\n    self.status.set_text(\"Enregistré\");\n}\n```\n\n- Les textes visibles viennent des ressources (`{Res clé}`).\n- Les couleurs sont des jetons du thème, jamais des littéraux.\n\n> Réponse rejouée depuis un enregistrement : aucune clé, aucun réseau."
+        }
+      ],
+      "usage": { "inputTokens": 2400, "outputTokens": 180, "cacheReadInputTokens": 0, "cacheCreationInputTokens": 1800 },
+      "stop": "end_turn"
+    }
+  ]
+}

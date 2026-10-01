@@ -940,6 +940,33 @@
         </Strings>
       </Button>
       <!--
+        docs/AI-ASSISTANT.md: View > Other Windows > Kubuno Dev Assistant (« Assistant de développement Kubuno »), and its
+        settings in the Tools menu. Own command set (guidKubunoDevAssistantCmdSet, Kubuno.Core.DevAssistant.DevAssistantGuids).
+        Texts are set at run time (French/English).
+      -->
+      <Button guid="guidKubunoDevAssistantCmdSet" id="cmdidShowDevAssistant" priority="0x0102" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Icon guid="ImageCatalogGuid" id="Comment" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno Dev Assistant</ButtonText>
+          <CanonicalName>.View.KubunoDevAssistant</CanonicalName>
+          <LocCanonicalName>.View.KubunoDevAssistant</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoDevAssistantCmdSet" id="cmdidDevAssistantSettings" priority="0x0110" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="Settings" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno Dev Assistant Settings...</ButtonText>
+          <CanonicalName>.Tools.KubunoDevAssistantSettings</CanonicalName>
+          <LocCanonicalName>.Tools.KubunoDevAssistantSettings</LocCanonicalName>
+        </Strings>
+      </Button>
+      <!--
         docs/DATA.md DATA-6. View > Other Windows > Data Sources (Shift+Alt+D), the Data Sources toolbar and the menu of a
         table / column (its drop choice, checked at run time). Texts are set at run time (French/English).
       -->
@@ -1853,6 +1880,11 @@
       <IDSymbol name="KubunoDesignerHorizontalSpacingListGroup" value="0x1057" />
       <IDSymbol name="KubunoDesignerVerticalSpacingListGroup" value="0x1058" />
       <IDSymbol name="KubunoDesignerCenterListGroup" value="0x1059" />
+    </GuidSymbol>
+    <!-- docs/AI-ASSISTANT.md - MUST match Kubuno.Core.DevAssistant.DevAssistantGuids. -->
+    <GuidSymbol name="guidKubunoDevAssistantCmdSet" value="{b4e8f3a1-7c2d-4f6e-8a9b-1d3c5e7f9a20}">
+      <IDSymbol name="cmdidShowDevAssistant" value="0x0100" />
+      <IDSymbol name="cmdidDevAssistantSettings" value="0x0101" />
     </GuidSymbol>
   </Symbols>
 

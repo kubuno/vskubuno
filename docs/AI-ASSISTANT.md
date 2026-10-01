@@ -1,6 +1,8 @@
 # Kubuno Dev Assistant — an AI pair programmer for building Kubuno, inside Visual Studio (design study)
 
-Status: **design, 2026-10-01**. Nothing below is built yet. Product owner request (2026-10-01, with a screenshot of
+Status: **design, 2026-10-01; lot DA-1 (MVP) built the same day - see §14 "As built"**. The product owner accepted every
+recommendation of §12 (name, C# net8 host, Opus 5.5 by default with a 5 $ cap, checkpoint + final review, own window
++ MCP bridge, native WPF, local masked storage). Product owner request (2026-10-01, with a screenshot of
 Visual Studio's GitHub Copilot Chat window): *"something similar that lets us use an AI such as Claude or another one,
 but specialised for Kubuno"*. Clarified the same day: **a developer-only tool** to help build Kubuno (core, modules,
 desktop apps, views), **not** the end-user `assistant` module, with no dependency on any Kubuno server.
@@ -10,7 +12,7 @@ apart from the end-user *Assistant* module (see §1.3). Final name: open questio
 
 Contents: 1. What already exists · 2. Provider options · 3. How Copilot does it in VS 2026, and whether to plug into it ·
 4. Recommendation in one page · 5. UX · 6. Kubuno specialisation (knowledge pack, commands, tools) · 7. Agent mode ·
-8. Security and privacy · 9. Architecture · 10. Lots · 11. Risks · 12. Open questions · 13. Sources.
+8. Security and privacy · 9. Architecture · 10. Lots · 11. Risks · 12. Open questions · 13. Sources · 14. As built (DA-1).
 
 ---
 
@@ -734,3 +736,96 @@ lots.
   `docs/WEB-VIEWS.md` §6/§10/§11, `docs/RESOURCES.md`, `docs/VIEWS-SPEC.md`, `docs/MULTI-OS-AUDIT.md`,
   `src/Core/Kubuno.Core.Mcp/Tools/KubunoVsTools.cs`, `src/Web/Kubuno.Web.Logic/DevDatabase/DevDatabaseGuard.cs`,
   desktop `common/kubuno-secrets/src/lib.rs`; `Z:\src\assistant` (read only, to explain why it is out of scope).
+
+---
+
+## 14. As built (DA-1 MVP, 2026-10-01)
+
+### 14.1 Projects and processes
+
+| Project | Kind | Content |
+|---|---|---|
+| `src/Core/Kubuno.Core.DevAssistant.Logic` | netstandard2.0, no VS SDK | JSON-RPC lines (`RpcMessage`, `RpcCodec`, duplex `RpcConnection` with `$/cancelRequest`), the protocol DTOs (`DevAssistantProtocol.cs`), `SecretScanner` / `SecretMasker` / `DeniedFiles`, the change sets (`LineDiff`, `ChangeSet`, `AnchoredEditApplier`, `ChangeSetApplier` over `IChangeSetBufferHost`), `PriceTable` / `CostLedger`, `PromptParser`, `ToolPolicy` / `ToolInputValidator`, the Markdown block parser, `ConversationStore` (JSONL in `.vs`), `WindowsCredentialStore` (CredRead/Write/Delete, `CRED_PERSIST_LOCAL_MACHINE`). |
+| `src/Core/Kubuno.Core.DevAssistant.Host` | net8 exe `kubuno-dev-assistant.exe` | `HostServer` (initialize, models/list, session/send, session/cancel, shutdown), `AgentLoop`, `AnthropicProvider` (official SDK `Anthropic` 12.53.0), `FakeProvider` + `Fixtures\` (recorded responses). Ships in the VSIX under `tools\kubuno-dev-assistant\` (framework-dependent, .NET 8, like `kubuno-vs-mcp.exe`). |
+| `src/Core/Kubuno.Core.DevAssistant` | net48, in-proc | `DevAssistantLayer` (a Core-layer `KubunoLayer` listed first in `KubunoPackage.CreateLayers`), the tool window, the dialogs, the host client, `AssistantController`, the Core tools / references / commands, `VsChangeSetBufferHost`, the MEF contracts (`Extensibility\DevAssistantContracts.cs`), the rules digest `Knowledge\rules.md`. |
+| `src/Desktop/Kubuno.Desktop/DevAssistant/` | Desktop layer, MEF parts | `#élément` (`KbviewSelectionTracker` + `KbviewReferenceProvider`), the `kbview_*` tools, `/vue`, `KbviewLanguageServerBridge` (scratch documents in `kubuno-views-ls`). |
+| `tests/Kubuno.Core.DevAssistant.Tests` | net8.0 MSTest, 39 tests | protocol, masking corpus + marker restore, diff/hunks/staleness/single undo, cost cap, policy, schema validation, the SDK path against a local server replaying recorded SSE, the whole `/vue` flow through the host with the fake provider, and the recorded `/vue` ops against the real `kubuno-views-ls` (inconclusive when it is not built). |
+
+The VSIX side starts the host on first use with no argument and **removes every `ANTHROPIC_*` variable** from its
+environment; the host reads the key from `Kubuno:DevAssistant:Provider:anthropic` only, so a key set in the
+environment is never used. A missing key is reported in the transcript ("open the settings, paste your key").
+
+### 14.2 What a turn does
+
+1. `PromptParser` finds the command (`/vue` `/view`, `/expliquer` `/explain`, `/aide` `/help`) and the references
+   (`#fichier[:chemin]`, `#sélection`, `#élément`, accents optional, English aliases); a command with no reference gets
+   its defaults (`/vue` → `#fichier` + `#élément`, `/expliquer` → `#sélection`).
+2. A secret in the developer's own text stops the send (Oui = masquer, Non = envoyer quand même, Annuler).
+3. References are resolved (buffer text, unsaved changes included), **masked**, and appended to the user message as
+   `<reference kind="…" label="…">` blocks. The system prompt is the rules digest (cache breakpoint 1) plus the
+   command digest (breakpoint 2); the conversation is cached automatically (top-level `cache_control`).
+4. The host loops: stream → tool calls → the VSIX validates each input against its schema, runs the tool, **masks**
+   the result → next call. It stops on `end_turn`, refusal, `max_tokens` (tool inputs never run), the round limit
+   (12), the cost cap or Stop; dangling tool uses always get an error `tool_result` so the history stays valid and
+   append-only.
+5. The new turns are appended to the conversation (masked) and to `.vs\Kubuno\dev-assistant\conversations\<id>.jsonl`.
+
+Tools exposed in DA-1 (all others are rejected by `ToolPolicy` on both sides): `vs_active_document`, `vs_selection`,
+`vs_error_list`, `vs_open_documents`, `fs_read`, `fs_list`, `fs_grep`, `edit_propose`, `kbview_registry`,
+`kbview_selected_element`, `kbview_element`, `kbview_validate`, `kbview_apply_ops`. No execute class exists; a name
+containing push/publish/release/tag/commit/shell/exec/run/sql/db/http/fetch/npm/cargo… cannot be registered.
+
+### 14.3 `/vue` on the language server
+
+`kbview_apply_ops` opens the view's current text in `kubuno-views-ls` under a **scratch URI**
+(`<dir>\.kubuno-assist\<random>\<name>.kbview`, never written to disk), runs each op through `kubuno/applyEdit` in
+order (formatting each `insertChild` on its own indented line with the designer's `InsertChildFormatter`), sends the
+result with `didChange`, then collects the server's diagnostics. `HoverSuppressionMiddleLayer` gained a
+`DiagnosticsObserver` hook so these `publishDiagnostics` are captured and **swallowed** (they never reach the Error
+List). The result is refused on a new language-server error, malformed XML, or an element name the edit introduced
+that the registry does not know; otherwise it becomes a proposal. The recorded `/vue` scenario was checked against
+the real server by a test (`LanguageServerScratchTests`).
+
+### 14.4 Choices that differ from the design (deliberately, for DA-1)
+
+- **Review window**: a modal ThemedDialog (« Modifications proposées ») with per-hunk check boxes and a themed inline
+  diff, not `IWpfDifferenceViewer` in a document window. Same model underneath (`ChangeSet`), so DA-6 can swap the view.
+- **Files not open** are opened visibly in their editor before the edit (not `IVsInvisibleEditorManager`): the dirty
+  state, RDT and undo stay right; one file = one `ITextEdit` in a named undo transaction, several files = one linked
+  undo transaction (`mdtGlobal`). A new file is written then opened (it cannot be undone with Ctrl+Z).
+- **Code blocks** are read-only monospace boxes with « Copier » / « Insérer au curseur », not editor views; Markdown is
+  parsed in-proc by a small parser of the Logic assembly (no Markdig in the host).
+- **Settings**: a ThemedDialog (⚙ in the window, or Outils › « Paramètres de l'assistant de développement Kubuno… »)
+  stored in Visual Studio's user settings store (`Kubuno\DevAssistant`), not a unified-settings page: a password box
+  and the Credential Manager actions do not fit the declarative unified settings.
+- **Not in DA-1**: the refusal `fallbacks` beta, context editing / compaction, `strict: true` on tool schemas (inputs are
+  validated by the VSIX instead), the BM25 docs index and `kubuno_docs_*` (DA-2), a keyboard shortcut, the effort
+  per message beta. The cost cap is checked before each model call, so the last call can overrun it by its own cost.
+- **Masking** uses salted HMAC suffixes (`«secret:npm-token#a1b2c3»`, salt stored with the conversation) instead of
+  per-conversation counters, so placeholders stay identical after a restart without storing any value. The scanner
+  does not compare against the Credential Manager's values.
+- The **fake provider** (`Fournisseur : Test hors ligne`) is part of the shipped host: it replays `Fixtures\*.json`
+  scenarios chosen by regular expression on the user's message and fills tool inputs from earlier tool results
+  (`{{toolu_id.path}}`). Nothing leaves the machine with it.
+
+### 14.5 Verification (2026-10-01)
+
+- Build: whole solution (Debug), no new warning; `Kubuno.Core.DevAssistant.Tests` 39/39, `Kubuno.Architecture.Tests`
+  7/7 (the pure-logic count is now 7), `Kubuno.Core.Tests` 53/53, `Kubuno.Desktop.Tests` 629/629.
+- Live, in a dedicated hive (`/rootsuffix KubunoAssist`, VSIX installed with `VSIXInstaller`), with the fake provider,
+  dark and light themes: the window opens docked with Solution Explorer; settings store a dummy key in the Credential
+  Manager (`cmdkey` shows it, the dialog shows « ● Clé enregistrée » only) and « Supprimer la clé » removes it; a
+  question with `#fichier #élément` streams its answer (the hint label selected on the design surface arrives with its
+  XML, ancestors and registry entry); « Voir la requête » shows the planted fake GitHub token only as
+  `«secret:github-token#…»`, also absent from the `.vs` conversation files; `/vue` calls `vs_active_document`,
+  `kbview_registry`, then `kbview_apply_ops` validated by the real language server, proposes 2 hunks, 1 accepted is
+  applied in the designer's buffer, and **one Edit.Undo restores the file exactly** (document back to "saved").
+
+### 14.6 Live test with Claude (the developer's step)
+
+No automated test calls the real API. To try Claude: open « Assistant de développement Kubuno » (Affichage › Autres
+fenêtres), click ⚙, choose « Anthropic Claude », paste the API key, click « Enregistrer la clé », OK. The first message
+shows the data notice. Smoke test: (1) ask a question with `#fichier` and check the streamed answer and the cost line;
+(2) send the same question again and check that the cost line shows a cache hit (`cache … %` above 0); (3) run `/vue`
+on a sample view and review the hunks; (4) open « Voir la requête » and check the masked secrets. The model list comes
+from the Models API once a key is stored (the fallback list is shown otherwise, with the reason in the badge's tooltip).

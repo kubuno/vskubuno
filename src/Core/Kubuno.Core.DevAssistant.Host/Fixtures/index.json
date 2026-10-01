@@ -1,0 +1,5 @@
+[
+  { "pattern": "^/vue\\b", "file": "vue.json" },
+  { "pattern": "^/expliquer\\b", "file": "expliquer.json" },
+  { "pattern": ".*", "file": "chat.json" }
+]

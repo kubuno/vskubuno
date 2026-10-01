@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Core layer: kubuno-dev-assistant.exe, the provider host of the Kubuno Dev Assistant (docs/AI-ASSISTANT.md section 9.1).
+    A child process of devenv.exe started by Kubuno.Core.DevAssistant, speaking JSON-RPC lines on its stdio. It owns the
+    providers (the official Anthropic C# SDK, and the offline fake provider replaying recorded responses), the streaming
+    tool loop, prompt caching, cost accounting and the cost cap, cancellation, and reads the API key itself from the
+    Windows Credential Manager.
+
+    net8.0 out of process on purpose: the SDK pulls System.Text.Json 10, Microsoft.Extensions.AI.Abstractions 10 and
+    System.Net.ServerSentEvents, which must never be loaded into devenv.exe (binding conflicts). Same packaging as
+    kubuno-vs-mcp.exe: the build output ships under the VSIX's tools\kubuno-dev-assistant\ (framework-dependent, .NET 8).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Core.DevAssistant.Host</RootNamespace>
+    <AssemblyName>kubuno-dev-assistant</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Anthropic" Version="12.53.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kubuno.Core.DevAssistant.Logic\Kubuno.Core.DevAssistant.Logic.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The fake provider's recorded responses (offline checks and the end-to-end tests). -->
+    <None Include="Fixtures\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
