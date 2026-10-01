@@ -59,6 +59,26 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>How many dynamic items each list may show.</summary>
         public const int MaxDynamicItems = 32;
+
+        /// <summary>A ribbon element's smart tag menu, and the menu of a ribbon's "+" glyph (docs/RIBBON.md section 9).</summary>
+        public const int RibbonTasksMenu = 0x1100;
+
+        /// <summary>"Add" › on a ribbon element's context menu and smart tag.</summary>
+        public const int RibbonAddMenu = 0x1101;
+
+        public const int RibbonAddContextMenu = 0x1102;
+
+        /// <summary>"Create Command from this Button": a <c>Command</c> holding the element's label, icons and screen tip.</summary>
+        public const int RibbonCreateCommand = 0x0600;
+
+        /// <summary>"Edit Items..." / "Edit Groups..." / "Edit Tabs...": the element's polymorphic collection editor.</summary>
+        public const int RibbonEditItems = 0x0601;
+
+        /// <summary>"Choose Icon...": the icon picker on the element's icon attribute.</summary>
+        public const int RibbonChooseIcon = 0x0602;
+
+        /// <summary>First dynamic item of "Add" › (one per element kind that can be added).</summary>
+        public const int RibbonAddFirst = 0x0620;
     }
 
     /// <summary>What the design surface's context menu shows for one element (or for the view itself) - pure, unit-tested.</summary>
@@ -108,6 +128,32 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>What the Layout commands (Align ›, Make Same Size ›, spacing, centering, z-order) can do with <see cref="SelectedIds"/>.</summary>
         public LayoutSelectionInfo Layout { get; private set; } = LayoutSelectionInfo.Empty;
+
+        /// <summary>A ribbon element: the kinds of element "Add" › can add into it (docs/RIBBON.md section 9).</summary>
+        public IReadOnlyList<string> AddChoices { get; private set; } = Array.Empty<string>();
+
+        /// <summary>A ribbon element's polymorphic collection ("Edit Items..."), or null.</summary>
+        public Ribbon.RibbonCollection? Collection { get; private set; }
+
+        /// <summary>Whether "Create Command from this Button" applies.</summary>
+        public bool CanCreateCommand { get; private set; }
+
+        /// <summary>The icon attribute "Choose Icon..." edits, or null.</summary>
+        public string? IconAttribute { get; private set; }
+
+        /// <summary>The menu shows only the "Add" choices (a ribbon's "+" glyph).</summary>
+        public bool AddOnly { get; private set; }
+
+        /// <summary>An element laid out by a ribbon: the Layout submenus (Align, Make Same Size...) do not apply.</summary>
+        public bool InRibbon { get; private set; }
+
+        /// <summary><see cref="Build"/>, then the ribbon element's tasks (its smart tag or "+" glyph: <paramref name="addOnly"/>).</summary>
+        public static DesignerMenuModel BuildRibbon(string text, string elementId, ComponentRegistry registry, string? clipboardTag, IReadOnlyList<string>? selectedIds, bool addOnly)
+        {
+            var model = Build(text, elementId, registry, clipboardTag, selectedIds);
+            model.AddOnly = addOnly;
+            return model;
+        }
 
         /// <summary>
         /// The model for <paramref name="elementId"/> (null = the view) against the current
@@ -164,6 +210,15 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             model.CanUnwrap = DesignerStructurePlanner.CanUnwrap(text, elementId, registry);
             model.FrontIndex = DesignerStructurePlanner.BringToFrontIndex(text, elementId);
             model.BackIndex = DesignerStructurePlanner.SendToBackIndex(text, elementId);
+            if (Ribbon.RibbonDesignerTasks.IsRibbon(component))
+            {
+                model.AddChoices = Ribbon.RibbonDesignerTasks.AddChoices(text, elementId, registry);
+                model.Collection = Ribbon.RibbonDesignerTasks.CollectionOf(component!);
+                model.CanCreateCommand = Ribbon.RibbonDesignerTasks.CanCreateCommand(text, elementId);
+                model.IconAttribute = Ribbon.RibbonDesignerTasks.IconAttribute(text, elementId, registry);
+                model.InRibbon = component!.Name != "Ribbon";
+            }
+
             return model;
         }
     }
@@ -207,6 +262,18 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>A Layout toolbar / Format menu command on the current selection (docs/DESIGNER.md §13).</summary>
         void RunLayoutCommand(DesignerLayoutCommand command);
+
+        /// <summary>Adds a new <paramref name="tag"/> into ribbon element <paramref name="parentId"/> (docs/RIBBON.md section 9) and selects it.</summary>
+        void AddChild(string parentId, string tag);
+
+        /// <summary>"Create Command from this Button" on <paramref name="elementId"/>.</summary>
+        void CreateCommandFrom(string elementId);
+
+        /// <summary>Opens the collection editor on <paramref name="elementId"/>'s <paramref name="collection"/>.</summary>
+        void EditCollection(string elementId, Ribbon.RibbonCollection collection);
+
+        /// <summary>"Choose Icon...": the icon picker on <paramref name="elementId"/>'s <paramref name="attribute"/>.</summary>
+        void ChooseIcon(string elementId, string attribute);
     }
 
     /// <summary>
@@ -323,7 +390,16 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 case DesignerCommandIds.DesignSize: _actions.EditDesignSize(); break;
                 case DesignerCommandIds.ConvertHandlers: _actions.ConvertHandlers(); break;
                 case DesignerCommandIds.ChooseToolboxItems: _actions.ChooseToolboxItems(); break;
+                case DesignerCommandIds.RibbonCreateCommand: _actions.CreateCommandFrom(id!); break;
+                case DesignerCommandIds.RibbonEditItems when _model.Collection is { } collection: _actions.EditCollection(id!, collection); break;
+                case DesignerCommandIds.RibbonChooseIcon when _model.IconAttribute is { } icon: _actions.ChooseIcon(id!, icon); break;
                 default:
+                    if (Index(cmd, DesignerCommandIds.RibbonAddFirst, _model.AddChoices.Count) is { } add)
+                    {
+                        _actions.AddChild(id!, _model.AddChoices[add]);
+                        break;
+                    }
+
                     if (Index(cmd, DesignerCommandIds.WrapFirst, DesignerStructurePlanner.WrapContainers.Count) is { } wrap)
                     {
                         _actions.Wrap(id!, DesignerStructurePlanner.WrapContainers[wrap]);
@@ -381,6 +457,16 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 case DesignerCommandIds.HorizontalSpacingMenu: return LayoutMenu(DesignerText.MenuHorizontalSpacing, DesignerLayoutCommand.HorizontalSpacingEqual, DesignerLayoutCommand.HorizontalSpacingRemove);
                 case DesignerCommandIds.VerticalSpacingMenu: return LayoutMenu(DesignerText.MenuVerticalSpacing, DesignerLayoutCommand.VerticalSpacingEqual, DesignerLayoutCommand.VerticalSpacingRemove);
                 case DesignerCommandIds.CenterMenu: return LayoutMenu(DesignerText.MenuCenterInView, DesignerLayoutCommand.CenterHorizontally, DesignerLayoutCommand.CenterVertically);
+                case DesignerCommandIds.RibbonAddMenu: return new CommandState(_model.AddChoices.Count > 0, _model.AddChoices.Count > 0 && !_model.IsMultiple, DesignerText.MenuRibbonAdd);
+                case DesignerCommandIds.RibbonCreateCommand: return new CommandState(true, _model.CanCreateCommand && !_model.AddOnly && !_model.IsMultiple, DesignerText.MenuRibbonCreateCommand);
+                case DesignerCommandIds.RibbonEditItems:
+                    return new CommandState(true, _model.Collection is not null && !_model.AddOnly && !_model.IsMultiple, DesignerText.MenuRibbonEditCollection(_model.Collection?.Row ?? "Items"));
+                case DesignerCommandIds.RibbonChooseIcon: return new CommandState(true, _model.IconAttribute is not null && !_model.AddOnly && !_model.IsMultiple, DesignerText.MenuRibbonChooseIcon);
+            }
+
+            if (Index(cmdId, DesignerCommandIds.RibbonAddFirst, DesignerCommandIds.MaxDynamicItems) is { } addChoice)
+            {
+                return DynamicItem(addChoice, _model.AddChoices.Count, i => _model.AddChoices[i]);
             }
 
             if (Index(cmdId, DesignerCommandIds.WrapFirst, DesignerStructurePlanner.WrapContainers.Count) is { } wrap)
@@ -421,7 +507,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         private CommandState LayoutMenu(string text, DesignerLayoutCommand first, DesignerLayoutCommand last) =>
             new CommandState(
                 Enumerable.Range((int)first, (int)last - (int)first + 1).Any(c => _model.Layout.IsEnabled((DesignerLayoutCommand)c)),
-                !_model.IsView,
+                !_model.IsView && !_model.InRibbon,
                 text);
 
         private static int? Index(int cmdId, int first, int count) => cmdId >= first && cmdId < first + count ? cmdId - first : null;

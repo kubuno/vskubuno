@@ -54,6 +54,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `samples/foundations-desktop`: every F1 element in `.kbview` views (a Sidebar and a StatusBar around four pages, a
   Repeater of 10 000 messages shown by a user control next to a ListView of 10 000 rows, a wrapped Repeater of cards,
   Avatars, PictureBoxes, a Popover, menus with sub-menus, radio groups and items from a list, a TableLayoutPanel form
+- Ribbon designer tasks: the « + » glyphs of the ribbon, a tab and a group open an « Ajouter » menu of the element
+  kinds they take; a smart tag on the selected ribbon element offers « Ajouter ▸ », « Modifier les éléments… »,
+  « Créer une commande à partir de ce bouton » and « Choisir l'icône… » (also on the element's context menu). Each
+  change is one undo unit.
+- Polymorphic collection editor: a group's Items, a tab's Groups, a ribbon's Tabs and a menu's DropDownItems are one
+  Properties row each; « Ajouter ▾ » offers every element kind the collection holds, each member edited with its own
+  properties.
+- A tab's `ScalingPolicy` row: an editor of its ordered `Scale` steps (group picked from the tab's groups, size),
+  written as `<RibbonTab.ScalingPolicy>`.
   with a paged DataTable, wrapping and filling Stacks) and a custom control declared in another crate of the
   application (`foundations-controls`, typed `Custom<ChipBar>` in the form's code).
 - **The Kubuno desktop applications open, build, run and debug as a Visual Studio solution**
@@ -499,6 +508,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `NuGet.Config` source for it; the template wizard also registers the bundled feed in the user's `NuGet.Config`.
   See `docs/RSPROJ.md`.
 - The Toolbox and Solution Explorer have an icon for the `ToolTip`, `ContextMenu` and `MenuItem` components.
+- The Toolbox could lose the Kubuno tabs' items after a live theme switch (the Toolbox reloads its items while it
+  re-themes, and the designer's context may flicker off and on): the designer now checks, once the switch has
+  settled, that its items are still there and reinstalls them otherwise.
+- The design surface repainted four times a second while idle (possible flicker); it now paints only when something
+  happens.
+- Ribbon elements no longer show the irrelevant Location / Size rows (and the other properties the ribbon hides) in
+  the Properties window, and the context menu of a ribbon element no longer offers the Layout submenus.
 - `The_scanner_ignores_comments_and_strings` (override assistant) failed on a checkout with CRLF line endings: the test's
   source sample is now normalised.
 

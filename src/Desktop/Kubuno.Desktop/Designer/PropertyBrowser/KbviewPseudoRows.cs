@@ -354,11 +354,22 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             })
         {
             ChildTag = childTag;
+            ChildTags = new[] { childTag };
             StringList = stringList;
         }
 
-        /// <summary>The children's tag (<c>Column</c>, <c>Option</c>...).</summary>
+        /// <summary>A POLYMORPHIC collection row (a ribbon group's <c>Items</c>, docs/RIBBON.md section 9): its members are the children of any of <paramref name="childTags"/>.</summary>
+        public KbviewChildrenPropertyDescriptor(string rowName, IReadOnlyList<string> childTags, string category)
+            : this(rowName, childTags[0], stringList: false, category)
+        {
+            ChildTags = childTags;
+        }
+
+        /// <summary>The children's tag (<c>Column</c>, <c>Option</c>...); the first one of a polymorphic row.</summary>
         public string ChildTag { get; }
+
+        /// <summary>Every tag the row's members may have (one, but for a polymorphic row).</summary>
+        public IReadOnlyList<string> ChildTags { get; private set; }
 
         /// <summary>Edited as lines of text (<c>Option</c>/<c>Item</c> of a list control) rather than with the collection editor.</summary>
         public bool StringList { get; }
@@ -385,13 +396,28 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
         }
 
         public override bool ShouldSerializeValue(object component) =>
-            component is KbviewElementObject element && ViewDocument.Find(ViewDocument.Parse(element.Host.GetCurrentText()), element.ElementId)?.Children.Any(c => c.Name == ChildTag) == true;
+            component is KbviewElementObject element && ViewDocument.Find(ViewDocument.Parse(element.Host.GetCurrentText()), element.ElementId)?.Children.Any(c => ChildTags.Contains(c.Name)) == true;
 
         /// <summary>The children rows of <paramref name="component"/>: a string list for a list control's items, a collection row per other kind of gated child.</summary>
         public static IEnumerable<KbviewChildrenPropertyDescriptor> RowsFor(ComponentMeta component)
         {
             var allowed = component.AllowedChildren ?? new List<string>();
             var category = PropertyCategoryMap.DisplayName(PropertyCategoryMap.Category.Behavior);
+            if (Ribbon.RibbonDesignerTasks.IsRibbon(component))
+            {
+                // A ribbon element: ONE polymorphic row (a group's Items mix buttons, toggles, galleries...).
+                if (Ribbon.RibbonDesignerTasks.CollectionOf(component) is { } collection)
+                {
+                    yield return new KbviewChildrenPropertyDescriptor(collection.Row, collection.Tags, category);
+                }
+                else if (allowed.Count == 1 && allowed[0] == "Option")
+                {
+                    yield return new KbviewChildrenPropertyDescriptor("Items", allowed[0], stringList: true, category);
+                }
+
+                yield break;
+            }
+
             if (allowed.Count == 1 && (allowed[0] == "Option" || allowed[0] == "Item") && component.Name != "TreeView")
             {
                 yield return new KbviewChildrenPropertyDescriptor("Items", allowed[0], stringList: true, category);
@@ -435,29 +461,37 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 return value;
             }
 
-            var element = elements[0];
-            var version = element.Host.CurrentVersion;
-            var text = element.Host.GetCurrentText();
-            var parent = ViewDocument.Find(ViewDocument.Parse(text), element.ElementId);
-            if (parent is null)
+            ThreadHelper.ThrowIfNotOnUIThread();
+            Edit(elements[0].Host, services, elements[0].ElementId, row.Name, row.ChildTags, provider);
+            return value;
+        }
+
+        /// <summary>
+        /// Opens the collection editor on the <paramref name="tags"/> children of <paramref name="elementId"/> and applies the
+        /// result as ONE undo unit - the Properties window's row, and a ribbon element's "Edit Items..." task.
+        /// </summary>
+        public static void Edit(IKbviewElementHost host, IKbviewDesignServices services, string elementId, string rowName, IReadOnlyList<string> tags, IServiceProvider? provider = null)
+        {
+            var version = host.CurrentVersion;
+            var text = host.GetCurrentText();
+            var parent = ViewDocument.Find(ViewDocument.Parse(text), elementId);
+            if (parent is null || tags.Count == 0)
             {
-                return value;
+                return;
             }
 
-            var childMeta = element.Host.Registry.Find(row.ChildTag);
-            var originals = parent.Children.Where(c => c.Name == row.ChildTag).ToList();
-            var dialog = new UI.CollectionEditorDialog(row.Name, row.ChildTag, childMeta, originals);
+            var kinds = tags.Select(t => (t, host.Registry.Find(t))).ToList();
+            var originals = parent.Children.Where(c => tags.Contains(c.Name)).ToList();
+            var dialog = new UI.CollectionEditorDialog(rowName, kinds, originals);
             ThreadHelper.ThrowIfNotOnUIThread();
             if (RichEditors.ShowDialog(provider, dialog))
             {
-                var edits = ChildCollectionPlanner.Plan(text, element.ElementId, row.ChildTag, dialog.Members);
+                var edits = ChildCollectionPlanner.Plan(text, elementId, tags, dialog.Members);
                 if (edits.Count > 0)
                 {
-                    services.ApplyTextEdits(version, edits, "Edit " + row.Name);
+                    services.ApplyTextEdits(version, edits, "Edit " + rowName);
                 }
             }
-
-            return value;
         }
     }
 

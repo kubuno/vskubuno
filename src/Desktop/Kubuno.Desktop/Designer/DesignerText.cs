@@ -309,6 +309,22 @@ namespace Kubuno.Desktop.Designer
 
         public static string MenuDuplicate => T("Duplicate", "Dupliquer");
 
+        /// <summary>"Add" › on a ribbon element (docs/RIBBON.md section 9).</summary>
+        public static string MenuRibbonAdd => T("Add", "Ajouter");
+
+        public static string MenuRibbonCreateCommand => T("Create Command from this Button", "Créer une commande à partir de ce bouton");
+
+        public static string MenuRibbonChooseIcon => T("Choose Icon...", "Choisir l'icône...");
+
+        /// <summary>"Edit Items...", "Edit Groups..."... - a ribbon element's collection editor.</summary>
+        public static string MenuRibbonEditCollection(string row) => row switch
+        {
+            "Groups" => T("Edit Groups...", "Modifier les groupes..."),
+            "Tabs" => T("Edit Tabs...", "Modifier les onglets..."),
+            "DropDownItems" => T("Edit Drop-Down Items...", "Modifier les éléments du menu..."),
+            _ => T("Edit Items...", "Modifier les éléments..."),
+        };
+
         public static string MenuSelect => T("Select", "Sélectionner");
 
         public static string MenuWrapIn => T("Wrap In", "Envelopper dans");

@@ -481,8 +481,8 @@ namespace Kubuno.Desktop.Designer.UI
     /// </summary>
     internal sealed class CollectionEditorDialog : ThemedEditorDialog
     {
-        private readonly string _childTag;
-        private readonly ComponentMeta? _childMeta;
+        private readonly IReadOnlyList<(string Tag, ComponentMeta? Meta)> _kinds;
+        private readonly bool _polymorphic;
         private readonly List<MemberProxy> _members;
         private readonly ListView _list;
         private readonly Grid _properties;
@@ -490,11 +490,26 @@ namespace Kubuno.Desktop.Designer.UI
         private bool _relabeling;
 
         public CollectionEditorDialog(string rowName, string childTag, ComponentMeta? childMeta, IReadOnlyList<ViewNode> originals)
+            : this(rowName, new[] { (childTag, childMeta) }, originals)
+        {
+        }
+
+        /// <summary>
+        /// A POLYMORPHIC collection (docs/RIBBON.md section 9: a ribbon group's Items mix buttons, toggles, galleries...):
+        /// <paramref name="kinds"/> are the element kinds it holds, "Add" offers each of them, and every member is edited with
+        /// its own kind's properties.
+        /// </summary>
+        public CollectionEditorDialog(string rowName, IReadOnlyList<(string Tag, ComponentMeta? Meta)> kinds, IReadOnlyList<ViewNode> originals)
             : base(DesignerText.CollectionEditorTitle(rowName), 700, 480)
         {
-            _childTag = childTag;
-            _childMeta = childMeta;
-            _members = originals.Select((node, i) => new MemberProxy(childTag, childMeta, i, node.Attributes.Where(a => a.Value is not null).ToDictionary(a => a.Name, a => a.Value!, StringComparer.Ordinal))).ToList();
+            _kinds = kinds;
+            _polymorphic = kinds.Count > 1;
+            var childTag = kinds[0].Tag;
+            _members = originals.Select((node, i) =>
+            {
+                var kind = kinds.FirstOrDefault(k => k.Tag == node.Name);
+                return new MemberProxy(kind.Tag ?? node.Name, kind.Meta, i, node.Attributes.Where(a => a.Value is not null).ToDictionary(a => a.Name, a => a.Value!, StringComparer.Ordinal));
+            }).ToList();
 
             _list = MakeList();
             var buttons = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
@@ -527,7 +542,7 @@ namespace Kubuno.Desktop.Designer.UI
             _description.Margin = new Thickness(0, 8, 0, 0);
             _description.MinHeight = 36;
             var right = new DockPanel();
-            var rightLabel = MakeLabel(DesignerText.CollectionProperties(childTag));
+            var rightLabel = MakeLabel(DesignerText.CollectionProperties(_polymorphic ? rowName : childTag));
             DockPanel.SetDock(rightLabel, Dock.Top);
             DockPanel.SetDock(_description, Dock.Bottom);
             right.Children.Add(rightLabel);
@@ -542,11 +557,27 @@ namespace Kubuno.Desktop.Designer.UI
 
             add.Click += (_, _) =>
             {
-                var member = new MemberProxy(_childTag, _childMeta, null, new Dictionary<string, string>(StringComparer.Ordinal));
-                member.SeedNew(_members.Count + 1);
-                _members.Add(member);
-                RefreshList(_members.Count - 1);
+                if (!_polymorphic)
+                {
+                    AddMember(_kinds[0]);
+                    return;
+                }
+
+                // « Ajouter ▾ »: one entry per kind the collection holds.
+                var menu = new ContextMenu { PlacementTarget = add, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+                foreach (var kind in _kinds)
+                {
+                    var entry = new MenuItem { Header = kind.Tag };
+                    entry.Click += (_, _) => AddMember(kind);
+                    menu.Items.Add(entry);
+                }
+
+                menu.IsOpen = true;
             };
+            if (_polymorphic)
+            {
+                add.Content = DesignerText.Add + " ▾";
+            }
             remove.Click += (_, _) =>
             {
                 var i = _list.SelectedIndex;
@@ -568,8 +599,24 @@ namespace Kubuno.Desktop.Designer.UI
             RefreshList(_members.Count > 0 ? 0 : -1);
         }
 
-        /// <summary>The edited collection, for <see cref="ChildCollectionPlanner.Plan"/>.</summary>
+        /// <summary>The edited collection, for <see cref="ChildCollectionPlanner.Plan(string, string, IReadOnlyList{string}, IReadOnlyList{CollectionMember})"/>.</summary>
         public IReadOnlyList<CollectionMember> Members => _members.Select(m => m.ToMember()).ToList();
+
+        private void AddMember((string Tag, ComponentMeta? Meta) kind)
+        {
+            var member = new MemberProxy(kind.Tag, kind.Meta, null, new Dictionary<string, string>(StringComparer.Ordinal));
+            member.SeedNew(_members.Count(m => m.Tag == kind.Tag) + 1);
+            _members.Add(member);
+            RefreshList(_members.Count - 1);
+        }
+
+        /// <summary>What the members list shows for <paramref name="member"/>: its kind too in a polymorphic collection.</summary>
+        private string ItemText(MemberProxy member, int index)
+        {
+            var label = member.Label;
+            var text = _polymorphic && label != member.Tag ? member.Tag + " — " + label : label;
+            return index.ToString(CultureInfo.InvariantCulture) + "  " + text;
+        }
 
         private void MoveMember(int delta)
         {
@@ -589,7 +636,7 @@ namespace Kubuno.Desktop.Designer.UI
             _list.Items.Clear();
             foreach (var (member, i) in _members.Select((m, i) => (m, i)))
             {
-                _list.Items.Add(i.ToString(CultureInfo.InvariantCulture) + "  " + member.Label);
+                _list.Items.Add(ItemText(member, i));
             }
 
             if (select >= 0 && select < _list.Items.Count)
@@ -609,7 +656,7 @@ namespace Kubuno.Desktop.Designer.UI
             if (i >= 0 && i < _members.Count)
             {
                 _relabeling = true;
-                _list.Items[i] = i.ToString(CultureInfo.InvariantCulture) + "  " + _members[i].Label;
+                _list.Items[i] = ItemText(_members[i], i);
                 _list.SelectedIndex = i;
                 _relabeling = false;
             }
@@ -687,6 +734,9 @@ namespace Kubuno.Desktop.Designer.UI
 
             public int? OriginalIndex { get; }
 
+            /// <summary>The member's element tag.</summary>
+            public string Tag => _tag;
+
             public Dictionary<string, string> Values { get; }
 
             /// <summary>What the members list shows: the text/header/label, else the tag.</summary>
@@ -707,7 +757,7 @@ namespace Kubuno.Desktop.Designer.UI
             {
                 if (OriginalIndex is null)
                 {
-                    return new CollectionMember(null, Values.Where(p => p.Value.Length > 0).Select(p => new KeyValuePair<string, string?>(p.Key, p.Value)));
+                    return new CollectionMember(null, Values.Where(p => p.Value.Length > 0).Select(p => new KeyValuePair<string, string?>(p.Key, p.Value)), _tag);
                 }
 
                 var changes = Values.Where(p => !_original.TryGetValue(p.Key, out var o) || o != p.Value)
@@ -739,7 +789,7 @@ namespace Kubuno.Desktop.Designer.UI
             public PropertyDescriptorCollection GetProperties(Attribute[]? attributes)
             {
                 var names = new List<(string Name, PropertyMeta? Meta)> { ("x:Name", null) };
-                names.AddRange((_meta?.Properties ?? new List<PropertyMeta>()).Where(p => p.Browsable && !p.RootOnly && p.InheritedFrom is null).Select(p => (p.Name, (PropertyMeta?)p)));
+                names.AddRange((_meta?.Properties ?? new List<PropertyMeta>()).Where(p => p.Browsable && !p.RootOnly && (p.InheritedFrom is null || p.InheritedFrom is "RibbonControl" or "RibbonItem")).Select(p => (p.Name, (PropertyMeta?)p)));
                 return new PropertyDescriptorCollection(names.Select(n => (PropertyDescriptor)new MemberPropertyDescriptor(n.Name, n.Meta)).ToArray(), readOnly: true);
             }
 

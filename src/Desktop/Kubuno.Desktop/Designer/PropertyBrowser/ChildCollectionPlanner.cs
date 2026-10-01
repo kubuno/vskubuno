@@ -28,9 +28,10 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
     /// <summary>One member of an edited child collection: an existing child (<see cref="OriginalIndex"/>, its index among the managed children) or a new one.</summary>
     public sealed class CollectionMember
     {
-        public CollectionMember(int? originalIndex, IEnumerable<KeyValuePair<string, string?>>? attributes = null)
+        public CollectionMember(int? originalIndex, IEnumerable<KeyValuePair<string, string?>>? attributes = null, string? tag = null)
         {
             OriginalIndex = originalIndex;
+            Tag = tag;
             if (attributes is not null)
             {
                 foreach (var pair in attributes)
@@ -42,6 +43,9 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
         /// <summary>The index of the existing child among the managed children, null for a new one.</summary>
         public int? OriginalIndex { get; }
+
+        /// <summary>A new member's element tag in a polymorphic collection (null: the collection's first tag).</summary>
+        public string? Tag { get; }
 
         /// <summary>
         /// The attributes to write, in order: for an existing child only the ones to change (null or empty removes it; the
@@ -63,7 +67,16 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
         /// element <paramref name="parentId"/>; empty when nothing changes or the parent is not found. Non-overlapping, in
         /// ascending order.
         /// </summary>
-        public static IReadOnlyList<TextReplacement> Plan(string text, string parentId, string childTag, IReadOnlyList<CollectionMember> members)
+        public static IReadOnlyList<TextReplacement> Plan(string text, string parentId, string childTag, IReadOnlyList<CollectionMember> members) =>
+            Plan(text, parentId, new[] { childTag }, members);
+
+        /// <summary>
+        /// <see cref="Plan(string, string, string, IReadOnlyList{CollectionMember})"/> for a POLYMORPHIC collection (docs/RIBBON.md section 9): the
+        /// children whose tag is one of <paramref name="childTags"/> (a ribbon group's buttons, toggles, galleries...) are the
+        /// managed ones, in document order; a new member is written with its own <see cref="CollectionMember.Tag"/> (the first
+        /// tag when it has none).
+        /// </summary>
+        public static IReadOnlyList<TextReplacement> Plan(string text, string parentId, IReadOnlyList<string> childTags, IReadOnlyList<CollectionMember> members)
         {
             var parent = ViewDocument.Find(ViewDocument.Parse(text), parentId);
             if (parent is null)
@@ -71,7 +84,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 return Array.Empty<TextReplacement>();
             }
 
-            var managed = parent.Children.Where(c => c.Name == childTag).ToList();
+            var managed = parent.Children.Where(c => childTags.Contains(c.Name)).ToList();
             var edits = new List<TextReplacement>();
             var kept = members.Where(m => m.OriginalIndex is { } i && i >= 0 && i < managed.Count).ToList();
             var keptIndexes = kept.Select(m => m.OriginalIndex!.Value).ToList();
@@ -88,7 +101,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                     return edits;
                 }
 
-                edits.Add(InsertInto(text, parent, members.Select(m => NewElement(childTag, m)).ToList(), newline));
+                edits.Add(InsertInto(text, parent, members.Select(m => NewElement(m.Tag ?? childTags[0], m)).ToList(), newline));
                 return edits;
             }
 
@@ -108,7 +121,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                     }
                 }
 
-                var added = members.Where(m => m.OriginalIndex is null).Select(m => NewElement(childTag, m)).ToList();
+                var added = members.Where(m => m.OriginalIndex is null).Select(m => NewElement(m.Tag ?? childTags[0], m)).ToList();
                 if (added.Count > 0)
                 {
                     var anchor = managed[kept.Last().OriginalIndex!.Value];
@@ -136,12 +149,12 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 }
                 else
                 {
-                    items.Add(NewElement(childTag, member));
+                    items.Add(NewElement(member.Tag ?? childTags[0], member));
                 }
             }
 
             // Other children that sat between the managed ones keep their place after them.
-            items.AddRange(parent.Children.Where(c => c.Name != childTag && c.Start > first.Start && c.End <= last.End).Select(c => text.Substring(c.Start, c.End - c.Start)));
+            items.AddRange(parent.Children.Where(c => !childTags.Contains(c.Name) && c.Start > first.Start && c.End <= last.End).Select(c => text.Substring(c.Start, c.End - c.Start)));
             var block = string.Concat(items.Select(item => newline + blockIndent + item));
             var original = text.Substring(spanStart, last.End - spanStart);
             if (string.Equals(original, block, StringComparison.Ordinal))

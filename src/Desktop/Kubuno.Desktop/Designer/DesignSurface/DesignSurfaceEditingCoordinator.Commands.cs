@@ -54,7 +54,11 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
             try
             {
-                var model = DesignerMenuModel.Build(GetCurrentText(), e.ElementId, Registry, DesignerClipboard.PeekTag(), SelectionIds());
+                // A ribbon's "+" glyph ("add") or smart tag ("tasks") - docs/RIBBON.md section 9 - has its own menu.
+                var ribbonMenu = e.ElementId is not null && e.Menu is "add" or "tasks";
+                var model = ribbonMenu
+                    ? DesignerMenuModel.BuildRibbon(GetCurrentText(), e.ElementId!, Registry, DesignerClipboard.PeekTag(), SelectionIds(), addOnly: e.Menu == "add")
+                    : DesignerMenuModel.Build(GetCurrentText(), e.ElementId, Registry, DesignerClipboard.PeekTag(), SelectionIds());
                 var target = new DesignerContextMenuCommandTarget(model, this);
                 // Cascading submenus are routed like any command, to the active pane - which forwards them here.
                 ActiveMenuTarget = target;
@@ -64,7 +68,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 }
 
                 var group = DesignerCommandIds.CommandSet;
-                var menu = model.IsView ? DesignerCommandIds.ViewContextMenu : DesignerCommandIds.ElementContextMenu;
+                var menu = ribbonMenu ? (e.Menu == "add" ? DesignerCommandIds.RibbonAddContextMenu : DesignerCommandIds.RibbonTasksMenu)
+                    : model.IsView ? DesignerCommandIds.ViewContextMenu : DesignerCommandIds.ElementContextMenu;
                 var points = new[] { new POINTS { x = (short)e.ScreenX, y = (short)e.ScreenY } };
                 ErrorHandler.ThrowOnFailure(shell.ShowContextMenu(0, ref group, menu, points, target));
             }
@@ -462,6 +467,66 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>Whether a Layout command is enabled (the toolbar buttons, the pane and the context submenus).</summary>
         internal bool IsLayoutCommandEnabled(DesignerLayoutCommand command) => CurrentLayout().IsEnabled(command);
+
+        // ---- Ribbon tasks (docs/RIBBON.md section 9) ----
+
+        /// <summary>"Add" › / a "+" glyph: a new <paramref name="tag"/> (with what its drop gives it) at the end of <paramref name="parentId"/>, then selected.</summary>
+        public void AddChild(string parentId, string tag) =>
+            Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var plan = Toolbox.ToolboxInsertionPlanner.Plan(GetCurrentText(), parentId, tag, Registry);
+                if (plan is null || plan.ParentId != parentId)
+                {
+                    ShowStatus(DesignerText.StatusPasteRefused(tag));
+                    return;
+                }
+
+                if (await ApplyEncodedOpsAsync(new object[] { new { kind = "insertChild", parentId = plan.ParentId, index = plan.Index, xml = plan.Xml } }, "Add " + tag, formatInsertion: true))
+                {
+                    await SelectInsertedAsync(plan.NewElementId);
+                }
+            }, "RibbonAdd");
+
+        /// <summary>"Create Command from this Button": one undo unit (the new <c>Command</c> and the element's <c>Command</c> attribute).</summary>
+        public void CreateCommandFrom(string elementId)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var version = CurrentVersion;
+            var edits = Ribbon.RibbonDesignerTasks.PlanCreateCommand(GetCurrentText(), elementId, out var name);
+            if (edits.Count > 0)
+            {
+                ApplyTextEdits(version, edits, "Create Command " + name);
+            }
+        }
+
+        /// <summary>"Edit Items..." on a ribbon element: its polymorphic collection editor.</summary>
+        public void EditCollection(string elementId, Ribbon.RibbonCollection collection)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            PropertyBrowser.KbviewCollectionEditor.Edit(this, this, elementId, collection.Row, collection.Tags);
+        }
+
+        /// <summary>"Choose Icon..." on a ribbon element: the icon picker (docs/ICONS.md) on its icon attribute, one undo unit.</summary>
+        public void ChooseIcon(string elementId, string attribute)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var current = ElementAttributeReader.Read(GetCurrentText(), elementId)?.Attributes is { } attributes && attributes.TryGetValue(attribute, out var value) ? value : null;
+            var dialog = new Icons.IconPickerDialog(ViewFilePath, current, this);
+            if (!dialog.Ask())
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(dialog.Result))
+            {
+                RemoveAttribute(elementId, attribute);
+            }
+            else
+            {
+                SetAttribute(elementId, attribute, dialog.Result!);
+            }
+        }
 
         /// <summary>
         /// Runs a Layout command: align/size/spacing/center are computed by the design surface from its painted

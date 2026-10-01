@@ -218,6 +218,27 @@
           <ButtonText>Kubuno Migrations</ButtonText>
         </Strings>
       </Menu>
+      <!-- docs/RIBBON.md section 9: a ribbon element's smart tag, the menu of a ribbon's "+" glyph, and "Add" ›. -->
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Kubuno Ribbon Tasks</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoItemContextMenuGroup"/>
+        <Strings>
+          <ButtonText>Kubuno Ribbon Add</ButtonText>
+        </Strings>
+      </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddMenu" priority="0x0100" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Add</ButtonText>
+        </Strings>
+      </Menu>
     </Menus>
     <Groups>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDebugMenuGroup" priority="0x0700">
@@ -414,6 +435,16 @@
       </Group>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsRefreshGroup" priority="0x0400">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsContextMenu" />
+      </Group>
+      <!-- docs/RIBBON.md section 9: the ribbon tasks, on the element menu (after "View Code") and in the smart tag. -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup" priority="0x0150">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerElementContextMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddMenu" />
       </Group>
     </Groups>
 
@@ -1268,6 +1299,40 @@
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerViewCodeGroup" />
     </CommandPlacement>
     <!-- docs/DESIGNER.md Â§13: the Layout commands, in the context submenus and in the Layout toolbar. -->
+      <!-- docs/RIBBON.md section 9: the ribbon tasks. -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonAddFirst" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddListGroup" />
+        <CommandFlag>DynamicItemStart</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Element</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonCreateCommand" priority="0x0200" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Create Command from this Button</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonEditItems" priority="0x0300" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Edit Items...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonChooseIcon" priority="0x0400" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Choose Icon...</ButtonText>
+        </Strings>
+      </Button>
     <CommandPlacement guid="guidVSStd97" id="cmdidAlignLeft" priority="0x0100">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerAlignListGroup" />
     </CommandPlacement>
@@ -1441,6 +1506,22 @@
     </CommandPlacement>
     <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidSqlxPrepare" priority="0x0100">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsSqlxGroup" />
+    </CommandPlacement>
+    <!-- docs/RIBBON.md section 9: "Add" › in the smart tag; the add list alone for a "+" glyph; the tasks on the element menu. -->
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddMenu" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddListGroup" priority="0x0100">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddContextMenu" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonCreateCommand" priority="0x0200">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonEditItems" priority="0x0300">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonChooseIcon" priority="0x0400">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup" />
     </CommandPlacement>
     <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidMigrationRefresh" priority="0x0100">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoMigrationsRefreshGroup" />
@@ -1684,3 +1765,14 @@
 
 
 </CommandTable>
+      <!-- docs/RIBBON.md section 9 - MUST match DesignerCommandIds.Ribbon*. -->
+      <IDSymbol name="KubunoDesignerRibbonTasksMenu" value="0x1100" />
+      <IDSymbol name="KubunoDesignerRibbonAddMenu" value="0x1101" />
+      <IDSymbol name="KubunoDesignerRibbonAddContextMenu" value="0x1102" />
+      <IDSymbol name="KubunoDesignerRibbonGroup" value="0x1103" />
+      <IDSymbol name="KubunoDesignerRibbonTasksGroup" value="0x1104" />
+      <IDSymbol name="KubunoDesignerRibbonAddListGroup" value="0x1105" />
+      <IDSymbol name="cmdidDesignerRibbonCreateCommand" value="0x0600" />
+      <IDSymbol name="cmdidDesignerRibbonEditItems" value="0x0601" />
+      <IDSymbol name="cmdidDesignerRibbonChooseIcon" value="0x0602" />
+      <IDSymbol name="cmdidDesignerRibbonAddFirst" value="0x0620" />

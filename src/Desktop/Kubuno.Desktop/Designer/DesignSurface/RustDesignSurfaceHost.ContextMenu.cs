@@ -55,8 +55,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// <summary>See <see cref="RustDesignSurfaceHost.ContextMenuRequested"/>.</summary>
     public sealed class DesignSurfaceContextMenuEventArgs : EventArgs
     {
-        public DesignSurfaceContextMenuEventArgs(double x, double y, int screenX, int screenY, string? elementId)
+        public DesignSurfaceContextMenuEventArgs(double x, double y, int screenX, int screenY, string? elementId, string? menu = null)
         {
+            Menu = menu;
             X = x;
             Y = y;
             ScreenX = screenX;
@@ -76,6 +77,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>The element the menu is for (<c>""</c> = the root element), or null for the view itself.</summary>
         public string? ElementId { get; }
+
+        /// <summary>
+        /// A menu other than the context menu (docs/RIBBON.md section 9): <c>"add"</c> (a ribbon's "+" glyph - what can be added
+        /// into the element) or <c>"tasks"</c> (its smart tag); null for the context menu.
+        /// </summary>
+        public string? Menu { get; }
     }
 
     /// <summary>A design-surface keyboard command (mirrors <c>kubuno_views::design::DesignCommand</c>).</summary>
@@ -142,7 +149,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 return false;
             }
 
-            menu = new DesignSurfaceContextMenuEventArgs(x, y, (int)screenX, (int)screenY, elementId);
+            var kind = root.TryGetProperty("menu", out var menuProp) && menuProp.ValueKind == JsonValueKind.String ? menuProp.GetString() : null;
+            menu = new DesignSurfaceContextMenuEventArgs(x, y, (int)screenX, (int)screenY, elementId, kind);
             return true;
         }
 

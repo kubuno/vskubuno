@@ -136,6 +136,12 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 var toolTipProvider = ToolTipProviderName();
                 foreach (var property in Component.Properties)
                 {
+                    // A hidden property (a ribbon element's X, Y, Dock...) also keeps the fallback below from listing it.
+                    if (!property.Browsable)
+                    {
+                        seen.Add(property.Name);
+                    }
+
                     // A project control's `#[browsable(false)]` property stays settable in XML but is not listed (EVT-7b);
                     // the view's own (form) properties belong to its root element only.
                     if (!property.Browsable || (property.RootOnly && !IsRoot) || !seen.Add(property.Name))
@@ -159,8 +165,17 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 var ownSize = Component.Properties.Exists(p => p.Name == "Size" && p.InheritedFrom is null);
                 var ownLocation = Component.Properties.Exists(p => p.Name == "Location" && p.InheritedFrom is null);
                 var layout = PropertyCategoryMap.DisplayName(PropertyCategoryMap.Category.Layout);
-                list.Add(new KbviewCompositePropertyDescriptor(new TwoAttributeSpec(LocationRow, "X", "Y", autoWhenAbsent: false), ownLocation ? DesignerText.PositionName : "Location", DesignerText.LocationDoc, layout));
-                list.Add(new KbviewCompositePropertyDescriptor(new TwoAttributeSpec(SizeRow, "Width", "Height", autoWhenAbsent: true), ownSize ? DesignerText.DimensionsName : "Size", DesignerText.SizeDoc, layout));
+                // Not for an element whose position or size the component hides (a ribbon lays its elements out).
+                bool Hidden(string name) => Component.Properties.Exists(p => p.Name == name && !p.Browsable);
+                if (!Hidden("X") && !Hidden("Y"))
+                {
+                    list.Add(new KbviewCompositePropertyDescriptor(new TwoAttributeSpec(LocationRow, "X", "Y", autoWhenAbsent: false), ownLocation ? DesignerText.PositionName : "Location", DesignerText.LocationDoc, layout));
+                }
+
+                if (!Hidden("Width") && !Hidden("Height"))
+                {
+                    list.Add(new KbviewCompositePropertyDescriptor(new TwoAttributeSpec(SizeRow, "Width", "Height", autoWhenAbsent: true), ownSize ? DesignerText.DimensionsName : "Size", DesignerText.SizeDoc, layout));
+                }
 
                 // (DataBindings), and the children collections (Columns, TabPages, Items...).
                 var visible = Component.Properties.Where(p => p.Browsable && (!p.RootOnly || IsRoot)).ToList();
@@ -170,6 +185,11 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 }
 
                 list.AddRange(KbviewChildrenPropertyDescriptor.RowsFor(Component));
+                if (Component.Name == "RibbonTab")
+                {
+                    // docs/RIBBON.md section 5: the tab's collapse order.
+                    list.Add(new Ribbon.RibbonScalingPolicyDescriptor(PropertyCategoryMap.DisplayName(PropertyCategoryMap.Category.Layout)));
+                }
 
                 // The view itself (the root element): its design-time canvas size (docs/DESIGNER.md §12).
                 if (ElementId.Length == 0)

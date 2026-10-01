@@ -220,8 +220,9 @@ namespace Kubuno.Desktop.Designer.Toolbox
                         Uninstall();
                     }
                 };
-                // Icons are rendered for the current theme; re-render them when it changes (like VS's own).
-                Microsoft.VisualStudio.PlatformUI.VSColorTheme.ThemeChanged += _ => RefreshIcons();
+                // Icons are rendered for the current theme; re-render them when it changes (like VS's own),
+                // and put back the items the Toolbox dropped while it re-themed (see OnThemeChanged).
+                Microsoft.VisualStudio.PlatformUI.VSColorTheme.ThemeChanged += _ => OnThemeChanged();
             }
 
             if (context.IsActive)
@@ -605,6 +606,94 @@ namespace Kubuno.Desktop.Designer.Toolbox
             var uri = new Uri($"/Kubuno.Desktop.ProjectSystem;component/Resources/Icons/Controls/{iconName}.{variant}.xaml", UriKind.Relative);
             return System.Windows.Application.LoadComponent(uri) is System.Windows.FrameworkElement icon ? ToolboxIconRasterizer.Render(icon) : null;
         }
+        /// <summary>
+        /// A live theme switch. The Toolbox rebuilds its window on <c>ThemeChanged</c> and may do so after our
+        /// handler ran: items added with <c>TBXIF_DONTPERSIST</c> that it reloads from its store are then gone,
+        /// while <see cref="s_installed"/> still says they are there - the Toolbox stayed empty until the next
+        /// session. The check therefore runs once the shell is idle again, and a missing item reinstalls them all.
+        /// </summary>
+        private static void OnThemeChanged()
+        {
+#pragma warning disable VSSDK007 // no package-owned JoinableTaskFactory reachable from this static installer - same precedent as RetryMissingIconsLater.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                for (var pass = 0; pass < 3; pass++)
+                {
+                    // After the Toolbox's own re-theming (it runs from the same event, then on idle).
+                    await System.Threading.Tasks.Task.Delay(pass == 0 ? 250 : 1500).ConfigureAwait(false);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    if (!s_installed)
+                    {
+                        // The designer's UI context may have flickered off and on while the shell re-themed,
+                        // its events arriving out of order: the items were removed though a designer is active.
+                        if (s_registry is not null && UIContext.FromUIContextGuid(new Guid(DesignerConstants.CommandUiContextGuidString)).IsActive)
+                        {
+                            KubunoViewsLogHost.Current.WriteLine("[designer] Toolbox: a .kbview designer is active but its items were removed during a theme change; reinstalling them.");
+                            Install();
+                        }
+
+                        continue;
+                    }
+
+                    RepairOrRefresh("theme change");
+                }
+            }).FileAndForget("Kubuno/Designer/ToolboxTheme");
+#pragma warning restore VSSDK007
+        }
+
+        /// <summary>Re-renders the icons, or reinstalls every Kubuno item when the Toolbox lost some of them.</summary>
+        private static void RepairOrRefresh(string reason)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (Package.GetGlobalService(typeof(SVsToolbox)) is not IVsToolbox toolbox)
+            {
+                return;
+            }
+
+            var present = CountPresentItems(toolbox);
+            if (present >= s_items.Count)
+            {
+                RefreshIcons();
+                return;
+            }
+
+            KubunoViewsLogHost.Current.WriteLine($"[designer] Toolbox: {s_items.Count - present} of {s_items.Count} Kubuno item(s) gone after a {reason}; reinstalling them.");
+            Uninstall();
+            Install();
+        }
+
+        /// <summary>How many of the Kubuno items (<see cref="s_items"/>) the Toolbox still lists, in the Kubuno tabs.</summary>
+        private static int CountPresentItems(IVsToolbox toolbox)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var tabs = DesignerText.AllToolboxTabNames().ToList();
+            if (s_installedProjectTab is { } projectTab)
+            {
+                tabs.Add(projectTab);
+            }
+
+            var existing = ListTabs(toolbox);
+            var count = 0;
+            foreach (var tab in tabs.Where(existing.Contains).Distinct(StringComparer.Ordinal))
+            {
+                if (ErrorHandler.Failed(toolbox.EnumItems(tab, out var itemEnum)) || itemEnum is null)
+                {
+                    continue;
+                }
+
+                var one = new Microsoft.VisualStudio.OLE.Interop.IDataObject[1];
+                while (itemEnum.Next(1, one, out var fetched) == VSConstants.S_OK && fetched == 1)
+                {
+                    if (ToolboxDataObjectReader.HasComponent(one[0]))
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
         /// <summary>Re-renders every Kubuno item's icon for the current theme (<c>IVsToolbox.SetItemInfo</c>); returns how many icons could not be rendered.</summary>
         private static int RefreshIcons()
         {
