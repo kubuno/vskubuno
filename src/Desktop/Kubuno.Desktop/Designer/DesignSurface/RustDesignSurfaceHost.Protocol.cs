@@ -73,6 +73,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         {
             _lastSentText = text;
             SendLine(DesignSurfaceProtocol.EncodeSetText(text, BaseDirectory));
+            // The preview kept on screen if the surface restarts follows the edits (RustDesignSurfaceHost.Status.cs).
+            ScheduleSnapshot();
         }
 
         private void SendSetDesignMode(bool on)
@@ -216,6 +218,13 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
             // The ABI handshake (docs/DESIGNER.md section 15) - RustDesignSurfaceHost.Runtime.cs.
             if (TryHandleSurfaceInfo(line))
+            {
+                return;
+            }
+
+            // What the preview shows of the text, and its diagnostics (docs/DESIGNER.md section 17) -
+            // RustDesignSurfaceHost.Status.cs.
+            if (TryHandleRenderStatusLine(line))
             {
                 return;
             }
@@ -437,6 +446,91 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                     return false;
             }
         }
+
+        /// <summary>
+        /// Parses a <c>renderStatus</c> line (docs/DESIGNER.md section 17): what the preview shows of the
+        /// current text and its diagnostics. <c>false</c> for any other line, an unknown <c>state</c>, or a
+        /// malformed one; a diagnostic missing its message or position is skipped - never throws.
+        /// </summary>
+        public static bool TryParseRenderStatus(string line, out DesignSurfaceRenderStatus? status)
+        {
+            status = null;
+            if (!TryParseAsType(line, "renderStatus", out var root))
+            {
+                return false;
+            }
+
+            if (!root.TryGetProperty("state", out var stateProp) || stateProp.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            DesignSurfaceRenderState state;
+            switch (stateProp.GetString())
+            {
+                case "clean": state = DesignSurfaceRenderState.Clean; break;
+                case "tolerant": state = DesignSurfaceRenderState.Tolerant; break;
+                case "recovered": state = DesignSurfaceRenderState.Recovered; break;
+                case "stale": state = DesignSurfaceRenderState.Stale; break;
+                case "empty": state = DesignSurfaceRenderState.Empty; break;
+                default: return false;
+            }
+
+            var diagnostics = new List<DesignSurfaceDiagnostic>();
+            if (root.TryGetProperty("diagnostics", out var list) && list.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var d in list.EnumerateArray())
+                {
+                    if (d.ValueKind != JsonValueKind.Object
+                        || !TryInt(d, "line", out var lineNumber) || !TryInt(d, "column", out var column)
+                        || !d.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.String)
+                    {
+                        continue;
+                    }
+
+                    diagnostics.Add(ParseDiagnostic(d, lineNumber, column, message.GetString() ?? string.Empty));
+                }
+            }
+
+            status = new DesignSurfaceRenderStatus(state, diagnostics);
+            return true;
+        }
+
+        private static DesignSurfaceDiagnostic ParseDiagnostic(JsonElement d, int line, int column, string message)
+        {
+            var endLine = TryInt(d, "endLine", out var el) ? el : line;
+            var endColumn = TryInt(d, "endColumn", out var ec) ? ec : column;
+            var syntax = d.TryGetProperty("syntax", out var s) && s.ValueKind == JsonValueKind.True;
+            return new DesignSurfaceDiagnostic(line, column, endLine, endColumn, message, OptionalString(d, "code"), OptionalString(d, "element"), syntax);
+        }
+
+        /// <summary>
+        /// Parses a <c>goToSource</c> line (docs/DESIGNER.md section 17): a click on an element's warning marker,
+        /// whose finding the XML pane shows. <c>false</c> for any other line or a malformed one - never throws.
+        /// </summary>
+        public static bool TryParseGoToSource(string line, out DesignSurfaceDiagnostic? diagnostic)
+        {
+            diagnostic = null;
+            if (!TryParseAsType(line, "goToSource", out var root)
+                || !root.TryGetProperty("diagnostic", out var d) || d.ValueKind != JsonValueKind.Object
+                || !TryInt(d, "line", out var lineNumber) || !TryInt(d, "column", out var column))
+            {
+                return false;
+            }
+
+            var message = OptionalString(d, "message") ?? string.Empty;
+            diagnostic = ParseDiagnostic(d, lineNumber, column, message);
+            return true;
+        }
+
+        private static bool TryInt(JsonElement element, string name, out int value)
+        {
+            value = 0;
+            return element.TryGetProperty(name, out var prop) && prop.ValueKind == JsonValueKind.Number && prop.TryGetInt32(out value);
+        }
+
+        private static string? OptionalString(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var prop) && prop.ValueKind == JsonValueKind.String ? prop.GetString() : null;
 
         /// <summary>The <c>surfaceInfo</c> handshake version this host speaks (<c>SURFACE_INFO_VERSION</c> in <c>view_embed.rs</c>).</summary>
         public const int SurfaceInfoVersion = 1;

@@ -155,6 +155,8 @@ namespace Kubuno.Desktop.Views.LanguageService
                 CreateNoWindow = true,
                 WorkingDirectory = workingDirectory,
             };
+            // The diagnostics in Visual Studio's UI language (kubuno_views::messages, docs/DESIGNER.md section 17).
+            startInfo.EnvironmentVariables["KUBUNO_UI_LANG"] = Kubuno.Core.Logic.Localization.UiLanguage.IsFrench ? "fr" : "en";
 
             Process process;
             try

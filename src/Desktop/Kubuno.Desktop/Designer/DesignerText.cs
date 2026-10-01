@@ -64,6 +64,76 @@ namespace Kubuno.Desktop.Designer
             "Preview refused: the kubuno_ui.dll this preview loaded is not the one it was built against (" + detail + "). Build the project again.",
             "Aperçu refusé : la kubuno_ui.dll chargée par l'aperçu n'est pas celle avec laquelle il a été compilé (" + detail + "). Générez à nouveau le projet.");
 
+        // ---- The design surface's error banner (docs/DESIGNER.md section 17) ----
+
+        /// <summary>The text does not parse: the last good preview stays on screen.</summary>
+        public static string ErrorBannerStale => T(
+            "The view contains errors - showing the last valid preview.",
+            "La vue contient des erreurs — dernier aperçu valide affiché.");
+
+        /// <summary>Nothing could be shown.</summary>
+        public static string ErrorBannerEmpty => T(
+            "The view contains errors - nothing can be previewed yet.",
+            "La vue contient des erreurs — rien ne peut encore être affiché.");
+
+        /// <summary>A malformed file opened: the preview was rebuilt from what could be read.</summary>
+        public static string ErrorBannerRecovered => T(
+            "The view is not well-formed XML - the preview shows what could be read.",
+            "La vue n'est pas du XML bien formé — l'aperçu montre ce qui a pu être lu.");
+
+        /// <summary>The view has errors: its valid part is shown.</summary>
+        public static string ErrorBannerTolerant(int errors, int warnings) =>
+            T($"The view contains {ErrorCount(errors, warnings)} - ", $"La vue contient {ErrorCount(errors, warnings)} — ")
+            + (errors + warnings == 1
+                ? T("the element in question is shown as a placeholder or with its default value.",
+                    "l'élément en cause est affiché comme un espace réservé ou avec sa valeur par défaut.")
+                : T("the elements in question are shown as placeholders or with their default values.",
+                    "les éléments en cause sont affichés comme des espaces réservés ou avec leur valeur par défaut."));
+
+        /// <summary>« 2 erreurs et 1 avertissement », « 1 erreur », « 3 avertissements ».</summary>
+        public static string ErrorCount(int errors, int warnings)
+        {
+            var e = errors == 1 ? T("1 error", "1 erreur") : T($"{errors} errors", $"{errors} erreurs");
+            var w = warnings == 1 ? T("1 warning", "1 avertissement") : T($"{warnings} warnings", $"{warnings} avertissements");
+            return errors > 0 && warnings > 0 ? e + T(" and ", " et ") + w : warnings > 0 ? w : e;
+        }
+
+        /// <summary>The banner's toggle when entries are hidden: shows them.</summary>
+        public static string ErrorBannerShowMore(int hidden) => hidden == 1
+            ? T("Show 1 more...", "Afficher 1 autre…")
+            : T($"Show {hidden} more...", $"Afficher les {hidden} autres…");
+
+        /// <summary>The banner's toggle when every entry shows: back to the first ones.</summary>
+        public static string ErrorBannerShowLess => T("Show less", "Afficher moins");
+
+        /// <summary>Only elements the preview's runtime does not know yet.</summary>
+        public static string ErrorBannerRuntimeGaps(int count) => count == 1
+            ? T("The preview does not know 1 control of this view yet: it is shown as a placeholder until the project is built.",
+                "L'aperçu ne connaît pas encore 1 contrôle de cette vue : il est affiché comme un espace réservé jusqu'à la génération du projet.")
+            : T($"The preview does not know {count} controls of this view yet: they are shown as placeholders until the project is built.",
+                $"L'aperçu ne connaît pas encore {count} contrôles de cette vue : ils sont affichés comme des espaces réservés jusqu'à la génération du projet.");
+
+        /// <summary>One element the preview's runtime does not know (but Visual Studio does).</summary>
+        public static string ErrorBannerRuntimeGap(string element) => T(
+            $"<{element}> is not available in the preview's runtime yet (build the project).",
+            $"<{element}> n'est pas encore disponible dans le runtime de l'aperçu (générez le projet).");
+
+
+
+        /// <summary>The tooltip of a banner entry.</summary>
+        public static string ErrorBannerGoTo => T("Go to this location in the XML", "Aller à cet emplacement dans le XML");
+
+        /// <summary>The design surface keeps crashing.</summary>
+        public static string SurfaceFailing => T(
+            "The preview stopped unexpectedly several times. The last preview is shown.",
+            "L'aperçu s'est arrêté de façon inattendue à plusieurs reprises. Le dernier aperçu est affiché.");
+
+        /// <summary>The action that restarts the design surface now.</summary>
+        public static string SurfaceRestart => T("Restart", "Relancer");
+
+        /// <summary>Painted over the last preview while the design surface restarts.</summary>
+        public static string SurfaceRestarting => T("Restarting the preview...", "Redémarrage de l'aperçu…");
+
         public static string CategoryDesign => T("Design", "Design");
 
         public static string CategoryLayout => T("Layout", "Disposition");

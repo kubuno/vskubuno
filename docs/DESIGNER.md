@@ -1867,3 +1867,81 @@ the SDK (`printing-desktop.exe` → `kubuno_ui-ab21aba6a20de8c0.dll` in `deps`),
 `kubuno_ui::buttons::impl$7::paint` with symbols, and the designer first ran the VSIX's surface on its
 bundled `tools\surface\kubuno_ui-366da9519c380e46.dll`, then the design build's surface on its copy of
 `kubuno_ui-ab21aba6a20de8c0.dll` (SHA-256 equal to the project's), both "ABI check passed".
+
+## 17. The preview is never blank: tolerant compilation, last good preview, error banner
+
+*As built (2026-10-01).* The design surface used to paint « Waiting for a view that compiles… » on a
+white page whenever the view had no successful compilation yet. Every cause of that page, and what the
+surface does now:
+
+| Cause | Before | Now |
+|---|---|---|
+| XML not well-formed while typing | blank page until the first good text; then the last good tree, unmarked | the last good preview, **dimmed**, and the banner « La vue contient des erreurs — dernier aperçu valide affiché » |
+| A broken file opened first | blank page | what the error-tolerant parser recovered, rebuilt into well-formed text and compiled tolerantly (state `recovered`) |
+| Unknown element (typo, newer control, project control not built, gated child in the wrong parent) | blank page | a **placeholder** at its place: hatched dashed box, puzzle icon, `<Name>`, the reason; its children built inside it; selectable, movable, resizable |
+| Unknown attribute, invalid value (enum, number, colour, design-time attribute below the root) | blank page | the attribute is ignored (the property keeps its default) and the element gets a **warning marker** |
+| Malformed binding, a value a builder refuses | blank page | the attribute is dropped and the build retried (the property's default shows) |
+| Children a parent cannot hold (`ChildrenModel::None` / `SingleWidget`) | blank page | the extra (trailing) children are not shown, the parent is marked |
+| Mismatched closing tag | blank page | the closing tag is mended |
+| Project runtime design build in progress | (bundled runtime) blank page on the first unknown project control | the bundled runtime with placeholders, the runtime info bar, then the project runtime |
+| The surface process restarting (crash, hot swap) | blank container | the last preview (a snapshot) with a band « Redémarrage de l'aperçu… » |
+| Nothing at all to show (no element) | blank page | the empty frame at the view's design size, a sentence, and the error list |
+
+### Tolerant compilation (`kubuno_views::tolerant`)
+
+`compile::compile` stays a gate (an application must not run a broken view). The designer calls
+`Runtime::reload_for_design`, which runs `tolerant::compile_tolerant`:
+
+1. The diagnostics shown to the user are those of the text **as written** (parse + `validate`), so their
+   positions are the buffer's.
+2. `validate::validate_with_repairs` pairs every finding with a `Repair`: `DropAttribute`, `Placeholder`,
+   `DropElement` (the element and its following siblings), `RenameEndTag`. Repairs become text edits applied
+   to the prepared text (inheritance merged, `d:` attributes applied), then the text goes through the very
+   same strict pipeline (`compile::compile_prepared`). A builder's refusal (`BuildError`) is turned into a
+   repair too (drop the attribute it is in, else a placeholder) and the build retried, at most 12 rounds.
+3. Every repair keeps the element tree's shape (only trailing children are ever removed), so the
+   ids of the preview are those of the text Visual Studio holds: selection, drags and edits keep working.
+4. Unknown elements become the reserved elements `__DesignPlaceholder` (children placed by Dock/Anchor,
+   like a `<Panel>`) or `__DesignPlaceholderFlow` (like a `<Stack>`), with `__Element`/`__Reason`, keeping only
+   their placement attributes (`x:Name`, `X`, `Y`, `Width`, `Height`, `Dock`, `Anchor`, design size). They
+   are found by `registry::lookup` but listed nowhere (export, Toolbox, completion).
+5. `DesignIssue`s record the elements shown differently from their text (id, message, attribute, range in the
+   written text) for the surface's markers.
+
+`Runtime::reload_for_design` returns a `DesignRenderState`: `Clean`, `Tolerant`, `Recovered`, `Stale` (the
+text does not parse: the previous view is kept), `Empty`.
+
+### Protocol
+
+Surface → host, after each reload (sent only when it changed, and always after `projectComponents`):
+
+```json
+{"type":"renderStatus","state":"tolerant","diagnostics":[{"line":3,"column":4,"endLine":3,"endColumn":8,
+  "message":"élément inconnu `<Frob>`","code":"unknownElement","element":"Frob"}]}
+```
+
+Lines and columns are 1-based, columns in UTF-16 units (what `IVsTextView.SetSelection` counts); `syntax: true`
+marks a parse error; `code: "unknownElement"` lets the host tell a misspelt element from a control its own
+registry knows but the preview's runtime does not. A click on a warning marker selects the element
+(`selectionChanged`) then sends `{"type":"goToSource","diagnostic":{…}}`.
+
+### Visual Studio side
+
+- **Error banner** (`UI/DesignErrorBanner.cs`, model `DesignErrorBannerModel`): a compact strip above the
+  surface in the info bar colours; its headline counts what it lists by severity (« 2 erreurs et
+  1 avertissement »; an element only the preview's runtime lacks is a warning); syntax errors first; three
+  rows, then « Afficher les N autres… » (remembered per document) and an inner scroll. An entry is a link: it
+  switches Design to Split and selects the span in the XML pane. The Error List keeps the language server's
+  diagnostics only: the banner adds none to it.
+- **Crash and restart**: `RustDesignSurfaceHost.Status.cs` captures the surface's window
+  (`PrintWindow(PW_RENDERFULLCONTENT)`, else the screen) 0.7 s after each text or status change and paints
+  it in the container while the surface's window is gone. Three quick crashes in a row show the bar
+  « L'aperçu s'est arrêté de façon inattendue à plusieurs reprises » with « Relancer »
+  (`IDesignSurfaceStatusAware.Restart`).
+- **Language**: Visual Studio passes its UI language to the language server and the surface
+  (`KUBUNO_UI_LANG=fr|en`); `kubuno_views::messages::localize` translates the parser's, validator's,
+  builders' and value grammars' messages (a template table, identifiers kept), for the Error List and the banner.
+- **Suggestions**: an unknown element or attribute close to a known one (edit distance ≤ a third of the name)
+  gets « vouliez-vous écrire `X` ? »; a XAML-style `Binding="Name"` suggests `Text="{Binding …}"`. The language
+  server offers the matching quick fixes.
+- The Design / XML / Split buttons use Visual Studio's command-bar colours (rest, hover, selected).

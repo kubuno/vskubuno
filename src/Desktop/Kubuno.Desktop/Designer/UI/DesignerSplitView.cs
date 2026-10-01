@@ -49,6 +49,13 @@ namespace Kubuno.Desktop.Designer.UI
         private readonly Hyperlink _runtimeBarLink;
         private IDesignSurfaceRuntimeAware? _runtimeAware;
         private string? _runtimeRejectedMessage;
+        // docs/DESIGNER.md section 17: the error banner above the surface (what the preview shows of a view with
+        // errors, and where they are), and the bar of a surface that keeps crashing ("Relancer").
+        private readonly DesignErrorBanner _errorBanner = new DesignErrorBanner();
+        private readonly Border _healthBar;
+        private readonly TextBlock _healthBarText;
+        private readonly Hyperlink _healthBarLink;
+        private IDesignSurfaceStatusAware? _statusAware;
         private bool _disposed;
 
         // VSTHRD010 cannot be satisfied with a preceding ThrowIfNotOnUIThread() call for a constructor
@@ -117,6 +124,13 @@ namespace Kubuno.Desktop.Designer.UI
             // EVT-7b: the component tray (non-visual components) under the surface, like WinForms'.
             _componentTray = new ComponentTray { IconFactory = Toolbox.NativeToolboxInstaller.LoadIconElement };
             var designStack = new DockPanel { LastChildFill = true };
+            (_healthBar, _healthBarText, _healthBarLink) = BuildRuntimeBar();
+            DockPanel.SetDock(_healthBar, Dock.Top);
+            designStack.Children.Add(_healthBar);
+            DockPanel.SetDock(_errorBanner, Dock.Top);
+            designStack.Children.Add(_errorBanner);
+            _errorBanner.NavigateRequested += OnErrorBannerNavigate;
+            _errorBanner.DocumentPath = document?.Path;
             DockPanel.SetDock(_componentTray, Dock.Bottom);
             designStack.Children.Add(_componentTray);
             designStack.Children.Add(new Border { Child = _designSurfaceHost.Content });
@@ -150,6 +164,16 @@ namespace Kubuno.Desktop.Designer.UI
             }
 
             UpdateRuntimeBar();
+
+            if (_designSurfaceHost is IDesignSurfaceStatusAware statusAware)
+            {
+                _statusAware = statusAware;
+                statusAware.RenderStatusChanged += OnRenderStatusChanged;
+                statusAware.HealthChanged += OnSurfaceHealthChanged;
+                statusAware.SourceNavigationRequested += OnErrorBannerNavigate;
+            }
+
+            UpdateHealthBar();
 
             _viewModel.PropertyChanged += (_, e) =>
             {
@@ -214,6 +238,8 @@ namespace Kubuno.Desktop.Designer.UI
             }
 
             _editingCoordinator = DesignSurfaceEditingCoordinator.TryCreate(_designSurfaceHost, _textBuffer, _codeWindowHost, _oleServiceProvider, _trackSelection, _ensureActiveDesigner, _componentTray);
+            // The banner tells a control the preview's runtime lacks from a misspelt one with the registry.
+            UpdateErrorBanner();
         }
 
         /// <summary>The per-pane editing/selection coordinator, once the document is loaded (null before, or when VS services were unavailable).</summary>
@@ -231,9 +257,9 @@ namespace Kubuno.Desktop.Designer.UI
 
         private (ToggleButton design, ToggleButton xml, ToggleButton split) BuildTabStripButtons()
         {
-            var design = new ToggleButton { Content = "Design", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(4, 4, 0, 4) };
-            var xml = new ToggleButton { Content = "XML", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(2, 4, 0, 4) };
-            var split = new ToggleButton { Content = "Split", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(2, 4, 4, 4) };
+            var design = new ToggleButton { Content = "Design", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(4, 4, 0, 4), Style = ViewModeButtonStyle.Value };
+            var xml = new ToggleButton { Content = "XML", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(2, 4, 0, 4), Style = ViewModeButtonStyle.Value };
+            var split = new ToggleButton { Content = "Split", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(2, 4, 4, 4), Style = ViewModeButtonStyle.Value };
 
             design.Click += (_, _) => Mode = DesignerViewMode.Design;
             xml.Click += (_, _) => Mode = DesignerViewMode.Xml;
@@ -241,6 +267,48 @@ namespace Kubuno.Desktop.Designer.UI
 
             return (design, xml, split);
         }
+
+        /// <summary>
+        /// The Design / XML / Split buttons in Visual Studio's own command-bar colours (theme-aware: light,
+        /// dark, blue): flat at rest, the command bar's hover colours under the pointer, its selected colours
+        /// for the active mode - like the view switch of the XAML designer, not WPF's default grey button.
+        /// </summary>
+        private static readonly Lazy<Style> ViewModeButtonStyle = new Lazy<Style>(() =>
+        {
+            var border = new FrameworkElementFactory(typeof(Border), "Chrome");
+            border.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
+            border.SetValue(Border.SnapsToDevicePixelsProperty, true);
+            border.SetValue(Border.BackgroundProperty, new System.Windows.TemplateBindingExtension(Control.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new System.Windows.TemplateBindingExtension(Control.BorderBrushProperty));
+            border.SetValue(Border.PaddingProperty, new System.Windows.TemplateBindingExtension(Control.PaddingProperty));
+            var content = new FrameworkElementFactory(typeof(ContentPresenter));
+            content.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            border.AppendChild(content);
+            var template = new ControlTemplate(typeof(ToggleButton)) { VisualTree = border };
+
+            var style = new Style(typeof(ToggleButton));
+            style.Setters.Add(new Setter(Control.TemplateProperty, template));
+            style.Setters.Add(new Setter(FrameworkElement.FocusVisualStyleProperty, null));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, System.Windows.Media.Brushes.Transparent));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty, System.Windows.Media.Brushes.Transparent));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.CommandBarTextActiveBrushKey)));
+            var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.CommandBarMouseOverBackgroundGradientBrushKey)));
+            hover.Setters.Add(new Setter(Control.BorderBrushProperty, new DynamicResourceExtension(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.CommandBarMouseOverBackgroundGradientBrushKey)));
+            hover.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.CommandBarTextHoverBrushKey)));
+            var focus = new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true };
+            focus.Setters.Add(new Setter(Control.BorderBrushProperty, new DynamicResourceExtension(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.CommandBarSelectedBorderBrushKey)));
+            var selected = new Trigger { Property = ToggleButton.IsCheckedProperty, Value = true };
+            selected.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.CommandBarSelectedBrushKey)));
+            selected.Setters.Add(new Setter(Control.BorderBrushProperty, new DynamicResourceExtension(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.CommandBarSelectedBorderBrushKey)));
+            selected.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.CommandBarTextSelectedBrushKey)));
+            style.Triggers.Add(hover);
+            style.Triggers.Add(focus);
+            style.Triggers.Add(selected);
+            return style;
+        });
 
         private static StackPanel BuildTabStrip(ToggleButton design, ToggleButton xml, ToggleButton split)
         {
@@ -332,6 +400,95 @@ namespace Kubuno.Desktop.Designer.UI
             UpdateRuntimeBar();
         }
 
+        private void OnRenderStatusChanged(object? sender, EventArgs e) => UpdateErrorBanner();
+
+        /// <summary>
+        /// The banner of the surface's last <c>renderStatus</c>. An element the preview does not know but the
+        /// language server's registry does (a newer control, a project control not built yet) is a gap of the
+        /// preview's runtime, not an error of the view: the banner says so instead.
+        /// </summary>
+        private void UpdateErrorBanner()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            var registry = _editingCoordinator?.Registry;
+            _errorBanner.Show(DesignErrorBannerModel.Build(_statusAware?.RenderStatus, registry is null ? null : name => registry.Find(name) is not null));
+        }
+
+        /// <summary>The error banner's entry: the XML pane (Split when only Design shows), its span selected.</summary>
+        private void OnErrorBannerNavigate(object? sender, DesignSurfaceDiagnostic diagnostic)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            if (Mode == DesignerViewMode.Design)
+            {
+                Mode = DesignerViewMode.Split;
+            }
+
+            // After the layout pass that makes the XML pane visible.
+#pragma warning disable VSTHRD001, VSTHRD110 // a plain dispatcher hop on the UI thread, as above.
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                SelectInXml(diagnostic);
+            }));
+#pragma warning restore VSTHRD001, VSTHRD110
+        }
+
+        private void SelectInXml(DesignSurfaceDiagnostic diagnostic)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var view = XmlTextView;
+            if (_disposed || view is null)
+            {
+                return;
+            }
+
+            int line = diagnostic.Line - 1, column = diagnostic.Column - 1, endLine = diagnostic.EndLine - 1, endColumn = diagnostic.EndColumn - 1;
+            if (ErrorHandler.Failed(view.SetSelection(line, column, endLine, endColumn)))
+            {
+                // Out of the line (the text changed since): the start of the line.
+                view.SetCaretPos(line, 0);
+            }
+
+            view.EnsureSpanVisible(new TextSpan { iStartLine = line, iStartIndex = column, iEndLine = endLine, iEndIndex = endColumn });
+            view.SendExplicitFocus();
+        }
+
+        private void OnSurfaceHealthChanged(object? sender, EventArgs e) => UpdateHealthBar();
+
+        /// <summary>The bar of a surface that keeps crashing: the last preview stays, « Relancer » starts it again now.</summary>
+        private void UpdateHealthBar()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            if (_statusAware is not { IsFailingRepeatedly: true })
+            {
+                _healthBar.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            _healthBarText.Inlines.Clear();
+            _healthBarText.Inlines.Add(new Run(DesignerText.SurfaceFailing + "  "));
+            _healthBarLink.Inlines.Clear();
+            _healthBarLink.Inlines.Add(new Run(DesignerText.SurfaceRestart));
+            _healthBarLink.Click -= OnHealthBarLinkClick;
+            _healthBarLink.Click += OnHealthBarLinkClick;
+            _healthBarText.Inlines.Add(_healthBarLink);
+            _healthBar.Visibility = Visibility.Visible;
+        }
+
+        private void OnHealthBarLinkClick(object sender, RoutedEventArgs e) => _statusAware?.Restart();
+
         private void ApplyViewMode()
         {
             _designColumn.Width = _viewModel.IsDesignPaneVisible ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
@@ -363,6 +520,13 @@ namespace Kubuno.Desktop.Designer.UI
             {
                 _runtimeAware.RuntimeSource.Changed -= OnRuntimeSourceChanged;
                 _runtimeAware.RuntimeRejected -= OnRuntimeRejected;
+            }
+
+            if (_statusAware is not null)
+            {
+                _statusAware.RenderStatusChanged -= OnRenderStatusChanged;
+                _statusAware.HealthChanged -= OnSurfaceHealthChanged;
+                _statusAware.SourceNavigationRequested -= OnErrorBannerNavigate;
             }
         }
 

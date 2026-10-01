@@ -301,6 +301,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             // a design surface draws every control exactly as it looks at run time, so it never inherits the
             // switch (a surface built from an older checkout would otherwise box every element in cyan).
             psi.EnvironmentVariables.Remove(Kubuno.Desktop.Logic.Painting.PaintDebug.EnvironmentVariableName);
+            // The surface's own texts and diagnostics in Visual Studio's UI language (kubuno_views::messages).
+            psi.EnvironmentVariables["KUBUNO_UI_LANG"] = DesignerText.IsFrench ? "fr" : "en";
             _handshake = HandshakeState.Waiting;
 
             Process proc;
@@ -354,6 +356,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             BeginProtocolIo();
             AssignToJobObject(proc);
             _lastStart = DateTime.UtcNow;
+            // The crash count starts over once this surface has run long enough (RustDesignSurfaceHost.Status.cs).
+            OnSurfaceLaunched();
             KubunoViewsLogHost.Current.WriteLine($"[designer] design surface started (PID {proc.Id}).");
             WaitForChild();
         }
@@ -433,7 +437,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 }
 
                 KubunoViewsLogHost.Current.WriteLine($"[designer] design surface exited unexpectedly (code {exitCode}); restarting.");
-                if ((DateTime.UtcNow - _lastStart).TotalMilliseconds >= StableAfterMs)
+                var stable = (DateTime.UtcNow - _lastStart).TotalMilliseconds >= StableAfterMs;
+                if (stable)
                 {
                     _backoffMs = BackoffInitialMs;
                 }
@@ -441,6 +446,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 {
                     _backoffMs = Math.Min(_backoffMs * 2, BackoffMaxMs);
                 }
+
+                // The last preview stays on screen; a surface that keeps crashing says so (RustDesignSurfaceHost.Status.cs).
+                OnSurfaceCrashed(stable);
 
                 ScheduleRetry();
             }));
@@ -538,6 +546,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                     var h = (int)((lParam.ToInt64() >> 16) & 0xFFFF);
                     NativeMethods.MoveWindow(child, 0, 0, w, h, true);
                 }
+            }
+            else if (msg == WmPaint && TryPaintSnapshot(hwnd))
+            {
+                // The last preview while the surface restarts (RustDesignSurfaceHost.Status.cs).
+                handled = true;
+                return IntPtr.Zero;
             }
             else if (msg == WmSetFocus)
             {
@@ -824,6 +838,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             _disposed = true;
             _childPoll.Stop();
             _retryTimer.Stop();
+            _snapshotTimer.Stop();
+            _stableTimer.Stop();
+            ReleaseSnapshot();
             _lease.Source.Changed -= OnRuntimeSourceChanged;
             _lease.Dispose();
             NativeMethods.DestroyWindow(hwnd.Handle);
@@ -868,6 +885,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         // matching the spike's own Native.cs - see that file's remarks).
         private const int WmSize = 0x0005;
         private const int WmSetFocus = 0x0007;
+        private const int WmPaint = 0x000F;
         private const int WmKeyDown = 0x0100;
         private const int WmSysKeyDown = 0x0104;
         /// <summary>Must match Rust's <c>kubuno_controls::host::WM_KUBUNO_TAB_OUT</c> exactly (<c>WM_APP + 0x4B4F</c>).</summary>

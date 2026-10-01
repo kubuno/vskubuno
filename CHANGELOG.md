@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The designer always shows a preview of the view** (`docs/DESIGNER.md` §17): a view with errors no longer
+  shows « Waiting for a view that compiles… » on a blank page. Everything valid is rendered; an unknown element
+  (a typo, a newer control, a project control not built yet) becomes a hatched placeholder with its name at its
+  place, still selectable and movable, with its children inside; an invalid attribute value is ignored (default
+  value) and its element gets a warning marker, whose tooltip gives the message and whose click selects the
+  element and the attribute in the XML. While the XML is not well-formed (typing), the last valid preview stays,
+  dimmed; a broken file opened first shows what could be read.
+- **Error banner above the design surface**: what the preview shows of a view with errors, its diagnostics
+  counted by severity (« 2 erreurs et 1 avertissement »), syntax errors first, three rows then « Afficher les N
+  autres… » (remembered per document); a click selects the span in the XML pane (switching Design to Split).
+  A control only the preview's runtime lacks is reported as a warning asking to build the project.
+- **Diagnostics in Visual Studio's language**: the view language server and the design surface now get the UI
+  language (`KUBUNO_UI_LANG`) and report their messages in French or English, in the Error List and the banner.
+- **« Vouliez-vous écrire … ? »**: a misspelt element or attribute name gets a suggestion, and a XAML-style
+  `Binding="Name"` suggests `Text="{Binding Name}"`, each with a quick fix.
+- **The preview survives a crash of its process**: the last preview stays on screen while the surface restarts,
+  and a surface that keeps crashing shows a bar with « Relancer ».
+
 - **Docs: offline-first sync of the desktop apps** (`docs/DESKTOP-OFFLINE-SYNC.md`): the design study (a local
   SQLite database per account and app, synchronised through the Kubuno Delta Protocol v1, outbox of intents,
   conflict policies, token broker, SQLCipher) and its implementation status (§19): results of the SQLCipher spike
@@ -391,6 +409,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   a 404.
 
 ### Changed
+
+- The designer's **Design / XML / Split** buttons use Visual Studio's command-bar colours (rest, hover, selected),
+  in the dark and the light themes, instead of WPF's default grey buttons.
 
 - **Views specification: one type scale for both targets** (`docs/VIEWS-SPEC.md` §7.1): the desktop now uses the
   web's role sizes (Micro 10.5, Meta 11.5, Body 13.5, Heading 15.5, Title 21.5, page title 22.5), so a `Label Role`
