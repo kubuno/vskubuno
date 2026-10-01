@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Design build of a project with a library target**: when the package has a `src/lib.rs` next to its
+  `src/main.rs` (the migrated Kubuno Chat keeps its views and its `MessageThread` control in its library), the
+  designer compiles and links that library, so its controls render for real and appear in the project's
+  « Composants » Toolbox tab; a program-only package is unchanged. The surface is also linked with the library search
+  paths the graph's build scripts declare (`cargo:rustc-link-search`, e.g. `windows-targets`' import libraries), which a
+  project depending on `winreg` or `windows-sys` 0.48 needed (`LNK1181 windows.0.48.5.lib`).
+
 - **Kubuno Splash Screen** item template: a new splash screen is now an 800 × 500 view holding a `<SplashArtwork>` —
   Kubuno's procedural artwork (Kubuno, Drive, Chat or Documents) with the product name, version, a status line, a
   progress bar and the legal lines — which the designer draws exactly as the application will show it. Its code

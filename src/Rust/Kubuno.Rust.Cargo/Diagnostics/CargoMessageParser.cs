@@ -58,6 +58,9 @@ namespace Kubuno.Rust.Cargo.Diagnostics
                     return ParseCompilerArtifact(line);
                 case "build-finished":
                     return ParseBuildFinished(line);
+                case "build-script-executed":
+                    var script = JsonSerializer.Deserialize<RawBuildScriptExecuted>(line, CargoJsonOptions.Default) ?? new RawBuildScriptExecuted();
+                    return new CargoBuildScriptEvent(script.PackageId ?? string.Empty, script.LinkedPaths ?? Array.Empty<string>());
                 default:
                     return new CargoUnrecognizedEvent(envelope.Reason, line);
             }

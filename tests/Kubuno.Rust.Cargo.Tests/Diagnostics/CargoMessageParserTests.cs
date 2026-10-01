@@ -174,6 +174,15 @@ namespace Kubuno.Rust.Cargo.Tests.Diagnostics
         }
 
         [Fact]
+        public void Build_script_line_carries_its_library_search_paths()
+        {
+            const string line = "{\"reason\":\"build-script-executed\",\"package_id\":\"registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_msvc@0.48.5\",\"linked_libs\":[],\"linked_paths\":[\"native=C:\\\\t\\\\debug\\\\lib\"],\"cfgs\":[],\"env\":[],\"out_dir\":\"C:\\\\t\\\\out\"}";
+            var script = Assert.IsType<CargoBuildScriptEvent>(CargoMessageParser.Parse(line, ArbitraryWorkspaceRoot));
+            Assert.EndsWith("windows_x86_64_msvc@0.48.5", script.PackageId);
+            Assert.Equal(new[] { @"native=C:\t\debug\lib" }, script.LinkedPaths);
+        }
+
+        [Fact]
         public void Non_JSON_line_is_reported_as_unrecognized_without_throwing()
         {
             CargoBuildEvent evt = CargoMessageParser.Parse("warning: unstable feature enabled", ArbitraryWorkspaceRoot);

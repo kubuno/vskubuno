@@ -115,6 +115,38 @@ namespace Kubuno.Desktop.Tests.DesignSurface
         }
 
         [TestMethod]
+        public void The_build_scripts_library_paths_reach_the_surface_link()
+        {
+            var crate = DesignProjectCrate.From(Metadata(), Artifacts(), Manifest, "app", out _)!;
+            crate.NativeLinkPaths = new[] { @"native=C:\t\debug\build\windows_x86_64_msvc-1\out\lib" };
+            var inputs = DesignSurfaceInputs.From(Artifacts(), _ => true, out _)!;
+            var args = DesignSurfaceBuilder.RustcArgumentsFor(inputs, @"C:\d\surface.exe", "debug", crate, @"C:\d\libapp.rlib").ToList();
+            var at = args.IndexOf(@"native=C:\t\debug\build\windows_x86_64_msvc-1\out\lib");
+            Assert.IsTrue(at > 0 && args[at - 1] == "-L");
+            CollectionAssert.AreEqual(new[] { "-o", @"C:\d\surface.exe" }, args.Skip(args.Count - 2).ToArray());
+        }
+
+        [TestMethod]
+        public void A_package_with_a_library_target_links_the_library()
+        {
+            var lib = new CargoArtifact
+            {
+                PackageId = AppId,
+                Target = new CargoTarget { Name = "app_core", Kind = new[] { "lib" }, SrcPath = @"C:\p\app\src\lib.rs", Edition = "2021" },
+                Filenames = new[] { Deps + @"\libapp_core-5f.rlib", Deps + @"\libapp_core-5f.rmeta" },
+            };
+            var crate = DesignProjectCrate.From(Metadata(), Artifacts().Concat(new[] { lib }).ToArray(), Manifest, "app", out var reason);
+
+            Assert.IsNotNull(crate, reason);
+            Assert.AreEqual("app_core", crate!.CrateName);
+            Assert.AreEqual(@"C:\p\app\src\lib.rs", crate.SourcePath);
+            Assert.AreEqual(Deps + @"\libapp_core-5f.rlib", crate.StampFile);
+            StringAssert.Contains(crate.SurfaceIncludeSource(), "extern crate app_core as _;");
+            var inputs = DesignSurfaceInputs.From(Artifacts(), _ => true, out _)!;
+            CollectionAssert.AreEqual(new[] { "--edition", "2021", "--crate-name", "app_core", "--crate-type", "rlib", @"C:\p\app\src\lib.rs" }, crate.RustcArguments(inputs, @"C:\d\libapp_core.rlib", "debug").Take(7).ToArray());
+        }
+
+        [TestMethod]
         public void Without_its_program_or_a_library_there_is_no_crate_to_link()
         {
             var noBin = Artifacts().Where(a => a.PackageId != AppId).ToArray();

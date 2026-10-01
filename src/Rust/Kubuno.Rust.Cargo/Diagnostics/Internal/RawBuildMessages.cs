@@ -84,4 +84,13 @@ namespace Kubuno.Rust.Cargo.Diagnostics.Internal
 
         public bool Success { get; set; }
     }
+
+    internal sealed class RawBuildScriptExecuted
+    {
+        public string Reason { get; set; } = string.Empty;
+
+        public string? PackageId { get; set; }
+
+        public IReadOnlyList<string> LinkedPaths { get; set; } = Array.Empty<string>();
+    }
 }

@@ -234,6 +234,12 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
             var output = args.Count - 2;
             var extra = new List<string> { "--cfg", "kubuno_design_project", "--extern", project.CrateName + "=" + projectRlib };
+            foreach (var path in project.NativeLinkPaths)
+            {
+                extra.Add("-L");
+                extra.Add(path);
+            }
+
             foreach (var dependency in project.LinkedDependencies)
             {
                 var path = project.Externs.First(e => e.Key == dependency).Value;
@@ -325,6 +331,9 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             var cargo = CargoCommandFor(project);
             log?.Report("[design build] " + cargo);
             var artifacts = new List<CargoArtifact>();
+            // The library search paths the graph's build scripts asked for (`windows-targets`' import libraries…):
+            // the surface links the project's dependencies itself, so it needs them too.
+            var linkPaths = new List<string>();
             var cargoRequest = new ProcessRunRequest(cargo.FileName, cargo.Arguments)
             {
                 WorkingDirectory = project.ManifestDirectory,
@@ -346,6 +355,13 @@ namespace Kubuno.Desktop.Logic.DesignSurface
                         lock (artifacts)
                         {
                             artifacts.Add(artifact.Artifact);
+                        }
+
+                        break;
+                    case CargoBuildScriptEvent script:
+                        lock (artifacts)
+                        {
+                            linkPaths.AddRange(script.LinkedPaths.Where(p => !linkPaths.Contains(p)));
                         }
 
                         break;
@@ -394,6 +410,13 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
             // EVT-7b: the project's own crate (its controls), linked into the surface when it was built.
             var projectCrate = await ReadProjectCrateAsync(project, snapshot, log, cancellationToken).ConfigureAwait(false);
+            if (projectCrate is not null)
+            {
+                lock (artifacts)
+                {
+                    projectCrate.NativeLinkPaths = linkPaths.ToList();
+                }
+            }
 
             var uiSha = Sha256OfFile(inputs.UiDll);
             var stampInputs = new[] { inputs.UiDll, inputs.ViewsRlib, inputs.ControlsRlib, inputs.SurfaceSource }

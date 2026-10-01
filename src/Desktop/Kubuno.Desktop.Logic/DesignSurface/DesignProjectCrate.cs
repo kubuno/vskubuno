@@ -20,6 +20,9 @@ namespace Kubuno.Desktop.Logic.DesignSurface
     /// (<c>--extern &lt;crate&gt;=&lt;rlib&gt; --cfg kubuno_design_project</c>, <c>extern crate &lt;crate&gt; as
     /// _;</c> in a generated file) and links it. The crate's other direct library dependencies are
     /// named too, so controls declared in another crate of the project render as well.</para>
+    ///
+    /// <para>A package that has a library target as well (<c>src/lib.rs</c> + <c>src/main.rs</c>, the Kubuno
+    /// chat's layout) keeps its controls in the library: that root is the one compiled and linked.</para>
     /// </summary>
     public sealed class DesignProjectCrate
     {
@@ -41,7 +44,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             Description = description;
         }
 
-        /// <summary>The crate name (<c>my_app</c>): the bin target's name with <c>-</c> as <c>_</c>.</summary>
+        /// <summary>The crate name (<c>my_app</c>): the library target's name when the package has one, else the bin target's, with <c>-</c> as <c>_</c>.</summary>
         public string CrateName { get; }
 
         public string PackageName { get; }
@@ -50,10 +53,17 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
         public string ManifestDirectory { get; }
 
-        /// <summary>The crate root (<c>src\main.rs</c>).</summary>
+        /// <summary>The crate root (<c>src\lib.rs</c> when the package has a library target, else <c>src\main.rs</c>).</summary>
         public string SourcePath { get; }
 
         public string Edition { get; }
+
+        /// <summary>
+        /// The library search paths the build scripts of the project's graph asked for (cargo's
+        /// <c>build-script-executed</c> <c>linked_paths</c>, e.g. <c>native=…\windows_x86_64_msvc-…\lib</c>): linking
+        /// the crate into the surface needs them, as cargo passes them to the program's own link.
+        /// </summary>
+        public IReadOnlyList<string> NativeLinkPaths { get; set; } = Array.Empty<string>();
 
         /// <summary>Its direct normal dependencies (extern name, compiled library), in the manifest's order.</summary>
         public IReadOnlyList<KeyValuePair<string, string>> Externs { get; }
@@ -87,7 +97,10 @@ namespace Kubuno.Desktop.Logic.DesignSurface
                 return null;
             }
 
-            var binArtifact = artifacts.LastOrDefault(a => a.PackageId == package.Id && a.Target.IsKind("bin") && (bin is null || a.Target.Name == bin));
+            // A package with a library target (`src/lib.rs` next to `src/main.rs`) keeps its controls in it: the
+            // library is the crate the surface links (the program only names it). Otherwise the program's own root.
+            var libArtifact = artifacts.LastOrDefault(a => a.PackageId == package.Id && (a.Target.IsKind("lib") || a.Target.IsKind("rlib")));
+            var binArtifact = libArtifact ?? artifacts.LastOrDefault(a => a.PackageId == package.Id && a.Target.IsKind("bin") && (bin is null || a.Target.Name == bin));
             if (binArtifact is null)
             {
                 reason = "the project's program was not built";

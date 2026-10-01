@@ -39,7 +39,25 @@ namespace Kubuno.Rust.Cargo.Diagnostics
     }
 
     /// <summary>
-    /// Any other line: a recognized-but-unmodeled reason (e.g. "build-script-executed"), or a
+    /// A "build-script-executed" line: a package's build script ran; <see cref="LinkedPaths"/> are the library
+    /// search paths it asked for (<c>cargo:rustc-link-search</c>, as <c>native=C:\…</c> / <c>all=…</c> or a plain
+    /// path) — what anything linking that package later must pass to <c>rustc -L</c> too.
+    /// </summary>
+    public sealed class CargoBuildScriptEvent : CargoBuildEvent
+    {
+        public CargoBuildScriptEvent(string packageId, System.Collections.Generic.IReadOnlyList<string> linkedPaths)
+        {
+            PackageId = packageId;
+            LinkedPaths = linkedPaths;
+        }
+
+        public string PackageId { get; }
+
+        public System.Collections.Generic.IReadOnlyList<string> LinkedPaths { get; }
+    }
+
+    /// <summary>
+    /// Any other line: a recognized-but-unmodeled reason, or a
     /// line that isn't valid JSON at all (Cargo occasionally writes plain text to stdout even
     /// under <c>--message-format=json</c>). Carries the raw line so callers can still show or
     /// log it instead of losing it.
