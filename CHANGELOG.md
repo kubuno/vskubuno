@@ -601,6 +601,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Identical files on every OS.** The repository now pins line endings to LF
+  (`.gitattributes`), so a checkout on Windows no longer turns scripts,
+  manifests or sources into CRLF, and what is built or packaged from it is the
+  same whichever OS checks it out.
+
 - **Add New Item on a project node** put a new control's files next to `Cargo.toml` and did not declare its module,
   so the control was not compiled and never reached the Toolbox. The module is now declared from the crate root
   with a `#[path]` (`#[path = "../address_editor.rs"] mod address_editor;`), wherever the file is.
