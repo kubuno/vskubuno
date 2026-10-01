@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Docs: offline-first sync of the desktop apps** (`docs/DESKTOP-OFFLINE-SYNC.md`): the design study (a local
+  SQLite database per account and app, synchronised through the Kubuno Delta Protocol v1, outbox of intents,
+  conflict policies, token broker, SQLCipher) and its implementation status (§19): results of the SQLCipher spike
+  (chosen build, measured overhead, build requirements), the four foundation crates of the desktop repository, the
+  choices that differ from the design, the multi-OS verification, the shell integration steps and the open risks.
 - **Web design surface spike (WebView2 in a document pane)** (`docs/WEB-VIEWS.md` §11, lot WV-9a): opening a
   `.kbwebspike` file (sample in `samples/web-design-spike`) shows a WebView2 design surface in the document well,
   rendering a few Kubuno web elements with the production web fonts (Plus Jakarta Sans, Outfit, DM Mono, shipped with

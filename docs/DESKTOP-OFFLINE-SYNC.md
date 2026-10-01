@@ -2,14 +2,16 @@
 
 > Product requirement (2026-10-01): "the desktop versions must have a local SQLite database and synchronise their data
 > with the web version through the web version's API".
-> Status: **design study, nothing built.** Read-only survey of `desktop`, `core`, the module back-ends and the Android
-> apps (`mobile/android`). No database, no SSH, no server touched. Every server fact below cites the file it comes
-> from so it can be re-checked before a lot starts.
+> Status: design study (read-only survey of `desktop`, `core`, the module back-ends and the Android apps
+> (`mobile/android`); no database, no SSH, no server touched; every server fact below cites the file it comes from so
+> it can be re-checked before a lot starts). **2026-10-01: the foundation lots SE-0 to SE-3 are built on the library
+> side** (`desktop/common`: `kubuno-secrets`, `kubuno-api-client`, `kubuno-account`, `kubuno-sync-engine`), not yet
+> wired into the shell or the apps: see §19.
 
 Contents: 1 Summary - 2 What exists today - 3 Server API inventory - 4 Prior art - 5 Architecture -
 6 Local database - 7 Pull, push, conflicts - 8 Scheduling - 9 Auth and accounts - 10 Security - 11 Multi-OS paths -
 12 Views and data components - 13 Per-app plan - 14 Server lots - 15 Desktop lots and order - 16 Testing and
-verification - 17 Risks - 18 Open questions.
+verification - 17 Risks - 18 Open questions - 19 Implementation status (foundation lots).
 
 ---
 
@@ -759,3 +761,114 @@ repo, nothing pushed by the agent.
    client; cached bodies stay protected by SQLCipher.*
 8. **Shared items in feeds** (CORE-S4) before or after the first PIM apps? -> *Before: an offline calendar without
    shared calendars would be misleading.*
+
+---
+
+## 19. Implementation status (foundation lots, 2026-10-01)
+
+The user approved every recommendation of §18. The foundation lots are built as **libraries** in `desktop/common`
+(the cross-OS workspace, next to `kubuno-sync`), listed in `windows/Kubuno.Core.Desktop.slnx` under `/Libraries/`.
+Nothing is wired into the shell or the apps yet: the shell is being migrated by another lot, and its integration
+(19.4) is scheduled after it. The drive metadata pilot (D-1), `SyncedTableAdapter` and the components (SE-4), chat,
+documents and every server lot are the next lots.
+
+### 19.1 SE-0: SQLCipher spike (decision: SQLCipher; the fallback is not needed)
+
+Spike crate under `C:\kubuno-build\agent-syncf\spike` (throw-away): sqlx 0.8.6 + rusqlite 0.32 on one
+`libsqlite3-sys` 0.30.1 with `bundled-sqlcipher-vendored-openssl`, Windows MSVC.
+
+- **The Git Bash Perl cannot build OpenSSL** (`Can't locate Locale/Maketext/Simple.pm`, MSYS paths). A native
+  Strawberry Perl (`PERL=<path>\perl.exe`) builds it with the `nmake` of VS 2026; without NASM, `openssl-src` adds
+  `no-asm` by itself (no AES-NI). Alternatives evaluated: `sqlcipher-src` (SQLCipher + libtomcrypt) and
+  `sqlite3mc-src` (SQLite3 Multiple Ciphers, no external crypto) are source-only crates: using them means a `-sys`
+  crate of our own with `links = "sqlite3"`, i.e. forking `libsqlite3-sys` (sqlx and rusqlite require it), so they
+  were rejected; a prebuilt library through `SQLITE3_LIB_DIR` is fragile across CI images. **Chosen**:
+  `bundled-sqlcipher-vendored-openssl` on Windows and Linux, `bundled-sqlcipher` (CommonCrypto, no OpenSSL) on macOS,
+  through target-specific dependency tables of `kubuno-sync-engine` (feature `sqlcipher`, on by default). Works
+  offline once vendored (`openssl-src` carries the sources). Build requirements: `desktop/BUILD.md`, section
+  "SQLCipher : prérequis de build".
+- **Unification works**: with the feature on, rusqlite opens the sqlx-encrypted file with the same key, a wrong key
+  fails, and both still read clear databases when no key is given (`kubuno-sync`'s `state.db` is unaffected).
+- **sqlx key ordering**: `SqliteConnectOptions` puts `key` first among its pragmas; the raw-key form
+  `PRAGMA key = "x'<64 hex>'"` (no KDF: the key is already 256 random bits) works; `disable_statement_logging()` keeps
+  the pragma out of the logs. Opening with a key on a build **without** SQLCipher is refused (`PRAGMA cipher_version`
+  returns nothing) instead of silently writing a clear file.
+- **Measured overhead** (100 000 rows, averages of 3 runs, Windows VM, OpenSSL with NASM):
+
+  | Workload | Clear | SQLCipher, default cache | SQLCipher, 64 MB cache |
+  |---|---|---|---|
+  | insert, 200 transactions of 500 rows | 3.2 s | +2.5 % | +3.6 % |
+  | 10 000 point reads by key | 1.5 s | +33 % | +2 % |
+  | 20 full scans (`LIKE`) | 0.6 s | +300 % | +73 % |
+
+  Without NASM (`no-asm`) a mixed benchmark cost +192 % instead of +50 %. The engine sets `cache_size = -32768`
+  (32 MB) on every connection. Binary size: +4.3 MB (static libcrypto). First OpenSSL build: about 12 minutes on the
+  dev VM (sequential nmake), cached afterwards.
+- **Not verified here**: SQLCipher for macOS needs the Apple SDK (`os/log.h`, CommonCrypto) and cannot be
+  cross-checked from Windows (zig stops on `os/log.h`); Linux with vendored OpenSSL was not cross-built (needs `make`
+  and a Linux toolchain). Both belong to the CI matrix (and the user's Mac).
+
+### 19.2 Crates
+
+| Crate | Content | Tests |
+|---|---|---|
+| `kubuno-secrets` | `SecretStore` trait; a Windows Credential Manager back-end **of our own** (generic credentials `Kubuno/<scope>/<item>`, `CRED_PERSIST_LOCAL_MACHINE`: `keyring` writes `CRED_PERSIST_ENTERPRISE`, which roams, and a refresh token presented from two machines revokes its family); macOS Keychain and Linux Secret Service through `keyring` 3 (`apple-native`; `async-secret-service` + `crypto-rust` = zbus, pure Rust); `MemorySecretStore`; opt-in `FileSecretStore` (`0600`) for a Linux session without Secret Service, never chosen silently; `OsSecretStore::probe`; `Secret` zeroized with a redacted `Debug`; `get_or_create` with read-back | unit; real OS store round trip (`--ignored`, run on Windows) |
+| `kubuno-api-client` (the `kubuno-api` of §5.1) | async `ApiClient` (reqwest + rustls): any method, `If-Match`, `Idempotency-Key`, `X-Kubuno-Device-Key`, JSON or bytes; `TokenSource` trait (one refresh-and-retry on 401); retries with exponential backoff and jitter only for replayable requests (safe method or idempotency key), `Retry-After`; `ApiError` from `{"error","message"}` with the §7.3 classification (`ErrorClass`); KDP v1 types (`DeltaPage`, `Change`, `ChangeKind` whose `Other` is never read as a delete, opaque `Cursor` from a number or a string) and the "cursor must move" guard; redacted `Debug` | unit; contract tests against an axum fake; live tests gated on `KUBUNO_TEST_SERVER_URL` (plus an optional `KUBUNO_TEST_ACCESS_TOKEN` from the environment, never from a configuration file) |
+| `kubuno-account` | `AccountKey` = `hex(sha256(normalized server URL + "|" + user id))[..16]`; `AccountStore` (`<data>/accounts/<key>/account.json`, no secret); `TokenOwner` (the §9 state machine: single flight, adopt-fresh, persist-before-use with read-back, rotation grace, genuine vs transient, 45 s cooldown, expiry from `exp - iat` on the monotonic clock, revoked session, signing in again restores the same key, account switch, events, per-account database key); `login` with the **TOTP step**; the broker (protocol v1 = JSON lines; server for the shell, client and `BrokerTokenSource` for the apps); `migrate::adopt_legacy_instances` (plaintext `creds.json` to the OS store) | unit; owner against a fake auth server that models rotation, reuse detection and grace; broker in-process over the real pipe/socket; **two-process** test (the test binary re-run as an "app"); refused client policy |
+| `kubuno-sync-engine` | `paths` (§11); `LocalDb` (SQLCipher key, pragmas, engine schema versioned in `_sync_meta.engine_schema`, app migrations through a `sqlx::migrate::Migrator`, feed reset on schema change, read-only after a failed migration, account check, in-flight recovery, `SyncLock` single writer); outbox (`Intent`, coalescing of never-sent ops only, `create` + `delete` cancel, shadow rows, rebase, `_pending`); push with the §7.3 table and **explicit rollback**; pull (page + cursor in one `BEGIN IMMEDIATE` transaction, `change_seq` ordering, tombstones, full resync on `410 CURSOR_EXPIRED` deleting unseen rows without pending ops); policies (field merge, keep both, server wins, last writer wins, custom); conflict records and `resolve_conflict` (keep mine / keep server, restore after a remote delete); `Scheduler` (startup, local-write debounce, interval, hint, network change, resume, manual; coalescing); `SyncStatus` (watch) and `SyncEvent` (broadcast); `JsonTableAdapter` (convention table + REST collection) | unit; §16.2 scenarios against a fake KDP server (offline edits, merge, field conflict both ways, deleted remotely + restore, 422 rollback, lost response, rebase, delete vs edit, keep both, cursor expiry, clock skew ±2 h, multi-account isolation, session expiry, migrations); **crash tests** (child process killed with `TerminateProcess`/`SIGKILL` mid-page, after the server applied a write, before the local commit); scheduler; SQLCipher |
+
+Choices that differ from the text above, and why:
+
+- **One SQLite stack, sqlx**, but the engine does **not** depend on `kubuno-data` (which depends on `kubuno-views`, a
+  UI crate): it uses the same mechanism (`sqlx::migrate!` files, the *Migrations* node of DATA-7) and exposes its
+  `SqlitePool`, which SE-4 hands to `kubuno-data`. The engine's own tables use their own version counter, so their
+  numbering never collides with the app's `_sqlx_migrations`.
+- `paths` lives in the engine (the `kubuno-paths::client` of §11 does not exist yet; another lot creates
+  `kubuno-paths` on the server side): same variable names (`KUBUNO_USER_*_DIR`), Windows known folders through
+  `SHGetKnownFolderPath`, never `is_dir()` inference. It becomes a re-export when `kubuno-paths` gains `client`.
+- The broker also hands out the **database key** (`database_key {account}`): apps open their own SQLCipher databases
+  without touching the OS store; refresh tokens never cross the broker.
+- Coalescing only merges into ops with `attempts = 0`: an op that was sent may have been applied, so it is never
+  rewritten (a different body under a new key could run twice).
+- A local delete answered 412 stays in `conflict` with the **server row visible** (`delete_vs_edit`); the rebase
+  skips such deletes.
+- The fallback of §10 (per-row AES-GCM) was not needed and is not built.
+
+### 19.3 Multi-OS verification
+
+- Windows: build, tests, `clippy -D warnings` (with and without `sqlcipher`).
+- Linux (`x86_64-unknown-linux-gnu`) and macOS (`aarch64-apple-darwin`): `cargo check` and `clippy -D warnings` of
+  the four crates **cross-compiled from Windows with `zig cc`** (C dependencies such as `ring` included), engine
+  without `sqlcipher`; tests not run there. SQLCipher itself: see 19.1.
+
+### 19.4 Shell integration (next, after the shell's migration lot)
+
+1. At start: `migrate::adopt_legacy_instances(paths::legacy_config_dir(), …)` (user id from the JWT `sub`, else
+   `GET /me`), then `TokenOwner::load`; on Linux, `OsSecretStore::probe()` first and the session-only / file fallback
+   dialog when there is no Secret Service.
+2. **Remove every `creds.json` refresh path of `kubuno-sync` in the same lot** (`Api::refresh`, `Creds::save`): the
+   file-sync daemon takes its tokens from `OwnerTokenSource` (risk "two token owners", §17).
+3. `BrokerServer::serve` with `BrokerEndpoint::for_current_user(paths::user_runtime_dir())` and
+   `ClientPolicy::ImagesUnder(install dir)`; apps use `BrokerClient::token_source(account)` and start
+   `kubuno-desktop --background` when the broker is unreachable (a transient error, never "session expired").
+4. Sign-in page: `login::login` -> `TotpRequired` -> `login_totp` -> `TokenOwner::sign_in`. Sign-out:
+   `unsent_count() > 0` opens « Envoyer d'abord / Exporter / Supprimer quand même », then `sign_out`,
+   `LocalDb::wipe` and `AccountStore::remove_dir`.
+5. Scheduler hooks: `shell.json` `sync_interval_min` -> `Scheduler::set_interval`; `WM_POWERBROADCAST` -> `Resume`;
+   network list manager -> `NetworkChanged`; websocket `<module>.changed` -> `PushHint`; `settings.json` `offline`
+   -> `set_forced_offline`.
+
+### 19.5 Open risks found while building
+
+- **`410 CURSOR_EXPIRED` and paging a full snapshot**: after a reset the client pages from `cursor=0`, each page's
+  last `change_seq` being the next cursor; those cursors are older than the tombstone horizon by construction.
+  CORE-S4 must not answer 410 to them (for example a `snapshot=true` parameter, or a horizon check only outside a
+  snapshot). The fake server answers 410 once to model the client side.
+- Windows CI needs a native Perl (preinstalled on GitHub runners) and preferably NASM (not preinstalled).
+- On Linux the `os` back-end of `kubuno-secrets` uses zbus with Tokio: callers on a Tokio runtime call the store from
+  `spawn_blocking` (the token owner does).
+- Pipe squatting by a process of the same user is only prevented while the shell runs
+  (`FILE_FLAG_FIRST_PIPE_INSTANCE`); the client does not yet verify the server's image path
+  (`GetNamedPipeServerProcessId`).
+- Server prerequisites unchanged: CORE-S1 (user-scoped idempotency), DRIVE-S1 (commit-ordered drive feed) before
+  D-2, PIM-S1 before PIM writes.
