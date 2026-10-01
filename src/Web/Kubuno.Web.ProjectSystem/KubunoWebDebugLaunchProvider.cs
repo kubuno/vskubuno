@@ -8,6 +8,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Kubuno.Core.Logging;
+using Kubuno.Core.Logic.Remote;
+using Kubuno.Core.Remote;
 using Kubuno.Rust.Launch;
 using Kubuno.Rust.ProjectSystem;
 using Kubuno.Web.Logic.DevCore;
@@ -31,6 +33,9 @@ namespace Kubuno.Web.ProjectSystem
     /// <item>the development database guard (<see cref="DevDatabaseGuard"/>): no <c>KUBUNO_DEV_DATABASE_URL</c>, or a
     /// database whose name does not look like a development one, refuses the launch with a message - the core runs
     /// its migrations at startup;</item>
+    /// <item>when that URL points at the local end of the development database tunnel (<c>localhost:55432</c>), the SSH
+    /// tunnel to the remote Linux host is opened or reused (<see cref="SshTunnels"/>); a failure cancels the launch with
+    /// an info bar (<see cref="RemoteHostInfoBar"/>), never a dialog;</item>
     /// <item>a module is deployed into the dev core first (<see cref="ModuleDeployment"/>, the Windows
     /// <c>deploy_local.sh</c>), after its copies left running by a previous session are stopped;</item>
     /// <item>the core runs with the <c>KV__…</c> environment of <see cref="DevCoreEnvironment"/> (no configuration file,
@@ -83,6 +88,44 @@ namespace Kubuno.Web.ProjectSystem
                 throw new InvalidOperationException(check.Message);
             }
 
+            // 1b. The SSH tunnel to the remote host's PostgreSQL (Tools > Options > Kubuno > Remote Linux host), when the
+            // accepted URL points at its local end. A failure is an info bar and a cancelled launch - never a dialog.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            var remote = RemoteHostOptionsPage.Current;
+            var remoteSettings = remote.ToSettings();
+            var tunnelMode = remote.DevDatabaseTunnel;
+            var tunnelLocalPort = remote.EffectiveTunnelLocalPort;
+            var tunnelRemotePort = remote.EffectiveRemoteDatabasePort;
+            var tunnelNeeded = DatabaseTunnelPolicy.IsNeeded(tunnelMode, check.Url!.Host, check.Url.Port, tunnelLocalPort);
+            KubunoLog.WriteLine("Kubuno web: development database " + check.Url.Redacted + "; SSH tunnel "
+                + (tunnelNeeded ? "needed" : "not used") + " (mode " + tunnelMode + ", local port " + tunnelLocalPort + ").");
+            await TaskScheduler.Default;
+            if (tunnelNeeded)
+            {
+                var tunnel = await SshTunnels.EnsureAsync(remoteSettings, tunnelLocalPort, tunnelRemotePort).ConfigureAwait(false);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                if (tunnel.CommandLine.Length > 0)
+                {
+                    KubunoLog.WriteLine("Kubuno remote: ssh " + tunnel.CommandLine);
+                }
+
+                if (!tunnel.IsOpen)
+                {
+                    KubunoLog.WriteLine("Kubuno web: F5 cancelled - the development database tunnel could not be opened. " + tunnel.Message);
+                    if (tunnel.ErrorOutput.Trim() is { Length: > 0 } sshErrors)
+                    {
+                        KubunoLog.WriteLine("Kubuno remote: ssh said: " + sshErrors.Replace(Environment.NewLine, " | "));
+                    }
+
+                    RemoteHostInfoBar.ShowFailure(tunnel, remoteSettings);
+                    throw new LaunchCancelledException("Kubuno: the development database tunnel could not be opened (see the info bar and the Kubuno Output pane).");
+                }
+
+                RemoteHostInfoBar.Close();
+                log.Add("Kubuno remote: " + tunnel.Message);
+                await TaskScheduler.Default;
+            }
+
             var rootText = await Read("KubunoDevCoreRoot").ConfigureAwait(false);
             var layout = string.IsNullOrWhiteSpace(rootText) ? DevCoreLayout.Default() : new DevCoreLayout(rootText);
             layout.EnsureCreated();
@@ -114,7 +157,7 @@ namespace Kubuno.Web.ProjectSystem
                 var cargoTargetDirectory = await Read("CargoTargetDir").ConfigureAwait(false);
                 coreExecutable = DevCoreLocator.FindCoreExecutable(moduleDirectory, explicitCore, string.IsNullOrEmpty(cargoTargetDirectory) ? Environment.GetEnvironmentVariable("CARGO_TARGET_DIR") : cargoTargetDirectory)
                     ?? throw new FileNotFoundException(
-                        "No Kubuno core to start the module in. Build the core (open core\\Kubuno.Core.slnx, or the multi-repository solution, and build it), "
+                        "No Kubuno core to start the module in. Build the core (open core\\Kubuno.Core.Web.slnx, or the multi-repository solution, and build it), "
                         + "install Kubuno on this machine, or set \"Core executable\" on this project's Debug page. Looked at: "
                         + string.Join(", ", DevCoreLocator.Candidates(moduleDirectory, explicitCore, cargoTargetDirectory)));
                 coreRepository = DevCoreLocator.SiblingCoreRepository(moduleDirectory);
@@ -204,7 +247,17 @@ namespace Kubuno.Web.ProjectSystem
 
         public override async Task LaunchAsync(DebugLaunchOptions launchOptions)
         {
-            await base.LaunchAsync(launchOptions).ConfigureAwait(true);
+            try
+            {
+                await base.LaunchAsync(launchOptions).ConfigureAwait(true);
+            }
+            catch (LaunchCancelledException)
+            {
+                // Already explained by an info bar and the Kubuno pane: no modal message box on top.
+                _pending = null;
+                return;
+            }
+
             var plan = _pending;
             _pending = null;
             if (plan is null)
@@ -383,6 +436,15 @@ namespace Kubuno.Web.ProjectSystem
             }
 
             throw new FileNotFoundException("The executable '" + targetPath + "' does not exist. Build the project first.", targetPath);
+        }
+
+        /// <summary>A launch stopped on purpose after an info bar said why: <see cref="LaunchAsync"/> ends it without CPS's message box.</summary>
+        private sealed class LaunchCancelledException : Exception
+        {
+            public LaunchCancelledException(string message)
+                : base(message)
+            {
+            }
         }
 
         private sealed class LaunchPlan

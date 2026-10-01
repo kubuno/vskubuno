@@ -246,7 +246,83 @@
                                                                    "description":  "@S_kubuno_data_diagnostics_logRequests_Description;..\\Kubuno.VisualStudio.dll",
                                                                    "default":  false,
                                                                    "order":  250
-                                                               }
+                                                               },
+                       "kubuno.remote.connection.host":  {
+                                                             "type":  "string",
+                                                             "title":  "@S_kubuno_remote_connection_host_Title;..\\Kubuno.VisualStudio.dll",
+                                                             "description":  "@S_kubuno_remote_connection_host_Description;..\\Kubuno.VisualStudio.dll",
+                                                             "default":  "192.168.1.220",
+                                                             "order":  260
+                                                         },
+                       "kubuno.remote.connection.user":  {
+                                                             "type":  "string",
+                                                             "title":  "@S_kubuno_remote_connection_user_Title;..\\Kubuno.VisualStudio.dll",
+                                                             "description":  "@S_kubuno_remote_connection_user_Description;..\\Kubuno.VisualStudio.dll",
+                                                             "default":  "martinien",
+                                                             "order":  270
+                                                         },
+                       "kubuno.remote.connection.port":  {
+                                                             "type":  "integer",
+                                                             "title":  "@S_kubuno_remote_connection_port_Title;..\\Kubuno.VisualStudio.dll",
+                                                             "description":  "@S_kubuno_remote_connection_port_Description;..\\Kubuno.VisualStudio.dll",
+                                                             "default":  22,
+                                                             "order":  280,
+                                                             "maximum":  65535,
+                                                             "minimum":  1
+                                                         },
+                       "kubuno.remote.connection.privateKeyPath":  {
+                                                                       "type":  "string",
+                                                                       "title":  "@S_kubuno_remote_connection_privateKeyPath_Title;..\\Kubuno.VisualStudio.dll",
+                                                                       "description":  "@S_kubuno_remote_connection_privateKeyPath_Description;..\\Kubuno.VisualStudio.dll",
+                                                                       "default":  "%USERPROFILE%\\.ssh\\id_ed25519_kubuno",
+                                                                       "order":  290,
+                                                                       "pathKind":  "file",
+                                                                       "format":  "path"
+                                                                   },
+                       "kubuno.remote.connection.knownHostsPath":  {
+                                                                       "type":  "string",
+                                                                       "title":  "@S_kubuno_remote_connection_knownHostsPath_Title;..\\Kubuno.VisualStudio.dll",
+                                                                       "description":  "@S_kubuno_remote_connection_knownHostsPath_Description;..\\Kubuno.VisualStudio.dll",
+                                                                       "default":  "%USERPROFILE%\\.ssh\\known_hosts_kubuno",
+                                                                       "order":  300,
+                                                                       "pathKind":  "file",
+                                                                       "format":  "path"
+                                                                   },
+                       "kubuno.remote.devDatabase.tunnel":  {
+                                                                "type":  "string",
+                                                                "title":  "@S_kubuno_remote_devDatabase_tunnel_Title;..\\Kubuno.VisualStudio.dll",
+                                                                "description":  "@S_kubuno_remote_devDatabase_tunnel_Description;..\\Kubuno.VisualStudio.dll",
+                                                                "default":  "auto",
+                                                                "order":  310,
+                                                                "enum":  [
+                                                                             "auto",
+                                                                             "always",
+                                                                             "never"
+                                                                         ],
+                                                                "enumItemLabels":  [
+                                                                                       "@S_kubuno_remote_devDatabase_tunnel_Item_auto;..\\Kubuno.VisualStudio.dll",
+                                                                                       "@S_kubuno_remote_devDatabase_tunnel_Item_always;..\\Kubuno.VisualStudio.dll",
+                                                                                       "@S_kubuno_remote_devDatabase_tunnel_Item_never;..\\Kubuno.VisualStudio.dll"
+                                                                                   ]
+                                                            },
+                       "kubuno.remote.devDatabase.localPort":  {
+                                                                   "type":  "integer",
+                                                                   "title":  "@S_kubuno_remote_devDatabase_localPort_Title;..\\Kubuno.VisualStudio.dll",
+                                                                   "description":  "@S_kubuno_remote_devDatabase_localPort_Description;..\\Kubuno.VisualStudio.dll",
+                                                                   "default":  55432,
+                                                                   "order":  320,
+                                                                   "maximum":  65535,
+                                                                   "minimum":  1
+                                                               },
+                       "kubuno.remote.devDatabase.remotePort":  {
+                                                                    "type":  "integer",
+                                                                    "title":  "@S_kubuno_remote_devDatabase_remotePort_Title;..\\Kubuno.VisualStudio.dll",
+                                                                    "description":  "@S_kubuno_remote_devDatabase_remotePort_Description;..\\Kubuno.VisualStudio.dll",
+                                                                    "default":  5432,
+                                                                    "order":  330,
+                                                                    "maximum":  65535,
+                                                                    "minimum":  1
+                                                                }
                    },
     "categories":  {
                        "kubuno":  {
@@ -348,6 +424,21 @@
                                                        "title":  "@S_kubuno_data_diagnostics_Title;..\\Kubuno.VisualStudio.dll",
                                                        "description":  "@S_kubuno_data_diagnostics_Description;..\\Kubuno.VisualStudio.dll",
                                                        "order":  190
-                                                   }
+                                                   },
+                       "kubuno.remote":  {
+                                             "title":  "@S_kubuno_remote_Title;..\\Kubuno.VisualStudio.dll",
+                                             "description":  "@S_kubuno_remote_Description;..\\Kubuno.VisualStudio.dll",
+                                             "order":  200
+                                         },
+                       "kubuno.remote.connection":  {
+                                                        "title":  "@S_kubuno_remote_connection_Title;..\\Kubuno.VisualStudio.dll",
+                                                        "description":  "@S_kubuno_remote_connection_Description;..\\Kubuno.VisualStudio.dll",
+                                                        "order":  210
+                                                    },
+                       "kubuno.remote.devDatabase":  {
+                                                         "title":  "@S_kubuno_remote_devDatabase_Title;..\\Kubuno.VisualStudio.dll",
+                                                         "description":  "@S_kubuno_remote_devDatabase_Description;..\\Kubuno.VisualStudio.dll",
+                                                         "order":  220
+                                                     }
                    }
 }

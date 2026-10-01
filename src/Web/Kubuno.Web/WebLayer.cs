@@ -21,6 +21,7 @@ namespace Kubuno.Web
                 WebSolutionCommands.Initialize(context.Package, commandService);
                 VersionCommands.Initialize(context.Package, commandService);
                 PackModuleCommand.Initialize(context.Package, commandService);
+                DevDatabaseTunnelCommand.Initialize(context.Package, commandService);
             }
 
             // SPIKE (docs/WEB-VIEWS.md, WV-9a): the WebView2 design surface in a document pane, for .kbwebspike files

@@ -207,6 +207,8 @@ namespace Kubuno.Core.Extensibility
                 Run(layer, "dispose", () => layer.Dispose(_context));
             }
 
+            // The SSH tunnels to the remote Linux host end with Visual Studio (a job object also ends them if it crashes).
+            Remote.SshTunnels.StopAll();
             _mcpBridgeHost?.Dispose();
             _mcpBridgeHost = null;
             KubunoHost.Detach(_package);

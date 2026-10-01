@@ -23,8 +23,8 @@ namespace Kubuno.Web.Logic.DevDatabase
         /// <summary>Set to 1/true to accept a database whose name does not look like a development one.</summary>
         public const string AllowAnyVariable = "KUBUNO_DEV_ALLOW_ANY_DATABASE";
 
-        /// <summary>The example given in messages and documentation: a separate database on the team's server.</summary>
-        public const string ExampleUrl = "postgres://kubuno:<password>@192.168.1.220:5432/kubuno_dev";
+        /// <summary>The example given in messages and documentation: a separate database on the team's server, through the SSH tunnel.</summary>
+        public const string ExampleUrl = "postgres://kubuno:<password>@localhost:55432/kubuno_dev";
 
         /// <summary>Name tokens that make a database a development one (compared case-insensitively).</summary>
         public static readonly IReadOnlyList<string> DevTokens = new[]
@@ -48,7 +48,7 @@ namespace Kubuno.Web.Logic.DevDatabase
                     null,
                     UrlVariable + " is not set. A core started from Visual Studio only connects to a DEVELOPMENT database, "
                     + "never the live one: it runs its migrations at startup. Create a separate database on the server "
-                    + "(for example kubuno_dev) and set " + UrlVariable + " to it, e.g. " + ExampleUrl + ", as a user "
+                    + "(for example kubuno_dev) and set " + UrlVariable + " to it, e.g. " + ExampleUrl + " (localhost:55432 is the SSH tunnel Visual Studio opens to the remote Linux host), as a user "
                     + "environment variable (setx " + UrlVariable + " \"...\", then restart Visual Studio) or in the project's "
                     + "Debug property page (Environment). See docs/WEB.md, \"The development database\".");
             }

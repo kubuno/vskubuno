@@ -44,6 +44,12 @@
   <data name="S_kubuno_data_query_Description" xml:space="preserve"><value>Exécution des requêtes SQL.</value></data>
   <data name="S_kubuno_data_diagnostics_Title" xml:space="preserve"><value>Diagnostics</value></data>
   <data name="S_kubuno_data_diagnostics_Description" xml:space="preserve"><value>Journalisation de l&apos;assistant de données (kubuno-data-tool).</value></data>
+  <data name="S_kubuno_remote_Title" xml:space="preserve"><value>Hôte Linux distant</value></data>
+  <data name="S_kubuno_remote_Description" xml:space="preserve"><value>La machine Linux qui héberge la base de développement (par un tunnel SSH) et, plus tard, les builds Linux.</value></data>
+  <data name="S_kubuno_remote_connection_Title" xml:space="preserve"><value>Connexion</value></data>
+  <data name="S_kubuno_remote_connection_Description" xml:space="preserve"><value>Comment Kubuno se connecte à l&apos;hôte : SSH non interactif avec une clé dédiée, jamais de mot de passe.</value></data>
+  <data name="S_kubuno_remote_devDatabase_Title" xml:space="preserve"><value>Base de développement</value></data>
+  <data name="S_kubuno_remote_devDatabase_Description" xml:space="preserve"><value>Le tunnel SSH que les profils de lancement de Kubuno Core Web ouvrent vers le PostgreSQL de l&apos;hôte.</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Title" xml:space="preserve"><value>Chemin personnalisé</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Description" xml:space="preserve"><value>Chemin complet de rust-analyzer.exe. Vide, Kubuno essaie &quot;rustup which rust-analyzer&quot;, puis %USERPROFILE%\.cargo\bin\rust-analyzer.exe, puis la variable d&apos;environnement PATH. Pris en compte au prochain démarrage du serveur.</value></data>
   <data name="S_kubuno_rust_editor_formatOnSave_Title" xml:space="preserve"><value>Mettre en forme à l&apos;enregistrement</value></data>
@@ -111,4 +117,23 @@
   <data name="S_kubuno_data_query_timeoutSeconds_Description" xml:space="preserve"><value>Durée maximale d&apos;une requête avant son annulation (1 à 86400).</value></data>
   <data name="S_kubuno_data_diagnostics_logRequests_Title" xml:space="preserve"><value>Journaliser les requêtes de l&apos;assistant de données</value></data>
   <data name="S_kubuno_data_diagnostics_logRequests_Description" xml:space="preserve"><value>Journalise chaque requête envoyée à kubuno-data-tool (méthode et paramètres, sans chaînes de connexion, mots de passe ni texte SQL) dans le volet Sortie Kubuno.</value></data>
+  <data name="S_kubuno_remote_connection_host_Title" xml:space="preserve"><value>Hôte</value></data>
+  <data name="S_kubuno_remote_connection_host_Description" xml:space="preserve"><value>Nom ou adresse IP de l&apos;hôte Linux distant.</value></data>
+  <data name="S_kubuno_remote_connection_user_Title" xml:space="preserve"><value>Utilisateur</value></data>
+  <data name="S_kubuno_remote_connection_user_Description" xml:space="preserve"><value>Le compte sous lequel Kubuno se connecte. Son fichier ~/.ssh/authorized_keys doit contenir la clé publique (le fichier .pub à côté de la clé privée).</value></data>
+  <data name="S_kubuno_remote_connection_port_Title" xml:space="preserve"><value>Port SSH</value></data>
+  <data name="S_kubuno_remote_connection_port_Description" xml:space="preserve"><value>Le port du serveur SSH de l&apos;hôte (1 à 65535).</value></data>
+  <data name="S_kubuno_remote_connection_privateKeyPath_Title" xml:space="preserve"><value>Clé privée</value></data>
+  <data name="S_kubuno_remote_connection_privateKeyPath_Description" xml:space="preserve"><value>La clé privée avec laquelle Kubuno s&apos;authentifie, utilisée par l&apos;OpenSSH de Windows en mode batch : elle ne doit pas avoir de phrase secrète, Kubuno ne demandant jamais de mot de passe ni de phrase secrète. Les variables d&apos;environnement (%USERPROFILE%) sont développées.</value></data>
+  <data name="S_kubuno_remote_connection_knownHostsPath_Title" xml:space="preserve"><value>Fichier des hôtes connus</value></data>
+  <data name="S_kubuno_remote_connection_knownHostsPath_Description" xml:space="preserve"><value>Les clés d&apos;hôte que Kubuno accepte, séparées de votre propre known_hosts. Un hôte inconnu n&apos;est jamais accepté en silence : une barre d&apos;informations affiche son empreinte et ne l&apos;ajoute ici que si vous cliquez sur Accepter.</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Title" xml:space="preserve"><value>Tunnel SSH</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Description" xml:space="preserve"><value>Quand F5 / Ctrl+F5 des profils Kubuno Core Web ouvre le tunnel de localhost vers le PostgreSQL de l&apos;hôte (ssh -N -L). Il est réutilisé par les lancements suivants et fermé avec Visual Studio ; les erreurs s&apos;affichent dans une barre d&apos;informations et le volet Sortie Kubuno.</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Item_auto" xml:space="preserve"><value>Quand KUBUNO_DEV_DATABASE_URL vise le port local</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Item_always" xml:space="preserve"><value>À chaque lancement</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Item_never" xml:space="preserve"><value>Jamais</value></data>
+  <data name="S_kubuno_remote_devDatabase_localPort_Title" xml:space="preserve"><value>Port local</value></data>
+  <data name="S_kubuno_remote_devDatabase_localPort_Description" xml:space="preserve"><value>L&apos;extrémité locale du tunnel : KUBUNO_DEV_DATABASE_URL vaut alors postgres://kubuno:&lt;mot de passe&gt;@localhost:55432/kubuno_dev.</value></data>
+  <data name="S_kubuno_remote_devDatabase_remotePort_Title" xml:space="preserve"><value>Port PostgreSQL sur l&apos;hôte</value></data>
+  <data name="S_kubuno_remote_devDatabase_remotePort_Description" xml:space="preserve"><value>Le port d&apos;écoute de PostgreSQL, sur la boucle locale de l&apos;hôte (il n&apos;a pas besoin d&apos;être joignable depuis le réseau).</value></data>
 </root>

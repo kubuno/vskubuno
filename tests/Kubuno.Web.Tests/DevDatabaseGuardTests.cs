@@ -19,6 +19,18 @@ namespace Kubuno.Web.Tests
         }
 
         [TestMethod]
+        public void The_tunnelled_kubuno_dev_database_is_accepted()
+        {
+            var check = DevDatabaseGuard.Check("postgres://kubuno:s3cret@localhost:55432/kubuno_dev", null);
+            Assert.IsTrue(check.IsAccepted);
+            Assert.AreEqual(DevDatabaseVerdict.DevName, check.Verdict);
+            Assert.AreEqual("localhost", check.Url!.Host);
+            Assert.AreEqual("55432", check.Url.Port);
+            Assert.AreEqual("postgres://kubuno:***@localhost:55432/kubuno_dev", check.Url.Redacted);
+            StringAssert.Contains(DevDatabaseGuard.ExampleUrl, "localhost:55432/kubuno_dev");
+        }
+
+        [TestMethod]
         public void A_dev_database_is_accepted()
         {
             var check = DevDatabaseGuard.Check("postgres://kubuno:p%40ss@192.168.1.220:5432/kubuno_dev?sslmode=prefer", null);

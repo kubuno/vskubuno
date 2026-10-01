@@ -224,8 +224,10 @@ frontend. `docs/WEB.md` has the details; in short:
 1. **Once per machine**: a local cargo target directory when the checkouts are on the share
    (`setx CARGO_TARGET_DIR C:\kubuno-build\web-target`), and the **development database** the dev core will use -
    a separate database on the team's PostgreSQL server, never the live one (the core migrates its database at
-   startup): `setx KUBUNO_DEV_DATABASE_URL "postgres://kubuno:<password>@192.168.1.220:5432/kubuno_dev"`. Restart
-   Visual Studio afterwards. A database whose name has no `dev`/`test`/`local`... word is refused.
+   startup), reached through the SSH tunnel Visual Studio opens to 192.168.1.220 (a dedicated key, authorised on
+   the host): `setx KUBUNO_DEV_DATABASE_URL "postgres://kubuno:<password>@localhost:55432/kubuno_dev"`. Restart
+   Visual Studio afterwards. A database whose name has no `dev`/`test`/`local`... word is refused. The host, user
+   and key are in **Tools > Options > Kubuno > Remote Linux host**.
 2. **Once per checkout**: open a file of the repository (or its folder) and run **Tools > Kubuno: Generate Web
    Solution**. It writes the `.rsproj` files, `frontend\<name>.esproj`, `Kubuno.Core.Web.slnx` (or `Kubuno.<Module>.slnx`)
    and its launch profiles. **Tools > Kubuno Core Web: Generate Multi-Repository Solution...** puts the core and the

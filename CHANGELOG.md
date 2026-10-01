@@ -364,6 +364,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Tools > Kubuno Core Web: Package Module (.kbpkg)**, **Check Versions** (`_tools/check_versions.py`, or its built-in checks
   when Python is not installed), **Prepare npm Floors...** and **Prepare Shared Crate Tags...** (the edits of
   `bump_npm_floors.sh` and `bump_shared_crates.sh`, shown and confirmed first; nothing is committed, tagged or pushed).
+- **The development database through an SSH tunnel** (`docs/WEB.md`, "The development database"). New page
+  **Tools > Options > Kubuno > Remote Linux host** (host `192.168.1.220`, user, SSH port, private key
+  `%USERPROFILE%\.ssh\id_ed25519_kubuno`, Kubuno-only known hosts file, tunnel mode and ports), kept in Visual
+  Studio's settings, never in a repository. F5 / Ctrl+F5 of the Kubuno Core Web profiles opens the tunnel
+  `localhost:55432` → the host's PostgreSQL with Windows' OpenSSH when `KUBUNO_DEV_DATABASE_URL` points at
+  `localhost:55432`, reuses it at the next launches and closes it with Visual Studio; **Tools > Kubuno Core Web: Open
+  Development Database Tunnel** opens it without starting a core. Never a password prompt and never a dialog: a
+  failure cancels the launch with an info bar that names the fix (key not authorised, with a "Copy the public key"
+  link; host unreachable; local port taken...). A host seen for the first time shows its key fingerprint with an
+  **Accept** button; host key checking is never turned off, and a changed host key is refused. The development
+  database guard is unchanged (`kubuno_dev` passes).
+
 ### Changed
 
 - **Views specification: one type scale for both targets** (`docs/VIEWS-SPEC.md` §7.1): the desktop now uses the

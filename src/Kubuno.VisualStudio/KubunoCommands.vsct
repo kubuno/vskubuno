@@ -556,6 +556,16 @@
           <LocCanonicalName>.Kubuno.PrepareSharedCrateTags</LocCanonicalName>
         </Strings>
       </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidOpenDevDatabaseTunnel" priority="0x0116" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="ConnectToDatabase" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Kubuno Core Web: Open Development Database Tunnel</ButtonText>
+          <CanonicalName>.Kubuno.OpenDevDatabaseTunnel</CanonicalName>
+          <LocCanonicalName>.Kubuno.OpenDevDatabaseTunnel</LocCanonicalName>
+        </Strings>
+      </Button>
       <!-- Developer tool: every dialog with sample data, to re-check their theming (DialogGalleryCommand; shown
            only in an instance started with /rootsuffix). -->
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDialogGallery" priority="0x0105" type="Button">
@@ -1687,6 +1697,7 @@
       <IDSymbol name="cmdidPrepareNpmFloors" value="0x0703" />
       <IDSymbol name="cmdidPrepareSharedCrateTags" value="0x0704" />
       <IDSymbol name="cmdidPackModule" value="0x0705" />
+      <IDSymbol name="cmdidOpenDevDatabaseTunnel" value="0x0706" />
       <IDSymbol name="cmdidAddKubunoView" value="0x0106" />
       <IDSymbol name="cmdidAddRustModule" value="0x0107" />
       <IDSymbol name="cmdidAddRustIntegrationTest" value="0x0108" />

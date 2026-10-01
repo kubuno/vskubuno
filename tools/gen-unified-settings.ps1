@@ -29,7 +29,11 @@ $categories = @(
     @('kubuno.data', 'Data', 'Donnees', 'The Data Explorer and its query windows.', 'L''Explorateur de donnees et ses fenetres de requete.'),
     @('kubuno.data.explorer', 'Data Explorer', 'Explorateur de donnees', 'Connections, schema tree and table data.', 'Connexions, arborescence du schema et donnees des tables.'),
     @('kubuno.data.query', 'Query window', 'Fenetre de requete', 'Running SQL queries.', 'Execution des requetes SQL.'),
-    @('kubuno.data.diagnostics', 'Diagnostics', 'Diagnostics', 'Logging of the data helper (kubuno-data-tool).', 'Journalisation de l''assistant de donnees (kubuno-data-tool).')
+    @('kubuno.data.diagnostics', 'Diagnostics', 'Diagnostics', 'Logging of the data helper (kubuno-data-tool).', 'Journalisation de l''assistant de donnees (kubuno-data-tool).'),
+    # French texts of the remote host entries are written with their accents (this file is UTF-8 with a BOM).
+    @('kubuno.remote', 'Remote Linux host', 'Hôte Linux distant', 'The Linux machine that holds the development database (through an SSH tunnel) and, later, the Linux builds.', 'La machine Linux qui héberge la base de développement (par un tunnel SSH) et, plus tard, les builds Linux.'),
+    @('kubuno.remote.connection', 'Connection', 'Connexion', 'How Kubuno connects to the host: non-interactive SSH with a dedicated key, never a password.', 'Comment Kubuno se connecte à l''hôte : SSH non interactif avec une clé dédiée, jamais de mot de passe.'),
+    @('kubuno.remote.devDatabase', 'Development database', 'Base de développement', 'The SSH tunnel the Kubuno Core Web launch profiles open to the host''s PostgreSQL.', 'Le tunnel SSH que les profils de lancement de Kubuno Core Web ouvrent vers le PostgreSQL de l''hôte.')
 )
 
 # Properties: moniker, type (boolean/string/enum), default, English title, French title, English description, French description,
@@ -138,7 +142,39 @@ $properties = @(
     @{ m = 'kubuno.data.diagnostics.logRequests'; t = 'boolean'; d = $false
        en = 'Log data helper requests'; fr = 'Journaliser les requetes de l''assistant de donnees'
        den = 'Log each request to kubuno-data-tool (method and parameters, with connection strings, passwords and SQL text removed) in the Kubuno Output pane.'
-       dfr = 'Journalise chaque requete envoyee a kubuno-data-tool (methode et parametres, sans chaines de connexion, mots de passe ni texte SQL) dans le volet Sortie Kubuno.' }
+       dfr = 'Journalise chaque requete envoyee a kubuno-data-tool (methode et parametres, sans chaines de connexion, mots de passe ni texte SQL) dans le volet Sortie Kubuno.' },
+    @{ m = 'kubuno.remote.connection.host'; t = 'string'; d = '192.168.1.220'
+       en = 'Host'; fr = 'Hôte'
+       den = 'Name or IP address of the remote Linux host.'
+       dfr = 'Nom ou adresse IP de l''hôte Linux distant.' },
+    @{ m = 'kubuno.remote.connection.user'; t = 'string'; d = 'martinien'
+       en = 'User'; fr = 'Utilisateur'
+       den = 'The account Kubuno connects as. Its ~/.ssh/authorized_keys must hold the public key (the .pub file next to the private key).'
+       dfr = 'Le compte sous lequel Kubuno se connecte. Son fichier ~/.ssh/authorized_keys doit contenir la clé publique (le fichier .pub à côté de la clé privée).' },
+    @{ m = 'kubuno.remote.connection.port'; t = 'integer'; d = 22; extra = @{ minimum = 1; maximum = 65535 }
+       en = 'SSH port'; fr = 'Port SSH'
+       den = 'The port of the host''s SSH server (1 to 65535).'
+       dfr = 'Le port du serveur SSH de l''hôte (1 à 65535).' },
+    @{ m = 'kubuno.remote.connection.privateKeyPath'; t = 'string'; d = '%USERPROFILE%\.ssh\id_ed25519_kubuno'; extra = @{ format = 'path'; pathKind = 'file' }
+       en = 'Private key'; fr = 'Clé privée'
+       den = 'The private key Kubuno authenticates with, used by Windows'' OpenSSH in batch mode: it must have no passphrase, since Kubuno never asks for a password or a passphrase. Environment variables (%USERPROFILE%) are expanded.'
+       dfr = 'La clé privée avec laquelle Kubuno s''authentifie, utilisée par l''OpenSSH de Windows en mode batch : elle ne doit pas avoir de phrase secrète, Kubuno ne demandant jamais de mot de passe ni de phrase secrète. Les variables d''environnement (%USERPROFILE%) sont développées.' },
+    @{ m = 'kubuno.remote.connection.knownHostsPath'; t = 'string'; d = '%USERPROFILE%\.ssh\known_hosts_kubuno'; extra = @{ format = 'path'; pathKind = 'file' }
+       en = 'Known hosts file'; fr = 'Fichier des hôtes connus'
+       den = 'The host keys Kubuno accepts, kept apart from your own known_hosts. An unknown host is never accepted silently: an info bar shows its fingerprint and adds it here only when you click Accept.'
+       dfr = 'Les clés d''hôte que Kubuno accepte, séparées de votre propre known_hosts. Un hôte inconnu n''est jamais accepté en silence : une barre d''informations affiche son empreinte et ne l''ajoute ici que si vous cliquez sur Accepter.' },
+    @{ m = 'kubuno.remote.devDatabase.tunnel'; t = 'enum'; d = 'auto'; e = 'auto=When KUBUNO_DEV_DATABASE_URL points at the local port|Quand KUBUNO_DEV_DATABASE_URL vise le port local;always=At every launch|À chaque lancement;never=Never|Jamais'
+       en = 'SSH tunnel'; fr = 'Tunnel SSH'
+       den = 'When F5 / Ctrl+F5 of the Kubuno Core Web profiles opens the tunnel from localhost to the host''s PostgreSQL (ssh -N -L). It is reused by the next launches and closed with Visual Studio; errors appear in an info bar and the Kubuno Output pane.'
+       dfr = 'Quand F5 / Ctrl+F5 des profils Kubuno Core Web ouvre le tunnel de localhost vers le PostgreSQL de l''hôte (ssh -N -L). Il est réutilisé par les lancements suivants et fermé avec Visual Studio ; les erreurs s''affichent dans une barre d''informations et le volet Sortie Kubuno.' },
+    @{ m = 'kubuno.remote.devDatabase.localPort'; t = 'integer'; d = 55432; extra = @{ minimum = 1; maximum = 65535 }
+       en = 'Local port'; fr = 'Port local'
+       den = 'The tunnel''s local end: KUBUNO_DEV_DATABASE_URL then reads postgres://kubuno:<password>@localhost:55432/kubuno_dev.'
+       dfr = 'L''extrémité locale du tunnel : KUBUNO_DEV_DATABASE_URL vaut alors postgres://kubuno:<mot de passe>@localhost:55432/kubuno_dev.' },
+    @{ m = 'kubuno.remote.devDatabase.remotePort'; t = 'integer'; d = 5432; extra = @{ minimum = 1; maximum = 65535 }
+       en = 'PostgreSQL port on the host'; fr = 'Port PostgreSQL sur l''hôte'
+       den = 'The port PostgreSQL listens on, on the host''s own loopback (it does not need to be reachable from the network).'
+       dfr = 'Le port d''écoute de PostgreSQL, sur la boucle locale de l''hôte (il n''a pas besoin d''être joignable depuis le réseau).' }
 )
 
 # French strings are written without accents in the table above (ASCII source); this restores them (case-sensitive pairs).

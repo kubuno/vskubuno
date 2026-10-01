@@ -82,6 +82,9 @@ namespace Kubuno.VisualStudio
             "ActiveEditorContentType:kbview",
             "{" + Kubuno.Rust.PackageGuids.CargoFolderUIContextString + "}",
         })]
+    // ---- Core layer (Kubuno.Core): the remote Linux host (dev database tunnel, later the Linux builds), docs/WEB.md ----
+    [ProvideOptionPage(typeof(Kubuno.Core.Remote.RemoteHostOptionsPage), KubunoConstants.OptionsCategoryName, "Remote Linux host", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.remote")]
+    [ProvideProfile(typeof(Kubuno.Core.Remote.RemoteHostOptionsPage), KubunoConstants.OptionsCategoryName, "Remote Linux host", 0, 0, isToolsOptionPage: true)]
     // ---- Rust layer (Kubuno.Rust) ----
     [ProvideOptionPage(typeof(Kubuno.Rust.Options.RustOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Rust.Constants.OptionsRustPageName, 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.rust")]
     [ProvideProfile(typeof(Kubuno.Rust.Options.RustOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Rust.Constants.OptionsRustPageName, 0, 0, isToolsOptionPage: true)]

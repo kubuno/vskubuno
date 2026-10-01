@@ -44,6 +44,12 @@
   <data name="S_kubuno_data_query_Description" xml:space="preserve"><value>Running SQL queries.</value></data>
   <data name="S_kubuno_data_diagnostics_Title" xml:space="preserve"><value>Diagnostics</value></data>
   <data name="S_kubuno_data_diagnostics_Description" xml:space="preserve"><value>Logging of the data helper (kubuno-data-tool).</value></data>
+  <data name="S_kubuno_remote_Title" xml:space="preserve"><value>Remote Linux host</value></data>
+  <data name="S_kubuno_remote_Description" xml:space="preserve"><value>The Linux machine that holds the development database (through an SSH tunnel) and, later, the Linux builds.</value></data>
+  <data name="S_kubuno_remote_connection_Title" xml:space="preserve"><value>Connection</value></data>
+  <data name="S_kubuno_remote_connection_Description" xml:space="preserve"><value>How Kubuno connects to the host: non-interactive SSH with a dedicated key, never a password.</value></data>
+  <data name="S_kubuno_remote_devDatabase_Title" xml:space="preserve"><value>Development database</value></data>
+  <data name="S_kubuno_remote_devDatabase_Description" xml:space="preserve"><value>The SSH tunnel the Kubuno Core Web launch profiles open to the host&apos;s PostgreSQL.</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Title" xml:space="preserve"><value>Path override</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Description" xml:space="preserve"><value>Full path to rust-analyzer.exe. When empty, Kubuno tries &quot;rustup which rust-analyzer&quot;, then %USERPROFILE%\.cargo\bin\rust-analyzer.exe, then the PATH environment variable. Applies the next time the server starts.</value></data>
   <data name="S_kubuno_rust_editor_formatOnSave_Title" xml:space="preserve"><value>Format on save</value></data>
@@ -111,4 +117,23 @@
   <data name="S_kubuno_data_query_timeoutSeconds_Description" xml:space="preserve"><value>How long a query may run before it is cancelled (1 to 86400).</value></data>
   <data name="S_kubuno_data_diagnostics_logRequests_Title" xml:space="preserve"><value>Log data helper requests</value></data>
   <data name="S_kubuno_data_diagnostics_logRequests_Description" xml:space="preserve"><value>Log each request to kubuno-data-tool (method and parameters, with connection strings, passwords and SQL text removed) in the Kubuno Output pane.</value></data>
+  <data name="S_kubuno_remote_connection_host_Title" xml:space="preserve"><value>Host</value></data>
+  <data name="S_kubuno_remote_connection_host_Description" xml:space="preserve"><value>Name or IP address of the remote Linux host.</value></data>
+  <data name="S_kubuno_remote_connection_user_Title" xml:space="preserve"><value>User</value></data>
+  <data name="S_kubuno_remote_connection_user_Description" xml:space="preserve"><value>The account Kubuno connects as. Its ~/.ssh/authorized_keys must hold the public key (the .pub file next to the private key).</value></data>
+  <data name="S_kubuno_remote_connection_port_Title" xml:space="preserve"><value>SSH port</value></data>
+  <data name="S_kubuno_remote_connection_port_Description" xml:space="preserve"><value>The port of the host&apos;s SSH server (1 to 65535).</value></data>
+  <data name="S_kubuno_remote_connection_privateKeyPath_Title" xml:space="preserve"><value>Private key</value></data>
+  <data name="S_kubuno_remote_connection_privateKeyPath_Description" xml:space="preserve"><value>The private key Kubuno authenticates with, used by Windows&apos; OpenSSH in batch mode: it must have no passphrase, since Kubuno never asks for a password or a passphrase. Environment variables (%USERPROFILE%) are expanded.</value></data>
+  <data name="S_kubuno_remote_connection_knownHostsPath_Title" xml:space="preserve"><value>Known hosts file</value></data>
+  <data name="S_kubuno_remote_connection_knownHostsPath_Description" xml:space="preserve"><value>The host keys Kubuno accepts, kept apart from your own known_hosts. An unknown host is never accepted silently: an info bar shows its fingerprint and adds it here only when you click Accept.</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Title" xml:space="preserve"><value>SSH tunnel</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Description" xml:space="preserve"><value>When F5 / Ctrl+F5 of the Kubuno Core Web profiles opens the tunnel from localhost to the host&apos;s PostgreSQL (ssh -N -L). It is reused by the next launches and closed with Visual Studio; errors appear in an info bar and the Kubuno Output pane.</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Item_auto" xml:space="preserve"><value>When KUBUNO_DEV_DATABASE_URL points at the local port</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Item_always" xml:space="preserve"><value>At every launch</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Item_never" xml:space="preserve"><value>Never</value></data>
+  <data name="S_kubuno_remote_devDatabase_localPort_Title" xml:space="preserve"><value>Local port</value></data>
+  <data name="S_kubuno_remote_devDatabase_localPort_Description" xml:space="preserve"><value>The tunnel&apos;s local end: KUBUNO_DEV_DATABASE_URL then reads postgres://kubuno:&lt;password&gt;@localhost:55432/kubuno_dev.</value></data>
+  <data name="S_kubuno_remote_devDatabase_remotePort_Title" xml:space="preserve"><value>PostgreSQL port on the host</value></data>
+  <data name="S_kubuno_remote_devDatabase_remotePort_Description" xml:space="preserve"><value>The port PostgreSQL listens on, on the host&apos;s own loopback (it does not need to be reachable from the network).</value></data>
 </root>

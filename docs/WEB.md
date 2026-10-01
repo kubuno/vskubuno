@@ -149,9 +149,8 @@ database:
 - the connection string comes **only** from the `KUBUNO_DEV_DATABASE_URL` environment variable (or, discouraged
   because it writes a password next to the sources, the project's per-user Debug environment) - never from a file of
   the repository, never from the server's configuration;
-- it must name a **separate development database** on the team's PostgreSQL server (192.168.1.220), for example
-  `postgres://kubuno:<password>@192.168.1.220:5432/kubuno_dev`. Create it once on the server
-  (`CREATE DATABASE kubuno_dev OWNER kubuno;`);
+- it must name a **separate development database** on the team's PostgreSQL server (192.168.1.220), reached through
+  an SSH tunnel (below): `postgres://kubuno:<password>@localhost:55432/kubuno_dev`;
 - the **guard** (`DevDatabaseGuard`, in the launch provider and in `Kubuno.Web.Sdk`'s `KubunoCheckDevDatabase`
   target - never in the core's own code) refuses to start when the variable is missing, when it is not a database
   URL, when it names no database, and when the database's name has no development token (`dev`, `devel`,
@@ -160,9 +159,67 @@ database:
   `kubunodev` do not). `KUBUNO_DEV_ALLOW_ANY_DATABASE=1` lets a throw-away database with another name through, on
   purpose. Messages show the URL with its password replaced by `***`.
 
-Set the variable once: `setx KUBUNO_DEV_DATABASE_URL "postgres://kubuno:<password>@192.168.1.220:5432/kubuno_dev"`,
-then restart Visual Studio. `msbuild crates\kubuno-core\kubuno-core.rsproj -t:KubunoCheckDevDatabase` says what F5
-would say.
+### Setting it up (once per machine)
+
+PostgreSQL on 192.168.1.220 listens on the host's loopback only: port 5432 is closed to the network. Visual Studio
+reaches it through an SSH tunnel, `localhost:55432` → `localhost:5432` on the host.
+
+1. **Create the database** on the server, as `postgres`: `CREATE DATABASE kubuno_dev OWNER kubuno;`
+2. **A dedicated key, without a passphrase** (Kubuno never asks for a password or a passphrase):
+   `ssh-keygen -t ed25519 -f "%USERPROFILE%\.ssh\id_ed25519_kubuno" -N ""`.
+3. **Authorise it** on the host: append `%USERPROFILE%\.ssh\id_ed25519_kubuno.pub` to `~/.ssh/authorized_keys` of
+   the account Kubuno uses (`martinien` by default). When it is not, F5 says so in an info bar, whose
+   "Copy the public key" link puts the `.pub` line on the clipboard.
+4. **Set the variable** to the tunnel's local end, then restart Visual Studio:
+   `setx KUBUNO_DEV_DATABASE_URL "postgres://kubuno:<password>@localhost:55432/kubuno_dev"`.
+   `msbuild crates\kubuno-core\kubuno-core.rsproj -t:KubunoCheckDevDatabase` says what the guard would say.
+5. **First connection**: the host's key is not known to Kubuno yet. An info bar shows its fingerprint
+   (`SHA256:...`, ED25519 preferred); compare it with the server's (`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`
+   on the host) and click **Accept**: the key is added to `%USERPROFILE%\.ssh\known_hosts_kubuno`, then F5 again.
+
+### Tools > Options > Kubuno > Remote Linux host
+
+The host is set in Visual Studio's unified settings (`kubuno.remote.*`), never in a repository. It is also the host
+of the Linux builds to come.
+
+| Setting | Default |
+|---|---|
+| Connection > Host | `192.168.1.220` |
+| Connection > User | `martinien` |
+| Connection > SSH port | 22 |
+| Connection > Private key | `%USERPROFILE%\.ssh\id_ed25519_kubuno` |
+| Connection > Known hosts file | `%USERPROFILE%\.ssh\known_hosts_kubuno` (only the keys accepted in Visual Studio) |
+| Development database > SSH tunnel | *When KUBUNO_DEV_DATABASE_URL points at the local port* (`auto`), *At every launch*, *Never* |
+| Development database > Local port | 55432 |
+| Development database > PostgreSQL port on the host | 5432 |
+
+### The tunnel
+
+F5 / Ctrl+F5 of the Kubuno Core Web profiles (the core and every module) opens the tunnel **after** the guard has
+accepted the URL and **before** anything is deployed, when the URL's host is `localhost`/`127.0.0.1`/`::1` at the
+local port (or the setting says *At every launch*). `Tools > Kubuno Core Web: Open Development Database Tunnel`
+opens the same tunnel without starting a core (for the Data Explorer, psql or `cargo sqlx prepare` on
+`localhost:55432`).
+
+- **Command**: Windows' OpenSSH (`C:\Windows\System32\OpenSSH\ssh.exe`),
+  `ssh -N -L 55432:localhost:5432 -F none -i <key> -p <port> -o BatchMode=yes -o IdentitiesOnly=yes
+  -o StrictHostKeyChecking=yes -o UserKnownHostsFile=<known_hosts_kubuno> -o ConnectTimeout=10
+  -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=3 <user>@<host>`
+  (`SshCommandLine`, Kubuno.Core.Logic). `BatchMode` means no prompt ever; `-F none` and `IdentitiesOnly` keep the
+  user's own ssh configuration and agent out of it; host key checking is **strict**, against the Kubuno file only -
+  it is never turned off.
+- **Lifetime**: the tunnel is up when its local port accepts connections. It is reused by the next launches while
+  its process lives (a port that already answers without a Visual Studio tunnel - one opened by hand - is used as
+  is); a change of settings replaces it. It ends with Visual Studio (`SshTunnels.StopAll` at the package's disposal,
+  and a kill-on-close job object if Visual Studio ends otherwise). A tunnel that drops later is logged; the next
+  launch opens it again.
+- **Errors** never open a dialog: the launch is cancelled, the "Kubuno" Output pane gets the reason and ssh's own
+  output, and a main-window info bar names the fix (`SshFailure`): key not authorised (with "Copy the public key"),
+  host unknown (fingerprint + **Accept**), host key **changed** (refused; no accept action - remove the old line by
+  hand after checking), host unreachable, unknown host name, local port taken, key file missing, key readable by
+  other accounts, key with a passphrase. Each bar has "Options" and "Log" links.
+- **Accept** reads the host's keys with `ssh-keyscan` (no authentication), shows the preferred one's fingerprint and,
+  on the click only, appends that one key (`host` on port 22, `[host]:port` otherwise) to the Kubuno known_hosts.
 
 ## 6. The dev core
 
@@ -187,7 +244,7 @@ administrator and writes its password to `initial-admin-password` (the "Kubuno" 
 
 ## 7. F5
 
-**The core** (`kubuno-core.rsproj`, debugger "Kubuno Core Web (serveur)"): guard, then `kubuno-core.exe` under the native
+**The core** (`kubuno-core.rsproj`, debugger "Kubuno Core Web (serveur)"): guard and development database tunnel (section 5), then `kubuno-core.exe` under the native
 debugger with the dev core environment (and `RUST_BACKTRACE=1`, `RUST_LOG=info` unless set); the browser opens on
 `http://localhost:8080/` once the core answers. **Combined launch**: the "Kubuno Core Web (serveur + Vite)" profile of the
 `.slnLaunch` starts the core and the frontend project; the frontend's F5 runs Vite's dev server (`npm run dev`,
@@ -197,7 +254,7 @@ the core does not open a second browser.
 
 **A module** (`<module>.rsproj`, `KubunoWebRole=Module`):
 
-1. guard;
+1. guard, then the development database tunnel (section 5);
 2. deploy - the Windows `deploy_local.sh`: the built executable (and its PDB), `module.toml` (the core reads the
    installed manifest), the top-level `migrations/*.sql` and `frontend/dist` are copied into
    `dev-core\modules-store\<id>` when the module was installed from a `.kbpkg`, else `dev-core\modules\<id>`; copies
