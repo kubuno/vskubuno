@@ -218,7 +218,7 @@ image resolver + icon loader + repaint on culture change), `binding.rs` (`parse_
   `fr`, dark theme; the drive locales convert to 49 files (1 432 strings, a few untranslated per culture).
 - **Own VS hive `KubunoRes`** (VSIX built from this tree): resource file created from the item template; strings
   added in the grid; an image added (Add Existing File — copied into `Resources/`, Images category with thumbnail);
-  nesting in Solution Explorer; designer showing `{Res}` values, switched to French and back with the Language picker;
+  nesting in Solution Explorer; designer showing `{Res}` values, switched to French and back with the Language picker; the frame title follows the language too, also on the bundled design surface;
   Button `Image` set to `{Res app_icon}` through the Select Resource dialog (written to the XML, one undo unit);
   F12 from `Resources::logo()` / `Resources::culture_status()` to their entries; build and F5 (the app starts in the
   Windows display language, French). Screenshots dark and light in `C:\kubuno-build\agent-res\out\`.
@@ -231,6 +231,6 @@ image resolver + icon loader + repaint on culture change), `binding.rs` (`parse_
 - The icon picker's "Project resources" tab (icon agent) calls `ResourcePicker` by reflection; only the image editor
   path was driven live.
 - WinForms-style "edit in French writes `main_view.fr.kbres`" (§6) is not built.
-- A Button's `Image` property is written and resolved but the Button family does not paint `Image` (use `Icon`).
+- A Button's `Image` (`{Res key}` included) is drawn through the icon pipeline when it has no `Icon` (icons work, 2026-10-01); the size cap of a resource `.ico` (48 instead of 32 DIP) is the icons work's.
 - `kubuno-resources-tool` import of non-string `.resx` data (bitmaps) is reported, not converted.
 - The window title of a running app follows the culture; a native window caption set once by code does not.
