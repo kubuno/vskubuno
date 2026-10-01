@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   PNG/BMP/GIF/JPEG images, icons and text files, rename, comment, remove, switch an entry between linked and
   embedded, copy its `{Res key}` reference, and add cultures (`fr`, `fr-FR`…) whose `name.fr.kbres` files are saved
   with the neutral one. Undo/Redo, an invalid-XML banner with **View Code**, and XML colouring in the code view.
+  The editor uses Visual Studio's own list, header, selection, button, combo box and check box styles in every
+  theme (light, dark, the colour themes), and starts with the keyboard in the grid.
 - **Resource files for Kubuno desktop applications** (`docs/RESOURCES.md`), the equivalent of `Resources.resx` and
   `Properties.Resources`: new **Kubuno Resource File** and **Kubuno Localized Resource File** item templates
   (`resources.kbres`, `resources.fr.kbres`); culture files and a view's own resource file nest under their file in

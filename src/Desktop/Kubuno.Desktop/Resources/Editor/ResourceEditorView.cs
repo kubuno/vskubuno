@@ -42,7 +42,7 @@ namespace Kubuno.Desktop.Resources.Editor
         private readonly TextBlock _persistenceLabel = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) };
         private readonly ComboBox _persistenceBox = new ComboBox { MinWidth = 150, Margin = new Thickness(0, 0, 8, 0) };
         private readonly Button _cultureButton = new Button { Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 8, 0) };
-        private readonly ToggleButton _showCultures = new ToggleButton { Padding = new Thickness(8, 2, 8, 2), IsChecked = true };
+        private readonly ToggleButton _showCultures = new CheckBox { Margin = new Thickness(4, 0, 0, 0), IsChecked = true };
         private readonly Border _banner = new Border { BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(8, 4, 8, 4), Visibility = Visibility.Collapsed };
         private readonly TextBlock _bannerText = new TextBlock { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
         private readonly DataGrid _grid = new DataGrid();
@@ -73,6 +73,7 @@ namespace Kubuno.Desktop.Resources.Editor
             BuildToolbarContent();
             BuildGrid();
             BuildTiles();
+            ApplyVsStyles();
 
             _details.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.SystemGrayTextBrushKey);
             _status.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.SystemGrayTextBrushKey);
@@ -106,6 +107,7 @@ namespace Kubuno.Desktop.Resources.Editor
             _banner.SetResourceReference(Border.BorderBrushProperty, EnvironmentColors.ToolWindowBorderBrushKey);
             _bannerText.SetResourceReference(TextBlock.ForegroundProperty, VsBrushes.InfoTextKey);
             var viewCode = new Button { Content = ResourceText.ViewCode, Padding = new Thickness(8, 1, 8, 1), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            viewCode.SetResourceReference(StyleProperty, VsResourceKeys.ButtonStyleKey);
             viewCode.Click += (_, _) => _host.ViewCode();
             var bannerPanel = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(viewCode, Dock.Right);
@@ -245,32 +247,61 @@ namespace Kubuno.Desktop.Resources.Editor
             _grid.GridLinesVisibility = DataGridGridLinesVisibility.All;
             _grid.BorderThickness = new Thickness(0);
             _grid.ClipboardCopyMode = DataGridClipboardCopyMode.None;
-            _grid.SetResourceReference(Control.BackgroundProperty, EnvironmentColors.ToolWindowBackgroundBrushKey);
-            _grid.SetResourceReference(Control.ForegroundProperty, EnvironmentColors.ToolWindowTextBrushKey);
-            _grid.SetResourceReference(DataGrid.HorizontalGridLinesBrushProperty, EnvironmentColors.ToolWindowBorderBrushKey);
-            _grid.SetResourceReference(DataGrid.VerticalGridLinesBrushProperty, EnvironmentColors.ToolWindowBorderBrushKey);
+            // Visual Studio's own list colours (the Error List's, Solution Explorer's): tree-view background and selection
+            // (active and inactive), list headers, grid lines - never WPF's system colours.
+            _grid.SetResourceReference(Control.BackgroundProperty, TreeViewColors.BackgroundBrushKey);
+            _grid.SetResourceReference(Control.ForegroundProperty, TreeViewColors.BackgroundTextBrushKey);
+            _grid.SetResourceReference(DataGrid.HorizontalGridLinesBrushProperty, EnvironmentColors.GridLineBrushKey);
+            _grid.SetResourceReference(DataGrid.VerticalGridLinesBrushProperty, EnvironmentColors.GridLineBrushKey);
 
             var header = new Style(typeof(DataGridColumnHeader));
-            header.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(6, 3, 6, 3)));
+            header.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 4, 6, 4)));
             header.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0, 0, 1, 1)));
             header.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
-            header.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(EnvironmentColors.GridHeadingBackgroundBrushKey)));
-            header.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(EnvironmentColors.GridHeadingTextBrushKey)));
-            header.Setters.Add(new Setter(Control.BorderBrushProperty, new DynamicResourceExtension(EnvironmentColors.ToolWindowBorderBrushKey)));
+            header.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(HeaderColors.DefaultBrushKey)));
+            header.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(HeaderColors.DefaultTextBrushKey)));
+            header.Setters.Add(new Setter(Control.BorderBrushProperty, new DynamicResourceExtension(HeaderColors.SeparatorLineBrushKey)));
+            header.Setters.Add(new Setter(Control.TemplateProperty, HeaderTemplate()));
+            var headerHover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            headerHover.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(HeaderColors.MouseOverBrushKey)));
+            headerHover.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(HeaderColors.MouseOverTextBrushKey)));
+            header.Triggers.Add(headerHover);
             _grid.ColumnHeaderStyle = header;
 
             var row = new Style(typeof(DataGridRow));
-            row.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
-            var rowSelected = new Trigger { Property = DataGridRow.IsSelectedProperty, Value = true };
-            rowSelected.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(EnvironmentColors.SystemHighlightBrushKey)));
-            rowSelected.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(EnvironmentColors.SystemHighlightTextBrushKey)));
+            row.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(TreeViewColors.BackgroundBrushKey)));
+            row.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(TreeViewColors.BackgroundTextBrushKey)));
+            var rowSelected = new MultiTrigger();
+            rowSelected.Conditions.Add(new Condition(DataGridRow.IsSelectedProperty, true));
+            rowSelected.Conditions.Add(new Condition(Selector.IsSelectionActiveProperty, true));
+            rowSelected.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(TreeViewColors.SelectedItemActiveBrushKey)));
+            rowSelected.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(TreeViewColors.SelectedItemActiveTextBrushKey)));
+            var rowSelectedInactive = new MultiTrigger();
+            rowSelectedInactive.Conditions.Add(new Condition(DataGridRow.IsSelectedProperty, true));
+            rowSelectedInactive.Conditions.Add(new Condition(Selector.IsSelectionActiveProperty, false));
+            rowSelectedInactive.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(TreeViewColors.SelectedItemInactiveBrushKey)));
+            rowSelectedInactive.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(TreeViewColors.SelectedItemInactiveTextBrushKey)));
+            row.Triggers.Add(rowSelectedInactive);
             row.Triggers.Add(rowSelected);
             _grid.RowStyle = row;
 
+            // Cells draw nothing of their own (WPF's default template paints the selected cell in the system highlight
+            // colour): the row's colours show through; the cell being edited gets the text box's own colours.
             var cell = new Style(typeof(DataGridCell));
             cell.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
             cell.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
             cell.Setters.Add(new Setter(UIElement.FocusableProperty, true));
+            cell.Setters.Add(new Setter(Control.TemplateProperty, CellTemplate()));
+            var cellSelected = new Trigger { Property = DataGridCell.IsSelectedProperty, Value = true };
+            cellSelected.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+            cellSelected.Setters.Add(new Setter(Control.ForegroundProperty, new Binding(nameof(Control.Foreground)) { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(DataGridRow), 1) }));
+            cell.Triggers.Add(cellSelected);
+            var cellEditing = new Trigger { Property = DataGridCell.IsEditingProperty, Value = true };
+            cellEditing.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(CommonControlsColors.TextBoxBackgroundFocusedBrushKey)));
+            cellEditing.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(CommonControlsColors.TextBoxTextFocusedBrushKey)));
+            cellEditing.Setters.Add(new Setter(Control.BorderBrushProperty, new DynamicResourceExtension(CommonControlsColors.TextBoxBorderFocusedBrushKey)));
+            cellEditing.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+            cell.Triggers.Add(cellEditing);
             _grid.CellStyle = cell;
 
             _grid.PreviewKeyDown += OnGridPreviewKeyDown;
@@ -292,6 +323,132 @@ namespace Kubuno.Desktop.Resources.Editor
                 UpdateDetails();
             };
             _tiles.PreviewKeyDown += OnTilesPreviewKeyDown;
+        }
+
+        /// <summary>
+        /// Visual Studio's own control styles for document content (not the themed-dialog ones): buttons, combo boxes and
+        /// their items, the check box, scroll bars; the tiles' selection in the tree-view colours. Resource references, so
+        /// a theme switch restyles everything live.
+        /// </summary>
+        private void ApplyVsStyles()
+        {
+            foreach (var button in new[] { _addButton, _removeButton, _cultureButton })
+            {
+                button.SetResourceReference(StyleProperty, VsResourceKeys.ButtonStyleKey);
+            }
+
+            foreach (var combo in new[] { _categoryBox, _persistenceBox })
+            {
+                combo.SetResourceReference(StyleProperty, VsResourceKeys.ComboBoxStyleKey);
+                combo.SetResourceReference(ItemsControl.ItemContainerStyleProperty, VsResourceKeys.ComboBoxItemStyleKey);
+            }
+
+            _showCultures.SetResourceReference(StyleProperty, VsResourceKeys.CheckBoxStyleKey);
+            _persistenceLabel.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.CommandBarTextActiveBrushKey);
+            Loaded += (_, _) =>
+            {
+                // Scroll bars of the grid and the tiles: Visual Studio's (resolved once the theme dictionaries are there).
+                if (TryFindResource(VsResourceKeys.ScrollBarStyleKey) is Style scrollBar && !Resources.Contains(typeof(ScrollBar)))
+                {
+                    Resources[typeof(ScrollBar)] = scrollBar;
+                }
+
+                if (TryFindResource(VsResourceKeys.ScrollViewerStyleKey) is Style scrollViewer && !Resources.Contains(typeof(ScrollViewer)))
+                {
+                    Resources[typeof(ScrollViewer)] = scrollViewer;
+                }
+
+                // Like the resx editor, the keyboard starts in the grid (first entry, Value column), not on the toolbar.
+                Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                {
+                    if (_grid.IsVisible && _grid.Items.Count > 0 && _grid.Columns.Count > 1)
+                    {
+                        _grid.SelectedIndex = 0;
+                        _grid.CurrentCell = new DataGridCellInfo(_grid.Items[0], _grid.Columns[1]);
+                        _grid.Focus();
+                    }
+                }));
+            };
+
+            var tile = new Style(typeof(ListViewItem));
+            tile.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+            tile.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(TreeViewColors.BackgroundTextBrushKey)));
+            tile.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+            tile.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
+            tile.Setters.Add(new Setter(Control.TemplateProperty, TileTemplate()));
+            var tileHover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            tileHover.Setters.Add(new Setter(Control.BorderBrushProperty, new DynamicResourceExtension(TreeViewColors.SelectedItemInactiveBrushKey)));
+            var tileSelectedInactive = new MultiTrigger();
+            tileSelectedInactive.Conditions.Add(new Condition(ListBoxItem.IsSelectedProperty, true));
+            tileSelectedInactive.Conditions.Add(new Condition(Selector.IsSelectionActiveProperty, false));
+            tileSelectedInactive.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(TreeViewColors.SelectedItemInactiveBrushKey)));
+            tileSelectedInactive.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(TreeViewColors.SelectedItemInactiveTextBrushKey)));
+            var tileSelected = new MultiTrigger();
+            tileSelected.Conditions.Add(new Condition(ListBoxItem.IsSelectedProperty, true));
+            tileSelected.Conditions.Add(new Condition(Selector.IsSelectionActiveProperty, true));
+            tileSelected.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(TreeViewColors.SelectedItemActiveBrushKey)));
+            tileSelected.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(TreeViewColors.SelectedItemActiveTextBrushKey)));
+            tile.Triggers.Add(tileHover);
+            tile.Triggers.Add(tileSelectedInactive);
+            tile.Triggers.Add(tileSelected);
+            _tiles.ItemContainerStyle = tile;
+            _tiles.SetResourceReference(Control.BackgroundProperty, TreeViewColors.BackgroundBrushKey);
+            _tiles.SetResourceReference(Control.ForegroundProperty, TreeViewColors.BackgroundTextBrushKey);
+        }
+
+        /// <summary>A flat column header: background, a separator line on the right and bottom, the content.</summary>
+        private static ControlTemplate HeaderTemplate()
+        {
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+            border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+            border.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Control.PaddingProperty));
+            var content = new FrameworkElementFactory(typeof(ContentPresenter));
+            content.SetValue(ContentPresenter.HorizontalAlignmentProperty, new TemplateBindingExtension(Control.HorizontalContentAlignmentProperty));
+            content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            border.AppendChild(content);
+            var grid = new FrameworkElementFactory(typeof(Grid));
+            grid.AppendChild(border);
+            // The column resize grip on the right edge (DataGridColumnHeader looks it up by name).
+            var grip = new FrameworkElementFactory(typeof(Thumb), "PART_RightHeaderGripper");
+            grip.SetValue(FrameworkElement.WidthProperty, 6.0);
+            grip.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right);
+            grip.SetValue(FrameworkElement.CursorProperty, Cursors.SizeWE);
+            grip.SetValue(Control.TemplateProperty, TransparentThumb());
+            grid.AppendChild(grip);
+            return new ControlTemplate(typeof(DataGridColumnHeader)) { VisualTree = grid };
+        }
+
+        private static ControlTemplate TransparentThumb()
+        {
+            var rect = new FrameworkElementFactory(typeof(Border));
+            rect.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+            return new ControlTemplate(typeof(Thumb)) { VisualTree = rect };
+        }
+
+        /// <summary>A cell: its background and border (the editing cell's) around the content, nothing else.</summary>
+        private static ControlTemplate CellTemplate()
+        {
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+            border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+            border.SetValue(UIElement.SnapsToDevicePixelsProperty, true);
+            border.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+            return new ControlTemplate(typeof(DataGridCell)) { VisualTree = border };
+        }
+
+        /// <summary>A tile: its background and border around the content (no WPF chrome).</summary>
+        private static ControlTemplate TileTemplate()
+        {
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+            border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+            border.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Control.PaddingProperty));
+            border.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+            return new ControlTemplate(typeof(ListViewItem)) { VisualTree = border };
         }
 
         private void WireEvents()
@@ -562,6 +719,7 @@ namespace Kubuno.Desktop.Resources.Editor
             var edit = new FrameworkElementFactory(typeof(TextBox));
             edit.SetBinding(TextBox.TextProperty, new Binding(path) { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.LostFocus });
             edit.SetValue(TextBox.AcceptsReturnProperty, true);
+            edit.SetResourceReference(FrameworkElement.StyleProperty, VsResourceKeys.TextBoxStyleKey);
             edit.SetValue(Control.BorderThicknessProperty, new Thickness(0));
             edit.SetValue(FrameworkElement.MarginProperty, new Thickness(0));
             edit.AddHandler(FrameworkElement.LoadedEvent, new RoutedEventHandler((s, _) =>
