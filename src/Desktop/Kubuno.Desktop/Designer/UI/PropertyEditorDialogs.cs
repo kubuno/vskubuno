@@ -489,6 +489,15 @@ namespace Kubuno.Desktop.Designer.UI
         private readonly TextBlock _description;
         private bool _relabeling;
 
+        /// <summary>The view an icon member is relative to, for the icon picker (docs/ICONS.md).</summary>
+        public string? IconViewFile { get; set; }
+
+        /// <summary>The icon set and the runtime's rendering, for the icon picker.</summary>
+        public Icons.IKbviewIconServices? IconServices { get; set; }
+
+        /// <summary>The icon picker (a delegate: it runs from a click, on the UI thread).</summary>
+        private static readonly Func<string?, string?, Icons.IKbviewIconServices?, string?> PickIcon = Icons.IconPickerDialog.Pick;
+
         public CollectionEditorDialog(string rowName, string childTag, ComponentMeta? childMeta, IReadOnlyList<ViewNode> originals)
             : this(rowName, new[] { (childTag, childMeta) }, originals)
         {
@@ -693,6 +702,27 @@ namespace Kubuno.Desktop.Designer.UI
                     combo.SelectionChanged += (_, _) => Write(member, descriptor, combo.SelectedItem as string ?? combo.Text);
                     editor = combo;
                 }
+                else if (descriptor.IsIcon)
+                {
+                    // An icon: typed, or chosen with the icon picker ("...").
+                    var box = MakeTextBox(value);
+                    box.TextChanged += (_, _) => Write(member, descriptor, box.Text);
+                    var pick = MakeButton("...");
+                    pick.MinWidth = 28;
+                    pick.Margin = new Thickness(4, 0, 0, 0);
+                    pick.Click += (_, _) =>
+                    {
+                        if (PickIcon(IconViewFile, box.Text, IconServices) is { } chosen)
+                        {
+                            box.Text = chosen;
+                        }
+                    };
+                    var panel = new DockPanel();
+                    DockPanel.SetDock(pick, Dock.Right);
+                    panel.Children.Add(pick);
+                    panel.Children.Add(box);
+                    editor = panel;
+                }
                 else
                 {
                     var box = MakeTextBox(value);
@@ -789,7 +819,16 @@ namespace Kubuno.Desktop.Designer.UI
             public PropertyDescriptorCollection GetProperties(Attribute[]? attributes)
             {
                 var names = new List<(string Name, PropertyMeta? Meta)> { ("x:Name", null) };
-                names.AddRange((_meta?.Properties ?? new List<PropertyMeta>()).Where(p => p.Browsable && !p.RootOnly && (p.InheritedFrom is null || p.InheritedFrom is "RibbonControl" or "RibbonItem")).Select(p => (p.Name, (PropertyMeta?)p)));
+                // What the Properties window lists for the element (its own and inherited browsable properties, the
+                // design-time ones aside), grouped by category like the grid, Appearance first.
+                var listed = (_meta?.Properties ?? new List<PropertyMeta>())
+                    .Where(p => p.Browsable && !p.RootOnly && !p.DesignTime)
+                    .GroupBy(p => p.Name, StringComparer.Ordinal)
+                    .Select(g => g.First())
+                    .OrderBy(p => p.Category == "Appearance" ? 0 : p.Category == "Behavior" ? 1 : 2)
+                    .ThenBy(p => p.Category ?? string.Empty, StringComparer.Ordinal)
+                    .ThenBy(p => p.Name, StringComparer.Ordinal);
+                names.AddRange(listed.Select(p => (p.Name, (PropertyMeta?)p)));
                 return new PropertyDescriptorCollection(names.Select(n => (PropertyDescriptor)new MemberPropertyDescriptor(n.Name, n.Meta)).ToArray(), readOnly: true);
             }
 
@@ -811,6 +850,9 @@ namespace Kubuno.Desktop.Designer.UI
             public override bool IsReadOnly => false;
 
             public override Type PropertyType => typeof(string);
+
+            /// <summary>An icon (<c>editor("icon")</c>): edited with the icon picker as well as typed.</summary>
+            public bool IsIcon => _meta?.Editor == "icon";
 
             /// <summary>The values offered in the drop-down (a switch or a list of choices), else null.</summary>
             public IReadOnlyList<string>? Choices => _meta?.Kind.Tag switch

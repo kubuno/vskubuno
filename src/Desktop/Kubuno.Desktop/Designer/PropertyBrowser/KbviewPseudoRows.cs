@@ -482,7 +482,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
             var kinds = tags.Select(t => (t, host.Registry.Find(t))).ToList();
             var originals = parent.Children.Where(c => tags.Contains(c.Name)).ToList();
-            var dialog = new UI.CollectionEditorDialog(rowName, kinds, originals);
+            var dialog = new UI.CollectionEditorDialog(rowName, kinds, originals) { IconViewFile = services.ViewFilePath, IconServices = services as Icons.IKbviewIconServices };
             ThreadHelper.ThrowIfNotOnUIThread();
             if (RichEditors.ShowDialog(provider, dialog))
             {

@@ -250,7 +250,10 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
             var display = name == "ToolTip" ? DesignerText.ToolTipOn(toolTipProvider) : name;
             var shownDefault = property?.Editor == "font" && string.IsNullOrEmpty(property.Default) ? FontText.AmbientDefault : property?.Default;
-            return new KbviewAttributePropertyDescriptor(name, display, kind, shownDefault, doc, category, customCategory: property?.Category, meta: property);
+            // Every icon property is listed with the icon's options (docs/ICONS.md), unless its declaration puts it elsewhere (a
+            // window's Icon in Window Style, like WinForms).
+            var custom = property?.Editor == "icon" && (property.Category is null || property.Category == "Appearance") ? "Icon" : property?.Category;
+            return new KbviewAttributePropertyDescriptor(name, display, kind, shownDefault, doc, category, customCategory: custom, meta: property);
         }
 
         /// <summary>The <c>x:Name</c> of the view's first <c>&lt;ToolTip&gt;</c> component (the WinForms "ToolTip on toolTip1" extender), or null.</summary>

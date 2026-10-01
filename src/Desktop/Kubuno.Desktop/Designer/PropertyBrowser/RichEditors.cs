@@ -24,7 +24,9 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             "color" => new KbviewColorEditor(),
             "font" => new KbviewFontEditor(),
             "image" => new KbviewImageEditor(),
+            "icon" => new Icons.KbviewIconEditor(),
             "cursor" => new KbviewCursorEditor(),
+            _ when Icons.KbviewContentAlignmentEditor.Applies(meta?.Kind?.EnumVariants) => new Icons.KbviewContentAlignmentEditor(),
             _ => null,
         };
 
@@ -38,6 +40,11 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             if (meta?.Editor is { } classEditor && classEditor.StartsWith("class:", StringComparison.Ordinal))
             {
                 return new ClassNamesConverter(classEditor.Substring("class:".Length));
+            }
+
+            if (meta?.TypeConverter == "IconSize")
+            {
+                return new Icons.IconSizeConverter();
             }
 
             return meta?.TypeConverter == "Opacity" ? new OpacityConverter() : null;
@@ -59,6 +66,8 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                     return FontText.Normalize(text);
                 case "image":
                     return text.Trim().Replace('\\', '/');
+                case "icon":
+                    return Icons.IconValue.Normalize(text);
             }
 
             if (meta?.TypeConverter == "Opacity")

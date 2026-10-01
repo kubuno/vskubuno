@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Icons, chosen and drawn like in Windows Forms** (`docs/ICONS.md`): every icon property — a button's, a menu item's,
+  a toolbar item's, a sidebar item's, a status label's, an empty state's, a docked panel's, the `<Icon>` element's
+  `Name`, the ribbon's `SmallIcon`/`LargeIcon` and the window's own `Icon` — shows the icon itself in its Properties
+  window row, and "…" opens an **icon picker**: the whole Kubuno icon set as a searchable gallery (by name or keyword,
+  by set — Lucide, the Kubuno themed icons, the module logos — or recently used), the project's images with
+  **Import…** (a file outside the view's folder is copied into its `resources` folder) and its resource files, a
+  preview at 16, 20, 24 and 32 pixels on the light and the dark theme drawn by the runtime itself, and **No icon**.
+  The choice is written as one undo unit: `Icon="Save"`, `Icon="resources/save.svg"` or `Icon="{Res Logo}"`.
+- New **Icon** (« Icône ») category in the Properties window with `IconSize` (Small, Medium, Large, XLarge, or a
+  size), `IconScaling`, `IconColor`, and for buttons `ImageAlign`, `TextImageRelation` and `IconSpacing`;
+  `ImageAlign` and `TextAlign` open a 3 × 3 alignment grid like Windows Forms' alignment editor.
+- In the `.kbview` editor, icon attributes complete the icon names, each with a picture of the icon, and an unknown
+  icon name, an unsupported file type or a missing image file is underlined with a warning (and a suggestion,
+  `save2` → `Save`).
+- The collection editors (a menu's items, a toolbar's…) give icon members a "…" button that opens the icon picker.
 - **Resource editor for `.kbres` files**, the equivalent of Visual Studio's `.resx` editor: double-clicking a
   `.kbres` file (in a `.rsproj` or in Open Folder) opens a grid for strings and other text resources (Name, Value,
   Comment and one column per culture, missing translations flagged and the neutral value shown as a hint) or a

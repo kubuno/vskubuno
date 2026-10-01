@@ -75,9 +75,10 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
         /// <summary>
         /// The images of the project holding <paramref name="viewFile"/> (the nearest folder with a <c>Cargo.toml</c>, else the
-        /// view's folder), as paths relative to the view, build output folders skipped; at most <paramref name="limit"/>.
+        /// view's folder), as paths relative to the view, build output folders skipped; at most <paramref name="limit"/>. <paramref name="extensions"/>: the
+        /// file types listed (<see cref="Extensions"/> by default; the icon picker adds SVG, TIFF and WebP).
         /// </summary>
-        public static IReadOnlyList<string> ProjectImages(string? viewFile, int limit = 400)
+        public static IReadOnlyList<string> ProjectImages(string? viewFile, int limit = 400, IReadOnlyList<string>? extensions = null)
         {
             if (string.IsNullOrEmpty(viewFile))
             {
@@ -105,7 +106,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
                 try
                 {
-                    foreach (var file in Directory.EnumerateFiles(folder).Where(IsImage).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+                    foreach (var file in Directory.EnumerateFiles(folder).Where(f => (extensions ?? Extensions).Contains(Path.GetExtension(f).ToLowerInvariant())).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
                     {
                         if (found.Count >= limit)
                         {

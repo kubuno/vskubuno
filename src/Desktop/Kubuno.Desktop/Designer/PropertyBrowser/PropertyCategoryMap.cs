@@ -128,6 +128,12 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 return DesignerText.CategoryPrinting;
             }
 
+            // The icon and how it is drawn (docs/ICONS.md).
+            if (string.Equals(category, "Icon", StringComparison.OrdinalIgnoreCase))
+            {
+                return Icons.IconText.CategoryIcon;
+            }
+
             foreach (Category known in Enum.GetValues(typeof(Category)))
             {
                 if (string.Equals(known.ToString(), (category ?? string.Empty).Replace(" ", string.Empty), StringComparison.OrdinalIgnoreCase))
