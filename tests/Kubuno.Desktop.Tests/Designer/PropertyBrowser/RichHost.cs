@@ -76,6 +76,22 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
 
         public IReadOnlyList<string> GetBindingPaths() => Paths;
 
+        /// <summary>The schema <see cref="GetBindingSources"/> answers.</summary>
+        public Kubuno.Desktop.Designer.Bindings.BindingSourceSchema Schema { get; set; } = Kubuno.Desktop.Designer.Bindings.BindingSourceSchema.Empty;
+
+        public List<string> Definitions { get; } = new List<string>();
+
+        public Kubuno.Desktop.Designer.Bindings.BindingSourceSchema GetBindingSources(string elementId) => Schema;
+
+        public Kubuno.Desktop.Designer.Bindings.BindingPreview PreviewBinding(string expression, string? sample, Kubuno.Desktop.Designer.Bindings.BindingShape sampleShape, Kubuno.Desktop.Designer.Bindings.BindingShape? want) =>
+            new Kubuno.Desktop.Designer.Bindings.BindingPreview(sample, null);
+
+        public bool GoToBindingDefinition(string elementId, string attribute)
+        {
+            Definitions.Add(elementId + "." + attribute);
+            return true;
+        }
+
         public void ApplyTextEdits(int version, IReadOnlyList<TextReplacement> edits, string description) => TextEdits.Add((version, edits, description));
 
         public void RunScheduled()

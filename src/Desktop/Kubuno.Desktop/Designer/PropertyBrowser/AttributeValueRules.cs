@@ -29,7 +29,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             }
 
             value ??= string.Empty;
-            if (BindingExpressionParser.IsBindingExpression(value))
+            if (Bindings.BindingMarkup.IsMarkupExtension(value))
             {
                 return value;
             }

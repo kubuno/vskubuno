@@ -234,7 +234,7 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
             Assert.IsFalse(properties.Find("Dock", false).IsReadOnly);
             Assert.IsInstanceOfType(properties.Find("Dock", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor)), typeof(KbviewDockEditor));
             Assert.IsInstanceOfType(properties.Find("Anchor", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor)), typeof(KbviewAnchorEditor));
-            Assert.IsNull(properties.Find("Text", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
+            Assert.IsNull(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)properties.Find("Text", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner, "a text row has only the binding picker");
         }
 
         [TestMethod]

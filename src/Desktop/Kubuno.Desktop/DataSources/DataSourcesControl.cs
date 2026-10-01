@@ -23,6 +23,12 @@ namespace Kubuno.Desktop.DataSources
         Table,
         Column,
         Error,
+
+        /// <summary>The active view's data context (docs/DESIGNER.md "Data bindings").</summary>
+        ViewModel,
+
+        /// <summary>A member of it: dropped onto a control it binds it, onto empty space it adds a bound control.</summary>
+        Member,
     }
 
     /// <summary>A node of the Data Sources tree (its <see cref="TreeViewItem.Tag"/>).</summary>
@@ -47,8 +53,11 @@ namespace Kubuno.Desktop.DataSources
 
         public KbdataColumnInfo? Column { get; }
 
-        /// <summary>Tables and columns can be dropped onto a view.</summary>
-        public bool IsDraggable => Source != null && Table != null && (Kind == DataSourceNodeKind.Table || Kind == DataSourceNodeKind.Column);
+        /// <summary>The view-model member of a <see cref="DataSourceNodeKind.Member"/> node.</summary>
+        public Designer.Bindings.BindingMember? Member { get; set; }
+
+        /// <summary>Tables, columns and view-model members can be dropped onto a view.</summary>
+        public bool IsDraggable => (Source != null && Table != null && (Kind == DataSourceNodeKind.Table || Kind == DataSourceNodeKind.Column)) || (Kind == DataSourceNodeKind.Member && Member != null);
     }
 
     /// <summary>
@@ -95,7 +104,7 @@ namespace Kubuno.Desktop.DataSources
             _tree.PreviewMouseRightButtonDown += OnPreviewRightButtonDown;
             _tree.MouseRightButtonUp += (_, e) =>
             {
-                if (_tree.SelectedItem is TreeViewItem item && item.IsMouseOver && SelectedNode is { } node)
+                if (_tree.SelectedItem is TreeViewItem item && item.IsMouseOver && SelectedNode is { Kind: not (DataSourceNodeKind.ViewModel or DataSourceNodeKind.Member) } node)
                 {
                     e.Handled = true;
                     ContextMenuRequested?.Invoke(this, new DataSourcesMenuEventArgs(node, PointToScreen(e.GetPosition(this))));
@@ -199,12 +208,74 @@ namespace Kubuno.Desktop.DataSources
                 }
             }
 
-            bool empty = sources.Count == 0 && errors.Count == 0;
+            AddViewModel(expanded);
+            bool empty = sources.Count == 0 && errors.Count == 0 && _viewModelMembers.Count == 0;
             _message.Text = empty ? DataSourcesText.NoDataSources : string.Empty;
             _message.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
             UpdateArrows();
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
+
+        private string _viewModelLabel = string.Empty;
+        private IReadOnlyList<Designer.Bindings.BindingMember> _viewModelMembers = Array.Empty<Designer.Bindings.BindingMember>();
+
+        /// <summary>
+        /// Shows the active view's data context (docs/DESIGNER.md "Data bindings"): its members, dragged like a column - onto a
+        /// control they bind it, onto empty space they add a bound control. Empty hides the node.
+        /// </summary>
+        public void ShowViewModel(string label, IReadOnlyList<Designer.Bindings.BindingMember> members)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (label == _viewModelLabel && members.Select(m => m.Path).SequenceEqual(_viewModelMembers.Select(m => m.Path)))
+            {
+                return;
+            }
+
+            _viewModelLabel = label;
+            _viewModelMembers = members;
+            var expanded = new HashSet<string>(AllItems().Where(i => i.IsExpanded).Select(i => KeyOf((DataSourceNode)i.Tag)), StringComparer.Ordinal);
+            foreach (var old in _tree.Items.OfType<TreeViewItem>().Where(i => i.Tag is DataSourceNode { Kind: DataSourceNodeKind.ViewModel }).ToList())
+            {
+                _tree.Items.Remove(old);
+            }
+
+            AddViewModel(expanded);
+            if (_viewModelMembers.Count > 0)
+            {
+                _message.Visibility = Visibility.Collapsed;
+            }
+
+            UpdateArrows();
+        }
+
+        private void AddViewModel(ISet<string> expanded)
+        {
+            if (_viewModelMembers.Count == 0)
+            {
+                return;
+            }
+
+            var title = (Designer.DesignerText.IsFrench ? "Modèle de vue" : "View model") + (_viewModelLabel.Length > 0 ? " — " + _viewModelLabel : string.Empty);
+            var root = Item(new DataSourceNode(DataSourceNodeKind.ViewModel, "viewmodel:" + _viewModelLabel, null), title, KnownMonikers.Class, title);
+            foreach (var member in _viewModelMembers)
+            {
+                var node = new DataSourceNode(DataSourceNodeKind.Member, "viewmodel:" + member.Path, null) { Member = member };
+                var tip = Designer.Bindings.BindingStrings.Combine(member.Path + " · " + Designer.Bindings.BindingStrings.TypeOf(member), member.Doc);
+                root.Items.Add(Item(node, member.Name, MemberMoniker(member), tip));
+            }
+
+            root.IsExpanded = expanded.Count == 0 || expanded.Contains(KeyOf((DataSourceNode)root.Tag));
+            _tree.Items.Insert(0, root);
+        }
+
+        private static ImageMoniker MemberMoniker(Designer.Bindings.BindingMember member) => member.Shape switch
+        {
+            Designer.Bindings.BindingShape.Bool => KnownMonikers.CheckBoxChecked,
+            Designer.Bindings.BindingShape.Number => KnownMonikers.Numeric,
+            Designer.Bindings.BindingShape.List => KnownMonikers.ListBox,
+            Designer.Bindings.BindingShape.Text => member.Writable ? KnownMonikers.TextBox : KnownMonikers.Label,
+            _ => KnownMonikers.Property,
+        };
 
         /// <summary>Re-reads the icons and tool tips (after a drop choice changed).</summary>
         public void RefreshIcons()
@@ -300,6 +371,7 @@ namespace Kubuno.Desktop.DataSources
             DataSourceNodeKind.Source => node.Source!.Name.Length > 0 ? node.Source.Name : node.Source.ModuleName,
             DataSourceNodeKind.Table => node.Table!.Name,
             DataSourceNodeKind.Column => node.Column!.Name,
+            DataSourceNodeKind.Member => node.Member!.Name,
             _ => node.KbdataPath,
         };
 
@@ -316,7 +388,7 @@ namespace Kubuno.Desktop.DataSources
             Grid.SetColumn(block, 1);
             header.Children.Add(image);
             header.Children.Add(block);
-            if (node.IsDraggable)
+            if (node.IsDraggable && node.Table != null)
             {
                 // The WinForms drop-down arrow of the selected table / column: its drop choices.
                 var arrow = new Button

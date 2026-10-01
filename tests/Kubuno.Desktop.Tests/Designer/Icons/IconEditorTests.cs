@@ -179,7 +179,7 @@ namespace Kubuno.Desktop.Tests.Designer.Icons
             var element = new KbviewElementObject(host, "0", registry.Find("Button")!);
             var row = element.GetProperties().Find("Icon", false)!;
             Assert.AreEqual(new CategoryAttribute("Icon").Category, row.Category);
-            Assert.IsInstanceOfType<KbviewIconEditor>(row.GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
+            Assert.IsInstanceOfType<KbviewIconEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)row.GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
 
             // Each gesture is one undo unit (one batch of edits of the view's text), a file written with forward slashes.
             row.SetValue(element, "resources\\save.svg");

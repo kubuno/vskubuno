@@ -15,7 +15,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
     public static class BindingText
     {
         /// <summary>The binding modes, the default (<c>OneWay</c>, not written) first.</summary>
-        public static IReadOnlyList<string> Modes { get; } = new[] { "OneWay", "TwoWay", "OneTime" };
+        public static IReadOnlyList<string> Modes { get; } = Bindings.BindingMarkup.Modes;
 
         /// <summary><c>{Binding Path}</c>, or <c>{Binding Path, Mode=TwoWay}</c>; empty for an empty path.</summary>
         public static string Build(string? path, string? mode)
@@ -34,7 +34,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
         public static string FromTyped(string? text)
         {
             var t = (text ?? string.Empty).Trim();
-            if (t.Length == 0 || BindingExpressionParser.IsBindingExpression(t))
+            if (t.Length == 0 || Bindings.BindingMarkup.IsMarkupExtension(t))
             {
                 return t;
             }
@@ -170,12 +170,35 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
         public override PropertyDescriptorCollection GetProperties(ITypeDescriptorContext? context, object value, Attribute[]? attributes) =>
             new PropertyDescriptorCollection(
-                _row.Bindable.Select(p => (PropertyDescriptor)new KbviewBindingPartDescriptor(p)).Concat(new[] { new KbviewAdvancedBindingsDescriptor(_row.All) }).ToArray(),
+                Listed(value as KbviewBindingsValue).Select(p => (PropertyDescriptor)new KbviewBindingPartDescriptor(p)).Concat(new[] { new KbviewAdvancedBindingsDescriptor(_row.All) }).ToArray(),
                 readOnly: true);
+
+        /// <summary>The properties listed: the bindable ones (and Text, Tag), then every other property bound now - a custom control's
+        /// <c>{Binding …}</c> properties show here even when they are not declared bindable.</summary>
+        public IReadOnlyList<PropertyMeta> Listed(KbviewBindingsValue? value)
+        {
+            if (value?.Owner is not { } owner)
+            {
+                return _row.Bindable;
+            }
+
+            var bound = _row.All.Where(p => !_row.Bindable.Contains(p) && Bindings.BindingMarkup.IsMarkupExtension(owner.GetRawValue(KbviewBindingPartDescriptor.AttributeOf(p, owner))));
+            return _row.Bindable.Concat(bound).ToList();
+        }
 
         public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType) => destinationType == typeof(string);
 
-        public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType) => string.Empty;
+        /// <summary>WinForms shows nothing; here, how many properties are bound (« 3 liaisons »), the quick summary.</summary>
+        public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType)
+        {
+            if (value is not KbviewBindingsValue { Owner: { } owner })
+            {
+                return string.Empty;
+            }
+
+            var count = _row.All.Count(p => Bindings.BindingMarkup.IsMarkupExtension(owner.GetRawValue(KbviewBindingPartDescriptor.AttributeOf(p, owner))));
+            return count == 0 ? string.Empty : DesignerText.IsFrench ? (count == 1 ? "1 liaison" : count + " liaisons") : (count == 1 ? "1 binding" : count + " bindings");
+        }
     }
 
     /// <summary>One property's binding under "(DataBindings)": its <c>{Binding ...}</c>, or empty when the property has a plain value.</summary>
@@ -187,12 +210,13 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             : base(property.Name, new Attribute[]
             {
                 new DescriptionAttribute(DesignerText.BindingPartDoc(property.Name)),
-                new EditorAttribute(typeof(KbviewBindingEditor), typeof(UITypeEditor)),
                 new RefreshPropertiesAttribute(RefreshProperties.Repaint),
             })
         {
             _property = property;
         }
+
+        public override TypeConverter Converter => new Bindings.KbviewBindingDisplayConverter(new StringConverter());
 
         public override Type ComponentType => typeof(KbviewBindingsValue);
 
@@ -200,7 +224,8 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
         public override Type PropertyType => typeof(string);
 
-        public override object? GetEditor(Type editorBaseType) => editorBaseType == typeof(UITypeEditor) ? new KbviewBindingEditor() : base.GetEditor(editorBaseType);
+        /// <summary>The binding picker (docs/DESIGNER.md, "Data bindings"), like every bindable row.</summary>
+        public override object? GetEditor(Type editorBaseType) => editorBaseType == typeof(UITypeEditor) ? new Bindings.KbviewBindableEditor(null, _property.Kind) : base.GetEditor(editorBaseType);
 
         /// <summary>The attribute holding <paramref name="property"/> on <paramref name="element"/> (its canonical name or an older one in use).</summary>
         public static string AttributeOf(PropertyMeta property, KbviewElementObject element) =>
@@ -214,7 +239,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             }
 
             var raw = owner.GetRawValue(AttributeOf(_property, owner));
-            return BindingExpressionParser.IsBindingExpression(raw) ? raw! : string.Empty;
+            return Bindings.BindingMarkup.IsMarkupExtension(raw) ? raw! : string.Empty;
         }
 
         public override void SetValue(object? component, object? value)
@@ -226,10 +251,16 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
             var attribute = AttributeOf(_property, owner);
             var current = owner.GetRawValue(attribute);
+            // The picker already wrote it (« Supprimer la liaison » restores a literal value).
+            if (string.Equals(value as string, current, StringComparison.Ordinal))
+            {
+                return;
+            }
+
             var text = BindingText.FromTyped(value as string);
             if (text.Length == 0)
             {
-                if (BindingExpressionParser.IsBindingExpression(current))
+                if (Bindings.BindingMarkup.IsMarkupExtension(current))
                 {
                     owner.RemoveAttribute(attribute);
                 }
@@ -289,28 +320,17 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
         public override bool ShouldSerializeValue(object component) => false;
     }
 
-    /// <summary>A binding row's editor: the view model field (from the language server) and the mode.</summary>
-    public sealed class KbviewBindingEditor : UITypeEditor
-    {
-        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext? context) => UITypeEditorEditStyle.Modal;
-
-        public override object? EditValue(ITypeDescriptorContext? context, IServiceProvider? provider, object? value)
-        {
-            var element = RichEditors.Elements(context).FirstOrDefault();
-            var paths = (element?.Host as IKbviewDesignServices)?.GetBindingPaths() ?? Array.Empty<string>();
-            var dialog = new UI.BindingDialog(context?.PropertyDescriptor?.Name ?? string.Empty, value as string, paths);
-            ThreadHelper.ThrowIfNotOnUIThread();
-            return RichEditors.ShowDialog(provider, dialog) ? dialog.Result : value;
-        }
-    }
-
-    /// <summary>"(Advanced)"'s editor: every property of the element with its binding; OK writes the changed ones.</summary>
+    /// <summary>
+    /// "(Advanced)"'s editor (WinForms' "Formatting and Advanced Binding"): the element's properties with their bindings; the
+    /// chosen one opens « Liaison de données » (docs/DESIGNER.md, "Data bindings").
+    /// </summary>
     public sealed class KbviewAdvancedBindingsEditor : UITypeEditor
     {
         public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext? context) => UITypeEditorEditStyle.Modal;
 
         public override object? EditValue(ITypeDescriptorContext? context, IServiceProvider? provider, object? value)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var element = RichEditors.Elements(context).FirstOrDefault();
             var all = (context?.PropertyDescriptor as KbviewAdvancedBindingsDescriptor)?.All;
             if (element is null || all is null)
@@ -318,19 +338,11 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 return value;
             }
 
-            var paths = (element.Host as IKbviewDesignServices)?.GetBindingPaths() ?? Array.Empty<string>();
-            var current = all.ToDictionary(p => p.Name, p => BindingText.Parse(element.GetRawValue(KbviewBindingPartDescriptor.AttributeOf(p, element))).Path is null ? string.Empty : element.GetRawValue(KbviewBindingPartDescriptor.AttributeOf(p, element))!, StringComparer.Ordinal);
-            var dialog = new UI.AdvancedBindingsDialog(all.Select(p => p.Name).ToList(), current, paths);
-            ThreadHelper.ThrowIfNotOnUIThread();
-            if (RichEditors.ShowDialog(provider, dialog))
+            var rows = all.Select(p => (p, KbviewBindingPartDescriptor.AttributeOf(p, element))).Select(x => (x.Item2, element.GetRawValue(x.Item2))).ToList();
+            var chooser = new Bindings.BindingPropertyChooser(rows);
+            if (chooser.Ask() && chooser.Chosen is { } attribute)
             {
-                foreach (var property in all)
-                {
-                    if (dialog.Results.TryGetValue(property.Name, out var binding) && !string.Equals(binding, current[property.Name], StringComparison.Ordinal))
-                    {
-                        new KbviewBindingPartDescriptor(property).SetValue(new KbviewBindingsValue(element), binding);
-                    }
-                }
+                Bindings.BindingActions.ShowDialog(element, attribute, all.FirstOrDefault(p => p.Name == attribute || p.AttributeNames.Contains(attribute))?.Kind);
             }
 
             return value;
@@ -482,7 +494,16 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
             var kinds = tags.Select(t => (t, host.Registry.Find(t))).ToList();
             var originals = parent.Children.Where(c => tags.Contains(c.Name)).ToList();
-            var dialog = new UI.CollectionEditorDialog(rowName, kinds, originals) { IconViewFile = services.ViewFilePath, IconServices = services as Icons.IKbviewIconServices };
+            // The members' bindings resolve like a member's (a DataTable's columns name fields of its rows): the schema of the
+            // first member, else of the container.
+            var schemaId = originals.FirstOrDefault()?.Id ?? elementId;
+            var dialog = new UI.CollectionEditorDialog(rowName, kinds, originals)
+            {
+                IconViewFile = services.ViewFilePath,
+                IconServices = services as Icons.IKbviewIconServices,
+                BindingSchema = () => services.GetBindingSources(schemaId),
+                BindingPreview = services.PreviewBinding,
+            };
             ThreadHelper.ThrowIfNotOnUIThread();
             if (RichEditors.ShowDialog(provider, dialog))
             {

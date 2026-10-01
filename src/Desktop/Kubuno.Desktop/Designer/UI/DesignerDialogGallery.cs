@@ -19,6 +19,16 @@ namespace Kubuno.Desktop.Designer.UI
             new KeyValuePair<string, Func<bool?>>(
                 DesignerText.DesignSizeTitle,
                 () => DesignSizeDialog.TryAsk(800, 600, out _, out _)),
+            // docs/DESIGNER.md "Data bindings" (sample schema; no language server: no live sample).
+            new KeyValuePair<string, Func<bool?>>(
+                Bindings.BindingStrings.DialogTitle + " (DataBindingDialog)",
+                () => new Bindings.DataBindingDialog(
+                    new Bindings.BindingEditModel("Text", "{Binding Title, Mode=TwoWay, StringFormat='{0} !'}", "Stockage"),
+                    Bindings.BindingSamples.Schema(),
+                    Bindings.BindingShape.Text,
+                    "String",
+                    Array.Empty<Bindings.BindingIssue>(),
+                    preview: null).ShowModal()),
         };
     }
 }

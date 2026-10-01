@@ -45,6 +45,8 @@ namespace Kubuno.Desktop
         private object? _priorityTargetsService;
         private object? _buildManagerService;
         private uint _viewSwitchCookie;
+
+        private uint _bindingDefinitionCookie;
         private ProjectDesignSurfaceRuntimeProvider? _designSurfaceRuntimes;
 
         public override string Name => "Desktop";
@@ -98,6 +100,8 @@ namespace Kubuno.Desktop
             {
                 var viewSwitch = new Kubuno.Desktop.Designer.EditorFactory.DesignerViewSwitchCommandTarget(package);
                 ErrorHandler.ThrowOnFailure(priorityTargets.RegisterPriorityCommandTarget(0, viewSwitch, out _viewSwitchCookie));
+                // docs/DESIGNER.md "Data bindings": F12 on a bound row of the Properties window.
+                ErrorHandler.ThrowOnFailure(priorityTargets.RegisterPriorityCommandTarget(0, new Kubuno.Desktop.Designer.Bindings.BindingCommands.GoToDefinitionTarget(), out _bindingDefinitionCookie));
                 _priorityTargets = priorityTargets;
             }
 
@@ -129,6 +133,8 @@ namespace Kubuno.Desktop
                 Kubuno.Desktop.DataExplorer.ShowDataExplorerCommand.Initialize(commandService);
                 Kubuno.Desktop.Migrations.MigrationCommands.Initialize(commandService);
                 Kubuno.Desktop.DataSources.ShowDataSourcesCommand.Initialize(commandService);
+                // docs/DESIGNER.md "Data bindings": the Properties window's binding entries.
+                Kubuno.Desktop.Designer.Bindings.BindingCommands.Initialize(commandService);
             }
 
             RegisterDialogGalleryEntries();
@@ -170,6 +176,7 @@ namespace Kubuno.Desktop
             if (_priorityTargets is not null)
             {
                 _priorityTargets.UnregisterPriorityCommandTarget(_viewSwitchCookie);
+                _priorityTargets.UnregisterPriorityCommandTarget(_bindingDefinitionCookie);
                 _priorityTargets = null;
             }
         }

@@ -60,7 +60,7 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
         /// <summary>The text written for <paramref name="text"/> typed in the row (empty = remove the attribute); throws <see cref="ArgumentException"/> when invalid.</summary>
         public static string Normalize(PropertyMeta? meta, PropKind kind, string text)
         {
-            if (BindingExpressionParser.IsBindingExpression(text))
+            if (Bindings.BindingMarkup.IsMarkupExtension(text))
             {
                 return text;
             }

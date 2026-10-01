@@ -8,6 +8,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Data bindings are first-class in the designer** (`docs/DESIGNER.md` §18): every bindable row of the Properties
+  window now has a drop-down arrow in its value cell (categorised and alphabetical views alike) that opens a
+  **binding picker** — the template's row, the view's data context (its `#[bind]` fields, a user control's
+  properties, a hand-written `impl ViewModel`'s paths, with their Rust types), the data sources and their columns,
+  the `.kbres` resources and the named data components, fitting members first, the others greyed — with the
+  property's own values and editor one click away. A bound value shows a binding marker (amber with « ! » when the
+  language server reports a problem), its design-time value and a short note of its problem
+  (`{Binding Title} · Stockage · ⚠ chemin inconnu`); typing `{Binding …}` keeps working, with a check of the
+  expression.
+- **« Liaison de données » dialog** (WinForms' « Formatting and Advanced Binding », WPF's « Create Data Binding »):
+  source and path, mode and update trigger, converter and its parameter, format and culture, value when null,
+  fallback value, design-time value (`d:`), a live sample computed by the runtime's own formats and converters, and
+  the resulting expression; « Supprimer la liaison (rétablir la valeur) » keeps the value the designer showed. Every
+  change is written in place (unknown keys, the order and the aliases of the expression kept) as one undo unit.
+- **Binding commands**: « Créer une liaison… », « Modifier la liaison… », « Supprimer la liaison (rétablir la valeur) »
+  and « Aller à la définition » on a bindable row, as links of the picker (Visual Studio's Properties window does not show
+  extension commands in its own context menu); F12 in the Properties window on a bound row opens the Rust member.
+- **« (DataBindings) » lists every bound property** of the element (a custom control's too) with the picker, and
+  shows how many are bound; « (Avancé) » opens « Liaison de données » for any property.
+- **The collection editor binds members' properties** too (« ▾ » for the picker, « … » for the dialog).
+- **Bindings in the XML editor**: completion of keys, paths (dotted paths and `Source=` members), sources, modes,
+  update triggers and converters; hover with the member's type; F12 to the `#[bind]` field, the property, the arm of
+  `fn get`, the row's field or the converter; warnings for an unknown key, mode, trigger, converter or path, a member
+  whose type does not fit the property (with the converter that would), and a two-way binding of a read-only member;
+  after a member was renamed in Rust, the unknown path suggests the new name with the quick fix « Mettre à jour les
+  liaisons ».
+- **Data Sources window**: a « Modèle de vue » node lists the active view's data context; dragging a member onto a
+  control binds the control's default binding property (`Text`, `Checked`, `Value`, `ItemsSource`…), onto empty
+  space it adds a label and a bound control. A column dropped onto a control of a view that already has its table's
+  binding source binds it too.
+
 - **User controls are `.kbcontrol` files, with their own icon** (`docs/VIEWS-SPEC.md` §1.1, `docs/DESIGNER.md` §11):
   a user control's view (root `<UserControl>`) now uses the `.kbcontrol` extension, while forms, windows, dialogs,
   tool windows, MDI windows, splash screens and flyouts keep `.kbview`. Same format, same designer, same language

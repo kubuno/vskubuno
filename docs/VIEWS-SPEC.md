@@ -213,19 +213,42 @@ view, or `{Res key}`. Any bindable value MAY be `{Binding …}` or `{Res …}` (
 ### 6.1 `{Binding}` — the desktop grammar (`kubuno-views` `binding.rs`), on both targets
 
 ```
-{Binding Path[, Mode=OneWay|TwoWay][, Source=name][, FormatString=fmt][, NullValue=text][, Culture=ci]}
+{Binding Path[, Mode=OneWay|TwoWay|OneTime|OneWayToSource][, UpdateSourceTrigger=PropertyChanged|LostFocus|Explicit]
+         [, Source=name][, Converter=Name][, ConverterParameter=text][, FallbackValue=text]
+         [, StringFormat=fmt][, TargetNullValue=text][, ConverterCulture=ci]}
 ```
 
 - `Path`: dotted member path (`prefs.font`, `locations.data.locations`); first unnamed part, or `Path=`.
-- `Mode`: `OneWay` (default) or `TwoWay`. Two-way writes back on the property's **change event**, named by the
+- `Mode`: `OneWay` (default), `TwoWay` (also writes the user's changes back), `OneTime` (reads the source once — per
+  item of a `Repeater` — and keeps that value), `OneWayToSource` (only writes; the property keeps showing what was
+  entered, its `FallbackValue` before that). A write-back happens on the property's **change event**, named by the
   registry (web: `prop_map[P].change`, e.g. `Checked` ↔ `OnCheckedChanged`).
+- `UpdateSourceTrigger`: when a write-back reaches the source — `PropertyChanged` (default; `Default` is accepted),
+  `LostFocus` (when the focus leaves the element, or the window), `Explicit` (when the code asks:
+  `kubuno_views::binding::update_sources(vm, path)` on the desktop). The property shows the pending value meanwhile.
+  Inside an item template a write is always immediate (the row only exists while the item is built).
 - `Source=name`: a named data component (`<Query x:Name>` on the web, `BindingSource` on the desktop); `Source=a,
   Path=b` ≡ path `a.b`.
-- Formatting: `FormatString` (alias `StringFormat`: .NET-style `N2`, `C`, `d`, `dd/MM/yyyy`, `#,##0.00`),
-  `NullValue` (alias `TargetNullValue`), `Culture` (aliases `ConverterCulture`, `FormatInfo`). Values with commas are
-  quoted `'…'` (`''` = one quote).
-- **Not in version 1**: `FallbackValue`, `Converter`, `ElementName`, `RelativeSource`, expressions. Logic lives in
-  code-behind getters (`Enabled="{Binding canSave}"`).
+- `Converter=Name` (+ `ConverterParameter`): applied to the source value before the format, and backwards on a
+  write-back (a converter that does not convert back drops the write). Built-in on both targets: `Not`, `IsEmpty`,
+  `IsNotEmpty`, `ToUpper`, `ToLower`, `Trim`, `Equals` / `NotEquals` (compare with the parameter; `Equals` writes the
+  parameter back when it becomes true: a radio button per choice), `BoolToText` (parameter `'yes|no'`), `Count`
+  (rows of a list, characters of a text). Application converters: desktop `#[kubuno_views::value_converter]` on an
+  `impl ValueConverter for T` (`T: Default`), or `binding::register_converter(name, value)`; a project converter may
+  replace a built-in one. An unknown converter shows the value unconverted.
+- `FallbackValue`: what the property shows while the path does not resolve (an unset key, a value of the wrong
+  shape, a converter that declines); without it, the property's default.
+- Formatting: `StringFormat` (alias `FormatString`: .NET-style `N2`, `C`, `d`, `dd/MM/yyyy`, `#,##0.00`),
+  `TargetNullValue` (alias `NullValue`), `ConverterCulture` (aliases `Culture`, `FormatInfo`). Values with commas,
+  quotes, braces or `=` are quoted `'…'` (`''` = one quote).
+- Unknown keys and unknown `Mode` / `UpdateSourceTrigger` values are ignored by the runtime and reported by the
+  language server as warnings (with « did you mean » for a key in the wrong case); so are an unknown converter, an
+  unknown path (when the data context lists every path it answers), a member whose shape does not fit the property,
+  and a two-way binding of a read-only member.
+- **Not in this version**: `ElementName`, `RelativeSource`, expressions. Logic lives in code-behind getters
+  (`Enabled="{Binding canSave}"`) and converters.
+- Design time: `d:Property="value"` (any property) replaces the property's value in the designer only — the sample a
+  bound property shows while the view model is not running.
 - Resolution order: the view instance (fields, `@bind` accessors / `#[bind]` fields, getters), then its
   `dataContext` / `#[data_context]`; inside a `Repeater` item: the row, then the user control, then the page.
 - A value that starts with `{` and ends with `}` is a markup extension; v1 has no escape for a literal in braces.

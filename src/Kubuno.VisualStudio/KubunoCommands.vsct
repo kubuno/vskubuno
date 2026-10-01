@@ -457,6 +457,10 @@
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddListGroup" priority="0x0100">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddMenu" />
       </Group>
+      <!-- docs/DESIGNER.md "Data bindings": the binding entries of the Properties window's context menu. -->
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoPropertiesBindingGroup" priority="0x0050">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROPBRS" />
+      </Group>
     </Groups>
 
     <Buttons>
@@ -1405,11 +1409,75 @@
           <ButtonText>Choose Icon...</ButtonText>
         </Strings>
       </Button>
+      <!--
+        docs/DESIGNER.md "Data bindings": the Properties window's context menu on a bindable row of a .kbview element
+        (each visible only where it applies; texts set at run time, French/English).
+      -->
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidBindingCreate" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoPropertiesBindingGroup" />
+        <Icon guid="ImageCatalogGuid" id="Link" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Create Data Binding...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidBindingEdit" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoPropertiesBindingGroup" />
+        <Icon guid="ImageCatalogGuid" id="Link" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Edit Data Binding...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidBindingRemove" priority="0x0102" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoPropertiesBindingGroup" />
+        <Icon guid="ImageCatalogGuid" id="Unlink" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Remove Binding (restore the value)</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidBindingGoToDefinition" priority="0x0103" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoPropertiesBindingGroup" />
+        <Icon guid="ImageCatalogGuid" id="GoToDefinition" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Go To Definition</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
 
   <!-- VS's own standard commands, placed in the .kbview design surface's context menus. -->
   <CommandPlacements>
+    <!--
+      docs/DESIGNER.md "Data bindings": the binding entries also in the Properties window's own group (Reset, Commands,
+      Description), where its context menu shows them.
+    -->
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidBindingCreate" priority="0x0010">
+      <Parent guid="guidSHLMainMenu" id="IDG_VS_PROPBRS_MISC" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidBindingEdit" priority="0x0011">
+      <Parent guid="guidSHLMainMenu" id="IDG_VS_PROPBRS_MISC" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidBindingRemove" priority="0x0012">
+      <Parent guid="guidSHLMainMenu" id="IDG_VS_PROPBRS_MISC" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidBindingGoToDefinition" priority="0x0013">
+      <Parent guid="guidSHLMainMenu" id="IDG_VS_PROPBRS_MISC" />
+    </CommandPlacement>
     <!--
       The Dependencies menus reuse Solution Explorer's own "Scope to This" / "New Solution Explorer
       View" (StandardCommandSet11, answered by Solution Explorer for the selected node) and the
@@ -1811,6 +1879,12 @@
       <IDSymbol name="KubunoDataSourcesModeGroup" value="0x10A3" />
       <IDSymbol name="KubunoDataSourcesControlGroup" value="0x10A4" />
       <IDSymbol name="KubunoDataSourcesActionGroup" value="0x10A5" />
+      <!-- docs/DESIGNER.md "Data bindings": the Properties window's context menu (Kubuno.Desktop PackageIds.Binding*). -->
+      <IDSymbol name="cmdidBindingCreate" value="0x0360" />
+      <IDSymbol name="cmdidBindingEdit" value="0x0361" />
+      <IDSymbol name="cmdidBindingRemove" value="0x0362" />
+      <IDSymbol name="cmdidBindingGoToDefinition" value="0x0363" />
+      <IDSymbol name="KubunoPropertiesBindingGroup" value="0x10E8" />
 
       <!-- .kbview design surface context menus - MUST match Kubuno.Desktop.Designer's DesignerCommandIds. -->
       <IDSymbol name="KubunoDesignerElementContextMenu" value="0x1030" />

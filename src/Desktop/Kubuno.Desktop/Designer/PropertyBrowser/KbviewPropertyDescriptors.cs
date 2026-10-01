@@ -33,18 +33,36 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
         {
             Meta = meta;
             _aliases = meta?.Aliases ?? (IReadOnlyList<string>)Array.Empty<string>();
-            _editor = editor ?? RichEditors.EditorFor(meta);
             _readOnly = readOnly;
             AttributeName = attributeName;
             Kind = kind;
             _default = defaultValue;
-            _converter = RichEditors.ConverterFor(meta) ?? kind?.Tag switch
+            var converter = RichEditors.ConverterFor(meta) ?? kind?.Tag switch
             {
                 PropKindTag.Bool => new AttributeValuesConverter(new[] { "true", "false" }),
                 PropKindTag.Enum => new AttributeValuesConverter(kind.EnumVariants),
                 _ => new StringConverter(),
             };
+            // Every bindable row: the binding picker in its value cell, the binding marker, the design-time value
+            // (docs/DESIGNER.md, "Data bindings"); its own editor stays one click away (« Modifier la valeur… »).
+            IsBindable = Bindable(attributeName, kind, meta, editor, readOnly);
+            var own = editor ?? RichEditors.EditorFor(meta);
+            _editor = IsBindable ? new Bindings.KbviewBindableEditor(own, kind) : own;
+            _converter = IsBindable ? new Bindings.KbviewBindingDisplayConverter(converter) : converter;
         }
+
+        /// <summary>Whether the row takes a binding (the picker and the marker): every property but the name, the design-time
+        /// attributes, the Dock/Anchor pickers, references to other elements and greyed rows.</summary>
+        public bool IsBindable { get; }
+
+        private static bool Bindable(string attributeName, PropKind? kind, PropertyMeta? meta, System.Drawing.Design.UITypeEditor? explicitEditor, bool readOnly) =>
+            kind is not null
+            && !readOnly
+            && explicitEditor is null
+            && !attributeName.StartsWith("x:", StringComparison.Ordinal)
+            && !attributeName.StartsWith("d:", StringComparison.Ordinal)
+            && !(meta is null && attributeName.StartsWith("Design", StringComparison.Ordinal))
+            && !(meta?.Editor is { } e && (e.StartsWith("reference:", StringComparison.Ordinal) || e.StartsWith("class:", StringComparison.Ordinal)));
 
         /// <summary>The registry property the row shows, when it shows one.</summary>
         public PropertyMeta? Meta { get; }
@@ -107,6 +125,13 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
                 }
 
                 return;
+            }
+
+            // A typed expression must be one the runtime reads (`{Binding X` without its brace is not written as text).
+            var typed = text.Trim();
+            if (IsBindable && typed.StartsWith("{", StringComparison.Ordinal) && !Bindings.BindingMarkup.IsMarkupExtension(typed))
+            {
+                throw new ArgumentException(Bindings.BindingStrings.Malformed(typed));
             }
 
             var normalized = Kind is null ? AttributeValueRules.NormalizeName(text)

@@ -53,6 +53,13 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             return true;
         }
 
+        /// <summary>What the view's bindings can name (the Data Sources window's view-model node).</summary>
+        Bindings.BindingSourceSchema IExternalDropTarget.BindingSources()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return GetBindingSources(string.Empty);
+        }
+
         /// <summary>A keyboard / double-click insertion from outside: at a free place of the root.</summary>
         void IExternalDropTarget.InsertExternal(IExternalDropSource source)
         {
@@ -75,7 +82,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             string? error;
             try
             {
-                plan = source.Plan(new ExternalDropRequest(path, GetCurrentText(), parentId, index, x, y), out error);
+                plan = source.Plan(new ExternalDropRequest(path, GetCurrentText(), parentId, index, x, y) { Registry = Registry }, out error);
             }
             catch (Exception ex)
             {
@@ -83,7 +90,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 return;
             }
 
-            if (plan is null || plan.Insertions.Count == 0)
+            if (plan is null || (plan.Insertions.Count == 0 && plan.AttributeEdits.Count == 0))
             {
                 if (!string.IsNullOrEmpty(error))
                 {
@@ -93,7 +100,10 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 return;
             }
 
-            var ops = plan.Insertions.Select(i => (object)new { kind = "insertFragment", parentId = i.ParentId, index = i.Index, xml = i.Xml }).ToList();
+            // The attributes first (a drop onto a control binds it), then the insertions: one request, one undo unit.
+            var ops = plan.AttributeEdits.Select(e => (object)new { kind = "setAttribute", elementId = e.ElementId, name = e.Name, value = e.Value })
+                .Concat(plan.Insertions.Select(i => (object)new { kind = "insertFragment", parentId = i.ParentId, index = i.Index, xml = i.Xml }))
+                .ToList();
             if (await ApplyEncodedOpsAsync(ops, plan.Description) && plan.SelectElementId is { } select)
             {
                 await SelectInsertedAsync(select);

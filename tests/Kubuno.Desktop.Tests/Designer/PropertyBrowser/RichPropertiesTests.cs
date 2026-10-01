@@ -211,10 +211,10 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
         public void Editors_FollowTheRegistry()
         {
             var (button, _) = Create("0", "Button");
-            Assert.IsInstanceOfType<KbviewColorEditor>(Row(button, "BackColor").GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
-            Assert.IsInstanceOfType<KbviewFontEditor>(Row(button, "Font").GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
-            Assert.IsInstanceOfType<KbviewImageEditor>(Row(button, "BackgroundImage").GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
-            Assert.IsInstanceOfType<KbviewCursorEditor>(Row(button, "Cursor").GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
+            Assert.IsInstanceOfType<KbviewColorEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)Row(button, "BackColor").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
+            Assert.IsInstanceOfType<KbviewFontEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)Row(button, "Font").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
+            Assert.IsInstanceOfType<KbviewImageEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)Row(button, "BackgroundImage").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
+            Assert.IsInstanceOfType<KbviewCursorEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)Row(button, "Cursor").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
             Assert.IsTrue(new KbviewColorEditor().GetPaintValueSupported(null));
             Assert.AreEqual(FontText.AmbientDefault, Row(button, "Font").GetValue(button), "the ambient font, greyed");
             Assert.IsFalse(Row(button, "Font").ShouldSerializeValue(button));
@@ -266,7 +266,7 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
             text.SetValue(value, "Status");
             parts.Single(p => p.Name == "Enabled").SetValue(value, "{Binding CanSave, Mode=TwoWay}");
             CollectionAssert.AreEqual(new[] { "set 0 Text={Binding Status}", "set 0 Enabled={Binding CanSave, Mode=TwoWay}" }, host.Calls);
-            Assert.IsInstanceOfType<KbviewBindingEditor>(text.GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
+            Assert.IsInstanceOfType<Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor>(text.GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
         }
 
         [TestMethod]

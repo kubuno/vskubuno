@@ -1969,3 +1969,133 @@ registry knows but the preview's runtime does not. A click on a warning marker s
   gets « vouliez-vous écrire `X` ? »; a XAML-style `Binding="Name"` suggests `Text="{Binding …}"`. The language
   server offers the matching quick fixes.
 - The Design / XML / Split buttons use Visual Studio's command-bar colours (rest, hover, selected).
+
+## 18. Data bindings (as built 2026-10-01)
+
+A `{Binding …}` is edited, checked and navigated like in Windows Forms and WPF, from the Properties window, the
+« Liaison de données » dialog, the XML editor and the Data Sources window. The language server knows what a binding can
+name; the C# side only presents it.
+
+### What a binding can name: the source schema (`kubuno-views-ls`, `binding_sources.rs`)
+
+`kubuno/bindingSources { uri, elementId, openFiles }` → `{ schema, issues }`, read from the view and its Rust
+code-behind with a scanner (no build; unsaved editors win through `openFiles`):
+
+| Level | Where it comes from | Members |
+|---|---|---|
+| `context` (the view's data context) | the code-behind is the sibling `.rs` that names the view (`#[kubuno::view("x.kbview")]`, `#[user_control(view = "x.kbcontrol")]`), else the one named like the view | a form class's `#[bind]` fields (PascalCase, or `#[bind("Path")]`) and its `#[data_context]` type's `impl ViewModel` arms (anywhere in the package); a user control's `#[property]` fields (bindable ones first); a hand-written `impl ViewModel`'s `fn get` arms, with the shape of the `Value::…` each arm builds |
+| `item` (the row of a template) | the element whose `ItemsSource` holds the element (a `Repeater`'s item, a `DataTable`'s `Column`) | the keys of its `d:ItemsSource` sample file, the columns of a binding source it names, the code-behind's `Row::new().with("Key", Value::…)` chain that best matches what the template binds |
+| `components` | the view's named `BindingSource` (columns from its `TableAdapter`'s `SelectCommand`, plus `Position`, `Count`, `PositionText`, `HasChanges`, `IsEditing`, `CanMovePrevious`, `CanMoveNext`), `ErrorProvider` (`HasErrors`, `Summary`), `DbConnection` (`State`) | written `{Binding Source=name, Path=member}` |
+| `resources` | the package's `.kbres` keys | written `{Res key}` |
+| `converters` | `kubuno_views::binding::BUILTIN_CONVERTERS` and the package's `#[value_converter]` / `register_converter("…")` | |
+
+Each member carries its name, path, the expression that binds it, its Rust type, its shape (`Bool`, `Number`, `Text`,
+`List`, `Object`, `Any`), whether it can be written (a two-way binding of `Count` writes nothing), its documentation
+and its location (F12). A level is **open** when it may answer paths the scan cannot list (a `_ =>` arm that
+delegates, a data context type outside the package): unknown paths are then not reported. Resolution follows the
+runtime: the row first, then the components, then the context; a path below a list or an object (`prefs.font`) is not
+checked.
+
+### Diagnostics, completion, hover, F12, rename (`binding_lsp.rs`)
+
+- Warnings (source `kubuno-bindings`): an unknown key (« did you mean `Mode` ») or `Mode` / `UpdateSourceTrigger`
+  value (`kubuno_views::binding::parse_binding_report`), an unknown converter, an unknown path or data component, a
+  member whose shape does not fit the property (`Items` in a `Text`: « Converter=Count gives its size »; text into a
+  boolean or a number is information only: it shows when it parses), a two-way binding of a read-only member.
+- **Rename**: after a member was renamed in Rust (rust-analyzer's F2 renames the field, not the XML), the unknown path
+  names the probable new member (an unbound member with the same normalised name, one containing the other, a long
+  common start, or a small edit distance); the diagnostic carries `{ oldPath, newPath }` and the quick fix
+  « Mettre à jour les liaisons : `Statut` → `StatusText` » rewrites every binding of the old path in the view. The
+  diagnostics are republished when a `.rs` of the view's folder changes.
+- Completion inside `{Binding …}`: the keys after a comma; the members (the row's, the context's, the components) with
+  their type, fitting ones first; a component's members after `Source=x, Path=` or after `x.`; the modes, the triggers
+  and the converters (project ones marked).
+- Hover on a path: the member's type, `read-only`, its documentation. F12 on a path, `Source=` or `Converter=`: the
+  Rust field / property / arm, the sample file's or the row chain's key, the component's `x:Name`, the converter.
+- `kubuno/bindingPreview { expression, value, shape, want }` → `{ text, note }`: a sample value through the binding's
+  converter and format, computed by `kubuno_views` itself (a project converter is not linked in the server: the note says
+  the sample is unconverted). `kubuno/bindingDefinition { uri, elementId, attribute }`: F12 from the Properties window.
+
+### Properties window (`Designer/Bindings`)
+
+- Every **bindable row** (every attribute row but `x:Name`, the `d:` and design-time attributes, Dock/Anchor, references
+  to other elements and greyed rows) gets `KbviewBindableEditor`: a **drop-down arrow** in the value cell (in the
+  categorised and the alphabetical views, and under « (DataBindings) ») that opens `BindingPickerControl` (Windows Forms:
+  the grid's drop-down holder keeps only Windows Forms content open under the mouse; the collection editor uses its WPF
+  twin `BindingPickerView`): the row's problems on top, the property's own values (true/false, an enumeration's variants), a search
+  box, the tree of the schema (`BindingPickerModel`: fitting members first, text that converts next, the others greyed
+  with the reason in their tooltip, the current binding in bold), and the links « Avancé… » (the dialog), « Modifier la
+  valeur… » (the row's own editor: colour, font, image, icon…), « Supprimer la liaison » and « Aller à la définition ». A pick retargets the current
+  binding and keeps its options (`BindingMarkup.Retarget`); a resource writes `{Res key}`.
+- A bound value **paints a marker** in the value box (a gold chain; a teal « R » for `{Res}`; amber « ! » when the server
+  reports a problem), and its text shows the expression, the design-time value and the problem in short:
+  `{Binding Statut}  ·  Prêt  ·  ⚠ chemin inconnu` (`KbviewBindingDisplayConverter`; what is typed back is read up to the
+  brace). The row's own editor still paints a literal value (a colour swatch).
+- Typing: a value starting with `{` must be a `{Binding …}` or `{Res …}` the runtime reads, else the grid shows the error.
+  Completion is the drop-down's search box and the XML editor's: an auto-complete list on the grid's own edit box was tried
+  and brought Visual Studio down (a handle re-created under another DPI context), so the grid's controls are left alone.
+- **Commands** of a bindable row (`BindingCommands`): « Créer une liaison… » (unbound), « Modifier la liaison… »,
+  « Supprimer la liaison (rétablir la valeur) », « Aller à la définition » (bound) — also the picker's links. They are placed in
+  `IDM_VS_CTXT_PROPBRS` / `IDG_VS_PROPBRS_MISC`, but Visual Studio 18's Properties window builds its own context menu
+  (Réinitialiser, Commandes, Description) and does not show extension commands there (checked live): they are reached from
+  the picker, `Tools > Customize` or a key binding. F12 while the focus is in the grid on a bound row goes to the
+  definition (a priority command target on `GotoDefn`, checked live).
+- « (DataBindings) » lists the bindable properties, `Text`, `Tag` and every other property bound now (a custom control's
+  `{Binding …}` properties), and shows how many are bound; « (Avancé) » chooses a property and opens the dialog.
+- The schema and the problems come from `kubuno/bindingSources`, cached per buffer version and element
+  (`DesignSurfaceEditingCoordinator.Bindings.cs`).
+
+### « Liaison de données » (`DataBindingDialog`, `BindingEditModel`)
+
+The source picker on the left; on the right the path and the source component, the mode and the update trigger (each
+with a line of help), the converter (built-in and project ones, editable) and its parameter, the format (presets,
+editable), the culture, the value when null, the fallback value, the design-time value (`d:Property`), a sample source
+value with what the property shows (live, `kubuno/bindingPreview`), and the resulting expression. OK writes only what
+changed — the expression is edited part by part (`BindingMarkup`: unknown keys, the order of the parts and the alias in
+use are kept; the default mode or trigger is written only if it already was) — then the `d:` attribute, in one
+dispatcher turn: **one undo unit** (`PropertyEditBatcher`). « Supprimer la liaison (rétablir la valeur) » removes the
+binding and keeps the value the designer showed: the design-time value becomes the property's value (its `d:` goes),
+else the attribute goes. The dialog is in the dialog gallery (sample schema).
+
+### Collection editor
+
+Each member property has « ▾ » (the picker, in a popup under the row) and « … » (the dialog); their edits go into the
+member's values (the binding and its `d:`), applied with the rest at OK.
+
+### Data Sources window (docs/DATA.md §21)
+
+A « Modèle de vue — Type » node lists the active view's data context; a member dragged onto a control binds it, onto
+empty space it adds a label and a bound control (`BindingDropPlanner`).
+
+### Limits
+
+- `ElementName` / `RelativeSource` are not in the runtime (VIEWS-SPEC §6.1): named visual elements are not offered.
+- The scan reads the code-behind's text: a data context computed elsewhere, a `#[data_context]` type of another crate, or
+  rows built by a helper of another file make the level open (no unknown-path warnings) rather than wrong.
+- Renaming a member is flagged and fixed by the quick fix; the rename itself is not driven from rust-analyzer.
+
+### Tests
+
+Rust: `kubuno-views` `binding::tests` (grammar, report, converters, fallback, modes, triggers), `kubuno-views-ls`
+`binding_sources::tests` and `binding_lsp::tests` (a package on disk: schema, diagnostics, quick fix, completion,
+definition, hover, preview). C#: `Designer/Bindings/BindingModelTests` (markup, picker, dialog edits and their undo
+unit, rows, « (DataBindings) », drops, the server's answer) and `BindingLanguageServerTests` (a pick and the dialog's
+design value through the real `kubuno/applyEdit`, comment and layout kept; the schema, the preview, F12).
+
+### Live verification (hive `KubunoBind`, 2026-10-02)
+
+On a copy of the desktop shell's views (`admin_storage.kbview`, `admin_users.kbview`; the shell's sources untouched), dark
+then light theme: the bound properties of a `StorageBlock` in the `Repeater`'s template show the marker (the user
+control's `Accounts`, `Allocated`… too, in the categorised and the alphabetical views); a click on a value cell shows the
+drop-down arrow, which opens the picker with the row's fields (from the `d:ItemsSource` sample and the code-behind's
+row chain), the `StorageSection` properties and the resources; a click on a member rebinds the property (its options
+kept); « Avancé… » opens « Liaison de données », whose OK wrote the binding and its `d:` value in place and one
+`Edit.Undo` removed both; « Supprimer la liaison » removed it; a typed `{Binding Statut}` got the amber marker,
+« ⚠ chemin inconnu » and the Error List warning; F12 in the grid and « Aller à la définition » opened the row chain's
+`.with("Title", …)` in the code-behind; the live sample showed the runtime's `N0`/`fr-FR` format and the `Not`
+converter; the Data Sources window listed « Modèle de vue — StorageSection » and inserted a bound `TextField`; a member
+dropped on a control bound it; the collection editor's « ▾ » offered the `DataTable` row's fields and a click set the
+column's `Binding`. Found and fixed during the check: the first picker (WPF in an `ElementHost`) closed on a mouse click
+(now Windows Forms), an auto-complete list on the grid's edit box brought Visual Studio down (removed), the binding
+commands are not shown by the Properties window's own context menu (links of the picker instead), the collection
+editor showed the buttons only from the second member (the first is now refreshed — fixed after the check).

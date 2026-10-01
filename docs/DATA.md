@@ -914,3 +914,32 @@ failed/missing migrations, connection error —, the request shapes incl. `targe
 one reverted → "1 pending", Update SQLx Cache with `data_source!` → 5 files and "up to date", a new migration → "stale",
 an unknown connection → "Status unavailable…", the Data Explorer copy through the picker, the build warning in the
 Error List and the info bar.
+
+## 21. Data bindings in the designer and the Data Sources window (as built 2026-10-01)
+
+The binding UI of the designer (`docs/DESIGNER.md` §18) knows the data components of a view: the binding picker, the
+« Liaison de données » dialog and the XML completion offer each named `BindingSource` with its columns (read from its
+`TableAdapter`'s `SelectCommand`) and its navigation members (`Position` — two-way —, `Count`, `PositionText`,
+`HasChanges`, `IsEditing`, `CanMovePrevious`, `CanMoveNext`), an `ErrorProvider`'s `HasErrors` / `Summary` and a
+`DbConnection`'s `State`, written `{Binding Source=customers, Path=Name}`. An unknown component or column is a warning
+(a source whose `SelectCommand` is `*` is not checked), a two-way binding of a read-only member too. A `DataTable`'s or a
+`Repeater`'s template bound to a binding source (`ItemsSource="{Binding Source=customers}"`) completes and checks the
+columns as the row's fields.
+
+**Data Sources window.**
+- A « Modèle de vue — `Type` » node, above the project's sources, lists the members of the active view's data context
+  (the view-model members of `docs/DESIGNER.md` §18: `#[bind]` fields, a user control's properties, the paths of an
+  `impl ViewModel`), with an icon of their shape and their Rust type in the tooltip; it follows the active designer.
+- Like Windows Forms, a member **dropped onto a control binds it**: the control's default binding property —
+  `Checked` of a check box, `On` of a switch, `Value` of a numeric field / slider / progress bar, `Date` of a date picker,
+  `SelectedValue` of a combo box / drop-down / radio button, `SelectedIndex` of a list box, `Image`, `Color`, else `Text`
+  (`ItemsSource` for a list member) —, two-way when the member is writable and the property writes back. Dropped onto empty
+  space it adds a label and a bound control of its shape (`TextField` for writable text, `Label` for read-only text,
+  `CheckBox`, `NumericField`, `ListBox` for a list), below what they would cover, with a unique snake_case `x:Name`.
+- A **column dropped onto a control** of a view that already has the table's `BindingSource` binds that control to
+  `{Binding Source=<binding source>, Path=<column>, Mode=TwoWay}` instead of adding a detail row. (Without the binding
+  source yet, the drop still adds the components and the detail row: the first drop of a table creates them.)
+- Every drop is one request, one undo unit (`ExternalDropResult.AttributeEdits` are applied with the insertions).
+
+The hit test of a drop reads the positioned children of the drop container (`X`, `Y`, `Width`, `Height`); a docked or
+flowed control is not a drop target.

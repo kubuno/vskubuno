@@ -84,5 +84,11 @@ namespace Kubuno.Desktop
         public const int DataSourcesControlTextFieldCommand = 0x0348;
         public const int KubunoDataSourcesToolbar = 0x10A0;
         public const int KubunoDataSourcesContextMenu = 0x10A2;
+
+        // docs/DESIGNER.md "Data bindings": the Properties window context menu of a bindable row (Designer/Bindings/BindingCommands.cs).
+        public const int BindingCreateCommand = 0x0360;
+        public const int BindingEditCommand = 0x0361;
+        public const int BindingRemoveCommand = 0x0362;
+        public const int BindingGoToDefinitionCommand = 0x0363;
     }
 }

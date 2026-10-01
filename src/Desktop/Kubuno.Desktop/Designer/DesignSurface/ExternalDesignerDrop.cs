@@ -34,6 +34,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         public double? X { get; }
 
         public double? Y { get; }
+
+        /// <summary>The designer's component registry (which property of a control a dropped member binds), when known.</summary>
+        public Registry.ComponentRegistry? Registry { get; set; }
     }
 
     /// <summary>One <c>insertFragment</c> an external drop applies.</summary>
@@ -64,6 +67,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         }
 
         public IReadOnlyList<ExternalDropInsertion> Insertions { get; }
+
+        /// <summary>Attributes the drop sets on existing elements (a member dropped onto a control binds it, docs/DESIGNER.md "Data bindings").</summary>
+        public IReadOnlyList<(string ElementId, string Name, string Value)> AttributeEdits { get; set; } = Array.Empty<(string, string, string)>();
 
         public string Description { get; }
 
@@ -157,6 +163,21 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             }
         }
 
+        /// <summary>What the bindings of the designer of <paramref name="documentPath"/> can name (null: no open designer for it).</summary>
+        public static Bindings.BindingSourceSchema? BindingSourcesOf(string documentPath)
+        {
+            Prune();
+            foreach (var reference in Targets)
+            {
+                if (reference.TryGetTarget(out var target) && string.Equals(target.DocumentPath, documentPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    return target.BindingSources();
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Inserts <paramref name="source"/> into the designer of <paramref name="documentPath"/> (at a free place: a keyboard / double-click
         /// insertion). False when that document has no open designer.
@@ -197,5 +218,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         string? DocumentPath { get; }
 
         void InsertExternal(IExternalDropSource source);
+
+        /// <summary>What the view's bindings can name (docs/DESIGNER.md "Data bindings"): the Data Sources window lists its view-model members.</summary>
+        Bindings.BindingSourceSchema BindingSources();
     }
 }

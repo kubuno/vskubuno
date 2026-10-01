@@ -345,108 +345,6 @@ namespace Kubuno.Desktop.Designer.UI
         }
     }
 
-    /// <summary>"(Advanced)" binding: every property with its binding; selecting one edits it on the right.</summary>
-    internal sealed class AdvancedBindingsDialog : ThemedEditorDialog
-    {
-        private readonly Dictionary<string, string> _results;
-        private readonly Dictionary<string, TextBlock> _rows = new Dictionary<string, TextBlock>(StringComparer.Ordinal);
-        private readonly ListView _properties;
-        private readonly ComboBox _path;
-        private readonly ComboBox _mode;
-        private bool _loading;
-
-        public AdvancedBindingsDialog(IReadOnlyList<string> properties, IReadOnlyDictionary<string, string> current, IReadOnlyList<string> paths)
-            : base(DesignerText.BindingsAdvancedTitle, 620, 420)
-        {
-            _results = properties.ToDictionary(p => p, p => current.TryGetValue(p, out var b) ? b : string.Empty, StringComparer.Ordinal);
-            _properties = MakeList();
-            _properties.Width = 240;
-            _properties.Margin = new Thickness(0, 0, 12, 0);
-            foreach (var name in properties)
-            {
-                var row = new TextBlock { Tag = name };
-                _rows[name] = row;
-                Refresh(name);
-                _properties.Items.Add(row);
-            }
-
-            _path = MakeComboBox(editable: true);
-            _path.Items.Add(DesignerText.BindingNone);
-            foreach (var p in paths)
-            {
-                _path.Items.Add(p);
-            }
-
-            _mode = MakeComboBox(editable: false);
-            foreach (var m in BindingText.Modes)
-            {
-                _mode.Items.Add(m);
-            }
-
-            var right = new Grid { VerticalAlignment = VerticalAlignment.Top };
-            right.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            right.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            BindingDialog.AddRow(right, 0, MakeLabel(DesignerText.BindingPath, _path), _path);
-            BindingDialog.AddRow(right, 1, MakeLabel(DesignerText.BindingMode, _mode), _mode);
-
-            _properties.SelectionChanged += (_, _) => ShowSelected();
-            _path.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler((_, _) => Store()));
-            _path.SelectionChanged += (_, _) => Store(_path.SelectedItem as string);
-            _mode.SelectionChanged += (_, _) => Store();
-
-            var body = new DockPanel();
-            DockPanel.SetDock(_properties, Dock.Left);
-            body.Children.Add(_properties);
-            body.Children.Add(right);
-            SetBody(body);
-            if (_properties.Items.Count > 0)
-            {
-                _properties.SelectedIndex = 0;
-            }
-        }
-
-        /// <summary>Each property's binding text (empty = none).</summary>
-        public IReadOnlyDictionary<string, string> Results => _results;
-
-        private string? SelectedName => (_properties.SelectedItem as TextBlock)?.Tag as string;
-
-        private void Refresh(string name)
-        {
-            var row = _rows[name];
-            var bound = _results[name].Length > 0;
-            row.Text = bound ? name + "  " + _results[name] : name;
-            row.FontWeight = bound ? FontWeights.Bold : FontWeights.Normal;
-        }
-
-        private void ShowSelected()
-        {
-            if (SelectedName is not { } name)
-            {
-                return;
-            }
-
-            _loading = true;
-            var (path, mode) = BindingText.Parse(_results[name]);
-            _path.Text = path ?? DesignerText.BindingNone;
-            _mode.SelectedItem = mode;
-            _loading = false;
-        }
-
-        private void Store(string? chosen = null)
-        {
-            if (_loading || SelectedName is not { } name)
-            {
-                return;
-            }
-
-            // A pick from the list arrives before the combo box shows it as its text.
-            var text = chosen ?? _path.Text ?? string.Empty;
-            var path = text == DesignerText.BindingNone ? string.Empty : text;
-            _results[name] = BindingText.Build(path, _mode.SelectedItem as string);
-            Refresh(name);
-        }
-    }
-
     /// <summary>The string collection editor: one item per line.</summary>
     internal sealed class StringListDialog : ThemedEditorDialog
     {
@@ -495,8 +393,31 @@ namespace Kubuno.Desktop.Designer.UI
         /// <summary>The icon set and the runtime's rendering, for the icon picker.</summary>
         public Icons.IKbviewIconServices? IconServices { get; set; }
 
+        /// <summary>What the members' properties can be bound to (docs/DESIGNER.md, "Data bindings"), read when a binding is edited; null hides the binding buttons.</summary>
+        public Func<Bindings.BindingSourceSchema>? BindingSchema
+        {
+            get => _bindingSchema;
+            set
+            {
+                // Set after the constructor showed the first member: show it again, with its binding buttons.
+                _bindingSchema = value;
+                RefreshSelectedMember();
+            }
+        }
+
+        private Func<Bindings.BindingSourceSchema>? _bindingSchema;
+
+        private void RefreshSelectedMember() =>
+            ShowMember(_list.SelectedIndex >= 0 && _list.SelectedIndex < _members.Count ? _members[_list.SelectedIndex] : null);
+
+        /// <summary>The live sample of « Liaison de données », or null.</summary>
+        public Func<string, string?, Bindings.BindingShape, Bindings.BindingShape?, Bindings.BindingPreview>? BindingPreview { get; set; }
+
         /// <summary>The icon picker (a delegate: it runs from a click, on the UI thread).</summary>
         private static readonly Func<string?, string?, Icons.IKbviewIconServices?, string?> PickIcon = Icons.IconPickerDialog.Pick;
+
+        /// <summary>« Liaison de données » (a delegate, like <see cref="PickIcon"/>).</summary>
+        private static readonly Func<Bindings.DataBindingDialog, bool> AskBinding = Bindings.BindingActions.Ask;
 
         public CollectionEditorDialog(string rowName, string childTag, ComponentMeta? childMeta, IReadOnlyList<ViewNode> originals)
             : this(rowName, new[] { (childTag, childMeta) }, originals)
@@ -689,6 +610,7 @@ namespace Kubuno.Desktop.Designer.UI
                 name.TextTrimming = TextTrimming.CharacterEllipsis;
                 var value = descriptor.GetValue(member) as string ?? string.Empty;
                 FrameworkElement editor;
+                Action<string> setText = _ => { };
                 if (descriptor.Choices is { } choices)
                 {
                     var combo = MakeComboBox(editable: true);
@@ -700,12 +622,14 @@ namespace Kubuno.Desktop.Designer.UI
                     combo.Text = value;
                     combo.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler((_, _) => Write(member, descriptor, combo.Text)));
                     combo.SelectionChanged += (_, _) => Write(member, descriptor, combo.SelectedItem as string ?? combo.Text);
+                    setText = t => combo.Text = t;
                     editor = combo;
                 }
                 else if (descriptor.IsIcon)
                 {
                     // An icon: typed, or chosen with the icon picker ("...").
                     var box = MakeTextBox(value);
+                    setText = t => box.Text = t;
                     box.TextChanged += (_, _) => Write(member, descriptor, box.Text);
                     var pick = MakeButton("...");
                     pick.MinWidth = 28;
@@ -726,12 +650,116 @@ namespace Kubuno.Desktop.Designer.UI
                 else
                 {
                     var box = MakeTextBox(value);
+                    setText = t => box.Text = t;
                     box.TextChanged += (_, _) => Write(member, descriptor, box.Text);
                     editor = box;
                 }
 
+                if (BindingSchema is not null && descriptor.Name != "x:Name" && !descriptor.Name.StartsWith("d:", StringComparison.Ordinal))
+                {
+                    editor = WithBindingButtons(member, descriptor, editor, setText);
+                }
+
                 editor.GotKeyboardFocus += (_, _) => _description.Text = descriptor.DisplayName + " — " + descriptor.Description;
                 BindingDialog.AddRow(_properties, row++, name, editor);
+            }
+        }
+
+        /// <summary>
+        /// A member's property editor with the binding buttons of the Properties window (docs/DESIGNER.md, "Data bindings"):
+        /// « ▾ » opens the binding picker under the row, « … » opens « Liaison de données »; both write the member's values
+        /// (the binding, and its design-time <c>d:</c> value), applied with the rest at OK.
+        /// </summary>
+        private FrameworkElement WithBindingButtons(MemberProxy member, MemberPropertyDescriptor descriptor, FrameworkElement editor, Action<string> setText)
+        {
+            var drop = MakeButton("▾");
+            var more = MakeButton("…");
+            foreach (var b in new[] { drop, more })
+            {
+                b.MinWidth = 24;
+                b.Padding = new Thickness(2, 0, 2, 0);
+                b.Margin = new Thickness(4, 0, 0, 0);
+            }
+
+            drop.ToolTip = Bindings.BindingStrings.Source;
+            more.ToolTip = Bindings.BindingStrings.DialogTitle;
+            System.Windows.Automation.AutomationProperties.SetName(drop, Bindings.BindingStrings.Source + " " + descriptor.Name);
+            System.Windows.Automation.AutomationProperties.SetName(more, Bindings.BindingStrings.DialogTitle + " " + descriptor.Name);
+            var want = Bindings.BindingShapes.Of(descriptor.Meta, descriptor.Name);
+
+            void OpenDialog()
+            {
+                var schema = BindingSchema?.Invoke() ?? Bindings.BindingSourceSchema.Empty;
+                member.Values.TryGetValue(descriptor.Name, out var current);
+                member.Values.TryGetValue("d:" + descriptor.Name, out var design);
+                var model = new Bindings.BindingEditModel(descriptor.Name, current, design);
+                var dialog = new Bindings.DataBindingDialog(model, schema, want, descriptor.Meta?.Kind.Tag.ToString() ?? string.Empty, Array.Empty<Bindings.BindingIssue>(), BindingPreview);
+                if (AskBinding(dialog))
+                {
+                    ApplyBindingEdits(member, descriptor, dialog.Edits, setText);
+                }
+            }
+
+            drop.Click += (_, _) =>
+            {
+                var schema = BindingSchema?.Invoke() ?? Bindings.BindingSourceSchema.Empty;
+                member.Values.TryGetValue(descriptor.Name, out var current);
+                var picker = new Bindings.BindingPickerView(schema, want, current, descriptor.Choices ?? Array.Empty<string>(), Array.Empty<Bindings.BindingIssue>(), canEditValue: false) { Width = 360, Height = 380 };
+                var frame = MakeFrame(picker);
+                var popup = new System.Windows.Controls.Primitives.Popup { Child = frame, PlacementTarget = editor, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = false };
+                picker.Picked += v =>
+                {
+                    popup.IsOpen = false;
+                    setText(v);
+                };
+                picker.LiteralPicked += v =>
+                {
+                    popup.IsOpen = false;
+                    setText(v);
+                };
+                picker.Cancelled += () => popup.IsOpen = false;
+                picker.AdvancedRequested += () =>
+                {
+                    popup.IsOpen = false;
+                    OpenDialog();
+                };
+                picker.RemoveRequested += () =>
+                {
+                    popup.IsOpen = false;
+                    member.Values.TryGetValue("d:" + descriptor.Name, out var design);
+                    ApplyBindingEdits(member, descriptor, Bindings.BindingEditModel.RemoveBinding(descriptor.Name, design), setText);
+                };
+                popup.IsOpen = true;
+            };
+            more.Click += (_, _) => OpenDialog();
+
+            var panel = new DockPanel();
+            DockPanel.SetDock(more, Dock.Right);
+            DockPanel.SetDock(drop, Dock.Right);
+            panel.Children.Add(more);
+            panel.Children.Add(drop);
+            panel.Children.Add(editor);
+            return panel;
+        }
+
+        /// <summary>Applies binding edits to a member: its property through the row (so the list relabels), its <c>d:</c> value directly.</summary>
+        private void ApplyBindingEdits(MemberProxy member, MemberPropertyDescriptor descriptor, IEnumerable<Bindings.BindingAttributeEdit> edits, Action<string> setText)
+        {
+            foreach (var edit in edits)
+            {
+                if (edit.Attribute == descriptor.Name)
+                {
+                    setText(edit.Value ?? string.Empty);
+                    Write(member, descriptor, edit.Value ?? string.Empty);
+                }
+                else if (edit.Value is null)
+                {
+                    member.Values.Remove(edit.Attribute);
+                }
+                else
+                {
+                    member.Values[edit.Attribute] = edit.Value;
+                }
             }
         }
 
@@ -850,6 +878,9 @@ namespace Kubuno.Desktop.Designer.UI
             public override bool IsReadOnly => false;
 
             public override Type PropertyType => typeof(string);
+
+            /// <summary>The registry property, when the row shows one.</summary>
+            public PropertyMeta? Meta => _meta;
 
             /// <summary>An icon (<c>editor("icon")</c>): edited with the icon picker as well as typed.</summary>
             public bool IsIcon => _meta?.Editor == "icon";
