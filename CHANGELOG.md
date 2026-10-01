@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Kubuno Splash Screen** item template: a new splash screen is now an 800 × 500 view holding a `<SplashArtwork>` —
+  Kubuno's procedural artwork (Kubuno, Drive, Chat or Documents) with the product name, version, a status line, a
+  progress bar and the legal lines — which the designer draws exactly as the application will show it. Its code
+  gets `show_at_startup()`, which shows the splash at once on its own thread, set up from the view
+  (`kubuno::splash::from_kbview`), and fades it out into the main window.
 - **Icons, chosen and drawn like in Windows Forms** (`docs/ICONS.md`): every icon property — a button's, a menu item's,
   a toolbar item's, a sidebar item's, a status label's, an empty state's, a docked panel's, the `<Icon>` element's
   `Name`, the ribbon's `SmallIcon`/`LargeIcon` and the window's own `Icon` — shows the icon itself in its Properties

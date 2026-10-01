@@ -7,7 +7,7 @@
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
     <Name>Kubuno Splash Screen</Name>
-    <Description>A splash screen: borderless, centred on the screen, on top of the other windows; it closes itself after SplashDuration milliseconds.</Description>
+    <Description>The application's splash screen: Kubuno's artwork (Kubuno, Drive, Chat or Documents), the product name, version, a live status line with a progress bar, the legal lines. Shown at start-up on its own thread, faded out into the main window.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoSplashScreen</TemplateID>
     <LanguageTag>Rust</LanguageTag>
