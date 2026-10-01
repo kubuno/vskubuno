@@ -95,6 +95,8 @@ namespace Kubuno.Desktop.Designer.UI
 
             (_designTab, _xmlTab, _splitTab) = BuildTabStripButtons();
             var tabStrip = BuildTabStrip(_designTab, _xmlTab, _splitTab);
+            // The design-time language (docs/RESOURCES.md): previews the view's {Res …} values in a culture of the project.
+            Kubuno.Desktop.Designer.Resources.DesignLanguagePicker.Attach(tabStrip, _designSurfaceHost);
             Grid.SetRow(tabStrip, 0);
             root.Children.Add(tabStrip);
 

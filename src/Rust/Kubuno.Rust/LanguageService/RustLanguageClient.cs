@@ -42,6 +42,7 @@ namespace Kubuno.Rust.LanguageService
         {
             Instance = this;
             _middleLayer.ReferenceParticipants = () => ReferenceParticipants;
+            _middleLayer.DefinitionProviders = () => DefinitionProviders;
 #pragma warning disable VSSDK007 // fire-and-forget from an event handler; FileAndForget reports faults to the "Kubuno" pane.
             RustOptionsPage.Applied += (_, _) => ThreadHelper.JoinableTaskFactory.RunAsync(PushConfigurationAsync).FileAndForget("kubuno/rust/pushConfiguration");
 #pragma warning restore VSSDK007
@@ -62,6 +63,10 @@ namespace Kubuno.Rust.LanguageService
         /// <summary>What the layers above add to a rename or to Find All References (<see cref="Extensibility.IRustReferenceParticipant"/>).</summary>
         [ImportMany]
         internal IEnumerable<Extensibility.IRustReferenceParticipant> ReferenceParticipants { get; set; } = Array.Empty<Extensibility.IRustReferenceParticipant>();
+
+        /// <summary>What the layers above answer for Go To Definition (<see cref="Extensibility.IRustDefinitionProvider"/>).</summary>
+        [ImportMany]
+        internal IEnumerable<Extensibility.IRustDefinitionProvider> DefinitionProviders { get; set; } = Array.Empty<Extensibility.IRustDefinitionProvider>();
 
         /// <summary>The client's name (also how Kubuno's own requests pick this server through Visual Studio's broker).</summary>
         public const string ClientName = "Kubuno Rust Language Server";

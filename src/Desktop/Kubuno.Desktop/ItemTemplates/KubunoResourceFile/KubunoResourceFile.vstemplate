@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/RESOURCES.md: "Add New Item > Kubuno Resource File" (Fichier de ressources) - the Resources.resx of a Kubuno
+     desktop application: strings, images, icons, sounds, files, colours and fonts, opened in the resource editor and
+     turned into a typed class by `kubuno::resources!("resources.kbres")`. -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Kubuno Resource File</Name>
+    <Description>A resource file (Fichier de ressources): strings, images, icons, sounds, files, colours and fonts, embedded at compile time by kubuno::resources!("resources.kbres") and used in views as {Res key}.</Description>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.KubunoResourceFile</TemplateID>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>16</SortOrder>
+    <DefaultName>resources.kbres</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="false" TargetFileName="$fileinputname$.kbres" OpenInEditor="true">resources.kbres</ProjectItem>
+  </TemplateContent>
+</VSTemplate>

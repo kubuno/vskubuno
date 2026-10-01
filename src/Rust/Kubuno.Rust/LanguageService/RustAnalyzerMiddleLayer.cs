@@ -50,6 +50,7 @@ namespace Kubuno.Rust.LanguageService
         private const string DidChangeMethod = "textDocument/didChange";
         private const string DidCloseMethod = "textDocument/didClose";
         private const string InlayHintMethod = "textDocument/inlayHint";
+        private const string DefinitionMethod = "textDocument/definition";
 
         private readonly PullDiagnosticsResultIds _resultIds = new();
         private int _loggedOnce;
@@ -71,7 +72,7 @@ namespace Kubuno.Rust.LanguageService
             methodName == DocumentDiagnosticMethod || methodName == HoverMethod || methodName == RenameMethod || methodName == CompletionMethod
             || methodName == ReferencesMethod || methodName.StartsWith(SemanticTokensPrefix, StringComparison.Ordinal)
             || methodName == DidOpenMethod || methodName == DidChangeMethod || methodName == DidCloseMethod
-            || methodName == InlayHintMethod;
+            || methodName == InlayHintMethod || methodName == DefinitionMethod;
 
         public async Task HandleNotificationAsync(string methodName, JToken methodParam, Func<JToken, Task> sendNotification)
         {
@@ -100,6 +101,8 @@ namespace Kubuno.Rust.LanguageService
                     return null;
                 case DocumentDiagnosticMethod:
                     return await HandleDiagnosticsAsync(methodParam, sendRequest).ConfigureAwait(false);
+                case DefinitionMethod:
+                    return await HandleDefinitionAsync(methodParam, sendRequest).ConfigureAwait(false);
             }
 
             var response = await sendRequest(methodParam).ConfigureAwait(false);
@@ -229,6 +232,34 @@ namespace Kubuno.Rust.LanguageService
         /// (<see cref="IRustReferenceParticipant"/>, MEF-imported by <see cref="RustLanguageClient"/>).
         /// </summary>
         internal Func<IEnumerable<IRustReferenceParticipant>> ReferenceParticipants { get; set; } = () => Array.Empty<IRustReferenceParticipant>();
+
+        /// <summary>What the layers above answer for Go To Definition instead of rust-analyzer (<see cref="IRustDefinitionProvider"/>).</summary>
+        internal Func<IEnumerable<IRustDefinitionProvider>> DefinitionProviders { get; set; } = () => Array.Empty<IRustDefinitionProvider>();
+
+        /// <summary>
+        /// rust-analyzer's Go To Definition, unless a <see cref="IRustDefinitionProvider"/> knows better (the desktop layer:
+        /// a <c>resources!</c> accessor goes to its <c>.kbres</c> entry, not to the macro call).
+        /// </summary>
+        private async Task<JToken?> HandleDefinitionAsync(JToken methodParam, Func<JToken, Task<JToken?>> sendRequest)
+        {
+            var response = await sendRequest(methodParam).ConfigureAwait(false);
+            foreach (var provider in DefinitionProviders())
+            {
+                try
+                {
+                    if (await provider.GetDefinitionAsync(methodParam, response, CancellationToken.None).ConfigureAwait(false) is { } better)
+                    {
+                        return better;
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or FormatException)
+                {
+                    KubunoLog.WriteLine("Go To Definition: a provider failed: " + ex.Message);
+                }
+            }
+
+            return response;
+        }
 
         /// <summary>
         /// rust-analyzer renames the Rust side of a symbol; each <see cref="IRustReferenceParticipant"/> adds what the

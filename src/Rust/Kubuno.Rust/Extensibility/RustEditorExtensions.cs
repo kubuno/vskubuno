@@ -45,6 +45,17 @@ namespace Kubuno.Rust.Extensibility
         Task<RustEditContribution?> GetReferencesAsync(JToken requestParameters, CancellationToken cancellationToken);
     }
 
+    /// <summary>
+    /// Go To Definition from Rust into another language's file, where rust-analyzer can only point at a macro call - the
+    /// desktop layer's <c>resources!</c> accessors (<c>Resources::logo()</c> → the <c>.kbres</c> entry, docs/RESOURCES.md).
+    /// Called off the UI thread with the request's parameters and rust-analyzer's own answer.
+    /// </summary>
+    public interface IRustDefinitionProvider
+    {
+        /// <summary>The locations to go to instead of <paramref name="rustAnalyzerResponse"/>, or null to keep it.</summary>
+        Task<JToken?> GetDefinitionAsync(JToken requestParameters, JToken? rustAnalyzerResponse, CancellationToken cancellationToken);
+    }
+
     /// <summary>An LSP <c>WorkspaceEdit</c> a <see cref="IRustReferenceParticipant"/> adds, and the line it logs.</summary>
     public sealed class RustEditContribution
     {

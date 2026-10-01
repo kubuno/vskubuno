@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Resources Version="1">
+  <String Name="app_title" Comment="The window title">Kubuno resources sample</String>
+  <String Name="welcome_text" Comment="The heading under the banner">Welcome! This window is built from resources.kbres.</String>
+  <String Name="hint_text">The texts, the banner and the colour follow the UI culture; switch it with the button.</String>
+  <String Name="switch_text" Comment="The button that switches the culture">Français</String>
+  <String Name="culture_status">Culture: English (neutral resources)</String>
+  <String Name="ok_text">OK</String>
+  <Image Name="logo" File="images/logo.png" Comment="The round K logo"/>
+  <Image Name="banner" File="images/banner.png" Comment="Localised: resources.fr.kbres has its own"/>
+  <Icon Name="app_icon" File="images/app.ico" Comment="16, 32, 48 and 256 px"/>
+  <Color Name="accent" Value="#1A73E8"/>
+</Resources>

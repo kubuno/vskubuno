@@ -100,6 +100,24 @@
   </ItemGroup>
 
   <!--
+    Resource files (docs/RESOURCES.md), nested like .resx files: a culture's file under its neutral one
+    (`resources.fr.kbres` under `resources.kbres`), a view's own resources under the view (`main_view.kbres`
+    under `main_view.kbview`, like Form1.resx under Form1.cs). KubunoResourceSet is the file name without its
+    last part (`resources` for `resources.fr.kbres`); same opt-out as the code-behind nesting.
+  -->
+  <ItemGroup>
+    <None Update="**/*.kbres">
+      <KubunoResourceSet>$([System.IO.Path]::GetFileNameWithoutExtension('%(Filename)'))</KubunoResourceSet>
+    </None>
+  </ItemGroup>
+  <ItemGroup Condition="'$(EnableKbviewCodeBehindNesting)' == 'true'">
+    <None Update="**/*.kbres">
+      <DependentUpon Condition="'%(None.DependentUpon)' == '' and '%(None.KubunoResourceSet)' != '%(None.Filename)' and Exists('%(None.RootDir)%(None.Directory)%(None.KubunoResourceSet).kbres')">%(None.KubunoResourceSet).kbres</DependentUpon>
+      <DependentUpon Condition="'%(None.DependentUpon)' == '' and Exists('%(None.RootDir)%(None.Directory)%(None.Filename).kbview')">%(None.Filename).kbview</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <!--
     Rule files (docs/RSPROJ.mdÂ§3): what CPS uses to know the item types it displays, and the
     project/file property pages. Neutral language only (no localized copies yet).
   -->
@@ -256,6 +274,9 @@
     <!-- docs/DATA.md DATA-7: what `data_source!` reads at compile time (the .kbdata files and the offline query cache),
          and the migrations its stale-cache warning compares that cache with - a change to any of them must reach cargo. -->
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.kbdata" Condition="Exists('$(_KubunoManifestDir)\src')" />
+    <!-- docs/RESOURCES.md: what `resources!` embeds at compile time (the .kbres files and the pictures, sounds and files
+         they link, kept under src by the resource editor). -->
+    <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.kbres;$(_KubunoManifestDir)\src\**\*.png;$(_KubunoManifestDir)\src\**\*.ico;$(_KubunoManifestDir)\src\**\*.svg;$(_KubunoManifestDir)\src\**\*.jpg;$(_KubunoManifestDir)\src\**\*.bmp;$(_KubunoManifestDir)\src\**\*.gif;$(_KubunoManifestDir)\src\**\*.wav" Condition="Exists('$(_KubunoManifestDir)\src')" />
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\.sqlx\*.json" Condition="Exists('$(_KubunoManifestDir)\.sqlx')" />
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\migrations\*.sql" Condition="Exists('$(_KubunoManifestDir)\migrations')" />
     <_KubunoCargoLockFile Include="$(CargoWorkspaceRoot)\Cargo.lock" Condition="Exists('$(CargoWorkspaceRoot)\Cargo.lock')" />
@@ -368,6 +389,22 @@
       <_KubunoWorkspaceBuildProperty Include="KubunoRustFlags=$([MSBuild]::Escape('$(_KubunoRustFlags)'))" />
       <_KubunoWorkspaceBuildProperty Include="CargoWorkspaceBuildArgs=$([MSBuild]::Escape('$(_KubunoWorkspaceBuildArgList)'))" />
     </ItemGroup>
+  </Target>
+
+  <!--
+    docs/RESOURCES.md: `resources!` finds a set's culture files when it expands, but rustc only tracks the files it
+    embedded - a culture file added later would be ignored until the neutral file changes. A neutral file older than
+    one of its culture files is touched, so the macro expands again and embeds the new culture.
+  -->
+  <Target Name="_KubunoTouchResourceSets" BeforeTargets="CoreCompile" Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_KubunoKbresSatellite Include="@(None)" Condition="'%(None.Extension)' == '.kbres' and '%(None.KubunoResourceSet)' != '' and '%(None.KubunoResourceSet)' != '%(None.Filename)'" KubunoNeutral="%(None.RootDir)%(None.Directory)%(None.KubunoResourceSet).kbres" />
+      <_KubunoKbresStale Include="%(_KubunoKbresSatellite.KubunoNeutral)" Condition="Exists('%(_KubunoKbresSatellite.KubunoNeutral)') and $([System.IO.File]::GetLastWriteTimeUtc('%(_KubunoKbresSatellite.FullPath)').Ticks) &gt; $([System.IO.File]::GetLastWriteTimeUtc('%(_KubunoKbresSatellite.KubunoNeutral)').Ticks)" />
+    </ItemGroup>
+    <RemoveDuplicates Inputs="@(_KubunoKbresStale)">
+      <Output TaskParameter="Filtered" ItemName="_KubunoKbresToTouch" />
+    </RemoveDuplicates>
+    <Touch Files="@(_KubunoKbresToTouch)" Condition="'@(_KubunoKbresToTouch)' != ''" />
   </Target>
 
   <Target Name="CoreCompile"

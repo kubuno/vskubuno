@@ -8,6 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Resource editor for `.kbres` files**, the equivalent of Visual Studio's `.resx` editor: double-clicking a
+  `.kbres` file (in a `.rsproj` or in Open Folder) opens a grid for strings and other text resources (Name, Value,
+  Comment and one column per culture, missing translations flagged and the neutral value shown as a hint) or a
+  thumbnail view for images, icons, audio and files. Add existing files (or drop them on the editor), create new
+  PNG/BMP/GIF/JPEG images, icons and text files, rename, comment, remove, switch an entry between linked and
+  embedded, copy its `{Res key}` reference, and add cultures (`fr`, `fr-FR`…) whose `name.fr.kbres` files are saved
+  with the neutral one. Undo/Redo, an invalid-XML banner with **View Code**, and XML colouring in the code view.
+- **Resource files for Kubuno desktop applications** (`docs/RESOURCES.md`), the equivalent of `Resources.resx` and
+  `Properties.Resources`: new **Kubuno Resource File** and **Kubuno Localized Resource File** item templates
+  (`resources.kbres`, `resources.fr.kbres`); culture files and a view's own resource file nest under their file in
+  Solution Explorer; **F12** on a generated accessor (`Resources::logo()`) opens its entry in the `.kbres` file.
+- **Select Resource dialog** for image properties, like Windows Forms': a local image file next to the view (Import…
+  copies an outside file) or an entry of one of the project's resource files (`{Res logo}`), with thumbnails, a
+  preview, its details and Import… into the chosen resource file (creating `src/resources.kbres` when the project has
+  none). The icon picker's project tab uses the same dialog.
+- **Design-time language** in the designer's Design | XML | Split strip: preview a view with the `{Res …}` values and
+  pictures of any culture of the project ("(Default)" shows the neutral ones), updated live when a resource file or a
+  picture changes.
+- In `.kbview` files, `{Res ` completes the project's resource keys (with value, translations, comment and picture),
+  hover shows them, F12 goes to the entry, and an unknown key, an image property naming a non-image resource or a
+  missing translation is reported.
+- `samples/resources-desktop`: strings, images, a multi-size icon and a colour in English and French, switched live.
 - **The ribbon in the designer** (`docs/RIBBON.md`): a new **Ruban** (Ribbon) Toolbox tab lists `Ribbon` and every
   element composing it — tabs, contextual tab groups, groups, control groups, boxes, the quick access toolbar, the
   Backstage and its tabs, buttons and separators, buttons, toggle and radio buttons, menu and split buttons, colour

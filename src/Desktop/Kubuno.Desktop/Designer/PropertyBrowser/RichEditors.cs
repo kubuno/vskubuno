@@ -292,9 +292,11 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
         {
             var element = RichEditors.Elements(context).FirstOrDefault();
             var viewFile = (element?.Host as IKbviewDesignServices)?.ViewFilePath;
-            var dialog = new UI.ImagePickerDialog(viewFile, value as string);
             ThreadHelper.ThrowIfNotOnUIThread();
-            return RichEditors.ShowDialog(provider, dialog) ? dialog.Result : value;
+            _ = provider;
+            // The Select Resource dialog (docs/RESOURCES.md): a local image file or a project resource (`{Res key}`).
+            var filter = context?.PropertyDescriptor?.Name == "Icon" ? Resources.ResourceKindFilter.Icons : Resources.ResourceKindFilter.Images;
+            return Resources.ResourcePicker.Pick(viewFile, value as string, filter) ?? value;
         }
 
         public override bool GetPaintValueSupported(ITypeDescriptorContext? context) => true;
@@ -306,6 +308,11 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
             if (e.Value is string path && ImageResources.Resolve(viewFile, path) is { } full)
             {
                 UI.Swatches.PaintImage(e.Graphics, e.Bounds, full);
+            }
+            else if (e.Value is string reference && viewFile is not null && Logic.Resources.ProjectResources.Find(Logic.Resources.ProjectResources.Items(viewFile), reference)?.FilePath is { } linked)
+            {
+                // A `{Res key}` of a linked resource: its file.
+                UI.Swatches.PaintImage(e.Graphics, e.Bounds, linked);
             }
         }
     }

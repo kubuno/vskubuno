@@ -148,6 +148,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             // The canvas around the view in the colours of Visual Studio's theme (and on every theme change).
             SendCanvasTheme();
 
+            // The project's resource files and the design-time language (docs/RESOURCES.md), before the text.
+            SendResources(force: true);
+
             // The designer options that change what the surface draws, before anything is drawn.
             SendLine(DesignSurfaceProtocol.EncodeSetDesignOptions(Options.DesignerOptionsHost.Current?.ShowDesignOutlines ?? true));
 

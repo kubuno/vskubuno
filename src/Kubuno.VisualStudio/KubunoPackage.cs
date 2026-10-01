@@ -124,6 +124,14 @@ namespace Kubuno.VisualStudio
     // plain code window of this factory (KbviewEditorFactory.CodePhysicalView), like WinForms' Form1.cs.
     [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
     [ProvideEditorExtension(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), Kubuno.Desktop.Views.KbviewConstants.FileExtension, Kubuno.Desktop.Designer.DesignerConstants.EditorExtensionPriority)]
+    // The .kbres resource editor (Kubuno.Desktop\Resources\Editor): the default editor of .kbres files everywhere (no
+    // other editor is registered for the extension; 0x60 wins). Same logical views as the .kbview designer: Primary and
+    // Designer -> the grid/thumbnail editor, Code and TextView -> a plain code window on the same XML buffer.
+    [ProvideEditorFactory(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), 111)]
+    [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), "{7651a702-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
+    [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
+    [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
+    [ProvideEditorExtension(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), ".kbres", 0x60)]
     [ProvideOptionPage(typeof(Kubuno.Desktop.Designer.Options.KbviewDesignerOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Desktop.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.designer")]
     [ProvideProfile(typeof(Kubuno.Desktop.Designer.Options.KbviewDesignerOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Desktop.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
     // The View Outline tool window (Tools menu, KubunoCommands.vsct). The former fallback "Kubuno

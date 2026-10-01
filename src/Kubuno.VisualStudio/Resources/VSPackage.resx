@@ -127,6 +127,10 @@
   <data name="110" xml:space="preserve">
     <value>Kubuno View Designer</value>
   </data>
+  <!-- "111": the display name of the .kbres resource editor (KubunoPackage.cs [ProvideEditorFactory(typeof(KbresEditorFactory), 111)]). -->
+  <data name="111" xml:space="preserve">
+    <value>Kubuno Resource Editor</value>
+  </data>
   <!-- "120": the key binding scope of the Data Explorer query windows (KubunoPackage.cs [ProvideKeyBindingTable(PackageGuidStrings.QueryToolWindow, 120)], docs/DATA.md DATA-5). -->
   <data name="120" xml:space="preserve">
     <value>Kubuno Query Window</value>

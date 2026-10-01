@@ -190,6 +190,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             {
                 _lease.Source.Changed -= OnRuntimeSourceChanged;
                 _lease.Dispose();
+                DisposeResources();
             }
 
             base.Dispose(disposing);

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Resources Version="1">
+  <String Name="app_title">Exemple de ressources Kubuno</String>
+  <String Name="welcome_text">Bienvenue ! Cette fenêtre est faite de resources.kbres.</String>
+  <String Name="hint_text">Les textes, la bannière et la couleur suivent la culture de l'interface ; changez-la avec le bouton.</String>
+  <String Name="switch_text">English</String>
+  <String Name="culture_status">Culture : français (resources.fr.kbres)</String>
+  <Image Name="banner" File="images/banner.fr.png"/>
+  <Color Name="accent" Value="#C2185B"/>
+</Resources>

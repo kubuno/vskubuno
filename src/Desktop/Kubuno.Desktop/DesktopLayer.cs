@@ -79,6 +79,8 @@ namespace Kubuno.Desktop
             // factory. Must happen before any .kbview document can open through "Open With... > Kubuno View Designer"
             // (which itself loads the package on demand, and waits for its initialization).
             context.RegisterEditorFactory(new Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory());
+            // The .kbres resource editor (docs/RESOURCES.md).
+            context.RegisterEditorFactory(new Kubuno.Desktop.Resources.Editor.KbresEditorFactory());
             Kubuno.Desktop.Designer.Options.DesignerOptionsHost.Current = context.GetDialogPage<Kubuno.Desktop.Designer.Options.KbviewDesignerOptionsPage>();
 
             // The Properties window resolves the IEventBindingService behind a double-click on an event
@@ -201,6 +203,7 @@ namespace Kubuno.Desktop
             }
 
             entries.AddRange(Kubuno.Desktop.Designer.UI.DesignerDialogGallery.Entries);
+            entries.AddRange(Kubuno.Desktop.Resources.Editor.ResourceDialogGallery.Entries);
             entries.AddRange(TemplateWizardDialogGallery.Entries);
             return entries;
         }

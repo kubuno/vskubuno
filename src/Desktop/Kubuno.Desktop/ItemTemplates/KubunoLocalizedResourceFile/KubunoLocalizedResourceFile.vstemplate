@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/RESOURCES.md: "Add New Item > Kubuno Localized Resource File" (Fichier de ressources localisé) - the
+     translations of a resource file for one culture: name it after the resource file and the culture
+     (resources.fr.kbres, resources.de-DE.kbres). It nests under its resource file and holds only the entries it
+     translates; the others fall back to the neutral file. -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Kubuno Localized Resource File</Name>
+    <Description>The translations of a resource file for one culture (Fichier de ressources localisé): name it resources.fr.kbres, resources.de-DE.kbres... Entries it does not translate fall back to the neutral file.</Description>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.KubunoLocalizedResourceFile</TemplateID>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>17</SortOrder>
+    <DefaultName>resources.fr.kbres</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="false" TargetFileName="$fileinputname$.kbres" OpenInEditor="true">resources.culture.kbres</ProjectItem>
+  </TemplateContent>
+</VSTemplate>
