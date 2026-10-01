@@ -227,16 +227,27 @@ X.sample.json}"`, `Repeater DesignItemCount`, `<Query d:Sample="…">`; the web 
 
 ### 7.1 Shared roles and tokens
 
-Both targets publish the **same typographic roles** under the same names; each target keeps its own sizes and face.
+Both targets publish the **same typographic roles** under the same names **and the same sizes**; only the face
+differs (§7.2). A web CSS px is one desktop DIP, so a role renders at the same physical size on both targets at any
+scale (at 175 %, 13.5 px = 13.5 DIP = 23.6 device pixels). The desktop sizes live in
+`drive_app_controls::themes::shape::text` (re-exported as `kubuno_ui::metrics::text`), each role with its own
+DirectWrite format in `TextFormats`; the web sizes in `theme.css`.
 
-| Role (`Label Role`, `kubuno_ui::display::Role`) | Web token | Web size (`theme.css`) | Desktop size (`metrics::text`) |
-|---|---|---|---|
-| `Micro` — badges, counters | `--kb-text-micro` | 10.5 px | 11 (painted in the Meta face) |
-| `Meta` — metadata, captions | `--kb-text-meta` | 11.5 px | 12 |
-| `Body` — labels, fields, menus, tabs (default) | `--kb-text-body` | 13.5 px | 12 (OS form size, product decision) |
-| `Heading` — section headers, card titles | `--kb-text-heading` | 15.5 px | 16 |
-| `Title` — object name heading a panel | `--kb-text-title` | 21.5 px | 22 |
-| page title (not a Label role) | `--kb-text-page` | 22.5 px (27.5 in `.kb-admin`) | 22 |
+| Role (`Label Role`, `kubuno_ui::display::Role`) | Web token | Web (`theme.css`) | Desktop (`metrics::text`, DIP) | Desktop format | Desktop line box |
+|---|---|---|---|---|---|
+| `Micro` — badges, counters | `--kb-text-micro` | 10.5 px | 10.5 (`MICRO`) | `micro` | 16 |
+| `Meta` — metadata, captions | `--kb-text-meta` (= host `text-xs`) | 11.5 px | 11.5 (`META`) | `caption` | 16 |
+| `Body` — labels, fields, menus, tabs (default) | `--kb-text-body` (= host `text-sm`) | 13.5 px | 13.5 (`BODY`) | `body` | 20 |
+| `Heading` — section headers, card titles | `--kb-text-heading` | 15.5 px | 15.5 (`HEADING`) | `heading` | 24 |
+| `Title` — object name heading a panel | `--kb-text-title` | 21.5 px | 21.5 (`TITLE`) | `title` | 30 |
+| page title (not a Label role) | `--kb-text-page` | 22.5 px (27.5 in `.kb-admin`) | 22.5 (`PAGE`; `PAGE_ADMIN` 27.5) | `page` | — |
+
+Until 2026-10 the desktop followed the older web scale (11 / 12 / 16 / 22, body at the OS form size 12); it is now
+aligned role by role. A few web components set a literal size outside the scale (`@ui/Tooltip` 12 px,
+`OutlinedField` 14 / 20 px, the workspace menu bar 12 px and status bar 10 px, the dock tabs 13 px, the office ribbon
+14 / 11 / 10 px): the desktop ports keep those literal values where they paint with their own format (workspace,
+dock, ribbon) and use the nearest role where they paint with a shared one (tooltip → `Meta`, outlined field →
+`Body` / `Title`).
 
 Weights (web, enforced by the host CSS): running text **500**, `font-medium` → **600**, buttons **500** and never
 bold. Elements choose a role, never a size or a font: `Font` is a desktop-only `Control` property (allowlisted).
@@ -278,8 +289,9 @@ The user requirement « pour la version web, tu vas devoir rapatrier la police u
 - **Web ↔ web** (TSX before, view after): same engine (Chromium, headless Chrome or WebView2), same fonts, same CSS
   → **pixel parity with the usual small tolerance** (anti-aliasing), after `document.fonts.ready`; a text-metric
   difference here is a bug, not noise.
-- **Web ↔ desktop**: never compared pixel to pixel — the faces (Plus Jakarta Sans vs Segoe UI Variable), body sizes
-  (13.5 vs 12) and rasterisers differ by design. They are compared by **structure**: the same element tree, the
+- **Web ↔ desktop**: never compared pixel to pixel — the sizes are the same (§7.1), but the faces
+  (Plus Jakarta Sans vs Segoe UI Variable, whose advances differ at the same size) and the rasterisers differ by
+  design. They are compared by **structure**: the same element tree, the
   same text content, the same roles, accessibility tree and layout relations (order, alignment, which element fills),
   with a size tolerance proportional to the role's line box.
 - Captures freeze animations, fonts load before capture, and text is compared in `fr`, `en` and `ar` (RTL), as the

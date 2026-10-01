@@ -366,6 +366,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `bump_npm_floors.sh` and `bump_shared_crates.sh`, shown and confirmed first; nothing is committed, tagged or pushed).
 ### Changed
 
+- **Views specification: one type scale for both targets** (`docs/VIEWS-SPEC.md` §7.1): the desktop now uses the
+  web's role sizes (Micro 10.5, Meta 11.5, Body 13.5, Heading 15.5, Title 21.5, page title 22.5), so a `Label Role`
+  renders at the same physical size in the web and desktop previews; the table lists each role's token, size, desktop
+  format and line box, and the components that keep a literal size outside the scale.
 - **Kubuno programs never load a `kubuno_ui` library of another build** (`docs/DESIGNER.md`, section 16): every
 - **Kubuno Core Desktop and Kubuno Core Web are named apart in Visual Studio**: the desktop workspace solution is `Kubuno.Core.Desktop.slnx`, the web server solution `Kubuno.Core.Web.slnx`; the docs follow.
 
