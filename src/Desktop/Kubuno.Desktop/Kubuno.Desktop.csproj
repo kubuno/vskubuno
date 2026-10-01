@@ -64,7 +64,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
     <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
-    <!-- docs/AI-ASSISTANT.md: the Dev Assistant's contracts (DevAssistant\: #?l?ment, /vue, the .kbview tools). -->
+    <!-- docs/AI-ASSISTANT.md: the Dev Assistant's contracts (DevAssistant\: #élément, /vue, the .kbview tools). -->
     <ProjectReference Include="..\..\Core\Kubuno.Core.DevAssistant\Kubuno.Core.DevAssistant.csproj" />
     <ProjectReference Include="..\..\Core\Kubuno.Core.DevAssistant.Logic\Kubuno.Core.DevAssistant.Logic.csproj" />
     <ProjectReference Include="..\..\Rust\Kubuno.Rust\Kubuno.Rust.csproj" />
