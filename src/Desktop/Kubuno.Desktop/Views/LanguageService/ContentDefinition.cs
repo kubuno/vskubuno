@@ -37,5 +37,12 @@ namespace Kubuno.Desktop.Views.LanguageService
         [ContentType(KbviewConstants.ContentType)]
         [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "MEF requires a public static field for a FileExtensionToContentTypeDefinition export.")]
         public static FileExtensionToContentTypeDefinition KbviewFileExtensionDefinition = null!;
+
+        /// <summary>User control views (<c>.kbcontrol</c>) are the same format: same content type, same language server.</summary>
+        [Export]
+        [FileExtension(KbviewConstants.ControlFileExtension)]
+        [ContentType(KbviewConstants.ContentType)]
+        [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "MEF requires a public static field for a FileExtensionToContentTypeDefinition export.")]
+        public static FileExtensionToContentTypeDefinition KbcontrolFileExtensionDefinition = null!;
     }
 }

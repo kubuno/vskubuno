@@ -1,11 +1,11 @@
-//! Code-behind of the user control `MessageRow` (`message_row.kbview`), the item template of the
+//! Code-behind of the user control `MessageRow` (`message_row.kbcontrol`), the item template of the
 //! messages Repeater: each item of the list gets its own instance (its `likes` is per message).
 
 use kubuno::views::prelude::*;
 
 /// A message: its author's avatar, the text and the time, and a like button.
 #[derive(UserControl, Default)]
-#[user_control(view = "message_row.kbview", default_event = "Liked")]
+#[user_control(view = "message_row.kbcontrol", default_event = "Liked")]
 pub struct MessageRow {
     base: UserControlCore,
     /// The author (also set from the row of the item: a property named like a row field).

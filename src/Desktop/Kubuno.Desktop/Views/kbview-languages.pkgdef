@@ -26,8 +26,15 @@
 ; Designer\INTEGRATION.md).
 [$RootKey$\Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions]
 "kbview"=dword:00000064
+; User control views (.kbcontrol, docs/VIEWS-SPEC.md "File kinds"): the same format, the same editors and priorities.
+"kbcontrol"=dword:00000064
 
 ; docs/RSPROJ.md lot 8: the .kbview file icon for Open Folder (guid:id of RustProject.imagemanifest's KbviewFile image,
 ; the moniker Kubuno.Desktop.ProjectSystem's KbviewTreePropertiesProvider gives .kbview items of a .rsproj).
 [$RootKey$\ShellFileAssociations\.kbview]
 "DefaultIconMoniker"="7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57:3"
+
+; The .kbcontrol (user control) file icon for Open Folder: RustProject.imagemanifest's KbcontrolFile image, distinct
+; from the form/window icon of .kbview files.
+[$RootKey$\ShellFileAssociations\.kbcontrol]
+"DefaultIconMoniker"="7d2b8c4e-5a1f-4e63-9b0d-3c6f2a8e1b57:5"

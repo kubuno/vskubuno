@@ -36,8 +36,10 @@ namespace Kubuno.Desktop.ProjectSystem
 
         public Task<IProjectSpecificEditorInfo?> GetSpecificEditorAsync(string documentMoniker)
         {
-            var isView = !string.IsNullOrEmpty(documentMoniker) &&
-                string.Equals(Path.GetExtension(documentMoniker), ".kbview", StringComparison.OrdinalIgnoreCase);
+            // Both view kinds (docs/VIEWS-SPEC.md, "File kinds"): forms (.kbview) and user controls (.kbcontrol).
+            var extension = string.IsNullOrEmpty(documentMoniker) ? string.Empty : Path.GetExtension(documentMoniker);
+            var isView = string.Equals(extension, ".kbview", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".kbcontrol", StringComparison.OrdinalIgnoreCase);
             return Task.FromResult<IProjectSpecificEditorInfo?>(isView ? EditorInfo.Instance : null);
         }
 

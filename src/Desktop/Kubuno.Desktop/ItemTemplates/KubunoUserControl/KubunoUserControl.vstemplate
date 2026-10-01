@@ -5,7 +5,7 @@
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
     <Name>Kubuno User Control (Kubuno Core Desktop)</Name>
-    <Description>A reusable control designed as a view of its own (.kbview) with its code-behind: its properties and events are those of the element it becomes in the project's other views.</Description>
+    <Description>A reusable control designed as a view of its own (.kbcontrol) with its code-behind: its properties and events are those of the element it becomes in the project's other views.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoUserControl</TemplateID>
     <LanguageTag>Rust</LanguageTag>
@@ -14,10 +14,10 @@
     <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>12</SortOrder>
-    <DefaultName>UserControl.kbview</DefaultName>
+    <DefaultName>UserControl.kbcontrol</DefaultName>
   </TemplateData>
   <TemplateContent>
-    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.kbview">UserControl.kbview</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.kbcontrol">UserControl.kbcontrol</ProjectItem>
     <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">UserControl.rs</ProjectItem>
   </TemplateContent>
   <WizardExtension>

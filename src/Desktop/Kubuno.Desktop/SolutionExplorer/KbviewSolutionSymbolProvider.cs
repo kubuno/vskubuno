@@ -39,13 +39,13 @@ namespace Kubuno.Desktop.SolutionExplorer
     /// load, so this stays cheap, and it only runs when a node is expanded or its file changes.
     /// </summary>
     [Export(typeof(ISolutionSymbolProvider))]
-    internal sealed class KbviewSolutionSymbolProvider : ISolutionSymbolProvider
+    internal class KbviewSolutionSymbolProvider : ISolutionSymbolProvider
     {
         private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
         private string? _executable;
         private bool _located;
 
-        public string FileExtension => ".kbview";
+        public virtual string FileExtension => Kubuno.Desktop.Views.KbviewConstants.FileExtension;
 
         public Guid NavigationLogicalView => VSConstants.LOGVIEWID.Designer_guid;
 
@@ -214,5 +214,12 @@ namespace Kubuno.Desktop.SolutionExplorer
 
             return result;
         }
+    }
+
+    /// <summary>The same element trees under user control views (<c>.kbcontrol</c>, docs/VIEWS-SPEC.md "File kinds").</summary>
+    [Export(typeof(ISolutionSymbolProvider))]
+    internal sealed class KbcontrolSolutionSymbolProvider : KbviewSolutionSymbolProvider
+    {
+        public override string FileExtension => Kubuno.Desktop.Views.KbviewConstants.ControlFileExtension;
     }
 }

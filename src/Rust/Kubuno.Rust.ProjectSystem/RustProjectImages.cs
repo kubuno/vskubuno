@@ -29,6 +29,12 @@ namespace Kubuno.Rust.ProjectSystem
         /// <summary>The <c>CargoManifest</c> image id (Cargo's crate).</summary>
         public const int CargoManifestId = 4;
 
+        /// <summary>
+        /// The <c>KbcontrolFile</c> image id: a user control view (<c>.kbcontrol</c>, docs/VIEWS-SPEC.md "File kinds") - a
+        /// dashed control outline holding the toolbox UserControl layout, unlike the form-like window of <c>.kbview</c>.
+        /// </summary>
+        public const int KbcontrolFileId = 5;
+
         /// <summary>The project node icon of a <c>.rsproj</c>.</summary>
         public static readonly ProjectImageMoniker RustProject = new ProjectImageMoniker(ImagesGuid, RustProjectId);
 
@@ -37,6 +43,8 @@ namespace Kubuno.Rust.ProjectSystem
         public static readonly ProjectImageMoniker KbviewFile = new ProjectImageMoniker(ImagesGuid, KbviewFileId);
 
         public static readonly ProjectImageMoniker CargoManifest = new ProjectImageMoniker(ImagesGuid, CargoManifestId);
+
+        public static readonly ProjectImageMoniker KbcontrolFile = new ProjectImageMoniker(ImagesGuid, KbcontrolFileId);
 
         /// <summary>The file icon for <paramref name="fileName"/>, or <see langword="null"/> to keep Visual Studio's own.</summary>
         public static ProjectImageMoniker? ForFile(string? fileName)
@@ -57,7 +65,7 @@ namespace Kubuno.Rust.ProjectSystem
                 return RustFile;
             }
 
-            // .kbview items get KbviewFile from the desktop layer (Kubuno.Desktop.ProjectSystem.KbviewTreePropertiesProvider).
+            // .kbview and .kbcontrol items get KbviewFile/KbcontrolFile from the desktop layer (Kubuno.Desktop.ProjectSystem.KbviewTreePropertiesProvider).
             return null;
         }
     }

@@ -320,7 +320,7 @@ Cursor"** command is faster: put the caret in or just before the `#[test]` funct
 and run it - it builds only that test binary and launches it under the native debugger with
 `--exact --nocapture --test-threads=1`, without discovering or building every other test first.
 
-## 6. The view designer (`.kbview`)
+## 6. The view designer (`.kbview` and `.kbcontrol`)
 
 A `.kbview` file is a declarative view (see `docs/XML_VIEWS.md` for the format itself) with a
 same-stem `.rs` code-behind (`settings.kbview` / `settings.rs`) - the Rust analogue of a WPF/WinForms
@@ -390,7 +390,8 @@ A user control is a reusable piece of UI with its own designer, its own code and
 dropped onto forms from the Toolbox. The workflow is the Windows Forms one:
 
 1. **Create it**: *Add > New Item > Kubuno User Control*, name it (`address_editor`). You get
-   `address_editor.kbview` (the designed view, root `<UserControl x:Class="AddressEditor" DesignWidth=… DesignHeight=…>`)
+   `address_editor.kbcontrol` (the designed view, root `<UserControl x:Class="AddressEditor" DesignWidth=… DesignHeight=…>`;
+   a user control's view is a `.kbcontrol`, with its own Solution Explorer icon, a form's a `.kbview`)
    and `address_editor.rs` nested under it (`#[derive(UserControl)]`, its `#[event_handlers]` impl, a `Load`
    handler). The module is declared for you (`mod address_editor;`, or `#[path = "../address_editor.rs"] mod
    address_editor;` for a file added next to `Cargo.toml`). The designer opens borderless, at the design size;
@@ -429,6 +430,11 @@ dropped onto forms from the Toolbox. The workflow is the Windows Forms one:
 6. **Change it**: edit the user control then build. Until then, the forms using it show an information bar
    («out of date, build the project»); the build refreshes them without reopening.
 
+**A user control in a `.kbview`** (a project written before the two extensions, 2026-10-01) gets a warning on its
+root element; the light bulb's **Renommer en .kbcontrol** renames the file and updates its code-behind's
+`#[user_control(view = "…")]` (and the `x:Inherits` of views deriving from it). The reverse fix,
+**Renommer en .kbview**, is offered for a form saved as a `.kbcontrol`.
+
 A user control can be nested in another one, in a `TabControl` page, a `DockPanel`, or be a `<Repeater>`'s item
 (written inside the Repeater, or `ItemTemplate="DriveCard"`): each item has its own instance, its own context
 menus, its own events (the page's handler reads the item with `current_item()`).
@@ -442,7 +448,8 @@ the application starts in (the Windows UI language, when the project has its `.k
 **Language** box still offers «(Par défaut)».
 
 **Visual inheritance.** *Add > New Item > Kubuno Inherited Form* / *Kubuno Inherited User Control* opens the
-**Inheritance Picker**: choose the base view. The new view's root says `x:Inherits="base_dialog.kbview"`; the
+**Inheritance Picker**: choose the base view. The new view's root says `x:Inherits="base_dialog.kbview"` (an inherited
+user control is a `.kbcontrol` too: `x:Inherits="address_editor.kbcontrol"`); the
 designer shows the base's controls with a padlock - locked, unless their **Modifiers** (`Modifiers="Protected"`, set in the base's
 Properties window) is `Protected` or `Public`, in which case they can be selected, moved and their properties
 overridden (the derived view repeats the element with its `x:Name` and only the changed attributes). The derived

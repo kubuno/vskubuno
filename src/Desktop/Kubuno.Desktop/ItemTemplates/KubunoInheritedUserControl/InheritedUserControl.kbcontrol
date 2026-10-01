@@ -1,5 +1,5 @@
 <!--
-  $fileinputname$.kbview - the user control $classname$, inheriting $baseview$: it shows every control of the base user
+  $fileinputname$.kbcontrol - the user control $classname$, inheriting $baseview$: it shows every control of the base user
   control. The controls the base makes Protected or Public are listed below: set their properties here (the base keeps
   the others, locked). Add its own controls after them.
 -->

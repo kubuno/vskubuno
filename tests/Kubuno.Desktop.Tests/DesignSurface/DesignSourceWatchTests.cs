@@ -22,6 +22,7 @@ namespace Kubuno.Desktop.Tests.DesignSurface
             Assert.IsTrue(DesignSourceWatch.AffectsDesign(@"C:\s\App\src\address_editor.rs", "#[derive(UserControl, Default)]\npub struct AddressEditor {}"));
             Assert.IsTrue(DesignSourceWatch.AffectsDesign(@"C:\s\App\src\round.rs", "#[derive(kubuno::views::component::Component, Default)] struct R;"));
             Assert.IsTrue(DesignSourceWatch.AffectsDesign(@"C:\s\App\src\address_editor.kbview", "<!-- an editor -->\n<UserControl x:Class=\"AddressEditor\"/>"));
+            Assert.IsTrue(DesignSourceWatch.AffectsDesign(@"C:\s\App\src\address_editor.kbcontrol", "<UserControl x:Class=\"AddressEditor\"/>"), "a user control view (.kbcontrol)");
             Assert.IsFalse(DesignSourceWatch.AffectsDesign(@"C:\s\App\src\main_view.kbview", "<Panel DesignWidth=\"800\"/>"), "a form's own view is read live");
             Assert.IsFalse(DesignSourceWatch.AffectsDesign(@"C:\s\App\src\main_view.rs", "#[kubuno::view(\"main_view.kbview\")]\npub struct MainView {}"), "a form's code-behind");
             Assert.IsFalse(DesignSourceWatch.AffectsDesign(@"C:\s\App\target\debug\build\x.rs", "#[derive(UserControl)]"), "build output");

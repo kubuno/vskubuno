@@ -28,6 +28,33 @@
 - The `.kbview` text is the **only source of truth**. Tools edit it surgically (comments, attribute order, formatting
   preserved); nothing generated from it is ever committed (web: `.kubuno/views/` is gitignored; desktop: `OUT_DIR`).
 
+### 1.1 File kinds: `.kbview` and `.kbcontrol`
+
+A view file has one of two extensions, by **role**. The format is the same (this whole specification applies to both);
+only what the file *is* differs, which is what tools show (Solution Explorer icon, item templates, the web plugin's
+module kind).
+
+| Extension | Holds | Root element | Desktop code-behind | Web code-behind |
+|---|---|---|---|---|
+| `.kbview` | a form: a window, a dialog, a tool window, an MDI parent or child, a splash screen, a flyout, a page | any container but `UserControl` (`Panel`, …) | `#[kubuno::view("main_view.kbview")]` | a class extending the generated `ViewBase`, imported from `./NotesSettingsPage.kbview` |
+| `.kbcontrol` | a user control: a composite control designed as a view, used as an element of other views (`<MessageRow/>`) | `UserControl` | `#[derive(UserControl)]` + `#[user_control(view = "message_row.kbcontrol")]` | a class extending the generated `ViewBase`, imported from `./MessageRow.kbcontrol` |
+
+- A view is a user control when its root is `<UserControl>` **or** its code-behind declares it as one
+  (`#[derive(UserControl)]` naming it). Such a file **MUST** be a `.kbcontrol`; every other view **MUST** be a `.kbview`.
+- The language server warns (`view-file-kind`) when the extension disagrees with the kind, and offers the quick fix
+  « Renommer en .kbcontrol » / « Renommer en .kbview »: it renames the file and updates every path naming it — the
+  code-behind's `#[kubuno::view(…)]` / `#[user_control(view = …)]` and the `x:Inherits` of the views deriving from it.
+- Inheritance keeps the kind: an inherited user control (`<UserControl x:Inherits="address_editor.kbcontrol">`) is a
+  `.kbcontrol`, an inherited form a `.kbview`.
+- Unaffected: custom controls (code only, `#[derive(Component)]`, no view file) and inherited controls (code only).
+- Everything that reads views takes both extensions: the macros (`include_str!` of the named path, whatever its
+  extension), the design build, `kubuno-views-ls` (document selector, project scanning, diagnostics, `{Res}`), the
+  Visual Studio designer and Solution Explorer, `Kubuno.Rust.Sdk` (code-behind nesting, `SubType="Designer"`, build
+  inputs), and on the web the Vite plugin (`@kubuno/views-compiler` compiles `*.kbview` and `*.kbcontrol` alike; a
+  `.kbcontrol` module exports a user control, a `.kbview` module a view).
+- A view's resources (`main_view.kbres`) and code-behind (`main_view.rs` / `.ts`) are found by stem, under either
+  extension.
+
 ## 2. Element names
 
 **Rule: the canonical element names are the desktop names** (decision 1). The web registry maps each canonical name

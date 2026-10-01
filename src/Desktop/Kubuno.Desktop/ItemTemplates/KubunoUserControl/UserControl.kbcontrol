@@ -1,5 +1,5 @@
 <!--
-  $fileinputname$.kbview - the user control $classname$: design it like a view (double-click for the designer).
+  $fileinputname$.kbcontrol - the user control $classname$: design it like a view (double-click for the designer).
   Its code-behind, $fileinputname$.rs, is its view model: {Binding Caption} reads its `caption` property, and
   OnClick="on_action_click" runs its method. The project's other views use it as <$classname$ Caption="..."/>
   once the project is built: it is then in the Toolbox, under "<project> Composants".

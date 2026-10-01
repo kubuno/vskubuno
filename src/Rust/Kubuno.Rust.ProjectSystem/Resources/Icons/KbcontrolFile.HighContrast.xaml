@@ -1,0 +1,13 @@
+﻿<!-- KbcontrolFile icon, HighContrast background variant: a user control view (.kbcontrol, docs/VIEWS-SPEC.md "File kinds"). Keep the three variants in sync. -->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="16" Height="16">
+  <Canvas Width="16" Height="16">
+    <!-- A control without a window frame: a dashed outline (no title bar, unlike KbviewFile's form) holding the toolbox
+         UserControl glyph's layout (Lucide "layout-template": one wide block over a wide and a narrow one). Every edge
+         is on the pixel grid (the dashes are filled pixel runs, symmetric on each side), so it stays crisp at 16 px. -->
+    <Rectangle Canvas.Left="1" Canvas.Top="2" Width="14" Height="12" Fill="#000000" />
+    <Path Fill="#FFFFFF" Data="M0,1h3v1h-3z M4,1h2v1h-2z M7,1h2v1h-2z M10,1h2v1h-2z M13,1h3v1h-3z M0,14h3v1h-3z M4,14h2v1h-2z M7,14h2v1h-2z M10,14h2v1h-2z M13,14h3v1h-3z M0,2h1v1h-1z M0,4h1v2h-1z M0,7h1v2h-1z M0,10h1v2h-1z M0,13h1v1h-1z M15,2h1v1h-1z M15,4h1v2h-1z M15,7h1v2h-1z M15,10h1v2h-1z M15,13h1v1h-1z" />
+    <Rectangle Canvas.Left="3" Canvas.Top="4" Width="10" Height="3" Fill="#00FFFF" />
+    <Rectangle Canvas.Left="3" Canvas.Top="9" Width="6" Height="3" Fill="#FFFFFF" />
+    <Rectangle Canvas.Left="10" Canvas.Top="9" Width="3" Height="3" Fill="#00FFFF" />
+  </Canvas>
+</Viewbox>

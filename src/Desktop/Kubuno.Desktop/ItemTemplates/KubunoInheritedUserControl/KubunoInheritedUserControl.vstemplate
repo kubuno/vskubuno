@@ -15,10 +15,10 @@
     <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>14</SortOrder>
-    <DefaultName>InheritedUserControl.kbview</DefaultName>
+    <DefaultName>InheritedUserControl.kbcontrol</DefaultName>
   </TemplateData>
   <TemplateContent>
-    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.kbview">InheritedUserControl.kbview</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.kbcontrol">InheritedUserControl.kbcontrol</ProjectItem>
     <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.rs">InheritedUserControl.rs</ProjectItem>
   </TemplateContent>
   <WizardExtension>

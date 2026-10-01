@@ -6,7 +6,7 @@ use kubuno_views::prelude::*;
 /// A user control inheriting `$basetypename$`. Describe it here: this text is its description in the Toolbox.
 #[derive(UserControl, Default)]
 #[kubuno(extends = $basetype$)]
-#[user_control(view = "$fileinputname$.kbview")]
+#[user_control(view = "$fileinputname$.kbcontrol")]
 pub struct $classname$ {
     base: $basetype$,
 }

@@ -114,17 +114,9 @@ namespace Kubuno.Desktop.Designer.EditorFactory
             return fileExists(code) ? code : null;
         }
 
-        /// <summary>The view of a code file: the same-stem <c>.kbview</c> next to a <c>.rs</c> file, when it exists.</summary>
-        public static string? ViewFileOf(string rsPath, Func<string, bool> fileExists)
-        {
-            if (string.IsNullOrEmpty(rsPath) || !rsPath.EndsWith(".rs", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            var view = System.IO.Path.ChangeExtension(rsPath, "." + Kubuno.Desktop.Views.KbviewConstants.FileExtension.TrimStart('.'));
-            return fileExists(view) ? view : null;
-        }
+        /// <summary>The view of a code file: the same-stem <c>.kbview</c> or <c>.kbcontrol</c> next to a <c>.rs</c> file, when it exists.</summary>
+        public static string? ViewFileOf(string rsPath, Func<string, bool> fileExists) =>
+            Kubuno.Desktop.Logic.ViewFiles.ViewOf(rsPath, fileExists);
 
         /// <summary>The view of the active document when it is a view's code (<c>main_view.rs</c>), else null.</summary>
         private string? ActiveCodeBehindView()
@@ -161,7 +153,7 @@ namespace Kubuno.Desktop.Designer.EditorFactory
                 !(type is int frameType && frameType == (int)__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document) ||
                 ErrorHandler.Failed(frame.GetProperty((int)__VSFPROPID.VSFPROPID_pszMkDocument, out var moniker)) ||
                 moniker is not string path ||
-                !path.EndsWith("." + Kubuno.Desktop.Views.KbviewConstants.FileExtension.TrimStart('.'), StringComparison.OrdinalIgnoreCase))
+                !Kubuno.Desktop.Views.KbviewConstants.IsViewFile(path))
             {
                 return null;
             }

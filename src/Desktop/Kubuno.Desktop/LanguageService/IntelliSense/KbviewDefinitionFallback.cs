@@ -55,7 +55,7 @@ namespace Kubuno.Desktop.LanguageService.IntelliSense
                 var folder = Path.GetDirectoryName(path) ?? string.Empty;
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var fileHost = new VsWorkspaceFileHost(ServiceProvider.GlobalProvider);
-                var openViews = fileHost.OpenTexts(folder, ".kbview");
+                var openViews = fileHost.OpenTexts(folder, Kubuno.Desktop.Logic.ViewFiles.Extensions);
                 var openRust = fileHost.OpenTexts(folder, ".rs");
                 await TaskScheduler.Default;
 

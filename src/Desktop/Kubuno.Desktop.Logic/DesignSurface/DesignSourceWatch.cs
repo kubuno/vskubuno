@@ -72,7 +72,8 @@ namespace Kubuno.Desktop.Logic.DesignSurface
                 return DeclaresControl.IsMatch(text);
             }
 
-            return path.EndsWith(".kbview", StringComparison.OrdinalIgnoreCase) && UserControlRoot.IsMatch(text);
+            // A user control view: a .kbcontrol, or a .kbview not renamed yet (docs/VIEWS-SPEC.md, "File kinds").
+            return ViewFiles.IsViewFile(path) && UserControlRoot.IsMatch(text);
         }
     }
 }

@@ -288,7 +288,7 @@ generated getter (§6.2). This keeps views designable and diffs small.
   })
   ```
 
-  Used as `<NoteCard Note="{Binding item}" OnOpen="card_open"/>`. A user control is a `.kbview` with a code-behind
+  Used as `<NoteCard Note="{Binding item}" OnOpen="card_open"/>`. A user control is a `.kbcontrol` (VIEWS-SPEC.md §1.1) with a code-behind
   (`UserControl` root), usable as an element by its file stem, as on the desktop (`<Repeater ItemTemplate="NoteRow">`).
 - **Unregistered component (migration escape hatch)**: `<ReactHost Component="./NoteEditor#NoteEditor"
   Props="{Binding editorProps}"/>` — rendered for real in the designer (it is real React), no Properties rows beyond

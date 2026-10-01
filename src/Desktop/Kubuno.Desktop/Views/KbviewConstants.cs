@@ -10,7 +10,14 @@ namespace Kubuno.Desktop.Views
         /// <summary>Editor content type for Kubuno view files (see <see cref="LanguageService.ContentDefinition"/>).</summary>
         public const string ContentType = "kbview";
 
+        /// <summary>The extension of a form, window or dialog view (docs/VIEWS-SPEC.md, "File kinds").</summary>
         public const string FileExtension = ".kbview";
+
+        /// <summary>The extension of a user control view: the same XML format and editor, a different role and icon.</summary>
+        public const string ControlFileExtension = ".kbcontrol";
+
+        /// <summary>Whether <paramref name="path"/> is a view file of either kind (<c>.kbview</c> or <c>.kbcontrol</c>).</summary>
+        public static bool IsViewFile(string? path) => Kubuno.Desktop.Logic.ViewFiles.IsViewFile(path);
 
         /// <summary>File name of the Rust language server binary this library launches over stdio.</summary>
         public const string LanguageServerExecutableName = "kubuno-views-ls.exe";

@@ -1382,6 +1382,30 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   3 DIP outside its bounds (visible on an accent-coloured Button) with WinForms-style grab handles - filled
   when it can be resized there (an Anchor child), hollow otherwise.
 
+### Two file kinds: `.kbview` (forms) and `.kbcontrol` (user controls)
+
+Since 2026-10-01 (`docs/VIEWS-SPEC.md` §1.1) a user control's view is a `.kbcontrol` file; forms, windows, dialogs,
+tool windows, MDI windows, splash screens and flyouts stay `.kbview`. Same XML, same designer, same language server
+(one `kbview` content type for both extensions); only the role differs:
+
+- **Solution Explorer** shows two icons (`RustProject.imagemanifest`, 16 px, hinted, light/dark/high contrast):
+  `KbviewFile` (id 3) - a window with its title bar - for `.kbview`, and `KbcontrolFile` (id 5) - a dashed control
+  outline holding the toolbox UserControl glyph's layout - for `.kbcontrol`. `KbviewTreePropertiesProvider` gives them
+  to `.rsproj` items; `kbview-languages.pkgdef`'s `ShellFileAssociations` to Open Folder.
+- **Opening**: `KbviewEditorFactory` is registered for both extensions, `KbviewDesignerEditorProvider` makes it the
+  double-click default of both inside a `.rsproj`; the core text editor entry, the TextMate grammar and the element
+  tree under the file (`KbcontrolSolutionSymbolProvider`) cover `.kbcontrol` too. F7 / Shift+F7 pair `row.rs` with
+  `row.kbcontrol` like `main_view.rs` with `main_view.kbview`, and `Kubuno.Rust.Sdk` nests the code-behind (and a
+  same-stem `.kbres`) under either.
+- **Item templates**: « User Control » and « Inherited User Control » write a `.kbcontrol`; Form, Dialog, Tool Window,
+  MDI Parent/Child, Splash Screen and Flyout a `.kbview`. The inheritance picker lists both kinds.
+- **Toolbox**: a user control is found from its Rust declaration (`#[derive(UserControl)]`, `kubuno/crateComponents`),
+  whatever its view's extension, and listed under « <project> Composants » after a build.
+- **Mismatch**: `kubuno-views-ls` warns (`view-file-kind`) on a `.kbview` whose root is `<UserControl>` (or whose
+  code-behind is a `#[derive(UserControl)]` naming it) and on a `.kbcontrol` holding a form, with the quick fix
+  « Renommer en .kbcontrol » / « Renommer en .kbview » (a `RenameFile` plus the edits of the code-behind's path and of
+  the derived views' `x:Inherits`).
+
 ### Live verification (experimental instance, `KubunoLot8App.rsproj`)
 
 Double-click `main_view.kbview` in Solution Explorer → `main_view.kbview [Conception]`; the Toolbox

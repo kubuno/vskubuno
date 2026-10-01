@@ -66,6 +66,7 @@ impl MainView {
 | `Application.Run(new Form1())` | `kubuno::Application::run(MainView::new())` |
 | `ApplicationConfiguration.Initialize()` | optional: `Application::set_theme`, `set_chrome`, `enable_visual_styles`, `set_hot_reload`, `set_diagnostics` |
 | `Form1.Designer.cs` | `#[kubuno::view("main_view.kbview")]` — generated in memory by the compiler, no file |
+| `UserControl1.cs` + its designer | `#[derive(UserControl)]` + `#[user_control(view = "user_control1.kbcontrol")]` (a `.kbcontrol` view) |
 | `InitializeComponent()` | `self.initialize_component()` |
 | `private Button button1;` | `hello: kubuno::forms::Button` (a field per `x:Name`, private unless the view's `Modifiers` says `Public`/`Internal`) |
 | `this.button1.Enabled = false` | `self.hello.set_enabled(false)` |
@@ -357,6 +358,10 @@ queried over LSP on the same project): hover on `self.status` shows `status: Tex
 
 As built (`EVENTS.md` §18, walkthrough in `GETTING-STARTED.md` §6 "User controls"):
 
+- **A user control's view is a `.kbcontrol` file** (`address_editor.kbcontrol`, root `<UserControl x:Class="…">`),
+  a form's a `.kbview` - same format, same designer, different role and Solution Explorer icon (`VIEWS-SPEC.md`
+  §1.1). The code-behind names it: `#[user_control(view = "address_editor.kbcontrol")]`. A user control still in a
+  `.kbview` is flagged by the language server, whose quick fix « Renommer en .kbcontrol » renames it and its path.
 - **A user control's code-behind** is a `#[derive(UserControl)]` struct, its own view model. Its `#[property]`
   fields are its properties (they may be `Option<ColorValue>`, `Vec<String>`, an enum, `Rows`, `Shared<T>`…), and
   `#[property(on_change = "…")]` is the body of a setter. Its `#[event]` fields are its events, raised with
@@ -373,4 +378,4 @@ As built (`EVENTS.md` §18, walkthrough in `GETTING-STARTED.md` §6 "User contro
 - **Inherited form**: `<Panel x:Inherits="base_form.kbview">…</Panel>` and `#[kubuno::view("derived.kbview")] struct
   Derived { #[base] base: BaseForm }`: the base form's controls are `self.base.ok`, and its handlers keep running.
   **Inherited user control**: `#[derive(UserControl)] #[kubuno(extends = crate::address_editor::AddressEditor)]
-  #[user_control(view = "fancy_address.kbview")] struct FancyAddress { base: AddressEditor, … }`.
+  #[user_control(view = "fancy_address.kbcontrol")] struct FancyAddress { base: AddressEditor, … }`.

@@ -9,7 +9,8 @@
 	"name": "Kubuno View",
 	"scopeName": "text.xml.kbview",
 	"fileTypes": [
-		"kbview"
+		"kbview",
+		"kbcontrol"
 	],
 	"patterns": [
 		{

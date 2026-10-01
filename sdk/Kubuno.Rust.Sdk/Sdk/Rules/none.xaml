@@ -20,7 +20,7 @@
   </StringProperty>
   <BoolProperty Name="Visible" Visible="False" />
   <StringProperty Name="DependentUpon" Visible="False" />
-  <!-- SubType="Designer" on .kbview items (Sdk.targets): what CPS reads to offer "View Designer"/"View Code". -->
+  <!-- SubType="Designer" on .kbview and .kbcontrol items (Sdk.targets): what CPS reads to offer "View Designer"/"View Code". -->
   <StringProperty Name="SubType" Visible="False" />
   <StringProperty Name="Link" Visible="False" />
 </Rule>

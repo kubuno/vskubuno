@@ -29,5 +29,14 @@ namespace Kubuno.Desktop.Tests.Designer.DesignSurface
             Assert.IsNull(DesignerViewSwitchCommandTarget.ViewFileOf(Path.Combine(Src, "main.rs"), p => p == view), "not a view's code");
             Assert.IsNull(DesignerViewSwitchCommandTarget.ViewFileOf(view, _ => true), "only from a .rs file");
         }
+
+        [TestMethod]
+        public void Shift_F7_in_a_user_controls_code_opens_its_kbcontrol()
+        {
+            var control = Path.Combine(Src, "message_row.kbcontrol");
+            var code = Path.Combine(Src, "message_row.rs");
+            Assert.AreEqual(control, DesignerViewSwitchCommandTarget.ViewFileOf(code, p => p == control));
+            Assert.AreEqual(Path.Combine(Src, "message_row.rs"), DesignerViewSwitchCommandTarget.CodeFileOf(control, p => p == code), "F7 from the user control");
+        }
     }
 }

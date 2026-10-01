@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **User controls are `.kbcontrol` files, with their own icon** (`docs/VIEWS-SPEC.md` §1.1, `docs/DESIGNER.md` §11):
+  a user control's view (root `<UserControl>`) now uses the `.kbcontrol` extension, while forms, windows, dialogs,
+  tool windows, MDI windows, splash screens and flyouts keep `.kbview`. Same format, same designer, same language
+  server; Solution Explorer tells them apart (a new hinted 16 px user control icon, light, dark and high contrast, next
+  to the form's window icon), in a `.rsproj` and in Open Folder. A `.kbcontrol` opens in the designer on a
+  double-click, F7 / Shift+F7 pair it with its `.rs`, `Kubuno.Rust.Sdk` nests its code-behind and `.kbres` under it,
+  marks it `SubType="Designer"` and counts it as a build input, and the inheritance picker lists it. The « User
+  Control » and « Inherited User Control » item templates (and the project menu's « Contrôle utilisateur Kubuno »)
+  now create a `.kbcontrol`; the foundations sample's `message_row` is one. A user control left in a `.kbview` (or a
+  form saved as a `.kbcontrol`) gets a warning with the quick fix « Renommer en .kbcontrol » / « Renommer en
+  .kbview », which renames the file and updates its code-behind's path and the views inheriting from it.
+
 - **Kubuno Dev Assistant (« Assistant de développement Kubuno »), lot DA-1** (`docs/AI-ASSISTANT.md` §14): an AI pair
   programmer for building Kubuno, in its own tool window (View › Other Windows), docked with Solution Explorer, native
   and theme-following. Claude through the official Anthropic SDK in a separate process (`kubuno-dev-assistant.exe`,

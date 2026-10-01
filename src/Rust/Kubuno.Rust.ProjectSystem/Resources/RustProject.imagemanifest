@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Image manifest for the .rsproj project node icon (docs/RSPROJ.md §3) and the .rs/.kbview/Cargo.toml file icons (lot 8). Shipped at the root of the
+  Image manifest for the .rsproj project node icon (docs/RSPROJ.md §3) and the .rs/.kbview/.kbcontrol/Cargo.toml file icons (lot 8). Shipped at the root of the
   Kubuno.VisualStudio VSIX, where Visual Studio's image service discovers *.imagemanifest files on
   its own (no registration needed). The XAML sources are WPF resources of
   Kubuno.Rust.ProjectSystem.dll; the GUID/ID must match RustProjectImages.cs.
@@ -13,6 +13,7 @@
     <ID Name="RustFile" Value="2" />
     <ID Name="KbviewFile" Value="3" />
     <ID Name="CargoManifest" Value="4" />
+    <ID Name="KbcontrolFile" Value="5" />
   </Symbols>
   <Images>
     <!-- Official Rust gear+R mark, one XAML per background AND per size: the 16px variant drops the
@@ -54,6 +55,13 @@
       <Source Uri="$(Resources)/Icons/CargoManifest.Light.xaml" Background="Light" />
       <Source Uri="$(Resources)/Icons/CargoManifest.Dark.xaml" Background="Dark" />
       <Source Uri="$(Resources)/Icons/CargoManifest.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <!-- A user control view (.kbcontrol, docs/VIEWS-SPEC.md "File kinds"): vector, one XAML per background, distinct
+         from KbviewFile's form so Solution Explorer tells the two kinds apart. -->
+    <Image Guid="$(RustProjectImagesGuid)" ID="$(KbcontrolFile)" AllowColorInversion="false">
+      <Source Uri="$(Resources)/Icons/KbcontrolFile.Light.xaml" Background="Light" />
+      <Source Uri="$(Resources)/Icons/KbcontrolFile.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Resources)/Icons/KbcontrolFile.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

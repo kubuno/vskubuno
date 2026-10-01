@@ -75,7 +75,10 @@ namespace Kubuno.Desktop.TemplateWizard
             return result.OrderBy(b => b.Path, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
-        /// <summary>The <c>.kbview</c> files under <paramref name="projectDirectory"/>, build output skipped.</summary>
+        /// <summary>
+        /// The view files under <paramref name="projectDirectory"/> - forms (<c>.kbview</c>) and user controls
+        /// (<c>.kbcontrol</c>, docs/VIEWS-SPEC.md "File kinds") - build output skipped.
+        /// </summary>
         public static IEnumerable<string> ViewFiles(string projectDirectory)
         {
             if (!Directory.Exists(projectDirectory))
@@ -83,7 +86,8 @@ namespace Kubuno.Desktop.TemplateWizard
                 return Array.Empty<string>();
             }
 
-            return Directory.EnumerateFiles(projectDirectory, "*.kbview", SearchOption.AllDirectories)
+            return new[] { "*.kbview", "*.kbcontrol" }
+                .SelectMany(pattern => Directory.EnumerateFiles(projectDirectory, pattern, SearchOption.AllDirectories))
                 .Where(f => f.IndexOf("\\target\\", StringComparison.OrdinalIgnoreCase) < 0 && f.IndexOf("\\obj\\", StringComparison.OrdinalIgnoreCase) < 0);
         }
 

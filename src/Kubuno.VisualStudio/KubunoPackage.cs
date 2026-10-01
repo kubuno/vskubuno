@@ -129,6 +129,8 @@ namespace Kubuno.VisualStudio
     // plain code window of this factory (KbviewEditorFactory.CodePhysicalView), like WinForms' Form1.cs.
     [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
     [ProvideEditorExtension(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), Kubuno.Desktop.Views.KbviewConstants.FileExtension, Kubuno.Desktop.Designer.DesignerConstants.EditorExtensionPriority)]
+    // User control views (.kbcontrol, docs/VIEWS-SPEC.md "File kinds"): the same designer, the same priority.
+    [ProvideEditorExtension(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), Kubuno.Desktop.Views.KbviewConstants.ControlFileExtension, Kubuno.Desktop.Designer.DesignerConstants.EditorExtensionPriority)]
     // The .kbres resource editor (Kubuno.Desktop\Resources\Editor): the default editor of .kbres files everywhere (no
     // other editor is registered for the extension; 0x60 wins). Same logical views as the .kbview designer: Primary and
     // Designer -> the grid/thumbnail editor, Code and TextView -> a plain code window on the same XML buffer.

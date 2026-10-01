@@ -32,7 +32,7 @@ namespace Kubuno.Desktop
             new ProjectItemTemplate(PackageIds.AddKubunoViewCommand, "KubunoView", "Vue Kubuno", "Nom de la vue :", "NewView", ".kbview"),
             // docs/EVENTS.md EVT-7b: the control templates (the wizard names the struct and the file, and declares the module).
             new ProjectItemTemplate(PackageIds.AddKubunoCustomControlCommand, "KubunoCustomControl", "Contrôle personnalisé Kubuno", "Nom du contrôle :", "CustomControl", ".rs", ControlItemNames.ModuleName, intoSourceFolder: true),
-            new ProjectItemTemplate(PackageIds.AddKubunoUserControlCommand, "KubunoUserControl", "Contrôle utilisateur Kubuno", "Nom du contrôle utilisateur :", "UserControl", ".kbview", ControlItemNames.ModuleName, intoSourceFolder: true),
+            new ProjectItemTemplate(PackageIds.AddKubunoUserControlCommand, "KubunoUserControl", "Contrôle utilisateur Kubuno", "Nom du contrôle utilisateur :", "UserControl", ".kbcontrol", ControlItemNames.ModuleName, intoSourceFolder: true),
             new ProjectItemTemplate(PackageIds.AddKubunoInheritedControlCommand, "KubunoInheritedControl", "Contrôle hérité Kubuno", "Nom du contrôle :", "InheritedControl", ".rs", ControlItemNames.ModuleName, intoSourceFolder: true),
             new ProjectItemTemplate(PackageIds.AddKubunoComponentCommand, "KubunoComponent", "Composant Kubuno", "Nom du composant :", "Component", ".rs", ControlItemNames.ModuleName, intoSourceFolder: true),
         };
