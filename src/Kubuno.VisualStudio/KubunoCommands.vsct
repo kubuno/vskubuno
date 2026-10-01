@@ -231,6 +231,14 @@
           <ButtonText>Kubuno Ribbon Add</ButtonText>
         </Strings>
       </Menu>
+      <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonSizeMenu" priority="0x0350" type="Menu">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Size</ButtonText>
+        </Strings>
+      </Menu>
       <Menu guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddMenu" priority="0x0100" type="Menu">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup"/>
         <CommandFlag>DynamicVisibility</CommandFlag>
@@ -442,6 +450,9 @@
       </Group>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" priority="0x0100">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksMenu" />
+      </Group>
+      <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonSizeListGroup" priority="0x0100">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonSizeMenu" />
       </Group>
       <Group guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddListGroup" priority="0x0100">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonAddMenu" />
@@ -1272,6 +1283,30 @@
           <ButtonText>Edit Items...</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonEditLabel" priority="0x0150" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Edit Label...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonSizeLarge" priority="0x0100" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonSizeListGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Large</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonSizeSmall" priority="0x0101" type="Button">
+        <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonSizeListGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>Small</ButtonText>
+        </Strings>
+      </Button>
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonChooseIcon" priority="0x0400" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonTasksGroup" />
         <CommandFlag>DynamicVisibility</CommandFlag>
@@ -1520,6 +1555,12 @@
     <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonEditItems" priority="0x0300">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup" />
     </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonEditLabel" priority="0x0150">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonSizeMenu" priority="0x0350">
+      <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup" />
+    </CommandPlacement>
     <CommandPlacement guid="guidKubunoCommandsPackageCmdSet" id="cmdidDesignerRibbonChooseIcon" priority="0x0400">
       <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoDesignerRibbonGroup" />
     </CommandPlacement>
@@ -1716,6 +1757,11 @@
       <IDSymbol name="cmdidDesignerRibbonCreateCommand" value="0x0600" />
       <IDSymbol name="cmdidDesignerRibbonEditItems" value="0x0601" />
       <IDSymbol name="cmdidDesignerRibbonChooseIcon" value="0x0602" />
+      <IDSymbol name="cmdidDesignerRibbonEditLabel" value="0x0603" />
+      <IDSymbol name="cmdidDesignerRibbonSizeLarge" value="0x0604" />
+      <IDSymbol name="cmdidDesignerRibbonSizeSmall" value="0x0605" />
+      <IDSymbol name="KubunoDesignerRibbonSizeMenu" value="0x1106" />
+      <IDSymbol name="KubunoDesignerRibbonSizeListGroup" value="0x1107" />
       <IDSymbol name="cmdidDesignerRibbonAddFirst" value="0x0620" />
       <!-- docs/DESIGNER.md Â§13: Layout submenus and toolbar. -->
       <IDSymbol name="KubunoDesignerAlignMenu" value="0x1035" />

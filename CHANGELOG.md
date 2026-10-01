@@ -64,6 +64,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Polymorphic collection editor: a group's Items, a tab's Groups, a ribbon's Tabs and a menu's DropDownItems are one
   Properties row each; « Ajouter ▾ » offers every element kind the collection holds, each member edited with its own
   properties.
+- A **Zoom** box next to Design | XML | Split (Fit, 50 % … 200 %), like the XAML designer's: « Fit » shows the whole
+  designed window, caption buttons included, however wide it is.
+- A ribbon control's smart tag (and context menu) also offers « Modifier le libellé… » and « Taille ▸ Large / Small ».
+- The collection editor lists, for each member, the properties the Properties window shows for that element (its
+  inherited ones included), grouped Appearance first.
 - A tab's `ScalingPolicy` row: an editor of its ordered `Scale` steps (group picked from the tab's groups, size),
   written as `<RibbonTab.ScalingPolicy>`.
 - `samples/ribbon-desktop`: the Accueil tab of Kubuno Documents as a `.kbview` ribbon (Presse-papiers, Police,

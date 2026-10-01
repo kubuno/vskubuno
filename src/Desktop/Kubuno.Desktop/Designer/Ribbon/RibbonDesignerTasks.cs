@@ -113,6 +113,32 @@ namespace Kubuno.Desktop.Designer.Ribbon
             return Has("Icon") ? "Icon" : null;
         }
 
+        /// <summary>The text attribute "Edit Label" edits: <c>Header</c> for a tab, a group or a Backstage tab, <c>Label</c> otherwise; null when the element has none.</summary>
+        public static string? LabelAttribute(string text, string elementId, ComponentRegistry registry)
+        {
+            var node = ViewDocument.Find(ViewDocument.Parse(text), elementId);
+            var component = node is null ? null : registry.Find(node.Name);
+            if (node is null || !IsRibbon(component))
+            {
+                return null;
+            }
+
+            return new[] { "Header", "Label" }.FirstOrDefault(n => component!.Properties.Any(p => p.Name == n));
+        }
+
+        /// <summary>The element's <c>Size</c> (Large or Small) when it has one, else null.</summary>
+        public static string? SizeOf(string text, string elementId, ComponentRegistry registry)
+        {
+            var node = ViewDocument.Find(ViewDocument.Parse(text), elementId);
+            var component = node is null ? null : registry.Find(node.Name);
+            if (node is null || !IsRibbon(component) || !component!.Properties.Any(p => p.Name == "Size" && p.Kind.Tag == PropKindTag.Enum))
+            {
+                return null;
+            }
+
+            return string.IsNullOrEmpty(node.Attribute("Size")) ? "Small" : node.Attribute("Size");
+        }
+
         /// <summary>Whether a <c>Command</c> can be made from element <paramref name="elementId"/> (a button-like element without one).</summary>
         public static bool CanCreateCommand(string text, string elementId)
         {

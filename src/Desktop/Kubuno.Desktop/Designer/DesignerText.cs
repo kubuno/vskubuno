@@ -316,6 +316,10 @@ namespace Kubuno.Desktop.Designer
 
         public static string MenuRibbonChooseIcon => T("Choose Icon...", "Choisir l'icône...");
 
+        public static string MenuRibbonEditLabel => T("Edit Label...", "Modifier le libellé...");
+
+        public static string MenuRibbonSize => T("Size", "Taille");
+
         /// <summary>"Edit Items...", "Edit Groups..."... - a ribbon element's collection editor.</summary>
         public static string MenuRibbonEditCollection(string row) => row switch
         {

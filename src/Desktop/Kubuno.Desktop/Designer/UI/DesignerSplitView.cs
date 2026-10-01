@@ -97,6 +97,8 @@ namespace Kubuno.Desktop.Designer.UI
             var tabStrip = BuildTabStrip(_designTab, _xmlTab, _splitTab);
             // The design-time language (docs/RESOURCES.md): previews the view's {Res …} values in a culture of the project.
             Kubuno.Desktop.Designer.Resources.DesignLanguagePicker.Attach(tabStrip, _designSurfaceHost);
+            // The zoom box (Fit, 50 %… 200 %), like the XAML designer's.
+            DesignSurface.DesignZoomPicker.Attach(tabStrip, _designSurfaceHost);
             Grid.SetRow(tabStrip, 0);
             root.Children.Add(tabStrip);
 

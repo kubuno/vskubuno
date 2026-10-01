@@ -77,6 +77,17 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         /// <summary>"Choose Icon...": the icon picker on the element's icon attribute.</summary>
         public const int RibbonChooseIcon = 0x0602;
 
+        /// <summary>"Edit Label...": the element's Label (Header) in a small input box at the element.</summary>
+        public const int RibbonEditLabel = 0x0603;
+
+        /// <summary>"Size" › Large / Small.</summary>
+        public const int RibbonSizeLarge = 0x0604;
+
+        public const int RibbonSizeSmall = 0x0605;
+
+        /// <summary>The "Size" › submenu.</summary>
+        public const int RibbonSizeMenu = 0x1106;
+
         /// <summary>First dynamic item of "Add" › (one per element kind that can be added).</summary>
         public const int RibbonAddFirst = 0x0620;
     }
@@ -140,6 +151,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>The icon attribute "Choose Icon..." edits, or null.</summary>
         public string? IconAttribute { get; private set; }
+
+        /// <summary>The text attribute "Edit Label..." edits (Label or Header), or null.</summary>
+        public string? LabelAttribute { get; private set; }
+
+        /// <summary>The element's Size (Large / Small) when it has one, else null.</summary>
+        public string? Size { get; private set; }
 
         /// <summary>The menu shows only the "Add" choices (a ribbon's "+" glyph).</summary>
         public bool AddOnly { get; private set; }
@@ -216,6 +233,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 model.Collection = Ribbon.RibbonDesignerTasks.CollectionOf(component!);
                 model.CanCreateCommand = Ribbon.RibbonDesignerTasks.CanCreateCommand(text, elementId);
                 model.IconAttribute = Ribbon.RibbonDesignerTasks.IconAttribute(text, elementId, registry);
+                model.LabelAttribute = Ribbon.RibbonDesignerTasks.LabelAttribute(text, elementId, registry);
+                model.Size = Ribbon.RibbonDesignerTasks.SizeOf(text, elementId, registry);
                 model.InRibbon = component!.Name != "Ribbon";
             }
 
@@ -274,6 +293,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>"Choose Icon...": the icon picker on <paramref name="elementId"/>'s <paramref name="attribute"/>.</summary>
         void ChooseIcon(string elementId, string attribute);
+
+        /// <summary>"Edit Label...": a new value for <paramref name="elementId"/>'s <paramref name="attribute"/> (Label or Header).</summary>
+        void EditLabel(string elementId, string attribute);
+
+        /// <summary>"Size" › Large / Small: sets <paramref name="elementId"/>'s Size.</summary>
+        void SetRibbonSize(string elementId, string size);
     }
 
     /// <summary>
@@ -393,6 +418,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 case DesignerCommandIds.RibbonCreateCommand: _actions.CreateCommandFrom(id!); break;
                 case DesignerCommandIds.RibbonEditItems when _model.Collection is { } collection: _actions.EditCollection(id!, collection); break;
                 case DesignerCommandIds.RibbonChooseIcon when _model.IconAttribute is { } icon: _actions.ChooseIcon(id!, icon); break;
+                case DesignerCommandIds.RibbonEditLabel when _model.LabelAttribute is { } label: _actions.EditLabel(id!, label); break;
+                case DesignerCommandIds.RibbonSizeLarge: _actions.SetRibbonSize(id!, "Large"); break;
+                case DesignerCommandIds.RibbonSizeSmall: _actions.SetRibbonSize(id!, "Small"); break;
                 default:
                     if (Index(cmd, DesignerCommandIds.RibbonAddFirst, _model.AddChoices.Count) is { } add)
                     {
@@ -462,6 +490,10 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 case DesignerCommandIds.RibbonEditItems:
                     return new CommandState(true, _model.Collection is not null && !_model.AddOnly && !_model.IsMultiple, DesignerText.MenuRibbonEditCollection(_model.Collection?.Row ?? "Items"));
                 case DesignerCommandIds.RibbonChooseIcon: return new CommandState(true, _model.IconAttribute is not null && !_model.AddOnly && !_model.IsMultiple, DesignerText.MenuRibbonChooseIcon);
+                case DesignerCommandIds.RibbonEditLabel: return new CommandState(true, _model.LabelAttribute is not null && !_model.AddOnly && !_model.IsMultiple, DesignerText.MenuRibbonEditLabel);
+                case DesignerCommandIds.RibbonSizeMenu: return new CommandState(true, _model.Size is not null && !_model.AddOnly && !_model.IsMultiple, DesignerText.MenuRibbonSize);
+                case DesignerCommandIds.RibbonSizeLarge: return new CommandState(_model.Size != "Large", _model.Size is not null, "Large");
+                case DesignerCommandIds.RibbonSizeSmall: return new CommandState(_model.Size != "Small", _model.Size is not null, "Small");
             }
 
             if (Index(cmdId, DesignerCommandIds.RibbonAddFirst, DesignerCommandIds.MaxDynamicItems) is { } addChoice)

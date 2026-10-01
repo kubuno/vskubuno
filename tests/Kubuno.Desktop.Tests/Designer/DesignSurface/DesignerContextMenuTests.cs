@@ -359,6 +359,10 @@ namespace Kubuno.Desktop.Tests.Designer.DesignSurface
 
             public void ChooseIcon(string elementId, string attribute) => Calls.Add($"ChooseIcon {elementId} {attribute}");
 
+            public void EditLabel(string elementId, string attribute) => Calls.Add($"EditLabel {elementId} {attribute}");
+
+            public void SetRibbonSize(string elementId, string size) => Calls.Add($"Size {elementId} {size}");
+
             public void EditCollection(string elementId, Kubuno.Desktop.Designer.Ribbon.RibbonCollection collection) => Calls.Add($"EditCollection {elementId} {collection.Row}");
 
             public void ConvertHandlers() => Calls.Add("ConvertHandlers");

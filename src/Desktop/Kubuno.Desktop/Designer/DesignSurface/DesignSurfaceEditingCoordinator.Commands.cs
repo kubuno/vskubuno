@@ -507,6 +507,31 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             PropertyBrowser.KbviewCollectionEditor.Edit(this, this, elementId, collection.Row, collection.Tags);
         }
 
+        /// <summary>"Edit Label..." on a ribbon element: its Label (or Header) in a small input box, one undo unit.</summary>
+        public void EditLabel(string elementId, string attribute)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var current = ElementAttributeReader.Read(GetCurrentText(), elementId)?.Attributes is { } attributes && attributes.TryGetValue(attribute, out var value) ? value ?? string.Empty : string.Empty;
+            if (Kubuno.Desktop.Resources.Editor.TextPromptDialog.TryAsk(DesignerText.MenuRibbonEditLabel.TrimEnd('.'), attribute + " :", current, null, out var text) && text != current)
+            {
+                SetAttribute(elementId, attribute, text);
+            }
+        }
+
+        /// <summary>"Size" › Large / Small on a ribbon element (Small is the default: the attribute goes).</summary>
+        public void SetRibbonSize(string elementId, string size)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (size == "Small")
+            {
+                RemoveAttribute(elementId, "Size");
+            }
+            else
+            {
+                SetAttribute(elementId, "Size", size);
+            }
+        }
+
         /// <summary>"Choose Icon..." on a ribbon element: the icon picker (docs/ICONS.md) on its icon attribute, one undo unit.</summary>
         public void ChooseIcon(string elementId, string attribute)
         {

@@ -154,6 +154,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             // The designer options that change what the surface draws, before anything is drawn.
             SendLine(DesignSurfaceProtocol.EncodeSetDesignOptions(Options.DesignerOptionsHost.Current?.ShowDesignOutlines ?? true));
 
+            // The designer's zoom (a restarted surface keeps it).
+            if (_zoom != 1.0)
+            {
+                SendZoom();
+            }
+
             // The project's controls first: the text then compiles against them.
             if (_lastProjectComponents != null)
             {
