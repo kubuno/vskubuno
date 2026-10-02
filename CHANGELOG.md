@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Web views design note: the compiler and the runtime as built** (`docs/WEB-VIEWS.md` §13 and §14, lots
+  WV-2 and WV-3). The note now describes the `.kbview` web compiler (the Rust crate `kubuno-views-web`, its
+  WebAssembly build in `@kubuno/views-compiler`, the Vite plugin, generated types, `kbview-tsc`, HMR) and the
+  `@kubuno/views` runtime, the render plan format both share, where each piece lives across the repositories
+  and how the core consumes the compiler (tagged git dependency), with what was verified and what remains.
+
 - **The extension ships kubuno-resources-tool.exe** (docs/RESOURCES.md) in its `tools\` folder, next to the language server and the data tool: `import-locales`, `import-resx` and `check` can be run from a terminal without building the desktop workspace.
 
 - **Data bindings are first-class in the designer** (`docs/DESIGNER.md` §18): every bindable row of the Properties

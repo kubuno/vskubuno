@@ -1,6 +1,6 @@
 # Kubuno web views — `.kbview` for the web UI, designed in Visual Studio — design note
 
-> Status: **design study, nothing built** (2026-10-01). Product-owner decision (2026-10-01): the Kubuno **web** UI
+> Status: **design study, partly built** (2026-10-01; built so far: WV-0, WV-1, WV-2, WV-3, WV-4, WV-8, WV-9a — see §12–§14). Product-owner decision (2026-10-01): the Kubuno **web** UI
 > (core host + module frontends) moves toward a declarative view format similar to the desktop `.kbview`, editable in
 > the Visual Studio visual designer (Toolbox, design surface, Properties, ⚡ events, code-behind); the design surface
 > renders with **WebView2** (WebKit is dropped); existing React/TSX code is migrated or transformed.
@@ -949,3 +949,160 @@ downstream source changed (the facade `kubuno`, the macros, chat, shell, documen
 Windows and on `wasm32-unknown-unknown`. Not done: the desktop designer smoke test in Visual Studio (no VS session in
 this lot; the export and `view_embed` compile unchanged, and the export is now also read back by the model loader in a
 test).
+
+## 13. WV-2 as built (2026-10-02) — `@kubuno/views-compiler`
+
+### 13.1 Where things live (repository placement — decision)
+
+This note did not say how the core consumes the Rust grammar; the choice follows CLAUDE.md §3 ("published"
+mode, tagged git dependencies, like `kubuno-seccomp` / `kubuno-storage`):
+
+| Piece | Repository / path | Consumed by |
+|---|---|---|
+| Grammar (unchanged) | desktop `windows/src/crates/kubuno-views-syntax`, `-model` | everything below |
+| **Web compiler** `kubuno-views-web` (new, platform-neutral: validation against a web registry, plan, `.d.ts`, check files, handle types) | desktop `windows/src/crates/kubuno-views-web` (workspace member, `.rsproj`, `Kubuno.Core.Desktop.slnx`) | the WASM shim (git tag); later the language server's web profile (path, WV-7) — §5's "one generator, shared Rust" |
+| WASM shim (C ABI, JSON in/out, no wasm-bindgen) | core `frontend/packages/views-compiler/wasm/` (own `[workspace]`, not a member of the core's Rust workspace) | `kubuno-views-web = { git = "https://github.com/kubuno/desktop", tag = "views-web-v0.1.0" }` |
+| Built `.wasm` (≈ 474 KB) + `BUILD-INFO.json` | committed in `frontend/packages/views-compiler/wasm/`, shipped in the npm package | module builds: **no Rust toolchain, offline-able** |
+| `@kubuno/views-compiler` (Vite plugin, `kbview-tsc`, browser entry) | core `frontend/packages/views-compiler/` (`dist/` committed, like `@kubuno/ui`'s) | modules (devDependency), the core host |
+
+The compiler lives in the desktop repository next to the grammar it extends, and because the language server
+(desktop repository) must reuse its TypeScript generators; the core only consumes a tag. Cargo's `[patch]`
+cannot replace a git dependency whose tag does not exist yet, so `scripts/build-wasm.mjs --desktop <checkout>`
+(or `KUBUNO_DESKTOP_DIR`) builds a copy of the shim with a path dependency; without it the shim builds from the
+tag. Release flow: commit + tag `views-web-vX.Y.Z` on the desktop repository (user) → `npm run build:wasm` in
+`frontend/packages/views-compiler` → commit the `.wasm` (and the shim's `Cargo.lock`) → publish
+`@kubuno/views-compiler` and `@kubuno/views` (user).
+
+### 13.2 What the compiler produces
+
+`kubuno_views_web::compile(text, registry, options)` (Rust; the same through WASM) returns: diagnostics
+(1-based line / **UTF-16** column, the unit of TypeScript, source maps and editors; codes `syntax`,
+`unknown-element` with « did you mean », `unknown-attribute`, `value`, `children`, `item-placement`,
+`property-element`, `x-name`, `handler-name`, `binding`, `binding-path`, `root-only`, `not-on-web`,
+`view-file-kind`, `registry` for isolation violations…), the **plan**, `X.kbview.d.ts`, `X.kbview.check.ts`
+and its span map, the `x:Name`s and the handler uses. The registry is the host file (`host: true`: may only
+name `@ui`, `@kubuno/sdk`, `@kubuno/drive`, `@kubuno/views`) plus project registries (`host: false`: also
+project-local modules `./x`, `../x`, `/x`) plus the `.kbcontrol` user controls (element = file stem, rendered by
+the code-behind's default export). A project element never shadows a host one; any other module is an
+**error** (module isolation rule 1).
+
+**Plan format (ABI 1)** — JSON, the contract between compiler, runtime and designer:
+
+- `Plan {abi, file, kind: view|control, root, tray[], names{x:Name → id}, handlers[], design_size?}`;
+  non-visual elements (`ContextMenu`, `ToolTip`, `Timer`, `Query`…) go to `tray`.
+- `Node {id (stable_id), el, name?, at, m/x (import specifier + export; absent for items), dom, kind?, fixed,
+  props[], events[], children[], content? (the prop receiving the children), slots{prop → nodes},
+  items? {prop, shape, content, key, nested, list[]} (children → prop adapter), template? (Repeater),
+  sc{class → props} (size-class values), design[] (design builds only)}`. An alternate component
+  (`TextField Variant="Outlined"` → `OutlinedField`) is chosen at compile time.
+- `Prop {n, to (the registry's prop_map entry, plus change_from: the source of the change event of a two-way
+  binding), v (literal typed by kind and mapped through values) | b (binding) | res {key, set}, kind, at}`.
+- `Binding {path, mode, trigger?, conv?, param?, fallback?, format?, null?, culture?, depth (enclosing
+  templates), at (position of the path)}`; `Event {n, h, from (event_map entry), args_type, at}`.
+
+The **Vite plugin** emits that plan as a module where components are imported (`import { Button as __c7 }
+from "@ui"`), Lucide icons are imported by name (aliases `trash` → `Trash2`, `close` → `X`; a path becomes an
+`?url` asset), every binding gets `g: (o) => o.prefs?.font` / `s: (o, v) => { o.prefs.font = v }` and every
+event a dispatcher `f: (vm, s, e) => vm.save_click(s, e)`, each with a source-map segment to its attribute
+(`sourcesContent` = the view). It exports `plan`, `ViewBase = createViewBase(plan, import.meta.hot &&
+import.meta.url)` and, for a view without a code-behind, `default`. Imports are only host singletons,
+`lucide-react` and project files (checked by test).
+
+**Types.** `.kubuno/views/<path>.kbview.d.ts` declares `plan` and `abstract class ViewBase extends View<Props>`
+with one `readonly` handle per `x:Name` (type named like the element, from `@kubuno/views`) and one
+`abstract handler(sender, e): void | Promise<void>` per handler (unions when a handler serves several events).
+The **check file** writes each binding against the code-behind class (`import type { X as __V } from './X'`,
+resolved through `rootDirs`): `__bool(vm.busy)`, `__num(vm.tab)`, `__str(…)`, `__arr(…)`, `__any(…)` (with a
+converter or a format), `vm.path = __w` for two-way (catches read-only members), `__fn(vm.method)` for
+method-valued properties, `__r(__rowN, vm).path` inside templates (row, then page). Paths not found on the
+instance may live on a typed `dataContext`. Projects add `"rootDirs": [".", ".kubuno/views"]` and include
+`.kubuno/views` (gitignored).
+
+**`kbview-tsc`** compiles every view (`src/**`, or `kubuno.views.json` → `sources`), prints the view
+diagnostics as `file(line,col): error KBV-<code>: …`, writes the generated files, runs the project's own
+TypeScript with the given arguments, and rewrites: an error inside a check file → the `.kbview` position
+(column one-to-one inside the path text); `TS2515` (missing abstract handler) in a code-behind → every
+attribute naming that handler. The output keeps tsc's MSBuild format (VS Error List). Exit 2 on view errors,
+else tsc's code.
+
+**HMR.** A `.kbview` edit re-evaluates only its module (self-accepting); `createViewBase` finds the live cell by
+module URL, swaps the plan, re-defines the handles and re-renders the instances (state, `@bind` values and
+handles kept). In dev the plugin makes every code-behind self-accepting; `X.component()` called again moves the
+live instances of the previous class onto the new prototype. A view that does not compile keeps the last good
+one on screen with the Vite overlay (`Counter.kbview(4,4): error KBV-unknown-element …`). Standard
+`@bind accessor` decorators are lowered with the project's TypeScript (`transpileModule`) before Vite's own
+transform, which leaves them as written (oxc does not lower TC39 decorators, and no browser runs them yet).
+
+### 13.3 Verified
+
+- Rust `kubuno-views-web`: 3 unit + 6 integration tests (4 golden views → plan, `.d.ts`, check file, span map,
+  diagnostics; design builds; isolation; no shadowing; handle types); `clippy -D warnings` on Windows and on
+  `wasm32-unknown-unknown`; `cargo check --all-targets` for `x86_64-unknown-linux-gnu` and
+  `aarch64-apple-darwin`. `kubuno-views-syntax` (83) and `-model` (8 + 1) untouched and green.
+- `@kubuno/views-compiler` (vitest, **12 tests, the same results on Linux .220 and on Windows**): golden plans,
+  declarations, check files and modules with the real host registry; error positions; isolation; source map of
+  accessors and dispatchers; compile time; `kbview-tsc` on a fixture project (5 errors at the exact `.kbview`
+  line/column: missing member, wrong type, read-only two-way, nested path, missing handler; nothing from the
+  generated files or the valid view); a Vite library build like a module's (externals kept, decorators lowered,
+  source map reaching the `.kbview`, no HMR code) and a failing build with file/line/column; **HMR in headless
+  Chrome** (Vite dev server, React StrictMode): two clicks, edit the view (the new element appears, the count is
+  kept, no reload), edit the code-behind (the new method runs on the live instance), break the view (overlay
+  with `Counter.kbview(4,4)`, last good view kept), fix it (recovered, still no reload). The `kbview-tsc` CLI
+  was also run by hand on both fixtures.
+
+## 14. WV-3 as built (2026-10-02) — `@kubuno/views` runtime
+
+Sources: core `frontend/src/views/` (`plan.ts`, `view.ts`, `render.tsx`, `binding.ts`, `events.ts`,
+`resolve.ts`, `controls.tsx`, `handles.generated.ts`); package `frontend/packages/views/` (types built by
+`packages/build.sh`, a throwing `index.js` stub, like `@kubuno/sdk`).
+
+- **Host integration**: alias `@kubuno/views` (Vite + `tsconfig.app.json`), build entry and stable chunk
+  `kubuno-views`, import-map entry (`build/importmap-plugin.ts`); `src/core/viewsHost.ts` (imported by
+  `main.tsx`, in the shared chunk) registers `@ui` and the sdk workspace components for interpreted plans, the
+  icon lookup (`ICON_MAP`) and `{Res}` through i18next (`languageChanged` re-renders every view). The runtime
+  depends only on React, `react-dom/client` and React Query. `loadRemoteModules` refuses a module whose
+  `viewsAbi` differs from `VIEWS_ABI` (`views-mismatch`, shown in the bell).
+- **Model**: `View` (props, `dataContext`, `use()` run on every render with notifications deferred to the
+  commit, `t()`, `invalidate()`, `static component()`), `@bind` (storage on the instance, not in the class's
+  private slots, so a prototype swap keeps it; equal writes ignored; writes after unmount dropped with a dev
+  warning), `createViewBase(plan, hotKey)`, element handles (a Proxy: camelCase property → current value or
+  override, `element`, `focus()`, `click()`). The handle interfaces are generated from the registry by the Rust
+  generator (`npm run build:views-handles`, `--check` fails when stale).
+- **Renderer**: one memoised `KbNode` per element, subscribed with `useSyncExternalStore` to its view and
+  re-rendered only when one of the values it reads changes; the root re-renders to run `use()`. The same code
+  renders compiled and interpreted plans. It implements prop/field/runtime targets; the registry converters
+  (`invert`, `icon-node`/`icon-component` with `IconSize`/`IconColor`, `null-when-false`, `equals-value`,
+  `index-to-key`, `items-source` with `DisplayMember`/`ValueMember`, `element-ref`, `binding-cell`, plus
+  `method`); children → prop adapters (array/record, item keys, item content, nested items, `selected-after`
+  with a local selection when unbound); slots; `Repeater` rows with stable row scopes; two-way bindings through
+  the change event's source (`LostFocus` / `Explicit` pending values, `OneWayToSource`, `OneTime`);
+  converters, formats, fallbacks; `{Res}`; DOM-root runtime targets (aria, role, tabindex, inert, cursor, dir,
+  theme colours as `var(--color-…)`, `Class`, size/margin/padding/min/max, `Stack.Fill`); `ToolTip` (host
+  `Tooltip`); `ContextMenu` / `DropDownMenu` (host `MenuDropdown`); DOM events; the view's `OnLoad` /
+  `OnShown` / `OnUnload`; size classes (ResizeObserver on the root); design-mode `data-kb-id`, and no handler
+  ever runs in design mode. Handler errors are reported with `file:line:col`, never thrown into React.
+- **Runtime elements**: `Repeater`, `Timer`, `Query` / `Mutation` (React Query; their state on the handle),
+  `ReactHost`, `defineControl`, `registerControls`, `KbView`, `MessageBox.show` (host `ConfirmDialog`),
+  `Dialog.show` (host `FloatingWindow`).
+
+**Verified**: runtime unit tests (core `src/views/runtime.test.tsx`, 10: resolution order, converters both ways,
+formats, args, StrictMode rendering, handles, plan swap, prototype swap, ABI refusal, missing handler); the
+**conformance suite** (2 tests, Linux and Windows): `Form.kbview` with the host's real `@ui` components,
+rendered compiled and interpreted in React StrictMode through 7 steps (click, typing in a two-way field, an
+object-field event, a check box mirrored by a switch, a tab change, a slot button writing a handle) — the same
+DOM at every step (React `useId` values normalised); HMR in Chrome (§13.3, StrictMode). Size: the runtime
+alone, bundled and minified with rolldown, **24.5 KB raw / 9.8 KB gzip** (budget 15 KB). Core
+`tsc -p tsconfig.app.json` and `tsconfig.node.json` clean; a host build emits `shared/kubuno-views-*.js` and its
+import-map entry.
+
+**Not done / open**: the runtime elements (`Repeater`, `Timer`, `Query`, `Mutation`, `ReactHost`) are not yet
+in the web registry (they need meta tables and the desktop conformance allowlist; until then a project
+registry can declare them, as the tests do); `Dock`/`Anchor`/`X`/`Y`/table cells wait for the WV-5a containers;
+item events raised through a parent adapter (`AccordionSection.OnToggled`, `MenuItem.OnCheckedChanged`,
+`ContextMenu.OnItemClicked`) and the `gradient-css` / `status-text` / `workspace-theme` converters are
+pass-through; a one-way bound controlled input logs React's read-only warning; the React Profiler budget is not
+measured (no pilot screen yet); the `module.toml [frontend] views_abi` install check (core Rust) and
+`check_versions.py` knowledge of the two new packages are not done; modules add `@kubuno/views` to their
+`SHARED` externals when they adopt views; `x:Props` needs a code-behind; user-control attributes pass through
+untyped until WV-7 reads their code-behind; the core-level runtime tests run on Linux only (the host's Vite
+config needs native Tailwind bindings).
