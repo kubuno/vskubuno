@@ -368,6 +368,8 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
             public void ConvertHandlers() => Calls.Add("ConvertHandlers");
 
             public void ChooseToolboxItems() => Calls.Add("ChooseToolboxItems");
+
+            public void RunMenuVerb(string elementId, Kubuno.Views.Designer.Menus.MenuVerb verb) => Calls.Add($"MenuVerb {elementId} {verb}");
         }
     }
 }

@@ -155,6 +155,12 @@ $table = @(
     @{ Name = 'RibbonLabel';              Icon = 'type';                  Accent = 'none' }
     @{ Name = 'RibbonSeparator';          Icon = 'separator-vertical';    Accent = 0 }
     @{ Name = 'Command';                  Icon = 'command';               Accent = 0 }
+    # The menu family (docs/MENUS.md).
+    @{ Name = 'MenuBar';                  Icon = 'menu';                  Accent = 0 }
+    @{ Name = 'MenuSeparator';            Icon = 'separator-horizontal';  Accent = 0 }
+    @{ Name = 'MenuHeader';               Icon = 'heading';               Accent = 0 }
+    @{ Name = 'DropDownButton';           Icon = 'square-chevron-down';   Accent = 1 }
+    @{ Name = 'SplitButton';              Icon = 'square-split-horizontal'; Accent = 1 }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS

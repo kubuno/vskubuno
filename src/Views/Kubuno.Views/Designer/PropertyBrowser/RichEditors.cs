@@ -26,6 +26,8 @@ namespace Kubuno.Views.Designer.PropertyBrowser
             "image" => new KbviewImageEditor(),
             "icon" => new Icons.KbviewIconEditor(),
             "cursor" => new KbviewCursorEditor(),
+            // A menu item's ShortcutKeys (docs/MENUS.md section 5): Windows Forms' ShortcutKeys editor.
+            "shortcut" => new Menus.KbviewShortcutKeysEditor(),
             // A Vec<String> property of a project control (WinForms' string[]): the String Collection Editor.
             "lines" => new KbviewLinesEditor(),
             _ when Icons.KbviewContentAlignmentEditor.Applies(meta?.Kind?.EnumVariants) => new Icons.KbviewContentAlignmentEditor(),
@@ -75,6 +77,9 @@ namespace Kubuno.Views.Designer.PropertyBrowser
                     return text.Trim().Replace('\\', '/');
                 case "icon":
                     return Icons.IconValue.Normalize(text);
+                case "shortcut":
+                    var shortcut = Menus.ShortcutText.Normalize(text);
+                    return shortcut.Length > 0 || text.Trim().Length == 0 ? shortcut : throw new ArgumentException(DesignerText.InvalidShortcut(text));
             }
 
             if (meta?.TypeConverter == "Opacity")

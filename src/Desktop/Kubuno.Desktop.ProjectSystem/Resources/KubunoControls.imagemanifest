@@ -119,6 +119,11 @@
     <ID Name="RibbonLabel" Value="108" />
     <ID Name="RibbonSeparator" Value="109" />
     <ID Name="Command" Value="110" />
+    <ID Name="MenuBar" Value="111" />
+    <ID Name="MenuSeparator" Value="112" />
+    <ID Name="MenuHeader" Value="113" />
+    <ID Name="DropDownButton" Value="114" />
+    <ID Name="SplitButton" Value="115" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -670,6 +675,31 @@
       <Source Uri="$(Controls)/Command.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/Command.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/Command.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(MenuBar)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/MenuBar.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/MenuBar.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/MenuBar.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(MenuSeparator)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/MenuSeparator.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/MenuSeparator.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/MenuSeparator.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(MenuHeader)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/MenuHeader.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/MenuHeader.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/MenuHeader.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(DropDownButton)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/DropDownButton.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/DropDownButton.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/DropDownButton.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(SplitButton)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/SplitButton.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/SplitButton.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/SplitButton.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

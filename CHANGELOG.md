@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Menus in the view designer, Windows Forms style** (`docs/MENUS.md`). A selected menu bar, context menu (from the
+  component tray), drop-down or split button shows its menu open on the design surface, every row selectable (F4,
+  Delete, copy/paste, undo), its mnemonics underlined. « Tapez ici » slots take new items in place: type, Enter for
+  the next one, Tab for a sub-menu, `-` for a separator, F2 to rename; the slot's « ▾ » adds a separator or a section
+  title. Rows can be dragged to reorder them, into and out of sub-menus. A double-click on a row creates its `OnClick`
+  handler. The smart tag inserts the standard items (Fichier, Édition, Outils, Aide, with icons, shortcuts and texts
+  in the project's `.kbres`), opens the items editor, binds an item to a `Command` or makes a new command from it.
+  `ShortcutKeys` gets the Windows Forms shortcut editor in the Properties window, and the Toolbox a « Menus et barres
+  d'outils » tab with icons for the new elements.
+- **Language server checks for menus**: a shortcut that does not parse or is used twice in the view, two items of one
+  menu with the same access key, a `Command` or `ContextMenu` naming nothing; in French when Visual Studio is.
+
 - **Desktop apps: a source layout by role** (`docs/DESKTOP-MIGRATION.md`, "Source layout"; `docs/VIEWS-SPEC.md` §1.1
   and §6.4). The shell, chat and documents crates are no longer a flat `src` folder: views, pages, a feature folder
   (the shell's administration console), controls, model, services, platform and resources each have their own

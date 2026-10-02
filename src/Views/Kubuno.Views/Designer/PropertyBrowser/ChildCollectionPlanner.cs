@@ -263,7 +263,7 @@ namespace Kubuno.Views.Designer.PropertyBrowser
             return new TextReplacement(start, child.End - start, string.Empty);
         }
 
-        private static TextReplacement InsertInto(string text, ViewNode parent, IReadOnlyList<string> elements, string newline)
+        internal static TextReplacement InsertInto(string text, ViewNode parent, IReadOnlyList<string> elements, string newline)
         {
             var parentIndent = LineIndent(text, parent.Start);
             var indent = parent.Children.Count > 0 ? LineIndent(text, parent.Children[0].Start) : parentIndent + "  ";
@@ -291,7 +291,7 @@ namespace Kubuno.Views.Designer.PropertyBrowser
         }
 
         /// <summary>The whitespace that starts the line holding offset <paramref name="offset"/>.</summary>
-        private static string LineIndent(string text, int offset)
+        internal static string LineIndent(string text, int offset)
         {
             var lineStart = offset;
             while (lineStart > 0 && text[lineStart - 1] != '\n' && text[lineStart - 1] != '\r')

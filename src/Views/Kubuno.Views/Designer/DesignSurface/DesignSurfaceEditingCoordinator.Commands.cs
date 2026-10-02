@@ -56,7 +56,12 @@ namespace Kubuno.Views.Designer.DesignSurface
             {
                 // A ribbon's "+" glyph ("add") or smart tag ("tasks") - docs/RIBBON.md section 9 - has its own menu.
                 var ribbonMenu = e.ElementId is not null && e.Menu is "add" or "tasks";
-                var model = ribbonMenu
+                // A menu element's smart tag (docs/MENUS.md section 5) lists its tasks as one flat list.
+                var menuTasks = ribbonMenu && e.Menu == "tasks" &&
+                    Menus.MenuDesignerTasks.IsMenu(ElementAttributeReader.Read(GetCurrentText(), e.ElementId!)?.TagName is { } tag ? Registry.Find(tag) : null);
+                var model = menuTasks
+                    ? DesignerMenuModel.BuildMenuTasks(GetCurrentText(), e.ElementId!, Registry, DesignerClipboard.PeekTag(), SelectionIds())
+                    : ribbonMenu
                     ? DesignerMenuModel.BuildRibbon(GetCurrentText(), e.ElementId!, Registry, DesignerClipboard.PeekTag(), SelectionIds(), addOnly: e.Menu == "add")
                     : DesignerMenuModel.Build(GetCurrentText(), e.ElementId, Registry, DesignerClipboard.PeekTag(), SelectionIds());
                 var target = new DesignerContextMenuCommandTarget(model, this);
@@ -68,7 +73,7 @@ namespace Kubuno.Views.Designer.DesignSurface
                 }
 
                 var group = DesignerCommandIds.CommandSet;
-                var menu = ribbonMenu ? (e.Menu == "add" ? DesignerCommandIds.RibbonAddContextMenu : DesignerCommandIds.RibbonTasksMenu)
+                var menu = ribbonMenu ? (e.Menu == "add" || menuTasks ? DesignerCommandIds.RibbonAddContextMenu : DesignerCommandIds.RibbonTasksMenu)
                     : model.IsView ? DesignerCommandIds.ViewContextMenu : DesignerCommandIds.ElementContextMenu;
                 var points = new[] { new POINTS { x = (short)e.ScreenX, y = (short)e.ScreenY } };
                 ErrorHandler.ThrowOnFailure(shell.ShowContextMenu(0, ref group, menu, points, target));
@@ -529,6 +534,120 @@ namespace Kubuno.Views.Designer.DesignSurface
             else
             {
                 SetAttribute(elementId, "Size", size);
+            }
+        }
+
+        // ---- Menu tasks (docs/MENUS.md section 5) ----
+
+        /// <summary>A task of a menu element's smart tag: each one is one undo unit.</summary>
+        public void RunMenuVerb(string elementId, Menus.MenuVerb verb)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            switch (verb.Kind)
+            {
+                case Menus.MenuVerbKind.InsertStandardItems:
+                    InsertStandardMenuItems(elementId);
+                    break;
+                case Menus.MenuVerbKind.EditItems:
+                    var tag = ElementAttributeReader.Read(GetCurrentText(), elementId)?.TagName;
+                    if (tag is not null && Registry.Find(tag) is { } component && Menus.MenuDesignerTasks.CollectionOf(component) is { } collection)
+                    {
+                        EditCollection(elementId, collection);
+                    }
+
+                    break;
+                case Menus.MenuVerbKind.Add when verb.Argument is { } added:
+                    AddChild(elementId, added);
+                    break;
+                case Menus.MenuVerbKind.ChooseIcon:
+                    ChooseIcon(elementId, "Icon");
+                    break;
+                case Menus.MenuVerbKind.EditText:
+                    EditLabel(elementId, "Text");
+                    break;
+                case Menus.MenuVerbKind.BindCommand when verb.Argument is { } command:
+                    SetAttribute(elementId, "Command", command);
+                    break;
+                case Menus.MenuVerbKind.UnbindCommand:
+                    RemoveAttribute(elementId, "Command");
+                    break;
+                case Menus.MenuVerbKind.NewCommand:
+                    var version = CurrentVersion;
+                    var edits = Menus.MenuDesignerTasks.PlanNewCommand(GetCurrentText(), elementId, out var name);
+                    if (edits.Count > 0)
+                    {
+                        ApplyTextEdits(version, edits, "Create Command " + name);
+                    }
+
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// « Insérer les éléments standard » on a menu bar (WinForms' Insert Standard Items): Fichier, Édition, Outils,
+        /// Aide in one undo unit. When the project has a <c>.kbres</c>, the texts go there (new keys
+        /// <c>menu_file_new</c>…) and the items name them with <c>{Res key}</c>; otherwise they are written in the view.
+        /// </summary>
+        private void InsertStandardMenuItems(string elementId)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var version = CurrentVersion;
+            var text = GetCurrentText();
+            Kubuno.Views.Logic.Resources.ResourceSetModel? resources = null;
+            var qualified = false;
+            if (ViewFilePath is { } view)
+            {
+                try
+                {
+                    var neutrals = Kubuno.Views.Logic.Resources.ProjectResources.NeutralFiles(Kubuno.Views.Logic.Resources.ProjectResources.ProjectRoot(view));
+                    var neutral = neutrals.FirstOrDefault(f => string.Equals(System.IO.Path.GetFileName(f), "resources.kbres", StringComparison.OrdinalIgnoreCase)) ?? neutrals.FirstOrDefault();
+                    if (neutral is not null)
+                    {
+                        resources = new Kubuno.Views.Logic.Resources.ResourceSetModel(neutral, System.IO.File.ReadAllText(neutral), Array.Empty<(string, string)>());
+                        qualified = neutrals.Count > 1;
+                    }
+                }
+                catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException)
+                {
+                    KubunoViewsLogHost.Current.WriteException("[designer] reading the project's resources failed; the standard items keep their texts", ex);
+                    resources = null;
+                }
+            }
+
+            Func<string, string, string>? reference = null;
+            if (resources is { } set)
+            {
+                reference = (name, value) =>
+                {
+                    // An existing key with the same text is reused; another text gets a new key.
+                    var key = set.Get(name) is { } existing && existing.Text == value ? name : set.Get(name) is null ? name : set.UniqueName(name);
+                    if (set.Get(key) is null)
+                    {
+                        set.AddString(key, value);
+                    }
+
+                    return Kubuno.Views.Logic.Resources.ResourceNames.Reference(key, qualified ? set.SetName : null);
+                };
+            }
+
+            var edits = Menus.MenuDesignerTasks.PlanStandardItems(text, elementId, reference, out var added);
+            if (edits.Count == 0)
+            {
+                return;
+            }
+
+            ApplyTextEdits(version, edits, "Insert Standard Items");
+            if (resources is { } changed && added.Count > 0)
+            {
+                try
+                {
+                    System.IO.File.WriteAllText(changed.NeutralPath, changed.Texts()[changed.NeutralPath]);
+                    ShowStatus(DesignerText.StatusStandardItemsResources(System.IO.Path.GetFileName(changed.NeutralPath)));
+                }
+                catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+                {
+                    KubunoViewsLogHost.Current.WriteException("[designer] writing the standard menu texts to the project's resources failed", ex);
+                }
             }
         }
 

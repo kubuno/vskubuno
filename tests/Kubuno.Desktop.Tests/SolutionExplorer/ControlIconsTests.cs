@@ -63,6 +63,16 @@ namespace Kubuno.Desktop.Tests.SolutionExplorer
             }
         }
 
+        /// <summary>The menu family (docs/MENUS.md) has its own Toolbox icons (its "Menus et barres d'outils" tab).</summary>
+        [TestMethod]
+        public void MenuElementsHaveAControlIcon()
+        {
+            foreach (var name in new[] { "MenuBar", "ContextMenu", "MenuItem", "MenuSeparator", "MenuHeader", "DropDownButton", "SplitButton" })
+            {
+                Assert.AreNotEqual(ControlIcons.FallbackId, ControlIcons.IdFor(name), name);
+            }
+        }
+
         private static string SourceFile([System.Runtime.CompilerServices.CallerFilePath] string path = "") => path;
     }
 }

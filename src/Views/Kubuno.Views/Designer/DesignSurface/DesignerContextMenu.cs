@@ -164,6 +164,21 @@ namespace Kubuno.Views.Designer.DesignSurface
         /// <summary>An element laid out by a ribbon: the Layout submenus (Align, Make Same Size...) do not apply.</summary>
         public bool InRibbon { get; private set; }
 
+        /// <summary>A menu element's smart tag (docs/MENUS.md section 5): its tasks, shown as one flat list.</summary>
+        public IReadOnlyList<Menus.MenuVerb> Verbs { get; private set; } = Array.Empty<Menus.MenuVerb>();
+
+        /// <summary>The text of "Add" › choice <paramref name="index"/>: a menu element's localized name, else the tag.</summary>
+        public string AddChoiceText(int index) => DesignerText.MenuElementName(AddChoices[index]);
+
+        /// <summary><see cref="Build"/>, then the smart tag tasks of menu element <paramref name="elementId"/>.</summary>
+        public static DesignerMenuModel BuildMenuTasks(string text, string elementId, ComponentRegistry registry, string? clipboardTag, IReadOnlyList<string>? selectedIds)
+        {
+            var model = Build(text, elementId, registry, clipboardTag, selectedIds);
+            model.Verbs = Menus.MenuDesignerTasks.Verbs(text, elementId, registry);
+            model.AddOnly = true;
+            return model;
+        }
+
         /// <summary><see cref="Build"/>, then the ribbon element's tasks (its smart tag or "+" glyph: <paramref name="addOnly"/>).</summary>
         public static DesignerMenuModel BuildRibbon(string text, string elementId, ComponentRegistry registry, string? clipboardTag, IReadOnlyList<string>? selectedIds, bool addOnly)
         {
@@ -237,6 +252,16 @@ namespace Kubuno.Views.Designer.DesignSurface
                 model.Size = Ribbon.RibbonDesignerTasks.SizeOf(text, elementId, registry);
                 model.InRibbon = component!.Name != "Ribbon";
             }
+            else if (Menus.MenuDesignerTasks.IsMenu(component))
+            {
+                // A menu element (docs/MENUS.md section 5): "Add" ›, "Edit Items...", its icon and text; an item is laid
+                // out by its menu, so the Layout submenus do not apply to it.
+                model.AddChoices = Menus.MenuDesignerTasks.AddChoices(text, elementId, registry);
+                model.Collection = Menus.MenuDesignerTasks.CollectionOf(component!);
+                model.IconAttribute = component!.Properties.Any(p => p.Name == "Icon") ? "Icon" : null;
+                model.LabelAttribute = component.Properties.Any(p => p.Name == "Text") ? "Text" : null;
+                model.InRibbon = Menus.MenuDesignerTasks.IsMenuItem(component.Name);
+            }
 
             return model;
         }
@@ -299,6 +324,9 @@ namespace Kubuno.Views.Designer.DesignSurface
 
         /// <summary>"Size" › Large / Small: sets <paramref name="elementId"/>'s Size.</summary>
         void SetRibbonSize(string elementId, string size);
+
+        /// <summary>A task of a menu element's smart tag (docs/MENUS.md section 5) on <paramref name="elementId"/>.</summary>
+        void RunMenuVerb(string elementId, Menus.MenuVerb verb);
     }
 
     /// <summary>
@@ -422,6 +450,17 @@ namespace Kubuno.Views.Designer.DesignSurface
                 case DesignerCommandIds.RibbonSizeLarge: _actions.SetRibbonSize(id!, "Large"); break;
                 case DesignerCommandIds.RibbonSizeSmall: _actions.SetRibbonSize(id!, "Small"); break;
                 default:
+                    if (_model.Verbs.Count > 0)
+                    {
+                        // A menu element's smart tag: its tasks fill the dynamic list.
+                        if (Index(cmd, DesignerCommandIds.RibbonAddFirst, _model.Verbs.Count) is { } verb)
+                        {
+                            _actions.RunMenuVerb(id!, _model.Verbs[verb]);
+                        }
+
+                        break;
+                    }
+
                     if (Index(cmd, DesignerCommandIds.RibbonAddFirst, _model.AddChoices.Count) is { } add)
                     {
                         _actions.AddChild(id!, _model.AddChoices[add]);
@@ -498,7 +537,9 @@ namespace Kubuno.Views.Designer.DesignSurface
 
             if (Index(cmdId, DesignerCommandIds.RibbonAddFirst, DesignerCommandIds.MaxDynamicItems) is { } addChoice)
             {
-                return DynamicItem(addChoice, _model.AddChoices.Count, i => _model.AddChoices[i]);
+                return _model.Verbs.Count > 0
+                    ? DynamicItem(addChoice, _model.Verbs.Count, i => _model.Verbs[i].Text)
+                    : DynamicItem(addChoice, _model.AddChoices.Count, _model.AddChoiceText);
             }
 
             if (Index(cmdId, DesignerCommandIds.WrapFirst, DesignerStructurePlanner.WrapContainers.Count) is { } wrap)

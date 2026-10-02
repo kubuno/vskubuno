@@ -132,6 +132,11 @@ namespace Kubuno.Desktop.Logic.SolutionExplorer
             ["RibbonLabel"] = 108, // Lucide "type"
             ["RibbonSeparator"] = 109, // Lucide "separator-vertical"
             ["Command"] = 110, // Lucide "command"
+            ["MenuBar"] = 111, // Lucide "menu"
+            ["MenuSeparator"] = 112, // Lucide "separator-horizontal"
+            ["MenuHeader"] = 113, // Lucide "heading"
+            ["DropDownButton"] = 114, // Lucide "square-chevron-down"
+            ["SplitButton"] = 115, // Lucide "square-split-horizontal"
         };
 
         /// <summary>The image id for element <paramref name="tag"/> (<see cref="FallbackId"/> when unknown).</summary>

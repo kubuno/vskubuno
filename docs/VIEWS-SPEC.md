@@ -97,6 +97,7 @@ adapter (§10.5), not rendered on its own.
 | `Popover` | containers | `@ui` `AnchoredPopover` | portal; `Target` → `anchorRef` |
 | `DataTable` + `Column` | data | `@ui` `DataTable` (`columns[]`) | |
 | `ContextMenu` + `MenuItem` | components | `@ui` `MenuDropdown` (`items[]`) | menus are `MenuDropdown` by construction |
+| `MenuBar`, `MenuSeparator`, `MenuHeader`, `DropDownButton`, `SplitButton` | menus | desktop only for now | see [MENUS.md](MENUS.md); `MenuSeparator`/`MenuHeader` map to `{ type: 'separator' }` / `{ type: 'label' }` when the web target gets them |
 | `ToolTip` | components | `@ui` `Tooltip` options | each control's `ToolTip` property wraps it in `Tooltip` |
 | `DockArea` + `DockPanel` | docking | `sdk` `DockArea` (`panels{}`) | record-shaped adapter |
 | `WorkspaceShell` | docking | `sdk` `WorkspaceShell` | |

@@ -2099,3 +2099,18 @@ column's `Binding`. Found and fixed during the check: the first picker (WPF in a
 (now Windows Forms), an auto-complete list on the grid's edit box brought Visual Studio down (removed), the binding
 commands are not shown by the Properties window's own context menu (links of the picker instead), the collection
 editor showed the buttons only from the second member (the first is now refreshed — fixed after the check).
+
+## 19. Menus (as built 2026-10-02)
+
+The menu family and its designer are described in [MENUS.md](MENUS.md) §5. In short: a selected `MenuBar`,
+`ContextMenu` (component tray), `DropDownButton`, `SplitButton` or `MenuItem` shows its menu open on the surface with
+every row a selectable element; « Tapez ici » slots take typed items in place (Enter: next, Tab: sub-menu, `-`: a
+separator; F2 renames), the slot's « ▾ » adds a separator or a header, rows drag within and across levels, the smart
+tag inserts the standard items (Fichier, Édition, Outils, Aide) and edits the items, and a double-click creates the
+row's `OnClick` handler like a button's. Protocol additions: none — the slots and drags produce the existing
+`insertChild`, `setAttribute` and `moveElement` edit requests, and the « ▾ » / smart tag reuse the `contextMenu`
+message with `menu: "add" | "tasks"`.
+
+**Ribbon double-click.** Checked on the surface: a double-click on a ribbon button sends `doubleClick` with the
+button's id, and the language server creates its `OnClick` handler (`ribbon_buttons_and_menu_items_get_their_click_handler`). The
+remaining suspect is therefore the Visual Studio side of the gesture; a live check in Visual Studio is still to do.

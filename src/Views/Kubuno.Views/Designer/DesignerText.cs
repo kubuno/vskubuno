@@ -403,6 +403,51 @@ namespace Kubuno.Views.Designer
             _ => T("Edit Items...", "Modifier les éléments..."),
         };
 
+        // ---- Menu tasks (docs/MENUS.md section 5) ----
+
+        public static string MenuInsertStandardItems => T("Insert Standard Items", "Insérer les éléments standard");
+
+        /// <summary>"Add Menu Item", "Add Separator", "Add Section Header" - what a « Type Here » slot's ▾ adds.</summary>
+        public static string MenuAddMenuElement(string tag) => tag switch
+        {
+            "MenuSeparator" => T("Add Separator", "Ajouter un séparateur"),
+            "MenuHeader" => T("Add Section Header", "Ajouter un titre de section"),
+            _ => T("Add Menu Item", "Ajouter un élément de menu"),
+        };
+
+        /// <summary>The name of an element "Add" › offers: a menu's items by their role, anything else by its tag.</summary>
+        public static string MenuElementName(string tag) => tag switch
+        {
+            "MenuItem" => T("Menu Item", "Élément de menu"),
+            "MenuSeparator" => T("Separator", "Séparateur"),
+            "MenuHeader" => T("Section Header", "Titre de section"),
+            _ => tag,
+        };
+
+        public static string MenuEditMenuText => T("Edit Text...", "Modifier le texte...");
+
+        public static string MenuBindCommand(string command) => T("Run Command « " + command + " »", "Exécuter la commande « " + command + " »");
+
+        public static string MenuNewCommandFromItem => T("New Command from this Item", "Nouvelle commande à partir de cet élément");
+
+        public static string MenuUnbindCommand(string command) => T("Stop Running « " + command + " »", "Ne plus exécuter « " + command + " »");
+
+        public static string StatusStandardItemsResources(string file) => T("Standard menu texts added to " + file + ".", "Textes des menus standard ajoutés à " + file + ".");
+
+        // ---- The ShortcutKeys editor (docs/MENUS.md section 5) ----
+
+        public static string ShortcutModifiers => T("Modifiers:", "Touches de modification :");
+
+        public static string ShortcutKey => T("Key:", "Touche :");
+
+        public static string ShortcutReset => T("Reset", "Réinitialiser");
+
+        public static string InvalidShortcut(string text) => T(
+            "'" + text + "' is not a shortcut: write modifiers then one key, such as Ctrl+S, Ctrl+Shift+N or F5.",
+            "« " + text + " » n'est pas un raccourci : indiquez des touches de modification puis une touche, comme Ctrl+S, Ctrl+Maj+N ou F5.");
+
+        public static string ShortcutNone => T("(none)", "(aucune)");
+
         public static string MenuSelect => T("Select", "Sélectionner");
 
         public static string MenuWrapIn => T("Wrap In", "Envelopper dans");
@@ -510,7 +555,7 @@ namespace Kubuno.Views.Designer
         {
             "Common Controls", "Contrôles communs", "Display", "Affichage", "Choice", "Choix", "Text", "Texte",
             "Containers", "Conteneurs", "Data", "Données", "Components", "Composants", "Printing", "Impression",
-            "Docking", "Ancrage", "Navigation", "Ribbon", "Ruban",
+            "Docking", "Ancrage", "Navigation", "Ribbon", "Ruban", "Menus & Toolbars", "Menus et barres d'outils",
         };
 
         /// <summary>The Toolbox tab of a project's own controls (docs/EVENTS.md EVT-7b), like WinForms' "&lt;Project&gt; Components".</summary>
@@ -529,6 +574,7 @@ namespace Kubuno.Views.Designer
                 case "docking": return T("Docking", "Ancrage");
                 case "navigation": return "Navigation";
                 case "ribbon": return T("Ribbon", "Ruban");
+                case "menus": return T("Menus & Toolbars", "Menus et barres d'outils");
                 case "printing": return CategoryPrinting;
                 case "components": return T("Components", "Composants");
                 default:
