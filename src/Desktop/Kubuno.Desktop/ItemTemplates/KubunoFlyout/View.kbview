@@ -2,7 +2,7 @@
   $fileinputname$.kbview - a flyout (WindowKind="Flyout": no border, rounded, Acrylic, closes when it
   loses the focus). Show it with `$classname$::new().show_flyout(x, y)`.
 -->
-<Panel DesignWidth="300" DesignHeight="180" Title="$classname$" WindowKind="Flyout" OnLoad="$modulename$_load">
+<Panel xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" DesignWidth="300" DesignHeight="180" Title="$classname$" WindowKind="Flyout" OnLoad="$modulename$_load">
   <Label x:Name="heading" Text="$classname$" Font="Segoe UI, 12pt, style=Bold" X="16" Y="12" Width="268" Height="28" Anchor="Top, Left, Right"/>
   <Label x:Name="message" Text="" X="16" Y="48" Width="268" Height="44" Anchor="Top, Left, Right"/>
 </Panel>

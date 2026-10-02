@@ -3,7 +3,7 @@
   Its bindings read the row of the item first (Author, Text, Time, Presence), then the user control's own
   properties (Likes); its handlers are MessageRow's methods.
 -->
-<UserControl x:Class="MessageRow" DesignWidth="420" DesignHeight="64">
+<UserControl xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" x:Class="MessageRow" DesignWidth="420" DesignHeight="64">
   <Avatar x:Name="avatar" DisplayName="{Binding Author}" Presence="{Binding Presence}" AvatarSize="40" X="12" Y="12" Width="40" Height="40"/>
   <Label x:Name="author" Text="{Binding Author}" Role="Heading" X="64" Y="10" Width="200" Height="20" Anchor="Top, Left, Right"/>
   <Label x:Name="time" Text="{Binding Time}" Role="Meta" TextAlign="TopRight" X="276" Y="12" Width="92" Height="18" Anchor="Top, Right"/>

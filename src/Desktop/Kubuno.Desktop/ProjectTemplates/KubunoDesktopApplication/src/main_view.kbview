@@ -5,7 +5,7 @@
   (the edges of the window it follows when the window is resized). Each x:Name is a field of
   MainView (self.status, self.hello); double-click a control to add its event handler.
 -->
-<Panel DesignWidth="800" DesignHeight="450" Title="$safeprojectname$" OnLoad="main_view_load">
+<Panel xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" DesignWidth="800" DesignHeight="450" Title="$safeprojectname$" OnLoad="main_view_load">
   <TextField x:Name="status" Placeholder="Status" X="24" Y="24" Width="632" Height="36" Anchor="Top, Left, Right"/>
   <Button x:Name="hello" Text="Say hello" Variant="Primary" X="672" Y="24" Width="104" Height="36" Anchor="Top, Right"/>
 </Panel>

@@ -3,5 +3,5 @@
   control of the base form. The controls the base makes Protected or Public are listed below: set their properties here
   (the base keeps the others, locked). Add the new form's own controls after them.
 -->
-<$baseroot$ x:Inherits="$baseview$" Title="$classname$">
+<$baseroot$ xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" x:Inherits="$baseview$" Title="$classname$">
 $overrides$</$baseroot$>

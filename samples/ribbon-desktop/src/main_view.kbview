@@ -3,7 +3,7 @@
   element of the ribbon is a control of the designer (select it, set its properties, handle its
   events); the commands (component tray) hold the shared label, icon, shortcut and state.
 -->
-<Panel DesignWidth="1280" DesignHeight="640" Title="Kubuno Ribbon" OnLoad="main_view_load">
+<Panel xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" DesignWidth="1280" DesignHeight="640" Title="Kubuno Ribbon" OnLoad="main_view_load">
   <Command x:Name="cmd_paste" Label="Coller" LargeIcon="ClipboardPaste" SmallIcon="ClipboardPaste" Shortcut="Ctrl+Shift+V" OnExecute="paste_execute"/>
   <Command x:Name="cmd_bold" Label="Gras" SmallIcon="Bold" Shortcut="Ctrl+B" IsCheckable="true" Checked="{Binding Bold, Mode=TwoWay}" OnExecute="bold_execute"/>
   <Command x:Name="cmd_italic" Label="Italique" SmallIcon="Italic" Shortcut="Ctrl+I" IsCheckable="true" Checked="{Binding Italic, Mode=TwoWay}"/>

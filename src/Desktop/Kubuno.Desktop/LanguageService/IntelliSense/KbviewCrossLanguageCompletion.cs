@@ -113,18 +113,26 @@ namespace Kubuno.Desktop.LanguageService.IntelliSense
                 }
 
                 RustCompletionTrace.WriteLine($"Views {context.Kind} '{context.Attribute}': {string.Join(", ", names)}");
-                if (names.Count == 0)
+                bool isHandler = context.Kind != KbviewValueKind.BindingPath;
+                if (names.Count == 0 && !isHandler)
                 {
                     return CompletionContext.Empty;
                 }
 
-                var icon = context.Kind == KbviewValueKind.BindingPath ? PropertyIcon : HandlerIcon;
+                var icon = isHandler ? HandlerIcon : PropertyIcon;
                 var items = names.Distinct(StringComparer.Ordinal).Select((name, index) =>
                 {
                     var item = new CompletionItem(name, this, icon, ImmutableArray<CompletionFilter>.Empty, string.Empty, name, index.ToString("D4"), name, name, ImmutableArray<ImageElement>.Empty);
                     item.Properties.AddProperty(KindKey, context.Kind);
                     return item;
                 }).ToImmutableArray();
+                if (isHandler)
+                {
+                    // XAML's « <Nouveau gestionnaire d'événements> »: first in the list; committing it creates the handler
+                    // in the code-behind (KbviewNewHandlerCommitManager, the designer's kubuno/createHandler path).
+                    items = items.Insert(0, KbviewNewHandlerCommitManager.CreateItem(this, HandlerIcon, context.Attribute, uri, triggerLocation.Position));
+                }
+
                 return new CompletionContext(items);
             }
             catch (Exception exception) when (exception is RemoteInvocationException or ConnectionLostException or ObjectDisposedException or UriFormatException or ArgumentException)
@@ -137,6 +145,13 @@ namespace Kubuno.Desktop.LanguageService.IntelliSense
         public Task<object> GetDescriptionAsync(IAsyncCompletionSession session, CompletionItem item, CancellationToken token)
         {
             bool french = DesignerText.IsFrench;
+            if (KbviewNewHandlerCommitManager.IsNewHandlerItem(item))
+            {
+                return Task.FromResult<object>(french
+                    ? "Crée un gestionnaire d'événements dans le code-behind et le lie à cet événement"
+                    : "Creates an event handler in the code-behind and binds it to this event");
+            }
+
             if (item.Properties.TryGetProperty(KindKey, out KbviewValueKind kind) && kind == KbviewValueKind.BindingPath)
             {
                 return Task.FromResult<object>(french

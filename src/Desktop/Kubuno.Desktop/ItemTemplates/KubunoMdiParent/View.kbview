@@ -2,7 +2,7 @@
   $fileinputname$.kbview - an MDI parent (IsMdiContainer="true"): documents opened with
   `document.form().set_mdi_parent(self)` then `show()` are drawn inside this window.
 -->
-<Panel DesignWidth="900" DesignHeight="560" Title="$classname$" IsMdiContainer="true" Icon="LayoutGrid" OnLoad="$modulename$_load" OnMdiChildActivate="$modulename$_mdi_child_activate">
+<Panel xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" DesignWidth="900" DesignHeight="560" Title="$classname$" IsMdiContainer="true" Icon="LayoutGrid" OnLoad="$modulename$_load" OnMdiChildActivate="$modulename$_mdi_child_activate">
   <Button x:Name="new_document" Text="New document" Variant="Secondary" X="16" Y="516" Width="140" Height="32" Anchor="Bottom, Left" OnClick="new_document_click"/>
   <Button x:Name="cascade" Text="Cascade" Variant="Ghost" X="164" Y="516" Width="96" Height="32" Anchor="Bottom, Left" OnClick="cascade_click"/>
   <Button x:Name="tile" Text="Tile" Variant="Ghost" X="268" Y="516" Width="96" Height="32" Anchor="Bottom, Left" OnClick="tile_click"/>

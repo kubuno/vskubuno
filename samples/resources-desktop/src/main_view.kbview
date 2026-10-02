@@ -2,7 +2,7 @@
   The resources sample's window: every text, picture and the accent colour is a {Res key} of
   src/resources.kbres (Visual Studio's designer shows them, in the language chosen in its tab strip).
 -->
-<Panel DesignWidth="640" DesignHeight="400" Title="{Res app_title}" Icon="{Res app_icon}" OnLoad="main_view_load">
+<Panel xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" DesignWidth="640" DesignHeight="400" Title="{Res app_title}" Icon="{Res app_icon}" OnLoad="main_view_load">
   <Panel x:Name="banner" BackgroundImage="{Res banner}" BackgroundImageLayout="Stretch" X="40" Y="24" Width="560" Height="96"/>
   <PictureBox x:Name="logo" Image="{Res logo}" SizeMode="Zoom" X="40" Y="140" Width="64" Height="64"/>
   <Label x:Name="welcome" Text="{Res welcome_text}" ForeColor="{Res accent}" Font="Segoe UI, 12pt, style=Bold" X="120" Y="140" Width="480" Height="24"/>

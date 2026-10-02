@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Namespace declarations in views, XAML style** (`docs/VIEWS-SPEC.md` §3). Every template (project, Add New Item,
+  inherited views) and every sample now writes `xmlns="https://kubuno.com/views"` and
+  `xmlns:x="https://kubuno.com/views/x"` on the root element (`xmlns:d="https://kubuno.com/views/design"` when the
+  view uses design-time attributes), so the XML editor and any XML tool stop reporting `x:Name` as an undeclared
+  prefix. They stay optional: a view without them means exactly the same. The language server notes an undeclared
+  `x:`/`d:` prefix as an information (not an error) with the quick fix « Ajouter les déclarations d'espaces de noms
+  manquantes », and completes `xmlns`, `xmlns:x`, `xmlns:d` and their URIs on the root element.
+- **« <Nouveau gestionnaire d'événements> » in the completion list of an `On…="…"` attribute**, like XAML: it creates
+  the handler in the code-behind (named after the element and the event), binds the event to it and shows the stub.
+- **A view opened outside the Kubuno editor says so.** When a `.kbview`/`.kbcontrol` opens in another editor (Visual
+  Studio's XML editor, most often), an info bar and the Kubuno Output pane explain why (the Kubuno extension not
+  registered in this Visual Studio instance, or another editor chosen), offer to reopen it with the Kubuno editor and
+  copy the repair command (`devenv /updateconfiguration`, with the instance's `/rootsuffix`).
+
 - **Menus in the view designer, Windows Forms style** (`docs/MENUS.md`). A selected menu bar, context menu (from the
   component tray), drop-down or split button shows its menu open on the design surface, every row selectable (F4,
   Delete, copy/paste, undo), its mnemonics underlined. « Tapez ici » slots take new items in place: type, Enter for
@@ -751,6 +765,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `Anchor="Top, Left"`; a Toolbox double-click does the same.
 
 ### Fixed
+
+- **No more red `x:` everywhere in a view's code**: a view shown by Visual Studio's XML editor (a Visual Studio
+  instance whose configuration cache missed the Kubuno registrations) underlined every `x:Name` as an undeclared
+  prefix (43 errors on the ribbon sample) and offered no Kubuno completion. The views now declare their namespaces,
+  and such an instance is detected and explained (see Added).
 
 - **A nested user control reads its own design data and images**: a user control placed by a view of another
   folder resolved its relative paths (`d:ItemsSource="design/rows.json"`, image files) against the folder of the

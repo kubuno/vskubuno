@@ -4,7 +4,7 @@
   OnClick="on_action_click" runs its method. The project's other views use it as <$classname$ Caption="..."/>
   once the project is built: it is then in the Toolbox, under "<project> Composants".
 -->
-<UserControl x:Class="$classname$" DesignWidth="320" DesignHeight="48" OnLoad="$modulename$_load">
+<UserControl xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" x:Class="$classname$" DesignWidth="320" DesignHeight="48" OnLoad="$modulename$_load">
   <Label x:Name="caption" Text="{Binding Caption}" X="8" Y="12" Width="200" Height="24" Anchor="Top, Left, Right"/>
   <Button x:Name="action" Text="OK" OnClick="on_action_click" X="216" Y="6" Width="96" Height="36" Anchor="Top, Right"/>
 </UserControl>

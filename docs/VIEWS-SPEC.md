@@ -128,7 +128,19 @@ markup is raw HTML + Tailwind (§0 of WEB-VIEWS): it needs the WV-5a layout and 
 - **Element** = component; **attribute** = property (or event, §8). Names are case-sensitive PascalCase.
 - **`x:` namespace** (reserved, never a property): `x:Name` (identifier, unique in the view; becomes a typed field of
   the code-behind and the element's handle), `x:Props` (web root only: the TS type of the view's props),
-  `x:Inherits` (inherited views, desktop). `xmlns:x` / `xmlns:d` declarations are optional.
+  `x:Inherits` (inherited views, desktop). The prefixes are fixed: `x:` and `d:` mean the same with or without
+  declarations.
+- **Namespace declarations** (XAML-style, on the root element, right after its name):
+  `xmlns="https://kubuno.com/views"` (the components), `xmlns:x="https://kubuno.com/views/x"` (the directives) and,
+  when the view uses design-time attributes, `xmlns:d="https://kubuno.com/views/design"`. They are **recommended** and
+  **emitted by every tool** (project and item templates, Add New Item, inherited views), **optional for parsing**:
+  Kubuno's parser, validator, desktop compiler and web compiler give a view the same meaning with or without them, and
+  never treat `xmlns`/`xmlns:*` as properties. Their purpose is any generic XML tool (Visual Studio's XML editor, an
+  XSD validator), which reports an undeclared prefix as a well-formedness error. The language server reports an
+  undeclared `x:`/`d:` prefix as an *information* (never an error), at its first use, with the quick fix « Add missing
+  namespace declarations », and completes `xmlns`, `xmlns:x`, `xmlns:d` and their URIs on the root element. The URIs
+  are identifiers, not addresses (nothing is fetched); a different URI bound to `x`/`d` is accepted as declared. Follow-up: an XSD of the views namespace generated from the
+  registry, associated with the XML editor, would also give that editor element and attribute validation.
 - **Design-time attributes**: `d:<Property>="…"` sets that property's value **in the designer only** (`d:Text`,
   `d:Visible`, `d:ItemsSource`); `DesignWidth` / `DesignHeight` (plain attributes, root element only, F32) give the
   canvas size of a view that declares no `Width`/`Height`. Both are ignored by production builds. A repeater's

@@ -3,7 +3,7 @@
   is an absolute surface: the window opens at DesignWidth x DesignHeight, each control has its
   X/Y/Width/Height and its Anchor. Double-click a control to add its event handler.
 -->
-<Panel DesignWidth="480" DesignHeight="240" Title="$classname$" OnLoad="$modulename$_load">
+<Panel xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" DesignWidth="480" DesignHeight="240" Title="$classname$" OnLoad="$modulename$_load">
   <Label x:Name="message" Text="$classname$" X="24" Y="24" Width="432" Height="24" Anchor="Top, Left, Right"/>
   <Button x:Name="close" Text="Close" Variant="Primary" X="368" Y="180" Width="88" Height="36" Anchor="Bottom, Right"/>
 </Panel>

@@ -104,17 +104,18 @@ Studio 2022 has no unified settings: the same pages stay classic property grids.
 
 | Feature | XAML / C# | `.kbview` in Kubuno | How |
 |---|---|---|---|
-| Element, attribute and enum value completion | yes | yes | kubuno-views-ls |
+| Element, attribute and enum value completion, as you type | yes | yes, opened by `<`, a space in a start tag, `"` and `=` (verified live 2026-10-02: `<Rib`, an attribute after a space, `Dock="`), and by Ctrl+Space | kubuno-views-ls |
+| Namespace declarations (`xmlns`, `xmlns:x`, `xmlns:d`) | yes | yes: completed with their URIs on the root element; an undeclared `x:`/`d:` prefix is an information with the quick fix « Ajouter les déclarations d'espaces de noms manquantes » (Ctrl+., with a preview) | kubuno-views-ls (`namespaces`) |
 | Handler names in `OnClick="..."` | yes | yes: only the code-behind handlers whose signature fits the event | Kubuno `KbviewCrossLanguageCompletion` (`kubuno/compatibleHandlers`) |
 | `{Binding ...}` path completion | yes | yes: the view model's paths | Kubuno (`kubuno/bindingPaths`) |
-| "New event handler" item | yes | Not in the completion list: double-click the event in the designer's Events tab instead | - |
+| "New event handler" item | yes | yes: « <Nouveau gestionnaire d'événements> » first in the list of an `On…="…"` attribute; it names the handler after the element and the event, writes the attribute, adds the stub to the code-behind and shows it (verified live) | Kubuno `KbviewNewHandlerCommitManager` (`kubuno/createHandler`, the designer's double-click path) |
 | QuickInfo | yes | yes, C#-style | Kubuno |
 | F12 from a handler attribute to the Rust method | yes | yes | kubuno-views-ls |
 | F12 from a control's tag to its Rust type | yes (metadata) | yes: the project's own type (user control) first, else kubuno_ui's | Kubuno `KbviewDefinitionFallback` (rust-analyzer's workspace symbols) |
 | F12 from a binding path to the view model | partial | yes: the `"Path" =>` arm of `fn get` | Kubuno |
 | Find All References of a handler including the views | yes | yes (from the Rust side) | Kubuno middle layer (`kubuno/renameHandler` probe) |
 | Rename a handler everywhere | yes | yes | kubuno-views-ls + Kubuno (EVT-5) |
-| Colorization | XAML colors | XML colors for elements/attributes/values, handler names as methods, `{Binding Path}` as a XAML markup extension | Kubuno TextMate theme (`kbview.tmLanguage.tmTheme`) + grammar rules |
+| Colorization | XAML colors | XML colors for elements/attributes/values, handler names as methods, `{Binding Path}` as a XAML markup extension | Kubuno TextMate theme (`kbview.tmLanguage.tmTheme`) + grammar rules. **Open issue (2026-10-02):** in Visual Studio 2026 the code view showed no XML colors at all (plain text color everywhere, the language server working), in the Kubuno editor and in the core text editor alike - to investigate (grammar not applied to the `kbview` content type). |
 
 ## Diagnostics and troubleshooting
 
@@ -122,4 +123,15 @@ Studio 2022 has no unified settings: the same pages stay classic property grids.
   classifications"), the first completion lists, CodeLens, and any failure.
 - `KUBUNO_VS_LOG=<file>` (environment variable of the Visual Studio process) mirrors that pane into a file;
   `KUBUNO_COMPLETION_TRACE=1` adds a trace of the completion sessions (start, filtering, commit).
+- **A `.kbview` with no completion and every `x:` underlined in red is not in the Kubuno editor.** Visual Studio
+  opened it in its XML editor (DTE `Document.Language` = "XML"), which knows nothing of Kubuno views. Found live
+  (2026-10-02): the extension's MEF parts were loaded but its pkgdef registrations (package, editor factories, the
+  `.kbview` association) were missing from the instance's configuration cache - after a VSIX installed into a hive
+  that had never run, or in a hive whose cache still pointed at a deleted copy of the extension (an old F5
+  deployment: ActivityLog "CreateInstance failed for package [KubunoPackage]" on a missing `Kubuno.VisualStudio.dll`).
+  The extension now says so itself (`KbviewWrongEditorDetector`): an info bar and a line in the "Kubuno" Output pane,
+  « Rouvrir avec l'éditeur Kubuno » (the core text editor, whose buffer gets the `kbview` content type and the language
+  server even without the registrations) and « Copier la commande de réparation »: close Visual Studio and run
+  `devenv /updateconfiguration` (plus `/rootsuffix <suffix>` for an experimental instance). Views also declare their
+  namespaces now (`VIEWS-SPEC.md` §3), so even an XML editor no longer reports `x:` as an undeclared prefix.
 - Everything above runs only in Rust / `.kbview` editors; C# and other languages are untouched.

@@ -3,5 +3,5 @@
   control. The controls the base makes Protected or Public are listed below: set their properties here (the base keeps
   the others, locked). Add its own controls after them.
 -->
-<UserControl x:Class="$classname$" x:Inherits="$baseview$">
+<UserControl xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" x:Class="$classname$" x:Inherits="$baseview$">
 $overrides$</UserControl>

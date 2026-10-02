@@ -2,7 +2,7 @@
   The foundations sample's window: a Sidebar (its rows pick the page) and a StatusBar around four pages.
   Every element here is edited in the designer: the Repeaters show sample items at design time.
 -->
-<Panel DesignWidth="1120" DesignHeight="720" Title="Kubuno foundations" OnLoad="main_view_load">
+<Panel xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" DesignWidth="1120" DesignHeight="720" Title="Kubuno foundations" OnLoad="main_view_load">
   <Sidebar x:Name="nav" Dock="Left" Width="232" SelectedItem="{Binding Page, Mode=TwoWay}" OnSelectionChanged="nav_selection_changed">
     <SidebarSection Text="Démo"/>
     <SidebarItem x:Name="nav_lists" Key="lists" Text="Listes" Icon="List"/>
