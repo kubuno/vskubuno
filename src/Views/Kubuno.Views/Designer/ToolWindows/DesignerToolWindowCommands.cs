@@ -1,16 +1,16 @@
 using System;
 using System.ComponentModel.Design;
-using Kubuno.Desktop.Designer.ToolWindows;
-using Kubuno.Core.Logging;
+using Kubuno.Shared;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.Desktop.DesignerIntegration
+namespace Kubuno.Views.Designer.ToolWindows
 {
     /// <summary>
     /// "Tools &gt; Kubuno View Outline" (<c>KubunoCommands.vsct</c>): shows the package-registered
-    /// <see cref="OutlineToolWindow"/> that Kubuno.Desktop.Designer ships but does not itself
+    /// <see cref="OutlineToolWindow"/> that Kubuno.Views.Designer ships but does not itself
     /// register (the former "Kubuno Toolbox"/"Kubuno Properties" fallbacks were removed - the designer
     /// uses Visual Studio's own Toolbox and Properties window, docs/DESIGNER.md §11) (it must not reference this VSIX assembly - see
     /// that library's own csproj top comment). Mirrors
@@ -26,12 +26,12 @@ namespace Kubuno.Desktop.DesignerIntegration
             // otherwise inferred as UI-thread-affinitized by the analyzer, which then flags this caller too.
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            Add(commandService, package, PackageIds.ShowKubunoOutlineCommand, typeof(OutlineToolWindow));
+            Add(commandService, package, ViewsCommandIds.ShowKubunoOutlineCommand, typeof(OutlineToolWindow));
         }
 
         private static void Add(OleMenuCommandService commandService, AsyncPackage package, int commandId, System.Type toolWindowType)
         {
-            var id = new CommandID(PackageGuids.KubunoCommandSet, commandId);
+            var id = new CommandID(KubunoGuids.CommandSet, commandId);
 #pragma warning disable VSTHRD010 // the command's Execute handler always fires on the UI thread (ShowToolWindow itself asserts this); the analyzer can't see that from the event subscription site - same precedent as DebugRustTestAtCursorCommand.Initialize's own BeforeQueryStatus subscription.
             var command = new OleMenuCommand((_, _) => ShowToolWindow(package, toolWindowType), id);
 #pragma warning restore VSTHRD010

@@ -8,7 +8,7 @@ using System.Windows;
 using Kubuno.Rust.Cargo.Commands;
 using Kubuno.Rust.Cargo.Tools;
 using Kubuno.Rust.Logic.SolutionExplorer;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Kubuno.Rust.SolutionExplorer;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;

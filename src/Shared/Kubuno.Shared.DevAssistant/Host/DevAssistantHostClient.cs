@@ -4,10 +4,10 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.Logging;
 
-namespace Kubuno.Core.DevAssistant.Host
+namespace Kubuno.Shared.DevAssistant.Host
 {
     /// <summary>
     /// Starts <c>kubuno-dev-assistant.exe</c> on first use and talks to it (docs/AI-ASSISTANT.md section 9.1): JSON-RPC

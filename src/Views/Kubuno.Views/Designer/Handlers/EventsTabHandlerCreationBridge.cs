@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.Properties;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.Properties;
+using Kubuno.Views.Logging;
 
-namespace Kubuno.Desktop.Designer.Handlers
+namespace Kubuno.Views.Designer.Handlers
 {
     /// <summary>
     /// The one line of wiring docs/DESIGNER.md §1 asks for: "double-click on an empty row to generate a
@@ -21,7 +21,7 @@ namespace Kubuno.Desktop.Designer.Handlers
     /// the constructor's null-guards and the forwarding itself (see
     /// tests/Kubuno.Desktop.Tests/Designer/Handlers/EventsTabHandlerCreationBridgeTests.cs).
     /// Errors are logged (<see cref="KubunoViewsLogHost"/>, the same gateway
-    /// <see cref="Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient"/> already logs
+    /// <see cref="Kubuno.Views.LanguageService.KubunoViewsLanguageClient"/> already logs
     /// through - this library may reference it, see its own csproj comment) rather than thrown back into
     /// the WPF event-raising call stack, which a `void`
     /// <see cref="PropertiesPanelViewModel.CreateHandlerRequested"/> handler could not propagate usefully

@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Selection;
 
-namespace Kubuno.Desktop.Designer.Ribbon
+namespace Kubuno.Views.Designer.Ribbon
 {
     /// <summary>
     /// What the designer offers on a ribbon element (docs/RIBBON.md section 9): the « Ajouter ▾ » choices (the "+" glyphs,

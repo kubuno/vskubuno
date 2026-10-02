@@ -3,7 +3,7 @@
   <!--
     The layering rules of the extension (docs/ARCHITECTURE.md, "Layers (as built)"), checked on the sources (every
     ProjectReference of src/**/*.csproj) and on the built assemblies (their assembly references, read with
-    System.Reflection.Metadata without loading them): Core <- Rust <- Desktop / Web / Mobile, the three targets never
+    System.Reflection.Metadata without loading them): Shared <- Rust <- Views <- Desktop / Web / Mobile, the three targets never
     reference each other, the *.Logic assemblies never reference the Visual Studio SDK, every product layer registers one
     KubunoLayer and the packaging project ships them all.
 

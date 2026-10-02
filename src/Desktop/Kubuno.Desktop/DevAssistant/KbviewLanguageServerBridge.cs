@@ -6,10 +6,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Registry.Infrastructure;
-using Kubuno.Desktop.Views.LanguageService;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Registry.Infrastructure;
+using Kubuno.Views.LanguageService;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
@@ -104,7 +104,7 @@ namespace Kubuno.Desktop.DevAssistant
             try
             {
                 var result = await InvokeAsync(rpc, "kubuno/rangeOfElement", new { uri, elementId }, cancellationToken).ConfigureAwait(false);
-                var range = Designer.Selection.SelectionResponseParser.ParseRangeOfElement(result?.ToString(Newtonsoft.Json.Formatting.None));
+                var range = Kubuno.Views.Designer.Selection.SelectionResponseParser.ParseRangeOfElement(result?.ToString(Newtonsoft.Json.Formatting.None));
                 return range is { } r ? LspPositionMapper.ToOffsetRange(text, r) : null;
             }
             finally

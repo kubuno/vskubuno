@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Desktop.Designer.DesignSurface;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.DesignSurface;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Registry;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.Desktop.Tests.Designer.DesignSurface
+namespace Kubuno.Views.Tests.Designer.DesignSurface
 {
     /// <summary>docs/DESIGNER.md §12: the context-menu wire shapes, the menu model and its command target.</summary>
     [TestClass]
@@ -363,7 +363,7 @@ namespace Kubuno.Desktop.Tests.Designer.DesignSurface
 
             public void SetRibbonSize(string elementId, string size) => Calls.Add($"Size {elementId} {size}");
 
-            public void EditCollection(string elementId, Kubuno.Desktop.Designer.Ribbon.RibbonCollection collection) => Calls.Add($"EditCollection {elementId} {collection.Row}");
+            public void EditCollection(string elementId, Kubuno.Views.Designer.Ribbon.RibbonCollection collection) => Calls.Add($"EditCollection {elementId} {collection.Row}");
 
             public void ConvertHandlers() => Calls.Add("ConvertHandlers");
 

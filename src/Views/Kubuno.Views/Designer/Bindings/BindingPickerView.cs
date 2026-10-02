@@ -9,7 +9,7 @@ using System.Windows.Media;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>
     /// The binding picker (docs/DESIGNER.md, "Data bindings"): the drop-down of a bindable property's value cell in the

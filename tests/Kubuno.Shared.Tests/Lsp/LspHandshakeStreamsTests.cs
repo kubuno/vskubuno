@@ -1,10 +1,10 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Kubuno.Core.Logic.Lsp;
+using Kubuno.Shared.Logic.Lsp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.Tests.Lsp
+namespace Kubuno.Shared.Tests.Lsp
 {
     [TestClass]
     public sealed class LspHandshakeStreamsTests

@@ -3,14 +3,14 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.Win32;
 
-namespace Kubuno.Core.Settings
+namespace Kubuno.Shared.Settings
 {
     /// <summary>
     /// An options page whose values live in Visual Studio 2026's unified settings (Tools &gt; Options &gt; Kubuno, see
     /// <c>UnifiedSettings/kubuno.registration.json</c>). The page object stays the code's view of the options; it
     /// (1) loads its classic values and, once, copies the ones the user had changed into the unified store,
     /// (2) reads the unified store, (3) follows the store's changes live. Without unified settings (Visual Studio 2022,
-    /// classic mode) it behaves as a plain <see cref="DialogPage"/>. Part of Kubuno.Core: every layer's options page
+    /// classic mode) it behaves as a plain <see cref="DialogPage"/>. Part of Kubuno.Shared: every layer's options page
     /// derives from it (and binds its properties with <see cref="UnifiedSettingAttribute"/>).
     /// </summary>
     public abstract class KubunoDialogPage : DialogPage

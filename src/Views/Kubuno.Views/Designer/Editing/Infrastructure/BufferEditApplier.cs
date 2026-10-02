@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.Text;
 
-namespace Kubuno.Desktop.Designer.Editing.Infrastructure
+namespace Kubuno.Views.Designer.Editing.Infrastructure
 {
     /// <summary>
     /// The only VS-dependent piece of this file: adapts a real <c>Microsoft.VisualStudio.Text.ITextBuffer</c>

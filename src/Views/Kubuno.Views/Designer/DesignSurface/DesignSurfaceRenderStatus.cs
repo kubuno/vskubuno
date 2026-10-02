@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// What the design surface shows of the current text (docs/DESIGNER.md section 17) - the

@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.DevAssistant.Host.Providers;
-using Kubuno.Core.DevAssistant.Logic.Cost;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
-using Kubuno.Core.DevAssistant.Logic.Tools;
+using Kubuno.Shared.DevAssistant.Host.Providers;
+using Kubuno.Shared.DevAssistant.Logic.Cost;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Tools;
 
-namespace Kubuno.Core.DevAssistant.Host
+namespace Kubuno.Shared.DevAssistant.Host
 {
     /// <summary>
     /// Runs one user turn (docs/AI-ASSISTANT.md sections 7.1 and 7.3): model call → tool calls answered by the VSIX →

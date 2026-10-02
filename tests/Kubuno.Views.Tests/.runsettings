@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Works around .NET Framework's loader-from-remote-source restriction on a mapped network drive
+  (e.g. Z:), which otherwise makes MSTest.TestAdapter.dll fail to load for this net48 test project
+  (FileLoadException, HRESULT 0x80131515) - see README.md's "Tests" section for the same issue on
+  tests\Kubuno.Rust.Tests, previously worked around by hand with
+  `$env:COMPLUS_LoadFromRemoteSources = "1"` before every `dotnet test` invocation. Setting it here,
+  scoped to this test host process via VSTest's own RunConfiguration/EnvironmentVariables, makes
+  `dotnet test tests\Kubuno.Views.Tests\Kubuno.Views.Tests.csproj`
+  work unconditionally, without relying on the caller's shell environment. Picked up automatically
+  through this project's own <RunSettingsFilePath> MSBuild property (see the .csproj) - VSTest reads
+  the same setting from a .runsettings file whether or not the assembly is on a network drive, so
+  this has no effect on a local checkout.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <COMPlus_LoadFromRemoteSources>1</COMPlus_LoadFromRemoteSources>
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>

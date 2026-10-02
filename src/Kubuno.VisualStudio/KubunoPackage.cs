@@ -2,8 +2,8 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core;
-using Kubuno.Core.Extensibility;
+using Kubuno.Shared;
+using Kubuno.Shared.Extensibility;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
@@ -13,10 +13,10 @@ using Microsoft.VisualStudio.Shell.Interop;
 // Several of our assemblies are resolved by NAME rather than by path, which cannot see an extension
 // folder on its own: Kubuno.Rust.ProjectSystem and Kubuno.Desktop.ProjectSystem (RustProject.imagemanifest and
 // KubunoControls.imagemanifest point at their WPF resources by assembly name, and Visual Studio's image
-// service loads them with Assembly.Load), their dependencies Kubuno.Core, Kubuno.Rust.Logic, Kubuno.Rust.Launch
+// service loads them with Assembly.Load), their dependencies Kubuno.Shared, Kubuno.Rust.Logic, Kubuno.Rust.Launch
 // and Kubuno.Rust.Cargo (MEF composes the CPS exports such as RustDebugLaunchProvider before this package ever
-// runs), the layer assemblies every one of them loads by reference (Kubuno.Core, Kubuno.Core.Logic,
-// Kubuno.Core.Mcp.Bridge...), and the two template wizards (Kubuno.Rust.TemplateWizard,
+// runs), the layer assemblies every one of them loads by reference (Kubuno.Shared, Kubuno.Shared.Logic,
+// Kubuno.Shared.Mcp.Bridge...), and the two template wizards (Kubuno.Rust.TemplateWizard,
 // Kubuno.Desktop.TemplateWizard: the "Create a new project" wizard's own Assembly.Load).
 //
 // Why not ProvideCodeBase (docs/RSPROJ.md, addendum "Solution Explorer icons in a regular install"):
@@ -44,7 +44,7 @@ namespace Kubuno.VisualStudio
     /// The Kubuno package - the extension's composition root (docs/ARCHITECTURE.md, "Layers (as built)"). It owns
     /// every registration Visual Studio reads from the pkgdef (the attributes below: options pages, editor factory,
     /// tool windows, UI context rules, menus) and lists the product layers; what each layer does when the package
-    /// loads lives in the layer (<see cref="KubunoLayer"/>), sequenced by <see cref="KubunoLayerHost"/> in Kubuno.Core.
+    /// loads lives in the layer (<see cref="KubunoLayer"/>), sequenced by <see cref="KubunoLayerHost"/> in Kubuno.Shared.
     /// The Rust language client and the other MEF components are exported by the layer assemblies independently of
     /// this package and activated by Visual Studio when a matching document is opened.
     ///
@@ -58,7 +58,7 @@ namespace Kubuno.VisualStudio
     ///
     /// <para><b>Adding a layer</b> (Web, Mobile...): reference its assembly from this project (it then ships in the
     /// VSIX folder, covered by the binding path), add its <see cref="KubunoLayer"/> to <see cref="CreateLayers"/>,
-    /// declare its registrations below and its commands in <c>KubunoCommands.vsct</c>. Core, Rust and Desktop do not
+    /// declare its registrations below and its commands in <c>KubunoCommands.vsct</c>. Shared, Rust and Views do not
     /// change.</para>
     /// </summary>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
@@ -82,11 +82,11 @@ namespace Kubuno.VisualStudio
             "ActiveEditorContentType:kbview",
             "{" + Kubuno.Rust.PackageGuids.CargoFolderUIContextString + "}",
         })]
-    // ---- Core layer (Kubuno.Core): the remote Linux host (dev database tunnel, later the Linux builds), docs/WEB.md ----
-    [ProvideOptionPage(typeof(Kubuno.Core.Remote.RemoteHostOptionsPage), KubunoConstants.OptionsCategoryName, "Remote Linux host", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.remote")]
-    [ProvideProfile(typeof(Kubuno.Core.Remote.RemoteHostOptionsPage), KubunoConstants.OptionsCategoryName, "Remote Linux host", 0, 0, isToolsOptionPage: true)]
+    // ---- Shared layer (Kubuno.Shared): the remote Linux host (dev database tunnel, later the Linux builds), docs/WEB.md ----
+    [ProvideOptionPage(typeof(Kubuno.Shared.Remote.RemoteHostOptionsPage), KubunoConstants.OptionsCategoryName, "Remote Linux host", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.remote")]
+    [ProvideProfile(typeof(Kubuno.Shared.Remote.RemoteHostOptionsPage), KubunoConstants.OptionsCategoryName, "Remote Linux host", 0, 0, isToolsOptionPage: true)]
     // docs/AI-ASSISTANT.md: the Kubuno Dev Assistant (« Assistant de développement Kubuno »), docked with Solution Explorer.
-    [ProvideToolWindow(typeof(Kubuno.Core.DevAssistant.UI.DevAssistantToolWindow), Style = VsDockStyle.Tabbed, Window = "3AE79031-E1BC-11D0-8F78-00A0C9110057")]
+    [ProvideToolWindow(typeof(Kubuno.Shared.DevAssistant.UI.DevAssistantToolWindow), Style = VsDockStyle.Tabbed, Window = "3AE79031-E1BC-11D0-8F78-00A0C9110057")]
     // ---- Rust layer (Kubuno.Rust) ----
     [ProvideOptionPage(typeof(Kubuno.Rust.Options.RustOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Rust.Constants.OptionsRustPageName, 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.rust")]
     [ProvideProfile(typeof(Kubuno.Rust.Options.RustOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Rust.Constants.OptionsRustPageName, 0, 0, isToolsOptionPage: true)]
@@ -108,14 +108,14 @@ namespace Kubuno.VisualStudio
         expression: "RustProjectSystem",
         termNames: new[] { "RustProjectSystem" },
         termValues: new[] { "ActiveProjectCapability:RustProjectSystem" })]
-    // ---- Desktop layer (Kubuno.Desktop) ----
-    [ProvideOptionPage(typeof(Kubuno.Desktop.Views.Options.KbviewOptionsPage), KubunoConstants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.views")]
-    [ProvideProfile(typeof(Kubuno.Desktop.Views.Options.KbviewOptionsPage), KubunoConstants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
-    // Kubuno.Desktop's Designer\INTEGRATION.md section 3: the split Design|XML editor for .kbview
+    // ---- Views layer (Kubuno.Views): the .kbview language client, the view designer, the .kbres editor ----
+    [ProvideOptionPage(typeof(Kubuno.Views.Options.KbviewOptionsPage), KubunoConstants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.views")]
+    [ProvideProfile(typeof(Kubuno.Views.Options.KbviewOptionsPage), KubunoConstants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
+    // Kubuno.Views' Designer\INTEGRATION.md section 3: the split Design|XML editor for .kbview
     // files, registered alongside - never instead of - kbview-languages.pkgdef's plain core text editor
     // (that pkgdef entry's own comment: "the HIGHEST value wins the double-click default", 0x64 there
     // vs. DesignerConstants.EditorExtensionPriority's 0x60 here, so the plain editor stays default).
-    [ProvideEditorFactory(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), 110)]
+    [ProvideEditorFactory(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), 110)]
     // Fixed 2026-09-28 (docs/RSPROJ.md work package 6): these two GUIDs were swapped one slot too far
     // (7651a703/7651a704, actually LOGVIEWID_TextView/LOGVIEWID_UserChooseView) - VSConstants.LOGVIEWID_Designer
     // is really {...a702...}, verified live by reflecting Microsoft.VisualStudio.Shell.15.0.dll's
@@ -123,29 +123,30 @@ namespace Kubuno.VisualStudio
     // actually reached KbviewEditorFactory for the real Designer logical view (confirmed live: even a
     // never-opened .kbview opened with IVsUIShellOpenDocument.OpenSpecificEditor against the true
     // LOGVIEWID_Designer fell back to the plain text editor before this fix).
-    [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), "{7651a702-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
-    [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
+    [ProvideEditorLogicalView(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), "{7651a702-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
+    [ProvideEditorLogicalView(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
     // LOGVIEWID_Code (verified by reflecting VSConstants.LOGVIEWID_Code): "View Code" (F7) opens the XML in a
     // plain code window of this factory (KbviewEditorFactory.CodePhysicalView), like WinForms' Form1.cs.
-    [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
-    [ProvideEditorExtension(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), Kubuno.Desktop.Views.KbviewConstants.FileExtension, Kubuno.Desktop.Designer.DesignerConstants.EditorExtensionPriority)]
+    [ProvideEditorLogicalView(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
+    [ProvideEditorExtension(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), Kubuno.Views.KbviewConstants.FileExtension, Kubuno.Views.Designer.DesignerConstants.EditorExtensionPriority)]
     // User control views (.kbcontrol, docs/VIEWS-SPEC.md "File kinds"): the same designer, the same priority.
-    [ProvideEditorExtension(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), Kubuno.Desktop.Views.KbviewConstants.ControlFileExtension, Kubuno.Desktop.Designer.DesignerConstants.EditorExtensionPriority)]
-    // The .kbres resource editor (Kubuno.Desktop\Resources\Editor): the default editor of .kbres files everywhere (no
+    [ProvideEditorExtension(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), Kubuno.Views.KbviewConstants.ControlFileExtension, Kubuno.Views.Designer.DesignerConstants.EditorExtensionPriority)]
+    // The .kbres resource editor (Kubuno.Views\Resources\Editor): the default editor of .kbres files everywhere (no
     // other editor is registered for the extension; 0x60 wins). Same logical views as the .kbview designer: Primary and
     // Designer -> the grid/thumbnail editor, Code and TextView -> a plain code window on the same XML buffer.
-    [ProvideEditorFactory(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), 111)]
-    [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), "{7651a702-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
-    [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
-    [ProvideEditorLogicalView(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
-    [ProvideEditorExtension(typeof(Kubuno.Desktop.Resources.Editor.KbresEditorFactory), ".kbres", 0x60)]
-    [ProvideOptionPage(typeof(Kubuno.Desktop.Designer.Options.KbviewDesignerOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Desktop.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.designer")]
-    [ProvideProfile(typeof(Kubuno.Desktop.Designer.Options.KbviewDesignerOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Desktop.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
+    [ProvideEditorFactory(typeof(Kubuno.Views.Resources.Editor.KbresEditorFactory), 111)]
+    [ProvideEditorLogicalView(typeof(Kubuno.Views.Resources.Editor.KbresEditorFactory), "{7651a702-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
+    [ProvideEditorLogicalView(typeof(Kubuno.Views.Resources.Editor.KbresEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
+    [ProvideEditorLogicalView(typeof(Kubuno.Views.Resources.Editor.KbresEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
+    [ProvideEditorExtension(typeof(Kubuno.Views.Resources.Editor.KbresEditorFactory), ".kbres", 0x60)]
+    [ProvideOptionPage(typeof(Kubuno.Views.Designer.Options.KbviewDesignerOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Views.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.designer")]
+    [ProvideProfile(typeof(Kubuno.Views.Designer.Options.KbviewDesignerOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Views.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
     // The View Outline tool window (Tools menu, KubunoCommands.vsct). The former fallback "Kubuno
     // Toolbox"/"Kubuno Properties" tool windows were removed: the designer fills Visual Studio's own
     // Toolbox and Properties window (docs/DESIGNER.md section 11). Their GUIDs are no longer registered, so a
     // persisted window layout that still names them cannot recreate them.
-    [ProvideToolWindow(typeof(Kubuno.Desktop.Designer.ToolWindows.OutlineToolWindow))]
+    [ProvideToolWindow(typeof(Kubuno.Views.Designer.ToolWindows.OutlineToolWindow))]
+    // ---- Desktop layer (Kubuno.Desktop) ----
     // docs/DATA.md DATA-5: the Data Explorer (docked left, tabbed with the Toolbox {B1E99781-AB81-11D0-B683-00AA00A3EE26}, where
     // Server Explorer lives - tabbing with Server Explorer itself left it floating in a profile that never opened it) and its
     // query windows (in the document well, one per query, not restored at the next start; their own key binding scope
@@ -175,14 +176,15 @@ namespace Kubuno.VisualStudio
         private KubunoLayerHost? _host;
 
         /// <summary>
-        /// The product layers, in initialization order: Rust first (the base every Kubuno target builds on), then the
-        /// targets. Core's own services (Output pane, MCP bridge, dialog gallery) are run by <see cref="KubunoLayerHost"/>
-        /// before them.
+        /// The product layers, in initialization order: Rust first (the base every Kubuno target builds on), then Views (the
+        /// .kbview designer the targets render for), then the targets. Shared's own services (Output pane, MCP bridge, dialog
+        /// gallery) are run by <see cref="KubunoLayerHost"/> before them.
         /// </summary>
         internal static KubunoLayer[] CreateLayers() => new KubunoLayer[]
         {
-            new Kubuno.Core.DevAssistant.DevAssistantLayer(),
+            new Kubuno.Shared.DevAssistant.DevAssistantLayer(),
             new Kubuno.Rust.RustLayer(),
+            new Kubuno.Views.ViewsLayer(),
             new Kubuno.Desktop.DesktopLayer(),
             new Kubuno.Web.WebLayer(),
             new Kubuno.Mobile.MobileLayer(),

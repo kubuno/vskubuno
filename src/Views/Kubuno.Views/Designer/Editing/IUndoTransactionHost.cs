@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// The narrow seam <see cref="CompoundEditCoordinator"/> depends on instead of the real

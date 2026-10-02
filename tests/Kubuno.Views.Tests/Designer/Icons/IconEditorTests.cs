@@ -2,14 +2,14 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using Kubuno.Desktop.Designer;
-using Kubuno.Desktop.Designer.Icons;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Tests.Designer.PropertyBrowser;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.Icons;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Tests.Designer.PropertyBrowser;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Icons
+namespace Kubuno.Views.Tests.Designer.Icons
 {
     /// <summary>docs/ICONS.md: the icon kind in the Properties window - the value syntax, the catalog, the editors and a round trip into the view.</summary>
     [TestClass]
@@ -179,7 +179,7 @@ namespace Kubuno.Desktop.Tests.Designer.Icons
             var element = new KbviewElementObject(host, "0", registry.Find("Button")!);
             var row = element.GetProperties().Find("Icon", false)!;
             Assert.AreEqual(new CategoryAttribute("Icon").Category, row.Category);
-            Assert.IsInstanceOfType<KbviewIconEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)row.GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
+            Assert.IsInstanceOfType<KbviewIconEditor>(((Kubuno.Views.Designer.Bindings.KbviewBindableEditor)row.GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
 
             // Each gesture is one undo unit (one batch of edits of the view's text), a file written with forward slashes.
             row.SetValue(element, "resources\\save.svg");

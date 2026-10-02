@@ -3,22 +3,12 @@ using System.ComponentModel;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Logging;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.DesignSurface;
 
 namespace Kubuno.Desktop.Designer.DesignSurface
 {
-    /// <summary>
-    /// A host whose surface can run different runtimes (docs/DESIGNER.md section 15) - what
-    /// <see cref="UI.DesignerSplitView"/> reads to show the runtime info bar.
-    /// </summary>
-    public interface IDesignSurfaceRuntimeAware
-    {
-        IDesignSurfaceRuntimeSource RuntimeSource { get; }
-
-        /// <summary>Raised on the UI thread when a surface failed the <c>surfaceInfo</c> ABI check (the message says why).</summary>
-        event EventHandler<string>? RuntimeRejected;
-    }
-
     /// <summary>
     /// The runtime half of <see cref="RustDesignSurfaceHost"/> (docs/DESIGNER.md section 15): which exe
     /// the pane runs, the hot swap onto a rebuilt project runtime, and the <c>surfaceInfo</c> ABI

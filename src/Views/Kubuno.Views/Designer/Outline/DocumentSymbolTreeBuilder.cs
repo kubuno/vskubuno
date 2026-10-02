@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Selection;
 
-namespace Kubuno.Desktop.Designer.Outline
+namespace Kubuno.Views.Designer.Outline
 {
     /// <summary>
     /// Turns a <c>textDocument/documentSymbol</c> response (<see cref="DocumentSymbolDto"/>, carrying no

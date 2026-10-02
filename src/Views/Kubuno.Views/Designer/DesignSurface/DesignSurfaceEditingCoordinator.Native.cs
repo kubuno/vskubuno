@@ -4,23 +4,23 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Editing.Infrastructure;
-using Kubuno.Desktop.Designer.Handlers;
-using Kubuno.Desktop.Designer.Handlers.Infrastructure;
-using Kubuno.Desktop.Designer.Outline;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Selection;
-using Kubuno.Desktop.Designer.Toolbox;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Editing.Infrastructure;
+using Kubuno.Views.Designer.Handlers;
+using Kubuno.Views.Designer.Handlers.Infrastructure;
+using Kubuno.Views.Designer.Outline;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Selection;
+using Kubuno.Views.Designer.Toolbox;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The half of <see cref="DesignSurfaceEditingCoordinator"/> that plugs the designer into Visual

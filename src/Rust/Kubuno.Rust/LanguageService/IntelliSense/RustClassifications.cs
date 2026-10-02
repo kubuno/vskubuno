@@ -38,7 +38,7 @@ namespace Kubuno.Rust.LanguageService.IntelliSense
         /// <summary>The macro color: Visual Studio's C++ macro purple, for the current theme.</summary>
         internal static Color MacroColor(bool dark) => dark ? Color.FromRgb(0xBE, 0xB7, 0xFF) : Color.FromRgb(0x8A, 0x1B, 0xFF);
 
-        internal static bool IsDarkTheme() => Kubuno.Core.UI.VsTheme.IsDark();
+        internal static bool IsDarkTheme() => Kubuno.Shared.UI.VsTheme.IsDark();
     }
 
     [Export(typeof(EditorFormatDefinition))]

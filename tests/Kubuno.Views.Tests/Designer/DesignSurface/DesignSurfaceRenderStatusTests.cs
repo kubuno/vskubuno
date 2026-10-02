@@ -1,9 +1,9 @@
 using System.Linq;
-using Kubuno.Desktop.Designer;
-using Kubuno.Desktop.Designer.DesignSurface;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.DesignSurface;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.DesignSurface
+namespace Kubuno.Views.Tests.Designer.DesignSurface
 {
     /// <summary>
     /// docs/DESIGNER.md section 16: the <c>renderStatus</c> line (checked against the exact string

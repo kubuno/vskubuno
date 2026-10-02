@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The stand-in for the Design pane until DSG-7 embeds the real <c>kubuno-views-designer</c>

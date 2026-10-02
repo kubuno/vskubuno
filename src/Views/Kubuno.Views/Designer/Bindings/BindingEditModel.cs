@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>One attribute edit: set <see cref="Value"/>, or remove the attribute when it is null.</summary>
     public sealed class BindingAttributeEdit

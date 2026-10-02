@@ -1,9 +1,9 @@
 using System.Linq;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Editing
+namespace Kubuno.Views.Tests.Designer.Editing
 {
     /// <summary>docs/DESIGNER.md §13: multi-selection helpers, the Layout commands' enabling and the multi-element structure gestures.</summary>
     [TestClass]

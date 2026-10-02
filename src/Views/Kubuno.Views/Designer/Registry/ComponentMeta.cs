@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.Desktop.Designer.Registry
+namespace Kubuno.Views.Designer.Registry
 {
     /// <summary>
     /// Mirrors one exported <c>kubuno_views::registry::ComponentMeta</c> entry - the whole shape

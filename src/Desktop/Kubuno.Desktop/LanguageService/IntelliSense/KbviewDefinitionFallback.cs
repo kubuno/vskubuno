@@ -6,12 +6,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kubuno.Desktop.Logic.IntelliSense;
-using Kubuno.Desktop.Designer.Handlers.Infrastructure;
-using Kubuno.Core.Logging;
+using Kubuno.Views.Designer.Handlers.Infrastructure;
+using Kubuno.Shared.Logging;
 using Kubuno.Rust.LanguageService;
 using Kubuno.Rust.LanguageService.IntelliSense;
-using Kubuno.Desktop.Views;
-using Kubuno.Desktop.Views.LanguageService;
+using Kubuno.Views;
+using Kubuno.Views.LanguageService;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Threading;
@@ -55,7 +55,7 @@ namespace Kubuno.Desktop.LanguageService.IntelliSense
                 var folder = Path.GetDirectoryName(path) ?? string.Empty;
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var fileHost = new VsWorkspaceFileHost(ServiceProvider.GlobalProvider);
-                var openViews = fileHost.OpenTexts(folder, Kubuno.Desktop.Logic.ViewFiles.Extensions);
+                var openViews = fileHost.OpenTexts(folder, Kubuno.Views.Logic.ViewFiles.Extensions);
                 var openRust = fileHost.OpenTexts(folder, ".rs");
                 await TaskScheduler.Default;
 

@@ -9,7 +9,7 @@ using Kubuno.Rust.Cargo.Metadata;
 using Kubuno.Rust.Cargo.Processes;
 using Kubuno.Rust.Launch;
 using Kubuno.Rust.Logic;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;

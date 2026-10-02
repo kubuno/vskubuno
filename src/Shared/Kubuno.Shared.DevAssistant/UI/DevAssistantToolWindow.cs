@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Core.DevAssistant.UI
+namespace Kubuno.Shared.DevAssistant.UI
 {
     /// <summary>
     /// View &gt; Other Windows &gt; « Assistant de développement Kubuno » (docs/AI-ASSISTANT.md section 5.1): a single-instance

@@ -2,11 +2,11 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Logging;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.Desktop.Designer.Registry.Infrastructure
+namespace Kubuno.Views.Designer.Registry.Infrastructure
 {
     /// <summary>
     /// The real <c>kubuno/registry</c> caller (docs/DESIGNER.md §5), over the same

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.Core.Logic.QuickInfo
+namespace Kubuno.Shared.Logic.QuickInfo
 {
     /// <summary>The block kinds of <see cref="Markdown"/>.</summary>
     public enum MarkdownBlockKind

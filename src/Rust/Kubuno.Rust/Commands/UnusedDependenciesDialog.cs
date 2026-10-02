@@ -3,7 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Kubuno.Rust.Logic.SolutionExplorer;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.PlatformUI;
 
 namespace Kubuno.Rust.Commands

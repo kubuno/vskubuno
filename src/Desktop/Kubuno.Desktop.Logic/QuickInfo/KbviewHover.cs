@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Shared.Logic.QuickInfo;
 using Kubuno.Desktop.Logic.SolutionExplorer;
 using Kubuno.Rust.Logic.QuickInfo;
 

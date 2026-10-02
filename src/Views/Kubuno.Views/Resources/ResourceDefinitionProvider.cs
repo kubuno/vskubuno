@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Logic.Resources;
+using Kubuno.Views.Logic.Resources;
 using Kubuno.Rust.Extensibility;
 using Newtonsoft.Json.Linq;
 
-namespace Kubuno.Desktop.Resources
+namespace Kubuno.Views.Resources
 {
     /// <summary>
     /// F12 on a <c>resources!</c> accessor (<c>Resources::logo()</c>) opens its entry in the <c>.kbres</c> file, and F12 on

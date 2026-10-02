@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.Desktop.Views.Locating
+namespace Kubuno.Views.Locating
 {
     /// <summary>
     /// Finds the Cargo workspace root to hand <c>kubuno-views-ls</c> as its project root: the

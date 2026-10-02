@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 using Kubuno.Web.Logic.Generation;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;

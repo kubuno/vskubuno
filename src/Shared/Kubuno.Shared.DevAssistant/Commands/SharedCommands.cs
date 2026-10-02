@@ -1,16 +1,16 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Kubuno.Core.DevAssistant.Extensibility;
-using Kubuno.Core.DevAssistant.Logic.Prompts;
+using Kubuno.Shared.DevAssistant.Extensibility;
+using Kubuno.Shared.DevAssistant.Logic.Prompts;
 
-namespace Kubuno.Core.DevAssistant.Commands
+namespace Kubuno.Shared.DevAssistant.Commands
 {
     /// <summary>
-    /// The Core layer's commands in DA-1: <c>/expliquer</c> (explain the current error or selection and propose a fix -
+    /// The Shared layer's commands in DA-1: <c>/expliquer</c> (explain the current error or selection and propose a fix -
     /// the Rust layer adds <c>rustc --explain</c> with the execution tools of DA-3) and <c>/aide</c>.
     /// </summary>
-    internal sealed class CoreCommands : IDevAssistantCommandProvider
+    internal sealed class SharedCommands : IDevAssistantCommandProvider
     {
         public IEnumerable<DevAssistantCommand> GetCommands() => new[]
         {
@@ -42,7 +42,7 @@ namespace Kubuno.Core.DevAssistant.Commands
         /// <summary>The rules digest (section 6.1, tier 1), embedded in this assembly.</summary>
         public static string RulesDigest()
         {
-            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Kubuno.Core.DevAssistant.Knowledge.rules.md");
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Kubuno.Shared.DevAssistant.Knowledge.rules.md");
             if (stream is null)
             {
                 return string.Empty;

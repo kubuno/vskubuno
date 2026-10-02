@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.Desktop.Logic
+namespace Kubuno.Views.Logic
 {
     /// <summary>
     /// The two kinds of view file (docs/VIEWS-SPEC.md, "File kinds"): a form, window or dialog is a <c>.kbview</c>, a

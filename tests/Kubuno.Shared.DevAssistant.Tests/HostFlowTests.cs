@@ -8,16 +8,16 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Kubuno.Core.DevAssistant.Host;
-using Kubuno.Core.DevAssistant.Host.Providers;
-using Kubuno.Core.DevAssistant.Logic.Changes;
-using Kubuno.Core.DevAssistant.Logic.Cost;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
-using Kubuno.Core.DevAssistant.Logic.Secrets;
-using Kubuno.Core.DevAssistant.Logic.Tools;
+using Kubuno.Shared.DevAssistant.Host;
+using Kubuno.Shared.DevAssistant.Host.Providers;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Logic.Cost;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Secrets;
+using Kubuno.Shared.DevAssistant.Logic.Tools;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.DevAssistant.Tests
+namespace Kubuno.Shared.DevAssistant.Tests
 {
     /// <summary>The host end to end over its real JSON-RPC channel, with the fake provider replaying the shipped recordings.</summary>
     [TestClass]

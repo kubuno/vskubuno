@@ -1,11 +1,11 @@
 using System;
 
-namespace Kubuno.Desktop.Views.Logging
+namespace Kubuno.Views.Logging
 {
     /// <summary>
     /// Everything this library needs to log a line or an exception, kept as an interface so it does
     /// not have to own (or duplicate) the VSIX's existing "Kubuno" Output pane
-    /// (<c>src/Core/Kubuno.Core/Logging/KubunoLog.cs</c>) - this library must not reference that
+    /// (<c>src/Shared/Kubuno.Shared/Logging/KubunoLog.cs</c>) - this library must not reference that
     /// project (it will itself be referenced BY the VSIX once integrated, see INTEGRATION.md; a
     /// reference the other way would be circular). The VSIX supplies a small adapter implementing
     /// this interface, wrapping its own <c>KubunoLog.WriteLine</c>/<c>WriteException</c>, and installs

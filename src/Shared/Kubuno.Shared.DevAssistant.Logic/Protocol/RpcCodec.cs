@@ -2,7 +2,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Kubuno.Core.DevAssistant.Logic.Protocol
+namespace Kubuno.Shared.DevAssistant.Logic.Protocol
 {
     /// <summary>JSON (de)serialization of the channel: camelCase, nulls omitted, one compact object per line.</summary>
     public static class RpcCodec

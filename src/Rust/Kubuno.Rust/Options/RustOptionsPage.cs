@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Forms.Design;
 using Kubuno.Rust.Logic.IntelliSense;
-using Kubuno.Core.Settings;
+using Kubuno.Shared.Settings;
 using Microsoft.VisualStudio.Shell;
 
 namespace Kubuno.Rust.Options

@@ -32,9 +32,9 @@ jobs:
           toolchain: stable
           components: rust-analyzer,rust-src,clippy,rustfmt
 
-      # kubuno-views-ls.exe (Kubuno.Desktop.Views' language server, tools\kubuno-views-ls.exe
+      # kubuno-views-ls.exe (Kubuno.Views' language server, tools\kubuno-views-ls.exe
       # in the VSIX) lives in the separate kubuno/desktop repo, not here - see
-      # src/Desktop/Kubuno.Desktop/Views/INTEGRATION.md #6 and Kubuno.VisualStudio.csproj's
+      # src/Views/Kubuno.Views/INTEGRATION.md #6 and Kubuno.VisualStudio.csproj's
       # KubunoViewsLsExePath property. Checked out to a sibling path and built before the solution
       # build below, which is pointed at its output via /p:KubunoViewsLsExePath.
       - name: Checkout kubuno/desktop (for kubuno-views-ls)
@@ -53,7 +53,7 @@ jobs:
       - name: Build Solution
         # KubunoViewsLsExePath: see the cargo build step above (default cargo target dir under
         # desktop/windows/target, since CARGO_TARGET_DIR is left unset here).
-        # kubuno-vs-mcp.exe needs no property override: Kubuno.Core.Mcp is now part of this solution
+        # kubuno-vs-mcp.exe needs no property override: Kubuno.Shared.Mcp is now part of this solution
         # (ReferenceOutputAssembly=false ProjectReference from Kubuno.VisualStudio.csproj), so this
         # one build also produces it at Kubuno.VisualStudio.csproj's own KubunoMcpOutputDir default.
         run: >-

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>
     /// The extra services the Properties window's rich editors need from the designer pane, beyond

@@ -1,7 +1,7 @@
 using System;
-using Kubuno.Core.Logic.Localization;
+using Kubuno.Shared.Logic.Localization;
 
-namespace Kubuno.Core.Logic.Remote
+namespace Kubuno.Shared.Logic.Remote
 {
     /// <summary>Why an ssh connection to the remote Linux host ended, read from ssh's error output.</summary>
     public enum SshFailureKind

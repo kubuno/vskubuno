@@ -1,6 +1,6 @@
-using Kubuno.Core.Logic.Localization;
+using Kubuno.Shared.Logic.Localization;
 
-namespace Kubuno.Core.DevAssistant.UI
+namespace Kubuno.Shared.DevAssistant.UI
 {
     /// <summary>UI strings of the assistant, French or English after Visual Studio's UI language.</summary>
     internal static class AssistantText

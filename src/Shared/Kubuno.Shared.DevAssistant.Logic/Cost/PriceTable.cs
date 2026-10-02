@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
 
-namespace Kubuno.Core.DevAssistant.Logic.Cost
+namespace Kubuno.Shared.DevAssistant.Logic.Cost
 {
     /// <summary>Prices of one model in US dollars per million tokens.</summary>
     public sealed class ModelPrice

@@ -4,10 +4,10 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using Kubuno.Desktop.Designer.UI;
+using Kubuno.Views.Designer.UI;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>
     /// « Liaison de données » (docs/DESIGNER.md, "Data bindings"): Windows Forms' "Formatting and Advanced Binding" and

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.Core.DevAssistant.Logic.Markdown
+namespace Kubuno.Shared.DevAssistant.Logic.Markdown
 {
     public enum MarkdownBlockKind
     {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.Shell;
 
 namespace Kubuno.Rust.ProjectSystem.ProjectProperties

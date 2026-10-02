@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.Desktop.Logic.Resources
+namespace Kubuno.Views.Logic.Resources
 {
     /// <summary>
     /// Go To Definition from the code <c>resources!</c> generates (docs/RESOURCES.md): rust-analyzer sends

@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Core layer, pure logic (docs/ARCHITECTURE.md, "Layers (as built)"): helpers every product layer may use and that
+    Shared layer, pure logic (docs/ARCHITECTURE.md, "Layers (as built)"): helpers every product layer may use and that
     need no Visual Studio SDK - LSP plumbing (handshake streams, JSON, snippets), the hover markdown model, the UI
-    language. No dependency on the VS SDK, so plain `dotnet test` exercises it (tests/Kubuno.Core.Tests).
+    language. No dependency on the VS SDK, so plain `dotnet test` exercises it (tests/Kubuno.Shared.Tests).
     net48 like the rest of the in-proc extension (classic VSSDK extensions are .NET Framework 4.8).
   -->
   <PropertyGroup>
@@ -11,8 +11,8 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Core.Logic</RootNamespace>
-    <AssemblyName>Kubuno.Core.Logic</AssemblyName>
+    <RootNamespace>Kubuno.Shared.Logic</RootNamespace>
+    <AssemblyName>Kubuno.Shared.Logic</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Windows;
-using Kubuno.Core.UI;
-using Kubuno.Desktop.Logic.Resources;
+using Kubuno.Shared.UI;
+using Kubuno.Views.Logic.Resources;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Resources.Editor
+namespace Kubuno.Views.Resources.Editor
 {
     /// <summary>
     /// The resource editor with an in-memory sample set, for Kubuno.VisualStudio's "Kubuno: Dialog Gallery" developer
@@ -19,7 +19,7 @@ namespace Kubuno.Desktop.Resources.Editor
         {
             new KeyValuePair<string, Func<bool?>>(ResourceText.ResourceEditorGallery, () => new SampleDialog().ShowModal()),
             // The Select Resource dialog on the resources sample (an image property of a view of that project).
-            new KeyValuePair<string, Func<bool?>>(ResourceText.SelectResourceTitle + " (SelectResourceDialog)", () => new Kubuno.Desktop.Designer.Resources.SelectResourceDialog(SampleView, "{Res logo}", Kubuno.Desktop.Designer.Resources.ResourceKindFilter.Images).ShowModal()),
+            new KeyValuePair<string, Func<bool?>>(ResourceText.SelectResourceTitle + " (SelectResourceDialog)", () => new Kubuno.Views.Designer.Resources.SelectResourceDialog(SampleView, "{Res logo}", Kubuno.Views.Designer.Resources.ResourceKindFilter.Images).ShowModal()),
         };
 
         /// <summary>A view of the resources sample (samples/resources-desktop of the extension's repository; KUBUNO_RESOURCES_SAMPLE overrides it).</summary>

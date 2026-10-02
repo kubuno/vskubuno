@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Desktop.Designer.Handlers
+namespace Kubuno.Views.Designer.Handlers
 {
     /// <summary>
     /// The <c>kubuno/createHandler</c> request (docs/DESIGNER.md §6/§8, DSG-10 - "double-click on a

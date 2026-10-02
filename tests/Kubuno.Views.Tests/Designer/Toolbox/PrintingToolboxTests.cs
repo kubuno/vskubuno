@@ -1,11 +1,11 @@
 using System.Linq;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Toolbox;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Toolbox;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 
-namespace Kubuno.Desktop.Tests.Designer.Toolbox
+namespace Kubuno.Views.Tests.Designer.Toolbox
 {
     /// <summary>
     /// docs/PRINTING.md: the printing components in the designer - their Toolbox tab ("Printing" / "Impression"), the

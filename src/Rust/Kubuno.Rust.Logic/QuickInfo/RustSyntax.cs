@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Shared.Logic.QuickInfo;
 
 namespace Kubuno.Rust.Logic.QuickInfo
 {

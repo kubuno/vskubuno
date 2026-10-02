@@ -9,7 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Kubuno.Web.Logic.WebDesigner;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;

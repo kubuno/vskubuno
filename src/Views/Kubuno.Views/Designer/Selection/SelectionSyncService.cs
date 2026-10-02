@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.DesignSurface;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Properties;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.DesignSurface;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Properties;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Logging;
 
-namespace Kubuno.Desktop.Designer.Selection
+namespace Kubuno.Views.Designer.Selection
 {
     /// <summary>
     /// DSG-8's C# half (docs/DESIGNER.md §6/§8/§9): keeps the design surface, the XML text view, the

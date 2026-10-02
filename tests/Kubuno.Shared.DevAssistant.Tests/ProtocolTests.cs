@@ -5,10 +5,10 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.DevAssistant.Tests
+namespace Kubuno.Shared.DevAssistant.Tests
 {
     [TestClass]
     public sealed class ProtocolTests

@@ -7,7 +7,7 @@ using Kubuno.Rust.Cargo.Commands;
 using Kubuno.Rust.Cargo.Diagnostics;
 using Kubuno.Rust.Cargo.Processes;
 using Kubuno.Rust.Debugging;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;

@@ -1,4 +1,4 @@
-using Kubuno.Core.Extensibility;
+using Kubuno.Shared.Extensibility;
 
 namespace Kubuno.Mobile
 {

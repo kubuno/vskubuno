@@ -4,13 +4,13 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-using Kubuno.Core.DevAssistant.Logic.Credentials;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
-using Kubuno.Core.DevAssistant.UI;
-using Kubuno.Core.UI;
+using Kubuno.Shared.DevAssistant.Logic.Credentials;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.UI;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.Core.DevAssistant.Settings
+namespace Kubuno.Shared.DevAssistant.Settings
 {
     /// <summary>
     /// « Paramètres de l'assistant » (docs/AI-ASSISTANT.md section 8.1): provider, default model, effort, cost cap, and the

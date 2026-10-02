@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using Kubuno.Desktop.Logic.Data;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Kubuno.Desktop.Options;
 using Microsoft.VisualStudio.Shell;
 

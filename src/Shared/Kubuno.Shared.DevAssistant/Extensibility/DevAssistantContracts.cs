@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.DevAssistant.Logic.Changes;
-using Kubuno.Core.DevAssistant.Logic.Prompts;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
-using Kubuno.Core.DevAssistant.Logic.Secrets;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Logic.Prompts;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Secrets;
 
-namespace Kubuno.Core.DevAssistant.Extensibility
+namespace Kubuno.Shared.DevAssistant.Extensibility
 {
     /// <summary>
     /// A tool the model may call (docs/AI-ASSISTANT.md section 6.3). Its descriptor is MCP-shaped; the policy

@@ -10,7 +10,7 @@ using Kubuno.Rust.Commands;
 using Kubuno.Desktop.Logic.Data;
 using Kubuno.Desktop.Logic.Migrations;
 using Kubuno.Desktop.DataExplorer;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 

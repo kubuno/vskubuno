@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace Kubuno.Desktop.Designer.Toolbox
+namespace Kubuno.Views.Designer.Toolbox
 {
     /// <summary>
     /// The private clipboard format a Kubuno component carries on Visual Studio's native Toolbox: its

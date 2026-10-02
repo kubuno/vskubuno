@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;

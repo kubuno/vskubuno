@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>What a property shows for a sample value through a binding (<c>kubuno/bindingPreview</c>).</summary>
     public sealed class BindingPreview

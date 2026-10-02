@@ -5,12 +5,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
-using Kubuno.Desktop.Designer.DesignSurface;
+using Kubuno.Views.Designer.DesignSurface;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.UI
+namespace Kubuno.Views.Designer.UI
 {
     /// <summary>
     /// The design surface's error banner (docs/DESIGNER.md section 17): a compact, non-blocking strip above

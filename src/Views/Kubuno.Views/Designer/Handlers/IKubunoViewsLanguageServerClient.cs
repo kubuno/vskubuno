@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.Desktop.Designer.Handlers
+namespace Kubuno.Views.Designer.Handlers
 {
     /// <summary>
     /// The seam <see cref="HandlerCreationService"/> depends on instead of a raw

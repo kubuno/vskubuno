@@ -92,9 +92,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
     <ProjectReference Include="..\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
-    <!-- Themed dialogs, host accessors. Kubuno.Core compiles against the NuGet 17.x SDK and keeps its packages private,
-         so this project's 18.x Visual Studio references stay the only ones (a higher version than Kubuno.Core's). -->
-    <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
+    <!-- Themed dialogs, host accessors. Kubuno.Shared compiles against the NuGet 17.x SDK and keeps its packages private,
+         so this project's 18.x Visual Studio references stay the only ones (a higher version than Kubuno.Shared's). -->
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared\Kubuno.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

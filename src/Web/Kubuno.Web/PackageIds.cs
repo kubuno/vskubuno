@@ -1,6 +1,6 @@
 namespace Kubuno.Web
 {
-    /// <summary>IDs of the commands the web layer handles, in Kubuno.Core's command set, matching <c>KubunoCommands.vsct</c> (0x07xx).</summary>
+    /// <summary>IDs of the commands the web layer handles, in Kubuno.Shared's command set, matching <c>KubunoCommands.vsct</c> (0x07xx).</summary>
     public static class PackageIds
     {
         /// <summary>Tools > "Kubuno: Generate Web Solution" (the core or the module of the active document/solution).</summary>

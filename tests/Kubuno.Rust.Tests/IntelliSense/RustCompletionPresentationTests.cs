@@ -1,6 +1,6 @@
 using System.Linq;
 using Kubuno.Rust.Logic.IntelliSense;
-using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Shared.Logic.QuickInfo;
 using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

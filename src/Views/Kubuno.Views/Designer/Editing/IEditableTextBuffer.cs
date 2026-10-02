@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// The narrow seam <see cref="BufferEditCore"/> depends on instead of the full

@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.Desktop.Logic.Resources
+namespace Kubuno.Views.Logic.Resources
 {
     /// <summary>
     /// Culture names of satellite files, generated Rust names and the <c>{Res …}</c> markup - the same rules as the

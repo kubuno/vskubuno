@@ -1,35 +1,12 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Logging;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.DesignSurface;
 
 namespace Kubuno.Desktop.Designer.DesignSurface
 {
-    /// <summary>
-    /// A host that reports what its preview shows (docs/DESIGNER.md section 17) - what
-    /// <see cref="UI.DesignerSplitView"/> reads to show the error banner and the "preview keeps crashing" bar.
-    /// </summary>
-    public interface IDesignSurfaceStatusAware
-    {
-        /// <summary>The last <c>renderStatus</c> the surface sent (kept across a restart until the new surface sends its own).</summary>
-        DesignSurfaceRenderStatus? RenderStatus { get; }
-
-        /// <summary>Raised on the UI thread when <see cref="RenderStatus"/> changes.</summary>
-        event EventHandler? RenderStatusChanged;
-
-        /// <summary>The surface exited unexpectedly several times in a row.</summary>
-        bool IsFailingRepeatedly { get; }
-
-        /// <summary>Raised on the UI thread when <see cref="IsFailingRepeatedly"/> changes.</summary>
-        event EventHandler? HealthChanged;
-
-        /// <summary>Raised on the UI thread when a marker of the surface asks to show a finding in the XML (<c>goToSource</c>).</summary>
-        event EventHandler<DesignSurfaceDiagnostic>? SourceNavigationRequested;
-
-        /// <summary>Starts the surface again now (the « Relancer » action).</summary>
-        void Restart();
-    }
-
     /// <summary>
     /// The status half of <see cref="RustDesignSurfaceHost"/> (docs/DESIGNER.md section 17): the
     /// <c>renderStatus</c> lines, the last preview kept on screen while the surface restarts (a snapshot of

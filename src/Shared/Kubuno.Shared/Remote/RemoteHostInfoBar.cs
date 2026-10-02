@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using Kubuno.Core.Logging;
-using Kubuno.Core.Logic.Localization;
-using Kubuno.Core.Logic.Remote;
+using Kubuno.Shared.Logging;
+using Kubuno.Shared.Logic.Localization;
+using Kubuno.Shared.Logic.Remote;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
@@ -16,7 +16,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.Core.Remote
+namespace Kubuno.Shared.Remote
 {
     /// <summary>
     /// The main-window info bar of the remote Linux host (docs/WEB.md, "The development database"): an SSH failure with

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Core.DevAssistant.Logic.Changes;
-using Kubuno.Core.DevAssistant.Logic.Secrets;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Logic.Secrets;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.DevAssistant.Tests
+namespace Kubuno.Shared.DevAssistant.Tests
 {
     /// <summary>
     /// docs/AI-ASSISTANT.md section 8.3. The sample tokens are assembled at run time (never literal in the source) so

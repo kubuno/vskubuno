@@ -6,11 +6,11 @@ using System.Drawing.Design;
 using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Forms.Design;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.UI;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.UI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Icons
+namespace Kubuno.Views.Designer.Icons
 {
     /// <summary>
     /// The editor of every icon property (<c>editor("icon")</c>: <c>Icon</c>, <c>SmallIcon</c>, <c>LargeIcon</c>, a window's

@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.DevAssistant.Tests
+namespace Kubuno.Shared.DevAssistant.Tests
 {
     /// <summary>
     /// The recorded <c>/vue</c> ops against the REAL <c>kubuno-views-ls</c> (docs/AI-ASSISTANT.md section 6.2): opened on a

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Outline;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Outline;
 
-namespace Kubuno.Desktop.Designer.Selection
+namespace Kubuno.Views.Designer.Selection
 {
     /// <summary>
     /// The seam <see cref="SelectionSyncService"/> (and <see cref="Outline"/>'s tree builder's caller)

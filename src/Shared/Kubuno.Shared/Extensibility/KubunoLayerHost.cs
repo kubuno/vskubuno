@@ -6,24 +6,24 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE80;
-using Kubuno.Core.Commands;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Commands;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.Core.Extensibility
+namespace Kubuno.Shared.Extensibility
 {
     /// <summary>
-    /// Runs the package's initialization for Core and every <see cref="KubunoLayer"/> (docs/ARCHITECTURE.md, "Layers (as
+    /// Runs the package's initialization for Shared and every <see cref="KubunoLayer"/> (docs/ARCHITECTURE.md, "Layers (as
     /// built)"). The package (src/Kubuno.VisualStudio) only declares registrations and lists its layers; the sequence and
     /// the threading rules live here, identical for every layer:
     /// <list type="bullet">
     /// <item>background thread: <see cref="KubunoHost"/> is set, each layer's <see cref="KubunoLayer.InitializeAsync"/>,
     /// the menu command service lookup;</item>
-    /// <item>UI thread (reported as the package's UI-thread load time): the Core commands, each layer's
+    /// <item>UI thread (reported as the package's UI-thread load time): the Shared commands, each layer's
     /// <see cref="KubunoLayer.InitializeOnUIThread"/>;</item>
     /// <item>deferred, once any solution load in progress is over: at UI idle the "Kubuno" Output pane, the MCP bridge's
     /// DTE reads and each layer's <see cref="KubunoLayer.InitializeOnIdle"/>; then in the background the MCP bridge
@@ -35,7 +35,7 @@ namespace Kubuno.Core.Extensibility
     {
         private readonly AsyncPackage _package;
         private readonly KubunoLayerContext _context;
-        private Kubuno.Core.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost? _mcpBridgeHost;
+        private Kubuno.Shared.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost? _mcpBridgeHost;
 
         public KubunoLayerHost(AsyncPackage package, Action<IVsEditorFactory> registerEditorFactory, IReadOnlyList<KubunoLayer> layers)
         {
@@ -165,7 +165,7 @@ namespace Kubuno.Core.Extensibility
         }
 
         /// <summary>
-        /// Starts the MCP bridge (see docs/MCP.md "Integration"): the net48 leg of Kubuno.Core.Mcp.Bridge, loaded in-proc
+        /// Starts the MCP bridge (see docs/MCP.md "Integration"): the net48 leg of Kubuno.Shared.Mcp.Bridge, loaded in-proc
         /// here, hosts a named pipe that <c>kubuno-vs-mcp.exe</c> (started independently by Claude Code, outside this
         /// process) connects to. Called on a background thread once the solution is loaded (so the discovery file names
         /// it), with the DTE values read at UI idle. Every failure is logged, never thrown: read-only Visual Studio
@@ -186,8 +186,8 @@ namespace Kubuno.Core.Extensibility
                     return;
                 }
 
-                var provider = new Kubuno.Core.Mcp.Bridge.Dte.DteVsContextProvider(dte);
-                var host = new Kubuno.Core.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost(provider);
+                var provider = new Kubuno.Shared.Mcp.Bridge.Dte.DteVsContextProvider(dte);
+                var host = new Kubuno.Shared.Mcp.Bridge.PipeProtocol.VsMcpBridgeHost(provider);
                 host.Start(visualStudioVersion: visualStudioVersion, solutionOrFolderPath: solutionOrFolderPath);
                 _mcpBridgeHost = host;
                 KubunoLog.WriteLine($"Kubuno: MCP bridge started (pipe '{host.PipeName}').");
@@ -198,7 +198,7 @@ namespace Kubuno.Core.Extensibility
             }
         }
 
-        /// <summary>The package's <c>Dispose(true)</c> body, on the UI thread: layers in reverse order, then Core.</summary>
+        /// <summary>The package's <c>Dispose(true)</c> body, on the UI thread: layers in reverse order, then Shared.</summary>
         public void Dispose()
         {
             ThreadHelper.ThrowIfNotOnUIThread();

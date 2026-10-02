@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Text;
-using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Views.Designer.Editing;
 
-namespace Kubuno.Desktop.Tests.Designer.Editing.Fakes
+namespace Kubuno.Views.Tests.Designer.Editing.Fakes
 {
     /// <summary>In-memory <see cref="IEditableTextBuffer"/> for unit-testing <see cref="BufferEditCore"/>/<see cref="CompoundEditCoordinator"/> without a real VS <c>ITextBuffer</c>.</summary>
     internal sealed class FakeEditableTextBuffer : IEditableTextBuffer

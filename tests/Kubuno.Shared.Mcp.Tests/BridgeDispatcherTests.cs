@@ -1,13 +1,13 @@
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.Mcp.Bridge;
-using Kubuno.Core.Mcp.Bridge.Contracts;
-using Kubuno.Core.Mcp.Bridge.PipeProtocol;
-using Kubuno.Core.Mcp.Tests.Fakes;
+using Kubuno.Shared.Mcp.Bridge;
+using Kubuno.Shared.Mcp.Bridge.Contracts;
+using Kubuno.Shared.Mcp.Bridge.PipeProtocol;
+using Kubuno.Shared.Mcp.Tests.Fakes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.Mcp.Tests
+namespace Kubuno.Shared.Mcp.Tests
 {
     /// <summary>
     /// <see cref="BridgeDispatcher"/> against a <see cref="FakeVsContextProvider"/>, with no pipe

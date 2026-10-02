@@ -1,9 +1,9 @@
-namespace Kubuno.Desktop.Designer
+namespace Kubuno.Views.Designer
 {
     /// <summary>
     /// Shared identifiers for this library's editor factory. The "kbview" content type/file
     /// extension themselves are NOT duplicated here - they live in
-    /// <c>Kubuno.Desktop.Views.KbviewConstants</c> (this project references that library, see
+    /// <c>Kubuno.Views.KbviewConstants</c> (this project references that library, see
     /// its own csproj comment), and this factory targets exactly that content type/extension so the
     /// XML pane's <c>IVsTextLines</c> buffer keeps colorizing and talking to kubuno-views-ls through
     /// the same MEF content-type routing the plain text editor already uses.

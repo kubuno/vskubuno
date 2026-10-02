@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>
     /// A <c>{Binding …}</c> attribute value read part by part, without loss (docs/DESIGNER.md, "Data bindings"): every

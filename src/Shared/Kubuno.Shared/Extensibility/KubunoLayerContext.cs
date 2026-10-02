@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.Core.Extensibility
+namespace Kubuno.Shared.Extensibility
 {
     /// <summary>
     /// What the package gives each <see cref="KubunoLayer"/> hook: the package itself, its services and the few

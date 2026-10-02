@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Outline;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Outline;
+using Kubuno.Views.Designer.Selection;
 
-namespace Kubuno.Desktop.Tests.Designer.Selection.Fakes
+namespace Kubuno.Views.Tests.Designer.Selection.Fakes
 {
     /// <summary>A scripted <see cref="IViewsSelectionLanguageServerClient"/> - each method returns whatever the matching dictionary/field was set up with, <see langword="null"/> by default (mirroring the server's own "unresolved -&gt; null" contract).</summary>
     internal sealed class FakeViewsSelectionLanguageServerClient : IViewsSelectionLanguageServerClient

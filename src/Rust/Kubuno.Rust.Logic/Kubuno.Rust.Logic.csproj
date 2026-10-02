@@ -20,7 +20,7 @@
   <ItemGroup>
     <!-- StartupItemSelector needs Kubuno.Rust.Cargo's CargoPackage/CargoTarget metadata model - still no VS SDK dependency, so plain `dotnet test` keeps working. -->
     <ProjectReference Include="..\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
-    <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared.Logic\Kubuno.Shared.Logic.csproj" />
   </ItemGroup>
 
 </Project>

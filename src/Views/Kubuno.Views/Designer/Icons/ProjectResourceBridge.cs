@@ -2,17 +2,17 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-namespace Kubuno.Desktop.Designer.Icons
+namespace Kubuno.Views.Designer.Icons
 {
     /// <summary>
     /// The icon picker's door to the project's resource files (<c>.kbres</c>, docs/RESOURCES.md): the resources editor's
-    /// <c>Kubuno.Desktop.Designer.Resources.ResourcePicker.Pick(viewFile, current, ResourceKindFilter.Icons)</c>, which shows
+    /// <c>Kubuno.Views.Designer.Resources.ResourcePicker.Pick(viewFile, current, ResourceKindFilter.Icons)</c>, which shows
     /// its Select Resource dialog and answers the attribute value to write (<c>{Res key}</c> or a relative path). Found by
     /// name, so the picker works whether or not that editor is part of this build; <see cref="IsAvailable"/> says whether it is.
     /// </summary>
     internal static class ProjectResourceBridge
     {
-        private const string PickerType = "Kubuno.Desktop.Designer.Resources.ResourcePicker";
+        private const string PickerType = "Kubuno.Views.Designer.Resources.ResourcePicker";
 
         private static readonly Lazy<MethodInfo?> Pick = new Lazy<MethodInfo?>(() =>
             typeof(ProjectResourceBridge).Assembly.GetType(PickerType, throwOnError: false)?
@@ -38,7 +38,7 @@ namespace Kubuno.Desktop.Designer.Icons
             }
             catch (TargetInvocationException ex)
             {
-                Kubuno.Desktop.Views.Logging.KubunoViewsLogHost.Current.WriteException("[designer] the Select Resource dialog failed", ex.InnerException ?? ex);
+                Kubuno.Views.Logging.KubunoViewsLogHost.Current.WriteException("[designer] the Select Resource dialog failed", ex.InnerException ?? ex);
                 return null;
             }
         }

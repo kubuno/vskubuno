@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Core.DevAssistant.Logic.Secrets;
+using Kubuno.Shared.DevAssistant.Logic.Secrets;
 
-namespace Kubuno.Core.DevAssistant.Logic.Changes
+namespace Kubuno.Shared.DevAssistant.Logic.Changes
 {
     /// <summary>
     /// One edit the model proposes for a file (the <c>edit_propose</c> tool): <see cref="OldText"/> must occur exactly

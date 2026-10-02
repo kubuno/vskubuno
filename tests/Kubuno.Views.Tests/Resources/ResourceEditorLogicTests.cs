@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows.Media.Imaging;
-using Kubuno.Desktop.Logic.Resources;
-using Kubuno.Desktop.Resources.Editor;
+using Kubuno.Views.Logic.Resources;
+using Kubuno.Views.Resources.Editor;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Resources
+namespace Kubuno.Views.Tests.Resources
 {
     /// <summary>The pure parts of the resource editor: grid rows, details, blank files, the ICO container.</summary>
     [TestClass]

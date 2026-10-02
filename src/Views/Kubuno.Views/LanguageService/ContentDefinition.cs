@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.Desktop.Views.LanguageService
+namespace Kubuno.Views.LanguageService
 {
     /// <summary>
     /// MEF exports that declare the "kbview" content type and associate it with the <c>.kbview</c>

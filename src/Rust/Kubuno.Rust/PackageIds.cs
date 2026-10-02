@@ -1,5 +1,5 @@
 using System;
-using Kubuno.Core;
+using Kubuno.Shared;
 
 namespace Kubuno.Rust
 {

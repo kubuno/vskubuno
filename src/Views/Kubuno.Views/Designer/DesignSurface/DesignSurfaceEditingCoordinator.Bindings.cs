@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.Bindings;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Handlers.Infrastructure;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.Bindings;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Handlers.Infrastructure;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The data binding services of the Properties window (docs/DESIGNER.md, "Data bindings"): the source schema of an

@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Text.Json.Nodes;
-using Kubuno.Core.Logic.Lsp;
+using Kubuno.Shared.Logic.Lsp;
 
 namespace Kubuno.Rust.Logic.IntelliSense
 {

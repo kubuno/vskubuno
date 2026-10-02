@@ -7,11 +7,11 @@ using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Forms.Design;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>
     /// The editor of every bindable row of the Properties window (docs/DESIGNER.md, "Data bindings"): the value cell gets a
@@ -104,7 +104,7 @@ namespace Kubuno.Desktop.Designer.Bindings
             }
             catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or ObjectDisposedException or System.ComponentModel.Win32Exception)
             {
-                Kubuno.Core.Logging.KubunoLog.WriteException("Kubuno: the binding picker failed", ex);
+                Kubuno.Shared.Logging.KubunoLog.WriteException("Kubuno: the binding picker failed", ex);
                 return value;
             }
 

@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kubuno.Rust.Logic;
 using Kubuno.Rust.TestAdapter.Containers;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;

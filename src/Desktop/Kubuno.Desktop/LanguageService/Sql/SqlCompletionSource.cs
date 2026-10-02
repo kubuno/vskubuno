@@ -5,7 +5,7 @@ using System.ComponentModel.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using Kubuno.Desktop.Logic.Sql;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 using Kubuno.Rust.SolutionExplorer;
 using Microsoft.VisualStudio.Core.Imaging;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;

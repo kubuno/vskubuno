@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Markup;
-using Kubuno.Desktop.Designer.Toolbox;
+using Kubuno.Views.Designer.Toolbox;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Toolbox
+namespace Kubuno.Views.Tests.Designer.Toolbox
 {
     [TestClass]
     public class ToolboxIconRasterizerTests

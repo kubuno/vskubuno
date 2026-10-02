@@ -1,6 +1,6 @@
-using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Views.Designer.Editing;
 
-namespace Kubuno.Desktop.Designer.Handlers
+namespace Kubuno.Views.Designer.Handlers
 {
     /// <summary>
     /// The seam <see cref="HandlerCreationService"/> depends on instead of raw VS document/editor

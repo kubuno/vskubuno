@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// Pure edit ordering + conflict detection, the other two "pure parts" this package's test strategy

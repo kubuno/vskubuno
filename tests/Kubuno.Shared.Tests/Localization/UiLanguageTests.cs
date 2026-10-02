@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Threading;
-using Kubuno.Core.Logic.Localization;
+using Kubuno.Shared.Logic.Localization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.Tests.Localization
+namespace Kubuno.Shared.Tests.Localization
 {
     [TestClass]
     public sealed class UiLanguageTests

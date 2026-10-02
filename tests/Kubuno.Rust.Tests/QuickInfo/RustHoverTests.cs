@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Shared.Logic.QuickInfo;
 using Kubuno.Rust.Logic.QuickInfo;
 using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

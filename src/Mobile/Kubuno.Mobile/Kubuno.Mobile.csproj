@@ -5,10 +5,10 @@
     "Roadmap - Kubuno view rendering engine for mobile"): the Visual Studio side of Kubuno MOBILE apps (Android, iOS,
     iPadOS) - Gradle/Kotlin projects, devices, and the portable Rust rendering engine with its Pair-to-Mac build
     host. Today a skeleton: MobileLayer is already registered with the package (src/Kubuno.VisualStudio) through the
-    same contract as the Rust and Desktop layers (Kubuno.Core.Extensibility.KubunoLayer), with no feature yet - see
+    same contract as the Rust and Desktop layers (Kubuno.Shared.Extensibility.KubunoLayer), with no feature yet - see
     README.md for what goes here and where each piece plugs in.
 
-    References Kubuno.Core and the Rust layer only - never Kubuno.Desktop or Kubuno.Web (enforced by
+    References Kubuno.Shared and the Rust layer only - never Kubuno.Desktop or Kubuno.Web (enforced by
     tests/Kubuno.Architecture.Tests). Desktop code the mobile renderer will share (the .kbview designer, the view
     registry) must first move down into a lower layer, never be referenced sideways.
   -->
@@ -33,8 +33,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
-    <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared\Kubuno.Shared.csproj" />
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared.Logic\Kubuno.Shared.Logic.csproj" />
     <ProjectReference Include="..\..\Rust\Kubuno.Rust\Kubuno.Rust.csproj" />
     <ProjectReference Include="..\..\Rust\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
   </ItemGroup>

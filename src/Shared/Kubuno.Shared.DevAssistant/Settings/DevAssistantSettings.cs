@@ -1,11 +1,11 @@
 using System;
 using System.Globalization;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 
-namespace Kubuno.Core.DevAssistant.Settings
+namespace Kubuno.Shared.DevAssistant.Settings
 {
     /// <summary>
     /// The assistant's per-user settings (docs/AI-ASSISTANT.md sections 4 and 7.3), kept in Visual Studio's user settings

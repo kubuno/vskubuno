@@ -3,7 +3,7 @@ using System.IO;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.Core
+namespace Kubuno.Shared
 {
     /// <summary>
     /// The running Kubuno package, for code the package does not construct - MEF parts (language clients, completion

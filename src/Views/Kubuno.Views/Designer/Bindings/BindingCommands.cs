@@ -1,10 +1,11 @@
 using System;
 using System.ComponentModel.Design;
+using Kubuno.Shared;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>
     /// The binding entries of the Properties window's context menu (docs/DESIGNER.md, "Data bindings"): « Créer une
@@ -16,18 +17,18 @@ namespace Kubuno.Desktop.Designer.Bindings
     {
         public static void Initialize(OleMenuCommandService commandService)
         {
-            Add(commandService, PackageIds.BindingCreateCommand, BindingStrings.CreateBinding, bound: false, row =>
+            Add(commandService, ViewsCommandIds.BindingCreateCommand, BindingStrings.CreateBinding, bound: false, row =>
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
                 BindingActions.ShowDialog(row.Element, row.Attribute);
             });
-            Add(commandService, PackageIds.BindingEditCommand, BindingStrings.EditBinding, bound: true, row =>
+            Add(commandService, ViewsCommandIds.BindingEditCommand, BindingStrings.EditBinding, bound: true, row =>
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
                 BindingActions.ShowDialog(row.Element, row.Attribute);
             });
-            Add(commandService, PackageIds.BindingRemoveCommand, BindingStrings.RemoveBinding, bound: true, row => BindingActions.RemoveBinding(row.Element, row.Attribute));
-            Add(commandService, PackageIds.BindingGoToDefinitionCommand, BindingStrings.GoToDefinition, bound: true, row =>
+            Add(commandService, ViewsCommandIds.BindingRemoveCommand, BindingStrings.RemoveBinding, bound: true, row => BindingActions.RemoveBinding(row.Element, row.Attribute));
+            Add(commandService, ViewsCommandIds.BindingGoToDefinitionCommand, BindingStrings.GoToDefinition, bound: true, row =>
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
                 BindingActions.GoToDefinition(row.Element, row.Attribute);
@@ -43,7 +44,7 @@ namespace Kubuno.Desktop.Designer.Bindings
                 {
                     run((row.Element, row.Attribute));
                 }
-            }, new CommandID(PackageGuids.KubunoCommandSet, id));
+            }, new CommandID(KubunoGuids.CommandSet, id));
             command.BeforeQueryStatus += (sender, _) =>
             {
                 var c = (OleMenuCommand)sender!;

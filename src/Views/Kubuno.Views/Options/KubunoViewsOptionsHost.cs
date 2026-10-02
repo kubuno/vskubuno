@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Views.Options
+namespace Kubuno.Views.Options
 {
     /// <summary>
     /// Static gateway to the active <see cref="IKubunoViewsOptions"/>, for the same reason

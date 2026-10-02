@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.Core.Logic.Remote
+namespace Kubuno.Shared.Logic.Remote
 {
     /// <summary>
     /// The command lines Kubuno gives Windows' OpenSSH (<c>C:\Windows\System32\OpenSSH\ssh.exe</c>) to reach the remote

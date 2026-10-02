@@ -6,11 +6,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Nodes;
-using Kubuno.Desktop.Designer.Bindings;
+using Kubuno.Views.Designer.Bindings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 
-namespace Kubuno.Desktop.Tests.Designer.Bindings
+namespace Kubuno.Views.Tests.Designer.Bindings
 {
     /// <summary>
     /// The binding UI against the real <c>kubuno-views-ls</c> (docs/DESIGNER.md, "Data bindings"): the source schema of a form

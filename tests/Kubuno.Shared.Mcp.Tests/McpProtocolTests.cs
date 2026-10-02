@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.Mcp.Bridge.Contracts;
-using Kubuno.Core.Mcp.Connectivity;
-using Kubuno.Core.Mcp.Tests.Fakes;
-using Kubuno.Core.Mcp.Tools;
+using Kubuno.Shared.Mcp.Bridge.Contracts;
+using Kubuno.Shared.Mcp.Connectivity;
+using Kubuno.Shared.Mcp.Tests.Fakes;
+using Kubuno.Shared.Mcp.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,11 +15,11 @@ using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 
-namespace Kubuno.Core.Mcp.Tests
+namespace Kubuno.Shared.Mcp.Tests
 {
     /// <summary>
     /// End-to-end MCP protocol tests: a real <c>ModelContextProtocol</c> server - the exact same
-    /// <c>AddMcpServer()...WithTools&lt;KubunoVsTools&gt;()</c> wiring as src/Core/Kubuno.Core.Mcp/Program.cs -
+    /// <c>AddMcpServer()...WithTools&lt;KubunoVsTools&gt;()</c> wiring as src/Shared/Kubuno.Shared.Mcp/Program.cs -
     /// talking to a real <c>ModelContextProtocol</c> client over a pair of in-memory duplex
     /// streams, with <see cref="KubunoVsTools"/> wired to a <see cref="FakeBridgeConnector"/>
     /// instead of a real Visual Studio pipe (per the task: "protocol initialize/tools/list/
@@ -126,7 +126,7 @@ namespace Kubuno.Core.Mcp.Tests
         {
             var connector = new FakeBridgeConnector
             {
-                Unavailable = new Kubuno.Core.Mcp.Bridge.BridgeUnavailableException(
+                Unavailable = new Kubuno.Shared.Mcp.Bridge.BridgeUnavailableException(
                     "Visual Studio is not running, or no running instance has the Kubuno bridge loaded."),
             };
             McpClient client = await StartServerAndConnectAsync(connector);

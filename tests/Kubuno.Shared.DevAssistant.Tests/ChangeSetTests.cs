@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Core.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.DevAssistant.Tests
+namespace Kubuno.Shared.DevAssistant.Tests
 {
     [TestClass]
     public sealed class ChangeSetTests

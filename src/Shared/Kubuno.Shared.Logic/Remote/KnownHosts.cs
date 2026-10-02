@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 
-namespace Kubuno.Core.Logic.Remote
+namespace Kubuno.Shared.Logic.Remote
 {
     /// <summary>One public host key: <c>&lt;host pattern&gt; &lt;type&gt; &lt;base64 key&gt;</c> (a known_hosts or ssh-keyscan line).</summary>
     public sealed class HostKey

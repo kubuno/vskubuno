@@ -1,7 +1,7 @@
 using System;
 using Microsoft.VisualStudio.Text.Operations;
 
-namespace Kubuno.Desktop.Designer.Editing.Infrastructure
+namespace Kubuno.Views.Designer.Editing.Infrastructure
 {
     /// <summary>
     /// The real <c>ITextUndoHistory</c>-backed <see cref="IUndoTransactionHost"/> (docs/DESIGNER.md §2:

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Selection;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// The Windows Forms designer's Layout toolbar / Format menu commands (docs/DESIGNER.md §13). The first

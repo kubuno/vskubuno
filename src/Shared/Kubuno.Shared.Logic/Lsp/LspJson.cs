@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Kubuno.Core.Logic.Lsp
+namespace Kubuno.Shared.Logic.Lsp
 {
     /// <summary>Small helpers over <see cref="JsonNode"/> for LSP messages.</summary>
     public static class LspJson

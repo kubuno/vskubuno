@@ -1,7 +1,7 @@
 using System.Globalization;
-using Kubuno.Core.Logic.Localization;
+using Kubuno.Shared.Logic.Localization;
 
-namespace Kubuno.Desktop.Resources
+namespace Kubuno.Views.Resources
 {
     /// <summary>
     /// The user-visible strings of the <c>.kbres</c> resource editor (docs/RESOURCES.md): English and French, picked
@@ -125,14 +125,14 @@ namespace Kubuno.Desktop.Resources
 
         public static string PersistenceName(bool embedded) => embedded ? Embedded : Linked;
 
-        public static string KindName(Kubuno.Desktop.Logic.Resources.ResourceKind kind) => kind switch
+        public static string KindName(Kubuno.Views.Logic.Resources.ResourceKind kind) => kind switch
         {
-            Kubuno.Desktop.Logic.Resources.ResourceKind.String => T("String", "Chaîne"),
-            Kubuno.Desktop.Logic.Resources.ResourceKind.Image => T("Image", "Image"),
-            Kubuno.Desktop.Logic.Resources.ResourceKind.Icon => T("Icon", "Icône"),
-            Kubuno.Desktop.Logic.Resources.ResourceKind.Audio => T("Audio", "Audio"),
-            Kubuno.Desktop.Logic.Resources.ResourceKind.File => T("File", "Fichier"),
-            Kubuno.Desktop.Logic.Resources.ResourceKind.Color => T("Color", "Couleur"),
+            Kubuno.Views.Logic.Resources.ResourceKind.String => T("String", "Chaîne"),
+            Kubuno.Views.Logic.Resources.ResourceKind.Image => T("Image", "Image"),
+            Kubuno.Views.Logic.Resources.ResourceKind.Icon => T("Icon", "Icône"),
+            Kubuno.Views.Logic.Resources.ResourceKind.Audio => T("Audio", "Audio"),
+            Kubuno.Views.Logic.Resources.ResourceKind.File => T("File", "Fichier"),
+            Kubuno.Views.Logic.Resources.ResourceKind.Color => T("Color", "Couleur"),
             _ => T("Font", "Police"),
         };
 

@@ -1,6 +1,6 @@
 using System.IO;
 using System.Linq;
-using Kubuno.Desktop.Logic;
+using Kubuno.Views.Logic;
 using Kubuno.Desktop.TemplateWizard;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

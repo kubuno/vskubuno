@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.Desktop.Views.Locating
+namespace Kubuno.Views.Locating
 {
     /// <summary>
     /// Finds the <c>kubuno-views-ls.exe</c> executable to launch as the LSP server for <c>.kbview</c>

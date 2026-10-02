@@ -1,5 +1,5 @@
 using System;
-using Kubuno.Core;
+using Kubuno.Shared;
 
 namespace Kubuno.Desktop
 {
@@ -26,9 +26,6 @@ namespace Kubuno.Desktop
     /// <summary>IDs of the commands the desktop layer handles, inside <see cref="PackageGuids.KubunoCommandSet"/>, matching <c>KubunoCommands.vsct</c>.</summary>
     public static class PackageIds
     {
-        /// <summary>Shows <see cref="Designer.ToolWindows.OutlineToolWindow"/> (Designer\INTEGRATION.md section 9).</summary>
-        public const int ShowKubunoOutlineCommand = 0x0103;
-
         // The Kubuno view and control entries of the extended "Ajouter" submenu on a .rsproj project node
         // (docs/EVENTS.md EVT-7b), added to the Rust layer's item commands by DesktopLayer.
         public const int AddKubunoViewCommand = 0x0106;
@@ -84,11 +81,5 @@ namespace Kubuno.Desktop
         public const int DataSourcesControlTextFieldCommand = 0x0348;
         public const int KubunoDataSourcesToolbar = 0x10A0;
         public const int KubunoDataSourcesContextMenu = 0x10A2;
-
-        // docs/DESIGNER.md "Data bindings": the Properties window context menu of a bindable row (Designer/Bindings/BindingCommands.cs).
-        public const int BindingCreateCommand = 0x0360;
-        public const int BindingEditCommand = 0x0361;
-        public const int BindingRemoveCommand = 0x0362;
-        public const int BindingGoToDefinitionCommand = 0x0363;
     }
 }

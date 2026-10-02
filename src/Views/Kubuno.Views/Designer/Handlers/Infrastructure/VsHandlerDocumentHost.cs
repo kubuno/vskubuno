@@ -1,6 +1,6 @@
 using System;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Editing.Infrastructure;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Editing.Infrastructure;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 
-namespace Kubuno.Desktop.Designer.Handlers.Infrastructure
+namespace Kubuno.Views.Designer.Handlers.Infrastructure
 {
     /// <summary>
     /// The real <see cref="IHandlerDocumentHost"/>: opens (or reuses) a document through

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.Tests.UI
+namespace Kubuno.Shared.Tests.UI
 {
     [TestClass]
     public sealed class DialogGalleryTests

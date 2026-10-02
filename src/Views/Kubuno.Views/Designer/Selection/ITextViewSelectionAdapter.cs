@@ -1,7 +1,7 @@
 using System;
-using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Views.Designer.Editing;
 
-namespace Kubuno.Desktop.Designer.Selection
+namespace Kubuno.Views.Designer.Selection
 {
     /// <summary>
     /// The seam <see cref="SelectionSyncService"/> depends on instead of a raw VS text view type -

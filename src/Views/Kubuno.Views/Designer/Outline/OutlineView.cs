@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.Desktop.Designer.Outline
+namespace Kubuno.Views.Designer.Outline
 {
     /// <summary>
     /// The Document Outline tool window's content: a plain <see cref="TreeView"/> over

@@ -1,11 +1,11 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using Kubuno.Core.Logic.Remote;
-using Kubuno.Core.Settings;
+using Kubuno.Shared.Logic.Remote;
+using Kubuno.Shared.Settings;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Core.Remote
+namespace Kubuno.Shared.Remote
 {
     /// <summary>
     /// Tools &gt; Options &gt; Kubuno &gt; Remote Linux host (docs/WEB.md, "The development database"): the machine that
@@ -15,6 +15,13 @@ namespace Kubuno.Core.Remote
     [Guid("6a0c4f3e-2b8d-4d71-9e55-3f1c7a9d2b64")]
     public sealed class RemoteHostOptionsPage : KubunoDialogPage
     {
+        // The type was Kubuno.Core.Remote.RemoteHostOptionsPage before the Core layer became Kubuno.Shared: the classic settings
+        // key DialogPage derives from the type's full name keeps that name, so values saved by an earlier version still load.
+        public RemoteHostOptionsPage()
+            : base(legacyTypeFullName: "Kubuno.Core.Remote.RemoteHostOptionsPage")
+        {
+        }
+
         [Category("Connection")]
         [DisplayName("Host")]
         [Description("Name or IP address of the remote Linux host.")]

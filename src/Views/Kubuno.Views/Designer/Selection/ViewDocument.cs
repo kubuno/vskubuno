@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace Kubuno.Desktop.Designer.Selection
+namespace Kubuno.Views.Designer.Selection
 {
     /// <summary>One attribute of a <see cref="ViewNode"/> with where it sits in the text.</summary>
     public sealed class ViewAttribute

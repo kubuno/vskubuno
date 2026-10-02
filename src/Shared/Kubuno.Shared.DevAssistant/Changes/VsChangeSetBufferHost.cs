@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Kubuno.Core.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -14,7 +14,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.TextManager.Interop;
 
-namespace Kubuno.Core.DevAssistant.Changes
+namespace Kubuno.Shared.DevAssistant.Changes
 {
     /// <summary>
     /// Applies change sets to Visual Studio's own text buffers (docs/AI-ASSISTANT.md section 5.5), never behind the

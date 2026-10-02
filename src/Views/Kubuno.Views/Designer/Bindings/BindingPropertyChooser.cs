@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.Desktop.Designer.UI;
+using Kubuno.Views.Designer.UI;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>
     /// « (Avancé) » of « (DataBindings) »: every property of the element, the bound ones in bold with their expression; OK (or a

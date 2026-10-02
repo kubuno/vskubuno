@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Selection;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// Pure helpers over a multi-selection of stable element ids (docs/DESIGNER.md §13) - the C# mirror of

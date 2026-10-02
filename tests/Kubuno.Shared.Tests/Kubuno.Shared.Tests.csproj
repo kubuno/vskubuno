@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Tests of the Core layer (docs/ARCHITECTURE.md, "Layers (as built)"): the pure helpers of Kubuno.Core.Logic (LSP
-       plumbing, UI language), the dialog gallery registry of Kubuno.Core and the unified settings manifest every layer's options pages are declared in. -->
+  <!-- Tests of the Shared layer (docs/ARCHITECTURE.md, "Layers (as built)"): the pure helpers of Kubuno.Shared.Logic (LSP
+       plumbing, UI language), the dialog gallery registry of Kubuno.Shared and the unified settings manifest every layer's options pages are declared in. -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <RootNamespace>Kubuno.Core.Tests</RootNamespace>
+    <RootNamespace>Kubuno.Shared.Tests</RootNamespace>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
@@ -23,8 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
-    <ProjectReference Include="..\..\src\Core\Kubuno.Core\Kubuno.Core.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Kubuno.Shared.Logic\Kubuno.Shared.Logic.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Kubuno.Shared\Kubuno.Shared.csproj" />
   </ItemGroup>
 
 </Project>

@@ -5,9 +5,9 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 
-namespace Kubuno.Core.DevAssistant.UI
+namespace Kubuno.Shared.DevAssistant.UI
 {
     /// <summary>
     /// « Voir la requête » (docs/AI-ASSISTANT.md section 8.2): the exact request bodies the host sent for one answer -

@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.Core.DevAssistant.Logic.Secrets
+namespace Kubuno.Shared.DevAssistant.Logic.Secrets
 {
     /// <summary>
     /// Replaces each secret <see cref="SecretScanner"/> finds with a stable placeholder <c>«secret:npm-token#a1b2c3»</c>

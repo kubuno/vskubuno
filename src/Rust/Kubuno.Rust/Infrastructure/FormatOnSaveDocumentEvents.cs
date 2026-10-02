@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using EnvDTE;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Kubuno.Rust.Options;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;

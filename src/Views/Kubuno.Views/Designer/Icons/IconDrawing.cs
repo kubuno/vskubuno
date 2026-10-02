@@ -5,7 +5,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace Kubuno.Desktop.Designer.Icons
+namespace Kubuno.Views.Designer.Icons
 {
     /// <summary>
     /// Draws icons with WPF for the Properties window and the icon picker: a glyph of the catalog from its own paths (stroked

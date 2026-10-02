@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Designer.Registry
+namespace Kubuno.Views.Designer.Registry
 {
     /// <summary>
     /// Disambiguates a <see cref="ChildrenModel.List"/> container's drop/resize behavior

@@ -1,11 +1,11 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Resources.Editor
+namespace Kubuno.Views.Resources.Editor
 {
     /// <summary>
     /// A small themed prompt: one line of text with a label and an inline validation message (a culture name, a new

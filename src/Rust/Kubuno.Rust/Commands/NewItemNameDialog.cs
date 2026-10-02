@@ -1,6 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 
 namespace Kubuno.Rust.Commands
 {

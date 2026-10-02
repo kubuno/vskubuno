@@ -107,7 +107,7 @@ namespace Kubuno.Rust.Commands
             }
             catch (Exception exception)
             {
-                Kubuno.Core.Logging.KubunoLog.WriteException($"Kubuno: adding \"{fileName}\" from the {template.DisplayName} template", exception);
+                Kubuno.Shared.Logging.KubunoLog.WriteException($"Kubuno: adding \"{fileName}\" from the {template.DisplayName} template", exception);
                 VsShellUtilities.ShowMessageBox(
                     ServiceProvider.GlobalProvider,
                     $"Impossible d'ajouter \"{fileName}\" - voir le panneau de sortie \"Kubuno\" pour le détail.",
@@ -181,7 +181,7 @@ namespace Kubuno.Rust.Commands
             IntoSourceFolder = intoSourceFolder;
         }
 
-        /// <summary>The command ID (<c>KubunoCommands.vsct</c>), in <see cref="Kubuno.Core.KubunoGuids.CommandSet"/>.</summary>
+        /// <summary>The command ID (<c>KubunoCommands.vsct</c>), in <see cref="Kubuno.Shared.KubunoGuids.CommandSet"/>.</summary>
         public int CommandId { get; }
 
         /// <summary>The template's own folder name under <c>ItemTemplates\</c> - also its <c>.vstemplate</c> file's base name.</summary>

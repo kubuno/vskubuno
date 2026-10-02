@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Kubuno.Rust.ProjectSystem;
-using Kubuno.Core.Settings;
+using Kubuno.Shared.Settings;
 using Microsoft.VisualStudio.Shell;
 
 namespace Kubuno.Rust.Options

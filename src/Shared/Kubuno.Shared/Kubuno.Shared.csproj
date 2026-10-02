@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Core layer, Visual Studio side (docs/ARCHITECTURE.md, "Layers (as built)"): the infrastructure every product layer
+    Shared layer, Visual Studio side (docs/ARCHITECTURE.md, "Layers (as built)"): the infrastructure every product layer
     (Rust, Desktop, Web, Mobile) builds on and that knows nothing about Rust or a Kubuno target - the layer contracts
     (Extensibility\KubunoLayer, KubunoLayerHost: how the package initializes each layer), the host accessors MEF parts
     use (KubunoHost), themed dialogs (UI\ThemedDialog), the unified settings plumbing (Settings\KubunoDialogPage), the
     "Kubuno" Output pane (Logging\KubunoLog), the bundled-tool locator, the dialog gallery and the MCP bridge start.
 
-    References only Kubuno.Core.Logic and Kubuno.Core.Mcp.Bridge - never a product layer (enforced by
+    References only Kubuno.Shared.Logic and Kubuno.Shared.Mcp.Bridge - never a product layer (enforced by
     tests/Kubuno.Architecture.Tests).
 
     The Visual Studio SDK packages are compile-time only (ExcludeAssets=runtime: devenv.exe supplies them) and private
@@ -20,8 +20,8 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Core</RootNamespace>
-    <AssemblyName>Kubuno.Core</AssemblyName>
+    <RootNamespace>Kubuno.Shared</RootNamespace>
+    <AssemblyName>Kubuno.Shared</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
 
@@ -40,14 +40,14 @@
   <ItemGroup>
     <!-- Same versions as every other Visual Studio assembly of the extension (bump them together). -->
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" PrivateAssets="all" />
-    <!-- DTE2 for the MCP bridge (docs/MCP.md "Integration"), like Kubuno.Core.Mcp.Bridge's net48 leg. -->
+    <!-- DTE2 for the MCP bridge (docs/MCP.md "Integration"), like Kubuno.Shared.Mcp.Bridge's net48 leg. -->
     <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
-    <ProjectReference Include="..\Kubuno.Core.Mcp.Bridge\Kubuno.Core.Mcp.Bridge.csproj" />
+    <ProjectReference Include="..\Kubuno.Shared.Logic\Kubuno.Shared.Logic.csproj" />
+    <ProjectReference Include="..\Kubuno.Shared.Mcp.Bridge\Kubuno.Shared.Mcp.Bridge.csproj" />
   </ItemGroup>
 
 </Project>

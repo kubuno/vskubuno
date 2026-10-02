@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 
-namespace Kubuno.Core.DevAssistant.UI
+namespace Kubuno.Shared.DevAssistant.UI
 {
     /// <summary>
     /// The data notice shown before the first message to a cloud provider (docs/AI-ASSISTANT.md section 8.2): where the

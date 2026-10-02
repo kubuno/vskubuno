@@ -33,10 +33,11 @@ namespace Kubuno.Desktop.Tests.SolutionExplorer
         [TestMethod]
         public void EveryRegistryComponentHasAControlIcon()
         {
-            var fixture = Path.Combine(Path.GetDirectoryName(SourceFile())!, "..", "Fixtures", "registry.sample.json");
+            // The registry fixture of the views layer's designer tests (tests/Kubuno.Views.Tests/Fixtures).
+            var fixture = Path.Combine(Path.GetDirectoryName(SourceFile())!, "..", "..", "Kubuno.Views.Tests", "Fixtures", "registry.sample.json");
             if (!File.Exists(fixture))
             {
-                Assert.Inconclusive("registry fixture not found next to this test project: " + fixture);
+                Assert.Inconclusive("registry fixture not found in tests/Kubuno.Views.Tests: " + fixture);
             }
 
             var names = System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(fixture), "^    \"name\"\\s*:\\s*\"(\\w+)\"", System.Text.RegularExpressions.RegexOptions.Multiline);
@@ -44,6 +45,21 @@ namespace Kubuno.Desktop.Tests.SolutionExplorer
             foreach (System.Text.RegularExpressions.Match name in names)
             {
                 Assert.AreNotEqual(ControlIcons.FallbackId, ControlIcons.IdFor(name.Groups[1].Value), name.Groups[1].Value);
+            }
+        }
+
+        /// <summary>The docking family and the migration foundation elements have their own Toolbox icons (their tabs: tests/Kubuno.Views.Tests).</summary>
+        [TestMethod]
+        public void DockingAndMigrationFoundationElementsHaveAControlIcon()
+        {
+            foreach (var name in new[] { "DockArea", "DockPanel", "WorkspaceShell" })
+            {
+                Assert.AreNotEqual(ControlIcons.FallbackId, ControlIcons.IdFor(name), name);
+            }
+
+            foreach (var name in new[] { "Repeater", "Sidebar", "SidebarItem", "SidebarSection", "StatusBar", "StatusLabel", "Avatar", "PictureBox", "Popover", "TableLayoutPanel" })
+            {
+                Assert.AreNotEqual(ControlIcons.FallbackId, ControlIcons.IdFor(name), name);
             }
         }
 

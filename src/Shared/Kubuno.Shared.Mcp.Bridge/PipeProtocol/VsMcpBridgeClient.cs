@@ -3,12 +3,12 @@ using System.IO.Pipes;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.Mcp.Bridge.Contracts;
+using Kubuno.Shared.Mcp.Bridge.Contracts;
 
-namespace Kubuno.Core.Mcp.Bridge.PipeProtocol
+namespace Kubuno.Shared.Mcp.Bridge.PipeProtocol
 {
     /// <summary>
-    /// The pipe-client half used by Kubuno.Core.Mcp to reach a running <see cref="VsMcpBridgeHost"/>.
+    /// The pipe-client half used by Kubuno.Shared.Mcp to reach a running <see cref="VsMcpBridgeHost"/>.
     /// One call, one short-lived connection: simple and robust to the bridge restarting between
     /// calls (e.g. the developer reloads the VS extension), at the cost of a pipe handshake per
     /// tool call. A future optimization could keep a persistent connection per discovered pid and

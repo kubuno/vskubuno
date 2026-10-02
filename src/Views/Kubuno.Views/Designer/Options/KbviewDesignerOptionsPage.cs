@@ -1,13 +1,13 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using Kubuno.Core.Settings;
+using Kubuno.Shared.Settings;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Options
+namespace Kubuno.Views.Designer.Options
 {
     /// <summary>
     /// Tools &gt; Options &gt; Kubuno &gt; Designer. Mirrors the shape of
-    /// <c>Kubuno.Desktop.Views.Options.KbviewOptionsPage</c>: this type lives in this library (not
+    /// <c>Kubuno.Views.Options.KbviewOptionsPage</c>: this type lives in this library (not
     /// in the VSIX) so it ships with the rest of the designer support, but a <c>DialogPage</c> only
     /// becomes a real Tools &gt; Options page once a VSIX package class declares it via
     /// <c>[ProvideOptionPage]</c>/<c>[ProvideProfile]</c> - see INTEGRATION.md, "Options page

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Outline;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Outline;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Outline
+namespace Kubuno.Views.Tests.Designer.Outline
 {
     [TestClass]
     public class DocumentSymbolTreeBuilderTests

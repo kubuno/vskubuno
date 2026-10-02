@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// Static gateway to the active <see cref="IDesignSurfaceHostFactory"/> - the one seam DSG-7 needs
@@ -9,7 +9,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// or - if it stays in this same library - simply change the default below) rather than edit
     /// <see cref="EditorFactory.DesignerWindowPane"/> or <see cref="UI.DesignerSplitView"/>.
     ///
-    /// Same shape as <c>Kubuno.Desktop.Views.Options.KubunoViewsOptionsHost</c>/
+    /// Same shape as <c>Kubuno.Views.Options.KubunoViewsOptionsHost</c>/
     /// <c>KubunoViewsLogHost</c>: a mutable static property with a safe, working default, because the
     /// window pane can be constructed before whatever sets a real factory has run.
     /// </summary>

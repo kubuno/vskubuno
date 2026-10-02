@@ -24,7 +24,7 @@ namespace Kubuno.Rust.Infrastructure
             // package's own JoinableTaskFactory, which ties the task to the package's lifetime,
             // when the package has already loaded; before that (unlikely - this only runs once a
             // .rs document activates the language client), fall back to the shared one.
-            var joinableTaskFactory = Kubuno.Core.KubunoHost.JoinableTaskFactory;
+            var joinableTaskFactory = Kubuno.Shared.KubunoHost.JoinableTaskFactory;
             joinableTaskFactory.RunAsync(ShowIfNeededAsync).Task.Forget();
         }
 

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Registry;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>
     /// One Properties-window row for a <c>.kbview</c> attribute. Always string-typed on purpose: whatever

@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// Creates one <see cref="IDesignSurfaceHost"/> per open designer pane (a design surface is

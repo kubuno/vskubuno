@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.Core.DevAssistant.Logic.Changes
+namespace Kubuno.Shared.DevAssistant.Logic.Changes
 {
     /// <summary>
     /// One contiguous change between two versions of a file: <see cref="OldCount"/> lines starting at

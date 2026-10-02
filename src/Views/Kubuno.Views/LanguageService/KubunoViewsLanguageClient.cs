@@ -6,10 +6,10 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Views.Infrastructure;
-using Kubuno.Desktop.Views.Locating;
-using Kubuno.Desktop.Views.Logging;
-using Kubuno.Desktop.Views.Options;
+using Kubuno.Views.Infrastructure;
+using Kubuno.Views.Locating;
+using Kubuno.Views.Logging;
+using Kubuno.Views.Options;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -18,7 +18,7 @@ using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using StreamJsonRpc;
 using Process = System.Diagnostics.Process;
 
-namespace Kubuno.Desktop.Views.LanguageService
+namespace Kubuno.Views.LanguageService
 {
     /// <summary>
     /// Hosts <c>kubuno-views-ls</c> as an LSP server for <c>.kbview</c> files (content type "kbview",
@@ -31,7 +31,7 @@ namespace Kubuno.Desktop.Views.LanguageService
     /// forced by this library not being able to reference that project (see INTEGRATION.md): logging
     /// goes through <see cref="KubunoViewsLogHost"/>/<see cref="IKubunoLog"/> instead of the VSIX's
     /// own static <c>KubunoLog</c>, and options come from <see cref="KubunoViewsOptionsHost"/> instead
-    /// of <c>Kubuno.Core.KubunoHost.Package.GetDialogPage</c>.
+    /// of <c>Kubuno.Shared.KubunoHost.Package.GetDialogPage</c>.
     /// </summary>
     [ContentType(KbviewConstants.ContentType)]
     [Export(typeof(ILanguageClient))]
@@ -156,7 +156,7 @@ namespace Kubuno.Desktop.Views.LanguageService
                 WorkingDirectory = workingDirectory,
             };
             // The diagnostics in Visual Studio's UI language (kubuno_views::messages, docs/DESIGNER.md section 17).
-            startInfo.EnvironmentVariables["KUBUNO_UI_LANG"] = Kubuno.Core.Logic.Localization.UiLanguage.IsFrench ? "fr" : "en";
+            startInfo.EnvironmentVariables["KUBUNO_UI_LANG"] = Kubuno.Shared.Logic.Localization.UiLanguage.IsFrench ? "fr" : "en";
 
             Process process;
             try

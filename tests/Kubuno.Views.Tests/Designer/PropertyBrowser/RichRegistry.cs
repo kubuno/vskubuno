@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
 
-namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
+namespace Kubuno.Views.Tests.Designer.PropertyBrowser
 {
     /// <summary>
     /// A small registry in the shape of the export with the control hierarchy's properties (docs/EVENTS.md,

@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Resources.Editor
+namespace Kubuno.Views.Resources.Editor
 {
     /// <summary>
     /// What the resource editor view needs from whoever hosts it: the document pane in Visual Studio, or a stub in the

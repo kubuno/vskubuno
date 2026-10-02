@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Kubuno.Rust.Cargo.Commands;
 using Kubuno.Rust.Cargo.Processes;
 using Kubuno.Rust.Logic.SolutionExplorer;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;

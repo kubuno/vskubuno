@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.Desktop.Designer.Registry
+namespace Kubuno.Views.Designer.Registry
 {
     /// <summary>
     /// Mirrors one entry of <c>kubuno_views::registry::ComponentMeta.properties</c> (docs/DESIGNER.md

@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Kubuno.Core.DevAssistant.Logic.Protocol
+namespace Kubuno.Shared.DevAssistant.Logic.Protocol
 {
     /// <summary>
     /// One JSON-RPC 2.0 message on the VSIX ⇄ <c>kubuno-dev-assistant.exe</c> channel (docs/AI-ASSISTANT.md section 9.1):

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
-using Kubuno.Desktop.Designer.Registry.Serialization;
+using Kubuno.Views.Designer.Registry.Serialization;
 
-namespace Kubuno.Desktop.Designer.Registry
+namespace Kubuno.Views.Designer.Registry
 {
     /// <summary>
     /// The whole <c>kubuno/registry</c> response (docs/DESIGNER.md §5), loaded from a JSON string -

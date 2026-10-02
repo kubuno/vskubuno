@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Kubuno.Desktop.Designer.Registry.Serialization
+namespace Kubuno.Views.Designer.Registry.Serialization
 {
     /// <summary>
     /// Reads/writes <see cref="PropKind"/>'s polymorphic shape (docs/DESIGNER.md §5): the three scalar

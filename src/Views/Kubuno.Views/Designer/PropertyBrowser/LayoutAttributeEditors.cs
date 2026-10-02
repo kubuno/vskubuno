@@ -4,7 +4,7 @@ using System.Drawing.Design;
 using System.Linq;
 using WinForms = System.Windows.Forms;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>
     /// The text of the <c>Dock</c>/<c>Anchor</c> attributes ⇄ the WinForms enums the pickers edit. Pure.

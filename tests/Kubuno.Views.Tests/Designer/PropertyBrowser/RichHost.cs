@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
 
-namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
+namespace Kubuno.Views.Tests.Designer.PropertyBrowser
 {
     /// <summary>A designer pane fake for the rich editors: records the attribute edits (optionally batched like the designer) and the text edits.</summary>
     internal sealed class RichHost : IKbviewElementHost, IKbviewDesignServices
@@ -77,14 +77,14 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
         public IReadOnlyList<string> GetBindingPaths() => Paths;
 
         /// <summary>The schema <see cref="GetBindingSources"/> answers.</summary>
-        public Kubuno.Desktop.Designer.Bindings.BindingSourceSchema Schema { get; set; } = Kubuno.Desktop.Designer.Bindings.BindingSourceSchema.Empty;
+        public Kubuno.Views.Designer.Bindings.BindingSourceSchema Schema { get; set; } = Kubuno.Views.Designer.Bindings.BindingSourceSchema.Empty;
 
         public List<string> Definitions { get; } = new List<string>();
 
-        public Kubuno.Desktop.Designer.Bindings.BindingSourceSchema GetBindingSources(string elementId) => Schema;
+        public Kubuno.Views.Designer.Bindings.BindingSourceSchema GetBindingSources(string elementId) => Schema;
 
-        public Kubuno.Desktop.Designer.Bindings.BindingPreview PreviewBinding(string expression, string? sample, Kubuno.Desktop.Designer.Bindings.BindingShape sampleShape, Kubuno.Desktop.Designer.Bindings.BindingShape? want) =>
-            new Kubuno.Desktop.Designer.Bindings.BindingPreview(sample, null);
+        public Kubuno.Views.Designer.Bindings.BindingPreview PreviewBinding(string expression, string? sample, Kubuno.Views.Designer.Bindings.BindingShape sampleShape, Kubuno.Views.Designer.Bindings.BindingShape? want) =>
+            new Kubuno.Views.Designer.Bindings.BindingPreview(sample, null);
 
         public bool GoToBindingDefinition(string elementId, string attribute)
         {

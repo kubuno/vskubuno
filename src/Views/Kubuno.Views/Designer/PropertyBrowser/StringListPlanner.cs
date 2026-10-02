@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Selection;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>
     /// The "Items" string list of a list control (<c>ListBox</c>, <c>CheckedListBox</c>, <c>ComboBox</c>, <c>Dropdown</c>): its

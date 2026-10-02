@@ -5,11 +5,11 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Kubuno.Core.Logging;
-using Kubuno.Core.UI;
+using Kubuno.Shared.Logging;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Core.Commands
+namespace Kubuno.Shared.Commands
 {
     /// <summary>
     /// Tools &gt; "Kubuno: Dialog Gallery" - a developer command, shown only in an instance started with
@@ -23,7 +23,7 @@ namespace Kubuno.Core.Commands
         // The entries come from every layer (DialogGallery.Register), so this command knows no dialog itself.
         public static void Initialize(OleMenuCommandService commandService)
         {
-            var id = new CommandID(KubunoGuids.CommandSet, CoreCommandIds.DialogGalleryCommand);
+            var id = new CommandID(KubunoGuids.CommandSet, SharedCommandIds.DialogGalleryCommand);
 #pragma warning disable VSTHRD010 // OleMenuCommand invoke/query events fire on the UI thread.
             var command = new OleMenuCommand((sender, args) => Show(), id);
             command.BeforeQueryStatus += (sender, args) =>

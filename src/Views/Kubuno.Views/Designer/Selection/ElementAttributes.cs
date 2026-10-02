@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Desktop.Designer.Selection
+namespace Kubuno.Views.Designer.Selection
 {
     /// <summary>One element's tag name and raw attribute values, as <see cref="ElementAttributeReader.Read"/> reads them off the current buffer text.</summary>
     public sealed class ElementAttributes

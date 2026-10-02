@@ -4,7 +4,7 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.Core.Logging
+namespace Kubuno.Shared.Logging
 {
     /// <summary>
     /// Writes to the "Kubuno" pane of the Output window: rust-analyzer discovery decisions,

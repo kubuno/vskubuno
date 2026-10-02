@@ -1,8 +1,8 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Kubuno.Desktop.Logic.Resources;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Logic.Resources;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.Desktop.Resources.Editor
+namespace Kubuno.Views.Resources.Editor
 {
     /// <summary>
     /// Produces the resource editor (<see cref="KbresEditorPane"/>) for <c>.kbres</c> files, the equivalent of Visual

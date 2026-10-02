@@ -9,7 +9,9 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Logging;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.DesignSurface;
 
 namespace Kubuno.Desktop.Designer.DesignSurface
 {
@@ -72,7 +74,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     // `selectionChanged`/`editRequest` on stdout - see `vskubuno/docs/DESIGNER.md`'s "DSG-6 protocol"
     // section) is implemented in the sibling file `RustDesignSurfaceHost.Protocol.cs`, kept separate so
     // it does not collide with concurrent work on this file's own keyboard-forwarding code.
-    public sealed partial class RustDesignSurfaceHost : HwndHost, IDesignSurfaceHost
+    public sealed partial class RustDesignSurfaceHost : HwndHost, IProtocolDesignSurfaceHost
     {
         // Backoff for both "the surface just crashed" and "the runtime DLLs are still missing" -
         // unified into one retry loop (see ScheduleRetry): a user who runs tools/stage-runtime.ps1

@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The default <see cref="IDesignSurfaceHostFactory"/> installed in

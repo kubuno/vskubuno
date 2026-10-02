@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Media;
-using Kubuno.Desktop.Designer.Icons;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.Icons;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The icon editors' server side (docs/ICONS.md): the Kubuno icon set (<c>kubuno/icons</c>, read once per Visual Studio

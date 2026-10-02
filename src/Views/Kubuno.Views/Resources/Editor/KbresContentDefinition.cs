@@ -2,7 +2,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.VisualStudio.Utilities;
 
-namespace Kubuno.Desktop.Resources.Editor
+namespace Kubuno.Views.Resources.Editor
 {
     /// <summary>
     /// Gives <c>.kbres</c> buffers Visual Studio's XML content type, so the code view of a resource file (View Code, or

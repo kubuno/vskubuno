@@ -9,7 +9,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using Kubuno.Desktop.Logic.Data;
 using Kubuno.Desktop.Logic.Migrations;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;

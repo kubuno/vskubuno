@@ -1,8 +1,8 @@
 using System.ComponentModel.Design;
 using System.Threading.Tasks;
-using Kubuno.Core;
-using Kubuno.Core.Logging;
-using Kubuno.Core.Remote;
+using Kubuno.Shared;
+using Kubuno.Shared.Logging;
+using Kubuno.Shared.Remote;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 

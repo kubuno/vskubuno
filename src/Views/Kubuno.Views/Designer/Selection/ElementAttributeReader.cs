@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.Desktop.Designer.Selection
+namespace Kubuno.Views.Designer.Selection
 {
     /// <summary>
     /// Reads one element's tag name and attributes directly off the CURRENT <c>.kbview</c> buffer text,

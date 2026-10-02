@@ -6,12 +6,12 @@ using System.Drawing.Design;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Forms.Design;
-using Kubuno.Desktop.Designer.Properties;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Properties;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Selection;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>
     /// Which editor and converter a registry property gets in the Properties window (its <c>editor</c> /

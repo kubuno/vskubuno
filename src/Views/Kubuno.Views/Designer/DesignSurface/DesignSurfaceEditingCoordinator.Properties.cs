@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Editing.Infrastructure;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Editing.Infrastructure;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// What the Properties window's rich editors need from the pane (docs/EVENTS.md, "WinForms-rich property sets"): the

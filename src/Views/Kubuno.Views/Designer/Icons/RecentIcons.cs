@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Kubuno.Desktop.Designer.Icons
+namespace Kubuno.Views.Designer.Icons
 {
     /// <summary>
     /// The icons chosen last in the icon picker, most recent first (at most <see cref="Capacity"/>), kept for the user in

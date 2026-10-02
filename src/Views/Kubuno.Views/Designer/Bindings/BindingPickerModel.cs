@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Registry;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>Which shapes fit which properties (mirrors <c>binding_lsp::fits</c> of the language server).</summary>
     public static class BindingShapes

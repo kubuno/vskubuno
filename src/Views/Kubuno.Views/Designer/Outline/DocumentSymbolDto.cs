@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Views.Designer.Editing;
 
-namespace Kubuno.Desktop.Designer.Outline
+namespace Kubuno.Views.Designer.Outline
 {
     /// <summary>
     /// One node of a <c>textDocument/documentSymbol</c> response (docs/DESIGNER.md §1's Document

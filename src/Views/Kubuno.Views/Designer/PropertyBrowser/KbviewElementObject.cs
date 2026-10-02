@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Selection;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>
     /// One <c>.kbview</c> element as Visual Studio's native Properties window (F4) sees it: published by
@@ -67,7 +67,8 @@ namespace Kubuno.Desktop.Designer.PropertyBrowser
 
         public ComponentMeta Component { get; }
 
-        internal IKbviewElementHost Host => _host;
+        // Public for the target layers (the desktop Dev Assistant parts read the selected element's view).
+        public IKbviewElementHost Host => _host;
 
         public ISite? Site { get; set; }
 

@@ -4,12 +4,12 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// Isolates every direct reference to a VS SDK assembly type
     /// (<c>Microsoft.VisualStudio.Interop</c>/<c>Microsoft.VisualStudio.Shell.15.0</c>/...) behind an
-    /// <see cref="object"/>-only boundary, so <see cref="RustDesignSurfaceHost"/>'s own ALWAYS-executed
+    /// <see cref="object"/>-only boundary, so <c>RustDesignSurfaceHost</c>'s own ALWAYS-executed
     /// code paths (its constructor, <c>WndProc</c>, <c>HandleUnhandledKey</c>) never mention one of these
     /// types in their OWN method signature or body, and can therefore run standalone (this library's own
     /// tests, <c>spikes/HwndHostSpike</c>) without those assemblies being physically present.
@@ -23,7 +23,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// method body, or in ANOTHER method's parameter list that this method calls with a matching
     /// non-erased type - the FIRST TIME that specific method is JIT-compiled (which happens on its first
     /// call), regardless of which runtime branch actually executes. Before this class existed,
-    /// <see cref="RustDesignSurfaceHost"/>'s own constructor took an
+    /// <c>RustDesignSurfaceHost</c>'s own constructor took an
     /// <c>Microsoft.VisualStudio.OLE.Interop.IServiceProvider?</c> parameter directly and held an
     /// <c>IVsFilterKeys2?</c> field - both VS SDK types - so simply calling <c>new
     /// RustDesignSurfaceHost(exePath)</c> (passing <see langword="null"/> for that parameter, exactly what
@@ -35,7 +35,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// itself needs no VS type - so JIT compilation of these methods, and the assembly loads it requires,
     /// only happens then.</para>
     /// </summary>
-    internal static class VsFilterKeysBridge
+    public static class VsFilterKeysBridge
     {
         /// <summary>
         /// <paramref name="oleServiceProvider"/> (an <c>Microsoft.VisualStudio.OLE.Interop.
@@ -46,7 +46,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         /// marshaling failure) - never throws, since the caller is its constructor and a missing VS
         /// service must not prevent the pane from opening.
         /// </summary>
-        internal static object? TryQuery(object oleServiceProvider)
+        public static object? TryQuery(object oleServiceProvider)
         {
             // Real callers (DesignerSplitView constructing this host, the spike) are always on the UI
             // thread. ThreadHelper's own lazily-created default JoinableTaskContext (there is no live VS
@@ -97,7 +97,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         /// throws - a COM call failing must not crash the designer pane over one forwarded key.
         /// <paramref name="translated"/> reports whether Visual Studio translated (and ran) the key.
         /// </summary>
-        internal static string TryTranslateAccelerator(object vsFilterKeys2, IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, out bool translated)
+        public static string TryTranslateAccelerator(object vsFilterKeys2, IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, out bool translated)
         {
             translated = false;
             // See TryQuery's own comment: always the UI thread, in VS and standalone alike.
@@ -129,11 +129,11 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         }
 
         /// <summary>
-        /// <see cref="Kubuno.Desktop.Views.Logging.KubunoViewsLogHost"/> is safe to call from here
+        /// <see cref="Kubuno.Views.Logging.KubunoViewsLogHost"/> is safe to call from here
         /// (it is a plain, VS-free interface - see its own doc), unlike everything else in this class;
         /// named separately only so a reader scanning for "does this class touch VS types outside its two
         /// public methods" can tell at a glance that it does not.
         /// </summary>
-        private static void LogSafely(string message) => Kubuno.Desktop.Views.Logging.KubunoViewsLogHost.Current.WriteLine(message);
+        private static void LogSafely(string message) => Kubuno.Views.Logging.KubunoViewsLogHost.Current.WriteLine(message);
     }
 }

@@ -2,9 +2,9 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Forms.Design;
 using Microsoft.VisualStudio.Shell;
-using Kubuno.Core.Settings;
+using Kubuno.Shared.Settings;
 
-namespace Kubuno.Desktop.Views.Options
+namespace Kubuno.Views.Options
 {
     /// <summary>
     /// Tools &gt; Options &gt; Kubuno &gt; Views. Mirrors the shape of the sibling VSIX project's

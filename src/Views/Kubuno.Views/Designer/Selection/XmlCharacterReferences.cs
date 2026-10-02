@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace Kubuno.Desktop.Designer.Selection
+namespace Kubuno.Views.Designer.Selection
 {
     /// <summary>
     /// Decodes the XML character references of an attribute value as <c>kubuno_views::ast::decode_entities</c> does

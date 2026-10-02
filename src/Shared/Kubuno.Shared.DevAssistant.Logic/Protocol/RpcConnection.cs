@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.Core.DevAssistant.Logic.Protocol
+namespace Kubuno.Shared.DevAssistant.Logic.Protocol
 {
     /// <summary>
     /// A duplex JSON-RPC endpoint over a line reader and writer: both sides of the channel use it (the VSIX over the

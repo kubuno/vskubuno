@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.Core.DevAssistant.Logic.Secrets
+namespace Kubuno.Shared.DevAssistant.Logic.Secrets
 {
     /// <summary>One secret found in a text: the exact span of the value to mask and its kind.</summary>
     public readonly struct SecretFinding

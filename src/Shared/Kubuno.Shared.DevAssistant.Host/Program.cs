@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Kubuno.Core.DevAssistant.Host
+namespace Kubuno.Shared.DevAssistant.Host
 {
     /// <summary>
     /// kubuno-dev-assistant.exe: JSON-RPC lines on stdin/stdout (docs/AI-ASSISTANT.md section 9.1). Nothing is written

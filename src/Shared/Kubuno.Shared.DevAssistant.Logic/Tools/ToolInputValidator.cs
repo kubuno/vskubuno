@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-namespace Kubuno.Core.DevAssistant.Logic.Tools
+namespace Kubuno.Shared.DevAssistant.Logic.Tools
 {
     /// <summary>
     /// Validates a tool input against its JSON schema before anything runs (eager input streaming hands over inputs the

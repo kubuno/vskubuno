@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Linq;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 
-namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
+namespace Kubuno.Views.Tests.Designer.PropertyBrowser
 {
     [TestClass]
     public class KbviewElementObjectTests
@@ -234,7 +234,7 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
             Assert.IsFalse(properties.Find("Dock", false).IsReadOnly);
             Assert.IsInstanceOfType(properties.Find("Dock", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor)), typeof(KbviewDockEditor));
             Assert.IsInstanceOfType(properties.Find("Anchor", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor)), typeof(KbviewAnchorEditor));
-            Assert.IsNull(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)properties.Find("Text", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner, "a text row has only the binding picker");
+            Assert.IsNull(((Kubuno.Views.Designer.Bindings.KbviewBindableEditor)properties.Find("Text", false).GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner, "a text row has only the binding picker");
         }
 
         [TestMethod]

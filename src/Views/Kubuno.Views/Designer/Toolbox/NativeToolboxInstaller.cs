@@ -6,14 +6,14 @@ using VsImageAttributes = Microsoft.VisualStudio.Imaging.Interop.ImageAttributes
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.Desktop.Designer.Toolbox
+namespace Kubuno.Views.Designer.Toolbox
 {
     /// <summary>
     /// Fills Visual Studio's OWN Toolbox window with the Kubuno components, grouped by registry family
@@ -44,6 +44,18 @@ namespace Kubuno.Desktop.Designer.Toolbox
 
         /// <summary>Set by the VSIX: the base name of a component's icon XAML (e.g. "Button", "Control" for an unknown component; null: no icon).</summary>
         public static Func<string, string?>? IconName { get; set; }
+
+        /// <summary>
+        /// Set by the target layer with <see cref="IconName"/>: the assembly whose WPF resources hold the icons
+        /// (<c>Resources/Icons/Controls/&lt;name&gt;.&lt;Light|Dark|HighContrast&gt;.xaml</c>) - the desktop layer's
+        /// Kubuno.Desktop.ProjectSystem, next to its KubunoControls.imagemanifest. Named, never referenced, so this layer does
+        /// not depend on a target.
+        /// </summary>
+        public static string? IconAssembly { get; set; }
+
+        /// <summary>The pack URI of an icon XAML in <see cref="IconAssembly"/>.</summary>
+        private static Uri IconUri(string iconName, string variant) =>
+            new Uri($"/{IconAssembly};component/Resources/Icons/Controls/{iconName}.{variant}.xaml", UriKind.Relative);
 
         /// <summary>Whether the Kubuno items were added to the Toolbox in this session.</summary>
         public static bool IsInstalled => s_installed;
@@ -89,13 +101,13 @@ namespace Kubuno.Desktop.Designer.Toolbox
         {
             try
             {
-                if (IconName?.Invoke(tag) is not { } iconName)
+                if (IconAssembly is null || IconName?.Invoke(tag) is not { } iconName)
                 {
                     return null;
                 }
 
                 var background = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolWindowBackgroundColorKey);
-                var uri = new Uri($"/Kubuno.Desktop.ProjectSystem;component/Resources/Icons/Controls/{iconName}.{IconVariantFor(background)}.xaml", UriKind.Relative);
+                var uri = IconUri(iconName, IconVariantFor(background));
                 return System.Windows.Application.LoadComponent(uri) as System.Windows.FrameworkElement;
             }
             catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException or System.Windows.Markup.XamlParseException)
@@ -516,7 +528,7 @@ namespace Kubuno.Desktop.Designer.Toolbox
                 {
                     pixels = ImageFileIcon(componentName.Substring(ImageKeyPrefix.Length));
                 }
-                else if (IconName?.Invoke(componentName) is not { } iconName)
+                else if (IconAssembly is null || IconName?.Invoke(componentName) is not { } iconName)
                 {
                     return IntPtr.Zero;
                 }
@@ -662,10 +674,10 @@ namespace Kubuno.Desktop.Designer.Toolbox
             }
         }
 
-        /// <summary>Renders an icon's XAML (compiled into Kubuno.Rust.ProjectSystem) pixel-hinted at 16x16 (<see cref="ToolboxIconRasterizer"/>), premultiplied BGRA; null when the resource is missing.</summary>
+        /// <summary>Renders an icon's XAML (compiled into <see cref="IconAssembly"/>) pixel-hinted at 16x16 (<see cref="ToolboxIconRasterizer"/>), premultiplied BGRA; null when the resource is missing.</summary>
         private static byte[]? RenderIcon(string iconName, string variant)
         {
-            var uri = new Uri($"/Kubuno.Desktop.ProjectSystem;component/Resources/Icons/Controls/{iconName}.{variant}.xaml", UriKind.Relative);
+            var uri = IconUri(iconName, variant);
             return System.Windows.Application.LoadComponent(uri) is System.Windows.FrameworkElement icon ? ToolboxIconRasterizer.Render(icon) : null;
         }
         /// <summary>

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Kubuno.Desktop.Tests.Designer
+namespace Kubuno.Views.Tests.Designer
 {
     /// <summary>Locates fixture files under Fixtures/ (copied next to the test assembly by the .csproj) - mirrors tests/Kubuno.Rust.Cargo.Tests/TestFixtures.cs's own shape.</summary>
     internal static class TestFixtures

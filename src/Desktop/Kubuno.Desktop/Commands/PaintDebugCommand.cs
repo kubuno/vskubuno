@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.Design;
 using System.Globalization;
 using Kubuno.Desktop.Logic.Painting;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;

@@ -1,4 +1,4 @@
-using Kubuno.Core.Extensibility;
+using Kubuno.Shared.Extensibility;
 using Kubuno.Web.Commands;
 using Microsoft.VisualStudio.Shell;
 
@@ -29,7 +29,7 @@ namespace Kubuno.Web
             context.RegisterEditorFactory(new WebDesigner.Spike.WebDesignSpikeEditorFactory());
 
             // The dialog gallery (docs/ARCHITECTURE.md, "Themed dialogs"): built only when the gallery opens.
-            Kubuno.Core.UI.DialogGallery.Register("Kubuno Core Web: Multi-Repository Solution (RepositoryPickerDialog)", () => new RepositoryPickerDialog(@"Z:\src", new[]
+            Kubuno.Shared.UI.DialogGallery.Register("Kubuno Core Web: Multi-Repository Solution (RepositoryPickerDialog)", () => new RepositoryPickerDialog(@"Z:\src", new[]
             {
                 ("core", "Kubuno Core Web (the server)", true),
                 ("calendar", "module calendar", false),
@@ -44,7 +44,7 @@ namespace Kubuno.Web
             }
             catch (System.IO.FileNotFoundException exception)
             {
-                Kubuno.Core.Logging.KubunoLog.WriteLine("Kubuno web: could not preload Kubuno.Web.TemplateWizard.dll (" + exception.Message + ").");
+                Kubuno.Shared.Logging.KubunoLog.WriteLine("Kubuno web: could not preload Kubuno.Web.TemplateWizard.dll (" + exception.Message + ").");
             }
         }
     }

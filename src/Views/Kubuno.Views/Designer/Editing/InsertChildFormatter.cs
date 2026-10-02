@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// Gives a new child element (a Toolbox drop or double-click, <c>kubuno/applyEdit</c>'s

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.Core.DevAssistant.Logic.Changes
+namespace Kubuno.Shared.DevAssistant.Logic.Changes
 {
     /// <summary>
     /// Every write the model proposed during one answer (docs/AI-ASSISTANT.md section 5.5): one <see cref="FileChange"/>

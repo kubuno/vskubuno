@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
-using Kubuno.Desktop.Views.Locating;
+using Kubuno.Views.Locating;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Views
+namespace Kubuno.Views.Tests.Locating
 {
     [TestClass]
     public class KubunoViewsLanguageServerLocatorTests

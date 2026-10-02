@@ -5,17 +5,17 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using Kubuno.Desktop.Designer.Outline;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Registry.Infrastructure;
-using Kubuno.Desktop.Designer.Toolbox;
-using Kubuno.Desktop.Designer.UI;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.Outline;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Registry.Infrastructure;
+using Kubuno.Views.Designer.Toolbox;
+using Kubuno.Views.Designer.UI;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The project's own controls in the designer (docs/EVENTS.md EVT-7b):
@@ -175,13 +175,13 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var json = _registry?.ProjectComponentsJson ?? "[]";
-            if (_host is not RustDesignSurfaceHost rustHost || string.Equals(json, _sentProjectComponents, StringComparison.Ordinal))
+            if (_host is not IProtocolDesignSurfaceHost liveHost || string.Equals(json, _sentProjectComponents, StringComparison.Ordinal))
             {
                 return;
             }
 
             _sentProjectComponents = json;
-            rustHost.SetProjectComponents(json);
+            liveHost.SetProjectComponents(json);
         }
 
         /// <summary>The Toolbox's project tab, from the last design build's registry (see the class doc).</summary>

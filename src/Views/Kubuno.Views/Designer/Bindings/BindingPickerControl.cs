@@ -5,7 +5,7 @@ using System.Linq;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>
     /// The binding picker of the Properties window's value drop-down (docs/DESIGNER.md, "Data bindings"): the Windows Forms

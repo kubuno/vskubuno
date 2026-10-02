@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The seam DSG-7 plugs into: everything <see cref="UI.DesignerSplitView"/> needs from "the thing
@@ -47,7 +47,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         /// while on, clicks select elements instead of interacting with the compiled widgets, and
         /// Delete/arrow gestures raise <see cref="EditRequested"/>. A no-op on
         /// <see cref="PlaceholderDesignSurfaceHost"/>. Added to the interface (rather than left a
-        /// <see cref="RustDesignSurfaceHost"/>-only member, which already had a matching method before
+        /// <c>RustDesignSurfaceHost</c>-only member, which already had a matching method before
         /// this) so the VSIX integration step (INTEGRATION.md &sect;6/&sect;8) can turn it on through
         /// <see cref="UI.DesignerSplitView"/>'s own <see cref="IDesignSurfaceHost"/>-typed field, with no
         /// downcast.

@@ -1,8 +1,8 @@
 using System;
 using System.Globalization;
-using Kubuno.Core.Logic.Localization;
+using Kubuno.Shared.Logic.Localization;
 
-namespace Kubuno.Desktop.Designer
+namespace Kubuno.Views.Designer
 {
     /// <summary>
     /// The handful of user-visible strings the designer puts into Visual Studio's OWN chrome (Toolbox tab

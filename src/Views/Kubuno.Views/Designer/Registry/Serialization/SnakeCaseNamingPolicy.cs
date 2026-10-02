@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace Kubuno.Desktop.Designer.Registry.Serialization
+namespace Kubuno.Views.Designer.Registry.Serialization
 {
     /// <summary>
     /// Converts PascalCase C# property names to Rust's own snake_case field names (e.g.

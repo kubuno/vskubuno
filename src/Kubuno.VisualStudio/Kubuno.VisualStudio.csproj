@@ -32,7 +32,7 @@
       Combining several first-party Microsoft.VisualStudio.* NuGet packages of slightly different
       vintages (Microsoft.VisualStudio.SDK 17.14.x pulling 18.x-era transitive VS assemblies vs.
       Microsoft.VisualStudio.Workspace.VSIntegration 17.12.19 and the VS-install-only
-      TestWindow/EnvDTE assemblies Kubuno.Rust.TestAdapter/Kubuno.Core.Mcp.Bridge resolve against) makes
+      TestWindow/EnvDTE assemblies Kubuno.Rust.TestAdapter/Kubuno.Shared.Mcp.Bridge resolve against) makes
       MSBuild's reference unification report an MSB3277 "unresolved conflict" note for each one it
       auto-resolves (always by picking the highest version - the same resolution the running VS
       instance itself performs at load time). This is expected/benign for a VSSDK extension
@@ -66,7 +66,7 @@
     package class with every registration attribute (KubunoPackage.cs), the command table (KubunoCommands.vsct), the
     unified settings manifest and its resources, the VSIX manifest - and the layer assemblies, pkgdef fragments,
     grammars, templates, image manifests and bundled tools it ships. No feature code lives here: each layer
-    (src/Core, src/Rust, src/Desktop, src/Web, src/Mobile) owns its own.
+    (src/Shared, src/Rust, src/Views, src/Desktop, src/Web, src/Mobile) owns its own.
   -->
   <ItemGroup>
     <Compile Include="PackageGuids.cs" />
@@ -90,7 +90,7 @@
       <LastGenOutput>source.extension.cs</LastGenOutput>
     </None>
     <!--
-      The display-name resource id [ProvideEditorFactory(typeof(KbviewEditorFactory), 110)] needs (Kubuno.Desktop's
+      The display-name resource id [ProvideEditorFactory(typeof(KbviewEditorFactory), 110)] needs (Kubuno.Views'
       Designer\INTEGRATION.md section 3) and the key binding table name (#120), resolved through this package's own
       managed resources (PackageRegistration(UseManagedResourcesOnly = true)). ManifestResourceName is set explicitly
       to "VSPackage" (rather than the default namespace-qualified name) because that is the exact base name
@@ -165,20 +165,22 @@
       <Link>ItemTemplates\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
 
-    <!-- ==== Desktop layer ==== -->
+    <!-- ==== Views layer ==== -->
     <!-- The .kbview grammar, language configuration, core text editor mapping and Open Folder icon
-         (Kubuno.Desktop\Views\kbview-languages.pkgdef), the grammar under its own Grammars\Kbview\ subfolder so each
+         (Kubuno.Views\kbview-languages.pkgdef), the grammar under its own Grammars\Kbview\ subfolder so each
          grammar's THIRD-PARTY-NOTICES.md/LICENSE files stay unambiguous (different upstream licenses/attribution). -->
-    <Content Include="..\Desktop\Kubuno.Desktop\Views\kbview-languages.pkgdef">
+    <Content Include="..\Views\Kubuno.Views\kbview-languages.pkgdef">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>kbview-languages.pkgdef</Link>
     </Content>
-    <Content Include="..\Desktop\Kubuno.Desktop\Views\Grammars\*.*">
+    <Content Include="..\Views\Kubuno.Views\Grammars\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Grammars\Kbview\%(Filename)%(Extension)</Link>
     </Content>
+
+    <!-- ==== Desktop layer ==== -->
     <!-- Kubuno control icons (docs/DESIGNER.md section 11): the designer's Toolbox items and the .kbview element nodes
          of Solution Explorer; the XAML icons are WPF resources of Kubuno.Desktop.ProjectSystem.dll. -->
     <Content Include="..\Desktop\Kubuno.Desktop.ProjectSystem\Resources\KubunoControls.imagemanifest">
@@ -206,7 +208,7 @@
   </ItemGroup>
   <PropertyGroup>
     <!--
-      kubuno-views-ls.exe (Rust LSP server, Kubuno.Desktop.Views' INTEGRATION.md #6) - built
+      kubuno-views-ls.exe (Rust LSP server, Kubuno.Views' INTEGRATION.md #6) - built
       out-of-band from the separate `desktop` repo
       (Z:\src\desktop\windows, crate kubuno-views-ls):
         cd Z:\src\desktop\windows
@@ -261,15 +263,15 @@
     <KubunoResourcesToolExePath Condition="'$(KubunoResourcesToolExePath)' == ''">$(KubunoViewsLsDir)kubuno-resources-tool.exe</KubunoResourcesToolExePath>
     <KubunoRustStdDir Condition="'$(KubunoRustStdDir)' == ''">$(USERPROFILE)\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib\</KubunoRustStdDir>
     <!--
-      kubuno-vs-mcp.exe (Kubuno.Core.Mcp, net8.0 - docs/MCP.md "Integration"). Default: this repo's own
+      kubuno-vs-mcp.exe (Kubuno.Shared.Mcp, net8.0 - docs/MCP.md "Integration"). Default: this repo's own
       build output for the same $(Configuration) (a ReferenceOutputAssembly=false ProjectReference
       below drives that build as part of this solution/project build - see its own comment for why
       it is not a normal assembly reference). Override with /p:KubunoMcpOutputDir=<path> to ship a
       self-contained `dotnet publish` output instead.
     -->
-    <KubunoMcpOutputDir Condition="'$(KubunoMcpOutputDir)' == ''">$(MSBuildThisFileDirectory)..\Core\Kubuno.Core.Mcp\bin\$(Configuration)\net8.0\</KubunoMcpOutputDir>
+    <KubunoMcpOutputDir Condition="'$(KubunoMcpOutputDir)' == ''">$(MSBuildThisFileDirectory)..\Shared\Kubuno.Shared.Mcp\bin\$(Configuration)\net8.0\</KubunoMcpOutputDir>
     <!--
-      kubuno-views-surface.exe (Kubuno.Desktop.Designer's own INTEGRATION.md §6, DSG-7's embedded
+      kubuno-views-surface.exe (Kubuno.Views.Designer's own INTEGRATION.md §6, DSG-7's embedded
       design surface): built out-of-band from the desktop repo, same workspace as kubuno-views-ls but a
       SEPARATE CARGO_TARGET_DIR (this crate is still examples-only, see kubuno-views/examples/view_embed.rs -
       built on its own rather than sharing desktop-target's in-flight build):
@@ -277,7 +279,7 @@
         $env:CARGO_TARGET_DIR = "C:\kubuno-build\agent-dsgint"
         cargo build -r -p kubuno-print -j 1 (the wrapper of kubuno-views' surface with the library components linked - kubuno-data's and kubuno-print's - so views holding data or printing components render before a design build - docs/DATA.md, docs/PRINTING.md; plus the cargo "example" flag, spelled with two dashes,
         naming view_embed - omitted above only because a doubled dash is not valid inside an XML
-        comment; see src/Desktop/Kubuno.Desktop/Designer/INTEGRATION.md §6 for the literal command)
+        comment; see src/Views/Kubuno.Views/Designer/INTEGRATION.md §6 for the literal command)
       Shipped under its OWN tools\surface\ subfolder (see the Content items below), never merged with
       kubuno-views-ls.exe's own tools\kubuno_ui-<hash>.dll/std-*.dll: a Rust dylib has no stable ABI, and this
       exe comes from a DIFFERENT CARGO_TARGET_DIR, so it needs its OWN matching kubuno_ui-<hash>.dll
@@ -390,13 +392,13 @@
     OUTSIDE this solution, before this project is even opened, so they already exist on disk the
     moment MSBuild evaluates this file's items - which happens once, during the static EVALUATION
     pass, before any target (including this project's own ProjectReference-driven build of
-    Kubuno.Core.Mcp) executes. kubuno-vs-mcp.exe, by contrast, is built AS PART of this same solution
+    Kubuno.Shared.Mcp) executes. kubuno-vs-mcp.exe, by contrast, is built AS PART of this same solution
     build (the ReferenceOutputAssembly=false ProjectReference below) - on a clean checkout, nothing
     has built it yet at evaluation time, so a static `Content Include="$(KubunoMcpOutputDir)**\*.*"`
     silently matches ZERO files and the VSIX ships without the MCP bridge, with no error (found live:
     a full clean build produced a Kubuno.VisualStudio.vsix missing tools\kubuno-vs-mcp\ entirely,
     despite 0 build errors/warnings - KubunoCheckToolExes's own Error above never caught it either,
-    since by the time THAT target ran - BeforeTargets="Build" - Kubuno.Core.Mcp had, by then, already been
+    since by the time THAT target ran - BeforeTargets="Build" - Kubuno.Shared.Mcp had, by then, already been
     built by ResolveProjectReferences, so the exists-check passed; only the item glob's own timing
     was wrong). Fixed by moving the glob into a target - AfterTargets="ResolveProjectReferences" ONLY,
     deliberately WITHOUT also pinning it BeforeTargets="Build": found live, by comparing MSBuild
@@ -412,15 +414,15 @@
     be on disk, well before GetVsixSourceItems collects them - not matched once at evaluation time
     (too early, exe does not exist yet) and not added too late either (past GetVsixSourceItems).
     Verified live end to end: a genuinely clean `msbuild Kubuno.VisualStudio.sln -t:Restore` then
-    `-t:Build` (no manual pre-build of Kubuno.Core.Mcp.csproj) produced a Kubuno.VisualStudio.vsix whose
+    `-t:Build` (no manual pre-build of Kubuno.Shared.Mcp.csproj) produced a Kubuno.VisualStudio.vsix whose
     tools\kubuno-vs-mcp\ contains kubuno-vs-mcp.exe and its full dependency closure. Every file
-    Kubuno.Core.Mcp's own build produces (kubuno-vs-mcp.exe/.dll/.deps.json/.runtimeconfig.json and its
+    Kubuno.Shared.Mcp's own build produces (kubuno-vs-mcp.exe/.dll/.deps.json/.runtimeconfig.json and its
     dependency DLLs, e.g. ModelContextProtocol*.dll) - it is a framework-dependent net8.0 exe, not
     self-contained, so all of these are required for it to actually run once shipped.
   -->
   <Target Name="KubunoAddMcpContent" AfterTargets="ResolveProjectReferences">
     <Error Condition="!Exists('$(KubunoMcpOutputDir)kubuno-vs-mcp.exe')"
-           Text="kubuno-vs-mcp.exe not found under '$(KubunoMcpOutputDir)'. It should have been built automatically as part of this solution (src\Core\Kubuno.Core.Mcp\Kubuno.Core.Mcp.csproj) - build that project first, or pass /p:KubunoMcpOutputDir=&lt;its output folder&gt;." />
+           Text="kubuno-vs-mcp.exe not found under '$(KubunoMcpOutputDir)'. It should have been built automatically as part of this solution (src\Shared\Kubuno.Shared.Mcp\Kubuno.Shared.Mcp.csproj) - build that project first, or pass /p:KubunoMcpOutputDir=&lt;its output folder&gt;." />
     <ItemGroup>
       <KubunoMcpOutputFile Include="$(KubunoMcpOutputDir)**\*.*" />
       <Content Include="@(KubunoMcpOutputFile)">
@@ -432,17 +434,17 @@
   </Target>
 
   <!--
-    docs/AI-ASSISTANT.md: kubuno-dev-assistant.exe (Kubuno.Core.DevAssistant.Host, net8.0, framework-dependent), the Dev
+    docs/AI-ASSISTANT.md: kubuno-dev-assistant.exe (Kubuno.Shared.DevAssistant.Host, net8.0, framework-dependent), the Dev
     Assistant's provider host, shipped exactly like kubuno-vs-mcp.exe above (same timing reason for the target) under
     tools\kubuno-dev-assistant\, with its dependency closure (the official Anthropic SDK) and the fake provider's
     recorded responses (Fixtures\). It is never loaded into devenv.exe.
   -->
   <PropertyGroup>
-    <KubunoDevAssistantHostOutputDir Condition="'$(KubunoDevAssistantHostOutputDir)' == ''">$(MSBuildThisFileDirectory)..\Core\Kubuno.Core.DevAssistant.Host\bin\$(Configuration)\net8.0\</KubunoDevAssistantHostOutputDir>
+    <KubunoDevAssistantHostOutputDir Condition="'$(KubunoDevAssistantHostOutputDir)' == ''">$(MSBuildThisFileDirectory)..\Shared\Kubuno.Shared.DevAssistant.Host\bin\$(Configuration)\net8.0\</KubunoDevAssistantHostOutputDir>
   </PropertyGroup>
   <Target Name="KubunoAddDevAssistantHostContent" AfterTargets="ResolveProjectReferences">
     <Error Condition="!Exists('$(KubunoDevAssistantHostOutputDir)kubuno-dev-assistant.exe')"
-           Text="kubuno-dev-assistant.exe not found under '$(KubunoDevAssistantHostOutputDir)'. It is built as part of this solution (src\Core\Kubuno.Core.DevAssistant.Host) - build that project first, or pass /p:KubunoDevAssistantHostOutputDir=&lt;its output folder&gt;." />
+           Text="kubuno-dev-assistant.exe not found under '$(KubunoDevAssistantHostOutputDir)'. It is built as part of this solution (src\Shared\Kubuno.Shared.DevAssistant.Host) - build that project first, or pass /p:KubunoDevAssistantHostOutputDir=&lt;its output folder&gt;." />
     <ItemGroup>
       <KubunoDevAssistantHostFile Include="$(KubunoDevAssistantHostOutputDir)**\*.*" Exclude="$(KubunoDevAssistantHostOutputDir)**\*.pdb" />
       <Content Include="@(KubunoDevAssistantHostFile)">
@@ -599,63 +601,63 @@
     Every layer assembly, each shipped in the VSIX folder (one binding path covers them all - KubunoPackage.cs):
     BuiltProjectOutputGroupDependencies pulls their own dependency DLLs (notably System.Text.Json and its netstandard2.0
     polyfill set, which net48 does not have) into the VSIX alongside them, so they actually load in Visual Studio and
-    not just at `dotnet build` time. The layer rules (Core <- Rust <- Desktop/Web/Mobile, no reference between
+    not just at `dotnet build` time. The layer rules (Shared <- Rust <- Views <- Desktop/Web/Mobile, no reference between
     Desktop, Web and Mobile) are enforced by tests/Kubuno.Architecture.Tests; only this project references them all.
   -->
   <ItemGroup>
-    <!-- ==== Core layer ==== -->
+    <!-- ==== Shared layer ==== -->
     <!-- Layer contracts and host, themed dialogs, unified settings plumbing, Output pane, dialog gallery, MCP bridge start. -->
-    <ProjectReference Include="..\Core\Kubuno.Core\Kubuno.Core.csproj">
+    <ProjectReference Include="..\Shared\Kubuno.Shared\Kubuno.Shared.csproj">
       <Project>{9C31551F-795A-4B62-93CD-D35F0D91F73E}</Project>
-      <Name>Kubuno.Core</Name>
+      <Name>Kubuno.Shared</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
-    <ProjectReference Include="..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj">
+    <ProjectReference Include="..\Shared\Kubuno.Shared.Logic\Kubuno.Shared.Logic.csproj">
       <Project>{3AA9F22E-A5B8-4716-A81B-46B5CFDD3CD3}</Project>
-      <Name>Kubuno.Core.Logic</Name>
+      <Name>Kubuno.Shared.Logic</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
-    <!-- docs/MCP.md "Integration": the net48 leg (multi-targeted net48;net8.0 project), started in-proc by Kubuno.Core. -->
-    <ProjectReference Include="..\Core\Kubuno.Core.Mcp.Bridge\Kubuno.Core.Mcp.Bridge.csproj">
+    <!-- docs/MCP.md "Integration": the net48 leg (multi-targeted net48;net8.0 project), started in-proc by Kubuno.Shared. -->
+    <ProjectReference Include="..\Shared\Kubuno.Shared.Mcp.Bridge\Kubuno.Shared.Mcp.Bridge.csproj">
       <Project>{cb4d8d70-b802-48ee-ba00-5d9cc66a6339}</Project>
-      <Name>Kubuno.Core.Mcp.Bridge</Name>
+      <Name>Kubuno.Shared.Mcp.Bridge</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
     <!--
       kubuno-vs-mcp.exe (net8.0, standalone process - never in-proc, never assembly-referenced from
       this net48 VSIX): ReferenceOutputAssembly=false makes this a build-ordering-only reference, so
-      `msbuild Kubuno.VisualStudio.sln`/building this project also builds Kubuno.Core.Mcp first, into
+      `msbuild Kubuno.VisualStudio.sln`/building this project also builds Kubuno.Shared.Mcp first, into
       $(KubunoMcpOutputDir) (see the Content item above that ships it under tools\).
     -->
-    <ProjectReference Include="..\Core\Kubuno.Core.Mcp\Kubuno.Core.Mcp.csproj">
+    <ProjectReference Include="..\Shared\Kubuno.Shared.Mcp\Kubuno.Shared.Mcp.csproj">
       <Project>{be214089-0974-4c47-95ea-eb1a059eb17a}</Project>
-      <Name>Kubuno.Core.Mcp</Name>
+      <Name>Kubuno.Shared.Mcp</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <!-- Kubuno.Core.Mcp targets net8.0 (see its own csproj comment); this legacy net48 project would
+      <!-- Kubuno.Shared.Mcp targets net8.0 (see its own csproj comment); this legacy net48 project would
            otherwise fail the target-framework compatibility check MSBuild runs for every
            ProjectReference regardless of ReferenceOutputAssembly. Build-ordering-only reference -
-           no assembly/type from Kubuno.Core.Mcp is ever compiled against here. -->
+           no assembly/type from Kubuno.Shared.Mcp is ever compiled against here. -->
       <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
     </ProjectReference>
-    <!-- docs/AI-ASSISTANT.md: the Kubuno Dev Assistant - its Visual Studio side, its pure logic, and its host process (build ordering only, like Kubuno.Core.Mcp). -->
-    <ProjectReference Include="..\Core\Kubuno.Core.DevAssistant\Kubuno.Core.DevAssistant.csproj">
+    <!-- docs/AI-ASSISTANT.md: the Kubuno Dev Assistant - its Visual Studio side, its pure logic, and its host process (build ordering only, like Kubuno.Shared.Mcp). -->
+    <ProjectReference Include="..\Shared\Kubuno.Shared.DevAssistant\Kubuno.Shared.DevAssistant.csproj">
       <Project>{7D4C2B91-5E3A-4F8B-9C1D-2E6F8A0B3C41}</Project>
-      <Name>Kubuno.Core.DevAssistant</Name>
+      <Name>Kubuno.Shared.DevAssistant</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
-    <ProjectReference Include="..\Core\Kubuno.Core.DevAssistant.Logic\Kubuno.Core.DevAssistant.Logic.csproj">
+    <ProjectReference Include="..\Shared\Kubuno.Shared.DevAssistant.Logic\Kubuno.Shared.DevAssistant.Logic.csproj">
       <Project>{8E5D3CA2-6F4B-4A9C-8D2E-3F7A9B1C4D52}</Project>
-      <Name>Kubuno.Core.DevAssistant.Logic</Name>
+      <Name>Kubuno.Shared.DevAssistant.Logic</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
-    <ProjectReference Include="..\Core\Kubuno.Core.DevAssistant.Host\Kubuno.Core.DevAssistant.Host.csproj">
+    <ProjectReference Include="..\Shared\Kubuno.Shared.DevAssistant.Host\Kubuno.Shared.DevAssistant.Host.csproj">
       <Project>{9F6E4DB3-7A5C-4BAD-9E3F-4A8B0C2D5E63}</Project>
-      <Name>Kubuno.Core.DevAssistant.Host</Name>
+      <Name>Kubuno.Shared.DevAssistant.Host</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
     </ProjectReference>
@@ -718,8 +720,22 @@
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
+    <!-- ==== Views layer ==== -->
+    <!-- The .kbview language client, the view designer, the .kbres editor (shared by the desktop and web targets). -->
+    <ProjectReference Include="..\Views\Kubuno.Views\Kubuno.Views.csproj">
+      <Project>{A2A97E14-84B8-420F-B727-29F83CD07F9E}</Project>
+      <Name>Kubuno.Views</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\Views\Kubuno.Views.Logic\Kubuno.Views.Logic.csproj">
+      <Project>{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}</Project>
+      <Name>Kubuno.Views.Logic</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
     <!-- ==== Desktop layer ==== -->
-    <!-- The .kbview language client, the view designer, the data tooling. -->
+    <!-- The Rust design surface of the view designer, the data tooling, the desktop templates. -->
     <ProjectReference Include="..\Desktop\Kubuno.Desktop\Kubuno.Desktop.csproj">
       <Project>{1d196ab0-036f-4db8-bcdb-1ad232d81966}</Project>
       <Name>Kubuno.Desktop</Name>

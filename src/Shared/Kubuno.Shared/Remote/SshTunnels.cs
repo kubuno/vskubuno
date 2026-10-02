@@ -8,11 +8,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.Logging;
-using Kubuno.Core.Logic.Remote;
+using Kubuno.Shared.Logging;
+using Kubuno.Shared.Logic.Remote;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.Core.Remote
+namespace Kubuno.Shared.Remote
 {
     /// <summary>The outcome of <see cref="SshTunnels.EnsureAsync"/>.</summary>
     public sealed class SshTunnelResult

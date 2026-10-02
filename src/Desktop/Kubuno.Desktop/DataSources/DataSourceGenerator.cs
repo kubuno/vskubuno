@@ -12,7 +12,7 @@ using Kubuno.Desktop.Logic.Data;
 using Kubuno.Desktop.Logic.DataSources;
 using Kubuno.Desktop.Logic.Sql;
 using Kubuno.Desktop.DataExplorer;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Kubuno.Desktop.Options;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TaskStatusCenter;

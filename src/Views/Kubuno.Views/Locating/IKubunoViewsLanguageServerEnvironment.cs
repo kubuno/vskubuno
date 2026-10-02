@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kubuno.Desktop.Views.Locating
+namespace Kubuno.Views.Locating
 {
     /// <summary>
     /// Everything <see cref="KubunoViewsLanguageServerLocator"/> needs to ask about the outside world

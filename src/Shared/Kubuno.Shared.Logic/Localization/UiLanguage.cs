@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Kubuno.Core.Logic.Localization
+namespace Kubuno.Shared.Logic.Localization
 {
     /// <summary>
     /// The UI language of the extension's own strings (French or English), picked from Visual Studio's UI culture

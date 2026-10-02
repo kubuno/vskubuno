@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Views
+namespace Kubuno.Views
 {
     /// <summary>
     /// Shared identifiers for this library (content type, file extension, options page, remediation
@@ -17,7 +17,7 @@ namespace Kubuno.Desktop.Views
         public const string ControlFileExtension = ".kbcontrol";
 
         /// <summary>Whether <paramref name="path"/> is a view file of either kind (<c>.kbview</c> or <c>.kbcontrol</c>).</summary>
-        public static bool IsViewFile(string? path) => Kubuno.Desktop.Logic.ViewFiles.IsViewFile(path);
+        public static bool IsViewFile(string? path) => Kubuno.Views.Logic.ViewFiles.IsViewFile(path);
 
         /// <summary>File name of the Rust language server binary this library launches over stdio.</summary>
         public const string LanguageServerExecutableName = "kubuno-views-ls.exe";
@@ -31,7 +31,7 @@ namespace Kubuno.Desktop.Views
         /// <summary>
         /// Title of the existing "Kubuno" Output pane this library logs into, via <see cref="Logging.IKubunoLog"/>
         /// (the pane itself is owned and created by the VSIX's KubunoPackage - see
-        /// src/Core/Kubuno.Core/Logging/KubunoLog.cs - not by this library).
+        /// src/Shared/Kubuno.Shared/Logging/KubunoLog.cs - not by this library).
         /// </summary>
         public const string OutputPaneTitle = "Kubuno";
 

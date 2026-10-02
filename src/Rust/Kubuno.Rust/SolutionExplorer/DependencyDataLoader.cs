@@ -9,7 +9,7 @@ using Kubuno.Rust.Cargo.Processes;
 using Kubuno.Rust.Cargo.Registry;
 using Kubuno.Rust.Cargo.Toolchain;
 using Kubuno.Rust.Logic.SolutionExplorer;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 
 namespace Kubuno.Rust.SolutionExplorer
 {

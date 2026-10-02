@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Logging;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.DesignSurface;
 
 namespace Kubuno.Desktop.Designer.DesignSurface
 {
@@ -84,14 +86,5 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 return null;
             }
         }
-    }
-
-    /// <summary>The <c>setCanvasBackground</c> message (see <see cref="RustDesignSurfaceHost"/>'s theme part).</summary>
-    public static class DesignSurfaceThemeProtocol
-    {
-        private static readonly JsonSerializerOptions Wire = new JsonSerializerOptions();
-
-        /// <summary><c>setCanvasBackground {color}</c> with <paramref name="color"/> as <c>#RRGGBB</c>.</summary>
-        public static string EncodeSetCanvasBackground(string color) => JsonSerializer.Serialize(new { type = "setCanvasBackground", color }, Wire);
     }
 }

@@ -1,8 +1,8 @@
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Tests.Designer.Editing.Fakes;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Tests.Designer.Editing.Fakes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Editing
+namespace Kubuno.Views.Tests.Designer.Editing
 {
     [TestClass]
     public class CompoundEditCoordinatorTests

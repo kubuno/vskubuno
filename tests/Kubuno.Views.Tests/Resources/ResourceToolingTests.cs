@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using Kubuno.Desktop.Designer.DesignSurface;
-using Kubuno.Desktop.Logic.Resources;
+using Kubuno.Views.Designer.DesignSurface;
+using Kubuno.Views.Logic.Resources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Resources
+namespace Kubuno.Views.Tests.Resources
 {
     /// <summary>F12 from the generated accessors, the designer's setResources message, and the project resource scan.</summary>
     [TestClass]

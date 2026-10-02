@@ -2,12 +2,12 @@ using System;
 using System.ComponentModel;
 using System.Drawing.Design;
 using System.Linq;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Selection;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Selection;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Ribbon
+namespace Kubuno.Views.Designer.Ribbon
 {
     /// <summary>
     /// A tab's <c>ScalingPolicy</c> as a Properties-window row (docs/RIBBON.md section 5): "(Collection)", edited with the

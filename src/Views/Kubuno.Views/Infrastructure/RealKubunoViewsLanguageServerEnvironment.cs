@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Kubuno.Desktop.Views.Locating;
+using Kubuno.Views.Locating;
 
-namespace Kubuno.Desktop.Views.Infrastructure
+namespace Kubuno.Views.Infrastructure
 {
     /// <summary>
     /// The real, VS-independent implementation of <see cref="IKubunoViewsLanguageServerEnvironment"/>:

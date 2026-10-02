@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Ribbon;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Ribbon;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Ribbon
+namespace Kubuno.Views.Tests.Designer.Ribbon
 {
     /// <summary>The ribbon's designer tasks (docs/RIBBON.md section 9): "Add" choices, polymorphic collections, "Create Command".</summary>
     [TestClass]
@@ -100,14 +100,14 @@ namespace Kubuno.Desktop.Tests.Designer.Ribbon
                 "    <RibbonGroup x:Name=\"font\"/>\n" +
                 "  </RibbonTab>\n" +
                 "</Ribbon>";
-            var tab = Kubuno.Desktop.Designer.Selection.ViewDocument.Find(Kubuno.Desktop.Designer.Selection.ViewDocument.Parse(Tab), "0")!;
+            var tab = Kubuno.Views.Designer.Selection.ViewDocument.Find(Kubuno.Views.Designer.Selection.ViewDocument.Parse(Tab), "0")!;
             CollectionAssert.AreEqual(new[] { "clip", "font" }, RibbonScalingPolicy.GroupNames(tab).ToList());
 
             var added = ChildCollectionPlanner.Apply(Tab, RibbonScalingPolicy.Plan(Tab, "0", new[] { ("font", "Medium"), ("clip", "Collapsed") }));
             StringAssert.Contains(added,
                 "  <RibbonTab Header=\"Accueil\">\n    <RibbonTab.ScalingPolicy>\n      <Scale Group=\"font\" Size=\"Medium\"/>\n      <Scale Group=\"clip\" Size=\"Collapsed\"/>\n    </RibbonTab.ScalingPolicy>\n    <RibbonGroup x:Name=\"clip\"/>");
 
-            var withPolicy = Kubuno.Desktop.Designer.Selection.ViewDocument.Find(Kubuno.Desktop.Designer.Selection.ViewDocument.Parse(added), "0")!;
+            var withPolicy = Kubuno.Views.Designer.Selection.ViewDocument.Find(Kubuno.Views.Designer.Selection.ViewDocument.Parse(added), "0")!;
             var originals = RibbonScalingPolicy.Steps(withPolicy);
             Assert.AreEqual(2, originals.Count);
             var merged = RibbonScalingPolicy.Merge(originals, new[] { new CollectionMember(1), new CollectionMember(0, new[] { new KeyValuePair<string, string?>("Size", "Small") }) });

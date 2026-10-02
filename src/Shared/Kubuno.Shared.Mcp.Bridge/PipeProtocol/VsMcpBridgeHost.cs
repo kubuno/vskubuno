@@ -5,20 +5,20 @@ using System.IO.Pipes;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.Mcp.Bridge.Contracts;
-using Kubuno.Core.Mcp.Bridge.Discovery;
+using Kubuno.Shared.Mcp.Bridge.Contracts;
+using Kubuno.Shared.Mcp.Bridge.Discovery;
 
-namespace Kubuno.Core.Mcp.Bridge.PipeProtocol
+namespace Kubuno.Shared.Mcp.Bridge.PipeProtocol
 {
     /// <summary>
-    /// The bridge's server side: accepts local named-pipe connections from Kubuno.Core.Mcp, frames and
+    /// The bridge's server side: accepts local named-pipe connections from Kubuno.Shared.Mcp, frames and
     /// dispatches each request via <see cref="BridgeDispatcher"/>, and writes/removes this VS
     /// instance's discovery file. Meant to be started once by the VSIX package at load and
     /// disposed at unload (see docs/MCP.md "Integration").
     /// </summary>
     /// <remarks>
     /// Accepts multiple sequential and concurrent client connections (each on its own accept-loop
-    /// iteration), since more than one Claude Code session, or a reconnecting Kubuno.Core.Mcp process,
+    /// iteration), since more than one Claude Code session, or a reconnecting Kubuno.Shared.Mcp process,
     /// may talk to the same VS instance over its lifetime.
     /// </remarks>
     public sealed class VsMcpBridgeHost : IDisposable
@@ -143,7 +143,7 @@ namespace Kubuno.Core.Mcp.Bridge.PipeProtocol
             }
             catch (IOException)
             {
-                // Client vanished mid-message (VS or Kubuno.Core.Mcp process died) - not the host's problem.
+                // Client vanished mid-message (VS or Kubuno.Shared.Mcp process died) - not the host's problem.
             }
             finally
             {

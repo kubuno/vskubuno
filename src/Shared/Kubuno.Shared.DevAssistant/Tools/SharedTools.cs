@@ -7,21 +7,21 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.DevAssistant.Extensibility;
-using Kubuno.Core.DevAssistant.Logic.Changes;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
-using Kubuno.Core.Mcp.Bridge;
-using Kubuno.Core.Mcp.Bridge.Contracts;
+using Kubuno.Shared.DevAssistant.Extensibility;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.Mcp.Bridge;
+using Kubuno.Shared.Mcp.Bridge.Contracts;
 
-namespace Kubuno.Core.DevAssistant.Tools
+namespace Kubuno.Shared.DevAssistant.Tools
 {
     /// <summary>
-    /// The Core layer's tools (docs/AI-ASSISTANT.md section 6.3): Visual Studio context through the MCP bridge's
+    /// The Shared layer's tools (docs/AI-ASSISTANT.md section 6.3): Visual Studio context through the MCP bridge's
     /// <see cref="IVsContextProvider"/> (in-proc, not the pipe), file reads inside the solution roots with the denied-file
     /// rules, and <c>edit_propose</c> - anchored replacements and new files that only build the change set reviewed by
     /// the developer. All read-only except <c>edit_propose</c>, which writes nothing itself.
     /// </summary>
-    internal static class CoreTools
+    internal static class SharedTools
     {
         private const int MaxReadChars = 60_000;
         private const int MaxGrepMatches = 200;

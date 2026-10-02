@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
-using Kubuno.Core.Mcp.Bridge.Contracts;
+using Kubuno.Shared.Mcp.Bridge.Contracts;
 
-namespace Kubuno.Core.Mcp.Bridge.Dte
+namespace Kubuno.Shared.Mcp.Bridge.Dte
 {
     /// <summary>
     /// Reference <see cref="IVsContextProvider"/> implementation built entirely on

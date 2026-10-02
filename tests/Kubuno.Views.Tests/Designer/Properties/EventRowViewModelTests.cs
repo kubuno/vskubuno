@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using Kubuno.Desktop.Designer.Properties;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Properties;
+using Kubuno.Views.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Properties
+namespace Kubuno.Views.Tests.Designer.Properties
 {
     [TestClass]
     public class EventRowViewModelTests

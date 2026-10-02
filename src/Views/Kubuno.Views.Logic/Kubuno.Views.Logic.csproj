@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Views layer, pure logic (docs/ARCHITECTURE.md, "Layers (as built)"; docs/WEB-VIEWS.md WV-8): what Kubuno.Views
+    computes without Visual Studio and every target with .kbview views shares - the view file kinds (ViewFiles) and the
+    .kbres resource model (Resources: KbresFile, ProjectResources, ResourceNames, ResourceNavigation, ResourceSetModel,
+    docs/RESOURCES.md). netstandard2.0 like Kubuno.Rust.Cargo and Kubuno.Web.Logic, so the web layer's pure logic can use
+    it too. No dependency on the VS SDK: plain `dotnet test` (tests/Kubuno.Views.Tests).
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Kubuno.Views.Logic</RootNamespace>
+    <AssemblyName>Kubuno.Views.Logic</AssemblyName>
+  </PropertyGroup>
+
+</Project>

@@ -2,21 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
-using Kubuno.Core.DevAssistant.Extensibility;
-using Kubuno.Core.DevAssistant.Logic.Changes;
-using Kubuno.Core.DevAssistant.Settings;
-using Kubuno.Core.DevAssistant.UI;
-using Kubuno.Core.Extensibility;
-using Kubuno.Core.Logging;
-using Kubuno.Core.UI;
+using Kubuno.Shared.DevAssistant.Extensibility;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Settings;
+using Kubuno.Shared.DevAssistant.UI;
+using Kubuno.Shared.Extensibility;
+using Kubuno.Shared.Logging;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Core.DevAssistant
+namespace Kubuno.Shared.DevAssistant
 {
     /// <summary>
     /// The Kubuno Dev Assistant's registration in the package (docs/AI-ASSISTANT.md section 9.6): the commands that open
     /// the tool window and its settings, the dialogs of the Dialog Gallery, and - at idle - the layers' startup parts
-    /// (e.g. the Desktop layer following the designer's selection for <c>#élément</c>). A Core-layer
+    /// (e.g. the Desktop layer following the designer's selection for <c>#élément</c>). A Shared-layer
     /// <see cref="KubunoLayer"/>: it knows no product layer; they contribute through the MEF contracts of
     /// <see cref="Extensibility"/>.
     /// </summary>

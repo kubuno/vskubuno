@@ -11,19 +11,19 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using EnvDTE;
 using EnvDTE80;
-using Kubuno.Core.DevAssistant.Logic.Changes;
-using Kubuno.Core.DevAssistant.Logic.Cost;
-using Kubuno.Core.DevAssistant.Logic.Prompts;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
-using Kubuno.Core.DevAssistant.Session;
-using Kubuno.Core.DevAssistant.Settings;
-using Kubuno.Core.Logging;
-using Kubuno.Core.UI;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Logic.Cost;
+using Kubuno.Shared.DevAssistant.Logic.Prompts;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Session;
+using Kubuno.Shared.DevAssistant.Settings;
+using Kubuno.Shared.Logging;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.Core.DevAssistant.UI
+namespace Kubuno.Shared.DevAssistant.UI
 {
     /// <summary>
     /// The content of the « Assistant de développement Kubuno » tool window (docs/AI-ASSISTANT.md section 5.1), built in

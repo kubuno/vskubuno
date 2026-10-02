@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 
-namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
+namespace Kubuno.Views.Tests.Designer.PropertyBrowser
 {
     /// <summary>
     /// docs/DESIGNER.md §13: several elements shown at once in Visual Studio's Properties window. The window merges

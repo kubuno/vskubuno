@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Kubuno.Core.Logic.Remote
+namespace Kubuno.Shared.Logic.Remote
 {
     /// <summary>When the Kubuno Core Web launch profiles open the development database tunnel (setting <c>kubuno.remote.devDatabase.tunnel</c>).</summary>
     public enum DatabaseTunnelMode

@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>A <see cref="TextEditDto"/> with its LSP range already resolved to plain character offsets against one specific text snapshot (see <see cref="TextEditPlanner"/>).</summary>
     public readonly struct PlannedTextEdit

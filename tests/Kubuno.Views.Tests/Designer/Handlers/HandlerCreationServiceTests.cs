@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Handlers;
-using Kubuno.Desktop.Tests.Designer.Handlers.Fakes;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Handlers;
+using Kubuno.Views.Tests.Designer.Handlers.Fakes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Handlers
+namespace Kubuno.Views.Tests.Designer.Handlers
 {
     [TestClass]
     public class HandlerCreationServiceTests

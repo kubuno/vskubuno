@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 
-namespace Kubuno.Desktop.Designer.Icons
+namespace Kubuno.Views.Designer.Icons
 {
     /// <summary>One layer of a glyph: SVG path data, stroked (Lucide, in design units) or filled, its themed role or fixed colour.</summary>
     public sealed class IconLayer

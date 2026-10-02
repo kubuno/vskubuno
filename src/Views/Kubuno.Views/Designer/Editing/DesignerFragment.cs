@@ -4,9 +4,9 @@ using System.Linq;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Selection;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// The designer's clipboard content (docs/DESIGNER.md §12): an element's own <c>.kbview</c> XML, copied

@@ -4,17 +4,17 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Editing.Infrastructure;
-using Kubuno.Desktop.Designer.Outline;
-using Kubuno.Desktop.Designer.Properties;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Registry.Infrastructure;
-using Kubuno.Desktop.Designer.Selection;
-using Kubuno.Desktop.Designer.Selection.Infrastructure;
-using Kubuno.Desktop.Designer.UI;
-using Kubuno.Desktop.Views.LanguageService;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Editing.Infrastructure;
+using Kubuno.Views.Designer.Outline;
+using Kubuno.Views.Designer.Properties;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Registry.Infrastructure;
+using Kubuno.Views.Designer.Selection;
+using Kubuno.Views.Designer.Selection.Infrastructure;
+using Kubuno.Views.Designer.UI;
+using Kubuno.Views.LanguageService;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -28,14 +28,14 @@ using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The VSIX integration step's own caller for <c>IDesignSurfaceHost.EditRequested</c>/
     /// <c>SetDocumentText</c> (INTEGRATION.md &sect;6/&sect;8): turns design mode on, forwards a
     /// Delete/nudge <see cref="DesignSurfaceEditOp"/> to <c>kubuno-views-ls</c>'s <c>kubuno/applyEdit</c>
     /// over the SAME <c>StreamJsonRpc.JsonRpc</c> object
-    /// <c>Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> exposes once
+    /// <c>Kubuno.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> exposes once
     /// <c>AttachForCustomMessageAsync</c> has run (docs/DESIGNER.md &sect;3), and applies the resulting
     /// <c>{range, newText}</c> edits through <see cref="BufferEditApplier"/> - one <c>ITextEdit</c>, one
     /// undo unit, per <see cref="BufferEditApplier"/>'s own doc comment (a Delete/nudge is always a
@@ -49,9 +49,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// Lives in this library (not the VSIX project) because every type it needs -
     /// <c>Microsoft.VisualStudio.ComponentModelHost.IComponentModel</c>,
     /// <c>Microsoft.VisualStudio.Editor.IVsEditorAdaptersFactoryService</c>,
-    /// <c>Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient</c> - is already reachable
+    /// <c>Kubuno.Views.LanguageService.KubunoViewsLanguageClient</c> - is already reachable
     /// from here (this project already references <c>Microsoft.VisualStudio.SDK</c> and
-    /// <c>Kubuno.Desktop.Views</c>, see this project's own csproj top comment); no dependency on
+    /// <c>Kubuno.Views</c>, see this project's own csproj top comment); no dependency on
     /// the VSIX assembly itself is needed. <see cref="UI.DesignerSplitView"/> only owns a small field of
     /// this type and forwards <see cref="Dispose"/> - see that class's own, minimal edit for this.
     ///
@@ -112,16 +112,16 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             _pushTimer.Tick += OnPushTimerTick;
 
             _host.EditRequested += OnEditRequested;
-            if (_host is RustDesignSurfaceHost rustHost)
+            if (_host is IProtocolDesignSurfaceHost liveHost)
             {
                 // DSG-9: a Flow reorder / toolbox drop and a move/resize batch (see the .Native.cs half).
-                rustHost.DragDropEditRequested += OnDragDropEditRequested;
-                rustHost.EditRequestsReceived += OnEditRequestsReceived;
-                rustHost.UnhandledSurfaceKey += OnUnhandledSurfaceKey;
+                liveHost.DragDropEditRequested += OnDragDropEditRequested;
+                liveHost.EditRequestsReceived += OnEditRequestsReceived;
+                liveHost.UnhandledSurfaceKey += OnUnhandledSurfaceKey;
                 // Context menus and Ctrl+C/X/V/D (the .Commands.cs half, docs/DESIGNER.md §12).
-                rustHost.ContextMenuRequested += OnContextMenuRequested;
-                rustHost.ElementDoubleClicked += OnElementDoubleClicked;
-                rustHost.SurfaceCommandRequested += OnSurfaceCommandRequested;
+                liveHost.ContextMenuRequested += OnContextMenuRequested;
+                liveHost.ElementDoubleClicked += OnElementDoubleClicked;
+                liveHost.SurfaceCommandRequested += OnSurfaceCommandRequested;
             }
 
             _buffer.Changed += OnBufferChanged;
@@ -257,7 +257,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
             try
             {
-                if (_host is not RustDesignSurfaceHost rustHost)
+                if (_host is not IProtocolDesignSurfaceHost liveHost)
                 {
                     // PlaceholderDesignSurfaceHost: nothing to select on the Design pane yet.
                     return;
@@ -299,7 +299,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 // id that is only valid post-edit can resolve to nothing, or worse, to whatever element now
                 // occupies that same ordinal position in the stale tree (e.g. the moved-to element's own
                 // parent) - see this pane's own INTEGRATION.md/report for the live symptom this fixes.
-                var surfaceTarget = new FlushBeforeSelectTarget(new DesignSurfaceSelectionTarget(rustHost), this);
+                var surfaceTarget = new FlushBeforeSelectTarget(new DesignSurfaceSelectionTarget(liveHost), this);
 
                 _viewsSelectionClient = lsClient;
                 _documentUri = documentUri;
@@ -558,14 +558,14 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             _pushTimer.Stop();
             _pushTimer.Tick -= OnPushTimerTick;
             _host.EditRequested -= OnEditRequested;
-            if (_host is RustDesignSurfaceHost rustHost)
+            if (_host is IProtocolDesignSurfaceHost liveHost)
             {
-                rustHost.DragDropEditRequested -= OnDragDropEditRequested;
-                rustHost.EditRequestsReceived -= OnEditRequestsReceived;
-                rustHost.UnhandledSurfaceKey -= OnUnhandledSurfaceKey;
-                rustHost.ContextMenuRequested -= OnContextMenuRequested;
-                rustHost.ElementDoubleClicked -= OnElementDoubleClicked;
-                rustHost.SurfaceCommandRequested -= OnSurfaceCommandRequested;
+                liveHost.DragDropEditRequested -= OnDragDropEditRequested;
+                liveHost.EditRequestsReceived -= OnEditRequestsReceived;
+                liveHost.UnhandledSurfaceKey -= OnUnhandledSurfaceKey;
+                liveHost.ContextMenuRequested -= OnContextMenuRequested;
+                liveHost.ElementDoubleClicked -= OnElementDoubleClicked;
+                liveHost.SurfaceCommandRequested -= OnSurfaceCommandRequested;
             }
 
             StopProjectComponentSync();

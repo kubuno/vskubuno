@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.Desktop.Designer.Registry
+namespace Kubuno.Views.Designer.Registry
 {
     /// <summary>One Kubuno theme colour: its name as written in a view (<c>BackColor="Primary"</c>) and its value in each theme.</summary>
     public sealed class ThemeToken

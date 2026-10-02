@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Kubuno.Desktop.Logic.DataSources;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.Bindings;
+using Kubuno.Views.Designer.Registry;
 
 namespace Kubuno.Desktop.Designer.Bindings
 {

@@ -11,8 +11,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using Kubuno.Core.UI;
-using Kubuno.Desktop.Logic.Resources;
+using Kubuno.Shared.UI;
+using Kubuno.Views.Logic.Resources;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.PlatformUI;
@@ -21,7 +21,7 @@ using Microsoft.VisualStudio.Shell;
 // A WPF control: every member runs on the UI thread of its dispatcher (the pane is created and used there only).
 #pragma warning disable VSTHRD010
 
-namespace Kubuno.Desktop.Resources.Editor
+namespace Kubuno.Views.Resources.Editor
 {
     /// <summary>
     /// The WPF surface of the resource editor (like Visual Studio's .resx editor): a toolbar, a grid for strings and

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Selection;
 
-namespace Kubuno.Desktop.Tests.Designer.Selection.Fakes
+namespace Kubuno.Views.Tests.Designer.Selection.Fakes
 {
     internal sealed class FakeDesignSurfaceSelectionTarget : IDesignSurfaceSelectionTarget
     {

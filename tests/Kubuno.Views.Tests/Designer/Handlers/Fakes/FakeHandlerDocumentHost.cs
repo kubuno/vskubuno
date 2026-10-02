@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Handlers;
-using Kubuno.Desktop.Tests.Designer.Editing.Fakes;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Handlers;
+using Kubuno.Views.Tests.Designer.Editing.Fakes;
 
-namespace Kubuno.Desktop.Tests.Designer.Handlers.Fakes
+namespace Kubuno.Views.Tests.Designer.Handlers.Fakes
 {
     /// <summary>An in-memory <see cref="IHandlerDocumentHost"/>: <see cref="Buffers"/> pre-seeds one <see cref="FakeEditableTextBuffer"/> per file URI, <see cref="Navigations"/> records every <see cref="NavigateTo"/> call in order.</summary>
     internal sealed class FakeHandlerDocumentHost : IHandlerDocumentHost

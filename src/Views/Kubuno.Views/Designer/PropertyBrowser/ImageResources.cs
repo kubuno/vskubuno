@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>
     /// Image attributes (<c>Image</c>, <c>BackgroundImage</c>, the view's <c>Icon</c>) hold a path RELATIVE to the view file,

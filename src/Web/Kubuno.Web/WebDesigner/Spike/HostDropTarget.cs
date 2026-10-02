@@ -45,10 +45,10 @@ namespace Kubuno.Web.WebDesigner.Spike
 
         public void DragEnter(OleInterop.IDataObject pDataObj, uint grfKeyState, OleInterop.POINTL pt, ref uint pdwEffect)
         {
-            Kubuno.Core.Logging.KubunoLog.WriteLine($"[web-spike] host drop target: DragEnter at {pt.x},{pt.y}");
+            Kubuno.Shared.Logging.KubunoLog.WriteLine($"[web-spike] host drop target: DragEnter at {pt.x},{pt.y}");
             _component = ReadComponent(pDataObj);
             _last = null;
-            Kubuno.Core.Logging.KubunoLog.WriteLine($"[web-spike] host drop target: DragEnter component={_component ?? "(none)"} formats: {DescribeFormats(pDataObj)}");
+            Kubuno.Shared.Logging.KubunoLog.WriteLine($"[web-spike] host drop target: DragEnter component={_component ?? "(none)"} formats: {DescribeFormats(pDataObj)}");
             if (_component is null)
             {
                 pdwEffect = DropEffectNone;
@@ -94,7 +94,7 @@ namespace Kubuno.Web.WebDesigner.Spike
                 return;
             }
 
-            Kubuno.Core.Logging.KubunoLog.WriteLine($"[web-spike] host drop target: Drop {component} at {point.X:0.#},{point.Y:0.#} CSS px");
+            Kubuno.Shared.Logging.KubunoLog.WriteLine($"[web-spike] host drop target: Drop {component} at {point.X:0.#},{point.Y:0.#} CSS px");
             _post(WebSurfaceProtocol.EncodeDrop(point.X, point.Y));
             pdwEffect = DropEffectCopy;
             _dropped(component);

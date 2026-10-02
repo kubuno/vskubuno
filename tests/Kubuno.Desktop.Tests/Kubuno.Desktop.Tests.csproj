@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Tests of the desktop layer (docs/ARCHITECTURE.md, "Layers (as built)"): the view designer (Designer\), the .kbview
-    language client's locators (Views\), and the pure logic of Kubuno.Desktop.Logic (Data\, DataSources\, Migrations\,
-    Sql\, Overrides\, QuickInfo\, DesignSurface\, PaintDebug\, Wizard\).
+    Tests of the desktop layer (docs/ARCHITECTURE.md, "Layers (as built)"): the Data Sources binding drop
+    (Designer\Bindings\), the view files of the inheritance picker (Views\), the Kubuno control icons (SolutionExplorer\),
+    and the pure logic of Kubuno.Desktop.Logic (Data\, DataSources\, Migrations\, Sql\, Overrides\, QuickInfo\,
+    DesignSurface\, PaintDebug\, Wizard\). The view designer itself is the views layer's: tests/Kubuno.Views.Tests.
   -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
@@ -57,17 +58,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!--
-      References the whole Visual Studio assembly: this test project exercises both the VS-SDK-free view-models
-      (Designer\UI\DesignerSplitViewModel.cs, Toolbox\*, Properties\*, Registry\* - all plain unit-testable), the pure
-      Designer\Editing\* pieces, and the views locators. Everything else in it (the editor factory, DesignerWindowPane,
-      CodeWindowHost, Editing\Infrastructure\*'s real ITextBuffer/ITextUndoHistory adapters) either needs a live
-      IVsTextLines/IVsCodeWindow/ITextBuffer COM/editor object or a hosted WPF Dispatcher/visual tree it only gets inside
-      a real devenv.exe process - see those classes' own doc comments, and Designer\INTEGRATION.md/docs/DESIGNER.md's
-      DSG-3/DSG-5 rows ("Manual, experimental instance - visual check" / "manual Ctrl+Z check").
-    -->
+    <!-- References the whole Visual Studio assembly (the Data Sources drop lives there) and the views layer it builds on. -->
     <ProjectReference Include="..\..\src\Desktop\Kubuno.Desktop\Kubuno.Desktop.csproj" />
     <ProjectReference Include="..\..\src\Desktop\Kubuno.Desktop.Logic\Kubuno.Desktop.Logic.csproj" />
+    <ProjectReference Include="..\..\src\Views\Kubuno.Views\Kubuno.Views.csproj" />
+    <ProjectReference Include="..\..\src\Views\Kubuno.Views.Logic\Kubuno.Views.Logic.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -76,8 +71,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Checked-in fixtures copied next to the test assembly: the schema-faithful registry samples (docs/DESIGNER.md 5),
-         the theme tokens, the schema snapshots of SQL IntelliSense (docs/DATA.md DATA-8). -->
+    <!-- Checked-in fixtures copied next to the test assembly: the schema snapshots of SQL IntelliSense (docs/DATA.md
+         DATA-8). The registry samples and theme tokens are tests/Kubuno.Views.Tests' (Fixtures\). -->
     <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
     <!-- kubuno-data-tool schema.load answers (Data Explorer tree tests, docs/DATA.md DATA-5). -->
     <None Update="Data\Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />

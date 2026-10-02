@@ -1,7 +1,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.Core.Logic.Remote
+namespace Kubuno.Shared.Logic.Remote
 {
     /// <summary>
     /// The remote Linux host of Tools &gt; Options &gt; Kubuno &gt; Remote Linux host (docs/WEB.md, "The development

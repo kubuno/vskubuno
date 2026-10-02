@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.Desktop.Logic.Resources;
+using Kubuno.Views.Logic.Resources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Resources
+namespace Kubuno.Views.Tests.Resources
 {
     /// <summary>The .kbres format (same canonical text as the Rust writer), names and cultures, and the resource editor model.</summary>
     [TestClass]

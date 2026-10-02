@@ -57,7 +57,7 @@ namespace Kubuno.Rust.LanguageService.IntelliSense
         internal static RustOptionsPage? Options()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            return Kubuno.Core.KubunoHost.GetDialogPage<RustOptionsPage>();
+            return Kubuno.Shared.KubunoHost.GetDialogPage<RustOptionsPage>();
         }
 
         private static void Apply(ITextView view)

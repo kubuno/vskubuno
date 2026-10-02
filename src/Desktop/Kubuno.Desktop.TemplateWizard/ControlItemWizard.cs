@@ -96,7 +96,7 @@ namespace Kubuno.Desktop.TemplateWizard
             var french = string.Equals(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, "fr", StringComparison.OrdinalIgnoreCase);
             // Themed like Visual Studio's own dialogs (docs/ARCHITECTURE.md, "Themed dialogs"); owned by the IDE's main
             // window through DialogWindow.ShowModal, so it no longer needs Topmost.
-            var window = new Kubuno.Core.UI.ThemedDialog
+            var window = new Kubuno.Shared.UI.ThemedDialog
             {
                 Title = french ? "Contrôle hérité Kubuno" : "Kubuno Inherited Control",
                 Width = 360,
@@ -114,7 +114,7 @@ namespace Kubuno.Desktop.TemplateWizard
             var cancel = new Button { Content = french ? "Annuler" : "Cancel", IsCancel = true };
             ok.Click += (_, _) => window.DialogResult = true;
             list.MouseDoubleClick += (_, _) => window.DialogResult = true;
-            StackPanel buttons = Kubuno.Core.UI.ThemedControls.ButtonRow(ok, cancel);
+            StackPanel buttons = Kubuno.Shared.UI.ThemedControls.ButtonRow(ok, cancel);
             var root = new DockPanel { Margin = new Thickness(12) };
             var label = new TextBlock { Text = french ? $"Contrôle de base de {className} :" : $"Base control of {className}:" };
             DockPanel.SetDock(label, Dock.Top);

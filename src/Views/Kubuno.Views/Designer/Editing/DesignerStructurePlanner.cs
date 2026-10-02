@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Selection;
-using Kubuno.Desktop.Designer.Toolbox;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Selection;
+using Kubuno.Views.Designer.Toolbox;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>Where a pasted or duplicated fragment goes: a container and an index among its children.</summary>
     public sealed class StructurePlacement

@@ -4,21 +4,21 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.EditorFactory;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Editing.Infrastructure;
-using Kubuno.Desktop.Designer.Registry.Infrastructure;
-using Kubuno.Desktop.Designer.Selection;
-using Kubuno.Desktop.Designer.Selection.Infrastructure;
-using Kubuno.Desktop.Designer.UI;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.EditorFactory;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Editing.Infrastructure;
+using Kubuno.Views.Designer.Registry.Infrastructure;
+using Kubuno.Views.Designer.Selection;
+using Kubuno.Views.Designer.Selection.Infrastructure;
+using Kubuno.Views.Designer.UI;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The design surface's context menus and keyboard commands (docs/DESIGNER.md §12): a right-click on the
@@ -512,7 +512,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var current = ElementAttributeReader.Read(GetCurrentText(), elementId)?.Attributes is { } attributes && attributes.TryGetValue(attribute, out var value) ? value ?? string.Empty : string.Empty;
-            if (Kubuno.Desktop.Resources.Editor.TextPromptDialog.TryAsk(DesignerText.MenuRibbonEditLabel.TrimEnd('.'), attribute + " :", current, null, out var text) && text != current)
+            if (Kubuno.Views.Resources.Editor.TextPromptDialog.TryAsk(DesignerText.MenuRibbonEditLabel.TrimEnd('.'), attribute + " :", current, null, out var text) && text != current)
             {
                 SetAttribute(elementId, attribute, text);
             }
@@ -569,10 +569,10 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
             if (DesignerLayoutCommands.FormatName(command) is { } name)
             {
-                if (_host is RustDesignSurfaceHost rustHost)
+                if (_host is IProtocolDesignSurfaceHost liveHost)
                 {
                     FlushPendingPush();
-                    rustHost.Format(name);
+                    liveHost.Format(name);
                 }
 
                 return;
@@ -596,12 +596,12 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             Run(async () =>
             {
                 if (await ApplyEncodedOpsAsync(new object[] { new { kind = "reorderChildren", parentId, order } }, command == DesignerLayoutCommand.BringToFront ? "Bring to Front" : "Send to Back") &&
-                    _host is RustDesignSurfaceHost rustHost && newPrimary is not null)
+                    _host is IProtocolDesignSurfaceHost liveHost && newPrimary is not null)
                 {
                     await Task.Delay(350).ConfigureAwait(true);
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     FlushPendingPush();
-                    rustHost.SelectMany(moved.Select(m => m.New!).ToList(), newPrimary);
+                    liveHost.SelectMany(moved.Select(m => m.New!).ToList(), newPrimary);
                 }
             }, "ZOrder");
         }

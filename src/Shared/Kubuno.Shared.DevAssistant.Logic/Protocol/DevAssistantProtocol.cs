@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace Kubuno.Core.DevAssistant.Logic.Protocol
+namespace Kubuno.Shared.DevAssistant.Logic.Protocol
 {
     /// <summary>
     /// The method names of the channel (docs/AI-ASSISTANT.md section 9.1). VSIX → host requests: <see cref="Initialize"/>,

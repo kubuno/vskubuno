@@ -1,9 +1,9 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Windows;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Logging;
 
-namespace Kubuno.Desktop.Designer.Editing.Infrastructure
+namespace Kubuno.Views.Designer.Editing.Infrastructure
 {
     /// <summary>
     /// The system clipboard as the designer uses it (docs/DESIGNER.md §12): a copied element goes under the

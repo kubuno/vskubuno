@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 using EnvDTE;
 using Process = System.Diagnostics.Process;
 using Kubuno.Rust.Logic;
-using Kubuno.Core.Logic.Lsp;
+using Kubuno.Shared.Logic.Lsp;
 using Kubuno.Rust.Logic.IntelliSense;
 using Kubuno.Rust.Infrastructure;
 using Kubuno.Rust.LanguageService.IntelliSense;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Kubuno.Rust.Options;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
@@ -273,7 +273,7 @@ namespace Kubuno.Rust.LanguageService
         private async Task<RustOptionsPage?> GetOptionsAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            return Kubuno.Core.KubunoHost.GetDialogPage<RustOptionsPage>();
+            return Kubuno.Shared.KubunoHost.GetDialogPage<RustOptionsPage>();
         }
 
         private async Task<string?> GetWorkspaceRootAsync()

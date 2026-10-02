@@ -33,7 +33,7 @@ namespace Kubuno.Rust.CrateManager
         internal static async Task ShowAsync(RsprojProjectContext context, string? crateName)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var package = Kubuno.Core.KubunoHost.Package;
+            var package = Kubuno.Shared.KubunoHost.Package;
             if (package is null)
             {
                 return;

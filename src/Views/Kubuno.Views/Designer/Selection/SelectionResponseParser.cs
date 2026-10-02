@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Outline;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Outline;
 
-namespace Kubuno.Desktop.Designer.Selection
+namespace Kubuno.Views.Designer.Selection
 {
     /// <summary>
     /// Pure JSON -&gt; DTO parsing for the three methods <see cref="IViewsSelectionLanguageServerClient"/>

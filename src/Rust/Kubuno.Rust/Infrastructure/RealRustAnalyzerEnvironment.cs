@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Kubuno.Rust.Logic;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 
 namespace Kubuno.Rust.Infrastructure
 {

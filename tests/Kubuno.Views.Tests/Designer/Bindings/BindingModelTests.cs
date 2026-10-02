@@ -1,16 +1,16 @@
 using System;
 using System.Linq;
-using Kubuno.Desktop.Designer;
-using Kubuno.Desktop.Designer.Bindings;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Tests.Designer.PropertyBrowser;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.Bindings;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Tests.Designer.PropertyBrowser;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 
-namespace Kubuno.Desktop.Tests.Designer.Bindings
+namespace Kubuno.Views.Tests.Designer.Bindings
 {
-    /// <summary>The data binding models of the designer (docs/DESIGNER.md, "Data bindings"): the lossless markup, the picker, the dialog's edits and their undo unit, the drops.</summary>
+    /// <summary>The data binding models of the designer (docs/DESIGNER.md, "Data bindings"): the lossless markup, the picker, the dialog's edits and their undo unit (the Data Sources drop: tests/Kubuno.Desktop.Tests).</summary>
     [TestClass]
     public sealed class BindingModelTests
     {
@@ -48,9 +48,9 @@ namespace Kubuno.Desktop.Tests.Designer.Bindings
         [TestMethod]
         public void Parser_RecognizesTheWholeGrammar()
         {
-            Assert.IsTrue(Kubuno.Desktop.Designer.Properties.BindingExpressionParser.TryParse("{Binding Source=customers, Path=Name, FormatString=N2}", out var e));
+            Assert.IsTrue(Kubuno.Views.Designer.Properties.BindingExpressionParser.TryParse("{Binding Source=customers, Path=Name, FormatString=N2}", out var e));
             Assert.AreEqual("customers.Name", e!.Path);
-            Assert.IsTrue(Kubuno.Desktop.Designer.Properties.BindingExpressionParser.TryParse("{Binding Path=Title}", out var p));
+            Assert.IsTrue(Kubuno.Views.Designer.Properties.BindingExpressionParser.TryParse("{Binding Path=Title}", out var p));
             Assert.AreEqual("Title", p!.Path, "Path= is the path, not « Path=Title »");
         }
 
@@ -183,30 +183,6 @@ namespace Kubuno.Desktop.Tests.Designer.Bindings
         }
 
         [TestMethod]
-        public void Drops_BindAControl_OrAddABoundOne()
-        {
-            const string view = "<Form>\n  <TextField x:Name=\"name\" X=\"10\" Y=\"10\" Width=\"200\" Height=\"28\"/>\n  <CheckBox x:Name=\"busy\" X=\"10\" Y=\"60\" Width=\"200\" Height=\"24\"/>\n</Form>";
-            var schema = BindingSamples.Schema();
-            var title = schema.Context.Members.Single(m => m.Path == "Title");
-            var plan = BindingDropPlanner.Plan(view, Controls, title, string.Empty, 50, 20, out var error)!;
-            Assert.IsNotNull(plan, error);
-            Assert.AreEqual(0, plan.Insertions.Count);
-            Assert.AreEqual("0:Text={Binding Title, Mode=TwoWay}", plan.Edits.Select(e => e.ElementId + ":" + e.Attribute + "=" + e.Value).Single());
-
-            var busy = schema.Context.Members.Single(m => m.Path == "IsBusy");
-            Assert.AreEqual("Checked", BindingDropPlanner.Plan(view, Controls, busy, string.Empty, 20, 70, out _)!.Edits.Single().Attribute);
-
-            var added = BindingDropPlanner.Plan(view, Controls, title, string.Empty, 10, 100, out _)!;
-            Assert.AreEqual(0, added.Edits.Count);
-            Assert.AreEqual(2, added.Insertions.Count, "a label and a bound control");
-            StringAssert.Contains(added.Insertions[1].Xml, "<TextField x:Name=\"title_text_field\" Text=\"{Binding Title, Mode=TwoWay}\"");
-            Assert.AreEqual("3", added.SelectElementId);
-            var items = schema.Context.Members.Single(m => m.Path == "Items");
-            StringAssert.Contains(BindingDropPlanner.Plan(view, Controls, items, string.Empty, 10, 200, out _)!.Insertions.Last().Xml, "<ListBox x:Name=\"items_list_box\" ItemsSource=\"{Binding Items}\"");
-            Assert.AreEqual("Status text", BindingDropPlanner.Humanize("StatusText"));
-        }
-
-        [TestMethod]
         public void Schema_IsReadFromTheServerAnswer()
         {
             var json = JToken.Parse(@"{
@@ -232,13 +208,6 @@ namespace Kubuno.Desktop.Tests.Designer.Bindings
         }
 
         /// <summary>A few controls in the export's shape (what a drop binds).</summary>
-        private static readonly ComponentRegistry Controls = ComponentRegistry.FromJson(
-            "[{\"name\":\"Form\",\"children\":\"List\",\"properties\":[{\"name\":\"Text\",\"kind\":\"String\"}]}," +
-            "{\"name\":\"TextField\",\"properties\":[{\"name\":\"Text\",\"kind\":\"String\",\"bindable\":true}]}," +
-            "{\"name\":\"CheckBox\",\"properties\":[{\"name\":\"Text\",\"kind\":\"String\"},{\"name\":\"Checked\",\"kind\":\"Bool\"}]}," +
-            "{\"name\":\"ListBox\",\"properties\":[{\"name\":\"ItemsSource\",\"kind\":\"String\",\"editor\":\"list\"}]}," +
-            "{\"name\":\"Label\",\"properties\":[{\"name\":\"Text\",\"kind\":\"String\"}]}]");
-
         /// <summary>A grid context over one element and one row.</summary>
         private sealed class TestContext : System.ComponentModel.ITypeDescriptorContext
         {

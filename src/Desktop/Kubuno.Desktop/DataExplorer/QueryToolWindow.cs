@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Kubuno.Desktop.Logic.Data;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -79,7 +79,7 @@ namespace Kubuno.Desktop.DataExplorer
         internal static async Task<QueryToolWindow?> ShowAsync(string connection, DataProviderKind? provider, string sql, string? caption = null, Func<QueryControl, Task>? afterShow = null)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var package = Kubuno.Core.KubunoHost.Package;
+            var package = Kubuno.Shared.KubunoHost.Package;
             if (package is null)
             {
                 return null;

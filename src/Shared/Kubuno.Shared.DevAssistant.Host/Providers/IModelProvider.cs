@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
 
-namespace Kubuno.Core.DevAssistant.Host.Providers
+namespace Kubuno.Shared.DevAssistant.Host.Providers
 {
     /// <summary>
     /// A model provider (docs/AI-ASSISTANT.md section 9.3). Implementations: <see cref="AnthropicProvider"/> (the

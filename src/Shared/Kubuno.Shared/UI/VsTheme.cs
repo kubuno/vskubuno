@@ -2,7 +2,7 @@ using System;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Core.UI
+namespace Kubuno.Shared.UI
 {
     /// <summary>The current Visual Studio theme, for the colors the extension defines itself (classifications, icons).</summary>
     public static class VsTheme

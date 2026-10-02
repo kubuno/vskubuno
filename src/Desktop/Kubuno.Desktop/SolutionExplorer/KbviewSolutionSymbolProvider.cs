@@ -5,12 +5,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.Logging;
-using Kubuno.Desktop.Designer.EditorFactory;
+using Kubuno.Shared.Logging;
+using Kubuno.Views.Designer.EditorFactory;
 using Kubuno.Desktop.Logic.SolutionExplorer;
-using Kubuno.Desktop.Views.Infrastructure;
-using Kubuno.Desktop.Views.Locating;
-using Kubuno.Desktop.Views.Options;
+using Kubuno.Views.Infrastructure;
+using Kubuno.Views.Locating;
+using Kubuno.Views.Options;
 using Kubuno.Rust.Extensibility;
 using Kubuno.Rust.Logic.SolutionExplorer;
 using Microsoft.VisualStudio;
@@ -45,7 +45,7 @@ namespace Kubuno.Desktop.SolutionExplorer
         private string? _executable;
         private bool _located;
 
-        public virtual string FileExtension => Kubuno.Desktop.Views.KbviewConstants.FileExtension;
+        public virtual string FileExtension => Kubuno.Views.KbviewConstants.FileExtension;
 
         public Guid NavigationLogicalView => VSConstants.LOGVIEWID.Designer_guid;
 
@@ -220,6 +220,6 @@ namespace Kubuno.Desktop.SolutionExplorer
     [Export(typeof(ISolutionSymbolProvider))]
     internal sealed class KbcontrolSolutionSymbolProvider : KbviewSolutionSymbolProvider
     {
-        public override string FileExtension => Kubuno.Desktop.Views.KbviewConstants.ControlFileExtension;
+        public override string FileExtension => Kubuno.Views.KbviewConstants.ControlFileExtension;
     }
 }

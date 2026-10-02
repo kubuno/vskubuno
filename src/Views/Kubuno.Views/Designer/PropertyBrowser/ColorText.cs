@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Registry;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>What a colour attribute holds.</summary>
     public enum ColorValueKind

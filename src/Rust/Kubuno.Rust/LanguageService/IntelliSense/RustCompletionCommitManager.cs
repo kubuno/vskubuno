@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
-using Kubuno.Core.Logic.Lsp;
+using Kubuno.Shared.Logic.Lsp;
 using Kubuno.Rust.Logic.IntelliSense;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion.Data;
@@ -217,6 +217,6 @@ namespace Kubuno.Rust.LanguageService.IntelliSense
     /// <summary>Undo labels of the completion commit (Edit &gt; Undo shows it).</summary>
     internal static class RustCompletionText
     {
-        public static string UndoDescription => Kubuno.Core.Logic.Localization.UiLanguage.IsFrench ? "Saisie semi-automatique" : "IntelliSense";
+        public static string UndoDescription => Kubuno.Shared.Logic.Localization.UiLanguage.IsFrench ? "Saisie semi-automatique" : "IntelliSense";
     }
 }

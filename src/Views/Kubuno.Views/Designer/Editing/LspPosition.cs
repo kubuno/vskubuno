@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// An LSP-style, zero-based text position: <see cref="Line"/> counts newline-terminated lines,

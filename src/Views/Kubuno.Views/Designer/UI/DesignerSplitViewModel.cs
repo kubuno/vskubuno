@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Kubuno.Desktop.Designer.UI
+namespace Kubuno.Views.Designer.UI
 {
     /// <summary>
     /// The view-mode state and its derived pane visibility, kept free of any WPF/VS SDK type so it is

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Kubuno.Core.DevAssistant.Logic.Secrets
+namespace Kubuno.Shared.DevAssistant.Logic.Secrets
 {
     /// <summary>
     /// Files the assistant never reads, attaches or writes (docs/AI-ASSISTANT.md sections 7.4 and 8.3), and the path

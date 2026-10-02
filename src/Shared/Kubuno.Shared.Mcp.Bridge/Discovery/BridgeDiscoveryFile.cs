@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace Kubuno.Core.Mcp.Bridge.Discovery
+namespace Kubuno.Shared.Mcp.Bridge.Discovery
 {
     /// <summary>
     /// Reads and writes the per-instance discovery files under

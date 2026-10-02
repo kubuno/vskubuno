@@ -12,17 +12,19 @@ namespace Kubuno.Architecture.Tests
 {
     /// <summary>
     /// docs/ARCHITECTURE.md, "Layers (as built)": the extension is split into layers whose dependencies only go down -
-    /// Core &lt;- Rust &lt;- Desktop / Web / Mobile - so a Kubuno target (desktop apps today, web modules and mobile apps
-    /// next) can be added without touching the layers below it, and the targets never depend on each other. Checked on
-    /// the project files and on the compiled assemblies.
+    /// Shared &lt;- Rust &lt;- Views &lt;- Desktop / Web / Mobile - so a Kubuno target (desktop apps today, web modules and
+    /// mobile apps next) can be added without touching the layers below it, and the targets never depend on each other.
+    /// Views holds what every target with .kbview views shares (the view designer, the .kbview language client, the .kbres
+    /// editor; docs/WEB-VIEWS.md WV-8). Checked on the project files and on the compiled assemblies.
     /// </summary>
     [TestClass]
     public sealed class LayeringTests
     {
         private enum Layer
         {
-            Core,
+            Shared,
             Rust,
+            Views,
             Desktop,
             Web,
             Mobile,
@@ -32,18 +34,20 @@ namespace Kubuno.Architecture.Tests
         /// <summary>What each layer may reference (itself included).</summary>
         private static readonly Dictionary<Layer, Layer[]> Allowed = new()
         {
-            [Layer.Core] = new[] { Layer.Core },
-            [Layer.Rust] = new[] { Layer.Core, Layer.Rust },
-            [Layer.Desktop] = new[] { Layer.Core, Layer.Rust, Layer.Desktop },
-            [Layer.Web] = new[] { Layer.Core, Layer.Rust, Layer.Web },
-            [Layer.Mobile] = new[] { Layer.Core, Layer.Rust, Layer.Mobile },
-            [Layer.Packaging] = new[] { Layer.Core, Layer.Rust, Layer.Desktop, Layer.Web, Layer.Mobile, Layer.Packaging },
+            [Layer.Shared] = new[] { Layer.Shared },
+            [Layer.Rust] = new[] { Layer.Shared, Layer.Rust },
+            [Layer.Views] = new[] { Layer.Shared, Layer.Rust, Layer.Views },
+            [Layer.Desktop] = new[] { Layer.Shared, Layer.Rust, Layer.Views, Layer.Desktop },
+            [Layer.Web] = new[] { Layer.Shared, Layer.Rust, Layer.Views, Layer.Web },
+            [Layer.Mobile] = new[] { Layer.Shared, Layer.Rust, Layer.Views, Layer.Mobile },
+            [Layer.Packaging] = new[] { Layer.Shared, Layer.Rust, Layer.Views, Layer.Desktop, Layer.Web, Layer.Mobile, Layer.Packaging },
         };
 
         /// <summary>The product layers, each with the one assembly that registers its <c>KubunoLayer</c>.</summary>
         private static readonly (Layer Layer, string Assembly, string LayerClass)[] ProductLayers =
         {
             (Layer.Rust, "Kubuno.Rust", "Kubuno.Rust.RustLayer"),
+            (Layer.Views, "Kubuno.Views", "Kubuno.Views.ViewsLayer"),
             (Layer.Desktop, "Kubuno.Desktop", "Kubuno.Desktop.DesktopLayer"),
             (Layer.Web, "Kubuno.Web", "Kubuno.Web.WebLayer"),
             (Layer.Mobile, "Kubuno.Mobile", "Kubuno.Mobile.MobileLayer"),
@@ -59,14 +63,15 @@ namespace Kubuno.Architecture.Tests
 
             if (assemblyName == "kubuno-vs-mcp")
             {
-                return Layer.Core; // Kubuno.Core.Mcp's executable name.
+                return Layer.Shared; // Kubuno.Shared.Mcp's executable name.
             }
 
             (string Prefix, Layer Layer)[] prefixes =
             {
-                ("Kubuno.Core", Layer.Core),
+                ("Kubuno.Shared", Layer.Shared),
                 ("Kubuno.Rust", Layer.Rust),
                 ("Kubuno.Cargo.MSBuild.Tasks", Layer.Rust), // Kubuno.Rust.Sdk's task assembly: its name is part of the SDK.
+                ("Kubuno.Views", Layer.Views),
                 ("Kubuno.Desktop", Layer.Desktop),
                 ("Kubuno.Web", Layer.Web),
                 ("Kubuno.Mobile", Layer.Mobile),
@@ -148,10 +153,11 @@ namespace Kubuno.Architecture.Tests
             var projects = SourceProjects().Select(p => p.Name).ToList();
             foreach (var expected in new[]
             {
-                "Kubuno.Core", "Kubuno.Core.Logic", "Kubuno.Core.Mcp", "Kubuno.Core.Mcp.Bridge",
-                "Kubuno.Core.DevAssistant", "Kubuno.Core.DevAssistant.Logic", "Kubuno.Core.DevAssistant.Host",
+                "Kubuno.Shared", "Kubuno.Shared.Logic", "Kubuno.Shared.Mcp", "Kubuno.Shared.Mcp.Bridge",
+                "Kubuno.Shared.DevAssistant", "Kubuno.Shared.DevAssistant.Logic", "Kubuno.Shared.DevAssistant.Host",
                 "Kubuno.Rust", "Kubuno.Rust.Logic", "Kubuno.Rust.Cargo", "Kubuno.Rust.Launch", "Kubuno.Rust.ProjectSystem",
                 "Kubuno.Rust.TestAdapter", "Kubuno.Rust.Debugger", "Kubuno.Rust.TemplateWizard", "Kubuno.Cargo.MSBuild.Tasks",
+                "Kubuno.Views", "Kubuno.Views.Logic",
                 "Kubuno.Desktop", "Kubuno.Desktop.Logic", "Kubuno.Desktop.ProjectSystem", "Kubuno.Desktop.TemplateWizard",
                 "Kubuno.Web", "Kubuno.Web.Logic", "Kubuno.Web.ProjectSystem", "Kubuno.Web.MSBuild.Tasks", "Kubuno.Web.TemplateWizard",
                 "Kubuno.Mobile", "Kubuno.VisualStudio",
@@ -213,11 +219,88 @@ namespace Kubuno.Architecture.Tests
             Assert.AreEqual(0, violations.Count, "Layer violations in the compiled assemblies:\n" + string.Join("\n", violations));
         }
 
+        /// <summary>
+        /// docs/WEB-VIEWS.md WV-8: the web layer reuses the view designer through the views layer, never through the desktop
+        /// layer - checked transitively on the project files (no project the web layer builds against is a desktop one,
+        /// whatever the path) and on the compiled web assemblies.
+        /// </summary>
+        [TestMethod]
+        public void The_web_layer_never_references_the_desktop_layer()
+        {
+            var violations = TargetReferences(Layer.Web, new[] { Layer.Desktop });
+            Assert.AreEqual(0, violations.Count, "The web layer reaches the desktop layer:\n" + string.Join("\n", violations));
+        }
+
+        /// <summary>The views layer is shared by every target, so it never reaches one of them, even transitively.</summary>
+        [TestMethod]
+        public void The_views_layer_never_references_a_target()
+        {
+            var violations = TargetReferences(Layer.Views, new[] { Layer.Desktop, Layer.Web, Layer.Mobile });
+            Assert.AreEqual(0, violations.Count, "The views layer reaches a target layer:\n" + string.Join("\n", violations));
+        }
+
+        /// <summary>
+        /// The projects of layer <paramref name="from"/> whose transitive project references, or whose compiled assembly's
+        /// references, reach a project or assembly of one of the <paramref name="forbidden"/> layers.
+        /// </summary>
+        private static List<string> TargetReferences(Layer from, Layer[] forbidden)
+        {
+            var violations = new List<string>();
+            var projects = SourceProjects().Where(p => LayerOf(p.Name) == from).ToList();
+            Assert.IsTrue(projects.Count > 0, "no project of the " + from + " layer");
+            foreach (var project in projects)
+            {
+                foreach (var reached in ProjectClosure(project.Path))
+                {
+                    var name = Path.GetFileNameWithoutExtension(reached);
+                    if (LayerOf(name) is { } to && forbidden.Contains(to))
+                    {
+                        violations.Add($"{project.Name} builds against {name} ({to})");
+                    }
+                }
+
+                if (BuiltAssembly(project.Path, project.AssemblyName) is { } assembly)
+                {
+                    foreach (var reference in AssemblyReferences(assembly))
+                    {
+                        if (LayerOf(reference) is { } to && forbidden.Contains(to))
+                        {
+                            violations.Add($"{project.AssemblyName} references the assembly {reference} ({to})");
+                        }
+                    }
+                }
+            }
+
+            return violations;
+        }
+
+        /// <summary>Every project reachable through the ProjectReference items of <paramref name="projectPath"/> (full paths).</summary>
+        private static IReadOnlyCollection<string> ProjectClosure(string projectPath)
+        {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var pending = new Stack<string>();
+            pending.Push(Path.GetFullPath(projectPath));
+            while (pending.Count > 0)
+            {
+                var current = pending.Pop();
+                foreach (var include in XDocument.Load(current).Descendants().Where(e => e.Name.LocalName == "ProjectReference").Select(e => (string)e.Attribute("Include")!))
+                {
+                    var reference = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(current)!, include));
+                    if (File.Exists(reference) && seen.Add(reference))
+                    {
+                        pending.Push(reference);
+                    }
+                }
+            }
+
+            return seen;
+        }
+
         [TestMethod]
         public void Pure_logic_assemblies_do_not_reference_the_Visual_Studio_SDK()
         {
             var pure = SourceProjects().Where(p => p.Name.EndsWith(".Logic", StringComparison.Ordinal) || p.Name is "Kubuno.Rust.Cargo" or "Kubuno.Rust.Launch").ToList();
-            Assert.AreEqual(7, pure.Count, "Kubuno.Core.Logic, Kubuno.Core.DevAssistant.Logic, Kubuno.Rust.Logic, Kubuno.Rust.Cargo, Kubuno.Rust.Launch, Kubuno.Desktop.Logic, Kubuno.Web.Logic");
+            Assert.AreEqual(8, pure.Count, "Kubuno.Shared.Logic, Kubuno.Shared.DevAssistant.Logic, Kubuno.Rust.Logic, Kubuno.Rust.Cargo, Kubuno.Rust.Launch, Kubuno.Views.Logic, Kubuno.Desktop.Logic, Kubuno.Web.Logic");
             foreach (var project in pure)
             {
                 var assembly = BuiltAssembly(project.Path, project.AssemblyName);
@@ -249,7 +332,7 @@ namespace Kubuno.Architecture.Tests
                     }
 
                     var baseType = reader.GetTypeReference((TypeReferenceHandle)type.BaseType);
-                    if (reader.GetString(baseType.Namespace) == "Kubuno.Core.Extensibility" && reader.GetString(baseType.Name) == "KubunoLayer")
+                    if (reader.GetString(baseType.Namespace) == "Kubuno.Shared.Extensibility" && reader.GetString(baseType.Name) == "KubunoLayer")
                     {
                         layers.Add(reader.GetString(type.Namespace) + "." + reader.GetString(type.Name));
                     }

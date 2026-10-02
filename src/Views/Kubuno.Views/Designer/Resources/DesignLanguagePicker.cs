@@ -2,12 +2,12 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.Desktop.Designer.DesignSurface;
-using Kubuno.Desktop.Resources;
+using Kubuno.Views.Designer.DesignSurface;
+using Kubuno.Views.Resources;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Resources
+namespace Kubuno.Views.Designer.Resources
 {
     /// <summary>
     /// The design-time language of the designer (docs/RESOURCES.md), in the Design | XML | Split strip: "(Default)" (the
@@ -20,7 +20,7 @@ namespace Kubuno.Desktop.Designer.Resources
         /// <summary>Adds the picker at the end of <paramref name="strip"/> when <paramref name="host"/> is a real design surface.</summary>
         public static void Attach(Panel strip, IDesignSurfaceHost host)
         {
-            if (host is not RustDesignSurfaceHost surface)
+            if (host is not IProtocolDesignSurfaceHost surface)
             {
                 return;
             }

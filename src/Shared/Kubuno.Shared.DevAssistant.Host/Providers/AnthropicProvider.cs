@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 using Anthropic;
 using Anthropic.Exceptions;
 using Anthropic.Models.Messages;
-using Kubuno.Core.DevAssistant.Logic.Credentials;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
-using ChatBlock = Kubuno.Core.DevAssistant.Logic.Protocol.ChatBlock;
-using ModelInfo = Kubuno.Core.DevAssistant.Logic.Protocol.ModelInfo;
+using Kubuno.Shared.DevAssistant.Logic.Credentials;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
+using ChatBlock = Kubuno.Shared.DevAssistant.Logic.Protocol.ChatBlock;
+using ModelInfo = Kubuno.Shared.DevAssistant.Logic.Protocol.ModelInfo;
 
-namespace Kubuno.Core.DevAssistant.Host.Providers
+namespace Kubuno.Shared.DevAssistant.Host.Providers
 {
     /// <summary>
     /// Anthropic Claude through the official C# SDK (docs/AI-ASSISTANT.md section 2.1): streaming Messages API with

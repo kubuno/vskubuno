@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Core.UI;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.Desktop.Designer.UI
+namespace Kubuno.Views.Designer.UI
 {
     /// <summary>
     /// "Choisir des éléments…" (docs/EVENTS.md EVT-7b, WinForms' "Choose Toolbox Items"): the controls the project's

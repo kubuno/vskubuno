@@ -7,7 +7,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace Kubuno.Desktop.Logic.Resources
+namespace Kubuno.Views.Logic.Resources
 {
     /// <summary>The kind of a resource entry: its element name in the <c>.kbres</c> file, and its editor category.</summary>
     public enum ResourceKind

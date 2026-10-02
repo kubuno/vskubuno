@@ -3,13 +3,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
-using Kubuno.Desktop.Designer.DesignSurface;
+using Kubuno.Views.Designer.DesignSurface;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TextManager.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.Desktop.Designer.UI
+namespace Kubuno.Views.Designer.UI
 {
     /// <summary>
     /// The whole content of <see cref="EditorFactory.DesignerWindowPane"/>: the Design/XML/Split
@@ -103,7 +103,7 @@ namespace Kubuno.Desktop.Designer.UI
             (_designTab, _xmlTab, _splitTab) = BuildTabStripButtons();
             var tabStrip = BuildTabStrip(_designTab, _xmlTab, _splitTab);
             // The design-time language (docs/RESOURCES.md): previews the view's {Res …} values in a culture of the project.
-            Kubuno.Desktop.Designer.Resources.DesignLanguagePicker.Attach(tabStrip, _designSurfaceHost);
+            Kubuno.Views.Designer.Resources.DesignLanguagePicker.Attach(tabStrip, _designSurfaceHost);
             // The zoom box (Fit, 50 %… 200 %), like the XAML designer's.
             DesignSurface.DesignZoomPicker.Attach(tabStrip, _designSurfaceHost);
             Grid.SetRow(tabStrip, 0);

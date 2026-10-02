@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.Core.Logic.Lsp
+namespace Kubuno.Shared.Logic.Lsp
 {
     /// <summary>
     /// Rewrites the <c>initialize</c> handshake between Visual Studio's LSP client and a language server, then

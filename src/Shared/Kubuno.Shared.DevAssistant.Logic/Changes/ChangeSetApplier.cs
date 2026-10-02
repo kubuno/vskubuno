@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kubuno.Core.DevAssistant.Logic.Changes
+namespace Kubuno.Shared.DevAssistant.Logic.Changes
 {
     /// <summary>
     /// Where a change set is applied: Visual Studio's text buffers in the extension (open documents, or files opened

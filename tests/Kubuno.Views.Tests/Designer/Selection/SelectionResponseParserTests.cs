@@ -1,7 +1,7 @@
-using Kubuno.Desktop.Designer.Selection;
+using Kubuno.Views.Designer.Selection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Selection
+namespace Kubuno.Views.Tests.Designer.Selection
 {
     [TestClass]
     public class SelectionResponseParserTests

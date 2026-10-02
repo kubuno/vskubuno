@@ -1,4 +1,6 @@
 using System;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.DesignSurface;
 
 namespace Kubuno.Desktop.Designer.DesignSurface
 {

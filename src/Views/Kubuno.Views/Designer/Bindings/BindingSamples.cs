@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>A sample source schema (the dialog gallery, the tests): a form with a few fields, a binding source, two converters.</summary>
     public static class BindingSamples

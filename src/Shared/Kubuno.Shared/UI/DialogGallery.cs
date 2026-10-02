@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Core.UI
+namespace Kubuno.Shared.UI
 {
     /// <summary>
     /// The dialogs Tools &gt; "Kubuno: Dialog Gallery" lists (docs/ARCHITECTURE.md, "Themed dialogs"): every layer

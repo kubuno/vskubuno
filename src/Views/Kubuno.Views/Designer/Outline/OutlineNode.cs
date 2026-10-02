@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Views.Designer.Editing;
 
-namespace Kubuno.Desktop.Designer.Outline
+namespace Kubuno.Views.Designer.Outline
 {
     /// <summary>One node of the Document Outline's tree, after <see cref="DocumentSymbolTreeBuilder"/> has assigned it a stable element id - the pure data <see cref="OutlineNodeViewModel"/> wraps for WPF binding.</summary>
     public sealed class OutlineNode

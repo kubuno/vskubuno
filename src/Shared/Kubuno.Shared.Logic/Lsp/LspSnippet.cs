@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.Core.Logic.Lsp
+namespace Kubuno.Shared.Logic.Lsp
 {
     /// <summary>One tab stop of an expanded snippet: its number (0 = final caret) and its span in the expanded text.</summary>
     public sealed class SnippetStop

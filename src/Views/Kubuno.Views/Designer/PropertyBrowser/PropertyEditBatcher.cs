@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>One attribute edit made in the Properties window: set <see cref="Name"/> to <see cref="Value"/>, or remove it when <see cref="Value"/> is null.</summary>
     public sealed class PropertyEdit

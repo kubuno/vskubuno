@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.Core.Mcp.Bridge.PipeProtocol
+namespace Kubuno.Shared.Mcp.Bridge.PipeProtocol
 {
     /// <summary>
     /// Wire framing for one JSON document per message over a <see cref="Stream"/> (a

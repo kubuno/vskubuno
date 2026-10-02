@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{C3B186ED-303A-47DA-9194-1487940D1B76}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{C3B186ED-303A-47DA-9194-1487940D1B76}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Rust", "Rust", "{457EF81F-740D-477A-B42A-31448C309D32}"
 EndProject
@@ -19,21 +19,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.VisualStudio", "src\Kubuno.VisualStudio\Kubuno.VisualStudio.csproj", "{9A6A9E2A-2B0C-4C7F-8F0F-7F7A8D9B6C11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core", "src\Core\Kubuno.Core\Kubuno.Core.csproj", "{9C31551F-795A-4B62-93CD-D35F0D91F73E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared", "src\Shared\Kubuno.Shared\Kubuno.Shared.csproj", "{9C31551F-795A-4B62-93CD-D35F0D91F73E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core.Logic", "src\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj", "{3AA9F22E-A5B8-4716-A81B-46B5CFDD3CD3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared.Logic", "src\Shared\Kubuno.Shared.Logic\Kubuno.Shared.Logic.csproj", "{3AA9F22E-A5B8-4716-A81B-46B5CFDD3CD3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core.Mcp", "src\Core\Kubuno.Core.Mcp\Kubuno.Core.Mcp.csproj", "{BE214089-0974-4C47-95EA-EB1A059EB17A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared.Mcp", "src\Shared\Kubuno.Shared.Mcp\Kubuno.Shared.Mcp.csproj", "{BE214089-0974-4C47-95EA-EB1A059EB17A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core.Mcp.Bridge", "src\Core\Kubuno.Core.Mcp.Bridge\Kubuno.Core.Mcp.Bridge.csproj", "{CB4D8D70-B802-48EE-BA00-5D9CC66A6339}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared.Mcp.Bridge", "src\Shared\Kubuno.Shared.Mcp.Bridge\Kubuno.Shared.Mcp.Bridge.csproj", "{CB4D8D70-B802-48EE-BA00-5D9CC66A6339}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core.DevAssistant", "src\Core\Kubuno.Core.DevAssistant\Kubuno.Core.DevAssistant.csproj", "{7D4C2B91-5E3A-4F8B-9C1D-2E6F8A0B3C41}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared.DevAssistant", "src\Shared\Kubuno.Shared.DevAssistant\Kubuno.Shared.DevAssistant.csproj", "{7D4C2B91-5E3A-4F8B-9C1D-2E6F8A0B3C41}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core.DevAssistant.Logic", "src\Core\Kubuno.Core.DevAssistant.Logic\Kubuno.Core.DevAssistant.Logic.csproj", "{8E5D3CA2-6F4B-4A9C-8D2E-3F7A9B1C4D52}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared.DevAssistant.Logic", "src\Shared\Kubuno.Shared.DevAssistant.Logic\Kubuno.Shared.DevAssistant.Logic.csproj", "{8E5D3CA2-6F4B-4A9C-8D2E-3F7A9B1C4D52}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core.DevAssistant.Host", "src\Core\Kubuno.Core.DevAssistant.Host\Kubuno.Core.DevAssistant.Host.csproj", "{9F6E4DB3-7A5C-4BAD-9E3F-4A8B0C2D5E63}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared.DevAssistant.Host", "src\Shared\Kubuno.Shared.DevAssistant.Host\Kubuno.Shared.DevAssistant.Host.csproj", "{9F6E4DB3-7A5C-4BAD-9E3F-4A8B0C2D5E63}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core.DevAssistant.Tests", "tests\Kubuno.Core.DevAssistant.Tests\Kubuno.Core.DevAssistant.Tests.csproj", "{A0F75EC4-8B6D-4CBE-AF40-5B9C1D3E6F74}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared.DevAssistant.Tests", "tests\Kubuno.Shared.DevAssistant.Tests\Kubuno.Shared.DevAssistant.Tests.csproj", "{A0F75EC4-8B6D-4CBE-AF40-5B9C1D3E6F74}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Rust", "src\Rust\Kubuno.Rust\Kubuno.Rust.csproj", "{AD8A66D1-43F0-42CB-9BA4-D456C2A9C3E0}"
 EndProject
@@ -67,9 +67,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Mobile", "src\Mobile
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Rust.Sdk", "sdk\Kubuno.Rust.Sdk\Kubuno.Rust.Sdk.csproj", "{421C0240-90EB-4CF9-9BE4-FA0957DE4276}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core.Tests", "tests\Kubuno.Core.Tests\Kubuno.Core.Tests.csproj", "{5E80A16A-2DFE-44F7-BAD8-CA10CAFC5FB9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared.Tests", "tests\Kubuno.Shared.Tests\Kubuno.Shared.Tests.csproj", "{5E80A16A-2DFE-44F7-BAD8-CA10CAFC5FB9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Core.Mcp.Tests", "tests\Kubuno.Core.Mcp.Tests\Kubuno.Core.Mcp.Tests.csproj", "{863F9188-7D19-4E8A-AECB-91DBB844A712}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Shared.Mcp.Tests", "tests\Kubuno.Shared.Mcp.Tests\Kubuno.Shared.Mcp.Tests.csproj", "{863F9188-7D19-4E8A-AECB-91DBB844A712}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Rust.Tests", "tests\Kubuno.Rust.Tests\Kubuno.Rust.Tests.csproj", "{B3F27179-AF7F-4395-ABB4-3FED7533225A}"
 EndProject
@@ -102,6 +102,14 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sdk", "sdk", "{FF13A09E-0E72-1904-124B-A4E979EF28D3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Web.Sdk", "sdk\Kubuno.Web.Sdk\Kubuno.Web.Sdk.csproj", "{8137E2F3-0F36-4CFD-B776-2F52C510D875}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Views", "Views", "{AAF0471B-71B3-4A4B-87B4-5E85B5BDDD47}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Views", "src\Views\Kubuno.Views\Kubuno.Views.csproj", "{A2A97E14-84B8-420F-B727-29F83CD07F9E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Views.Logic", "src\Views\Kubuno.Views.Logic\Kubuno.Views.Logic.csproj", "{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kubuno.Views.Tests", "tests\Kubuno.Views.Tests\Kubuno.Views.Tests.csproj", "{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -593,6 +601,42 @@ Global
 		{A0F75EC4-8B6D-4CBE-AF40-5B9C1D3E6F74}.Release|x64.Build.0 = Release|Any CPU
 		{A0F75EC4-8B6D-4CBE-AF40-5B9C1D3E6F74}.Release|x86.ActiveCfg = Release|Any CPU
 		{A0F75EC4-8B6D-4CBE-AF40-5B9C1D3E6F74}.Release|x86.Build.0 = Release|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Debug|x64.Build.0 = Debug|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Debug|x86.Build.0 = Debug|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Release|x64.ActiveCfg = Release|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Release|x64.Build.0 = Release|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Release|x86.ActiveCfg = Release|Any CPU
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E}.Release|x86.Build.0 = Release|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Debug|x64.Build.0 = Debug|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Debug|x86.Build.0 = Debug|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Release|x64.ActiveCfg = Release|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Release|x64.Build.0 = Release|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Release|x86.ActiveCfg = Release|Any CPU
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21}.Release|x86.Build.0 = Release|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Debug|x64.Build.0 = Debug|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Debug|x86.Build.0 = Debug|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Release|x64.ActiveCfg = Release|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Release|x64.Build.0 = Release|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Release|x86.ActiveCfg = Release|Any CPU
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -642,5 +686,9 @@ Global
 		{8E5D3CA2-6F4B-4A9C-8D2E-3F7A9B1C4D52} = {C3B186ED-303A-47DA-9194-1487940D1B76}
 		{9F6E4DB3-7A5C-4BAD-9E3F-4A8B0C2D5E63} = {C3B186ED-303A-47DA-9194-1487940D1B76}
 		{A0F75EC4-8B6D-4CBE-AF40-5B9C1D3E6F74} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{AAF0471B-71B3-4A4B-87B4-5E85B5BDDD47} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{A2A97E14-84B8-420F-B727-29F83CD07F9E} = {AAF0471B-71B3-4A4B-87B4-5E85B5BDDD47}
+		{8B3CCAD0-53AB-45F1-BA10-213BEEBF8E21} = {AAF0471B-71B3-4A4B-87B4-5E85B5BDDD47}
+		{F7CA5D6D-3871-4959-9E65-EBE0053BF3D0} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

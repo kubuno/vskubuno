@@ -5,7 +5,7 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace Kubuno.Desktop.Resources.Editor
+namespace Kubuno.Views.Resources.Editor
 {
     /// <summary>Writes the blank files "New Image" / "New Icon" create (before Visual Studio's image editor opens them).</summary>
     public static class BlankResources

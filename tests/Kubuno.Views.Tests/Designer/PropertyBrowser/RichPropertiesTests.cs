@@ -1,12 +1,12 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 
-namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
+namespace Kubuno.Views.Tests.Designer.PropertyBrowser
 {
     /// <summary>docs/EVENTS.md, "WinForms-rich property sets": the Properties window's rows for the control hierarchy's properties.</summary>
     [TestClass]
@@ -211,10 +211,10 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
         public void Editors_FollowTheRegistry()
         {
             var (button, _) = Create("0", "Button");
-            Assert.IsInstanceOfType<KbviewColorEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)Row(button, "BackColor").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
-            Assert.IsInstanceOfType<KbviewFontEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)Row(button, "Font").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
-            Assert.IsInstanceOfType<KbviewImageEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)Row(button, "BackgroundImage").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
-            Assert.IsInstanceOfType<KbviewCursorEditor>(((Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor)Row(button, "Cursor").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
+            Assert.IsInstanceOfType<KbviewColorEditor>(((Kubuno.Views.Designer.Bindings.KbviewBindableEditor)Row(button, "BackColor").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
+            Assert.IsInstanceOfType<KbviewFontEditor>(((Kubuno.Views.Designer.Bindings.KbviewBindableEditor)Row(button, "Font").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
+            Assert.IsInstanceOfType<KbviewImageEditor>(((Kubuno.Views.Designer.Bindings.KbviewBindableEditor)Row(button, "BackgroundImage").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
+            Assert.IsInstanceOfType<KbviewCursorEditor>(((Kubuno.Views.Designer.Bindings.KbviewBindableEditor)Row(button, "Cursor").GetEditor(typeof(System.Drawing.Design.UITypeEditor))!).Inner);
             Assert.IsTrue(new KbviewColorEditor().GetPaintValueSupported(null));
             Assert.AreEqual(FontText.AmbientDefault, Row(button, "Font").GetValue(button), "the ambient font, greyed");
             Assert.IsFalse(Row(button, "Font").ShouldSerializeValue(button));
@@ -266,7 +266,7 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
             text.SetValue(value, "Status");
             parts.Single(p => p.Name == "Enabled").SetValue(value, "{Binding CanSave, Mode=TwoWay}");
             CollectionAssert.AreEqual(new[] { "set 0 Text={Binding Status}", "set 0 Enabled={Binding CanSave, Mode=TwoWay}" }, host.Calls);
-            Assert.IsInstanceOfType<Kubuno.Desktop.Designer.Bindings.KbviewBindableEditor>(text.GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
+            Assert.IsInstanceOfType<Kubuno.Views.Designer.Bindings.KbviewBindableEditor>(text.GetEditor(typeof(System.Drawing.Design.UITypeEditor)));
         }
 
         [TestMethod]
@@ -326,8 +326,8 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
             var text = "ab\r\ncd\nef\rgh";
             foreach (var offset in new[] { 0, 2, 4, 5, 7, 8, 10, 11, text.Length })
             {
-                var position = Kubuno.Desktop.Designer.Editing.LspPositionMapper.FromOffset(text, offset);
-                Assert.AreEqual(offset, Kubuno.Desktop.Designer.Editing.LspPositionMapper.ToOffset(text, position), offset.ToString());
+                var position = Kubuno.Views.Designer.Editing.LspPositionMapper.FromOffset(text, offset);
+                Assert.AreEqual(offset, Kubuno.Views.Designer.Editing.LspPositionMapper.ToOffset(text, position), offset.ToString());
             }
         }
 

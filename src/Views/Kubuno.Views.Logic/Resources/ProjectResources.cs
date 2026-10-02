@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Kubuno.Desktop.Logic.Resources
+namespace Kubuno.Views.Logic.Resources
 {
     /// <summary>One resource of a project, as the Select Resource dialog, the icon picker and F12 see it.</summary>
     public sealed class ResourceItem

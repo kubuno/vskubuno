@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Kubuno.Desktop.Logic.Data;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Kubuno.Desktop.Options;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Imaging;
@@ -255,7 +255,7 @@ namespace Kubuno.Desktop.DataExplorer
         internal static async Task<DataExplorerToolWindow?> ShowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var package = Kubuno.Core.KubunoHost.Package;
+            var package = Kubuno.Shared.KubunoHost.Package;
             if (package is null)
             {
                 return null;

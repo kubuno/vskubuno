@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
 
-namespace Kubuno.Core.DevAssistant.Logic.Conversations
+namespace Kubuno.Shared.DevAssistant.Logic.Conversations
 {
     /// <summary>A conversation as kept by the extension: masked turns only, plus its running cost.</summary>
     public sealed class Conversation

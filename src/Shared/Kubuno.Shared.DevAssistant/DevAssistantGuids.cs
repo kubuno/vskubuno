@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Core.DevAssistant
+namespace Kubuno.Shared.DevAssistant
 {
     /// <summary>Identifiers of the Dev Assistant: tool window and its own command set (KubunoCommands.vsct, guidKubunoDevAssistantCmdSet).</summary>
     public static class DevAssistantGuids

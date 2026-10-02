@@ -52,7 +52,7 @@ namespace Kubuno.Desktop.LanguageService.Sql
             }
             catch (Exception exception) when (exception is ArgumentException or System.IO.IOException or UnauthorizedAccessException or NotSupportedException)
             {
-                Kubuno.Core.Logging.KubunoLog.WriteLine("SQL IntelliSense: no schema for " + path + ": " + exception.Message);
+                Kubuno.Shared.Logging.KubunoLog.WriteLine("SQL IntelliSense: no schema for " + path + ": " + exception.Message);
                 source = null;
             }
 

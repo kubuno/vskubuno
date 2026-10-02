@@ -112,8 +112,8 @@ namespace Kubuno.Desktop.LanguageService.Sql
     {
         protected SqlFormat(string name, string english, string french)
         {
-            DisplayName = Designer.DesignerText.IsFrench ? "Kubuno SQL - " + french : "Kubuno SQL - " + english;
-            ForegroundColor = SqlClassificationTypes.DefaultColor(name, Kubuno.Core.UI.VsTheme.IsDark());
+            DisplayName = Kubuno.Views.Designer.DesignerText.IsFrench ? "Kubuno SQL - " + french : "Kubuno SQL - " + english;
+            ForegroundColor = SqlClassificationTypes.DefaultColor(name, Kubuno.Shared.UI.VsTheme.IsDark());
         }
     }
 
@@ -352,7 +352,7 @@ namespace Kubuno.Desktop.LanguageService.Sql
         private void Apply()
         {
             var map = FormatMapService.GetClassificationFormatMap("text");
-            var dark = Kubuno.Core.UI.VsTheme.IsDark();
+            var dark = Kubuno.Shared.UI.VsTheme.IsDark();
             foreach (var (name, darkColor, lightColor) in SqlClassificationTypes.Colors)
             {
                 var type = Registry.GetClassificationType(name);

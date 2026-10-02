@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Kubuno.Desktop.Logic.Data;
-using Kubuno.Core.Settings;
+using Kubuno.Shared.Settings;
 using Microsoft.VisualStudio.Shell;
 
 namespace Kubuno.Desktop.Options
@@ -69,7 +69,7 @@ namespace Kubuno.Desktop.Options
                 ThreadHelper.ThrowIfNotOnUIThread();
                 try
                 {
-                    if (Kubuno.Core.KubunoHost.GetDialogPage<DataOptionsPage>() is DataOptionsPage page)
+                    if (Kubuno.Shared.KubunoHost.GetDialogPage<DataOptionsPage>() is DataOptionsPage page)
                     {
                         return page;
                     }

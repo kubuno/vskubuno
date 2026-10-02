@@ -1,9 +1,9 @@
 using System;
 using System.ComponentModel.Composition;
 using System.Threading.Tasks;
-using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Shared.Logic.QuickInfo;
 using Kubuno.Rust.Logic.QuickInfo;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;

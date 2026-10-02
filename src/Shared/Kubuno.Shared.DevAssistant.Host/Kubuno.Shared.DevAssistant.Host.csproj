@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Core layer: kubuno-dev-assistant.exe, the provider host of the Kubuno Dev Assistant (docs/AI-ASSISTANT.md section 9.1).
-    A child process of devenv.exe started by Kubuno.Core.DevAssistant, speaking JSON-RPC lines on its stdio. It owns the
+    Shared layer: kubuno-dev-assistant.exe, the provider host of the Kubuno Dev Assistant (docs/AI-ASSISTANT.md section 9.1).
+    A child process of devenv.exe started by Kubuno.Shared.DevAssistant, speaking JSON-RPC lines on its stdio. It owns the
     providers (the official Anthropic C# SDK, and the offline fake provider replaying recorded responses), the streaming
     tool loop, prompt caching, cost accounting and the cost cap, cancellation, and reads the API key itself from the
     Windows Credential Manager.
@@ -16,7 +16,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Core.DevAssistant.Host</RootNamespace>
+    <RootNamespace>Kubuno.Shared.DevAssistant.Host</RootNamespace>
     <AssemblyName>kubuno-dev-assistant</AssemblyName>
     <OutputType>Exe</OutputType>
     <InvariantGlobalization>true</InvariantGlobalization>
@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kubuno.Core.DevAssistant.Logic\Kubuno.Core.DevAssistant.Logic.csproj" />
+    <ProjectReference Include="..\Kubuno.Shared.DevAssistant.Logic\Kubuno.Shared.DevAssistant.Logic.csproj" />
   </ItemGroup>
 
   <ItemGroup>

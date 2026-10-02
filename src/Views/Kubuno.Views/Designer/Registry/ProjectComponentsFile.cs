@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Logging;
 using Newtonsoft.Json.Linq;
 
-namespace Kubuno.Desktop.Designer.Registry
+namespace Kubuno.Views.Designer.Registry
 {
     /// <summary>
     /// The registry a project's design surface exports after a design build (docs/EVENTS.md EVT-7b,

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Globalization;
-using Kubuno.Desktop.Logic.Resources;
+using Kubuno.Views.Logic.Resources;
 
-namespace Kubuno.Desktop.Resources.Editor
+namespace Kubuno.Views.Resources.Editor
 {
     /// <summary>The facts the editor shows about a binary entry (tooltip, details line).</summary>
     public sealed class ResourceDetails

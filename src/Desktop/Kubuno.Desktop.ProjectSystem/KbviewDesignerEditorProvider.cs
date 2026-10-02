@@ -28,7 +28,7 @@ namespace Kubuno.Desktop.ProjectSystem
     [Order(1000)]
     internal sealed class KbviewDesignerEditorProvider : IProjectSpecificEditorProvider
     {
-        /// <summary>Kubuno.Desktop.Designer's <c>DesignerConstants.EditorFactoryGuidString</c> (this assembly does not reference the designer library - keep in sync).</summary>
+        /// <summary>Kubuno.Views.Designer's <c>DesignerConstants.EditorFactoryGuidString</c> (this assembly does not reference the designer library - keep in sync).</summary>
         internal static readonly Guid DesignerEditorFactory = new Guid("1DCF5C91-A51E-4DE8-B066-680D6636C094");
 
         /// <summary><c>VSConstants.LOGVIEWID_Designer</c> (verified by reflection on Microsoft.VisualStudio.Shell.15.0).</summary>

@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Registry;
 
-namespace Kubuno.Desktop.Designer.Properties
+namespace Kubuno.Views.Designer.Properties
 {
     /// <summary>Raised when a row's "create handler" hook fires - see <see cref="EventRowViewModel.CreateHandlerRequested"/> for the exact scope.</summary>
     public sealed class CreateHandlerRequestedEventArgs : EventArgs

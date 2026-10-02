@@ -1,11 +1,11 @@
 using System;
 using System.IO;
 using System.Linq;
-using Kubuno.Core.Logic.Localization;
-using Kubuno.Core.Logic.Remote;
+using Kubuno.Shared.Logic.Localization;
+using Kubuno.Shared.Logic.Remote;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Core.Tests.Remote
+namespace Kubuno.Shared.Tests.Remote
 {
     /// <summary>The remote Linux host: settings, the ssh command lines, known_hosts, the failure messages and the tunnel decision (docs/WEB.md, "The development database").</summary>
     [TestClass]

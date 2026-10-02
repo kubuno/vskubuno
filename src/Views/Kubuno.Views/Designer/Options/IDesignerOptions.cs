@@ -1,10 +1,10 @@
-namespace Kubuno.Desktop.Designer.Options
+namespace Kubuno.Views.Designer.Options
 {
     /// <summary>
     /// The options the designer's own registration logic reads. Implemented by
     /// <see cref="KbviewDesignerOptionsPage"/> (a <c>Microsoft.VisualStudio.Shell.DialogPage</c>), kept
     /// as a separate interface for the same reason
-    /// <c>Kubuno.Desktop.Views.Options.IKubunoViewsOptions</c> is: so <see cref="DesignerOptionsHost"/>
+    /// <c>Kubuno.Views.Options.IKubunoViewsOptions</c> is: so <see cref="DesignerOptionsHost"/>
     /// does not have to name the concrete <c>DialogPage</c> type at every call site.
     /// </summary>
     public interface IDesignerOptions

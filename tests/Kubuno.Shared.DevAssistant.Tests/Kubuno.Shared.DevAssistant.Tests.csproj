@@ -12,7 +12,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <IsPackable>false</IsPackable>
-    <RootNamespace>Kubuno.Core.DevAssistant.Tests</RootNamespace>
+    <RootNamespace>Kubuno.Shared.DevAssistant.Tests</RootNamespace>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
@@ -23,8 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Core\Kubuno.Core.DevAssistant.Logic\Kubuno.Core.DevAssistant.Logic.csproj" />
-    <ProjectReference Include="..\..\src\Core\Kubuno.Core.DevAssistant.Host\Kubuno.Core.DevAssistant.Host.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Kubuno.Shared.DevAssistant.Logic\Kubuno.Shared.DevAssistant.Logic.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Kubuno.Shared.DevAssistant.Host\Kubuno.Shared.DevAssistant.Host.csproj" />
   </ItemGroup>
 
   <ItemGroup>

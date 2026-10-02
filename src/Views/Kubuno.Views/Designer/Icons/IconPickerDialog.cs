@@ -6,13 +6,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using Kubuno.Core.UI;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.UI;
+using Kubuno.Shared.UI;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.UI;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Icons
+namespace Kubuno.Views.Designer.Icons
 {
     /// <summary>
     /// The icon picker (docs/ICONS.md), opened by every icon property of the Properties window (<c>Icon</c>,

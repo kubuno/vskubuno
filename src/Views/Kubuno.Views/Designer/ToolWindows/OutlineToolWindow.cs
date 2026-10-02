@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
-using Kubuno.Desktop.Designer.Outline;
+using Kubuno.Views.Designer.Outline;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.ToolWindows
+namespace Kubuno.Views.Designer.ToolWindows
 {
     /// <summary>
     /// <c>View &gt; Other Windows &gt; Kubuno View Outline</c> (INTEGRATION.md §9 point 6: "the same

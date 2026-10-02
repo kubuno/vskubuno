@@ -144,7 +144,7 @@ namespace Kubuno.Desktop.TemplateWizard
         public static string? Ask(string className, IReadOnlyList<string> views, string projectDirectory, bool userControl)
         {
             var french = string.Equals(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, "fr", StringComparison.OrdinalIgnoreCase);
-            var window = new Kubuno.Core.UI.ThemedDialog
+            var window = new Kubuno.Shared.UI.ThemedDialog
             {
                 Title = french ? "Sélecteur d'héritage" : "Inheritance Picker",
                 Width = 460,
@@ -162,7 +162,7 @@ namespace Kubuno.Desktop.TemplateWizard
             var cancel = new Button { Content = french ? "Annuler" : "Cancel", IsCancel = true };
             ok.Click += (_, _) => window.DialogResult = true;
             list.MouseDoubleClick += (_, _) => window.DialogResult = list.SelectedItem is not null;
-            StackPanel buttons = Kubuno.Core.UI.ThemedControls.ButtonRow(ok, cancel);
+            StackPanel buttons = Kubuno.Shared.UI.ThemedControls.ButtonRow(ok, cancel);
             var root = new DockPanel { Margin = new Thickness(12) };
             var kind = userControl ? (french ? "le contrôle utilisateur" : "the user control") : (french ? "le formulaire" : "the form");
             var text = views.Count == 0

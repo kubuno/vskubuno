@@ -4,8 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Kubuno.Desktop.Logic.Overrides;
-using Kubuno.Desktop.Designer;
-using Kubuno.Core.UI;
+using Kubuno.Views.Designer;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.PlatformUI;
 
 namespace Kubuno.Desktop.LanguageService.Overrides

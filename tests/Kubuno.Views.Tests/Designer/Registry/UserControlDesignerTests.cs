@@ -1,13 +1,13 @@
 using System.Drawing;
 using System.IO;
-using Kubuno.Desktop.Designer;
-using Kubuno.Desktop.Designer.DesignSurface;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Toolbox;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.DesignSurface;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Toolbox;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Registry
+namespace Kubuno.Views.Tests.Designer.Registry
 {
     /// <summary>User controls in the designer (docs/EVENTS.md, "User controls"): what the registry export tells the IDE.</summary>
     [TestClass]
@@ -72,10 +72,10 @@ namespace Kubuno.Desktop.Tests.Designer.Registry
         public void The_designer_opens_in_the_language_the_application_starts_in()
         {
             var fr = System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
-            Assert.AreEqual("fr", RustDesignSurfaceHost.DefaultDesignCulture(new[] { "de", "fr" }, fr));
-            Assert.AreEqual("fr-FR", RustDesignSurfaceHost.DefaultDesignCulture(new[] { "fr", "fr-FR" }, fr));
-            Assert.AreEqual("fr-CA", RustDesignSurfaceHost.DefaultDesignCulture(new[] { "fr-CA" }, fr));
-            Assert.AreEqual(string.Empty, RustDesignSurfaceHost.DefaultDesignCulture(new[] { "de" }, fr), "no resources in that language: the neutral values");
+            Assert.AreEqual("fr", DesignSurfaceResourcesProtocol.DefaultDesignCulture(new[] { "de", "fr" }, fr));
+            Assert.AreEqual("fr-FR", DesignSurfaceResourcesProtocol.DefaultDesignCulture(new[] { "fr", "fr-FR" }, fr));
+            Assert.AreEqual("fr-CA", DesignSurfaceResourcesProtocol.DefaultDesignCulture(new[] { "fr-CA" }, fr));
+            Assert.AreEqual(string.Empty, DesignSurfaceResourcesProtocol.DefaultDesignCulture(new[] { "de" }, fr), "no resources in that language: the neutral values");
         }
 
         [TestMethod]

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Kubuno.Core.Logic.QuickInfo
+namespace Kubuno.Shared.Logic.QuickInfo
 {
     /// <summary>
     /// What a run of QuickInfo text stands for. The VSIX maps each value onto an editor classification

@@ -48,16 +48,18 @@
           One MefComponent asset per assembly that exports MEF parts (docs/ARCHITECTURE.md, "Layers (as built)"):
           Visual Studio only composes the assemblies a manifest names - composition from %CurrentProject% alone was
           live-verified NOT sufficient for kubuno-views-ls.exe to start for a .kbview file when its language client
-          lived in another assembly. Core exports nothing today; the Web and Mobile layers are listed already so their
+          lived in another assembly. Shared exports nothing today; the Web and Mobile layers are listed already so their
           first MEF part needs no manifest change.
         -->
-        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Core" Path="|Kubuno.Core|" />
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Shared" Path="|Kubuno.Shared|" />
         <!-- Rust layer: rust-analyzer, IntelliSense, Cargo workspaces... -->
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Rust" Path="|Kubuno.Rust|" />
         <!-- docs/RSPROJ.md work package 3: CPS exports of the .rsproj project type (the counterpart of
              Microsoft.VisualStudio.JavaScript.ProjectSystem.dll's own MefComponent asset). -->
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Rust.ProjectSystem" Path="|Kubuno.Rust.ProjectSystem|" />
-        <!-- Desktop layer: the .kbview language client and content type, .kbview IntelliSense in Rust files, SQL in Rust strings... -->
+        <!-- Views layer: the .kbview language client and content type, F12 on a resource name in Rust... -->
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Views" Path="|Kubuno.Views|" />
+        <!-- Desktop layer: .kbview IntelliSense in Rust files, SQL in Rust strings, override members... -->
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Desktop" Path="|Kubuno.Desktop|" />
         <!-- The desktop target's CPS exports in a .rsproj (the .kbview default editor and icon). -->
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Desktop.ProjectSystem" Path="|Kubuno.Desktop.ProjectSystem|" />

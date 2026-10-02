@@ -13,8 +13,8 @@ using Kubuno.Desktop.Logic.Data;
 using Kubuno.Desktop.Logic.DataSources;
 using Kubuno.Desktop.Logic.Sql;
 using Kubuno.Desktop.DataExplorer;
-using Kubuno.Desktop.Designer.DesignSurface;
-using Kubuno.Core.Logging;
+using Kubuno.Views.Designer.DesignSurface;
+using Kubuno.Shared.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Imaging;
@@ -346,7 +346,7 @@ namespace Kubuno.Desktop.DataSources
             var open = ExternalDesignerDrop.OpenDocuments;
             var target = active != null && open.Any(p => string.Equals(p, active, StringComparison.OrdinalIgnoreCase)) ? active : open.FirstOrDefault();
             var schema = target is null ? null : ExternalDesignerDrop.BindingSourcesOf(target);
-            _control.ShowViewModel(schema?.Context.Label ?? string.Empty, schema?.Context.Members ?? Array.Empty<Designer.Bindings.BindingMember>());
+            _control.ShowViewModel(schema?.Context.Label ?? string.Empty, schema?.Context.Members ?? Array.Empty<Kubuno.Views.Designer.Bindings.BindingMember>());
         }
 
         /// <summary>The crate of the active document, else of the Solution Explorer selection.</summary>
@@ -539,7 +539,7 @@ namespace Kubuno.Desktop.DataSources
 
             var data = new DataObject();
             // The design surface's own drop target understands Toolbox items only: the placeholder gives the drop feedback and point.
-            data.SetData(Designer.Toolbox.ToolboxItemFormat.FormatName, new MemoryStream(Designer.Toolbox.ToolboxItemFormat.Encode(ExternalDesignerDrop.MarkerComponent)));
+            data.SetData(Kubuno.Views.Designer.Toolbox.ToolboxItemFormat.FormatName, new MemoryStream(Kubuno.Views.Designer.Toolbox.ToolboxItemFormat.Encode(ExternalDesignerDrop.MarkerComponent)));
             var payload = node.Member is { } member
                 ? new JsonObject { ["member"] = member.Path }
                 : new JsonObject { ["kbdata"] = node.KbdataPath, ["table"] = node.Table!.Name, ["column"] = node.Column?.Name };
@@ -661,7 +661,7 @@ namespace Kubuno.Desktop.DataSources
         internal static async Task<DataSourcesToolWindow?> ShowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var package = Kubuno.Core.KubunoHost.Package;
+            var package = Kubuno.Shared.KubunoHost.Package;
             if (package is null)
             {
                 return null;
@@ -719,11 +719,11 @@ namespace Kubuno.Desktop.DataSources
                 && DataSourceDropPlanner.FindConnection(outline, _source.Connection) is { } connection
                 && DataSourceDropPlanner.FindAdapter(outline, connection, _table.Name) is { } adapter
                 && DataSourceDropPlanner.FindBindingSource(outline, adapter) is { } bindingSource
-                && Designer.Bindings.BindingDropPlanner.TargetProperty(component, Designer.Bindings.BindingShape.Text) is { } property)
+                && Designer.Bindings.BindingDropPlanner.TargetProperty(component, Kubuno.Views.Designer.Bindings.BindingShape.Text) is { } property)
             {
                 var expression = "{Binding Source=" + bindingSource + ", Path=" + _column + (property is "Text" or "Value" or "Checked" or "Date" or "SelectedValue" ? ", Mode=TwoWay" : string.Empty) + "}";
                 error = null;
-                return new ExternalDropResult(Array.Empty<ExternalDropInsertion>(), Designer.Bindings.BindingStrings.DroppedOn(_table.Name + "." + _column, property, target.XName ?? target.Name), target.Id)
+                return new ExternalDropResult(Array.Empty<ExternalDropInsertion>(), Kubuno.Views.Designer.Bindings.BindingStrings.DroppedOn(_table.Name + "." + _column, property, target.XName ?? target.Name), target.Id)
                 {
                     AttributeEdits = new[] { (target.Id, property, expression) },
                 };
@@ -747,16 +747,16 @@ namespace Kubuno.Desktop.DataSources
     /// </summary>
     internal sealed class ViewModelDropSource : IExternalDropSource
     {
-        private readonly Designer.Bindings.BindingMember _member;
+        private readonly Kubuno.Views.Designer.Bindings.BindingMember _member;
 
-        public ViewModelDropSource(Designer.Bindings.BindingMember member)
+        public ViewModelDropSource(Kubuno.Views.Designer.Bindings.BindingMember member)
         {
             _member = member;
         }
 
         public ExternalDropResult? Plan(ExternalDropRequest request, out string? error)
         {
-            var plan = Designer.Bindings.BindingDropPlanner.Plan(request.DocumentText, request.Registry ?? Designer.Registry.ComponentRegistry.Empty, _member, request.ParentId, request.X, request.Y, out error);
+            var plan = Designer.Bindings.BindingDropPlanner.Plan(request.DocumentText, request.Registry ?? Kubuno.Views.Designer.Registry.ComponentRegistry.Empty, _member, request.ParentId, request.X, request.Y, out error);
             if (plan is null)
             {
                 return null;

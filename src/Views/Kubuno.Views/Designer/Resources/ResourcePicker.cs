@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Kubuno.Desktop.Logic.Resources;
+using Kubuno.Views.Logic.Resources;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Resources
+namespace Kubuno.Views.Designer.Resources
 {
     /// <summary>Which resources a picker offers.</summary>
     public enum ResourceKindFilter

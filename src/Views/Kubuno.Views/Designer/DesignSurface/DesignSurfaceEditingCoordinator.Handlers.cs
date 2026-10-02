@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.Handlers;
-using Kubuno.Desktop.Designer.Handlers.Infrastructure;
-using Kubuno.Desktop.Designer.Selection;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.Handlers;
+using Kubuno.Views.Designer.Handlers.Infrastructure;
+using Kubuno.Views.Designer.Selection;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// The handler commands beyond creation (docs/EVENTS.md §5.3/§5.5, EVT-5): the Events tab row's dropdown of

@@ -6,11 +6,11 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
-using Kubuno.Core.DevAssistant.Logic.Changes;
-using Kubuno.Core.UI;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.Core.DevAssistant.UI
+namespace Kubuno.Shared.DevAssistant.UI
 {
     /// <summary>
     /// « Modifications proposées » (docs/AI-ASSISTANT.md section 5.5): the files of a change set and, for the selected

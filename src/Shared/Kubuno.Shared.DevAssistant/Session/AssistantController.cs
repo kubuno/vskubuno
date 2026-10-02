@@ -8,28 +8,28 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE80;
-using Kubuno.Core.DevAssistant.Changes;
-using Kubuno.Core.DevAssistant.Commands;
-using Kubuno.Core.DevAssistant.Extensibility;
-using Kubuno.Core.DevAssistant.Host;
-using Kubuno.Core.DevAssistant.Logic.Changes;
-using Kubuno.Core.DevAssistant.Logic.Conversations;
-using Kubuno.Core.DevAssistant.Logic.Prompts;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
-using Kubuno.Core.DevAssistant.Logic.Secrets;
-using Kubuno.Core.DevAssistant.Logic.Tools;
-using Kubuno.Core.DevAssistant.References;
-using Kubuno.Core.DevAssistant.Settings;
-using Kubuno.Core.DevAssistant.Tools;
-using Kubuno.Core.Logging;
-using Kubuno.Core.Mcp.Bridge;
-using Kubuno.Core.Mcp.Bridge.Contracts;
+using Kubuno.Shared.DevAssistant.Changes;
+using Kubuno.Shared.DevAssistant.Commands;
+using Kubuno.Shared.DevAssistant.Extensibility;
+using Kubuno.Shared.DevAssistant.Host;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Logic.Conversations;
+using Kubuno.Shared.DevAssistant.Logic.Prompts;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Secrets;
+using Kubuno.Shared.DevAssistant.Logic.Tools;
+using Kubuno.Shared.DevAssistant.References;
+using Kubuno.Shared.DevAssistant.Settings;
+using Kubuno.Shared.DevAssistant.Tools;
+using Kubuno.Shared.Logging;
+using Kubuno.Shared.Mcp.Bridge;
+using Kubuno.Shared.Mcp.Bridge.Contracts;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
-namespace Kubuno.Core.DevAssistant.Session
+namespace Kubuno.Shared.DevAssistant.Session
 {
     /// <summary>What the controller tells the tool window (always on the UI thread).</summary>
     internal interface IAssistantView
@@ -120,16 +120,16 @@ namespace Kubuno.Core.DevAssistant.Session
             var dte = (DTE2?)await AsyncServiceProvider.GlobalProvider.GetServiceAsync(typeof(SDTE));
             if (dte is not null)
             {
-                _context = new Kubuno.Core.Mcp.Bridge.Dte.DteVsContextProvider(dte);
+                _context = new Kubuno.Shared.Mcp.Bridge.Dte.DteVsContextProvider(dte);
             }
 
             _tools = new List<IDevAssistantTool>();
             _references = new List<IDevAssistantReferenceProvider>();
-            _commands = new List<DevAssistantCommand>(new CoreCommands().GetCommands());
+            _commands = new List<DevAssistantCommand>(new SharedCommands().GetCommands());
             if (_context is not null)
             {
-                _tools.AddRange(CoreTools.Create(_context));
-                _references.Add(new CoreReferences(_context));
+                _tools.AddRange(SharedTools.Create(_context));
+                _references.Add(new SharedReferences(_context));
             }
 
             if (await AsyncServiceProvider.GlobalProvider.GetServiceAsync(typeof(SComponentModel)) is IComponentModel componentModel)
@@ -415,7 +415,7 @@ namespace Kubuno.Core.DevAssistant.Session
 
                 var system = new List<SystemPart>
                 {
-                    new SystemPart { Text = CoreCommands.RulesDigest(), CacheBreakpoint = true },
+                    new SystemPart { Text = SharedCommands.RulesDigest(), CacheBreakpoint = true },
                 };
                 if (command is not null && command.Digest.Length > 0)
                 {

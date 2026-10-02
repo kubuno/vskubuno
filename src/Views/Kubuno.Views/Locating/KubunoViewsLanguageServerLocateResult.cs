@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Desktop.Views.Locating
+namespace Kubuno.Views.Locating
 {
     /// <summary>
     /// Outcome of <see cref="KubunoViewsLanguageServerLocator.Locate"/>: either a usable path and

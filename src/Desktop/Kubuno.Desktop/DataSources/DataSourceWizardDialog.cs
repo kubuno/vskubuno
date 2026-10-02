@@ -9,7 +9,7 @@ using System.Windows.Input;
 using Kubuno.Desktop.Logic.Data;
 using Kubuno.Desktop.Logic.DataSources;
 using Kubuno.Desktop.DataExplorer;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;

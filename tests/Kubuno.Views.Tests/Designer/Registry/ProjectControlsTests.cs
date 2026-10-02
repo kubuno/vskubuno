@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using Kubuno.Desktop.Designer.DesignSurface;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Toolbox;
+using Kubuno.Views.Designer.DesignSurface;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Toolbox;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 
-namespace Kubuno.Desktop.Tests.Designer.Registry
+namespace Kubuno.Views.Tests.Designer.Registry
 {
     /// <summary>docs/EVENTS.md EVT-7b: the project's own controls in the designer (registry, Properties window, Toolbox, surface).</summary>
     [TestClass]

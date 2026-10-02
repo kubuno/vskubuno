@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Core layer (docs/ARCHITECTURE.md, "Layers (as built)"). Multi-targeted so the SAME contract (DTOs,
+    Shared layer (docs/ARCHITECTURE.md, "Layers (as built)"). Multi-targeted so the SAME contract (DTOs,
     JSON-RPC-ish pipe framing, dispatcher, discovery-file format) is compiled twice:
 
-      - net48:  the flavor Kubuno.Core (in-proc devenv.exe, KubunoLayerHost starts the bridge) loads. Only this
+      - net48:  the flavor Kubuno.Shared (in-proc devenv.exe, KubunoLayerHost starts the bridge) loads. Only this
                 flavor compiles DteVsContextProvider.cs, because EnvDTE/EnvDTE80 are Framework-only
                 COM interop assemblies with no net8.0 assets (see the PackageReference Condition
                 below) - pulling them into the net8.0 build would break restore for anything
-                referencing this project from net8.0 (notably Kubuno.Core.Mcp and its tests).
-      - net8.0: the flavor Kubuno.Core.Mcp (the standalone MCP server exe, net8.0) and
-                tests/Kubuno.Core.Mcp.Tests reference. It gets the pipe client, the framing/dispatch
+                referencing this project from net8.0 (notably Kubuno.Shared.Mcp and its tests).
+      - net8.0: the flavor Kubuno.Shared.Mcp (the standalone MCP server exe, net8.0) and
+                tests/Kubuno.Shared.Mcp.Tests reference. It gets the pipe client, the framing/dispatch
                 logic and the discovery-file reader/writer - everything except the DTE-specific
                 reference implementation - so the wire contract is never duplicated between the
                 exe and the in-proc bridge, and it is unit-testable with plain `dotnet test`
@@ -23,18 +23,18 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Core.Mcp.Bridge</RootNamespace>
-    <AssemblyName>Kubuno.Core.Mcp.Bridge</AssemblyName>
+    <RootNamespace>Kubuno.Shared.Mcp.Bridge</RootNamespace>
+    <AssemblyName>Kubuno.Shared.Mcp.Bridge</AssemblyName>
   </PropertyGroup>
 
   <!-- net8.0 needs no System.Text.Json package: it ships in the shared framework. net48 gets it transitively from Microsoft.VisualStudio.SDK below (see its comment). -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <!--
-      Same package versions as src/Core/Kubuno.Core/Kubuno.Core.csproj, so the in-proc load inside
+      Same package versions as src/Shared/Kubuno.Shared/Kubuno.Shared.csproj, so the in-proc load inside
       devenv.exe binds against the identical EnvDTE/EnvDTE80 surface the rest of the extension uses.
       ExcludeAssets=runtime: at runtime inside devenv.exe these are resolved against the host's own
       copies, never shipped standalone (the VSIX is packaged by src/Kubuno.VisualStudio - see docs/MCP.md).
-      PrivateAssets=all: the layers above Kubuno.Core compile against their own Visual Studio references
+      PrivateAssets=all: the layers above Kubuno.Shared compile against their own Visual Studio references
       (the CPS project systems use the installed 18.x assemblies), so none of these may flow to them.
     -->
     <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" PrivateAssets="all" />

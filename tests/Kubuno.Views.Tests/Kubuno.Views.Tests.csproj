@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tests of the views layer (docs/ARCHITECTURE.md, "Layers (as built)"; docs/WEB-VIEWS.md WV-8): the target-neutral view
+    designer (Designer\: view models, editing pipeline, Properties, Toolbox, bindings, the design-surface protocol), the
+    .kbview language client's locators (Locating\) and the .kbres resource model and editor logic (Resources\). Moved
+    from tests/Kubuno.Desktop.Tests with the code; what stays desktop-only (the Data Sources binding drop, the Kubuno
+    control icons, the design build of a project's kubuno_ui) is tested there.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Kubuno.Views.Tests</RootNamespace>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <!--
+      See .runsettings (same folder) and its own comment: works around .NET Framework's
+      loader-from-remote-source restriction on a mapped network drive (e.g. Z:), which otherwise
+      fails MSTest.TestAdapter.dll's own load for every test in this net48 project.
+    -->
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory).runsettings</RunSettingsFilePath>
+    <!--
+      Designer\Selection\Fakes\FakeDesignSurfaceHost.cs (IDesignSurfaceHost's own Content : FrameworkElement)
+      needs WPF - a plain net48 SDK-style project does not reference PresentationCore/
+      PresentationFramework/WindowsBase by default; UseWPF is the SDK-style equivalent.
+    -->
+    <UseWPF>true</UseWPF>
+    <!-- The Dock/Anchor pickers (Designer\PropertyBrowser\LayoutAttributeEditors.cs) wrap the Windows Forms designer's own editors. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- Same benign MSB3277 unification notes as the Visual Studio assemblies under test. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <!-- The Visual Studio threading analyzers come with the SDK package of Kubuno.Views; the tests (which await their own
+         fakes' tasks and run without Visual Studio's main thread) are not code they are meant for. -->
+    <NoWarn>$(NoWarn);VSTHRD003;VSTHRD200</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.4.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.4.1" />
+    <!--
+      Kubuno.Views.csproj itself only gets System.Text.Json (used by Designer\Registry\Serialization\*) transitively
+      through Microsoft.VisualStudio.SDK, whose ExcludeAssets="runtime" cascades to every package it pulls in: inside
+      devenv.exe that is fine, but this test project runs as a plain net48 executable, so System.Text.Json's own DLL
+      would otherwise be missing from the test output directory. Referenced here at the SAME version
+      Microsoft.VisualStudio.SDK already resolves to (a lower one is an NU1605 downgrade error) - see
+      tests/Kubuno.Desktop.Tests/Kubuno.Desktop.Tests.csproj for the full story.
+    -->
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
+    <!-- Same reason, for the OLE command types (IOleCommandTarget, OLECMD) the context-menu command target tests use. -->
+    <PackageReference Include="Microsoft.VisualStudio.Interop" Version="17.14.40260" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      References the whole Visual Studio assembly: this test project exercises both the VS-SDK-free view-models
+      (Designer\UI\DesignerSplitViewModel.cs, Toolbox\*, Properties\*, Registry\* - all plain unit-testable), the pure
+      Designer\Editing\* pieces, and the views locators. Everything else in it (the editor factory, DesignerWindowPane,
+      CodeWindowHost, Editing\Infrastructure\*'s real ITextBuffer/ITextUndoHistory adapters) either needs a live
+      IVsTextLines/IVsCodeWindow/ITextBuffer COM/editor object or a hosted WPF Dispatcher/visual tree it only gets inside
+      a real devenv.exe process - see those classes' own doc comments, and Designer\INTEGRATION.md/docs/DESIGNER.md's
+      DSG-3/DSG-5 rows ("Manual, experimental instance - visual check" / "manual Ctrl+Z check").
+    -->
+    <ProjectReference Include="..\..\src\Views\Kubuno.Views\Kubuno.Views.csproj" />
+    <ProjectReference Include="..\..\src\Views\Kubuno.Views.Logic\Kubuno.Views.Logic.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Checked-in fixtures copied next to the test assembly: the schema-faithful registry samples (docs/DESIGNER.md 5)
+         and the theme tokens. -->
+    <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

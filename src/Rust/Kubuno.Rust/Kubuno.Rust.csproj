@@ -17,7 +17,7 @@
     behavior into the Rust editor (embedded languages, rename participants, symbol sources) without this assembly
     ever referencing them.
 
-    References Kubuno.Core and the Rust assemblies only (enforced by tests/Kubuno.Architecture.Tests).
+    References Kubuno.Shared and the Rust assemblies only (enforced by tests/Kubuno.Architecture.Tests).
   -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
@@ -67,8 +67,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
-    <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared\Kubuno.Shared.csproj" />
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared.Logic\Kubuno.Shared.Logic.csproj" />
     <ProjectReference Include="..\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
     <ProjectReference Include="..\Kubuno.Rust.Cargo\Kubuno.Rust.Cargo.csproj" />
     <ProjectReference Include="..\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />

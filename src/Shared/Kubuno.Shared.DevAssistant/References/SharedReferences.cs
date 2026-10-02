@@ -5,27 +5,27 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.DevAssistant.Extensibility;
-using Kubuno.Core.DevAssistant.Logic.Changes;
-using Kubuno.Core.DevAssistant.Logic.Prompts;
-using Kubuno.Core.DevAssistant.Tools;
-using Kubuno.Core.Mcp.Bridge;
-using Kubuno.Core.Mcp.Bridge.Contracts;
+using Kubuno.Shared.DevAssistant.Extensibility;
+using Kubuno.Shared.DevAssistant.Logic.Changes;
+using Kubuno.Shared.DevAssistant.Logic.Prompts;
+using Kubuno.Shared.DevAssistant.Tools;
+using Kubuno.Shared.Mcp.Bridge;
+using Kubuno.Shared.Mcp.Bridge.Contracts;
 
-namespace Kubuno.Core.DevAssistant.References
+namespace Kubuno.Shared.DevAssistant.References
 {
     /// <summary>
     /// <c>#fichier[:chemin]</c> and <c>#sélection</c> (docs/AI-ASSISTANT.md section 5.2), resolved from the in-proc
     /// <see cref="IVsContextProvider"/> when the message is sent. The content is masked by the caller.
     /// </summary>
-    internal sealed class CoreReferences : IDevAssistantReferenceProvider
+    internal sealed class SharedReferences : IDevAssistantReferenceProvider
     {
         private const int MaxChars = 60_000;
         private const int SelectionContextLines = 5;
 
         private readonly IVsContextProvider _context;
 
-        public CoreReferences(IVsContextProvider context)
+        public SharedReferences(IVsContextProvider context)
         {
             _context = context;
         }
@@ -36,7 +36,7 @@ namespace Kubuno.Core.DevAssistant.References
         {
             if (reference.Kind == ReferenceKinds.File)
             {
-                string? path = reference.Argument is { Length: > 0 } argument ? CoreTools.Resolve(argument, context) : null;
+                string? path = reference.Argument is { Length: > 0 } argument ? SharedTools.Resolve(argument, context) : null;
                 if (path is null)
                 {
                     var active = await _context.GetActiveDocumentAsync(new ActiveDocumentParams(), cancellationToken).ConfigureAwait(false);

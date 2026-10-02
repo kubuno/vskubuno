@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// Pure range/position -&gt; offset mapping over a plain <see cref="string"/> - no VS type involved,

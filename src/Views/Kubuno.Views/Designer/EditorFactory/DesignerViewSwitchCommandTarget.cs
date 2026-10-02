@@ -1,12 +1,12 @@
 using System;
-using Kubuno.Desktop.Designer.UI;
-using Kubuno.Desktop.Views.Logging;
+using Kubuno.Views.Designer.UI;
+using Kubuno.Views.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.Desktop.Designer.EditorFactory
+namespace Kubuno.Views.Designer.EditorFactory
 {
     /// <summary>
     /// "View Code" (F7, <c>View.ViewCode</c>) and "View Designer" (Shift+F7, <c>View.ViewDesigner</c>) for
@@ -116,7 +116,7 @@ namespace Kubuno.Desktop.Designer.EditorFactory
 
         /// <summary>The view of a code file: the same-stem <c>.kbview</c> or <c>.kbcontrol</c> next to a <c>.rs</c> file, when it exists.</summary>
         public static string? ViewFileOf(string rsPath, Func<string, bool> fileExists) =>
-            Kubuno.Desktop.Logic.ViewFiles.ViewOf(rsPath, fileExists);
+            Kubuno.Views.Logic.ViewFiles.ViewOf(rsPath, fileExists);
 
         /// <summary>The view of the active document when it is a view's code (<c>main_view.rs</c>), else null.</summary>
         private string? ActiveCodeBehindView()
@@ -153,7 +153,7 @@ namespace Kubuno.Desktop.Designer.EditorFactory
                 !(type is int frameType && frameType == (int)__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document) ||
                 ErrorHandler.Failed(frame.GetProperty((int)__VSFPROPID.VSFPROPID_pszMkDocument, out var moniker)) ||
                 moniker is not string path ||
-                !Kubuno.Desktop.Views.KbviewConstants.IsViewFile(path))
+                !Kubuno.Views.KbviewConstants.IsViewFile(path))
             {
                 return null;
             }

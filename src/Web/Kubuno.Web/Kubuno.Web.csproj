@@ -6,7 +6,7 @@
     version tools, .kbpkg packaging) and the "Kubuno Web Module" template. F5 is Kubuno.Web.ProjectSystem's, the build
     Kubuno.Web.Sdk's, the shared logic Kubuno.Web.Logic's.
 
-    References Kubuno.Core and the Rust layer only - never Kubuno.Desktop or Kubuno.Mobile (enforced by
+    References Kubuno.Shared and the Rust layer only - never Kubuno.Desktop or Kubuno.Mobile (enforced by
     tests/Kubuno.Architecture.Tests): a web module reuses the Rust support (rust-analyzer, Cargo, .rsproj,
     debugging) untouched.
   -->
@@ -66,10 +66,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
-    <ProjectReference Include="..\..\Core\Kubuno.Core.Logic\Kubuno.Core.Logic.csproj" />
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared\Kubuno.Shared.csproj" />
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared.Logic\Kubuno.Shared.Logic.csproj" />
     <ProjectReference Include="..\..\Rust\Kubuno.Rust\Kubuno.Rust.csproj" />
     <ProjectReference Include="..\..\Rust\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
+    <!--
+      docs/WEB-VIEWS.md WV-8: the view designer shared with the desktop target (Toolbox, Properties, events, pickers, the
+      design-surface protocol and the IProtocolDesignSurfaceHost seam the WebView2 surface of WV-9b implements). Never
+      Kubuno.Desktop (enforced by tests/Kubuno.Architecture.Tests).
+    -->
+    <ProjectReference Include="..\..\Views\Kubuno.Views\Kubuno.Views.csproj" />
+    <ProjectReference Include="..\..\Views\Kubuno.Views.Logic\Kubuno.Views.Logic.csproj" />
     <ProjectReference Include="..\Kubuno.Web.Logic\Kubuno.Web.Logic.csproj" />
     <!-- Preloaded by WebLayer so the template engine's Assembly.Load finds it (like the Rust and Desktop wizards). -->
     <ProjectReference Include="..\Kubuno.Web.TemplateWizard\Kubuno.Web.TemplateWizard.csproj" />

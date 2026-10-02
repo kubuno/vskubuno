@@ -2,10 +2,10 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Kubuno.Desktop.Designer.Properties;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Properties;
+using Kubuno.Views.Designer.Registry;
 
-namespace Kubuno.Desktop.Designer.PropertyBrowser
+namespace Kubuno.Views.Designer.PropertyBrowser
 {
     /// <summary>
     /// Pure validation/normalization of a value typed into the Properties window before it is written to

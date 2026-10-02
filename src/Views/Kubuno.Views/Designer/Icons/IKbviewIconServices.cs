@@ -1,6 +1,6 @@
 using System.Windows.Media;
 
-namespace Kubuno.Desktop.Designer.Icons
+namespace Kubuno.Views.Designer.Icons
 {
     /// <summary>
     /// What the icon editors need from the views language server (implemented by the designer pane, like

@@ -2,12 +2,12 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Forms;
-using Kubuno.Desktop.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.PropertyBrowser;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Kubuno.Desktop.Designer.Bindings
+namespace Kubuno.Views.Designer.Bindings
 {
     /// <summary>
     /// What the binding UI needs from Visual Studio's own Properties window (docs/DESIGNER.md, "Data bindings"): the

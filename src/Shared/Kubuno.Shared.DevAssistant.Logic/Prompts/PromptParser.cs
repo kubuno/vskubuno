@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Kubuno.Core.DevAssistant.Logic.Prompts
+namespace Kubuno.Shared.DevAssistant.Logic.Prompts
 {
     /// <summary>The <c>#</c> reference kinds (docs/AI-ASSISTANT.md section 5.2); DA-1 resolves the first three.</summary>
     public static class ReferenceKinds

@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Desktop.Designer.DesignSurface
+namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// Which design surface exe a designer pane runs (docs/DESIGNER.md section 15): the one built against

@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Desktop.Designer.Editing
+namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// One LSP-style text edit exactly as <c>kubuno/applyEdit</c> returns it (docs/DESIGNER.md §2: "that

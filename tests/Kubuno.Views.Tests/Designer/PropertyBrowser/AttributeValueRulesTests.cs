@@ -1,10 +1,10 @@
 using System;
-using Kubuno.Desktop.Designer.PropertyBrowser;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.PropertyBrowser;
+using Kubuno.Views.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 
-namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
+namespace Kubuno.Views.Tests.Designer.PropertyBrowser
 {
     [TestClass]
     public class AttributeValueRulesTests
@@ -122,28 +122,22 @@ namespace Kubuno.Desktop.Tests.Designer.PropertyBrowser
         }
 
         [TestMethod]
-        public void DockingFamily_HasItsToolboxTabAndIcons()
+        public void DockingFamily_HasItsToolboxTab()
         {
             DesignerText.ForceFrench = true;
             Assert.AreEqual("Ancrage", DesignerText.ToolboxTabName("docking"));
             DesignerText.ForceFrench = false;
             Assert.AreEqual("Docking", DesignerText.ToolboxTabName("docking"));
             CollectionAssert.Contains(DesignerText.AllToolboxTabNames(), "Ancrage");
-            foreach (var name in new[] { "DockArea", "DockPanel", "WorkspaceShell" })
-            {
-                Assert.AreNotEqual(Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.FallbackId, Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.IdFor(name), name);
-            }
+            // Their icons: tests/Kubuno.Desktop.Tests/SolutionExplorer/ControlIconsTests (the Kubuno control icons are the desktop layer's).
         }
 
         [TestMethod]
-        public void MigrationFoundationElements_HaveTheirToolboxTabsAndIcons()
+        public void MigrationFoundationElements_HaveTheirToolboxTabs()
         {
             Assert.AreEqual("Navigation", DesignerText.ToolboxTabName("navigation"));
             CollectionAssert.Contains(DesignerText.AllToolboxTabNames(), "Navigation");
-            foreach (var name in new[] { "Repeater", "Sidebar", "SidebarItem", "SidebarSection", "StatusBar", "StatusLabel", "Avatar", "PictureBox", "Popover", "TableLayoutPanel" })
-            {
-                Assert.AreNotEqual(Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.FallbackId, Kubuno.Desktop.Logic.SolutionExplorer.ControlIcons.IdFor(name), name);
-            }
+            // Their icons: tests/Kubuno.Desktop.Tests/SolutionExplorer/ControlIconsTests.
         }
     }
 }

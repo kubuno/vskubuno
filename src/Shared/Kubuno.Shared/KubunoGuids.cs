@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Core
+namespace Kubuno.Shared
 {
     /// <summary>
     /// The identifiers every layer shares: the package, the command set of <c>KubunoCommands.vsct</c> and the "Kubuno"
@@ -32,8 +32,8 @@ namespace Kubuno.Core
         public const string OptionsCategoryName = "Kubuno";
     }
 
-    /// <summary>Command IDs the Core layer handles, inside <see cref="KubunoGuids.CommandSet"/> (matching <c>KubunoCommands.vsct</c>).</summary>
-    internal static class CoreCommandIds
+    /// <summary>Command IDs the Shared layer handles, inside <see cref="KubunoGuids.CommandSet"/> (matching <c>KubunoCommands.vsct</c>).</summary>
+    internal static class SharedCommandIds
     {
         /// <summary>Tools menu entry of the dialog gallery (developer instances only).</summary>
         public const int DialogGalleryCommand = 0x0250;

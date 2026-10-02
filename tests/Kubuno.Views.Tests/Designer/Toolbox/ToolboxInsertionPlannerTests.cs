@@ -1,10 +1,10 @@
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Designer.Toolbox;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Designer.Toolbox;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 
-namespace Kubuno.Desktop.Tests.Designer.Toolbox
+namespace Kubuno.Views.Tests.Designer.Toolbox
 {
     [TestClass]
     public class ToolboxInsertionPlannerTests

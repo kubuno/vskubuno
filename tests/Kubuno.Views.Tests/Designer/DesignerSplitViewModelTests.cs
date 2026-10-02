@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Kubuno.Desktop.Designer.UI;
+using Kubuno.Views.Designer.UI;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer
+namespace Kubuno.Views.Tests.Designer
 {
     [TestClass]
     public class DesignerSplitViewModelTests

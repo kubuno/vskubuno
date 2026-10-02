@@ -1,6 +1,6 @@
-using Kubuno.Desktop.Designer.Bindings;
+using Kubuno.Views.Designer.Bindings;
 
-namespace Kubuno.Desktop.Designer.Properties
+namespace Kubuno.Views.Designer.Properties
 {
     /// <summary>
     /// Recognizes the <c>{Binding …}</c> values of the Properties grid (docs/DESIGNER.md §1, "Data bindings"): any value

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Kubuno.Core.Logic.Lsp
+namespace Kubuno.Shared.Logic.Lsp
 {
     /// <summary>
     /// Merges two LSP <c>WorkspaceEdit</c>s into one, so Visual Studio applies them as one rename - e.g. a rename started in

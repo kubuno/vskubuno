@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Designer.Icons
+namespace Kubuno.Views.Designer.Icons
 {
     /// <summary>The icon picker's and icon editors' user text, in English or French like the rest of the designer (<see cref="DesignerText"/>).</summary>
     public static class IconText

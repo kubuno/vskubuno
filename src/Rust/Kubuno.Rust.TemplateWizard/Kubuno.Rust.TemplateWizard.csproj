@@ -59,7 +59,7 @@
     <!--
       Microsoft.VisualStudio.TemplateWizardInterface (VS 2026, v18.0.0.0) depends on
       Microsoft.VisualStudio.Interop v18.0.0.0. The rest of this repo's net48 projects reference
-      EnvDTE/EnvDTE80 through NuGet (Kubuno.Core.Mcp.Bridge, Kubuno.Core, Kubuno.Rust), but those
+      EnvDTE/EnvDTE80 through NuGet (Kubuno.Shared.Mcp.Bridge, Kubuno.Shared, Kubuno.Rust), but those
       packages only ship v17.0.0.0 of Interop, and mixing that with the v18 reference above is a hard
       compile error (CS1705 "uses a higher version than the referenced assembly") that an explicit
       higher-version Reference alone does not resolve, because NuGet-authored references keep

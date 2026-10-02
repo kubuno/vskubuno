@@ -1,13 +1,13 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kubuno.Core.Extensibility
+namespace Kubuno.Shared.Extensibility
 {
     /// <summary>
     /// One product layer of the extension (docs/ARCHITECTURE.md, "Layers (as built)"): Rust (<c>RustLayer</c>), Desktop
     /// (<c>DesktopLayer</c>), Web (<c>WebLayer</c>), Mobile (<c>MobileLayer</c>). The single Kubuno package
     /// (src/Kubuno.VisualStudio) creates one instance of each and <see cref="KubunoLayerHost"/> calls these hooks in
-    /// order, layer by layer (Core's own services first, then the layers in the order the package lists them):
+    /// order, layer by layer (Shared's own services first, then the layers in the order the package lists them):
     /// <list type="number">
     /// <item><see cref="InitializeAsync"/> - background thread, while the package loads: file probing, service lookups.</item>
     /// <item><see cref="InitializeOnUIThread"/> - UI thread, while the package loads: only what must exist before the

@@ -1,0 +1,73 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Views layer, Visual Studio side (docs/ARCHITECTURE.md, "Layers (as built)"; docs/WEB-VIEWS.md WV-8): what every
+    Kubuno target with .kbview views shares, whatever renders them (the desktop's kubuno_ui, the web's React):
+      - the .kbview language client (kubuno-views-ls), its content type, grammar, options and locator (LanguageService\,
+        Locating\, Logging\, Options\, Infrastructure\, Grammars\, kbview-languages.pkgdef);
+      - Designer\   the WinForms-like view designer: editor factory (Design | XML | Split), the design surface seam
+                    (IDesignSurfaceHost, IProtocolDesignSurfaceHost and the design-surface protocol), editing pipeline,
+                    Toolbox, Properties/ICustomTypeDescriptor, events, collection editors, smart tags, resource/icon/
+                    binding pickers, error banner, outline, handlers (docs/DESIGNER.md; INTEGRATION.md files kept);
+      - Resources\  the .kbres resource editor (docs/RESOURCES.md);
+      - ViewsLayer.cs wires all of it into the package.
+    The renderer of the Design pane is a target's: Kubuno.Desktop's RustDesignSurfaceHost (view_embed.exe), the web
+    layer's WebView2 host (WV-9b), plugged in through DesignSurfaceHostFactoryHost.
+
+    References Shared and Rust only - never Desktop, Web or Mobile, which all build on it (enforced by
+    tests/Kubuno.Architecture.Tests). The pure logic is Kubuno.Views.Logic.
+
+    net48 like every in-proc Visual Studio assembly of the extension. All WPF UI is built in code-behind (no XAML
+    markup compile needed).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Kubuno.Views</RootNamespace>
+    <AssemblyName>Kubuno.Views</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <!-- Same benign MSB3277 unification notes as Kubuno.VisualStudio (see its csproj). -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <!-- $(VsInstallRoot) is only defined by Microsoft.VsSDK.targets (VSIX projects); resolved like the wizards do. -->
+    <VsInstallRoot Condition="'$(VsInstallRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildBinPath)\..\..\..'))</VsInstallRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Windows.Forms" />
+    <!-- Open Folder's IVsCommandItem & co., shipped only inside Visual Studio (see Kubuno.Rust.csproj). -->
+    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
+      <HintPath>$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\OpenFolder\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Same versions as every other Visual Studio assembly of the extension (bump them together). -->
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.14.60" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="17.12.19" ExcludeAssets="runtime" />
+    <PackageReference Include="EnvDTE" Version="17.14.40260" ExcludeAssets="runtime" />
+    <PackageReference Include="EnvDTE80" Version="17.14.40260" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared\Kubuno.Shared.csproj" />
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared.Logic\Kubuno.Shared.Logic.csproj" />
+    <!-- Resources\ResourceDefinitionProvider: an IRustDefinitionProvider (Kubuno.Rust.Extensibility: F12 on a resource name in Rust). -->
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust\Kubuno.Rust.csproj" />
+    <ProjectReference Include="..\..\Rust\Kubuno.Rust.Logic\Kubuno.Rust.Logic.csproj" />
+    <ProjectReference Include="..\Kubuno.Views.Logic\Kubuno.Views.Logic.csproj" />
+  </ItemGroup>
+
+</Project>

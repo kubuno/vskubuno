@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Shared.Logic.QuickInfo;
 using Kubuno.Rust.SolutionExplorer;
 using Microsoft.VisualStudio.Core.Imaging;
 using Microsoft.VisualStudio.Shell;
@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.Text.Classification;
 namespace Kubuno.Rust.LanguageService.QuickInfo
 {
     /// <summary>
-    /// Turns the SDK-free QuickInfo model (Kubuno.Core.Logic.QuickInfo) into Visual Studio's own
+    /// Turns the SDK-free QuickInfo model (Kubuno.Shared.Logic.QuickInfo) into Visual Studio's own
     /// tooltip elements - <see cref="ContainerElement"/>, <see cref="ClassifiedTextElement"/>,
     /// <see cref="ImageElement"/> - the same ones Roslyn builds for C#. Runs are classified with Roslyn's
     /// classification names (<c>keyword</c>, <c>struct name</c>, <c>method name</c>...) so the colors
@@ -76,7 +76,7 @@ namespace Kubuno.Rust.LanguageService.QuickInfo
 
         private static void OpenUrl(string url)
         {
-            if (Kubuno.Core.Logic.QuickInfo.Markdown.IsWebUrl(url))
+            if (Kubuno.Shared.Logic.QuickInfo.Markdown.IsWebUrl(url))
             {
                 VsShellUtilities.OpenSystemBrowser(url);
             }

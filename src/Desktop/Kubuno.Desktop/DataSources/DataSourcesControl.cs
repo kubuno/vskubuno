@@ -8,7 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Kubuno.Desktop.Logic.DataSources;
 using Kubuno.Desktop.DataExplorer;
-using Kubuno.Core.UI;
+using Kubuno.Shared.UI;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.PlatformUI;
@@ -54,7 +54,7 @@ namespace Kubuno.Desktop.DataSources
         public KbdataColumnInfo? Column { get; }
 
         /// <summary>The view-model member of a <see cref="DataSourceNodeKind.Member"/> node.</summary>
-        public Designer.Bindings.BindingMember? Member { get; set; }
+        public Kubuno.Views.Designer.Bindings.BindingMember? Member { get; set; }
 
         /// <summary>Tables, columns and view-model members can be dropped onto a view.</summary>
         public bool IsDraggable => (Source != null && Table != null && (Kind == DataSourceNodeKind.Table || Kind == DataSourceNodeKind.Column)) || (Kind == DataSourceNodeKind.Member && Member != null);
@@ -217,13 +217,13 @@ namespace Kubuno.Desktop.DataSources
         }
 
         private string _viewModelLabel = string.Empty;
-        private IReadOnlyList<Designer.Bindings.BindingMember> _viewModelMembers = Array.Empty<Designer.Bindings.BindingMember>();
+        private IReadOnlyList<Kubuno.Views.Designer.Bindings.BindingMember> _viewModelMembers = Array.Empty<Kubuno.Views.Designer.Bindings.BindingMember>();
 
         /// <summary>
         /// Shows the active view's data context (docs/DESIGNER.md "Data bindings"): its members, dragged like a column - onto a
         /// control they bind it, onto empty space they add a bound control. Empty hides the node.
         /// </summary>
-        public void ShowViewModel(string label, IReadOnlyList<Designer.Bindings.BindingMember> members)
+        public void ShowViewModel(string label, IReadOnlyList<Kubuno.Views.Designer.Bindings.BindingMember> members)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (label == _viewModelLabel && members.Select(m => m.Path).SequenceEqual(_viewModelMembers.Select(m => m.Path)))
@@ -255,12 +255,12 @@ namespace Kubuno.Desktop.DataSources
                 return;
             }
 
-            var title = (Designer.DesignerText.IsFrench ? "Modèle de vue" : "View model") + (_viewModelLabel.Length > 0 ? " — " + _viewModelLabel : string.Empty);
+            var title = (Kubuno.Views.Designer.DesignerText.IsFrench ? "Modèle de vue" : "View model") + (_viewModelLabel.Length > 0 ? " — " + _viewModelLabel : string.Empty);
             var root = Item(new DataSourceNode(DataSourceNodeKind.ViewModel, "viewmodel:" + _viewModelLabel, null), title, KnownMonikers.Class, title);
             foreach (var member in _viewModelMembers)
             {
                 var node = new DataSourceNode(DataSourceNodeKind.Member, "viewmodel:" + member.Path, null) { Member = member };
-                var tip = Designer.Bindings.BindingStrings.Combine(member.Path + " · " + Designer.Bindings.BindingStrings.TypeOf(member), member.Doc);
+                var tip = Kubuno.Views.Designer.Bindings.BindingStrings.Combine(member.Path + " · " + Kubuno.Views.Designer.Bindings.BindingStrings.TypeOf(member), member.Doc);
                 root.Items.Add(Item(node, member.Name, MemberMoniker(member), tip));
             }
 
@@ -268,12 +268,12 @@ namespace Kubuno.Desktop.DataSources
             _tree.Items.Insert(0, root);
         }
 
-        private static ImageMoniker MemberMoniker(Designer.Bindings.BindingMember member) => member.Shape switch
+        private static ImageMoniker MemberMoniker(Kubuno.Views.Designer.Bindings.BindingMember member) => member.Shape switch
         {
-            Designer.Bindings.BindingShape.Bool => KnownMonikers.CheckBoxChecked,
-            Designer.Bindings.BindingShape.Number => KnownMonikers.Numeric,
-            Designer.Bindings.BindingShape.List => KnownMonikers.ListBox,
-            Designer.Bindings.BindingShape.Text => member.Writable ? KnownMonikers.TextBox : KnownMonikers.Label,
+            Kubuno.Views.Designer.Bindings.BindingShape.Bool => KnownMonikers.CheckBoxChecked,
+            Kubuno.Views.Designer.Bindings.BindingShape.Number => KnownMonikers.Numeric,
+            Kubuno.Views.Designer.Bindings.BindingShape.List => KnownMonikers.ListBox,
+            Kubuno.Views.Designer.Bindings.BindingShape.Text => member.Writable ? KnownMonikers.TextBox : KnownMonikers.Label,
             _ => KnownMonikers.Property,
         };
 

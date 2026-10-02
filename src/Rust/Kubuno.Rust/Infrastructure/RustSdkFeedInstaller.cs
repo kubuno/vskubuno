@@ -1,5 +1,5 @@
 using Kubuno.Rust.Logic.ProjectGeneration;
-using Kubuno.Core.Logging;
+using Kubuno.Shared.Logging;
 
 namespace Kubuno.Rust.Infrastructure
 {

@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Designer.Outline
+namespace Kubuno.Views.Designer.Outline
 {
     /// <summary>
     /// The single, shared <see cref="OutlineViewModel"/> instance for the whole VS session - the Outline

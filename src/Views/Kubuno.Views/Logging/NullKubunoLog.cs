@@ -1,6 +1,6 @@
 using System;
 
-namespace Kubuno.Desktop.Views.Logging
+namespace Kubuno.Views.Logging
 {
     /// <summary>
     /// The default <see cref="IKubunoLog"/> installed in <see cref="KubunoViewsLogHost"/> until the

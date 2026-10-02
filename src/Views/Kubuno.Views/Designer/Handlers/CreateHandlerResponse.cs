@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Kubuno.Desktop.Designer.Editing;
+using Kubuno.Views.Designer.Editing;
 
-namespace Kubuno.Desktop.Designer.Handlers
+namespace Kubuno.Views.Designer.Handlers
 {
     /// <summary>
     /// A <c>kubuno/createHandler</c> result's <c>location</c> field - a plain "go to definition"

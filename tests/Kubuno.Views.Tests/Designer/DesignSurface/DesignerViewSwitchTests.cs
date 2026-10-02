@@ -1,8 +1,8 @@
 using System.IO;
-using Kubuno.Desktop.Designer.EditorFactory;
+using Kubuno.Views.Designer.EditorFactory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.DesignSurface
+namespace Kubuno.Views.Tests.Designer.DesignSurface
 {
     /// <summary>docs/PROGRAMMING-MODEL.md §7: F7 in the designer opens the view's code, Shift+F7 in the code opens the designer.</summary>
     [TestClass]

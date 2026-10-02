@@ -71,7 +71,7 @@
     <ProjectReference Include="..\Kubuno.Web.Logic\Kubuno.Web.Logic.csproj" />
     <ProjectReference Include="..\..\Rust\Kubuno.Rust.Launch\Kubuno.Rust.Launch.csproj" />
     <ProjectReference Include="..\..\Rust\Kubuno.Rust.ProjectSystem\Kubuno.Rust.ProjectSystem.csproj" />
-    <ProjectReference Include="..\..\Core\Kubuno.Core\Kubuno.Core.csproj" />
+    <ProjectReference Include="..\..\Shared\Kubuno.Shared\Kubuno.Shared.csproj" />
   </ItemGroup>
 
 </Project>

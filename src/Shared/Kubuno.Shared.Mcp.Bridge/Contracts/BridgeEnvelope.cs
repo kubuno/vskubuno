@@ -2,16 +2,16 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Kubuno.Core.Mcp.Bridge.Contracts
+namespace Kubuno.Shared.Mcp.Bridge.Contracts
 {
     /// <summary>
-    /// One request sent over the named pipe from the MCP server process (Kubuno.Core.Mcp) to the
-    /// bridge running inside devenv.exe (Kubuno.Core.Mcp.Bridge's <see cref="PipeProtocol.VsMcpBridgeHost"/>).
+    /// One request sent over the named pipe from the MCP server process (Kubuno.Shared.Mcp) to the
+    /// bridge running inside devenv.exe (Kubuno.Shared.Mcp.Bridge's <see cref="PipeProtocol.VsMcpBridgeHost"/>).
     /// </summary>
     /// <remarks>
     /// This is a small, purpose-built envelope - not the MCP JSON-RPC wire format itself. The MCP
-    /// protocol is spoken only between Claude Code and the Kubuno.Core.Mcp process (via the
-    /// <c>ModelContextProtocol</c> package); the pipe between Kubuno.Core.Mcp and the VS-side bridge is
+    /// protocol is spoken only between Claude Code and the Kubuno.Shared.Mcp process (via the
+    /// <c>ModelContextProtocol</c> package); the pipe between Kubuno.Shared.Mcp and the VS-side bridge is
     /// a private, simpler request/response contract, one message per line-framed JSON document
     /// (see <see cref="PipeProtocol.PipeMessageFraming"/>).
     /// </remarks>

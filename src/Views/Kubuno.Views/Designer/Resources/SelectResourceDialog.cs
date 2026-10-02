@@ -5,12 +5,12 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Kubuno.Desktop.Logic.Resources;
-using Kubuno.Desktop.Resources;
+using Kubuno.Views.Logic.Resources;
+using Kubuno.Views.Resources;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Resources
+namespace Kubuno.Views.Designer.Resources
 {
     /// <summary>
     /// The "Select Resource" dialog of image and icon properties, like Windows Forms' (docs/RESOURCES.md): a

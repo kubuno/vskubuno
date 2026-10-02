@@ -1,8 +1,8 @@
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Editing
+namespace Kubuno.Views.Tests.Designer.Editing
 {
     /// <summary>docs/DESIGNER.md §12: the registry rules behind paste, duplicate, wrap, unwrap and z-order.</summary>
     [TestClass]

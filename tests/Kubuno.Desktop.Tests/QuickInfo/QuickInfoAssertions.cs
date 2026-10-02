@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using Kubuno.Core.Logic.QuickInfo;
+using Kubuno.Shared.Logic.QuickInfo;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Kubuno.Desktop.Tests.QuickInfo

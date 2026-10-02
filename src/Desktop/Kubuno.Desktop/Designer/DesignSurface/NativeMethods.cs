@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using Kubuno.Views.Designer;
+using Kubuno.Views.Designer.DesignSurface;
 
 namespace Kubuno.Desktop.Designer.DesignSurface
 {

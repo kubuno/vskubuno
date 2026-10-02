@@ -1,7 +1,7 @@
 using System;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Registry;
 
-namespace Kubuno.Desktop.Designer.Toolbox
+namespace Kubuno.Views.Designer.Toolbox
 {
     /// <summary>One toolbox entry - a thin, display-oriented wrapper around a single <see cref="ComponentMeta"/> (docs/DESIGNER.md §1: "One entry per ComponentMeta from the registry").</summary>
     public sealed class ToolboxItemViewModel

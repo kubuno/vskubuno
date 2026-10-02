@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
 
-namespace Kubuno.Core.DevAssistant.Logic.Tools
+namespace Kubuno.Shared.DevAssistant.Logic.Tools
 {
     /// <summary>
     /// What the assistant may expose to a model at all (docs/AI-ASSISTANT.md section 7.4), enforced in code on both

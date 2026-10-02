@@ -1,13 +1,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Designer.Handlers;
-using Kubuno.Desktop.Designer.Properties;
-using Kubuno.Desktop.Designer.Registry;
-using Kubuno.Desktop.Tests.Designer.Handlers.Fakes;
+using Kubuno.Views.Designer.Handlers;
+using Kubuno.Views.Designer.Properties;
+using Kubuno.Views.Designer.Registry;
+using Kubuno.Views.Tests.Designer.Handlers.Fakes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Handlers
+namespace Kubuno.Views.Tests.Designer.Handlers
 {
     [TestClass]
     public class EventsTabHandlerCreationBridgeTests

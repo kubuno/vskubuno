@@ -8,9 +8,9 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
 
-namespace Kubuno.Core.DevAssistant.Host.Providers
+namespace Kubuno.Shared.DevAssistant.Host.Providers
 {
     /// <summary>
     /// The offline test provider (docs/AI-ASSISTANT.md section 10: "no automated test calls a real API"): replays recorded

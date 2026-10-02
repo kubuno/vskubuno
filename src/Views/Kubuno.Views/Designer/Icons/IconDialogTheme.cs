@@ -6,7 +6,7 @@ using System.Windows.Media;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Desktop.Designer.Icons
+namespace Kubuno.Views.Designer.Icons
 {
     /// <summary>
     /// The icon picker's controls that Visual Studio has no themed-dialog style for (a tab control and its tabs, the tiles of a

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Registry;
 
-namespace Kubuno.Desktop.Designer.Properties
+namespace Kubuno.Views.Designer.Properties
 {
     /// <summary>
     /// One row of the Events tab (docs/DESIGNER.md §1: "The Events tab lists ComponentMeta.events; each

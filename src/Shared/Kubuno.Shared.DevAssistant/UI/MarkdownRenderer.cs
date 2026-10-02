@@ -5,10 +5,10 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
-using Kubuno.Core.DevAssistant.Logic.Markdown;
+using Kubuno.Shared.DevAssistant.Logic.Markdown;
 using Microsoft.VisualStudio.PlatformUI;
 
-namespace Kubuno.Core.DevAssistant.UI
+namespace Kubuno.Shared.DevAssistant.UI
 {
     /// <summary>
     /// Renders Markdown into native, theme-following WPF (docs/AI-ASSISTANT.md section 5.1 and Q6): text blocks with

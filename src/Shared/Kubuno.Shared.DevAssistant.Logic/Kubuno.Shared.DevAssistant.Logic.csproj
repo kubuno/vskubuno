@@ -1,23 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Core layer, pure logic of the Kubuno Dev Assistant (docs/AI-ASSISTANT.md section 9.6): the wire protocol between the
+    Shared layer, pure logic of the Kubuno Dev Assistant (docs/AI-ASSISTANT.md section 9.6): the wire protocol between the
     VSIX and kubuno-dev-assistant.exe, the prompt parser (/ commands, # references), the secret scanner and masker, the
     change-set model (line diff, hunks, anchored edits, staleness, one-undo application), the price table and cost cap,
     the tool policy (what DA-1 may expose at all), the Markdown block model, the conversation store and the Windows
     Credential Manager access.
 
-    netstandard2.0 so BOTH sides compile the same contract: the in-proc net48 assembly (Kubuno.Core.DevAssistant) and
-    the net8 host process (Kubuno.Core.DevAssistant.Host). No Visual Studio SDK: tested with plain `dotnet test`
-    (tests/Kubuno.Core.DevAssistant.Tests).
+    netstandard2.0 so BOTH sides compile the same contract: the in-proc net48 assembly (Kubuno.Shared.DevAssistant) and
+    the net8 host process (Kubuno.Shared.DevAssistant.Host). No Visual Studio SDK: tested with plain `dotnet test`
+    (tests/Kubuno.Shared.DevAssistant.Tests).
   -->
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <RootNamespace>Kubuno.Core.DevAssistant.Logic</RootNamespace>
-    <AssemblyName>Kubuno.Core.DevAssistant.Logic</AssemblyName>
+    <RootNamespace>Kubuno.Shared.DevAssistant.Logic</RootNamespace>
+    <AssemblyName>Kubuno.Shared.DevAssistant.Logic</AssemblyName>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 

@@ -4,10 +4,10 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.DevAssistant.Host.Providers;
-using Kubuno.Core.DevAssistant.Logic.Protocol;
+using Kubuno.Shared.DevAssistant.Host.Providers;
+using Kubuno.Shared.DevAssistant.Logic.Protocol;
 
-namespace Kubuno.Core.DevAssistant.Host
+namespace Kubuno.Shared.DevAssistant.Host
 {
     /// <summary>
     /// The host side of the channel: answers the VSIX's requests (initialize, models/list, session/send, session/cancel,

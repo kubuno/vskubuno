@@ -1,4 +1,4 @@
-namespace Kubuno.Desktop.Designer.UI
+namespace Kubuno.Views.Designer.UI
 {
     /// <summary>
     /// The three states of the Design/XML orientation toggle (docs/DESIGNER.md §1: "modelled on the

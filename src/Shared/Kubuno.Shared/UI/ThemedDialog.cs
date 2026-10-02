@@ -8,7 +8,7 @@ using System.Windows.Media;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 
-namespace Kubuno.Core.UI
+namespace Kubuno.Shared.UI
 {
     /// <summary>
     /// The base of every modal dialog the extension shows (docs/ARCHITECTURE.md, "Themed dialogs"), so each one
@@ -25,7 +25,7 @@ namespace Kubuno.Core.UI
     /// Every color is a dynamic resource, so switching the Visual Studio theme while the dialog is open restyles
     /// it. Build content in code as usual; use <see cref="ThemedControls"/> for the few controls that need more
     /// than an implicit style (grid list views, placeholder text boxes, secondary text).
-    /// Part of Kubuno.Core (every layer references it). The two template wizard assemblies, which keep a minimal
+    /// Part of Kubuno.Shared (every layer references it). The two template wizard assemblies, which keep a minimal
     /// dependency closure (they are loaded by the template engine, not by the package), compile this file as source
     /// instead, with KUBUNO_SHARED_AS_SOURCE defined so the types stay internal to them.
     /// </summary>

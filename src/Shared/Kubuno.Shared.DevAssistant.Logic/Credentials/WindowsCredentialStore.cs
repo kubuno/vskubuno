@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Kubuno.Core.DevAssistant.Logic.Credentials
+namespace Kubuno.Shared.DevAssistant.Logic.Credentials
 {
     /// <summary>
     /// Generic credentials of the Windows Credential Manager (docs/AI-ASSISTANT.md section 8.1), persisted with

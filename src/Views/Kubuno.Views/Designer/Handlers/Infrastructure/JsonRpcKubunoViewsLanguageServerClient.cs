@@ -4,15 +4,15 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace Kubuno.Desktop.Designer.Handlers.Infrastructure
+namespace Kubuno.Views.Designer.Handlers.Infrastructure
 {
     /// <summary>
     /// The real <c>kubuno/createHandler</c> caller, over the same <c>StreamJsonRpc.JsonRpc</c> object
-    /// <c>Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> already exposes
+    /// <c>Kubuno.Views.LanguageService.KubunoViewsLanguageClient.Rpc</c> already exposes
     /// once <c>AttachForCustomMessageAsync</c> runs (docs/DESIGNER.md §3: "the exact hook custom,
     /// non-textDocument/* methods need"; §8 point 2's own note that a later integration step hands this
-    /// class that live object - this library has no dependency of its own on <c>Kubuno.Desktop.Views</c>
-    /// beyond what <see cref="Kubuno.Desktop.Designer.Editing"/>/this project's csproj comment
+    /// class that live object - this library has no dependency of its own on <c>Kubuno.Views</c>
+    /// beyond what <see cref="Kubuno.Views.Designer.Editing"/>/this project's csproj comment
     /// already explains, so the caller passes the <see cref="JsonRpc"/> in rather than this class
     /// resolving it itself).
     ///

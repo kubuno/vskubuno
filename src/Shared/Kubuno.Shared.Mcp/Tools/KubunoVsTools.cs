@@ -3,13 +3,13 @@ using System.ComponentModel;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Core.Mcp.Bridge;
-using Kubuno.Core.Mcp.Bridge.Contracts;
-using Kubuno.Core.Mcp.Connectivity;
+using Kubuno.Shared.Mcp.Bridge;
+using Kubuno.Shared.Mcp.Bridge.Contracts;
+using Kubuno.Shared.Mcp.Connectivity;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
-namespace Kubuno.Core.Mcp.Tools
+namespace Kubuno.Shared.Mcp.Tools
 {
     /// <summary>
     /// The MCP tools Claude Code sees: a read-only window onto what the developer is looking at in

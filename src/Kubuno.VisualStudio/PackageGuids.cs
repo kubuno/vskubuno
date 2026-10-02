@@ -2,7 +2,7 @@ namespace Kubuno.VisualStudio
 {
     /// <summary>
     /// GUIDs the package's registration attributes need that belong to no single layer. The layers' own identifiers
-    /// (tool windows, command IDs, UI contexts) are in <c>Kubuno.Core.KubunoGuids</c>, <c>Kubuno.Rust.PackageGuids</c>
+    /// (tool windows, command IDs, UI contexts) are in <c>Kubuno.Shared.KubunoGuids</c>, <c>Kubuno.Rust.PackageGuids</c>
     /// and <c>Kubuno.Desktop.PackageGuids</c>.
     /// </summary>
     internal static class PackageGuids

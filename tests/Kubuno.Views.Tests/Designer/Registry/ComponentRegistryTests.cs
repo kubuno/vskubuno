@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using Kubuno.Desktop.Designer.Registry;
+using Kubuno.Views.Designer.Registry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Kubuno.Desktop.Designer;
+using Kubuno.Views.Designer;
 
-namespace Kubuno.Desktop.Tests.Designer.Registry
+namespace Kubuno.Views.Tests.Designer.Registry
 {
     [TestClass]
     public class ComponentRegistryTests
@@ -108,12 +108,12 @@ namespace Kubuno.Desktop.Tests.Designer.Registry
 
             Assert.IsNull(registry.Find("Button")!.LayoutKind);
             Assert.IsNull(registry.Find("Card")!.LayoutKind);
-            Assert.AreEqual(Kubuno.Desktop.Designer.Registry.LayoutKind.Flow, registry.Find("Stack")!.LayoutKind);
+            Assert.AreEqual(Kubuno.Views.Designer.Registry.LayoutKind.Flow, registry.Find("Stack")!.LayoutKind);
             // `Panel`'s single Dock/Anchor engine - see `Registry/LayoutKind.cs`'s
             // own doc comment for why this is `DockAnchor`, not the originally
             // guessed `Dock`.
-            Assert.AreEqual(Kubuno.Desktop.Designer.Registry.LayoutKind.DockAnchor, registry.Find("Panel")!.LayoutKind);
-            Assert.AreEqual(Kubuno.Desktop.Designer.Registry.LayoutKind.Tabs, registry.Find("Tabs")!.LayoutKind);
+            Assert.AreEqual(Kubuno.Views.Designer.Registry.LayoutKind.DockAnchor, registry.Find("Panel")!.LayoutKind);
+            Assert.AreEqual(Kubuno.Views.Designer.Registry.LayoutKind.Tabs, registry.Find("Tabs")!.LayoutKind);
         }
 
         [TestMethod]

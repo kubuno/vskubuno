@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Kubuno.Desktop.Logic.Resources
+namespace Kubuno.Views.Logic.Resources
 {
     /// <summary>The file operations the resource editor needs (a fake in tests).</summary>
     public interface IResourceFileSystem

@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
-using Kubuno.Desktop.Designer.Editing;
-using Kubuno.Desktop.Designer.Handlers;
-using Kubuno.Desktop.Tests.Designer.Editing.Fakes;
-using Kubuno.Core.Logic.Lsp;
+using Kubuno.Views.Designer.Editing;
+using Kubuno.Views.Designer.Handlers;
+using Kubuno.Views.Tests.Designer.Editing.Fakes;
+using Kubuno.Shared.Logic.Lsp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Kubuno.Desktop.Tests.Designer.Handlers
+namespace Kubuno.Views.Tests.Designer.Handlers
 {
     /// <summary>docs/EVENTS.md §5.3/§5.5 (EVT-5): the handler commands' answers, applying their edits, and a Rust-editor rename.</summary>
     [TestClass]
