@@ -2114,3 +2114,22 @@ message with `menu: "add" | "tasks"`.
 **Ribbon double-click.** Checked on the surface: a double-click on a ribbon button sends `doubleClick` with the
 button's id, and the language server creates its `OnClick` handler (`ribbon_buttons_and_menu_items_get_their_click_handler`). The
 remaining suspect is therefore the Visual Studio side of the gesture; a live check in Visual Studio is still to do.
+
+## 20. The title bar's regions and standard items (as built 2026-10-02)
+
+Described in [SHELL-CONTROLS.md](SHELL-CONTROLS.md) §5. On the surface (`kubuno_views::design`, `view_embed.rs`):
+
+- **Drop zones**: while a Toolbox control is dragged, `ToolboxController::band_zones` gives the band's three zones
+  (`band_drop_zones`: the band between the icon and the caption buttons in thirds, mirrored for `RightToLeftLayout`),
+  painted dashed by `paint_band_drop_zones`, the hot one washed with the accent. The band the toolbox reads is laid out
+  with the regions the view declared this frame (`window::declared_slots`), so the marker of a non-empty region is its
+  real rectangle. A drop is `insertChild` on the root with `TitleBar.Region` (an `IconButton`: `Diameter`, `Glyph`,
+  `Width`, `Height` of the band's button size).
+- **Standard items**: built by the root `<Panel>` from the view's `Show…` properties, ids under
+  `design::HEADER_ITEM_PREFIX` (`header!`): not in the layout map (never selected; a click selects the view). A
+  `HeaderActions` class the design build did not link is drawn as the hatched placeholder.
+- **Smart tag**: with the view selected, a glyph at the window's top-right corner, outside it; a click sends the
+  existing `contextMenu` with `elementId: ""` and `menu: "tasks"`. The host (`DesignSurfaceEditingCoordinator`) builds
+  `DesignerMenuModel.BuildTitleBarTasks` (`TitleBarDesignerTasks.Verbs`: « Ajouter un bouton à la barre de titre » ×
+  Left/Center/Right, one switch per standard item, verb kinds `AddTitleBarButton` / `ToggleHeaderItem`) and shows it as
+  the flat dynamic list of `RibbonAddContextMenu` (no `.vsct` change). Protocol additions: none.

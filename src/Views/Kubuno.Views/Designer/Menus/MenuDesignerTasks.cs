@@ -55,6 +55,12 @@ namespace Kubuno.Views.Designer.Menus
 
         /// <summary>The item no longer runs a command.</summary>
         UnbindCommand,
+
+        /// <summary>The title bar's smart tag: a new button in the <c>TitleBar.Region</c> named <see cref="MenuVerb.Argument"/>.</summary>
+        AddTitleBarButton,
+
+        /// <summary>The title bar's smart tag: the header item the view property <see cref="MenuVerb.Argument"/> shows, switched.</summary>
+        ToggleHeaderItem,
     }
 
     /// <summary>

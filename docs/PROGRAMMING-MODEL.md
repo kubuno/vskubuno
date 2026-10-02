@@ -175,6 +175,13 @@ The form: `Form::new().text(…).client_size(w, h).start_position(…).form_bord
 (a result on a modal form closes it), `is_open()`, `is_modal()`, `handle()`, and the events `load()`,
 `shown()`, `activated()`, `deactivate()`, `form_closing()` (cancelable), `form_closed()`.
 
+The title bar is the window's header (docs/SHELL-CONTROLS.md §5): `set_header_items(HeaderItems { search, notifications,
+settings, help, waffle, account })` (all off by default, `HeaderItems::ALL`) puts the web header's standard items before
+the caption buttons, `set_unread_count(n)` sets the bell's counter, and `search_clicked()`, `notifications_clicked()`,
+`settings_clicked()`, `help_clicked()` raise on the form. Any control joins the title bar with
+`.property("TitleBar.Region", "Left" | "Center" | "Right")`. The bell, settings, help, waffle and avatar are the
+`HeaderActions` user control: the application links the shell controls crate for them.
+
 ## 5. How a form reaches the runtime
 
 Nothing is written to disk and `kubuno-views`' runtime is unchanged: a form's view is **composed in memory**

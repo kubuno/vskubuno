@@ -54,12 +54,16 @@ namespace Kubuno.Views.Designer.DesignSurface
 
             try
             {
+                // The title bar's smart tag (the view's root, docs/SHELL-CONTROLS.md section 5): its tasks as one flat list.
+                var titleBarTasks = e.ElementId is { Length: 0 } && e.Menu == "tasks";
                 // A ribbon's "+" glyph ("add") or smart tag ("tasks") - docs/RIBBON.md section 9 - has its own menu.
-                var ribbonMenu = e.ElementId is not null && e.Menu is "add" or "tasks";
+                var ribbonMenu = !titleBarTasks && e.ElementId is not null && e.Menu is "add" or "tasks";
                 // A menu element's smart tag (docs/MENUS.md section 5) lists its tasks as one flat list.
                 var menuTasks = ribbonMenu && e.Menu == "tasks" &&
                     Menus.MenuDesignerTasks.IsMenu(ElementAttributeReader.Read(GetCurrentText(), e.ElementId!)?.TagName is { } tag ? Registry.Find(tag) : null);
-                var model = menuTasks
+                var model = titleBarTasks
+                    ? DesignerMenuModel.BuildTitleBarTasks(GetCurrentText(), Registry, DesignerClipboard.PeekTag(), SelectionIds())
+                    : menuTasks
                     ? DesignerMenuModel.BuildMenuTasks(GetCurrentText(), e.ElementId!, Registry, DesignerClipboard.PeekTag(), SelectionIds())
                     : ribbonMenu
                     ? DesignerMenuModel.BuildRibbon(GetCurrentText(), e.ElementId!, Registry, DesignerClipboard.PeekTag(), SelectionIds(), addOnly: e.Menu == "add")
@@ -73,7 +77,7 @@ namespace Kubuno.Views.Designer.DesignSurface
                 }
 
                 var group = DesignerCommandIds.CommandSet;
-                var menu = ribbonMenu ? (e.Menu == "add" || menuTasks ? DesignerCommandIds.RibbonAddContextMenu : DesignerCommandIds.RibbonTasksMenu)
+                var menu = titleBarTasks ? DesignerCommandIds.RibbonAddContextMenu : ribbonMenu ? (e.Menu == "add" || menuTasks ? DesignerCommandIds.RibbonAddContextMenu : DesignerCommandIds.RibbonTasksMenu)
                     : model.IsView ? DesignerCommandIds.ViewContextMenu : DesignerCommandIds.ElementContextMenu;
                 var points = new[] { new POINTS { x = (short)e.ScreenX, y = (short)e.ScreenY } };
                 ErrorHandler.ThrowOnFailure(shell.ShowContextMenu(0, ref group, menu, points, target));
@@ -571,6 +575,21 @@ namespace Kubuno.Views.Designer.DesignSurface
                 case Menus.MenuVerbKind.UnbindCommand:
                     RemoveAttribute(elementId, "Command");
                     break;
+                case Menus.MenuVerbKind.AddTitleBarButton when verb.Argument is { } region:
+                    AddTitleBarButton(region);
+                    break;
+                case Menus.MenuVerbKind.ToggleHeaderItem when verb.Argument is { } item:
+                    // Off by default: switching an item off removes the attribute rather than writing "false".
+                    if (TitleBarDesignerTasks.IsShown(GetCurrentText(), item))
+                    {
+                        RemoveAttribute(StableElementId.Root, item);
+                    }
+                    else
+                    {
+                        SetAttribute(StableElementId.Root, item, "true");
+                    }
+
+                    break;
                 case Menus.MenuVerbKind.NewCommand:
                     var version = CurrentVersion;
                     var edits = Menus.MenuDesignerTasks.PlanNewCommand(GetCurrentText(), elementId, out var name);
@@ -582,6 +601,23 @@ namespace Kubuno.Views.Designer.DesignSurface
                     break;
             }
         }
+
+        /// <summary>
+        /// « Ajouter un bouton à la barre de titre » (docs/SHELL-CONTROLS.md section 5): an <c>IconButton</c> at the end of the
+        /// view's root in <paramref name="region"/>, then selected - one undo unit.
+        /// </summary>
+        private void AddTitleBarButton(string region) =>
+            Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var text = GetCurrentText();
+                var index = ElementAttributeReader.Read(text, StableElementId.Root)?.ChildTagNames.Count ?? 0;
+                var op = new { kind = "insertChild", parentId = StableElementId.Root, index, xml = TitleBarDesignerTasks.ButtonXml(text, region) };
+                if (await ApplyEncodedOpsAsync(new object[] { op }, "Add Title Bar Button", formatInsertion: true))
+                {
+                    await SelectInsertedAsync(StableElementId.Child(StableElementId.Root, index));
+                }
+            }, "TitleBarButton");
 
         /// <summary>
         /// « Insérer les éléments standard » on a menu bar (WinForms' Insert Standard Items): Fichier, Édition, Outils,

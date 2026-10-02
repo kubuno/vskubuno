@@ -147,8 +147,11 @@ markup is raw HTML + Tailwind (§0 of WEB-VIEWS): it needs the WV-5a layout and 
   design-time item count is the `Repeater` property `DesignItemCount` (category Design), not a `d:` attribute.
   Web addition: `d:DataContext="{SampleData file.json}"` and `<Query d:Sample="…">` (§6.4).
 - **Attached properties** `Owner.Property` are set on a child and read by its parent: `Stack.Fill`,
-  `TableLayoutPanel.Row`, `.Column`, `.RowSpan`, `.ColumnSpan` (declared on `Control`), `TitleBar.Region`,
-  `TitleBar.Drag`, `ActionBar.Region` (desktop window chrome).
+  `TableLayoutPanel.Row`, `.Column`, `.RowSpan`, `.ColumnSpan` (declared on `Control`), `TitleBar.Region`
+  (`Left`, `Center`, `Right`: the title bar's free regions), `TitleBar.Drag`, `ActionBar.Region` (desktop window
+  chrome). The root's `ShowSearch`, `ShowNotifications`, `ShowSettings`, `ShowHelp`, `ShowWaffle`, `ShowAccount` and
+  `UnreadCount` (off by default for every window kind) add the web header's standard items to the title bar, with the
+  view events `SearchClicked`, `NotificationsClicked`, `SettingsClicked`, `HelpClicked` (docs/SHELL-CONTROLS.md §5).
 - **Property elements**: `<Owner.Property>…</Owner.Property>`, placed **directly inside** `<Owner>`, set a content
   property (registry `serialization: "Content"`): `<Card.Actions>`, `<Card.Footer>`, `<RibbonTab.ScalingPolicy>`. A
   dotted element anywhere else is an error.

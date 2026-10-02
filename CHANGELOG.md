@@ -23,6 +23,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Sample `samples/storage-desktop`: settings bound in a view and read through the typed class, a secret, a Registry
   value; `--self-test` and `KUBUNO_SANDBOX_DIR` run it without touching the real profile.
 
+- **The title bar as a web-like header, in the designer** (`docs/SHELL-CONTROLS.md` §5). A window's Properties
+  (category *Title Bar*) now list `ShowSearch`, `ShowNotifications`, `ShowSettings`, `ShowHelp`, `ShowWaffle`,
+  `ShowAccount` and `UnreadCount`, and the Events tab `SearchClicked`, `NotificationsClicked`, `SettingsClicked` and
+  `HelpClicked`: switching one shows or hides the web header's search button, notifications bell, settings, help,
+  app launcher or avatar before the window's caption buttons, live on the design surface (a hatched placeholder
+  when the project does not use the Kubuno shell controls, with a warning saying which crate to add). Dragging a
+  control from the Toolbox over the title bar shows its three drop zones (left, centre, right), and a smart tag at
+  the window's top-right corner offers « Ajouter un bouton à la barre de titre » in each region and a switch per
+  standard item. All of them are off by default, for every kind of window.
+
 - **Window corners in the designer** (`docs/EVENTS.md` §19). `CornerRadius` is now a property of every window
   (the view's root), in the *Appearance* category with its default shown (8, Windows 11's radius; `0` for square
   corners), and of `FloatingWindow`. The design surface draws the window frame at the chosen radius and clips the

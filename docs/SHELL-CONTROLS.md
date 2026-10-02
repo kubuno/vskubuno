@@ -184,17 +184,92 @@ les contient, ils doivent pouvoir s'afficher à l'extérieur ».
   inside a scrolled or `overflow-hidden` parent). The web `WaffleButton` / `AccountButton` / `HeaderActions` render
   their panels that way.
 
-## 5. Title-bar header (desktop) — state and plan
+## 5. Title-bar header (desktop, as built 2026-10-02)
 
-The desktop window chrome already has title-bar slots (`TitleBar.Region="Left" | "Right"` on any element, the gaps
-between them drag the window, double-click maximises, snap layouts stay on the maximise button) — those ARE the
-free slots: any control (an `IconButton`, a `DropDownButton`, a search field, a user control) dropped in a region
-joins the title bar. The standard items are `HeaderActions` (§3) placed in `TitleBar.Region="Right"`.
+User requirement: « la barre de titre des fenêtres Kubuno desktop doit prévoir l'ajout ou pas de ces menus (ou d'autres
+boutons) comme sur la version web ». A Kubuno window's title bar IS its header: the standard items are Form properties,
+and three free regions take any control. Everything sits in the title bar's own row, left of the caption buttons
+(`[icon][left][title … drag area … ][centre][right][standard items] [_][□][X]`), mirrored right to left.
 
-Not done yet (needs the window runtime and the Visual Studio designer, shared with the Documents and IntelliSense
-work): form-level `ShowWaffle` / `ShowAccount` / … properties that inject the standard items without an element,
-a centre slot, the slots drawn as drop targets on the designer's title bar and the « Ajouter un bouton à la barre de
-titre » smart tag.
+### Form properties (the view's root, category « Barre de titre »)
+
+| Property | Item | Event on the view (root) |
+|---|---|---|
+| `ShowSearch` | the web header's magnifier (an `IconButton`, `Search`) | `SearchClicked` (`OnSearchClicked`) |
+| `ShowNotifications` | the bell, with `UnreadCount` (bindable, 0 = no counter, `9+`) | `NotificationsClicked` |
+| `ShowSettings` | the settings button | `SettingsClicked` |
+| `ShowHelp` | the header's help button (not the caption's `?` of `HelpButton`) | `HelpClicked` |
+| `ShowWaffle` | the app launcher (opens the `WaffleMenu` popup itself) | — |
+| `ShowAccount` | the avatar (opens the `AccountMenu` popup itself) | — |
+
+- **Defaults: off for every window kind** (Form, Dialog, ToolWindow, Splash, Flyout, MdiChild); what the view writes
+  wins, a binding (`ShowWaffle="{Binding SignedIn}"`) counts as shown for the room it takes. Not on by default for
+  main windows: every existing app window would grow a header it never asked for, and an app that does not link the
+  shell controls would get a diagnostic for nothing. A splash screen, a flyout or a borderless window has no Kubuno
+  title band: the items are not shown there (nor under `Chrome="System"`).
+- Code first: `form.set_header_items(HeaderItems { waffle: true, account: true, ..Default::default() })`
+  (`HeaderItems::ALL`), `form.set_unread_count(n)`, `form.search_clicked()`, `notifications_clicked()`,
+  `settings_clicked()`, `help_clicked()` (facade `kubuno::Form`).
+- **Composition** (`kubuno_views::window::HeaderSpec`, `build_header_items`): the root `<Panel>` builds, after its own
+  children, the search `IconButton` and one `<HeaderActions>` element **by class name** (`HEADER_ACTIONS_CLASS`) with the
+  view's `Show…`, `UnreadCount` and handler names copied on it (`OnNotificationsClicked="bell_click"`, the view's own
+  handler: a click reaches the form's code-behind, or a code-first subscriber, as any event of the view). The framework
+  never depends on the shell-controls crate: the class is registered when the application links it. Not registered:
+  the language server warns on the first `Show…` attribute (« … need the `HeaderActions` user control: add the shared
+  crate that provides it … »), the run time logs it and leaves the cluster out, and the designer shows a placeholder
+  (`<HeaderActions>` hatched, with that reason). `ShowSearch` alone needs nothing.
+- The items are not elements of the document (ids under `header!`): never selected, moved or serialized; a click on
+  them in the designer selects the view, whose Properties window shows the switches.
+
+### Geometry (web header tokens)
+
+- The cluster ends the **right** region, after the view's own `TitleBar.Region="Right"` controls (the web's module
+  slots come before the bell), immediately before the caption buttons (the chrome's 10 DIP `gap-2.5` plus the
+  cluster's own 8 DIP trailing gap). Search and cluster are joined (no gap, the web's `gap-0`); the regions' own
+  controls are `gap-1` (4) apart.
+- Sizes follow the band: in a title bar of the usual height (50 by default, 32 for a tool window) the buttons take the
+  caption buttons' size, **30** (`HeaderActions Compact="true"`, glyph 16); in the tall header (`TitleBarHeight` ≥ 56,
+  the web's `h-16` = 64) they are the web's **36** circles (`w-9 h-9`, glyph 18), the avatar 2 further (`ml-0.5`). The
+  cluster is as tall as the band and centres its buttons; widths: 160 / 190 for all five.
+- **Look**: a band carrying the items and coloured by nobody takes the web header's ground (`Background`, the
+  `var(--body-bg)` token) and the text colour for the title and caption buttons, light and dark. On a coloured band
+  (`TitleBarBackground`, `AccentColor`, or a ribbon whose tab strip it continues — Documents) the items take the band's
+  ink (`ForeColor` = `TitleBarForeground`, else `OnPrimary`) and the avatar its pale accent tint (`AvatarTint="Accent"`).
+  Hover: the controls' own round wash (`hover:bg-surface-3`).
+- **Free regions**: `TitleBar.Region="Left" | "Center" | "Right"` on any child of the root (`IconButton`,
+  `DropDownButton`, `SplitButton`, a `TextField`/search field, a user control). The centre region is centred on the
+  window but pushed aside (then narrowed, its control cut to it) so it never covers the left or right region
+  (`window_chrome::layout`). `RightToLeftLayout="true"` mirrors the regions and their order (from the region's right
+  edge), and the cluster (`RightToLeft="true"`: the avatar next to the caption buttons).
+
+### Behaviour
+
+- **Hit-testing** (checked with `WM_NCHITTEST` on the example window): `HTCLIENT` on every item and region control
+  (they are title-bar holes), `HTCAPTION` between the title and the controls and in the gap before the caption buttons
+  (drag, double-click maximises — checked live), `HTMAXBUTTON` on the maximise button (snap layouts).
+- **Keyboard**: **F6** (Shift+F6) moves the focus from the page to the first focusable control of the title band and
+  back to the control that had it; **Alt** pressed alone does the same in a view without a menu bar (with one, Alt keeps
+  entering the menu bar). Tab reaches the band's controls after the page's.
+- **UIA**: the items are ordinary controls of the view's accessibility tree, named by their tooltips (« Rechercher »,
+  « Notifications »…), under the window.
+- **Popups**: the waffle and the avatar open their panels below the button, outside the window (§4).
+
+### Designer (Visual Studio)
+
+- Selecting the title bar selects the view: the Properties window lists `ShowSearch` … `ShowAccount`, `UnreadCount`
+  (« Barre de titre ») and the four events (⚡); switching one rewrites the root attribute and the surface recompiles
+  live (the cluster, or its placeholder when the project does not link the shell controls).
+- Dragging a Toolbox control over the window shows the band's three **drop zones** (dashed; the one under the pointer
+  washed with the accent; mirrored right to left); a drop inserts the control as the root's last child with
+  `TitleBar.Region` (an `IconButton` gets the band's button size: `Diameter`/`Width`/`Height` 30, 36 in the tall
+  header).
+- With the view selected, a **smart tag** at the window's top-right corner opens the title bar's tasks: « Ajouter un
+  bouton à la barre de titre » (à gauche, au centre, à droite: an `IconButton`, then selected) and one switch per
+  standard item (checked when shown; switching off removes the attribute). Each task is one undo unit
+  (`TitleBarDesignerTasks`).
+
+Example: `kubuno-shell-controls/examples/form_header.rs` (`--dark`, `--compact`, `--rtl`, `--minimal`, `--accent`): a
+code-first Form with every item, a menu button on the left and a search field in the centre.
 
 ## 6. Platform notes
 

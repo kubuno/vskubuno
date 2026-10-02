@@ -179,6 +179,15 @@ namespace Kubuno.Views.Designer.DesignSurface
             return model;
         }
 
+        /// <summary>The title bar's smart tag (docs/SHELL-CONTROLS.md section 5): its tasks on the view's root, as one flat list.</summary>
+        public static DesignerMenuModel BuildTitleBarTasks(string text, ComponentRegistry registry, string? clipboardTag, IReadOnlyList<string>? selectedIds)
+        {
+            var model = Build(text, StableElementId.Root, registry, clipboardTag, selectedIds);
+            model.Verbs = TitleBarDesignerTasks.Verbs(text);
+            model.AddOnly = true;
+            return model;
+        }
+
         /// <summary><see cref="Build"/>, then the ribbon element's tasks (its smart tag or "+" glyph: <paramref name="addOnly"/>).</summary>
         public static DesignerMenuModel BuildRibbon(string text, string elementId, ComponentRegistry registry, string? clipboardTag, IReadOnlyList<string>? selectedIds, bool addOnly)
         {
