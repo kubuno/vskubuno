@@ -22,6 +22,7 @@ Sources: the four audits of 2026-09-30 (chat+shell, documents, drive, VS build) 
 | App lot 2, **shell** increment 3 follow-up (2026-10-01): each admin section previews its own design data (`design/*.json` through `d:ItemsSource`, `d:` values on the dashboard's cards); generic: `d:ItemsSource` on a `DataTable`, nested JSON arrays as inner Repeater lists, owner-drawn tables drawn by default in the designer, a `DataTable` too narrow for its columns scrolls sideways (the `Fill` column keeps its minimum) instead of squeezing them. A Debug build under a debugger runs `--sample` by default; `--live` opts out. F5 of the console checked. | desktop `src/shell`, `kubuno-views` |
 | App lot 3, **documents** (2026-10-02): `Application::run(DocumentWindow)`; `document_window.kbview` with the declarative `<Ribbon>` converted 1:1 from `ribbon.rs` (208 `<Command>`s shared by the ribbon, the QAT and the shortcuts; Backstage « Informations » as the `BackstageInfo` user control), ribbon pixel-identical to the Rust declaration; custom controls `PageCanvas` (the `doc` engine unchanged, wheel/keys/scroll bars incl. a horizontal one), web-faithful `HorizontalRuler` / `VerticalRuler` / `RulerCorner` (graduations, margins, indent markers, tab stops, drags with guide) and `ZoomSlider`; resources fr/en. Generic: ribbon elements in the accessibility tree (UIA Invoke), `{Res}` ScreenTips, `RibbonComboBox ItemsSource`, `RibbonGallery Display="Inline"`, `Option Label`, command-owned toggle state, `Control::cursor_at`/`tool_tip_at`, `StatusLabel ForeColor`. | desktop `src/documents`, `kubuno-views`, `kubuno-ui` |
 | App lot 3 follow-up, **documents editing** (2026-10-02): the engine moved into the platform-neutral `common/kubuno-docs-core` (model, `.kbdoc`, layout/pagination ported from `canvas-engine.ts` with ProseMirror positions, hit-testing, editing commands, Yjs-like undo grouping; builds for wasm32/linux/macOS); `PageCanvas` edits (caret, selection across pages, typing, IME placement, clipboard, context menu), ribbon commands wired with checked states from the selection, ruler edits undoable, pages side by side; `--doc <id>` opens a server document through the shell's broker with the digest-guarded save session on a worker thread, crash journal, Kubuno `ConfirmDialog` for recovery and conflicts. | desktop `common/kubuno-docs-core`, `src/documents`, `docs/DOCUMENTS-EDITING.md` |
+| App lot 2, **shell** increment 4 (2026-10-02): the header's menus as shared user controls in the new crate `desktop/windows/src/crates/shell-controls` — `WaffleMenu` (favourites card, edit mode, `AppTileGrid`), `AccountMenu` (`PanelMenu`, `AccentPill`), the header buttons `WaffleButton` / `AccountButton` that open them in an out-of-window popup, and the web's `HeaderActions` cluster; data through `LauncherService` / `AccountService`; names shared with the web (`docs/SHELL-CONTROLS.md`). Generic: `kubuno::popup` (a control in a top-level floating panel anchored to a control, flip and work-area clamping), `host::screen_geometry`, a hidden docked panel child no longer counted in the panel's measure. The shell's `waffle_flyout` / `user_flyout` views are gone (one code path: the buttons). Parity: as user controls inside the former flyouts 0.000 % pixels (light/dark, 100/175 %, open, editing, dragging, dropped, account panel and its hover); through the popup buttons the panel chrome and the account panel stay at 0.000 % (the tiles changed with the web-logo work of the same day). `examples/header_demo.rs` (320 × 200) shows the popups leaving the window, flipped above it at the screen's bottom and clamped at its edges. | desktop `src/crates/shell-controls`, `src/shell`, `kubuno::popup` |
 
 Decisions: the desktop keeps the system font (Plus Jakarta Sans stays web-only); property-element syntax
 (`<RibbonTab.ScalingPolicy>`) is adopted in `.kbview`; drive code ported from Files stays MIT-noticed when it moves
@@ -101,11 +102,11 @@ An existing domain folder keeps its name when it says more than the generic role
 
 ### Layout of each app
 
-**shell** (`kubuno-desktop`, 2026-10-02): `views/` (shell_window, waffle_flyout, user_flyout, confirm_dialog,
+**shell** (`kubuno-desktop`, 2026-10-02): `views/` (shell_window, confirm_dialog,
 signout_dialog) · `pages/` (launcher_page, settings_page, accounts_page + account_row, activity_page + activity_row,
 labels_page + label_row, login_page) · `admin/` (`mod.rs` = former `admin.rs`; admin_page, admin_section_header, the
 eight `admin_<section>` user controls, the item templates group_row, settings_category, storage_block; `design/*.json`)
-· `controls/` (app_tile_grid, bar_chart, org_unit_tree, panel_menu, stacked_bar, stat_card, status_dot,
+· `controls/` (bar_chart, org_unit_tree, stacked_bar, stat_card, status_dot,
 status_presenter, storage_gauge) · `model/` (view_model, events) · `services/` (backend, session, sync, apps, activity,
 settings, favorites, options) · `platform/` (cloudfiles, explorer, tray, folder_picker, actions) · `resources/`.
 
@@ -121,3 +122,14 @@ conversation_pane) · `controls/message_thread` · `model/` (`mod.rs` = former `
 `views/` (main window, dialogs, Properties), `pages/` (Home, settings pages, layouts) with a `<feature>/` folder per
 big area (`sidebar/`, `infopane/`, `settings/`, `properties/`), `controls/` (FileItemsView, ColumnsView, and the
 reused toolbar/status bar controls), and the existing `drive-*` crates for the non-UI layers.
+
+### Shared control libraries
+
+A control used by several apps (the header's menus) lives in a **shared library crate** under
+`desktop/windows/src/crates`, never in an app crate: `shell-controls` (`WaffleMenu`, `AccountMenu`, `WaffleButton`,
+`AccountButton`, `HeaderActions`, and their parts). It follows the same layout (`controls/` with each `.kbcontrol`
+next to its code-behind and `design/` data, `model/`, `resources/`), depends on the `kubuno` facade only, and takes
+its data from the app through traits (`LauncherService`, `AccountService`). Its name must not start with `kubuno`:
+the macros, the language server and the designer skip `kubuno*` crates when they look for an app's control
+libraries. An app adds it as a path dependency; its controls then show in the Toolbox and the designer.
+How to wire it in an app's header: `src/crates/shell-controls/README.md`.
