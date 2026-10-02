@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Desktop apps: a source layout by role** (`docs/DESKTOP-MIGRATION.md`, "Source layout"; `docs/VIEWS-SPEC.md` §1.1
+  and §6.4). The shell, chat and documents crates are no longer a flat `src` folder: views, pages, a feature folder
+  (the shell's administration console), controls, model, services, platform and resources each have their own
+  folder, every view still next to its same-stem code-behind (nested in Solution Explorer, F7 unchanged). The
+  convention is written down for the next apps (drive).
+- **Add New Item in a source folder declares the module there**: a Kubuno view, user control, custom control or
+  component added to a sub-folder of `src` is declared in the folder's `mod.rs` (or `<folder>.rs`) instead of being
+  left undeclared; a folder that is not a module yet gets its `mod.rs`, declared by its parent up to the crate root.
+  The new declaration takes the visibility of its siblings (`pub mod` in a library).
+
 - **Web views design note: the compiler and the runtime as built** (`docs/WEB-VIEWS.md` §13 and §14, lots
   WV-2 and WV-3). The note now describes the `.kbview` web compiler (the Rust crate `kubuno-views-web`, its
   WebAssembly build in `@kubuno/views-compiler`, the Vite plugin, generated types, `kbview-tsc`, HMR) and the
@@ -16,6 +26,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **The extension ships kubuno-resources-tool.exe** (docs/RESOURCES.md) in its `tools\` folder, next to the language server and the data tool: `import-locales`, `import-resx` and `check` can be run from a terminal without building the desktop workspace.
 
+- **Kubuno Dev Assistant (« Assistant de développement Kubuno »), lot DA-1** (`docs/AI-ASSISTANT.md` §14): an AI pair
+  programmer for building Kubuno, in its own tool window (View › Other Windows), docked with Solution Explorer, native
+  and theme-following. Claude through the official Anthropic SDK in a separate process (`kubuno-dev-assistant.exe`,
+  .NET 8) with streaming, tool use, prompt caching of the Kubuno rules, the model list from the Models API (Claude
+  Opus 5.5 by default, Sonnet 5.5 one click away), effort, live token and cost display with a hard cost cap per session
+  (5 $ by default), and Stop. `#fichier`, `#sélection` and `#élément` (the element selected in the view designer)
+  attach context; `/vue` creates or changes a view through edits computed and validated by the `.kbview` language
+  server, `/expliquer` explains an error or the selection. Proposed changes are reviewed hunk by hunk and applied to the
+  editors as one undo unit (a single Ctrl+Z). Secrets are masked before anything leaves Visual Studio, « Voir la
+  requête » shows exactly what is sent, conversations are kept masked in the solution's `.vs` folder only, the API key
+  lives in the Windows Credential Manager (never shown again, never passed on a command line), and nothing is sent
+  anywhere but to the chosen provider (no telemetry). An offline test provider replays recorded answers without a key.
 - **Data bindings are first-class in the designer** (`docs/DESIGNER.md` §18): every bindable row of the Properties
   window now has a drop-down arrow in its value cell (categorised and alphabetical views alike) that opens a
   **binding picker** — the template's row, the view's data context (its `#[bind]` fields, a user control's
@@ -47,30 +69,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   space it adds a label and a bound control. A column dropped onto a control of a view that already has its table's
   binding source binds it too.
 
-- **User controls are `.kbcontrol` files, with their own icon** (`docs/VIEWS-SPEC.md` §1.1, `docs/DESIGNER.md` §11):
-  a user control's view (root `<UserControl>`) now uses the `.kbcontrol` extension, while forms, windows, dialogs,
-  tool windows, MDI windows, splash screens and flyouts keep `.kbview`. Same format, same designer, same language
-  server; Solution Explorer tells them apart (a new hinted 16 px user control icon, light, dark and high contrast, next
-  to the form's window icon), in a `.rsproj` and in Open Folder. A `.kbcontrol` opens in the designer on a
-  double-click, F7 / Shift+F7 pair it with its `.rs`, `Kubuno.Rust.Sdk` nests its code-behind and `.kbres` under it,
-  marks it `SubType="Designer"` and counts it as a build input, and the inheritance picker lists it. The « User
-  Control » and « Inherited User Control » item templates (and the project menu's « Contrôle utilisateur Kubuno »)
-  now create a `.kbcontrol`; the foundations sample's `message_row` is one. A user control left in a `.kbview` (or a
-  form saved as a `.kbcontrol`) gets a warning with the quick fix « Renommer en .kbcontrol » / « Renommer en
-  .kbview », which renames the file and updates its code-behind's path and the views inheriting from it.
-
-- **Kubuno Dev Assistant (« Assistant de développement Kubuno »), lot DA-1** (`docs/AI-ASSISTANT.md` §14): an AI pair
-  programmer for building Kubuno, in its own tool window (View › Other Windows), docked with Solution Explorer, native
-  and theme-following. Claude through the official Anthropic SDK in a separate process (`kubuno-dev-assistant.exe`,
-  .NET 8) with streaming, tool use, prompt caching of the Kubuno rules, the model list from the Models API (Claude
-  Opus 5.5 by default, Sonnet 5.5 one click away), effort, live token and cost display with a hard cost cap per session
-  (5 $ by default), and Stop. `#fichier`, `#sélection` and `#élément` (the element selected in the view designer)
-  attach context; `/vue` creates or changes a view through edits computed and validated by the `.kbview` language
-  server, `/expliquer` explains an error or the selection. Proposed changes are reviewed hunk by hunk and applied to the
-  editors as one undo unit (a single Ctrl+Z). Secrets are masked before anything leaves Visual Studio, « Voir la
-  requête » shows exactly what is sent, conversations are kept masked in the solution's `.vs` folder only, the API key
-  lives in the Windows Credential Manager (never shown again, never passed on a command line), and nothing is sent
-  anywhere but to the chosen provider (no telemetry). An offline test provider replays recorded answers without a key.
 - **The designer always shows a preview of the view** (`docs/DESIGNER.md` §17): a view with errors no longer
   shows « Waiting for a view that compiles… » on a blank page. Everything valid is rendered; an unknown element
   (a typo, a newer control, a project control not built yet) becomes a hatched placeholder with its name at its
@@ -88,6 +86,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `Binding="Name"` suggests `Text="{Binding Name}"`, each with a quick fix.
 - **The preview survives a crash of its process**: the last preview stays on screen while the surface restarts,
   and a surface that keeps crashing shows a bar with « Relancer ».
+
+- **User controls are `.kbcontrol` files, with their own icon** (`docs/VIEWS-SPEC.md` §1.1, `docs/DESIGNER.md` §11):
+  a user control's view (root `<UserControl>`) now uses the `.kbcontrol` extension, while forms, windows, dialogs,
+  tool windows, MDI windows, splash screens and flyouts keep `.kbview`. Same format, same designer, same language
+  server; Solution Explorer tells them apart (a new hinted 16 px user control icon, light, dark and high contrast, next
+  to the form's window icon), in a `.rsproj` and in Open Folder. A `.kbcontrol` opens in the designer on a
+  double-click, F7 / Shift+F7 pair it with its `.rs`, `Kubuno.Rust.Sdk` nests its code-behind and `.kbres` under it,
+  marks it `SubType="Designer"` and counts it as a build input, and the inheritance picker lists it. The « User
+  Control » and « Inherited User Control » item templates (and the project menu's « Contrôle utilisateur Kubuno »)
+  now create a `.kbcontrol`; the foundations sample's `message_row` is one. A user control left in a `.kbview` (or a
+  form saved as a `.kbcontrol`) gets a warning with the quick fix « Renommer en .kbcontrol » / « Renommer en
+  .kbview », which renames the file and updates its code-behind's path and the views inheriting from it.
 
 - **Docs: offline-first sync of the desktop apps** (`docs/DESKTOP-OFFLINE-SYNC.md`): the design study (a local
   SQLite database per account and app, synchronised through the Kubuno Delta Protocol v1, outbox of intents,
@@ -143,6 +153,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   progress bar and the legal lines — which the designer draws exactly as the application will show it. Its code
   gets `show_at_startup()`, which shows the splash at once on its own thread, set up from the view
   (`kubuno::splash::from_kbview`), and fades it out into the main window.
+
 - **Icons, chosen and drawn like in Windows Forms** (`docs/ICONS.md`): every icon property — a button's, a menu item's,
   a toolbar item's, a sidebar item's, a status label's, an empty state's, a docked panel's, the `<Icon>` element's
   `Name`, the ribbon's `SmallIcon`/`LargeIcon` and the window's own `Icon` — shows the icon itself in its Properties
@@ -425,7 +436,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   or the dark theme is underlined in the `.kbview` with the measured ratio; the view still builds and runs.
 - **IntelliSense for the inherited properties**: completion and hover in `.kbview` files now offer every inherited
   property (and the view's own on the root element), say which level it comes from, and note older names.
-
 - **The Kubuno core and web modules in Visual Studio** (`docs/WEB.md`). **Tools > Kubuno Core Web: Generate Solution**
   turns the core or a module repository into a solution: one `.rsproj` per Cargo package, the frontend as a Visual
   Studio JavaScript project (`.esproj`, npm/Vite build, TypeScript IntelliSense, browser debugging through
@@ -504,11 +514,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - The designer's **Design / XML / Split** buttons use Visual Studio's command-bar colours (rest, hover, selected),
   in the dark and the light themes, instead of WPF's default grey buttons.
 
+- The designer's **Design / XML / Split** buttons use Visual Studio's command-bar colours (rest, hover, selected),
+  in the dark and the light themes, instead of WPF's default grey buttons.
+
 - **Views specification: one type scale for both targets** (`docs/VIEWS-SPEC.md` §7.1): the desktop now uses the
   web's role sizes (Micro 10.5, Meta 11.5, Body 13.5, Heading 15.5, Title 21.5, page title 22.5), so a `Label Role`
   renders at the same physical size in the web and desktop previews; the table lists each role's token, size, desktop
   format and line box, and the components that keep a literal size outside the scale.
-- **Kubuno programs never load a `kubuno_ui` library of another build** (`docs/DESIGNER.md`, section 16): every
 - **Kubuno Core Desktop and Kubuno Core Web are named apart in Visual Studio**: the desktop workspace solution is `Kubuno.Core.Desktop.slnx`, the web server solution `Kubuno.Core.Web.slnx`; the docs follow.
 
 - The **"Kubuno Module"** project template is now **"Kubuno Core Web Module"**, laid out like today's modules: the
@@ -535,6 +547,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   instead of failing with a modal "the Rust executable ... does not exist" message; the web solutions make the
   program (`kubuno-core`, a module's backend) the startup project.
 
+- **Kubuno programs never load a `kubuno_ui` library of another build** (`docs/DESIGNER.md`, section 16): every
   build of the Kubuno desktop library is now named `kubuno_ui-<hash>.dll` and each program imports its own, so the
   « Point d'entrée introuvable … kubuno_ui » dialog cannot happen any more and a missing library is reported under
   its own name. The extension follows: F5 and the debugger find the library and its symbols in the build's `deps`
@@ -727,6 +740,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **A nested user control reads its own design data and images**: a user control placed by a view of another
+  folder resolved its relative paths (`d:ItemsSource="design/rows.json"`, image files) against the folder of the
+  view nesting it, so the designer showed generated rows instead of its sample data. They now resolve next to its
+  own `.kbcontrol` (`kubuno-views`: `ClassRegistration::view_dir`, registered by the derive).
+
 - **Kubuno Core Web F5: the dev core stays in its own folder.** Since the core chooses its directories per platform
   (`kubuno-paths`), a core started by F5 ran in Windows' *system* mode: it read `%ProgramData%\Kubuno\config.toml` (an
   installed Kubuno's configuration) and would have written its state, backups and module data there. F5 now gives it
@@ -748,10 +766,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `.vscode\launch.json`, so F5 of a frontend project failed with "Unable to start the previously selected debugger".
   When a web solution opens, its frontends' committed `.kubuno\launch.json` is copied to the (git-ignored)
   `.vscode\launch.json` when that one does not exist.
+- Rust test adapter: a failing test is no longer reported as Passed when the libtest output carries CR characters (CRLF captures or CRLF child output re-joined by the runner broke the failures-block parsing); line endings are normalized before parsing.
 - Rust projects: a build whose packages run a build script no longer crashes MSBuild ("Unknown Cargo build event."): the `CargoBuild` task logs the build-script event as a low-importance message.
 - **Identical files on every OS.** The repository now pins line endings to LF
   (`.gitattributes`), so a checkout on Windows no longer turns scripts,
-- Rust test adapter: a failing test is no longer reported as Passed when the libtest output carries CR characters (CRLF captures or CRLF child output re-joined by the runner broke the failures-block parsing); line endings are normalized before parsing.
   manifests or sources into CRLF, and what is built or packaged from it is the
   same whichever OS checks it out.
 

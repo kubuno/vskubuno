@@ -54,6 +54,12 @@ module kind).
   `.kbcontrol` module exports a user control, a `.kbview` module a view).
 - A view's resources (`main_view.kbres`) and code-behind (`main_view.rs` / `.ts`) are found by stem, under either
   extension.
+- **Folders (normative, 2026-10-02).** A view and its code-behind **MUST** sit in the same folder with the same stem;
+  any folder of the package may hold them (`src/pages/login_page.kbcontrol` + `src/pages/login_page.rs`). Every tool
+  resolves an element naming a user control or custom control declared in another folder of the package (the classes
+  are scanned recursively), and every relative path written in a view (`d:ItemsSource`, image files) is relative to
+  **that view's own folder**, also when another view in another folder nests it. The desktop apps' folder convention is
+  `DESKTOP-MIGRATION.md`, "Source layout".
 
 ## 2. Element names
 
@@ -271,7 +277,9 @@ handlers.
 
 Design mode never runs handlers or mutations. Sample values come from `d:` attributes, `d:DataContext="{SampleData
 X.sample.json}"`, `Repeater DesignItemCount`, `<Query d:Sample="…">`; the web designer MAY switch to live data
-(opt-in, WEB-VIEWS §4.6).
+(opt-in, WEB-VIEWS §4.6). A file named by `d:ItemsSource="design/rows.json"` is relative to the folder of the view
+holding the attribute — a user control nested by a view of another folder reads its own `design/` folder (desktop:
+`ClassRegistration::view_dir`).
 
 ## 7. Typography
 

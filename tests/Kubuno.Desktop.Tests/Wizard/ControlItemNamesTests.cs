@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Kubuno.Desktop.TemplateWizard;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -85,6 +86,84 @@ namespace Kubuno.Desktop.Tests.Wizard
             Assert.AreEqual(Path.Combine(root, "src", "main.rs"), ControlItemNames.CrateRootFor(Path.Combine(root, "src", "round_button.rs"), Exists));
             Assert.IsNull(ControlItemNames.CrateRootFor(Path.Combine(root, "src", "controls", "round_button.rs"), Exists));
             Assert.IsNull(ControlItemNames.CrateRootFor(Path.Combine(root, "src", "main.rs"), Exists), "the root itself");
+        }
+
+        /// <summary>
+        /// docs/DESKTOP-MIGRATION.md "Source layout": a view added to a sub-folder of <c>src</c> (Add New Item on the folder
+        /// in Solution Explorer) is declared by that folder's module file, with the visibility its siblings have.
+        /// </summary>
+        [TestMethod]
+        public void A_control_added_to_a_source_folder_is_declared_by_the_folder_module()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "kubuno-wizard-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, "src", "pages"));
+                File.WriteAllText(Path.Combine(root, "Cargo.toml"), "[package]\nname = \"app\"\n");
+                File.WriteAllText(Path.Combine(root, "src", "lib.rs"), "//! App.\n\npub mod pages;\n");
+                File.WriteAllText(Path.Combine(root, "src", "pages", "mod.rs"), "//! Pages.\n\npub mod home_page;\n");
+                var file = Path.Combine(root, "src", "pages", "account_row.rs");
+                File.WriteAllText(file, "// row\n");
+
+                Assert.AreEqual(Path.Combine(root, "src", "pages", "mod.rs"), ControlItemNames.ParentModuleFor(file, File.Exists));
+                Assert.IsTrue(ControlItemNames.DeclareModuleOnDisk(file));
+                Assert.AreEqual("//! Pages.\n\npub mod home_page;\npub mod account_row;\n", File.ReadAllText(Path.Combine(root, "src", "pages", "mod.rs")));
+                Assert.AreEqual("//! App.\n\npub mod pages;\n", File.ReadAllText(Path.Combine(root, "src", "lib.rs")), "the crate root is left alone");
+                Assert.IsFalse(ControlItemNames.DeclareModuleOnDisk(file), "already declared");
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        /// <summary>A view added to a folder that is not a module yet creates its <c>mod.rs</c>, declared up to the crate root.</summary>
+        [TestMethod]
+        public void A_control_added_to_a_new_folder_creates_its_module_up_to_the_crate_root()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "kubuno-wizard-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, "src", "admin", "sections"));
+                File.WriteAllText(Path.Combine(root, "Cargo.toml"), "[package]\nname = \"app\"\n");
+                File.WriteAllText(Path.Combine(root, "src", "lib.rs"), "//! App.\n\npub mod views;\n");
+                var file = Path.Combine(root, "src", "admin", "sections", "users_section.rs");
+                File.WriteAllText(file, "// section\n");
+
+                Assert.IsNull(ControlItemNames.ParentModuleFor(file, File.Exists));
+                Assert.AreEqual(Path.Combine(root, "src", "admin", "sections", "mod.rs"), ControlItemNames.FolderModuleToCreate(file, File.Exists));
+                Assert.IsTrue(ControlItemNames.DeclareModuleOnDisk(file));
+                StringAssert.Contains(File.ReadAllText(Path.Combine(root, "src", "admin", "sections", "mod.rs")), "\npub mod users_section;\n");
+                StringAssert.Contains(File.ReadAllText(Path.Combine(root, "src", "admin", "mod.rs")), "\npub mod sections;\n");
+                Assert.AreEqual("//! App.\n\npub mod views;\npub mod admin;\n", File.ReadAllText(Path.Combine(root, "src", "lib.rs")));
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        /// <summary>A folder declared the 2018 way (<c>pages.rs</c> next to <c>pages\</c>) declares its files without a #[path].</summary>
+        [TestMethod]
+        public void A_folder_with_a_sibling_module_file_declares_its_files_plainly()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "kubuno-wizard-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, "src", "pages"));
+                File.WriteAllText(Path.Combine(root, "Cargo.toml"), "[package]\nname = \"app\"\n");
+                File.WriteAllText(Path.Combine(root, "src", "main.rs"), "mod pages;\nfn main() {}\n");
+                File.WriteAllText(Path.Combine(root, "src", "pages.rs"), "mod home_page;\n");
+                var file = Path.Combine(root, "src", "pages", "login_page.rs");
+                File.WriteAllText(file, "// page\n");
+
+                Assert.IsTrue(ControlItemNames.DeclareModuleOnDisk(file));
+                Assert.AreEqual("mod home_page;\nmod login_page;\n", File.ReadAllText(Path.Combine(root, "src", "pages.rs")));
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
         }
 
         /// <summary>

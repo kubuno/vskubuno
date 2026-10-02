@@ -142,7 +142,7 @@ namespace Kubuno.Desktop.TemplateWizard
         /// lines. A file not named after its module (<paramref name="fileName"/> <c>RoundButton.rs</c> for <c>round_button</c>)
         /// gets a <c>#[path]</c> attribute. Null when the module is already declared.
         /// </summary>
-        public static string? DeclareModule(string rootText, string module, string? fileName = null)
+        public static string? DeclareModule(string rootText, string module, string? fileName = null, string visibility = "")
         {
             if (Regex.IsMatch(rootText, @"(?m)^\s*(pub(\([^)]*\))?\s+)?mod\s+" + Regex.Escape(module) + @"\s*[;{]"))
             {
@@ -151,8 +151,8 @@ namespace Kubuno.Desktop.TemplateWizard
 
             var newline = rootText.Contains("\r\n") ? "\r\n" : "\n";
             var line = fileName is null || string.Equals(fileName, module + ".rs", StringComparison.Ordinal)
-                ? "mod " + module + ";"
-                : "#[path = \"" + fileName + "\"]" + newline + "mod " + module + ";";
+                ? visibility + "mod " + module + ";"
+                : "#[path = \"" + fileName + "\"]" + newline + visibility + "mod " + module + ";";
             var mods = Regex.Matches(rootText, @"(?m)^(pub(\([^)]*\))?\s+)?mod\s+\w+\s*;[^\n]*$");
             if (mods.Count > 0)
             {
@@ -286,25 +286,127 @@ namespace Kubuno.Desktop.TemplateWizard
             return false;
         }
 
-        /// <summary>Declares the module of <paramref name="rsPath"/> in its crate root on disk (keeping its encoding); whether it did.</summary>
-        public static bool DeclareModuleOnDisk(string rsPath)
+        /// <summary>
+        /// The module file that declares <paramref name="rsPath"/> when it sits in a sub-folder of the crate's <c>src</c>
+        /// (<c>src\pages\account_row.rs</c>, docs/DESKTOP-MIGRATION.md "Source layout"): the folder's <c>mod.rs</c>, else
+        /// the <c>pages.rs</c> next to the folder. Null when the file is not in such a sub-folder, or when the folder has
+        /// no module file yet (<see cref="FolderModuleToCreate"/> says which one to create).
+        /// </summary>
+        public static string? ParentModuleFor(string rsPath, Func<string, bool> fileExists)
         {
-            var root = CrateRootFor(rsPath, File.Exists);
-            if (root is null)
+            var folder = SourceSubFolder(rsPath, fileExists);
+            if (folder is null)
+            {
+                return null;
+            }
+
+            var modRs = Path.Combine(folder, "mod.rs");
+            if (fileExists(modRs) && !string.Equals(modRs, rsPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return modRs;
+            }
+
+            var sibling = folder.TrimEnd('\\', '/') + ".rs";
+            return fileExists(sibling) ? sibling : null;
+        }
+
+        /// <summary>
+        /// The <c>mod.rs</c> to create when <paramref name="rsPath"/> is added to a sub-folder of <c>src</c> that is not a
+        /// module yet (a folder just created in Solution Explorer); null when there is nothing to create.
+        /// </summary>
+        public static string? FolderModuleToCreate(string rsPath, Func<string, bool> fileExists)
+        {
+            var folder = SourceSubFolder(rsPath, fileExists);
+            if (folder is null || ParentModuleFor(rsPath, fileExists) is not null || string.Equals(Path.GetFileName(rsPath), "mod.rs", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return Path.Combine(folder, "mod.rs");
+        }
+
+        /// <summary>The folder of <paramref name="rsPath"/> when it is strictly under its package's <c>src</c>; null otherwise.</summary>
+        private static string? SourceSubFolder(string rsPath, Func<string, bool> fileExists)
+        {
+            var package = PackageDirectoryFor(rsPath, fileExists);
+            var folder = Path.GetDirectoryName(rsPath);
+            if (package is null || folder is null)
+            {
+                return null;
+            }
+
+            var src = Path.Combine(package, "src");
+            return IsUnder(folder, src) ? folder : null;
+        }
+
+        /// <summary>
+        /// The visibility of a module declared in <paramref name="parentText"/>: the one of the modules it already declares
+        /// (<c>pub </c> when they are public), else <c>pub </c> in a library (its views are linked by the designer and
+        /// re-exported by path) and nothing in a binary.
+        /// </summary>
+        public static string ModuleVisibility(string parentText, bool isLibrary = false)
+        {
+            var text = parentText ?? string.Empty;
+            if (Regex.IsMatch(text, @"(?m)^pub\s+mod\s+\w+\s*;"))
+            {
+                return "pub ";
+            }
+
+            return Regex.IsMatch(text, @"(?m)^mod\s+\w+\s*;") || !isLibrary ? string.Empty : "pub ";
+        }
+
+        /// <summary>
+        /// Declares the module of <paramref name="rsPath"/> on disk (keeping the file's encoding): in the crate root for a
+        /// file of <c>src</c> (or next to Cargo.toml), in its folder's module file for a file of a sub-folder of <c>src</c>
+        /// (creating that <c>mod.rs</c> when the folder is not a module yet). Whether it declared something.
+        /// </summary>
+        public static bool DeclareModuleOnDisk(string rsPath) => DeclareModuleOnDisk(rsPath, 0);
+
+        private static bool DeclareModuleOnDisk(string rsPath, int depth)
+        {
+            // A folder's `mod.rs` is declared like the `<folder>.rs` it stands for (`mod pages;` in the folder's parent).
+            var isFolderModule = string.Equals(Path.GetFileName(rsPath), "mod.rs", StringComparison.OrdinalIgnoreCase);
+            var folderOfModRs = isFolderModule ? Path.GetDirectoryName(rsPath) : null;
+            var effective = folderOfModRs is not null ? folderOfModRs.TrimEnd('\\', '/') + ".rs" : rsPath;
+            var module = ModuleName(Path.GetFileNameWithoutExtension(effective));
+
+            var declaring = CrateRootFor(effective, File.Exists);
+            if (declaring is null && depth < 16)
+            {
+                // A file of a sub-folder of `src` (docs/DESKTOP-MIGRATION.md "Source layout"): declared by the folder's
+                // module file — created, and itself declared by its parent, when the folder is not a module yet.
+                if (FolderModuleToCreate(effective, File.Exists) is { } create)
+                {
+                    var folderName = Path.GetFileName(Path.GetDirectoryName(create)) ?? string.Empty;
+                    File.WriteAllText(create, "//! The `" + ModuleName(folderName) + "` folder of the crate.\n", new UTF8Encoding(false));
+                    DeclareModuleOnDisk(create, depth + 1);
+                }
+
+                declaring = ParentModuleFor(effective, File.Exists);
+            }
+
+            if (declaring is null)
             {
                 return false;
             }
 
-            var bytes = File.ReadAllBytes(root);
+            var bytes = File.ReadAllBytes(declaring);
             var hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
             var text = new UTF8Encoding(false).GetString(bytes, hasBom ? 3 : 0, bytes.Length - (hasBom ? 3 : 0));
-            var updated = DeclareModule(text, ModuleName(Path.GetFileNameWithoutExtension(rsPath)), ModulePathFrom(root, rsPath));
+            // The new module gets the visibility of the modules already declared there (`pub mod` in a library), else a
+            // library's modules are public (its views are linked by the designer and re-exported by path).
+            var isCrateRoot = CrateRootFor(effective, File.Exists) is not null;
+            var package = PackageDirectoryFor(effective, File.Exists);
+            var isLibrary = package is not null && File.Exists(Path.Combine(package, "src", "lib.rs"));
+            // A `pages.rs` next to its folder names `pages/x.rs` as plain `mod x;`: no #[path] then.
+            var siblingStyle = !isCrateRoot && !string.Equals(Path.GetFileName(declaring), "mod.rs", StringComparison.OrdinalIgnoreCase);
+            var updated = DeclareModule(text, module, siblingStyle ? null : ModulePathFrom(declaring, effective), ModuleVisibility(text, isLibrary));
             if (updated is null)
             {
                 return false;
             }
 
-            File.WriteAllText(root, updated, new UTF8Encoding(hasBom));
+            File.WriteAllText(declaring, updated, new UTF8Encoding(hasBom));
             return true;
         }
     }

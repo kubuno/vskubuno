@@ -44,3 +44,79 @@ into AGPL crates.
 4. **drive** — one `.kbview` UserControl per Files XAML UserControl (navigation/address toolbar, sidebar, status bar, info-pane sections, Home widgets QuickAccess/Drives/RecentFiles, settings cards/expanders, property pages), reused across views like in Files; dialogs and Properties first, main window on the host wrapping the current engine, then region by region; `FileItemsView`/`ColumnsView` custom controls; one `.kbview` per Files `.xaml`.
 
 Each app lot: before/after screenshots (dark/light, 100 % and 175 %), UIA check, opens in the VS designer, F5.
+
+## Source layout
+
+Every desktop app crate (`shell`, `chat`, `documents`, and `drive` when it migrates) groups its `src` by **role**,
+so that a human finds a file by what it is, not by scrolling a flat folder (user request, 2026-10-02). The layout is
+the same in every app; a folder exists only when it holds something.
+
+### Folders
+
+| Folder | Holds | Examples |
+|---|---|---|
+| *(root)* | `main.rs` (the `Program.cs`) and `lib.rs` (the module tree, the `pub use` of the classes, `resources!`) — nothing else | |
+| `views/` | the top-level views (`.kbview`): the main window, its dialogs, flyouts, tool windows | `views/shell_window.kbview` + `.rs`, `views/confirm_dialog.kbview` |
+| `pages/` | the user controls (`.kbcontrol`) that make up the main window's content — pages, panes, sections — **and the item templates their lists repeat**, next to them | `pages/accounts_page.kbcontrol`, `pages/account_row.kbcontrol` |
+| `<feature>/` | a feature area big enough for its own folder (roughly six views or more, or non-UI logic of its own): its views, its item templates, its `design/` data; the feature's own logic is the folder's `mod.rs` | shell `admin/` (`mod.rs` = the console's structure) |
+| `controls/` | the building blocks views place: custom-drawn controls (`#[derive(Component)]`, code only) and user controls placed as plain elements by several views. A sub-folder for a family (`controls/ruler/`) | `controls/status_dot.rs`, `controls/status_presenter.kbcontrol` |
+| `model/` | what the views show and raise, pure and unit-tested: state, `view_model`, event arguments; or the domain model | shell `model/{view_model, events}`, chat `model/` (state) + `model/view_model.rs` |
+| `services/` | the work behind the views, no UI: server clients, the sync engine's door, sessions, settings, background loops | shell `services/{backend, session, sync, …}`, chat `services/api.rs` |
+| `platform/` | OS integration the views do not touch: Explorer, Cloud Files, tray, pickers, protocol handlers, drawing surfaces | shell `platform/{cloudfiles, explorer, tray, …}`, documents `platform/painter.rs` |
+| `resources/` | the `.kbres` sets (`resources.kbres`, `resources.fr.kbres`, …) | `kubuno::resources!(pub Resources, "resources/resources.kbres")` |
+| `design/` | design-time data (`d:ItemsSource="design/x.json"`), **next to the views that name it** | `admin/design/users.json` |
+
+An existing domain folder keeps its name when it says more than the generic role (documents keeps `doc/`, `edit/`,
+`model/`, `api/` — `api/` plays the `services/` role).
+
+### Rules
+
+1. **A view and its code-behind share a folder and a stem** (`pages/login_page.kbcontrol` + `pages/login_page.rs`):
+   Solution Explorer nests one under the other (`Kubuno.Rust.Sdk` `DependentUpon`, same folder), F7 opens the same-stem
+   `.rs`, and the macros' paths (`#[user_control(view = "login_page.kbcontrol")]`, `#[kubuno::view("x.kbview")]`) stay
+   bare file names. Never split them.
+2. **An item template lives next to the list that repeats it**, not in a separate `rows/` folder; a user control placed
+   by several views goes to `controls/`.
+3. **Folders are modules declared with `mod.rs`** (`pub mod x;` lines, plus a `//!` saying what the folder holds) —
+   it keeps a folder self-contained in Solution Explorer. In a library crate the modules are `pub`.
+4. **Paths in code name the module path** (`crate::services::backend`), never a re-export at the crate root to fake
+   the old flat paths; `lib.rs` re-exports only the classes (`pub use pages::login_page::LoginPage;`).
+5. **Relative paths in files are relative to the file that names them**: `include_str!`/`include_bytes!` to the Rust
+   file, `d:ItemsSource`/image paths to the view, `File="../../assets/app.ico"` in a `.kbres` to the `.kbres`.
+6. **Module isolation is unchanged**: folders never reach into another app's crate.
+
+### What depends on file locations (checked 2026-10-02)
+
+| Mechanism | Behaviour with folders |
+|---|---|
+| `#[kubuno::view]`, `#[user_control(view = …)]`, `kubuno::resources!` | resolved like `include_str!`, relative to the declaring file; fallback: the unique match under `src` |
+| A view naming a user control or custom control of another folder | the macros, `kubuno-views-ls` and the design build scan every `.rs` of the package recursively (`target`, `obj`, `bin`, hidden folders and nested packages skipped) |
+| `d:ItemsSource` and image paths of a **nested** user control | resolved against the user control's own folder (`ClassRegistration::view_dir`, absolute, registered by the derive), not the folder of the view nesting it — added 2026-10-02 |
+| `{Res}` in the designer and the language server | every `.kbres` of the package, recursively (set name = file stem) |
+| Solution Explorer nesting | same folder + same stem (`Sdk.targets`) |
+| Add New Item (all Kubuno view and control templates) on a folder | the files land in the folder; the wizard declares the module in the folder's `mod.rs` (or `<folder>.rs`), creating `mod.rs` — declared by its parent, up to the crate root — when the folder is not a module yet; visibility follows the sibling declarations (`pub` in a library) |
+| F7 / code-behind discovery / handler insertion | same folder, same stem first, then the other `.rs` of the folder |
+| Test Explorer | test names follow the module path (`kubuno_shell::services::session::tests::…`) |
+
+### Layout of each app
+
+**shell** (`kubuno-desktop`, 2026-10-02): `views/` (shell_window, waffle_flyout, user_flyout, confirm_dialog,
+signout_dialog) · `pages/` (launcher_page, settings_page, accounts_page + account_row, activity_page + activity_row,
+labels_page + label_row, login_page) · `admin/` (`mod.rs` = former `admin.rs`; admin_page, admin_section_header, the
+eight `admin_<section>` user controls, the item templates group_row, settings_category, storage_block; `design/*.json`)
+· `controls/` (app_tile_grid, bar_chart, org_unit_tree, panel_menu, stacked_bar, stat_card, status_dot,
+status_presenter, storage_gauge) · `model/` (view_model, events) · `services/` (backend, session, sync, apps, activity,
+settings, favorites, options) · `platform/` (cloudfiles, explorer, tray, folder_picker, actions) · `resources/`.
+
+**chat** (`kubuno-chat`, 2026-10-02): `views/chat_window` · `pages/` (conversation_list_pane + conversation_row,
+conversation_pane) · `controls/message_thread` · `model/` (`mod.rs` = former `model.rs`, `view_model`) ·
+`services/api` · `platform/protocol` · `resources/`.
+
+**documents** (`kubuno-documents`, 2026-10-02): `views/` (document_window, `view_tests.rs`) · `pages/backstage_info` ·
+`controls/` (page_canvas, zoom_slider, `ruler/`) · `model/` (the stored document, `node`, `state` = former `state.rs`)
+· `doc/`, `edit/`, `api/` (unchanged) · `platform/painter` · `resources/`.
+
+**drive** (when it migrates): one `.kbcontrol` per Files `.xaml` UserControl, grouped as Files groups them —
+`views/` (main window, dialogs, Properties), `pages/` (Home, settings pages, layouts) with a `<feature>/` folder per
+big area (`sidebar/`, `infopane/`, `settings/`, `properties/`), `controls/` (FileItemsView, ColumnsView, and the
+reused toolbar/status bar controls), and the existing `drive-*` crates for the non-UI layers.
