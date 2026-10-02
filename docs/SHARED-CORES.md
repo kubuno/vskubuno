@@ -1,6 +1,6 @@
 # Shared cores: one implementation of each algorithm for web, desktop and mobile
 
-Date: 2026-10-02. Status: **approved on 2026-10-02** (decisions in §8.1); first lots in progress.
+Date: 2026-10-02. Status: **approved on 2026-10-02** (decisions in §8.1); SC-0, SC-3b and the Android outbox fix built (§10).
 
 Trigger (user, 2026-10-02): « il faudra peut-être partager une partie du code avec la version web pour éviter de
 refaire certains algorithmes identiques plusieurs fois (et ceci vaut pour tous les modules avec leurs versions
@@ -531,3 +531,113 @@ then SC-2 and SC-3.
   unusual names.
 - The Android Compose line breaking was not compared with the web's (assumed different: the platform breaker vs
   whitespace-only breaking).
+
+## 10. As built (2026-10-02)
+
+### 10.1 SC-0 as built: conformance vectors
+
+**Format (format 1).** JSON Schema: `core/vectors/conformance-vectors.schema.json`. A suite is one file:
+
+```json
+{ "$schema": "…/conformance-vectors.schema.json", "format": 1,
+  "suite": "forms.operators", "version": "1.0.0",
+  "description": "what the function does, its input and output shapes",
+  "reference": "the reference implementation (crate::function)",
+  "cases": [ { "id": "equals/case-insensitive", "input": { … }, "expected": …, "note": "…",
+               "skip": { "kotlin": "documented divergence" } } ] }
+```
+
+- `suite` is `<domain>.<area>[.<sub>]`; case ids are unique, lower-case, `/` groups allowed.
+- Outputs compare as JSON: numbers by value (`1 == 1.0`), object keys in any order, arrays in order; a producer
+  emits unordered results sorted.
+- `skip` (platform → reason) is the only way to accept a divergence; the runner of that platform reports the case
+  as skipped. Platforms: `rust`, `ts`, `kotlin`, `swift`.
+- **Versioning.** `format` is the file-format major (a runner refuses any other). `version` is the suite's SemVer:
+  MAJOR when an expected output changes or a case is removed (every implementation must change), MINOR when cases
+  are added, PATCH for notes. The runners are versioned by their own tag (`vectors-vX.Y.Z` in core).
+
+**Layout per domain.** Vectors live with the reference implementation:
+
+| Domain | Folder | Reference |
+|---|---|---|
+| forms | `forms/crates/kubuno-forms-core/vectors/` (`operators`, `hidden`, `jump`, `reached`, `answer`, `submission`) | `kubuno-forms-core` |
+| sync client | `core/vectors/sync/` (`outbox-backoff`, `http-classify`) | desktop `kubuno-sync-engine` today, the future `kubuno-sync-core` |
+| next: recurrence, drive names | `core/vectors/recurrence/` (or the `kubuno-recurrence` crate), `drive/crates/kubuno-drive-core/vectors/` | SC-2, SC-3 |
+
+A consumer in another repository **vendors** a suite folder at a pinned tag with a `VENDOR.json`
+(`{format, source, ref, path, files: {name: "sha256:<hex>"}}`); the checksum is SHA-256 of the file with CRLF
+normalised to LF, so a Windows checkout does not break it. Every runner verifies `VENDOR.json` before running
+(a mismatch says to re-vendor). Within the reference's own repository the files are read in place.
+
+**Runners.**
+
+| Language | Where | Use |
+|---|---|---|
+| Rust | `core/crates/kubuno-vectors` (tag `vectors-v0.1.0`), dev-dependency | `kubuno_vectors::assert_suite(path, \|input\| …)`; `verify_vendor(dir)`; reports every failing case |
+| TypeScript | `core/frontend/packages/vectors` = npm `@kubuno/vectors` 0.1.0 (no dependency; vitest or `node:test`) | `defineVectorTests(path, fn, { describe, it })` (one test per case), `assertSuite`, `verifyVendor`; CLI `kubuno-vectors vendor <from> <to> --source --ref --path` and `kubuno-vectors check <dir>` |
+| Kotlin | `mobile/android/core-vectors` (JVM module, JUnit 4, kotlinx-serialization) | `ConformanceVectors.assertSuite(file) { input -> … }`, `verifyVendor(dir)`; used by `core-sync` tests |
+
+Until `@kubuno/vectors` is published, forms vendors the runner itself (`frontend/test/vendor/kubuno-vectors/`
+with its own `VENDOR.json`), so the module build needs no new npm dependency; it can switch to a devDependency
+after the publish.
+
+**CI.** core `checks.yml` job `vectors`: clippy + tests of `kubuno-vectors` and `npm test` of `@kubuno/vectors` on
+Linux, Windows and macOS (they also validate every suite of `core/vectors`). forms `checks.yml` job `forms-core`:
+clippy, tests and vectors of the core on the three OSes plus `cargo check --target wasm32-unknown-unknown`; the
+existing `frontend` job's `npx vitest run` runs the same vectors against `src/logic.ts`. mobile `build.yml` already
+runs `./gradlew test` on Linux, which includes `:core-vectors` and the vendored sync suites. `_tools/check_versions.py`
+now audits `kubuno-vectors` (tag identical everywhere, including module `crates/*/Cargo.toml`) and `@kubuno/vectors`.
+
+### 10.2 SC-3b as built: `kubuno-forms-core` (security fix)
+
+- Crate `forms/crates/kubuno-forms-core` (sans-IO, `forbid(unsafe_code)`, serde + serde_json only, checked on
+  wasm32): the twelve operators with JavaScript's exact coercions (`String()`, `trim`, `Number()`,
+  `Number#toString`), `compute_hidden`, `resolve_jump`, `reached_questions` (classic shell = not hidden; one at a
+  time = the jump path the page walks, loop-guarded), `is_answered`/`check_value` per question type (required,
+  types, choices, ranges, sizes, e-mail/URL/phone/date/time formats) and `validate_submission`.
+- The server's only submission path (`POST /public/:token/submit`; there is no authenticated, edit or draft path)
+  validates every submission with it: 422 `{error: "VALIDATION", message, issues: [{question_id, code}]}`, only the
+  answers of reached questions are stored, a file answer must name an upload of the same form, the respondent
+  e-mail must be valid when given.
+- The web keeps TypeScript (study §7: the WASM would cost ≈ 100 KB gzip for 135 lines): `frontend/src/logic.ts`
+  implements the same functions and passes the same 187 vectors; the public page validates with them before moving
+  on or sending and shows the issue under each question.
+- **Bypass proof** (curl, dev core on the local MySQL dev database, `C:\kubuno-build\agent-sc0\bypass-test.sh`):
+  before the fix a form with one rule accepted a response with its required question missing (HTTP 200), an empty
+  response (200), a required question of a shown section left empty (200), malformed values (200) and an answer to
+  a question of another form (stored); after the fix the same requests get 422 with the question ids, the legitimate
+  submission (required question in a hidden section left empty) still gets 200, and the foreign answer is dropped.
+  A headless browser run of the public page (classic layout, e-mail collected) confirmed the client side.
+- Found on the way and fixed: a form collecting the respondent e-mail could not be submitted in the classic layout
+  (the page sent `__email` as a question id; the server refused the body).
+
+### 10.3 Android outbox (Q5) as built
+
+`mobile` commits `db15696` (`:core-vectors`) and `f52a306` (outbox): transient failures retry forever with the
+shared schedule, persisted on the row; HTTP answers are classified as in `sync.http.classify`; definitive refusals,
+conflicts and not-found (except trash) become a persistent "not synced" row that only an explicit discard removes
+(with a local rollback); `OutboxStatus` exposes the list, retry and discard; `KubunoSyncIssuesBanner` (core-ui) shows
+it in app-drive; Room 3 → 4 migration keeps queued rows. JVM tests use fakes and run both sync suites. **Not built**:
+no Gradle or Android SDK on the Windows machine.
+
+### 10.4 Other "client-only validation" found (not fixed)
+
+- forms: `requireSignIn` is only sent to the page (the public submit route has no authentication); a form whose
+  `collectEmail` is on does not require the address server-side (and the one-question-per-screen page never asks
+  for it); the public token accepts submissions before publication (`published_at` is not checked).
+- calendar: the public poll answer (`/public/polls/:token/respond`) does not check that each `slot_id` belongs to
+  the poll, nor the e-mail format.
+- app: anonymous and shared record writes store any JSON under any type name, without the type's field rules.
+- drive: name rules (already SC-3).
+
+### 10.5 Next lots, ready to start
+
+- **SC-2 recurrence (`kubuno-recurrence`, core repository, Q3).** Start with `core/vectors/recurrence/`
+  (DST transitions in Europe/Paris and America/New_York, an event at 00:30 local on Monday, monthly last weekday,
+  29 February, COUNT/UNTIL in the event's zone, EXDATE/RECURRENCE-ID), expected outputs from a hand-checked oracle;
+  then the crate (expansion in the event's zone), the six calendar callers, tasks validation, and the web builder
+  held by the same vectors through `@kubuno/vectors`. Measure `rrule`/`chrono-tz` in WASM before choosing (§5.1.1).
+- **SC-3 drive names (Q4).** `kubuno-drive-core` (drive repository): verdict with server/Windows/macOS/Linux
+  profiles, case/NFC key, reversible local mapping, conflict-copy name; vectors first
+  (`drive/crates/kubuno-drive-core/vectors/`), then rename/create-folder on the server, the desktop sync engine and
+  Android vendoring the suite through `:core-vectors`.
