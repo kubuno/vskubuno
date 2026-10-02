@@ -473,6 +473,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Kubuno Core Web F5 opens Google Chrome by default.** The dev core's page opens in Chrome, Microsoft Edge only when
+  Chrome is not installed, then the default browser (`KubunoBrowser`: `chrome`, `edge`, `default`); generated and
+  template `launch.json` files, and their `.vscode` copies, list the Chrome configuration first, so script debugging
+  starts in Chrome. Their source map mapping names the URL the core really serves a module's bundle at
+  (`/modules/<id>/`).
 - **The view designer is shared by the Kubuno targets** (`docs/WEB-VIEWS.md` WV-8, `docs/ARCHITECTURE.md` "Layers
   (as built)"): the WinForms-like designer (Toolbox, Properties and its type descriptors, events ⚡, collection editors,
   smart tags, resource, icon and binding pickers, error banner, design-surface protocol), the `.kbview` language client
@@ -722,6 +727,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Kubuno Core Web F5: the dev core stays in its own folder.** Since the core chooses its directories per platform
+  (`kubuno-paths`), a core started by F5 ran in Windows' *system* mode: it read `%ProgramData%\Kubuno\config.toml` (an
+  installed Kubuno's configuration) and would have written its state, backups and module data there. F5 now gives it
+  `KUBUNO_PATHS_MODE=user` and every `KUBUNO_PATHS_*` directory inside `%LOCALAPPDATA%\Kubuno\dev-core` (docs/WEB.md §6).
+- **Stop Debugging no longer leaves modules running.** It ended the core and the debugged module, but every other
+  module the core had started (another F5 deployment, a `.kbpkg` install) kept running without its core, holding its
+  port. Every process started from the dev core's `modules` and `modules-store` folders is now stopped when the core
+  ends, and before the next launch.
+- **A web solution opened for the first time starts its program.** With no user options yet, Visual Studio picked a
+  module's frontend `.esproj` as the startup project (its F5 starts no core); the core's or the module's backend is now
+  made the startup project on that first opening - a later choice of the developer is kept.
+- **A failed F5 of a Kubuno web project says why.** Launched among several startup projects (the "Kubuno Core Web +
+  navigateur" profile), an exception of the launch only showed Visual Studio's generic "an extension threw" bar; the
+  Kubuno Output pane now has the error and its stack.
+- **TypeScript breakpoints of a module bind.** The module's source maps said `../src/entry.ts`, which the browser
+  resolved against `/modules/<id>/entry.js` to `/modules/src/entry.ts` - one URL for every module - so a breakpoint in
+  a module's TypeScript was never hit. F5 now deploys each source map with the absolute paths of the checkout's files.
+- **The frontend's F5 starts a browser.** Visual Studio 18 ignores `LaunchJsonFolder` and only reads
+  `.vscode\launch.json`, so F5 of a frontend project failed with "Unable to start the previously selected debugger".
+  When a web solution opens, its frontends' committed `.kubuno\launch.json` is copied to the (git-ignored)
+  `.vscode\launch.json` when that one does not exist.
 - Rust projects: a build whose packages run a build script no longer crashes MSBuild ("Unknown Cargo build event."): the `CargoBuild` task logs the build-script event as a low-importance message.
 - **Identical files on every OS.** The repository now pins line endings to LF
   (`.gitattributes`), so a checkout on Windows no longer turns scripts,

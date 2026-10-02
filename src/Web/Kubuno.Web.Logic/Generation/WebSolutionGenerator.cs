@@ -400,13 +400,14 @@ namespace Kubuno.Web.Logic.Generation
                 var path = repository.Module?.SidebarPath ?? "/" + repository.Id;
                 url = "http://localhost:8080" + (path.StartsWith("/", StringComparison.Ordinal) ? path : "/" + path);
                 webRoot = "${workspaceFolder}";
-                // The core serves the module's bundle at /modules/<id>/frontend/; its source maps point back into src.
-                overrides = "\"sourceMapPathOverrides\": { \"http://localhost:8080/modules/" + repository.Id + "/frontend/*\": \"${workspaceFolder}/dist/*\" }";
+                // The core serves the module's bundle at /modules/<id>/entry.js; F5 deploys its source maps with absolute
+                // source paths (SourceMapPaths), so its TypeScript maps to the checkout's src.
+                overrides = "\"sourceMapPathOverrides\": { \"http://localhost:8080/modules/" + repository.Id + "/*\": \"${workspaceFolder}/dist/*\" }";
             }
 
             var builder = new StringBuilder();
             builder.Append("{\n  \"version\": \"0.2.0\",\n  \"configurations\": [\n");
-            foreach (var (type, name) in new[] { ("edge", "Edge"), ("chrome", "Chrome") })
+            foreach (var (type, name) in new[] { ("chrome", "Chrome"), ("edge", "Edge") })
             {
                 builder.Append("    {\n");
                 builder.Append("      \"type\": \"").Append(type).Append("\",\n");

@@ -88,13 +88,24 @@ namespace Kubuno.Web.Logic.Modules
                 }
 
                 var target = new FileInfo(copy.Target);
-                if (target.Exists && target.Length == source.Length && target.LastWriteTimeUtc == source.LastWriteTimeUtc)
+                var sourceMap = SourceMapPaths.IsSourceMap(source.FullName);
+                // A deployed source map is rewritten (its size differs): its time stamp alone says it is current.
+                if (target.Exists && (sourceMap || target.Length == source.Length) && target.LastWriteTimeUtc == source.LastWriteTimeUtc)
                 {
                     continue;
                 }
 
                 Directory.CreateDirectory(target.DirectoryName!);
-                File.Copy(source.FullName, target.FullName, overwrite: true);
+                var rewritten = sourceMap ? SourceMapPaths.MakeSourcesAbsolute(File.ReadAllText(source.FullName), source.DirectoryName!) : null;
+                if (rewritten is not null)
+                {
+                    File.WriteAllText(target.FullName, rewritten, new System.Text.UTF8Encoding(false));
+                }
+                else
+                {
+                    File.Copy(source.FullName, target.FullName, overwrite: true);
+                }
+
                 File.SetLastWriteTimeUtc(target.FullName, source.LastWriteTimeUtc);
                 copied++;
             }

@@ -24,6 +24,8 @@ namespace Kubuno.Web
                 DevDatabaseTunnelCommand.Initialize(context.Package, commandService);
             }
 
+            WebStartupProject.Initialize();
+
             // SPIKE (docs/WEB-VIEWS.md, WV-9a): the WebView2 design surface in a document pane, for .kbwebspike files
             // (registered by KubunoPackage's [ProvideEditorFactory]; Visual Studio needs the live instance too).
             context.RegisterEditorFactory(new WebDesigner.Spike.WebDesignSpikeEditorFactory());

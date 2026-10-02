@@ -94,6 +94,31 @@ namespace Kubuno.Web.Tests
         }
 
         [TestMethod]
+        public void Deployed_source_maps_name_their_sources_by_absolute_path()
+        {
+            // Found live on drive: dist/entry.js.map says ../src/entry.ts, which the browser resolves against
+            // /modules/<id>/entry.js to /modules/src/entry.ts - the same URL for every module - and no TypeScript
+            // breakpoint ever bound. The deployed copy names the checkout's files instead.
+            var module = WriteModule();
+            var dist = Path.Combine(module, "frontend", "dist");
+            File.WriteAllText(Path.Combine(dist, "entry.js.map"), "{\"version\":3,\"file\":\"entry.js\",\"sources\":[\"../src/entry.ts\",\"webpack://x/y.ts\",\"../node_modules/lib/a.mjs\"],\"names\":[],\"mappings\":\"AAAA\"}");
+            var target = Path.Combine(_root, "dev-core", "modules", "inventory");
+            ModuleDeployment.Execute(ModuleDeployment.Plan(module, Path.Combine(module, "kubuno-inventory.exe"), target, ModuleManifest.Parse(Manifest)));
+
+            var deployed = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(target, "frontend", "entry.js.map"))).RootElement;
+            var sources = deployed.GetProperty("sources").EnumerateArray().Select(source => source.GetString()).ToList();
+            Assert.AreEqual(Path.Combine(module, "frontend", "src", "entry.ts").Replace('\\', '/'), sources[0]);
+            Assert.AreEqual("webpack://x/y.ts", sources[1], "a URL is kept");
+            Assert.AreEqual(Path.Combine(module, "frontend", "node_modules", "lib", "a.mjs").Replace('\\', '/'), sources[2]);
+            Assert.AreEqual("AAAA", deployed.GetProperty("mappings").GetString(), "the rest of the map is kept");
+
+            // Current by time stamp alone (its size differs from the source's): not copied again.
+            Assert.AreEqual(0, ModuleDeployment.Execute(ModuleDeployment.Plan(module, Path.Combine(module, "kubuno-inventory.exe"), target, ModuleManifest.Parse(Manifest))));
+            Assert.IsNull(SourceMapPaths.MakeSourcesAbsolute("{\"sources\":[\"C:/abs/a.ts\"]}", dist), "nothing to change");
+            Assert.IsNull(SourceMapPaths.MakeSourcesAbsolute("not json", dist));
+        }
+
+        [TestMethod]
         public void The_kbpkg_has_the_module_folder_at_its_root_and_sha256sums()
         {
             var module = WriteModule();

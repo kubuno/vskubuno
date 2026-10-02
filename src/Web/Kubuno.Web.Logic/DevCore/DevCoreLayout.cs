@@ -55,6 +55,15 @@ namespace Kubuno.Web.Logic.DevCore
         /// <summary>SQLite files (unused with PostgreSQL, but the default would be a Linux path).</summary>
         public string SqliteDirectory => Path.Combine(Root, "db");
 
+        /// <summary>The <c>KUBUNO_PATHS_CONFIG_DIR</c> of the dev core: the system configuration file it would read (never %ProgramData%\Kubuno).</summary>
+        public string ConfigDirectory => Path.Combine(Root, "config");
+
+        public string CacheDirectory => Path.Combine(Root, "cache");
+
+        public string RuntimeDirectory => Path.Combine(Root, "run");
+
+        public string BackupsDirectory => Path.Combine(Root, "backups");
+
         public string DataKeyFile => Path.Combine(Root, "data.key");
 
         /// <summary>Where the core writes the first administrator's generated password on a fresh database.</summary>
@@ -122,13 +131,21 @@ namespace Kubuno.Web.Logic.DevCore
             return Directory.Exists(store) ? store : Path.Combine(ModulesDirectory, moduleId);
         }
 
+        /// <summary>
+        /// The folders the core starts module executables from (<see cref="ModulesDirectory"/> and
+        /// <see cref="ModulesStoreDirectory"/>): any process whose image lies there belongs to this dev core. Stopping
+        /// the debugger terminates the core without its children, so every module it started - not only the one being
+        /// debugged - would keep running, holding its port for the next launch.
+        /// </summary>
+        public IReadOnlyList<string> ModuleProcessDirectories => new[] { ModulesDirectory, ModulesStoreDirectory };
+
         /// <summary>Creates every folder (idempotent).</summary>
         public void EnsureCreated()
         {
             foreach (var directory in new[]
             {
                 Root, ModulesDirectory, ModulesStoreDirectory, ModulesConfigDirectory, ModulesDataDirectory, ThemesDirectory,
-                FilesDirectory, LogsDirectory, SqliteDirectory,
+                FilesDirectory, LogsDirectory, SqliteDirectory, ConfigDirectory, CacheDirectory, RuntimeDirectory, BackupsDirectory,
             })
             {
                 Directory.CreateDirectory(directory);
@@ -259,6 +276,20 @@ namespace Kubuno.Web.Logic.DevCore
                 ["KV__LOGGING__LOG_DIR"] = layout.LogsDirectory,
                 ["KUBUNO_DATA_KEY_FILE"] = layout.DataKeyFile,
                 ["KUBUNO_INITIAL_PASSWORD_FILE"] = layout.InitialPasswordFile,
+                // The core's platform layout (kubuno-paths): a per-user instance whose every directory is a folder of the
+                // dev core - without them a Windows core defaults to %ProgramData%\Kubuno (system mode) and would read an
+                // installed Kubuno's configuration file and write its state, backups and module data there.
+                ["KUBUNO_PATHS_MODE"] = "user",
+                ["KUBUNO_PATHS_CONFIG_DIR"] = layout.ConfigDirectory,
+                ["KUBUNO_PATHS_STATE_DIR"] = layout.Root,
+                ["KUBUNO_PATHS_DATA_DIR"] = layout.Root,
+                ["KUBUNO_PATHS_LOG_DIR"] = layout.LogsDirectory,
+                ["KUBUNO_PATHS_CACHE_DIR"] = layout.CacheDirectory,
+                ["KUBUNO_PATHS_RUNTIME_DIR"] = layout.RuntimeDirectory,
+                ["KUBUNO_PATHS_BACKUP_DIR"] = layout.BackupsDirectory,
+                ["KUBUNO_PATHS_MODULES_STORE"] = layout.ModulesStoreDirectory,
+                ["KUBUNO_PATHS_MODULES_CONFIG_DIR"] = layout.ModulesConfigDirectory,
+                ["KUBUNO_PATHS_MODULES_DATA_DIR"] = layout.ModulesDataDirectory,
             };
 
             if (!string.IsNullOrEmpty(frontendDist))

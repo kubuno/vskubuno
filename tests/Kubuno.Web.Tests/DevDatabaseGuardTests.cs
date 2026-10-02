@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Kubuno.Web.Logic.DevCore;
 using Kubuno.Web.Logic.DevDatabase;
@@ -97,6 +98,70 @@ namespace Kubuno.Web.Tests
             Assert.AreEqual(@"C:\dev-core\data.key", environment["KUBUNO_DATA_KEY_FILE"]);
             Assert.IsTrue(environment.Values.All(value => !value.StartsWith("/")), "no Linux default left");
             CollectionAssert.IsSubsetOf(new[] { "KV__DATABASE__URL", "KV__SERVER__INTERNAL_SECRET", "KV__AUTH__JWT_SECRET" }, DevCoreEnvironment.SecretNames.ToList());
+        }
+
+        [TestMethod]
+        public void The_dev_core_platform_layout_stays_in_the_dev_core_folder()
+        {
+            // Without KUBUNO_PATHS_*, a Windows core runs in system mode and uses %ProgramData%\Kubuno: an installed
+            // Kubuno's config.toml would be read, and state, backups and module data written next to it.
+            var layout = new DevCoreLayout(@"C:\dev-core");
+            var environment = DevCoreEnvironment.Build(layout, "postgres://u:p@h/kubuno_dev", new DevCoreSecrets("kubunodev_a", "kubunodev_b"), null, 8080);
+            Assert.AreEqual("user", environment["KUBUNO_PATHS_MODE"]);
+            var directories = new[]
+            {
+                "KUBUNO_PATHS_CONFIG_DIR", "KUBUNO_PATHS_STATE_DIR", "KUBUNO_PATHS_DATA_DIR", "KUBUNO_PATHS_LOG_DIR", "KUBUNO_PATHS_CACHE_DIR",
+                "KUBUNO_PATHS_RUNTIME_DIR", "KUBUNO_PATHS_BACKUP_DIR", "KUBUNO_PATHS_MODULES_STORE", "KUBUNO_PATHS_MODULES_CONFIG_DIR",
+                "KUBUNO_PATHS_MODULES_DATA_DIR",
+            };
+            foreach (var name in directories)
+            {
+                Assert.IsTrue(environment[name].StartsWith(@"C:\dev-core",StringComparison.OrdinalIgnoreCase), name + " = " + environment[name]);
+            }
+
+            Assert.AreEqual(environment["KV__SERVER__MODULES_INSTALL_DIR"], environment["KUBUNO_PATHS_MODULES_STORE"]);
+            Assert.AreEqual(environment["KV__SERVER__MODULES_CONFIG_DIR"], environment["KUBUNO_PATHS_MODULES_CONFIG_DIR"]);
+            Assert.AreEqual(environment["KV__SERVER__MODULES_DATA_DIR"], environment["KUBUNO_PATHS_MODULES_DATA_DIR"]);
+            Assert.AreEqual(@"C:\dev-core\config", environment["KUBUNO_PATHS_CONFIG_DIR"]);
+        }
+
+        [TestMethod]
+        public void F5_opens_chrome_by_default_and_edge_only_as_a_fallback()
+        {
+            var environment = new System.Collections.Generic.Dictionary<string, string>
+            {
+                ["ProgramFiles"] = @"C:\Program Files",
+                ["ProgramFiles(x86)"] = @"C:\Program Files (x86)",
+                ["LOCALAPPDATA"] = @"C:\Users\dev\AppData\Local",
+            };
+            string? Env(string name) => environment.TryGetValue(name, out var value) ? value : null;
+            const string Chrome = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+            const string UserChrome = @"C:\Users\dev\AppData\Local\Google\Chrome\Application\chrome.exe";
+            const string Edge = @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe";
+
+            var both = new[] { Chrome, Edge };
+            Assert.AreEqual(Chrome, DevBrowser.Resolve(null, Env, both.Contains), "Chrome is the default");
+            Assert.AreEqual(Chrome, DevBrowser.Resolve("", Env, both.Contains));
+            Assert.AreEqual(UserChrome, DevBrowser.Resolve(null, Env, new[] { UserChrome, Edge }.Contains), "a per-user Chrome install counts");
+            Assert.AreEqual(Edge, DevBrowser.Resolve(null, Env, new[] { Edge }.Contains), "Edge only when Chrome is missing");
+            Assert.IsNull(DevBrowser.Resolve(null, Env, _ => false), "then the system's default browser");
+            Assert.AreEqual(Edge, DevBrowser.Resolve("edge", Env, both.Contains), "Edge on purpose (KubunoBrowser=edge)");
+            Assert.IsNull(DevBrowser.Resolve("default", Env, both.Contains));
+        }
+
+        [TestMethod]
+        public void Every_module_folder_the_core_starts_from_is_cleaned_up_with_it()
+        {
+            // Stop Debugging ends the core but not the modules it started: each folder the core runs module
+            // executables from - the F5 deployments and the .kbpkg store - is swept, not only the debugged module's.
+            var layout = new DevCoreLayout(@"C:\dev-core");
+            CollectionAssert.AreEquivalent(
+                new[] { @"C:\dev-core\modules", @"C:\dev-core\modules-store" },
+                layout.ModuleProcessDirectories.ToList());
+            var environment = DevCoreEnvironment.Build(layout, "postgres://u:p@h/kubuno_dev", new DevCoreSecrets("kubunodev_a", "kubunodev_b"), null, 8080);
+            CollectionAssert.AreEquivalent(
+                new[] { environment["KV__SERVER__MODULES_DIR"], environment["KV__SERVER__MODULES_INSTALL_DIR"] },
+                layout.ModuleProcessDirectories.ToList());
         }
     }
 }

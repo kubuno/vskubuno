@@ -150,6 +150,60 @@ namespace Kubuno.Web.Tests
         }
 
         [TestMethod]
+        public void A_web_solution_opened_without_user_options_starts_its_program_not_its_frontend()
+        {
+            // Found live (drive, fresh .vs): Visual Studio picked frontend\drive-frontend.esproj although the backend
+            // comes first in the .slnx, so F5 started a Vite watch and a browser with no core.
+            var calendar = Path.Combine(_root, "calendar");
+            var solution = Path.Combine(calendar, "Kubuno.Calendar.slnx");
+            Write(solution, "<Solution>\n  <Project Path=\"kubuno-calendar.rsproj\" />\n  <Project Path=\"frontend/calendar-frontend.esproj\" />\n</Solution>\n");
+            Assert.AreEqual(Path.Combine(calendar, ".vs", "Kubuno.Calendar.slnx", "v18", ".suo"), StartupProjectPolicy.UserOptionsFile(solution));
+            Assert.AreEqual("kubuno-calendar.rsproj", StartupProjectPolicy.ForFreshSolution(solution, hadUserOptions: false));
+            Assert.IsNull(StartupProjectPolicy.ForFreshSolution(solution, hadUserOptions: true), "the developer's own choice is kept");
+
+            // The multi-repository solution next to the repositories: the core starts.
+            var multi = Path.Combine(_root, "Kubuno.Web.slnx");
+            Write(multi, "<Solution>\n  <Folder Name=\"/calendar/\">\n    <Project Path=\"calendar/kubuno-calendar.rsproj\" />\n  </Folder>\n  <Folder Name=\"/core/\">\n    <Project Path=\"core/crates/kubuno-core/kubuno-core.rsproj\" />\n  </Folder>\n</Solution>\n");
+            Assert.AreEqual(@"core\crates\kubuno-core\kubuno-core.rsproj", StartupProjectPolicy.ForFreshSolution(multi, hadUserOptions: false));
+
+            // Not a Kubuno web solution: Visual Studio's choice.
+            var other = Path.Combine(_root, "other", "Other.slnx");
+            Write(other, "<Solution>\n  <Project Path=\"app/app.csproj\" />\n</Solution>\n");
+            Assert.IsNull(StartupProjectPolicy.ForFreshSolution(other, hadUserOptions: false));
+        }
+
+        [TestMethod]
+        public void The_committed_launch_json_is_mirrored_to_vscode_without_touching_a_developer_one()
+        {
+            // Visual Studio 18's script debugger ignores LaunchJsonFolder and only reads .vscode\launch.json (found live).
+            var calendar = Path.Combine(_root, "calendar");
+            var esproj = Path.Combine(calendar, "frontend", "calendar-frontend.esproj");
+            Write(esproj, "<Project Sdk=\"Microsoft.VisualStudio.JavaScript.Sdk/1.0.6887863\">\n  <PropertyGroup>\n    <LaunchJsonFolder>.kubuno</LaunchJsonFolder>\n  </PropertyGroup>\n</Project>\n");
+            Write(Path.Combine(calendar, "frontend", ".kubuno", "launch.json"), "{\"version\":\"0.2.0\"}");
+            var solution = Path.Combine(calendar, "Kubuno.Calendar.slnx");
+            Write(solution, "<Solution>\n  <Project Path=\"kubuno-calendar.rsproj\" />\n  <Project Path=\"frontend/calendar-frontend.esproj\" />\n</Solution>\n");
+
+            Assert.AreEqual(".kubuno", LaunchJsonMirror.LaunchJsonFolder(esproj));
+            var vscode = Path.Combine(calendar, "frontend", ".vscode", "launch.json");
+            CollectionAssert.AreEqual(new[] { vscode }, LaunchJsonMirror.EnsureForSolution(solution).ToList());
+            Assert.AreEqual("{\"version\":\"0.2.0\"}", File.ReadAllText(vscode));
+
+            // Chrome first (the configuration the script debugger preselects), Edge kept after it.
+            var edgeFirst = "{\"version\":\"0.2.0\",\"configurations\":[{\"type\":\"edge\",\"name\":\"E\"},{\"type\":\"chrome\",\"name\":\"C\"}]}";
+            var names = System.Text.Json.JsonDocument.Parse(LaunchJsonMirror.ChromeFirst(edgeFirst)).RootElement.GetProperty("configurations").EnumerateArray().Select(c => c.GetProperty("name").GetString()).ToList();
+            CollectionAssert.AreEqual(new[] { "C", "E" }, names);
+            Assert.AreEqual("not json", LaunchJsonMirror.ChromeFirst("not json"));
+            var generated = WebSolutionGenerator.Plan(new[] { WebRepository.Detect(calendar, out _)! }, solution, WebSdkVersions.Current, null)
+                .Single(file => file.Path.EndsWith("launch.json", StringComparison.OrdinalIgnoreCase)).Content;
+            Assert.IsTrue(generated.IndexOf("\"chrome\"", StringComparison.Ordinal) < generated.IndexOf("\"edge\"", StringComparison.Ordinal), "the generator lists Chrome first");
+            StringAssert.Contains(generated, "http://localhost:8080/modules/calendar/*", "the URL the core serves the bundle at");
+
+            File.WriteAllText(vscode, "{\"mine\":true}");
+            Assert.AreEqual(0, LaunchJsonMirror.EnsureForSolution(solution).Count, "a developer's own launch.json is kept");
+            Assert.AreEqual("{\"mine\":true}", File.ReadAllText(vscode));
+        }
+
+        [TestMethod]
         public void The_startup_project_is_the_program_never_a_library_and_libraries_get_no_launch_profile()
         {
             var core = WebRepository.Detect(Path.Combine(_root, "core"), out _)!;

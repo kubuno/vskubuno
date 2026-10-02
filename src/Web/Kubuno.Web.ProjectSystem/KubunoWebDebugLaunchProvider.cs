@@ -65,6 +65,25 @@ namespace Kubuno.Web.ProjectSystem
 
         public override async Task<IReadOnlyList<IDebugLaunchSettings>> QueryDebugTargetsAsync(DebugLaunchOptions launchOptions)
         {
+            try
+            {
+                return await QueryDebugTargetsCoreAsync(launchOptions).ConfigureAwait(true);
+            }
+            catch (Exception exception) when (!(exception is LaunchCancelledException) && !exception.Data.Contains(AlreadyLoggedKey))
+            {
+                // A launch among several startup projects (the "<Module> (Kubuno Core Web + navigateur)" profile) reports a
+                // provider's exception only as a generic "an extension threw" info bar: say what failed, with its stack.
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                KubunoLog.WriteLine("Kubuno web: F5 failed - " + exception);
+                throw;
+            }
+        }
+
+        /// <summary>Marks an exception whose message the Kubuno pane already shows.</summary>
+        private const string AlreadyLoggedKey = "Kubuno.AlreadyLogged";
+
+        private async Task<IReadOnlyList<IDebugLaunchSettings>> QueryDebugTargetsCoreAsync(DebugLaunchOptions launchOptions)
+        {
             var properties = ConfiguredProject.Services.ProjectPropertiesProvider!.GetCommonProperties();
             async Task<string> Read(string name) => await properties.GetEvaluatedPropertyValueAsync(name).ConfigureAwait(false) ?? string.Empty;
 
@@ -85,7 +104,9 @@ namespace Kubuno.Web.ProjectSystem
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 KubunoLog.WriteLine("Kubuno web: F5 refused - " + check.Message);
-                throw new InvalidOperationException(check.Message);
+                var refused = new InvalidOperationException(check.Message);
+                refused.Data[AlreadyLoggedKey] = true;
+                throw refused;
             }
 
             // 1b. The SSH tunnel to the remote host's PostgreSQL (Tools > Options > Kubuno > Remote Linux host), when the
@@ -130,6 +151,14 @@ namespace Kubuno.Web.ProjectSystem
             var layout = string.IsNullOrWhiteSpace(rootText) ? DevCoreLayout.Default() : new DevCoreLayout(rootText);
             layout.EnsureCreated();
             var port = int.TryParse(await Read("KubunoDevCorePort").ConfigureAwait(false), out var parsedPort) && parsedPort > 0 ? parsedPort : DevCoreLayout.DefaultPort;
+
+            // Modules a previous session's core started and left running (Stop Debugging ends the core, not its children):
+            // the new core starts them again, and they would hold their ports and lock their executables.
+            var leftovers = layout.ModuleProcessDirectories.SelectMany(directory => ModuleDeployment.StopProcessesUnder(directory)).ToList();
+            if (leftovers.Count > 0)
+            {
+                log.Add("Kubuno web: " + leftovers.Count + " module process(es) left running by a previous dev core stopped (process " + string.Join(", ", leftovers) + ").");
+            }
 
             var targetPath = await ResolveTargetPathAsync(properties).ConfigureAwait(false);
             string coreExecutable;
@@ -235,7 +264,9 @@ namespace Kubuno.Web.ProjectSystem
                 // Still held by a core that has not exited yet: the tail starts from the end of what is there.
             }
 
-            _pending = new LaunchPlan(coreExecutable, port, launchBrowser ? url : null, attach ? deployedExecutable : null, consoleLog, DatabaseSecrets(check.Url.Original), deployedExecutable);
+            // Chrome by default, Edge only when Chrome is missing, else the default browser (DevBrowser; KubunoBrowser picks).
+            var browser = DevBrowser.Resolve(await Read("KubunoBrowser").ConfigureAwait(false), Environment.GetEnvironmentVariable, File.Exists);
+            _pending = new LaunchPlan(coreExecutable, port, launchBrowser ? url : null, attach ? deployedExecutable : null, consoleLog, DatabaseSecrets(check.Url.Original), deployedExecutable, layout.ModuleProcessDirectories, browser);
 
             var settings = new DebugLaunchSettings(launchOptions)
             {
@@ -310,8 +341,11 @@ namespace Kubuno.Web.ProjectSystem
                     if (!browserOpened && await AnswersAsync(client, "http://127.0.0.1:" + plan.Port + "/").ConfigureAwait(false))
                     {
                         browserOpened = true;
-                        KubunoLog.WriteLine("Kubuno web: the dev core answers - opening " + plan.BrowserUrl);
-                        Process.Start(new ProcessStartInfo(plan.BrowserUrl!) { UseShellExecute = true })?.Dispose();
+                        KubunoLog.WriteLine("Kubuno web: the dev core answers - opening " + plan.BrowserUrl + " in " + (plan.Browser is null ? "the default browser" : Path.GetFileName(plan.Browser)) + ".");
+                        var start = plan.Browser is null
+                            ? new ProcessStartInfo(plan.BrowserUrl!) { UseShellExecute = true }
+                            : new ProcessStartInfo(plan.Browser, "\"" + plan.BrowserUrl + "\"") { UseShellExecute = false };
+                        Process.Start(start)?.Dispose();
                     }
 
                     if (plan.ModuleExecutable is not null)
@@ -490,21 +524,17 @@ namespace Kubuno.Web.ProjectSystem
         }
 
         /// <summary>
-        /// Ends the copies of the deployed module the core left behind: Stop Debugging terminates the core but only
-        /// detaches from the module process it started, which would keep running (and hold its port and database
-        /// connections) without its core. Only processes whose image lies in the deployed folder are touched.
+        /// Ends the module processes the core left behind: Stop Debugging terminates the core but only detaches from
+        /// the module it debugs, and every other module the core started (all of <c>modules\</c> and
+        /// <c>modules-store\</c>) is not a debuggee at all - they would keep running (and hold their ports and database
+        /// connections) without their core. Only processes whose image lies in the dev core's module folders are touched.
         /// </summary>
         private static void StopModuleCopies(LaunchPlan plan)
         {
-            if (plan.DeployedModuleExecutable is not { } executable)
-            {
-                return;
-            }
-
-            var stopped = ModuleDeployment.StopProcessesUnder(Path.GetDirectoryName(executable)!, Path.GetFileNameWithoutExtension(executable));
+            var stopped = plan.ModuleDirectories.SelectMany(directory => ModuleDeployment.StopProcessesUnder(directory)).ToList();
             if (stopped.Count > 0)
             {
-                KubunoLog.WriteLine("Kubuno web: the dev core ended - " + Path.GetFileName(executable) + " stopped (process " + string.Join(", ", stopped) + ").");
+                KubunoLog.WriteLine("Kubuno web: the dev core ended - " + stopped.Count + " module process(es) stopped (process " + string.Join(", ", stopped) + ").");
             }
         }
 
@@ -540,8 +570,10 @@ namespace Kubuno.Web.ProjectSystem
 
         private sealed class LaunchPlan
         {
-            public LaunchPlan(string coreExecutable, int port, string? browserUrl, string? moduleExecutable, string consoleLog, IReadOnlyList<string> masks, string? deployedModuleExecutable)
+            public LaunchPlan(string coreExecutable, int port, string? browserUrl, string? moduleExecutable, string consoleLog, IReadOnlyList<string> masks, string? deployedModuleExecutable, IReadOnlyList<string> moduleDirectories, string? browser)
             {
+                Browser = browser;
+                ModuleDirectories = moduleDirectories;
                 DeployedModuleExecutable = deployedModuleExecutable;
                 ConsoleLog = consoleLog;
                 Masks = masks;
@@ -557,6 +589,9 @@ namespace Kubuno.Web.ProjectSystem
 
             public string? BrowserUrl { get; }
 
+            /// <summary>The browser executable that opens <see cref="BrowserUrl"/>; null for the system's default browser.</summary>
+            public string? Browser { get; }
+
             public string? ModuleExecutable { get; }
 
             public string ConsoleLog { get; }
@@ -566,6 +601,9 @@ namespace Kubuno.Web.ProjectSystem
 
             /// <summary>The module deployed for this session (stopped with the core), whether or not it is debugged.</summary>
             public string? DeployedModuleExecutable { get; }
+
+            /// <summary>The dev core's module folders: what the core started from there is stopped with it.</summary>
+            public IReadOnlyList<string> ModuleDirectories { get; }
         }
     }
 }

@@ -31,8 +31,13 @@ picker) writes, for a Kubuno repository - recognized by its manifests, no `cargo
   (the crate also builds the `kubuno` CLI). Libraries go to a `/Libraries/` solution folder;
 - `frontend\<name>.esproj` - `kubuno-frontend.esproj` for the core, `<id>-frontend.esproj` for a module -
   `Microsoft.VisualStudio.JavaScript.Sdk/1.0.6887863` plus `Kubuno.Web.Sdk` (`KubunoWebRole` `CoreFrontend` or
-  `ModuleFrontend`), and its `frontend\.kubuno\launch.json` (Edge and Chrome configurations of Visual Studio's script
-  debugger; `.vscode` is ignored by the repositories' `.gitignore`, so `LaunchJsonFolder` points at `.kubuno`);
+  `ModuleFrontend`), and its `frontend\.kubuno\launch.json` (Chrome, then Edge, configurations of Visual Studio's
+  script debugger; `.vscode` is ignored by the repositories' `.gitignore`, so the committed file lives in `.kubuno` and
+  the `.esproj` names it in `LaunchJsonFolder`). **Visual Studio 18 ignores `LaunchJsonFolder`** (verified 2026-10-02:
+  relative, absolute, dotted or not, as a project item or not - only `.vscode\launch.json` is read; without it F5 of
+  the frontend fails with "Unable to start the previously selected debugger"). Every time a web solution opens, the
+  extension therefore writes the ignored `frontend\.vscode\launch.json` from `.kubuno\launch.json` when it does not
+  exist, Chrome configurations first (`LaunchJsonMirror`); a developer's own `.vscode\launch.json` is never touched;
 - `Kubuno.Core.Web.slnx` / `Kubuno.<Module>.slnx` (an existing `Kubuno.*.slnx` is merged into: only missing projects are
   added). The `.esproj` is mapped to `AnyCPU` (`<Platform Project="AnyCPU" />`); a module's backend has a
   `<BuildDependency>` on its frontend, so F5 on the backend builds the bundle it deploys;
@@ -40,8 +45,10 @@ picker) writes, for a Kubuno repository - recognized by its manifests, no `cargo
   "Kubuno Core Web (serveur + Vite)" for the core, "<Module> (Kubuno Core Web + navigateur)" for a module (only
   programs get a profile, never a library crate);
 - the **startup project**, set deliberately once the solution is open (Visual Studio keeps it per user, not in the
-  `.slnx`): `kubuno-core`, or the module's backend - never a library; programs also come first in the `.slnx`, so a
-  fresh `.vs` picks the same one. A library `.rsproj` cannot be started at all (Start is disabled for it by the Rust
+  `.slnx`): `kubuno-core`, or the module's backend - never a library. Programs come first in the `.slnx`, but that
+  was found not to be enough (drive, fresh `.vs`: Visual Studio picked the frontend `.esproj`, whose F5 starts no
+  core), so the first opening of a Kubuno web solution on a machine - no `.vs\<solution>\v18\.suo` yet - sets the
+  startup project too (`StartupProjectPolicy`; a later choice of the developer is kept). A library `.rsproj` cannot be started at all (Start is disabled for it by the Rust
   layer's launch provider, instead of a modal "executable does not exist" error);
 - Solution Explorer tells the projects apart: the core's server project shows a web server icon, a module's backend a
   web application icon (capabilities `KubunoWebCore`/`KubunoWebModule` from Kubuno.Web.Sdk, same project type);
@@ -239,6 +246,12 @@ folders of `%LOCALAPPDATA%\Kubuno\dev-core` (`KUBUNO_DEV_CORE_ROOT` or the `Kubu
 | `storage.local_path`, `logging.log_dir`, `database.path` | `files\`, `logs\`, `db\` |
 | data key, first administrator password | `data.key`, `initial-admin-password` (`KUBUNO_DATA_KEY_FILE`, `KUBUNO_INITIAL_PASSWORD_FILE`) |
 
+The core's platform directories (`kubuno-paths`, core 0.1.12+) are pinned to the same folder: `KUBUNO_PATHS_MODE=user`
+and every `KUBUNO_PATHS_*` variable (config `config\`, state and data the folder itself, logs, cache `cache\`, runtime
+`run\`, backups `backups\`, modules store/config/data as above). Without them a Windows core runs in *system* mode
+and uses `%ProgramData%\Kubuno` - an installed Kubuno's `config.toml` would be read, and state, backups and module
+data written there (seen live: "Platform directories, mode: system, config: C:\ProgramData\Kubuno").
+
 The core's working directory is that folder. On a fresh development database the core creates the first
 administrator and writes its password to `initial-admin-password` (the "Kubuno" Output pane says so).
 
@@ -246,13 +259,16 @@ administrator and writes its password to `initial-admin-password` (the "Kubuno" 
 
 **The core** (`kubuno-core.rsproj`, debugger "Kubuno Core Web (serveur)"): guard and development database tunnel (section 5), then `kubuno-core.exe` under the native
 debugger with the dev core environment (and `RUST_BACKTRACE=1`, `RUST_LOG=info` unless set); the browser opens on
-`http://localhost:8080/` once the core answers. The core's console (its tracing log, and what the modules it
+`http://localhost:8080/` once the core answers - **Google Chrome by default**, Microsoft Edge only when Chrome is not
+installed, then the system's default browser (`DevBrowser`; the `KubunoBrowser` property - `chrome`, `edge`,
+`default` - picks another on purpose). Product owner's rule (2026-10-02): Chrome is the default everywhere, Edge never. The core's console (its tracing log, and what the modules it
 supervises print) is redirected by the native debugger (`> dev-core\logs\core-console.log 2>&1`, never passed to the
 core) and followed into the **"Kubuno Core Web (serveur)"** Output pane, ANSI colours removed and the database
 password masked. **Combined launch**: the "Kubuno Core Web (serveur + Vite)" profile of the
 `.slnLaunch` starts the core and the frontend project; the frontend's F5 runs Vite's dev server (`npm run dev`,
-port 5173, which proxies `/api`, `/internal`, `/modules` and `/ws` to :8080) and opens Edge on
-`http://localhost:5173` with Visual Studio's script debugger. With a frontend project among the startup projects,
+port 5173, which proxies `/api`, `/internal`, `/modules` and `/ws` to :8080) and opens Chrome on
+`http://localhost:5173` with Visual Studio's script debugger (the first `launch.json` configuration; Edge is the
+second). With a frontend project among the startup projects,
 the core does not open a second browser.
 
 **A module** (`<module>.rsproj`, `KubunoWebRole=Module`):
@@ -272,14 +288,20 @@ the core does not open a second browser.
    appears and again after each restart by the supervisor (through the automation model, `Process2.Attach2` with the
    native engine: `IVsDebugger4.LaunchDebugTargets4` with `DLO_AlreadyRunning` refuses a process started by a core
    that is itself being debugged, E_INVALIDARG), until the core exits. Stop Debugging ends the core and only detaches
-   from the module, so the module copies left in the deployed folder are then stopped too;
+   from the module, and the other modules the core started are no debuggees at all: when the core ends, every process
+   started from the dev core's `modules\` and `modules-store\` folders is stopped (and again before the next launch);
 5. the browser opens on the module's first sidebar path (`http://localhost:8080/calendar`). A module checked out
    outside `..\core` gets the host frontend of the core repository of the last core F5 (`dev-core\core-repository.txt`).
 
-**Frontend debugging.** The "<Module> (Kubuno Core Web + navigateur)" profile also starts the module's frontend project: its
-F5 runs `vite build --watch --sourcemap` straight into the deployed `frontend` folder of the module (edit, save,
-refresh) and opens Edge on the module with the script debugger; `launch.json` maps
-`http://localhost:8080/modules/<id>/frontend/*` back to `dist/*`, whose source maps lead to `src`.
+**Frontend debugging.** The "<Module> (Kubuno Core Web + navigateur)" profile also starts the module's frontend project:
+its F5 opens **Chrome** (the first configuration of `.vscode\launch.json`, section 2; Edge stays one pick away in the
+debug target list) on the module with Visual Studio's script debugger, in a browser profile of its own. The core
+serves the bundle at `/modules/<id>/entry.js`; Vite's `dist/*.map` name their sources relative to `dist`
+(`../src/entry.ts`), which a browser resolves to `/modules/src/entry.ts` - the same URL for every module, so no
+breakpoint ever bound (found live). The deployment therefore rewrites each copied source map with the absolute paths
+of the checkout's files (`SourceMapPaths`), which the script debugger maps to the documents open in Visual Studio. The
+`StartupCommand` (`vite build --watch --sourcemap` into the deployed folder) was not seen running with a `launch.json`
+configuration selected: rebuild the frontend (Build) to refresh the deployed bundle.
 
 ## 8. The module template
 
@@ -381,7 +403,7 @@ item templates suffixed "(Kubuno Core Desktop)"; IDs unchanged). The extension's
   kubuno-modauth` in drive fixes it).
 - **Multi-repository**: `Z:\src\Kubuno.Web.slnx` with core + drive, 9/9 projects, Visual Studio's Git status bar
   showing the 2 repositories.
-- Not verified: a real development database (no `KUBUNO_DEV_DATABASE_URL` was available: never set nor guessed),
+- Not verified that day (done on 2026-10-02, below): a real development database (no `KUBUNO_DEV_DATABASE_URL` was available: never set nor guessed),
   hence the dev core running, the module attach, the browser opening and Edge script debugging; "Check Versions"
   and the "Prepare" commands inside Visual Studio (covered by unit tests).
 
@@ -399,3 +421,36 @@ item templates suffixed "(Kubuno Core Desktop)"; IDs unchanged). The extension's
 - While wiring the packages, one run of the first package build script copied freshly emitted declarations into
   `core/frontend/packages/ui/types` (10 modified `.d.ts`, 3 new ones) and overwrote `packages/ui/dist/index.js`, which
   was restored from HEAD at once; the build now writes only into `obj/package`.
+
+### Verification with the real development database (2026-10-02, hive `/rootsuffix KubunoWebF5`)
+
+`KUBUNO_DEV_DATABASE_URL` names `kubuno_dev` (role `kubuno_dev`) through `localhost:55432`; the release VSIX of the day
+plus the fixes below, built in `C:\kubuno-build\agent-webf5`. Solution `Z:\src\drive\Kubuno.Drive.slnx`.
+
+- **Repository blockers of 2026-10-01 are gone**: drive's and p2pnas' `Cargo.lock` were repinned on 2026-10-01 (drive
+  `kubuno-modauth` -> `fb4952b`, p2pnas `kubuno-db` -> `cd78dc3`, the commits the tags point at); a fresh build with an
+  empty `CARGO_HOME` and `--locked` resolves every git dependency (drive builds on Windows; p2pnas builds on Linux - on
+  Windows its vendored OpenSSL needs a full Perl, Git's lacks `IPC::Cmd`). The core's `backup::policy` and
+  `data_export::policy` tests pass on Windows (35 `policy` tests, fixed on 2026-10-01 by a per-OS absolute path).
+- **Dev core on the dev database**: the tunnel is opened by F5 (about 1 s; `ssh` reused or a port already answering
+  used as is), `kubuno-core.exe` starts under the debugger, the migrations run against `kubuno_dev` only ("Migrations
+  appliquées avec succès"), modules start and register (drive, and the `inventory` module created from the template).
+  Found and fixed: the core ran in *system* mode on `%ProgramData%\Kubuno` (section 6).
+- **Module attach and Rust breakpoints**: drive deployed (executable, PDB, manifest, migrations, frontend), the native
+  debugger attached to `kubuno-drive.exe`; a breakpoint in `drive/src/handlers/health.rs` was hit in the module and one
+  in `core/crates/kubuno-core/src/modules/proxy.rs` (`proxy_to_module`) in the core, with their Rust call stacks.
+- **Browser and module page**: the core's F5 opened the dev core in the default browser (Chrome on this machine), on
+  `/drive` -> sign-in page; signed in (a test account of the dev database), the drive page ("My Drive") loaded from the
+  module deployed by F5. Since then F5 opens Chrome explicitly (section 7).
+- **TypeScript breakpoint**: with the "Drive (Kubuno Core Web + navigateur)" startup projects, the script debugger
+  launched Chrome (its own profile) and a breakpoint in `drive/frontend/src/entry.ts` (`register()`) was hit, call stack
+  through the host's `loadRemoteModules.ts`. Found and fixed on the way: `LaunchJsonFolder` ignored (section 2), source
+  maps resolving to `/modules/src/...` (section 7), the startup project of a fresh `.vs` (section 2), modules left
+  running after Stop Debugging (section 7), launch failures among several startup projects reported only as
+  "an extension threw" (now in the Kubuno Output pane with their stack). The red "InvalidOperationException ... could
+  be caused by an extension" bar seen at each F5 came from Visual Studio's Copilot TypeScript language client
+  (ActivityLog), not from Kubuno.
+- Not verified: the frontend's `StartupCommand` (watching Vite build into the deployed folder) - not seen running with a
+  `launch.json` configuration selected; the module page after signing in inside the script debugger's Chrome (the
+  sign-in timed out, 408, while the machine's CPU was saturated by another build); the core and module F5 of
+  `Kubuno.Core.Web.slnx` and of the multi-repository solution (same launch provider).
