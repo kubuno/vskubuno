@@ -124,6 +124,9 @@
     <ID Name="MenuHeader" Value="113" />
     <ID Name="DropDownButton" Value="114" />
     <ID Name="SplitButton" Value="115" />
+    <ID Name="Settings" Value="116" />
+    <ID Name="SecretStore" Value="117" />
+    <ID Name="RegistryKey" Value="118" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -700,6 +703,21 @@
       <Source Uri="$(Controls)/SplitButton.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/SplitButton.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/SplitButton.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(Settings)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/Settings.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/Settings.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/Settings.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(SecretStore)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/SecretStore.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/SecretStore.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/SecretStore.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(RegistryKey)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/RegistryKey.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/RegistryKey.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/RegistryKey.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

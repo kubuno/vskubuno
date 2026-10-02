@@ -139,6 +139,14 @@ namespace Kubuno.VisualStudio
     [ProvideEditorLogicalView(typeof(Kubuno.Views.Resources.Editor.KbresEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
     [ProvideEditorLogicalView(typeof(Kubuno.Views.Resources.Editor.KbresEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
     [ProvideEditorExtension(typeof(Kubuno.Views.Resources.Editor.KbresEditorFactory), ".kbres", 0x60)]
+    // The .kbsettings settings editor (Kubuno.Views\Settings\Editor, docs/STORAGE-COMPONENTS.md): Windows Forms'
+    // Settings.settings grid. Same logical views as the .kbres editor: Primary and Designer -> the grid, Code and
+    // TextView -> a plain code window on the same XML buffer.
+    [ProvideEditorFactory(typeof(Kubuno.Views.Settings.Editor.KbsettingsEditorFactory), 113)]
+    [ProvideEditorLogicalView(typeof(Kubuno.Views.Settings.Editor.KbsettingsEditorFactory), "{7651a702-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
+    [ProvideEditorLogicalView(typeof(Kubuno.Views.Settings.Editor.KbsettingsEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
+    [ProvideEditorLogicalView(typeof(Kubuno.Views.Settings.Editor.KbsettingsEditorFactory), "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Code
+    [ProvideEditorExtension(typeof(Kubuno.Views.Settings.Editor.KbsettingsEditorFactory), ".kbsettings", 0x60)]
     [ProvideOptionPage(typeof(Kubuno.Views.Designer.Options.KbviewDesignerOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Views.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.designer")]
     [ProvideProfile(typeof(Kubuno.Views.Designer.Options.KbviewDesignerOptionsPage), KubunoConstants.OptionsCategoryName, Kubuno.Views.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
     // The View Outline tool window (Tools menu, KubunoCommands.vsct). The former fallback "Kubuno

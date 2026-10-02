@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Storage components in the designer** (`docs/STORAGE-COMPONENTS.md`). A « Stockage » / « Storage » Toolbox tab with
+  `Settings` (the app's typed settings), `SecretStore` (its secrets in the system's credential store) and
+  `RegistryKey` (a Windows Registry key), present in every Kubuno desktop project; dropped on a view they go to the
+  component tray, with their icons, their « Stockage » properties (back-end, hive and WOW64 view drop-downs) and their
+  default events. Views bind them like `{Binding Theme, Source=settings, Mode=TwoWay}`: the language server completes
+  the settings of the project's `.kbsettings` file, reports an unknown one, documents each (type, scope, default) and
+  goes to its line, and warns when a Windows-only component is used by a project that also targets Linux or macOS.
+- **The settings editor** (Windows Forms' Settings.settings): `.kbsettings` files open in a themed grid (Name, Type,
+  Scope, Roaming, Value, Accepted Values, Previous Names, Description), with the schema version and the app id, the
+  problems of the file in the status line and the rows' tooltips, and View Code; the XML stays the document. New item
+  template « Kubuno Settings File ». `kubuno::settings!("settings.kbsettings")` turns the file into a typed class
+  (`Settings::theme()`, `Settings::set_theme("Dark")`), shared with the views' `Settings` components.
+- Sample `samples/storage-desktop`: settings bound in a view and read through the typed class, a secret, a Registry
+  value; `--self-test` and `KUBUNO_SANDBOX_DIR` run it without touching the real profile.
+
 - **Window corners in the designer** (`docs/EVENTS.md` §19). `CornerRadius` is now a property of every window
   (the view's root), in the *Appearance* category with its default shown (8, Windows 11's radius; `0` for square
   corners), and of `FloatingWindow`. The design surface draws the window frame at the chosen radius and clips the

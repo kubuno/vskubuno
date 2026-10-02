@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Settings Version="2">
+  <Setting Name="Theme" Type="String" Default="System" Values="System|Light|Dark" Description="The colour theme of the window."/>
+  <Setting Name="ShowHidden" Type="Bool" Default="false" Description="Whether hidden items are listed."/>
+  <Setting Name="SyncIntervalMinutes" Type="Int" Default="5" PreviousNames="SyncInterval" Description="Minutes between two synchronisations."/>
+  <Setting Name="DisplayName" Type="String" Default="" Description="The name shown in the title."/>
+  <Setting Name="LaunchCount" Type="Int" Roaming="false" Default="0" Description="How many times the sample was started on this machine."/>
+  <Setting Name="UpdateChannel" Type="String" Scope="Application" Default="stable" Description="Set by an administrator for every user."/>
+  <Setting Name="RecentFiles" Type="StringList" Roaming="false">
+    <Item>welcome.kbdoc</Item>
+  </Setting>
+</Settings>

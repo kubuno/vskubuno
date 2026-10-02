@@ -131,6 +131,10 @@
   <data name="111" xml:space="preserve">
     <value>Kubuno Resource Editor</value>
   </data>
+  <!-- "113": the display name of the .kbsettings settings editor (KubunoPackage.cs [ProvideEditorFactory(typeof(KbsettingsEditorFactory), 113)], docs/STORAGE-COMPONENTS.md). -->
+  <data name="113" xml:space="preserve">
+    <value>Kubuno Settings Editor</value>
+  </data>
   <!-- "120": the key binding scope of the Data Explorer query windows (KubunoPackage.cs [ProvideKeyBindingTable(PackageGuidStrings.QueryToolWindow, 120)], docs/DATA.md DATA-5). -->
   <data name="120" xml:space="preserve">
     <value>Kubuno Query Window</value>

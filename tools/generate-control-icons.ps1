@@ -161,6 +161,10 @@ $table = @(
     @{ Name = 'MenuHeader';               Icon = 'heading';               Accent = 0 }
     @{ Name = 'DropDownButton';           Icon = 'square-chevron-down';   Accent = 1 }
     @{ Name = 'SplitButton';              Icon = 'square-split-horizontal'; Accent = 1 }
+    # The storage components (docs/STORAGE-COMPONENTS.md): the Toolbox's « Stockage » tab.
+    @{ Name = 'Settings';                 Icon = 'settings-2';            Accent = 0 }
+    @{ Name = 'SecretStore';              Icon = 'key-round';             Accent = 0 }
+    @{ Name = 'RegistryKey';              Icon = 'folder-key' }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS

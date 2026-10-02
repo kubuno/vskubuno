@@ -147,6 +147,9 @@ namespace Kubuno.Views.Designer
         /// <summary>The printing components' category and Toolbox tab (docs/PRINTING.md), WinForms' "Printing" / "Impression".</summary>
         public static string CategoryPrinting => T("Printing", "Impression");
 
+        /// <summary>The storage components' category and Toolbox tab (docs/STORAGE-COMPONENTS.md): Settings, SecretStore, RegistryKey.</summary>
+        public static string CategoryStorage => T("Storage", "Stockage");
+
         public static string CategoryMisc => T("Misc", "Divers");
 
         public static string CategoryAction => T("Action", "Action");
@@ -554,7 +557,7 @@ namespace Kubuno.Views.Designer
         public static string[] AllToolboxTabNames() => new[]
         {
             "Common Controls", "Contrôles communs", "Display", "Affichage", "Choice", "Choix", "Text", "Texte",
-            "Containers", "Conteneurs", "Data", "Données", "Components", "Composants", "Printing", "Impression",
+            "Containers", "Conteneurs", "Data", "Données", "Components", "Composants", "Printing", "Impression", "Storage", "Stockage",
             "Docking", "Ancrage", "Navigation", "Ribbon", "Ruban", "Menus & Toolbars", "Menus et barres d'outils",
         };
 
@@ -576,6 +579,7 @@ namespace Kubuno.Views.Designer
                 case "ribbon": return T("Ribbon", "Ruban");
                 case "menus": return T("Menus & Toolbars", "Menus et barres d'outils");
                 case "printing": return CategoryPrinting;
+                case "storage": return CategoryStorage;
                 case "components": return T("Components", "Composants");
                 default:
                     return family is null || family.Length == 0 ? "Kubuno" : char.ToUpperInvariant(family[0]) + family.Substring(1);

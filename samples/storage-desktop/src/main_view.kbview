@@ -1,0 +1,33 @@
+<!--
+  The storage sample's window (vskubuno docs/STORAGE-COMPONENTS.md). The Settings, SecretStore and RegistryKey are
+  non-visual components: the designer lists them in its component tray, under the surface. The controls bind the
+  settings of src/settings.kbsettings through the Settings component (Source=settings): what they change is saved
+  at once, and shared with the typed class `Settings` the code uses.
+-->
+<Panel xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" DesignWidth="660" DesignHeight="470" Title="Kubuno storage sample" OnLoad="main_view_load">
+  <Label Text="Theme" X="24" Y="24" Width="180" Height="20"/>
+  <Dropdown x:Name="theme" SelectedValue="{Binding Theme, Source=settings, Mode=TwoWay}" X="220" Y="16" Width="200" Height="34">
+    <Option Value="System" Label="System"/>
+    <Option Value="Light" Label="Light"/>
+    <Option Value="Dark" Label="Dark"/>
+  </Dropdown>
+  <Switch x:Name="show_hidden" Label="Show hidden items" On="{Binding ShowHidden, Source=settings, Mode=TwoWay}" X="24" Y="62" Width="300" Height="28"/>
+  <Label Text="Sync every (minutes)" X="24" Y="108" Width="180" Height="20"/>
+  <NumericField x:Name="interval" Value="{Binding SyncIntervalMinutes, Source=settings, Mode=TwoWay}" Minimum="1" Maximum="120" X="220" Y="100" Width="120" Height="34"/>
+  <Label Text="Display name" X="24" Y="152" Width="180" Height="20"/>
+  <TextField x:Name="display_name" Text="{Binding DisplayName, Source=settings, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Placeholder="Your name" X="220" Y="144" Width="300" Height="34"/>
+  <Label Text="Update channel (administrator)" X="24" Y="196" Width="190" Height="20"/>
+  <Label x:Name="channel" Text="{Binding UpdateChannel, Source=settings}" X="220" Y="196" Width="300" Height="20"/>
+  <Label x:Name="launches" Text="" X="24" Y="226" Width="600" Height="20"/>
+  <Label Text="API key" X="24" Y="268" Width="180" Height="20"/>
+  <TextField x:Name="api_key" Placeholder="Kept in the system's credential store" X="220" Y="260" Width="300" Height="34"/>
+  <Button x:Name="save_key" Text="Save" Variant="Primary" OnClick="save_key_click" X="530" Y="260" Width="100" Height="34"/>
+  <Label x:Name="key_saved" Text="A key is saved." Visible="{Binding ApiKey.Exists, Source=secrets}" X="220" Y="300" Width="200" Height="20"/>
+  <Button x:Name="forget_key" Text="Forget the key" OnClick="forget_key_click" Visible="{Binding ApiKey.Exists, Source=secrets}" X="430" Y="296" Width="200" Height="30"/>
+  <Label Text="Explorer's hidden files (HKCU)" X="24" Y="346" Width="190" Height="20"/>
+  <Label x:Name="explorer_hidden" Text="{Binding Hidden, Source=explorer, FallbackValue='(not set)'}" X="220" Y="346" Width="300" Height="20"/>
+  <Label x:Name="status" Text="" X="24" Y="420" Width="612" Height="20" Anchor="Bottom, Left, Right"/>
+  <Settings x:Name="settings" Schema="settings" OnSettingChanged="settings_setting_changed"/>
+  <SecretStore x:Name="secrets"/>
+  <RegistryKey x:Name="explorer" Hive="CurrentUser" Path="Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"/>
+</Panel>

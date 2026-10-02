@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/STORAGE-COMPONENTS.md: "Add New Item > Kubuno Settings File" (Fichier de paramètres) - the Settings.settings of a
+     Kubuno desktop application: typed settings with defaults, User (per user, roaming or this machine) or Application
+     (machine-wide, read-only), opened in the settings editor, turned into a typed class by
+     `kubuno::settings!("settings.kbsettings")` and bound in views through a <Settings> component. -->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Kubuno Settings File (Kubuno Core Desktop)</Name>
+    <Description>A settings file (Fichier de paramètres): typed settings with defaults, per user or machine-wide, read and written through kubuno::settings!("settings.kbsettings") and bound in views with a Settings component of the Storage tab.</Description>
+    <ProjectType>Rust</ProjectType>
+    <TemplateID>Kubuno.Rust.KubunoSettingsFile</TemplateID>
+    <LanguageTag>Rust</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <ProjectTypeTag>Kubuno</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <SortOrder>17</SortOrder>
+    <DefaultName>settings.kbsettings</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="false" TargetFileName="$fileinputname$.kbsettings" OpenInEditor="true">settings.kbsettings</ProjectItem>
+  </TemplateContent>
+</VSTemplate>

@@ -137,6 +137,9 @@ namespace Kubuno.Desktop.Logic.SolutionExplorer
             ["MenuHeader"] = 113, // Lucide "heading"
             ["DropDownButton"] = 114, // Lucide "square-chevron-down"
             ["SplitButton"] = 115, // Lucide "square-split-horizontal"
+            ["Settings"] = 116, // Lucide "settings-2"
+            ["SecretStore"] = 117, // Lucide "key-round"
+            ["RegistryKey"] = 118, // Lucide "folder-key"
         };
 
         /// <summary>The image id for element <paramref name="tag"/> (<see cref="FallbackId"/> when unknown).</summary>

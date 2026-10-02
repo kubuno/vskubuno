@@ -128,6 +128,12 @@ namespace Kubuno.Views.Designer.PropertyBrowser
                 return DesignerText.CategoryPrinting;
             }
 
+            // The storage components' own category (docs/STORAGE-COMPONENTS.md).
+            if (string.Equals(category, "Storage", StringComparison.OrdinalIgnoreCase))
+            {
+                return DesignerText.CategoryStorage;
+            }
+
             // The icon and how it is drawn (docs/ICONS.md).
             if (string.Equals(category, "Icon", StringComparison.OrdinalIgnoreCase))
             {

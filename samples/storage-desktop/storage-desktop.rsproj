@@ -1,0 +1,18 @@
+<Project Sdk="Kubuno.Rust.Sdk/1.1.1">
+
+  <!-- The storage sample (vskubuno docs/STORAGE-COMPONENTS.md), made from the Kubuno Desktop Application template. -->
+  <PropertyGroup>
+    <CargoPackage>storage-desktop</CargoPackage>
+    <KubunoDesktopSrc Condition="'$(KubunoDesktopSrc)' == ''">Z:\src\desktop\windows</KubunoDesktopSrc>
+    <!-- Its own cargo target directory (kubuno_ui is a Rust dylib: see the template's comment). -->
+    <CargoTargetDir Condition="'$(CARGO_TARGET_DIR)' != ''">$(CARGO_TARGET_DIR)\rsproj\$(CargoPackage)</CargoTargetDir>
+    <CargoTargetDir Condition="'$(CARGO_TARGET_DIR)' == ''">$(MSBuildProjectDirectory)\target</CargoTargetDir>
+  </PropertyGroup>
+
+  <Target Name="KubunoCheckDesktopSources" BeforeTargets="CargoRestore;CoreCompile">
+    <Error Condition="!Exists('$(KubunoDesktopSrc)/src/crates/kubuno-ui/Cargo.toml')"
+           Code="KUBUNO0001"
+           Text="The Kubuno desktop sources were not found at '$(KubunoDesktopSrc)'. Point &lt;KubunoDesktopSrc&gt; in this .rsproj and the kubuno path in Cargo.toml at a checkout of github.com/kubuno/desktop (its 'windows' folder)." />
+  </Target>
+
+</Project>

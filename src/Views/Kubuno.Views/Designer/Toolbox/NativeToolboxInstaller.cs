@@ -800,9 +800,10 @@ namespace Kubuno.Views.Designer.Toolbox
         /// The crates of the Kubuno libraries whose components get Toolbox tabs of their own, by their
         /// <c>#[toolbox(category = …)]</c>: <c>kubuno-print</c>'s "Impression" (docs/PRINTING.md) and <c>kubuno-data</c>'s
         /// "Données" - like the WinForms Toolbox's "Printing" and "Data" tabs, present in every project that links
-        /// them (through the <c>kubuno</c> crate), without "Choose Items…".
+        /// them (through the <c>kubuno</c> crate), without "Choose Items…". <c>kubuno-app-storage-components</c>'s
+        /// "Stockage" / "Storage" (Settings, SecretStore, RegistryKey: docs/STORAGE-COMPONENTS.md) likewise.
         /// </summary>
-        private static readonly string[] LibraryCrates = { "kubuno_print", "kubuno_data" };
+        private static readonly string[] LibraryCrates = { "kubuno_print", "kubuno_data", "kubuno_app_storage_components" };
 
         private static readonly HashSet<string> s_libraryItems = new HashSet<string>(StringComparer.Ordinal);
         private static string s_librarySignature = string.Empty;

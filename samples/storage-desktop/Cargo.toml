@@ -1,0 +1,20 @@
+[package]
+name = "storage-desktop"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# A Kubuno desktop application that keeps its data on the device (vskubuno docs/STORAGE-COMPONENTS.md): typed
+# settings declared in `src/settings.kbsettings` (the generated `Settings` class, and a `<Settings>` component the
+# view binds to), a secret in the OS credential store (`<SecretStore>`) and a Windows Registry key
+# (`<RegistryKey>`), from the designer's "Storage" Toolbox tab. Open storage-desktop.rsproj in Visual Studio (or
+# `cargo run` with CARGO_TARGET_DIR on a local disk: kubuno_ui is a dylib).
+#
+#   KUBUNO_SANDBOX_DIR=C:\temp\sbx storage-desktop.exe     everything (files, Registry, secrets) under the sandbox
+#   storage-desktop.exe --self-test C:\temp\report.txt     exercises the components and the typed class, writes a
+#                                                          report, then closes (secrets in memory only)
+
+[dependencies]
+# Kubuno, from a local checkout of github.com/kubuno/desktop (its `windows` workspace), like the
+# Kubuno Desktop Application template (change it here AND <KubunoDesktopSrc> in the .rsproj).
+kubuno = { path = "Z:/src/desktop/windows/src/crates/kubuno" }

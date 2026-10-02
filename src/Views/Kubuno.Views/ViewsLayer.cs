@@ -57,6 +57,8 @@ namespace Kubuno.Views
             context.RegisterEditorFactory(new Designer.EditorFactory.KbviewEditorFactory());
             // The .kbres resource editor (docs/RESOURCES.md).
             context.RegisterEditorFactory(new Resources.Editor.KbresEditorFactory());
+            // The .kbsettings settings editor (docs/STORAGE-COMPONENTS.md).
+            context.RegisterEditorFactory(new Settings.Editor.KbsettingsEditorFactory());
             Designer.Options.DesignerOptionsHost.Current = context.GetDialogPage<Designer.Options.KbviewDesignerOptionsPage>();
 
             // The Properties window resolves the IEventBindingService behind a double-click on an event
