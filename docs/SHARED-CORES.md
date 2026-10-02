@@ -1,6 +1,6 @@
 # Shared cores: one implementation of each algorithm for web, desktop and mobile
 
-Date: 2026-10-02. Status: **design study**, no product code changed. This file is the only output.
+Date: 2026-10-02. Status: **approved on 2026-10-02** (decisions in §8.1); first lots in progress.
 
 Trigger (user, 2026-10-02): « il faudra peut-être partager une partie du code avec la version web pour éviter de
 refaire certains algorithmes identiques plusieurs fois (et ceci vaut pour tous les modules avec leurs versions
@@ -503,6 +503,26 @@ thumbnails ignoring EXIF orientation; Android's outbox giving up after 5 attempt
 | Q8 | Commit WASM binaries in module repositories? | Yes, as the views compiler does (the only way to keep `.kbpkg` builds offline and Rust-free), with `BUILD-INFO.json` and a CI hash check. |
 | Q9 | Forms: fix the required-field bypass now (server ignores hidden questions only when it can evaluate the logic), before the shared core exists? | Yes, through SC-3b directly (it is small); until then, at least validate required questions that no rule targets. |
 | Q10 | i18n catalogues: one source per module generated for web, Android and desktop? | Yes, but as a separate lot after SC-0 (codegen, not a core); plural rules stay native. |
+
+## 8.1 Decisions (2026-10-02)
+
+On 2026-10-02 the user approved every recommendation of this study. Q1–Q10 are answered as recommended in §8:
+
+| # | Decision |
+|---|---|
+| Q1 | `kubuno-docs-core` is extracted in the desktop workspace and moves to the office repository when the office frontend adopts it (SC-1b). |
+| Q2 | Native code is accepted in the Android apps, only as prebuilt AARs, only for offline-critical logic, with a per-app size budget (≈ +2 MB per ABI); Compose rendering stays Kotlin. |
+| Q3 | Recurrence lives in the core repository (`kubuno-recurrence`), usable by calendar and tasks. |
+| Q4 | Drive accepts only portable names for new names (rejects `\ / : * ? " < > \|`, control characters, trailing dot/space, reserved device names, > 255 UTF-8 bytes) with a clear message; existing illegal names are mapped locally by the shared reversible, collision-free rule; case-only and NFC/NFD clashes get a server-side `(2)` on create. |
+| Q5 | Android's outbox give-up and rollback are fixed now, before a shared sync core; the shared core comes with iOS. |
+| Q6 | AGPL in App Store binaries is decided for the iOS app as a whole before its first store submission. |
+| Q7 | The web runs the Rust documents layout (SC-1b) if the corpus and vectors agree and the WASM stays under ≈ 400 KB gzip; otherwise two implementations held by committed vectors. |
+| Q8 | WASM binaries are committed in module repositories with `BUILD-INFO.json` and a CI hash check. |
+| Q9 | The forms required-field bypass is fixed now through SC-3b. |
+| Q10 | i18n catalogues: one source per module generated for web, Android and desktop, as a separate codegen lot after SC-0; plural rules stay native. |
+
+The rules of §7.1 are adopted. Execution order: SC-3b (security) together with SC-0, the Android outbox fix (Q5),
+then SC-2 and SC-3.
 
 ## 9. Limits of this study
 
