@@ -778,6 +778,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   surface out of date. Only the framework's own crates are skipped now, by an explicit list (`FrameworkCrates` in
   `Kubuno.Views.Logic`, identical to `FRAMEWORK_CRATES` of the Rust crate `kubuno-views-meta`, a test checks both;
   `docs/DESKTOP-MIGRATION.md`, "Shared control libraries").
+- **Views are colored again, like XAML**: elements, attributes and their `x:`/`d:` prefixes, values, comments,
+  handler names (as methods) and the `{Binding …}` / `{Res …}` markup extensions, in the designer's XML pane, the code
+  view and any text editor, in the dark and light themes. Visual Studio dropped the whole views grammar over two
+  malformed rules inherited from the XML grammar it is based on, its theme named classification types Visual Studio
+  does not register (the XML editor's "XML Name"…), and the handler rule never applied.
 - **No more red `x:` everywhere in a view's code**: a view shown by Visual Studio's XML editor (a Visual Studio
   instance whose configuration cache missed the Kubuno registrations) underlined every `x:Name` as an undeclared
   prefix (43 errors on the ribbon sample) and offered no Kubuno completion. The views now declare their namespaces,

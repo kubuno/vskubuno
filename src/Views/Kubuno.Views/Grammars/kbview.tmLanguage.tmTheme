@@ -4,6 +4,12 @@
   Kubuno Views: the colors of this grammar's TextMate scopes, as Visual Studio classification types (Visual Studio loads the
   theme next to a grammar, <grammar>.tmTheme, instead of its global one). Only classification names: the colors
   themselves come from Tools > Options > Fonts and Colors, so they follow the light/dark theme and the user's settings.
+
+  Every name below MUST be a classification type registered through MEF in every Visual Studio session: a name that is
+  not (the XML editor's "XML Name"/"XML Attribute"... are legacy colorable items, not classification types; the XAML
+  editor's "XAML Markup Extension ..." exist only once that editor is loaded) colors nothing, silently - which is how
+  every .kbview lost its colors (2026-10-02). The markup names are the ones Visual Studio's own TextMate theme
+  (TextMate\Starterkit\Themes\vs.tmTheme) gives XML and HTML; tests/Kubuno.Views.Tests checks the list.
 -->
 <plist version="1.0">
   <dict>
@@ -17,25 +23,16 @@
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
-          <string>XML Comment</string>
+          <string>comment</string>
         </dict>
       </dict>
       <dict>
         <key>scope</key>
-        <string>entity.name.tag, entity.name.tag.localname.xml, entity.name.tag.namespace.xml, meta.tag</string>
+        <string>entity.name.tag, entity.name.tag.localname.xml, entity.name.tag.namespace.xml, meta.tag, punctuation.definition.tag, punctuation.separator.namespace.xml</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
-          <string>XML Name</string>
-        </dict>
-      </dict>
-      <dict>
-        <key>scope</key>
-        <string>punctuation.definition.tag, punctuation.separator.namespace.xml</string>
-        <key>settings</key>
-        <dict>
-          <key>vsclassificationtype</key>
-          <string>XML Delimiter</string>
+          <string>markup node</string>
         </dict>
       </dict>
       <dict>
@@ -44,34 +41,16 @@
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
-          <string>XML Attribute</string>
+          <string>markup attribute</string>
         </dict>
       </dict>
       <dict>
         <key>scope</key>
-        <string>string.quoted.double.xml, string.quoted.single.xml</string>
+        <string>string.quoted.double.xml, string.quoted.single.xml, punctuation.definition.string.begin.xml, punctuation.definition.string.end.xml, constant.character.entity, punctuation.definition.constant</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
-          <string>XML Attribute Value</string>
-        </dict>
-      </dict>
-      <dict>
-        <key>scope</key>
-        <string>punctuation.definition.string.begin.xml, punctuation.definition.string.end.xml</string>
-        <key>settings</key>
-        <dict>
-          <key>vsclassificationtype</key>
-          <string>XML Attribute Quotes</string>
-        </dict>
-      </dict>
-      <dict>
-        <key>scope</key>
-        <string>constant.character.entity, punctuation.definition.constant</string>
-        <key>settings</key>
-        <dict>
-          <key>vsclassificationtype</key>
-          <string>XML Attribute Value</string>
+          <string>markup attribute value</string>
         </dict>
       </dict>
       <dict>
@@ -89,7 +68,7 @@
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
-          <string>XAML Markup Extension Class</string>
+          <string>type</string>
         </dict>
       </dict>
       <dict>
@@ -98,7 +77,7 @@
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
-          <string>XAML Markup Extension Parameter Name</string>
+          <string>markup attribute</string>
         </dict>
       </dict>
       <dict>
@@ -107,7 +86,7 @@
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
-          <string>XAML Markup Extension Parameter Value</string>
+          <string>identifier</string>
         </dict>
       </dict>
     </array>

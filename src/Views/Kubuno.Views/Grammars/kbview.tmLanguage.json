@@ -5,7 +5,7 @@
 		"Once accepted there, we are happy to receive an update request."
 	],
 	"version": "https://github.com/atom/language-xml/commit/7bc75dfe779ad5b35d9bf4013d9181864358cb49",
-	"kubuno_note": "Vendored from Visual Studio Code's built-in 'xml' extension (extensions/xml/syntaxes/xml.tmLanguage.json, MIT, itself converted from atom/language-xml, MIT/TextMate-bundle-license). Only one field was added that is not present upstream: 'fileTypes' (VS Code wires the .xml extension via its own package.json 'contributes.grammars' entry instead; Visual Studio's classic TextMate\\Repositories pkgdef mechanism expects each grammar file scanned from the registered folder to declare its own file types - see the same reasoning in ../../Kubuno.VisualStudio/Grammars/THIRD-PARTY-NOTICES.md for the Rust grammar). No pattern/rule was changed. See THIRD-PARTY-NOTICES.md, LICENSE-vscode.txt and LICENSE-atom-language-xml.txt in this folder.",
+	"kubuno_note": "Vendored from Visual Studio Code's built-in 'xml' extension (extensions/xml/syntaxes/xml.tmLanguage.json, MIT, itself converted from atom/language-xml, MIT/TextMate-bundle-license). Only one field was added that is not present upstream: 'fileTypes' (VS Code wires the .xml extension via its own package.json 'contributes.grammars' entry instead; Visual Studio's classic TextMate\\Repositories pkgdef mechanism expects each grammar file scanned from the registered folder to declare its own file types - see the same reasoning in ../../Kubuno.VisualStudio/Grammars/THIRD-PARTY-NOTICES.md for the Rust grammar). Changed rules: the two malformed begin rules of upstream's comments (a begin without an end, which made Visual Studio reject the whole grammar), and the Kubuno additions marked Kubuno (handler attributes, {Binding}/{Res} markup extensions). See THIRD-PARTY-NOTICES.md, LICENSE-vscode.txt and LICENSE-atom-language-xml.txt in this folder.",
 	"name": "Kubuno View",
 	"scopeName": "text.xml.kbview",
 	"fileTypes": [
@@ -334,8 +334,8 @@
 			]
 		},
 		"binding": {
-			"comment": "Kubuno: a {Binding Path, Mode=...} markup extension in an attribute value, colored like XAML's.",
-			"begin": "(\\{)\\s*(Binding)\\b",
+			"comment": "Kubuno: a {Binding Path, Mode=...} or {Res key} markup extension in an attribute value, colored like XAML's.",
+			"begin": "(\\{)\\s*(Binding|Res)\\b",
 			"beginCaptures": {
 				"1": {
 					"name": "punctuation.section.embedded.binding.kbview"
@@ -367,7 +367,7 @@
 			]
 		},
 		"handlerAttribute": {
-			"comment": "Kubuno: an event attribute (OnClick=\"handler\"): the value names a code-behind method.",
+			"comment": "Kubuno: an event attribute (OnClick=\"handler\"): the value names a code-behind method. It consumes the leading whitespace like tagStuff's generic attribute rule, which would otherwise match first (earlier start) and hide it.",
 			"captures": {
 				"1": {
 					"name": "entity.other.attribute-name.localname.xml"
@@ -382,7 +382,7 @@
 					"name": "string.quoted.double.xml punctuation.definition.string.end.xml"
 				}
 			},
-			"match": "(?<=\\s)(On[A-Z][\\w]*)\\s*=\\s*(\")([A-Za-z_][A-Za-z0-9_]*)(\")"
+			"match": "(?:^|\\s+)(On[A-Z][\\w]*)\\s*=\\s*(\")([A-Za-z_][A-Za-z0-9_]*)(\")"
 		},
 		"tagStuff": {
 			"patterns": [
@@ -417,14 +417,15 @@
 		"comments": {
 			"patterns": [
 				{
+					"comment": "Kubuno fix: upstream nests 'end' and 'name' inside 'captures', leaving a begin rule without an end, which makes Visual Studio's TextMate engine reject the whole grammar (no color at all).",
 					"begin": "<%--",
 					"captures": {
 						"0": {
 							"name": "punctuation.definition.comment.xml"
-						},
-						"end": "--%>",
-						"name": "comment.block.xml"
-					}
+						}
+					},
+					"end": "--%>",
+					"name": "comment.block.xml"
 				},
 				{
 					"begin": "<!--",
@@ -437,12 +438,9 @@
 					"name": "comment.block.xml",
 					"patterns": [
 						{
-							"begin": "--(?!>)",
-							"captures": {
-								"0": {
-									"name": "invalid.illegal.bad-comments-or-CDATA.xml"
-								}
-							}
+							"comment": "Kubuno fix: a match, not upstream's begin rule without an end (same reason as above).",
+							"match": "--(?!>)",
+							"name": "invalid.illegal.bad-comments-or-CDATA.xml"
 						}
 					]
 				}
