@@ -4,7 +4,7 @@ User request (2026-10-02): « le wafflemenu du core doit être un usercontrol »
 usercontrol » (the account menu). Both are **user controls** (`.kbcontrol`) on both targets, with the same names,
 properties, events and data shapes, so a view written for one target reads the same on the other and the designer
 shows the same members. This file is the contract; each target documents its own implementation (desktop: crate
-`shell-controls`, `desktop/windows/src/crates/shell-controls/README.md`; web: core/frontend).
+`kubuno-shell-controls`, `desktop/windows/src/crates/kubuno-shell-controls/README.md`; web: core/frontend).
 
 **What is inside the user control, and what is not.** The user control is the panel's *content*: everything the
 user reads and clicks. The *chrome* that carries it stays with the host, because it differs per platform: on the
@@ -48,9 +48,10 @@ LauncherApp { id: string, label: string, icon: string, logo?: string }
 - `id`: the server's `sidebar_items[].id` — the key favourites are stored under.
 - `icon`: a Kubuno icon name (a module logo such as `DriveLogo`, or a Lucide glyph); unknown → `Cloud`.
 - `logo`: a logo the server serves (desktop: the cached file's path; web: its URL); wins over `icon`.
+- `module` / `moduleLabel` (both targets): a module with several apps — Office, PaintSharp — has its other apps
+  grouped under its label (desktop `Tile.module` / `Tile.module_label`).
 - Web only: `Icon` (the icon component a module registered in `WaffleAppRegistry`; wins over `icon` and `logo`),
-  `href` (the address the tile opens: tiles are links, a middle click opens a new tab), `module` / `moduleLabel`
-  (a module with several apps — Office, PaintSharp — has its other apps grouped under its label).
+  `href` (the address the tile opens: tiles are links, a middle click opens a new tab).
 - Web only, on `WaffleMenu`: `ShowMarketplace` / `MarketplaceHref` (« Plus de modules », for whoever may manage the
   marketplace) and the event `OpenMarketplace`.
 
@@ -68,7 +69,7 @@ LauncherService {
 }
 ```
 
-Desktop: the Rust trait `shell_controls::LauncherService`, given with `WaffleMenu::set_service(Rc<dyn …>)`.
+Desktop: the Rust trait `kubuno_shell_controls::LauncherService`, given with `WaffleMenu::set_service(Rc<dyn …>)`.
 
 ### Rules (both targets)
 
@@ -79,6 +80,14 @@ Desktop: the Rust trait `shell_controls::LauncherService`, given with `WaffleMen
 - With no favourite, the card is its header alone outside the edit mode, and a dashed « Faites glisser vos applis
   ici » zone while editing; « Toutes les apps sont dans vos favoris » when every app is a favourite while editing.
 - Height: at most 580 outside the edit mode (the host's cap); the edit mode takes the room it needs.
+- The other apps: the apps of single-app modules sorted by label (`localeCompare`: case and accents ignored), then
+  one group per module with several apps (an 11 uppercase label, `pt-2 pb-1`, `mt-1`), groups sorted by label and
+  their apps by label. Geometry: the card 10 from the panel's interior on both sides (the scroll bar's gutter
+  included on the trailing side), `mt-[10px]`, `mb-[15px]`; the other apps inset 26 (`--kb-waffle-inset`).
+- An administrator's launcher lists the console: tile `core-admin`, « Administration », the web's `admin-logo.png`
+  (desktop: it opens the shell's console page).
+- A module with ONE app at its root route is keyed by the module's id (Mail's `mail-inbox` entry is the tile and the
+  favourite `mail`); a favourite an older desktop saved under the entry's id is mapped to it when read.
 
 ## 2. `AccountMenu` — the account panel
 
@@ -100,12 +109,13 @@ its avatar, « Bonjour <first name> ! », « Gérer votre compte », the other a
 |---|---|---|
 | `ManageAccount` | none | « Gérer votre compte ». |
 | `OpenAccount` | `{ id: string }` | An other account's row: switch to it (desktop) / open it (web: switch, or a new tab for another instance). |
-| `RemoveAccount` | `{ id: string }` | « Supprimer » on an other account's row (web). Declared on the desktop, whose panel has no such button yet. |
+| `RemoveAccount` | `{ id: string }` | « Supprimer » on a dead session's or another instance's row. |
 | `AddAccount` | none | « Ajouter un compte ». |
 | `OpenLabels` | none | « Étiquettes ». |
 | `OpenAdmin` | none | « Administration ». |
 | `SignOut` | none | « Se déconnecter ». |
-| `ChangeAvatar` | none | The camera button on the avatar (web). Declared on the desktop, whose panel has no camera button yet. |
+| `ChangeAvatar` | none | The camera button on the avatar (desktop: the shell opens the web's `/settings`, where the photo is cropped and uploaded). |
+| `ContentHeightChanged` | `{ height: number }` | The content's height changed (the accounts' card folded or unfolded): the host resizes its panel; a web host sizing with CSS may ignore it. |
 | `CloseRequested` | none | The close button, or Escape. |
 
 The control raises the event and does nothing else: navigation, switching, signing out (with its confirmation) and
@@ -124,10 +134,12 @@ AccountEntry { id: string, name: string, email: string, server: string, initials
 - `connected`: false for a session that died (web: « Déconnecté » + reconnect). The desktop lists only usable
   accounts and passes `true`. On the web, « Connexion » on such a row raises `OpenAccount` too: the host knows the
   session is dead and opens the add-account dialog pre-filled.
-- Web only: `remote` (an account of another Kubuno instance: its host shown on the row, « Ouvrir » raises
-  `OpenAccount`, the host opens a new tab) and `unread` (that account's unread notifications, shown as a badge).
-- Web only, on `AccountMenu`: `Busy` (a switch is under way: the rows are disabled), `AvatarBusy` (an upload is under
-  way: the camera is disabled), `ManageHref` / `LabelsHref` / `AdminHref` (those entries are links; a plain click
+- `remote` (an account of another Kubuno instance: its host on a pill, « Ouvrir » raises `OpenAccount`, « Supprimer »
+  `RemoveAccount`) and `unread` (that account's unread notifications, a badge on its row): both targets (desktop
+  `AccountEntry.remote` / `.unread`).
+- On `AccountMenu`, both targets: `Busy` (a switch is under way: the rows are disabled), `AvatarBusy` (an upload is
+  under way: the camera is disabled). Desktop only: `Expanded` (the accounts' card unfolded, `true` by default — the
+  web keeps it as internal state). Web only: `ManageHref` / `LabelsHref` / `AdminHref` (those entries are links; a plain click
   raises the event, a middle click opens the address). « Se déconnecter de tous les comptes » replaces « Se
   déconnecter » when the browser holds other accounts of this instance (the host's `SignOut` signs them all out).
 
@@ -143,7 +155,7 @@ AccountService {
 AccountAction = ManageAccount | OpenAccount(id) | RemoveAccount(id) | AddAccount | OpenLabels | OpenAdmin | SignOut | ChangeAvatar
 ```
 
-Desktop: the Rust trait `shell_controls::AccountService` (+ enum `AccountAction`), given with
+Desktop: the Rust trait `kubuno_shell_controls::AccountService` (+ enum `AccountAction`), given with
 `AccountMenu::set_service(Rc<dyn …>)`. An `AccountMenu` placed in a view raises its events; the `AccountButton`
 (§3), which creates its menu itself, hands the same picks to `act`.
 
@@ -163,6 +175,17 @@ Three more user controls, so an app drops ONE control in its header and gets the
   `sideOffset`) below it. `PopupAnchor="Window"`: at the window's top-right corner, `PopupMargin` (8: `right-2`) from
   its right edge, `PopupOffset` below its client top — the shell's header, whose panels line up with the window.
 - A click on the button while its panel is open closes it (the panel loses the focus) and does not reopen it.
+- **Other apps** (desktop, 2026-10-02): an app that is not the shell (Documents, Chat) gets both services from the
+  shared crate `kubuno-header-data` (`desktop/windows/src/crates/kubuno-header-data`, see its README): one
+  `kubuno_header_data::start(...)` in the window's `Load`, with `ShowWaffle="true" ShowAccount="true"` on the view's
+  root. A worker borrows the shell's current account from the token broker, fetches `/api/v1/modules` and
+  `/api/v1/me`, keeps them under `<data>/accounts/<key>/blobs/header/` (offline-first), follows the broker's events
+  and re-installs the services at each snapshot. Picks: the app's own tile brings its window forward, an installed
+  desktop app (Chat, Drive) starts, any other app opens its web route (never in a sandboxed run); another account
+  is switched to through the broker (`switch_account`); « Gérer », « Étiquettes », « Administration » open
+  `/settings`, `/labels`, `/admin` on the web; « Ajouter un compte » and « Se déconnecter » belong to the shell, which
+  has no request for them yet (follow-up: a broker `show_page` request). `--sample`, or a Debug run under a
+  debugger, shows the design data. The shell's `parse_modules`, favourites' migration and logo cache moved there.
 
 ## 4. Popups that leave their window
 
@@ -273,12 +296,12 @@ code-first Form with every item, a menu button on the left and a search field in
 
 ## 6. Platform notes
 
-| | Desktop (`shell-controls`) | Web (core/frontend) |
+| | Desktop (`kubuno-shell-controls`) | Web (core/frontend) |
 |---|---|---|
 | Host chrome | `kubuno::popup::Popup` (a `WindowKind="Flyout"` window, §4), opened by `WaffleButton` / `AccountButton`; the shell's header uses them (`PopupAnchor="Window"`) | Popover in a portal (§4) |
 | Strings | the crate's own `resources/shell_controls.kbres` (+ `.fr`): `launcher_*`, `account_*`, `header_*` keys, read with `{Res key, Source=shell_controls}` | the core's i18n (`shell.*`) |
 | Designer data | `controls/design/apps.json` (12 apps), `controls/design/accounts.json` (3 accounts) | none yet (the views' design-time data, WV-10) |
-| Differences today | no camera button, no collapsible « Afficher/Masquer plus de comptes » card, no Ouvrir/Supprimer per row (the desktop panel shows the other accounts as a plain list: name + server) | the full panel (the former UserPanel), see §7 |
+| Differences today | see §8 | see §8 |
 
 ## 7. Web as built (core pilot, 2026-10-02)
 
@@ -307,3 +330,20 @@ Details and parity numbers: `WEB-VIEWS.md`, "Core pilot: WaffleMenu & AccountMen
 - Not on the web yet: the `Popup…` properties of §3 (the web popovers anchor to their button), `ContentHeightChanged`
   is raised but the web hosts size their popovers with CSS, `HeaderActions` stays a TSX component (it now places
   `WaffleButton` and `AccountButton`), `AccountService.act` (the web `AccountButton` acts on the events itself).
+
+## 8. Reconciliation of the two targets (2026-10-02)
+
+Read side by side (desktop `kubuno-shell-controls`, web `core/frontend/src/core/shell/menus`), the user controls carry the
+same names, properties, events and data shapes (§1–§3). What remains different is listed here, each on purpose:
+
+| Topic | Desktop | Web | Why |
+|---|---|---|---|
+| Event args of `AppTileGrid` (an inner part) | `TileInvoked { id }`, `FavoritesEdited { favorites }` | `e.value` (`ValueChangedEventArgs`) | each target's event-args convention; the user-control events (§1–§2) are identical |
+| Tiles as links, `href`, `Icon` component, `ShowMarketplace` / `MarketplaceHref` / `OpenMarketplace` | — | yes | the browser's link semantics (middle click) and the web's module bundles; the desktop opens apps through `LauncherService::launch` |
+| `ManageHref` / `LabelsHref` / `AdminHref` | — | yes | links (web) |
+| « Se déconnecter de tous les comptes » | « Se déconnecter » (the current account) | all the browser's accounts of the instance | a desktop account is one instance's session; signing out of every instance is the accounts page's |
+| `Expanded` on `AccountMenu` | a property (`true` by default) | internal state | the desktop host sizes its popup window from it (`ContentHeightChanged`) |
+| `Popup…` properties, `ContentHeightChanged` handled | yes (a popup window sized by the host) | CSS sizing, popovers anchored to their button | §4 |
+| Panels in the dark theme | dark tint (`#28282CCC`), the theme's cards | the light panel and white cards (`#E9EEF6`, `bg-white`) under light text: the greeting is unreadable | **web defect** to fix on the web side (the desktop follows the theme) |
+| Fonts | the system font | Plus Jakarta Sans | desktop decision (DESKTOP-MIGRATION.md) |
+| Data source of the labels and ids | `/api/v1/modules` `sidebar_items` (+ the rules of §1) | each module's `WaffleAppRegistry.register(...)` in its bundle | the desktop loads no module bundle. **Follow-up for one source**: the core serves each module's launcher entries (`waffle_apps`: id, label, path, logo, module label) in `/api/v1/modules`, from the module's manifest, and both targets read them |
