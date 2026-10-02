@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **More storage components and tools** (lot ST-2, `docs/STORAGE-COMPONENTS.md` §12). The « Stockage » tab gains
+  `KeyValueStore` (small values of the app) and `FileStore` (its files, a cache with eviction or temporary files), and
+  the data tab `LocalDatabase` (a SQLite file of the app). A `RegistryKey`'s `Path` has a Registry key picker (read-only
+  browse of hives, keys and values, with the 32/64-bit view). The settings editor gets Undo/Redo (Ctrl+Z / Ctrl+Y) and a
+  « Par compte » / « Per account » check box (`AccountScoped`). The designer shows a bound setting's declared default
+  before the project is first built.
 - **Storage components in the designer** (`docs/STORAGE-COMPONENTS.md`). A « Stockage » / « Storage » Toolbox tab with
   `Settings` (the app's typed settings), `SecretStore` (its secrets in the system's credential store) and
   `RegistryKey` (a Windows Registry key), present in every Kubuno desktop project; dropped on a view they go to the

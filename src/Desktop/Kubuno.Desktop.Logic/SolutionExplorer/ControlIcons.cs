@@ -140,6 +140,9 @@ namespace Kubuno.Desktop.Logic.SolutionExplorer
             ["Settings"] = 116, // Lucide "settings-2"
             ["SecretStore"] = 117, // Lucide "key-round"
             ["RegistryKey"] = 118, // Lucide "folder-key"
+            ["KeyValueStore"] = 119, // Lucide "braces"
+            ["FileStore"] = 120, // Lucide "folder-archive"
+            ["LocalDatabase"] = 121, // Lucide "database-zap"
         };
 
         /// <summary>The image id for element <paramref name="tag"/> (<see cref="FallbackId"/> when unknown).</summary>

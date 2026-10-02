@@ -127,6 +127,9 @@
     <ID Name="Settings" Value="116" />
     <ID Name="SecretStore" Value="117" />
     <ID Name="RegistryKey" Value="118" />
+    <ID Name="KeyValueStore" Value="119" />
+    <ID Name="FileStore" Value="120" />
+    <ID Name="LocalDatabase" Value="121" />
   </Symbols>
   <Images>
     <Image Guid="$(ControlImagesGuid)" ID="$(Control)" AllowColorInversion="false">
@@ -718,6 +721,21 @@
       <Source Uri="$(Controls)/RegistryKey.Light.xaml" Background="Light" />
       <Source Uri="$(Controls)/RegistryKey.Dark.xaml" Background="Dark" />
       <Source Uri="$(Controls)/RegistryKey.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(KeyValueStore)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/KeyValueStore.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/KeyValueStore.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/KeyValueStore.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(FileStore)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/FileStore.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/FileStore.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/FileStore.HighContrast.xaml" Background="HighContrast" />
+    </Image>
+    <Image Guid="$(ControlImagesGuid)" ID="$(LocalDatabase)" AllowColorInversion="false">
+      <Source Uri="$(Controls)/LocalDatabase.Light.xaml" Background="Light" />
+      <Source Uri="$(Controls)/LocalDatabase.Dark.xaml" Background="Dark" />
+      <Source Uri="$(Controls)/LocalDatabase.HighContrast.xaml" Background="HighContrast" />
     </Image>
   </Images>
   <ImageLists />

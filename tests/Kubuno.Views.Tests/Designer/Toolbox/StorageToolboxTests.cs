@@ -29,7 +29,7 @@ namespace Kubuno.Views.Tests.Designer.Toolbox
             DesignerText.ForceFrench = false;
             var layout = NativeToolboxInstaller.Layout(Registry()).ToList();
             CollectionAssert.AreEqual(
-                new[] { "RegistryKey", "SecretStore", "Settings" },
+                new[] { "FileStore", "KeyValueStore", "RegistryKey", "SecretStore", "Settings" },
                 layout.Where(i => i.Tab == "Storage").Select(i => i.Component).ToArray(),
                 "alphabetical, like the WinForms Toolbox");
             DesignerText.ForceFrench = true;
@@ -63,6 +63,15 @@ namespace Kubuno.Views.Tests.Designer.Toolbox
             var secrets = registry.Find("SecretStore")!;
             Assert.IsTrue(secrets.NonVisual);
             CollectionAssert.AreEqual(new[] { "Os", "Memory" }, secrets.Properties.Single(p => p.Name == "Backend").Kind.EnumVariants.ToArray());
+
+            // Lot ST-2: the key-value store and the file store.
+            var kv = registry.Find("KeyValueStore")!;
+            Assert.IsTrue(kv.NonVisual);
+            Assert.AreEqual("kubuno_app_storage_components", kv.CrateName);
+            var files = registry.Find("FileStore")!;
+            Assert.IsTrue(files.NonVisual);
+            CollectionAssert.AreEqual(new[] { "Data", "Cache", "Temp" }, files.Properties.Single(p => p.Name == "Kind").Kind.EnumVariants.ToArray());
+            Assert.AreEqual("registry-key", key.Properties.Single(p => p.Name == "Path").Editor, "the Registry key picker");
         }
     }
 }

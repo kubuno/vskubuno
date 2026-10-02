@@ -103,7 +103,7 @@ a URL, a log, a crash report.
 
 | Windows / macOS / Linux | Web | Android | iOS |
 |---|---|---|---|
-| `KeyValueStore` (ST-2): a SQLite table in `<user_data_dir>/<app>/kv.db` (or the account's SQLCipher DB for account data), values ≤ 1 MiB, TTL optional | IndexedDB database `kubuno:<module>`, object store `kv` (`localStorage` only for tiny synchronous UI state) | DataStore / Room | SQLite / `UserDefaults` |
+| `KeyValueStore` (ST-2, as built): a JSON file `<user_data_dir>/<app>/kv/<store>.json` (`<data>/accounts/<key>/<app>/kv/` when account-scoped), written atomically under a lock with read-merge-write, values ≤ 1 MiB, TTL optional; no SQLite, so no C dependency and the cross-compiles stay plain | IndexedDB database `kubuno:<module>`, object store `kv` (`localStorage` only for tiny synchronous UI state) | DataStore / Room | SQLite / `UserDefaults` |
 
 ### 3.4 Files and blobs
 
@@ -120,8 +120,9 @@ a URL, a log, a crash report.
 ### 3.5 Structured local database
 
 The existing data components (`DbConnection Provider="Sqlite"`, `TableAdapter`, `BindingSource`, `DATA.md`) with a
-**`LocalDatabase` source** (ST-2): `Data Source=app:<name>` resolves to `<user_data_dir>/<app>/<name>.db`, SQLCipher with
-the key in the OS store when `Encrypted="true"` (the `kubuno-sync-engine` scheme). Web: IndexedDB (or SQLite WASM on
+**`LocalDatabase`** component (ST-2, a `DbConnection` subclass): `Data Source=app:<name>` resolves to
+`<user_data_dir>/<app>/databases/<name>.db`, `account:<name>` to the signed-in account's folder. Encryption
+(`Encrypted="true"`, SQLCipher with the key in the OS store, the `kubuno-sync-engine` scheme) is left for later. Web: IndexedDB (or SQLite WASM on
 OPFS, `sqlite-wasm`, when SQL is required). Android: Room. iOS: SQLite / GRDB.
 
 ### 3.6 Session vs persistent
@@ -184,7 +185,7 @@ has its own clipboard code (`DOCUMENTS-EDITING.md`); the component wraps the sam
 |---|---|---|---|---|---|---|
 | **`Settings`** | typed settings of a set (`Schema="settings"` = the project's `settings.kbsettings`) | `<Name>` (two-way for user settings) | `Auto`=File, `File`, `Registry` (Windows), `Memory` | `Auto` = server preferences + `localStorage` cache, `Local` (`localStorage`), `Memory` | DataStore / UserDefaults | **ST-1** (desktop) |
 | **`SecretStore`** | the app's secrets | `Available`, `<Name>.Exists` (read-only); values only from code | `Os`, `Memory` | `Memory` only (or a server vault) | Keystore / Keychain | **ST-1** (desktop) |
-| `KeyValueStore` | small untyped values, optional TTL, `Persistence` | `<key>` | SQLite (`kv.db`), `Memory` | IndexedDB, `localStorage`, `sessionStorage` | DataStore | ST-2 |
+| `KeyValueStore` | small untyped values, optional TTL, `Persistence` | `<key>` | JSON file (`kv/<store>.json`), `Memory` | IndexedDB, `localStorage`, `sessionStorage` | DataStore | ST-2 |
 | `FileStore` | isolated files, temp, cache with eviction (`Kind="Data|Cache|Temp"`, `MaxSize`) | `Count`, `Size`, `Files` (list) | the directories of §3.4 | OPFS, Cache Storage | files dirs | ST-2 |
 | `LocalDatabase` | a `DbConnection` source `app:<name>` (SQLCipher optional) | (data components) | SQLite/SQLCipher | IndexedDB / SQLite-WASM | Room | ST-2 |
 | `SharedChannel` | messages between the app's instances / the user's Kubuno apps | `LastMessage`, `Connected` | pipe / Unix socket | `BroadcastChannel` | bound service / App Groups | ST-4 |
@@ -418,7 +419,7 @@ the OS error; a corrupted settings file is reported with its position only (the 
 | Lot | Content | Size | Order / depends on |
 |---|---|---|---|
 | **ST-1** (done) | `kubuno-app-storage` (paths moved from `kubuno-account`, `machine_config_dir`, `AppId`, typed settings engine with scopes, defaults, notifications, external-change refresh, versioned upgrade, shared instances; File / Registry / Memory back-ends; `AppSecrets`; Windows Registry API with views and sandbox redirection); `<Settings>`, `<SecretStore>`, `<RegistryKey>` components; `.kbsettings` format + `settings!` typed class; `kubuno::storage` handles; LS members/diagnostics; Toolbox tab, icons, Properties category; settings editor + item template; sample; tests | L | — |
-| ST-2 | `KeyValueStore`, `FileStore` (data/cache/temp, eviction), `LocalDatabase` source for the data components; `Schema` drop-down and **Registry key picker** in Properties; platform badges and target filtering in the Toolbox; `Error` event; migrate the shell's `shell.json` and drive's `settings.json` onto `Settings` (one-time import, logged) | L | ST-1 |
+| **ST-2** (done, §12) | `KeyValueStore`, `FileStore` (data/cache/temp, eviction), `LocalDatabase` for the data components; **Registry key picker** in Properties; `AccountScoped` settings (Q6); one secret naming scheme (Q4); the shell's `shell.json` and drive's `settings.json` migrated onto `Settings` (one-time import, logged); undo/redo in the settings editor; the declared defaults on the design surface. Moved to a later lot: the `Schema` drop-down, platform badges and target filtering in the Toolbox, the `Error` event | L | ST-1 |
 | ST-3 | **web**: `@kubuno/views` `Settings` (server user preferences + `localStorage` cache, `storage`/`BroadcastChannel` notifications), `CookieStore`, `WebStorage`, `KeyValueStore`/`FileStore` on IndexedDB/OPFS/Cache Storage, `SecretStore` memory-only; per-module budgets; registry `web` blocks; conformance with the desktop export; a server endpoint for user preferences per module (core) | L | ST-1; coordinate with the web views agent (core/frontend) |
 | ST-4 | `SharedChannel` (pipes / Unix sockets / BroadcastChannel), file and Registry change watchers (`ReadDirectoryChangesW`, `RegNotifyChangeKeyValue`, inotify, FSEvents) replacing the 2 s poll | M | ST-1 |
 | ST-5 | `UserDefaults` (CFPreferences) and `GSettingsKey`; `Environment`; `Clipboard` | M | ST-1, the macOS/Linux renderers for views |
@@ -427,9 +428,13 @@ the OS error; a corrupted settings file is reported with its position only (the 
 
 ---
 
-## 10. Open questions (with recommended answers)
+## 10. Decisions (2026-10-02)
 
-| # | Question | Recommendation |
+The product owner approved every recommendation below (Q1–Q9) on 2026-10-02: they are **decisions**. Q7 is handled
+by a separate security lot (core/frontend and the auth code are not changed by the storage lots); ST-3 (web) waits for
+that lot and the web views work to settle.
+
+| # | Question | Decision (2026-10-02) |
 |---|---|---|
 | Q1 | Default back-end of `Settings` on Windows: files or the Registry? | **Files** (§4.3): portable, inspectable, sandbox-friendly, one code path; the Registry stays one property away. |
 | Q2 | Add a `{Setting Name}` markup extension? | **Not now**: `{Binding Name, Source=settings, Mode=TwoWay}` already works on both targets and the designer's binding picker writes it; revisit when the web compiler (ST-3) shares the binding grammar change. |
@@ -493,3 +498,45 @@ became dirty; closed without saving). C#: `Kubuno.Views.Tests`, `Kubuno.Desktop.
   a native Perl); its use of `kubuno_account::paths` names is unchanged.
 - The doctests of `kubuno-views-macros` fail to link on this machine (LNK1120, the `prefer-dynamic` dylib without
   `RUSTDOCFLAGS`), independently of this lot.
+
+---
+
+## 12. Part 3 — lot ST-2 (2026-10-02)
+
+### 12.1 Built
+
+- Engine (`desktop/common/kubuno-app-storage`): `account` (current account, `<data>/accounts/<key>/<app>/`,
+  Registry `Software\Kubuno\Accounts\<key>\Apps\<app>`), `AccountScoped` schemas (no account: memory + warning),
+  `kv` (`KeyValueStore`, JSON file, TTL, read-merge-write), `files` (`FileStore` Data/Cache/Temp, LRU eviction,
+  name-only API, `local_database_path`), `settings::migrate::import_legacy_json` (one-time import, file renamed
+  `*.migrated`), `settings::serde_bridge` (a serde struct as an open-schema set).
+- Components: `KeyValueStore`, `FileStore` (`kubuno-app-storage-components`), `LocalDatabase` (`kubuno-data`,
+  a `DbConnection` subclass, `app:`/`account:` specs); `AccountScoped` on `Settings`; the designer reads the
+  declared defaults of the project's `.kbsettings` (also when the surface never syncs the providers).
+- Secrets (Q4): `kubuno-data`'s default chain = environment → `Kubuno/app.<id>/<key>` (`AppSecretsSource`) →
+  the legacy Credential Manager names (read, then migrated) → user secrets.
+- Shell (`shell.json` → `shell.kbsettings`) and drive (`settings.json` → `kubuno-drive` settings) moved onto the
+  engine with a one-time import, both tested in a sandbox.
+- vskubuno: Registry key picker (`[editor("registry-key")]`, `RegistryKeyPickerDialog`, read-only), undo/redo of the
+  settings editor (`SettingsHistory`, Edit.Undo/Redo; a cell being edited keeps its own), the « Par compte » check
+  box (`AccountScoped`, same canonical text as Rust), icons, LS binding members, fixture, sample (`state`, `thumbs`).
+
+### 12.2 Verified
+
+Rust tests of every touched crate (engine 37, components 12, data, facade, LS 166, format 19, shell and drive
+migrations), clippy `-D warnings`, engine clippy for Linux and macOS; the sample's `--self-test` in a sandbox (KV
+set/get/remove, file write/read/refused name/clear); C# `Kubuno.Views.Tests` 457 passed, 2 ignored (pre-existing);
+VS (hive `KubunoStorage`, Release VSIX): `state` and `thumbs` in the component tray with their icons.
+
+### 12.3 ST-2 status (stopped on budget, 2026-10-02)
+
+- The declared-defaults fix (no provider sync on the design surface) is unit-tested but not yet seen in Visual Studio:
+  rebuild `view_embed` + the VSIX and look at the sample's designer (Theme `System`, interval `5`).
+- Not checked live in VS: the Registry key picker from Properties, undo/redo in the settings editor, the « Par
+  compte » check box, the « Stockage » tab listing the 5 components (covered by the C# tests and the fixture).
+- Moved to a later lot: the `Schema` drop-down, platform badges and target filtering, the `Error` event,
+  `LocalDatabase` encryption (SQLCipher).
+- `kubuno-views-meta`'s `framework` test fails on `kubuno-header-data` (another lot's new crate, not listed).
+- `kubuno-sync-engine` still needs a native Perl (vendored OpenSSL) to compile here; nothing was installed.
+- Lesson: the sample and the `windows` workspace must not share a target dir (two `drive-app-controls` builds
+  conflict); clean those crates after building the sample.

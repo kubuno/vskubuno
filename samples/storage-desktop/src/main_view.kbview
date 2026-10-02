@@ -1,6 +1,6 @@
 <!--
-  The storage sample's window (vskubuno docs/STORAGE-COMPONENTS.md). The Settings, SecretStore and RegistryKey are
-  non-visual components: the designer lists them in its component tray, under the surface. The controls bind the
+  The storage sample's window (vskubuno docs/STORAGE-COMPONENTS.md). The Settings, SecretStore, RegistryKey, KeyValueStore and
+  FileStore are non-visual components: the designer lists them in its component tray, under the surface. The controls bind the
   settings of src/settings.kbsettings through the Settings component (Source=settings): what they change is saved
   at once, and shared with the typed class `Settings` the code uses.
 -->
@@ -26,8 +26,11 @@
   <Button x:Name="forget_key" Text="Forget the key" OnClick="forget_key_click" Visible="{Binding ApiKey.Exists, Source=secrets}" X="430" Y="296" Width="200" Height="30"/>
   <Label Text="Explorer's hidden files (HKCU)" X="24" Y="346" Width="190" Height="20"/>
   <Label x:Name="explorer_hidden" Text="{Binding Hidden, Source=explorer, FallbackValue='(not set)'}" X="220" Y="346" Width="300" Height="20"/>
+  <Label x:Name="cached" Text="{Binding Count, Source=thumbs, StringFormat='{0} cached file(s)', FallbackValue='No cache yet'}" X="24" Y="384" Width="300" Height="20"/>
   <Label x:Name="status" Text="" X="24" Y="420" Width="612" Height="20" Anchor="Bottom, Left, Right"/>
   <Settings x:Name="settings" Schema="settings" OnSettingChanged="settings_setting_changed"/>
   <SecretStore x:Name="secrets"/>
+  <KeyValueStore x:Name="state" Store="state"/>
+  <FileStore x:Name="thumbs" Folder="thumbs" Kind="Cache" MaxSizeMb="1"/>
   <RegistryKey x:Name="explorer" Hive="CurrentUser" Path="Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"/>
 </Panel>

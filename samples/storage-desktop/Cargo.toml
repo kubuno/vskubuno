@@ -7,7 +7,8 @@ publish = false
 # A Kubuno desktop application that keeps its data on the device (vskubuno docs/STORAGE-COMPONENTS.md): typed
 # settings declared in `src/settings.kbsettings` (the generated `Settings` class, and a `<Settings>` component the
 # view binds to), a secret in the OS credential store (`<SecretStore>`) and a Windows Registry key
-# (`<RegistryKey>`), from the designer's "Storage" Toolbox tab. Open storage-desktop.rsproj in Visual Studio (or
+# (`<RegistryKey>`), small values (`<KeyValueStore>`) and a file cache (`<FileStore>`), from the designer's
+# "Storage" Toolbox tab. Open storage-desktop.rsproj in Visual Studio (or
 # `cargo run` with CARGO_TARGET_DIR on a local disk: kubuno_ui is a dylib).
 #
 #   KUBUNO_SANDBOX_DIR=C:\temp\sbx storage-desktop.exe     everything (files, Registry, secrets) under the sandbox

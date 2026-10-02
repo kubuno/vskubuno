@@ -30,7 +30,13 @@ namespace Kubuno.Views.Settings
             "The app the values are stored under (lower case: kubuno-notes). Empty: the Cargo package name.",
             "L'application sous laquelle les valeurs sont enregistrées (en minuscules : kubuno-notes). Vide : le nom du paquet Cargo.");
 
-        public static string ColumnName => T("Name", "Nom");
+        public static string AccountScoped => T("Per account", "Par compte");
+
+        public static string AccountScopedTip => T(
+            "The values belong to the signed-in Kubuno account: each account has its own, and signing out deletes them.",
+            "Les valeurs appartiennent au compte Kubuno connecté : chaque compte a les siennes, et la déconnexion les supprime.");
+
+        public static string ColumnName =>T("Name", "Nom");
 
         public static string ColumnType => T("Type", "Type");
 

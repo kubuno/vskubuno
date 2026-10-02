@@ -1,5 +1,6 @@
 //! The storage sample's window (`main_view.kbview`): settings bound through the `settings` component and read
-//! through the typed class `crate::Settings`, a secret kept by `secrets`, a Registry value shown by `explorer`.
+//! through the typed class `crate::Settings`, a secret kept by `secrets`, a Registry value shown by `explorer`, small
+//! values kept by `state` (a key-value store) and a file cache `thumbs`.
 
 use kubuno::prelude::*;
 use kubuno::storage::{Layer, SecretBackend};
@@ -104,6 +105,16 @@ impl MainView {
         // The Registry key, read-only (in a sandbox: the sandbox's copy).
         line("registry_key", self.explorer.full_name());
         line("registry_hidden", format!("{:?}", self.explorer.get_string("Hidden").map_err(|e| e.to_string())));
+        // The key-value store (a JSON file of the app's data folder) and the file cache.
+        line("kv_set", format!("{:?}", self.state.set("lastFolder", "Documents", None).map_err(|e| e.to_string())));
+        line("kv_get", format!("{:?}", self.state.get_string("lastFolder")));
+        line("kv_keys", self.state.keys().join(","));
+        line("kv_removed", format!("{:?}", self.state.remove("lastFolder").map_err(|e| e.to_string())));
+        line("file_write", format!("{:?}", self.thumbs.write("hello.txt", b"hello").map_err(|e| e.to_string())));
+        line("file_read", format!("{:?}", self.thumbs.read_to_string("hello.txt").map_err(|e| e.to_string())));
+        line("file_count", format!("{:?}", self.thumbs.list().map(|f| f.len()).map_err(|e| e.to_string())));
+        line("file_refused_name", format!("{}", self.thumbs.write("../escape.txt", b"x").is_err()));
+        line("file_cleared", format!("{:?}", self.thumbs.clear().map_err(|e| e.to_string())));
         line("save", format!("{:?}", self.settings.save().map_err(|e| e.to_string())));
         lines.join("\n") + "\n"
     }

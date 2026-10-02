@@ -76,6 +76,9 @@ namespace Kubuno.Views.Logic.Settings
         /// <summary>The app id the values are stored under (<c>App</c>), null for the Cargo package name.</summary>
         public string? App { get; set; }
 
+        /// <summary><c>AccountScoped="true"</c>: the values belong to the signed-in account (docs/STORAGE-COMPONENTS.md, decision Q6).</summary>
+        public bool AccountScoped { get; set; }
+
         public List<SettingEntry> Entries { get; set; } = new List<SettingEntry>();
 
         /// <summary>The text of a new file (Add &gt; New Item, a blank document).</summary>
@@ -198,6 +201,24 @@ namespace Kubuno.Views.Logic.Settings
             if (!string.IsNullOrEmpty(app))
             {
                 file.App = app;
+            }
+
+            var accountScoped = (string?)root.Attribute("AccountScoped");
+            if (accountScoped != null)
+            {
+                switch (accountScoped.Trim())
+                {
+                    case "true":
+                    case "True":
+                        file.AccountScoped = true;
+                        break;
+                    case "false":
+                    case "False":
+                        break;
+                    default:
+                        errors.Add($"AccountScoped is true or false ('{accountScoped}')");
+                        break;
+                }
             }
 
             foreach (var e in root.Elements())
@@ -331,6 +352,11 @@ namespace Kubuno.Views.Logic.Settings
             if (App != null)
             {
                 sb.Append(" App=\"").Append(KbresFile.EscapeAttr(App)).Append('"');
+            }
+
+            if (AccountScoped)
+            {
+                sb.Append(" AccountScoped=\"true\"");
             }
 
             if (Entries.Count == 0)

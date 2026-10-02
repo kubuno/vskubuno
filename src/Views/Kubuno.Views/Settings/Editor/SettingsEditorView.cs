@@ -33,6 +33,7 @@ namespace Kubuno.Views.Settings.Editor
         private readonly DataGrid _grid = new DataGrid();
         private readonly TextBox _version = new TextBox { Width = 48, Margin = new Thickness(4, 0, 12, 0), VerticalContentAlignment = VerticalAlignment.Center };
         private readonly TextBox _app = new TextBox { Width = 180, Margin = new Thickness(4, 0, 12, 0), VerticalContentAlignment = VerticalAlignment.Center };
+        private readonly CheckBox _accountScoped = new CheckBox { Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
         private readonly Button _add = new Button { Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 4, 0) };
         private readonly Button _remove = new Button { Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 12, 0) };
         private readonly Button _viewCodeButton = new Button { Padding = new Thickness(8, 2, 8, 2) };
@@ -72,6 +73,10 @@ namespace Kubuno.Views.Settings.Editor
 
             _version.ToolTip = SettingsText.VersionTip;
             _app.ToolTip = SettingsText.AppTip;
+            _accountScoped.Content = SettingsText.AccountScoped;
+            _accountScoped.ToolTip = SettingsText.AccountScopedTip;
+            _accountScoped.SetResourceReference(ForegroundProperty, EnvironmentColors.ToolWindowTextBrushKey);
+            _accountScoped.Click += (_, _) => RaiseChanged();
             _add.Click += (_, _) => AddRow();
             _remove.Click += (_, _) => RemoveSelected();
             _viewCodeButton.Click += (_, _) => _viewCode();
@@ -83,6 +88,7 @@ namespace Kubuno.Views.Settings.Editor
             toolbar.Children.Add(_version);
             toolbar.Children.Add(Label(SettingsText.App));
             toolbar.Children.Add(_app);
+            toolbar.Children.Add(_accountScoped);
             toolbar.Children.Add(_viewCodeButton);
             var toolbarBorder = new Border { Child = toolbar, BorderThickness = new Thickness(0, 0, 0, 1) };
             toolbarBorder.SetResourceReference(Border.BackgroundProperty, EnvironmentColors.CommandBarGradientBeginBrushKey);
@@ -117,6 +123,9 @@ namespace Kubuno.Views.Settings.Editor
         /// <summary>The settings' file name, for the hint (<c>settings.kbsettings</c>).</summary>
         public string FileName { get; set; } = "settings.kbsettings";
 
+        /// <summary>A text box of the editor (a cell, Version, App id) has the keyboard: Edit.Undo is its own.</summary>
+        public bool IsEditingText => IsKeyboardFocusWithin && Keyboard.FocusedElement is TextBox;
+
         /// <summary>The grid's rows (tests).</summary>
         internal IReadOnlyList<SettingRow> Rows => _rows;
 
@@ -147,6 +156,7 @@ namespace Kubuno.Views.Settings.Editor
 
                 _version.Text = file.Version.ToString(CultureInfo.InvariantCulture);
                 _app.Text = file.App ?? string.Empty;
+                _accountScoped.IsChecked = file.AccountScoped;
                 var unreadable = parseErrors.Count > 0 && file.Entries.Count == 0;
                 _banner.Visibility = unreadable ? Visibility.Visible : Visibility.Collapsed;
                 _bannerText.Text = unreadable ? SettingsText.InvalidFile + " " + parseErrors[0] : string.Empty;
@@ -171,6 +181,7 @@ namespace Kubuno.Views.Settings.Editor
             {
                 Version = int.TryParse(_version.Text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var v) && v >= 1 ? v : 1,
                 App = string.IsNullOrWhiteSpace(_app.Text) ? null : _app.Text.Trim(),
+                AccountScoped = _accountScoped.IsChecked == true,
             };
             file.Entries.AddRange(_rows.Select(r => r.ToEntry()));
             return file;

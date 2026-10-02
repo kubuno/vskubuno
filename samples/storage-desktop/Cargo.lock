@@ -770,6 +770,7 @@ dependencies = [
  "kubuno-ui",
  "kubuno-views",
  "kubuno-views-macros",
+ "serde_json",
  "tracing",
 ]
 
@@ -779,6 +780,7 @@ version = "0.1.0-alpha"
 dependencies = [
  "hex",
  "kubuno-secrets",
+ "serde",
  "serde_json",
  "sha2",
  "thiserror",
@@ -791,7 +793,9 @@ name = "kubuno-app-storage-components"
 version = "0.1.0-alpha"
 dependencies = [
  "kubuno-app-storage",
+ "kubuno-resources-model",
  "kubuno-views",
+ "serde_json",
  "tracing",
 ]
 

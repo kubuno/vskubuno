@@ -165,6 +165,9 @@ $table = @(
     @{ Name = 'Settings';                 Icon = 'settings-2';            Accent = 0 }
     @{ Name = 'SecretStore';              Icon = 'key-round';             Accent = 0 }
     @{ Name = 'RegistryKey';              Icon = 'folder-key' }
+    @{ Name = 'KeyValueStore';            Icon = 'braces';                Accent = 0 }
+    @{ Name = 'FileStore';                Icon = 'folder-archive' }
+    @{ Name = 'LocalDatabase';            Icon = 'database-zap' }
 )
 
 # Ink / accent per Visual Studio background. Light: Kubuno text-primary + primary blue; Dark: the VS

@@ -30,6 +30,8 @@ namespace Kubuno.Views.Designer.PropertyBrowser
             "shortcut" => new Menus.KbviewShortcutKeysEditor(),
             // A Vec<String> property of a project control (WinForms' string[]): the String Collection Editor.
             "lines" => new KbviewLinesEditor(),
+            // A <RegistryKey>'s Path (docs/STORAGE-COMPONENTS.md §5.2): the Registry key picker.
+            "registry-key" => new KbviewRegistryKeyEditor(),
             _ when Icons.KbviewContentAlignmentEditor.Applies(meta?.Kind?.EnumVariants) => new Icons.KbviewContentAlignmentEditor(),
             _ => null,
         };
@@ -343,6 +345,43 @@ namespace Kubuno.Views.Designer.PropertyBrowser
     /// <c>"lines"</c>): Windows Forms' String Collection Editor, one item per line, written in the attribute one item per
     /// line (<c>Countries="France&amp;#10;Belgique"</c>).
     /// </summary>
+    /// <summary>
+    /// The … button of a <c>&lt;RegistryKey&gt;</c>'s <c>Path</c> (docs/STORAGE-COMPONENTS.md §5.2): the Registry key picker,
+    /// opened on the element's <c>Hive</c> and <c>View</c>; a key picked in another hive or view sets them too.
+    /// </summary>
+    public sealed class KbviewRegistryKeyEditor : UITypeEditor
+    {
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext? context) => UITypeEditorEditStyle.Modal;
+
+        public override object? EditValue(ITypeDescriptorContext? context, IServiceProvider? provider, object? value)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var element = RichEditors.Elements(context).FirstOrDefault();
+            var hive = element?.GetRawValue("Hive") is { Length: > 0 } h ? h : "CurrentUser";
+            var view = element?.GetRawValue("View") is { Length: > 0 } v ? v : "Default";
+            var dialog = new UI.RegistryKeyPickerDialog(hive, view, value as string ?? string.Empty);
+            if (!RichEditors.ShowDialog(provider, dialog))
+            {
+                return value;
+            }
+
+            if (element is not null)
+            {
+                if (dialog.Hive != (Kubuno.Views.Logic.Settings.RegistryKeyPath.HiveName(hive) ?? "CurrentUser"))
+                {
+                    element.SetAttribute("Hive", dialog.Hive);
+                }
+
+                if (dialog.View != view)
+                {
+                    element.SetAttribute("View", dialog.View);
+                }
+            }
+
+            return dialog.Path;
+        }
+    }
+
     public sealed class KbviewLinesEditor : UITypeEditor
     {
         public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext? context) => UITypeEditorEditStyle.Modal;

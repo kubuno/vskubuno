@@ -1,6 +1,8 @@
 using System;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Windows.Input;
 using System.Windows.Threading;
 using Kubuno.Views.Logging;
 using Kubuno.Views.Logic.Settings;
@@ -35,6 +37,7 @@ namespace Kubuno.Views.Settings.Editor
         private bool _pushing;
         /// <summary>The buffer is not readable XML: the grid shows nothing and must never overwrite it.</summary>
         private bool _unreadable;
+        private readonly SettingsHistory _history = new SettingsHistory();
         private bool _disposed;
 
         public KbsettingsEditorPane(IVsTextLines textLines, OleInterop.IServiceProvider ole, string path)
@@ -109,6 +112,8 @@ namespace Kubuno.Views.Settings.Editor
                 return;
             }
 
+            // A change made outside the grid (the code view, a reload): an undo must never revert it.
+            _history.Clear();
             _reloadTimer.Stop();
             _reloadTimer.Start();
         }
@@ -152,10 +157,43 @@ namespace Kubuno.Views.Settings.Editor
                 return;
             }
 
-            if (!_buffer.CheckEditAccess())
+            if (Replace(current, target))
+            {
+                _history.Record(current, target);
+            }
+        }
+
+        /// <summary>Puts back the text before the grid's last change (Edit.Undo), or the one undone (Edit.Redo).</summary>
+        private void UndoRedo(bool redo)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (_buffer is null || _disposed)
+            {
+                return;
+            }
+
+            // A change still waiting to be written is part of the history first.
+            if (_pushTimer.IsEnabled)
+            {
+                _pushTimer.Stop();
+                PushToBuffer();
+            }
+
+            var current = _buffer.CurrentSnapshot.GetText();
+            var target = redo ? _history.Redo(current) : _history.Undo(current);
+            if (target is not null && Replace(current, target))
+            {
+                ReloadFromBuffer();
+            }
+        }
+
+        /// <summary>Replaces the buffer's text <paramref name="current"/> by <paramref name="target"/> as a minimal edit; false when it could not.</summary>
+        private bool Replace(string current, string target)
+        {
+            if (_buffer is null || !_buffer.CheckEditAccess())
             {
                 KubunoViewsLogHost.Current.WriteLine("[settings] " + SettingsText.ReadOnlyFile + " " + _path);
-                return;
+                return false;
             }
 
             var max = Math.Min(current.Length, target.Length);
@@ -177,15 +215,70 @@ namespace Kubuno.Views.Settings.Editor
                 using var edit = _buffer.CreateEdit();
                 edit.Replace(new Span(prefix, current.Length - prefix - suffix), target.Substring(prefix, target.Length - prefix - suffix));
                 edit.Apply();
+                return true;
             }
             catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
             {
                 KubunoViewsLogHost.Current.WriteException("[settings] could not update " + _path, ex);
+                return false;
             }
             finally
             {
                 _pushing = false;
             }
+        }
+
+        protected override void Initialize()
+        {
+            base.Initialize();
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (GetService(typeof(IMenuCommandService)) is not OleMenuCommandService commands)
+            {
+                return;
+            }
+
+            // Edit.Undo / Edit.Redo while the editor has the focus: the grid's history (a cell being edited keeps the
+            // text box's own undo).
+            AddCommand(commands, VSConstants.VSStd97CmdID.Undo, () => _view.IsEditingText || _history.CanUndo, () =>
+            {
+                if (_view.IsEditingText)
+                {
+                    ApplicationCommands.Undo.Execute(null, Keyboard.FocusedElement);
+                }
+                else
+                {
+                    UndoRedo(redo: false);
+                }
+            });
+            AddCommand(commands, VSConstants.VSStd97CmdID.Redo, () => _view.IsEditingText || _history.CanRedo, () =>
+            {
+                if (_view.IsEditingText)
+                {
+                    ApplicationCommands.Redo.Execute(null, Keyboard.FocusedElement);
+                }
+                else
+                {
+                    UndoRedo(redo: true);
+                }
+            });
+        }
+
+        private static void AddCommand(OleMenuCommandService commands, VSConstants.VSStd97CmdID id, Func<bool> enabled, Action execute)
+        {
+            var command = new OleMenuCommand(
+                (_, _) =>
+                {
+                    ThreadHelper.ThrowIfNotOnUIThread();
+                    execute();
+                },
+                new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)id));
+            command.BeforeQueryStatus += (_, _) =>
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                command.Supported = true;
+                command.Enabled = enabled();
+            };
+            commands.AddCommand(command);
         }
 
         private void ViewCode()

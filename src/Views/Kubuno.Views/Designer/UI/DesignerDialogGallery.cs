@@ -29,6 +29,10 @@ namespace Kubuno.Views.Designer.UI
                     "String",
                     Array.Empty<Bindings.BindingIssue>(),
                     preview: null).ShowModal()),
+            // docs/STORAGE-COMPONENTS.md §5.2: the Registry key picker of a <RegistryKey>'s Path (read-only).
+            new KeyValuePair<string, Func<bool?>>(
+                DesignerText.IsFrench ? "Sélectionner une clé du Registre (RegistryKey.Path)" : "Select a Registry Key (RegistryKey.Path)",
+                () => new RegistryKeyPickerDialog("CurrentUser", "Default", @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced").ShowModal()),
         };
     }
 }
