@@ -194,11 +194,11 @@ image resolver + icon loader + repaint on culture change), `binding.rs` (`parse_
 | Where | What |
 |---|---|
 | `Kubuno.Desktop.Logic/Resources/` | `KbresFile` (format, same canonical text as Rust), `ResourceNames` (cultures, satellites, Rust names, `{Res}` parse/format), `ResourceSetModel` (editor model: neutral + satellites, edits as single undo steps, `Texts()`), `ProjectResources` (project scan, `ResourceItem`), `ResourceNavigation` (F12 logic). |
-| `Kubuno.Desktop/Resources/Editor/` | The resource editor: `KbresEditorFactory`, `KbresEditorPane`, `KbresDocumentSession` (neutral buffer = doc data, satellites through invisible editors, model ⇄ buffers), `ResourceEditorView`, grid/details models, blank image/ICO writer, prompt dialog, gallery entries. |
-| `Kubuno.Desktop/Designer/Resources/` | `ResourcePicker` (API for the image editor and the icon picker: `Pick`, `ProjectImageResources`, `LoadPreview`, `Decode`), `SelectResourceDialog`, `DesignLanguagePicker`. |
+| `Kubuno.Views/Resources/Editor/` | The resource editor: `KbresEditorFactory`, `KbresEditorPane`, `KbresDocumentSession` (neutral buffer = doc data, satellites through invisible editors, model ⇄ buffers), `ResourceEditorView`, grid/details models, blank image/ICO writer, prompt dialog, gallery entries. |
+| `Kubuno.Views/Designer/Resources/` | `ResourcePicker` (API for the image editor and the icon picker: `Pick`, `ProjectImageResources`, `LoadPreview`, `Decode`), `SelectResourceDialog`, `DesignLanguagePicker`. |
 | `Kubuno.Desktop/Designer/DesignSurface/RustDesignSurfaceHost.Resources.cs` | `setResources`, design culture, file watcher (debounced, build folders ignored, identical messages never resent). |
-| `Kubuno.Desktop/Resources/ResourceDefinitionProvider.cs` + `Kubuno.Rust/Extensibility` `IRustDefinitionProvider` + middle layer | F12 from generated accessors. |
-| `Kubuno.Desktop/Resources/ResourceText.cs` | UI strings (fr/en). |
+| `Kubuno.Views/Resources/ResourceDefinitionProvider.cs` + `Kubuno.Rust/Extensibility` `IRustDefinitionProvider` + middle layer | F12 from generated accessors. |
+| `Kubuno.Views/Resources/ResourceText.cs` | UI strings (fr/en). |
 | `Kubuno.Desktop.ProjectSystem/KbresEditorProvider.cs`, `KubunoPackage` attributes, `DesktopLayer` registration | Default editor in a `.rsproj` and everywhere. |
 | `ItemTemplates/KubunoResourceFile`, `KubunoLocalizedResourceFile` | The two item templates. |
 | `sdk/Kubuno.Rust.Sdk/Sdk/Sdk.targets` | Nesting (`KubunoResourceSet` metadata), `.kbres`/images as CoreCompile inputs, `_KubunoTouchResourceSets`. |

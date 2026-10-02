@@ -467,6 +467,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **The view designer is shared by the Kubuno targets** (`docs/WEB-VIEWS.md` WV-8, `docs/ARCHITECTURE.md` "Layers
+  (as built)"): the WinForms-like designer (Toolbox, Properties and its type descriptors, events ⚡, collection editors,
+  smart tags, resource, icon and binding pickers, error banner, design-surface protocol), the `.kbview` language client
+  and the `.kbres` resource editor moved from the desktop layer into a new views layer (`Kubuno.Views`,
+  `Kubuno.Views.Logic`, tested by `Kubuno.Views.Tests`), which the desktop and web layers both build on - so the web
+  views designer reuses it. The desktop layer keeps the Rust design surface (`view_embed.exe`, rendering with the
+  project's own `kubuno_ui`), plugged into the designer through the new `IProtocolDesignSurfaceHost` interface, which the
+  WebView2 surface will implement next. Nothing changes for the desktop designer, and settings, window layouts, key
+  bindings, toolbox and project types are kept: every GUID, settings key and identifier is unchanged.
+- **The extension's internal shared layer is renamed `Kubuno.Shared`** (formerly `Kubuno.Core`: assemblies, namespaces,
+  projects, `src\Shared\`), so it is never confused with the products Kubuno Core Web (the server) and Kubuno Core
+  Desktop. Every package, command, tool window and editor GUID, settings key (the remote Linux host page keeps its
+  former classic key), unified settings id, CPS capability and template id is unchanged: existing settings, window
+  layouts and projects keep working.
+
 - **`Kubuno.Rust.Sdk` 1.1.1 and `Kubuno.Web.Sdk` 1.0.1** (rebuilt from the current sources): the task assembly packed in
   `Kubuno.Rust.Sdk` 1.1.0 predated the `Kubuno.Rust.Cargo` / `Kubuno.Rust.Launch` split and the fix of « Unknown Cargo
   build event », so a build through the SDK could fail with `Unknown Cargo build event` or reject

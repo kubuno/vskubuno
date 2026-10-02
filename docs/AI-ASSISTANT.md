@@ -20,8 +20,8 @@ Contents: 1. What already exists · 2. Provider options · 3. How Copilot does i
 
 ### 1.1 The MCP bridge (pillar 5, `docs/MCP.md`)
 
-Two processes: `kubuno-vs-mcp.exe` (`src/Core/Kubuno.Core.Mcp`, net8.0, official `ModelContextProtocol` C# SDK 2.2,
-stdio) and an in-proc bridge (`src/Core/Kubuno.Core.Mcp.Bridge`, `net48;net8.0`) that `KubunoPackage` starts. They talk
+Two processes: `kubuno-vs-mcp.exe` (`src/Shared/Kubuno.Shared.Mcp`, net8.0, official `ModelContextProtocol` C# SDK 2.2,
+stdio) and an in-proc bridge (`src/Shared/Kubuno.Shared.Mcp.Bridge`, `net48;net8.0`) that `KubunoPackage` starts. They talk
 over a named pipe (length-prefixed JSON) found through `%LOCALAPPDATA%\Kubuno\vs-mcp\<pid>.json`. The bridge's
 `IVsContextProvider` is implemented with EnvDTE (`Dte/DteVsContextProvider.cs`). It exposes **seven read-only tools**
 (`ReadOnly = true, Idempotent = true, OpenWorld = false`, in `Tools/KubunoVsTools.cs`):
@@ -45,17 +45,17 @@ calls the provider **in-proc**; it does not go through the pipe.
 
 ### 1.2 Layers and conventions to follow (`docs/ARCHITECTURE.md`)
 
-- Layers whose dependencies only go down: `Kubuno.Core*` → `Kubuno.Rust*` → `Kubuno.Desktop*` / `Kubuno.Web*` /
+- Layers whose dependencies only go down: `Kubuno.Shared*` → `Kubuno.Rust*` → `Kubuno.Desktop*` / `Kubuno.Web*` /
   `Kubuno.Mobile*`. Targets never reference each other. This is enforced by `tests/Kubuno.Architecture.Tests`. Pure
   logic lives in `*.Logic` assemblies, which have no VS SDK and are tested with `dotnet test`.
 - Extension points between layers are MEF `[ImportMany]` contracts. Precedents: `IRustEmbeddedLanguage`,
   `IRustReferenceParticipant` and `ISolutionSymbolProvider` in `Kubuno.Rust.Extensibility`. There are also
   `DialogGallery.Register`, `KubunoHost` and `KubunoLog`.
-- **Themed UI rules**: every modal dialog derives from `Kubuno.Core.UI.ThemedDialog` (`ShowModal()`). Tool-window
+- **Themed UI rules**: every modal dialog derives from `Kubuno.Shared.UI.ThemedDialog` (`ShowModal()`). Tool-window
   content calls `ThemedControls.AddImplicitStyles(Resources)` and uses `EnvironmentColors` brushes. Only theme keys are
   used, never literal colours. Message boxes go through `VsShellUtilities.ShowMessageBox`. Every dialog is listed in the
   Dialog Gallery and checked in the dark and light themes.
-- UI strings are French or English, chosen by `Kubuno.Core.Logic.Localization.UiLanguage`. Code and comments are in
+- UI strings are French or English, chosen by `Kubuno.Shared.Logic.Localization.UiLanguage`. Code and comments are in
   English.
 - Tool windows already built: `CrateManagerToolWindow` (multi-instance, document well), `OutlineToolWindow`, Data
   Explorer, Query window, Data Sources (all registered by `[ProvideToolWindow]` on `KubunoPackage`).
@@ -355,7 +355,7 @@ WEB-VIEWS 84 KB, DESKTOP-MIGRATION 7 KB, plus the CLAUDE.md files. Sending all o
 with caching, and much of it (DESIGNER.md especially) is design history rather than rules. So the pack has three tiers:
 
 1. **Rules digest** (≈ 4–6 k tokens, hand-written, versioned in the repo at
-   `src/Core/Kubuno.Core.DevAssistant/Knowledge/rules.md`, reviewed like code). Always in the system prompt and
+   `src/Shared/Kubuno.Shared.DevAssistant/Knowledge/rules.md`, reviewed like code). Always in the system prompt and
    cached. It contains:
    - UI strings in French (via `.kbres`, never literals), code and comments in English;
    - CHANGELOG `[Unreleased]` in English for every shipped change, one entry per repo touched;
@@ -511,7 +511,7 @@ that file: an admin password and an npm token). The Dev Assistant must assume se
   `secrets.json` / user-secrets folders, `.npmrc` / `.pypirc` containing auth, `*.kdbx`, `credentials*`,
   `.git-credentials`, `config.toml` files under module folders when they hold `api_key`/`secret`/`password` values,
   and everything outside the solution roots. The list is configurable.
-- **Scanner** (pure logic in `Kubuno.Core.DevAssistant.Logic`, unit-tested). It runs on **every outgoing piece of
+- **Scanner** (pure logic in `Kubuno.Shared.DevAssistant.Logic`, unit-tested). It runs on **every outgoing piece of
   text**: references, tool results and the user's own message.
   - Known token formats: Anthropic/OpenAI keys, GitHub `ghp_` / `github_pat_`, npm `npm_`, AWS `AKIA…`, Slack `xox*`,
     JWTs, PEM private keys.
@@ -552,13 +552,13 @@ Same ideas as the end-user module's "allow cloud providers" policy, implemented 
 ```
 devenv.exe (net48, in-proc)                                   kubuno-dev-assistant.exe (net8, child process)
 ┌──────────────────────────────────────────────┐  JSON-RPC   ┌────────────────────────────────────────────┐
-│ Kubuno.Core.DevAssistant                      │  over the   │ Kubuno.Core.DevAssistant.Host               │
+│ Kubuno.Shared.DevAssistant                      │  over the   │ Kubuno.Shared.DevAssistant.Host               │
 │  tool window, input, transcript, history      │  child's    │  providers: Anthropic (official C# SDK),    │
 │  reference resolvers (#), commands (/)        │  stdio      │   OpenAI-compatible (HttpClient)            │
 │  tool registry + executors (MEF, per layer)   │◀──────────▶│  agent loop, streaming, caching, context    │
 │  approvals, change sets, diff review, undo    │             │   editing / compaction, cost accounting     │
 │  secret masking (Logic), consent, settings    │             │  key read from Credential Manager           │
-│ Kubuno.Core.DevAssistant.Logic (pure, tested) │             │  Markdown → block model (Markdig)           │
+│ Kubuno.Shared.DevAssistant.Logic (pure, tested) │             │  Markdown → block model (Markdig)           │
 └──────────────────────────────────────────────┘             └──────────────┬─────────────────────────────┘
                                                                             │ HTTPS / HTTP (local)
                                                          api.anthropic.com · OpenAI-compatible · Ollama / llama.cpp
@@ -623,15 +623,15 @@ not depend on the pipe.
 
 | Layer | Assembly (new) | Owns |
 |---|---|---|
-| Core | `Kubuno.Core.DevAssistant.Logic` (netstandard2.0, no VS SDK) | protocol DTOs, command parser, reference model, **secret scanner/masker**, approval policy, command allowlist model, change-set/hunk model and diff, conversation store (JSONL), BM25 docs index, price table. Tested in `tests/Kubuno.Core.Tests` (or a new `Kubuno.Core.DevAssistant.Tests`). |
-| Core | `Kubuno.Core.DevAssistant.Host` (net8 exe `kubuno-dev-assistant.exe`) | providers, loop, streaming, caching, key read. Tested with a fake provider replaying recorded SSE fixtures. |
-| Core | `Kubuno.Core.DevAssistant` (net48, VS) | tool window, transcript, input, review window, consent and key dialogs (ThemedDialog, gallery), unified settings page « Kubuno › Assistant de développement », Credential Manager writes, VS-context / files / git / docs / edit tools, `/release` `/multi-os` `/changelog`, **the extension contracts** |
+| Core | `Kubuno.Shared.DevAssistant.Logic` (netstandard2.0, no VS SDK) | protocol DTOs, command parser, reference model, **secret scanner/masker**, approval policy, command allowlist model, change-set/hunk model and diff, conversation store (JSONL), BM25 docs index, price table. Tested in `tests/Kubuno.Shared.Tests` (or a new `Kubuno.Shared.DevAssistant.Tests`). |
+| Core | `Kubuno.Shared.DevAssistant.Host` (net8 exe `kubuno-dev-assistant.exe`) | providers, loop, streaming, caching, key read. Tested with a fake provider replaying recorded SSE fixtures. |
+| Core | `Kubuno.Shared.DevAssistant` (net48, VS) | tool window, transcript, input, review window, consent and key dialogs (ThemedDialog, gallery), unified settings page « Kubuno › Assistant de développement », Credential Manager writes, VS-context / files / git / docs / edit tools, `/release` `/multi-os` `/changelog`, **the extension contracts** |
 | Rust | `Kubuno.Rust` (`DevAssistant\`) | cargo / rustc / rust-analyzer / Test Explorer / debug tools, `/test`, `/expliquer` for Rust |
 | Desktop | `Kubuno.Desktop` (`DevAssistant\`) | `.kbview` / `.kbres` tools (LS edit APIs, registry, validation, designer selection), `#élément`, `/vue` `/handler` `/ressource`, `/migrer` (legacy desktop), the designer inline action |
 | Web | `Kubuno.Web` (`DevAssistant\`) | npm / tsc / module.toml / version-audit tools, `DevDatabaseGuard` wiring, `/migrer` (TSX), web-view profile of `/vue` |
 | Mobile | — | nothing yet. The contracts allow a Gradle/adb toolset later. |
 
-**Extension contracts** (MEF, `Kubuno.Core.DevAssistant.Extensibility`, imported with `[ImportMany]`, so Core never
+**Extension contracts** (MEF, `Kubuno.Shared.DevAssistant.Extensibility`, imported with `[ImportMany]`, so Core never
 names a higher layer):
 - `IDevAssistantToolProvider` → tool descriptors + executor;
 - `IDevAssistantReferenceProvider` → `#` kinds + resolver;
@@ -639,7 +639,7 @@ names a higher layer):
 - `IDevAssistantKnowledgeProvider` → extra digest or docs sections.
 
 Each target registers its parts like the existing Rust contracts do. `tests/Kubuno.Architecture.Tests` gains the new
-projects automatically by name (Core layer). `KubunoPackage` gets the `[ProvideToolWindow]` and the vsct entries.
+projects automatically by name (Shared layer). `KubunoPackage` gets the `[ProvideToolWindow]` and the vsct entries.
 
 ### 9.7 Persistence per solution
 
@@ -696,7 +696,7 @@ lots.
 
 ## 12. Open questions (each with the recommended answer)
 
-1. **Name.** « Assistant de développement Kubuno » / *Kubuno Dev Assistant* (internal: `Kubuno.Core.DevAssistant`,
+1. **Name.** « Assistant de développement Kubuno » / *Kubuno Dev Assistant* (internal: `Kubuno.Shared.DevAssistant`,
    `kubuno-dev-assistant.exe`)? **Recommended: yes.** It cannot be confused with the end-user *Assistant* module.
 2. **Host language.** C# net8 host with the official Anthropic SDK, or a Rust sidecar with raw HTTP? **Recommended:
    C# net8.** Official SDK, same precedent as `kubuno-vs-mcp.exe`, and Kubuno domain knowledge stays in the Rust
@@ -734,7 +734,7 @@ lots.
 - VS Code Chat Participant API (for comparison; no VS equivalent found): <https://code.visualstudio.com/api/extension-guides/ai/chat>.
 - In-repo: `docs/MCP.md`, `docs/ARCHITECTURE.md`, `docs/DESIGNER.md` §5/§8, `docs/DATA.md` §17,
   `docs/WEB-VIEWS.md` §6/§10/§11, `docs/RESOURCES.md`, `docs/VIEWS-SPEC.md`, `docs/MULTI-OS-AUDIT.md`,
-  `src/Core/Kubuno.Core.Mcp/Tools/KubunoVsTools.cs`, `src/Web/Kubuno.Web.Logic/DevDatabase/DevDatabaseGuard.cs`,
+  `src/Shared/Kubuno.Shared.Mcp/Tools/KubunoVsTools.cs`, `src/Web/Kubuno.Web.Logic/DevDatabase/DevDatabaseGuard.cs`,
   desktop `common/kubuno-secrets/src/lib.rs`; `Z:\src\assistant` (read only, to explain why it is out of scope).
 
 ---
@@ -745,11 +745,11 @@ lots.
 
 | Project | Kind | Content |
 |---|---|---|
-| `src/Core/Kubuno.Core.DevAssistant.Logic` | netstandard2.0, no VS SDK | JSON-RPC lines (`RpcMessage`, `RpcCodec`, duplex `RpcConnection` with `$/cancelRequest`), the protocol DTOs (`DevAssistantProtocol.cs`), `SecretScanner` / `SecretMasker` / `DeniedFiles`, the change sets (`LineDiff`, `ChangeSet`, `AnchoredEditApplier`, `ChangeSetApplier` over `IChangeSetBufferHost`), `PriceTable` / `CostLedger`, `PromptParser`, `ToolPolicy` / `ToolInputValidator`, the Markdown block parser, `ConversationStore` (JSONL in `.vs`), `WindowsCredentialStore` (CredRead/Write/Delete, `CRED_PERSIST_LOCAL_MACHINE`). |
-| `src/Core/Kubuno.Core.DevAssistant.Host` | net8 exe `kubuno-dev-assistant.exe` | `HostServer` (initialize, models/list, session/send, session/cancel, shutdown), `AgentLoop`, `AnthropicProvider` (official SDK `Anthropic` 12.53.0), `FakeProvider` + `Fixtures\` (recorded responses). Ships in the VSIX under `tools\kubuno-dev-assistant\` (framework-dependent, .NET 8, like `kubuno-vs-mcp.exe`). |
-| `src/Core/Kubuno.Core.DevAssistant` | net48, in-proc | `DevAssistantLayer` (a Core-layer `KubunoLayer` listed first in `KubunoPackage.CreateLayers`), the tool window, the dialogs, the host client, `AssistantController`, the Core tools / references / commands, `VsChangeSetBufferHost`, the MEF contracts (`Extensibility\DevAssistantContracts.cs`), the rules digest `Knowledge\rules.md`. |
+| `src/Shared/Kubuno.Shared.DevAssistant.Logic` | netstandard2.0, no VS SDK | JSON-RPC lines (`RpcMessage`, `RpcCodec`, duplex `RpcConnection` with `$/cancelRequest`), the protocol DTOs (`DevAssistantProtocol.cs`), `SecretScanner` / `SecretMasker` / `DeniedFiles`, the change sets (`LineDiff`, `ChangeSet`, `AnchoredEditApplier`, `ChangeSetApplier` over `IChangeSetBufferHost`), `PriceTable` / `CostLedger`, `PromptParser`, `ToolPolicy` / `ToolInputValidator`, the Markdown block parser, `ConversationStore` (JSONL in `.vs`), `WindowsCredentialStore` (CredRead/Write/Delete, `CRED_PERSIST_LOCAL_MACHINE`). |
+| `src/Shared/Kubuno.Shared.DevAssistant.Host` | net8 exe `kubuno-dev-assistant.exe` | `HostServer` (initialize, models/list, session/send, session/cancel, shutdown), `AgentLoop`, `AnthropicProvider` (official SDK `Anthropic` 12.53.0), `FakeProvider` + `Fixtures\` (recorded responses). Ships in the VSIX under `tools\kubuno-dev-assistant\` (framework-dependent, .NET 8, like `kubuno-vs-mcp.exe`). |
+| `src/Shared/Kubuno.Shared.DevAssistant` | net48, in-proc | `DevAssistantLayer` (a Core-layer `KubunoLayer` listed first in `KubunoPackage.CreateLayers`), the tool window, the dialogs, the host client, `AssistantController`, the Core tools / references / commands, `VsChangeSetBufferHost`, the MEF contracts (`Extensibility\DevAssistantContracts.cs`), the rules digest `Knowledge\rules.md`. |
 | `src/Desktop/Kubuno.Desktop/DevAssistant/` | Desktop layer, MEF parts | `#élément` (`KbviewSelectionTracker` + `KbviewReferenceProvider`), the `kbview_*` tools, `/vue`, `KbviewLanguageServerBridge` (scratch documents in `kubuno-views-ls`). |
-| `tests/Kubuno.Core.DevAssistant.Tests` | net8.0 MSTest, 39 tests | protocol, masking corpus + marker restore, diff/hunks/staleness/single undo, cost cap, policy, schema validation, the SDK path against a local server replaying recorded SSE, the whole `/vue` flow through the host with the fake provider, and the recorded `/vue` ops against the real `kubuno-views-ls` (inconclusive when it is not built). |
+| `tests/Kubuno.Shared.DevAssistant.Tests` | net8.0 MSTest, 39 tests | protocol, masking corpus + marker restore, diff/hunks/staleness/single undo, cost cap, policy, schema validation, the SDK path against a local server replaying recorded SSE, the whole `/vue` flow through the host with the fake provider, and the recorded `/vue` ops against the real `kubuno-views-ls` (inconclusive when it is not built). |
 
 The VSIX side starts the host on first use with no argument and **removes every `ANTHROPIC_*` variable** from its
 environment; the host reads the key from `Kubuno:DevAssistant:Provider:anthropic` only, so a key set in the
@@ -810,8 +810,8 @@ the real server by a test (`LanguageServerScratchTests`).
 
 ### 14.5 Verification (2026-10-01)
 
-- Build: whole solution (Debug), no new warning; `Kubuno.Core.DevAssistant.Tests` 39/39, `Kubuno.Architecture.Tests`
-  7/7 (the pure-logic count is now 7), `Kubuno.Core.Tests` 53/53, `Kubuno.Desktop.Tests` 629/629.
+- Build: whole solution (Debug), no new warning; `Kubuno.Shared.DevAssistant.Tests` 39/39, `Kubuno.Architecture.Tests`
+  7/7 (the pure-logic count is now 7), `Kubuno.Shared.Tests` 53/53, `Kubuno.Desktop.Tests` 629/629.
 - Live, in a dedicated hive (`/rootsuffix KubunoAssist`, VSIX installed with `VSIXInstaller`), with the fake provider,
   dark and light themes: the window opens docked with Solution Explorer; settings store a dummy key in the Credential
   Manager (`cmdkey` shows it, the dialog shows « ● Clé enregistrée » only) and « Supprimer la clé » removes it; a

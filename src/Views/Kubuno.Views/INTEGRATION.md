@@ -1,6 +1,6 @@
-# Integrating Kubuno.Desktop.Views into the Kubuno.VisualStudio VSIX
+# Integrating Kubuno.Views into the Kubuno.VisualStudio VSIX
 
-`Kubuno.Desktop.Views` is a standalone net48 class library: it builds and its tests run on
+`Kubuno.Views` is a standalone net48 class library: it builds and its tests run on
 their own (see the repo README's "Tests" section - the same `COMPLUS_LoadFromRemoteSources=1`
 workaround for a mapped network drive applies here too), but it produces no VSIX of its own. This
 document is the checklist for wiring it into `src/Kubuno.VisualStudio` (the VSIX project) once that
@@ -16,13 +16,13 @@ Add a `ProjectReference` to `Kubuno.VisualStudio.csproj`, in the same style alre
 ```xml
 <ProjectReference Include="..\Kubuno.VisualStudio.Views\Kubuno.VisualStudio.Views.csproj">
   <Project>{PUT-A-NEW-GUID-HERE}</Project>
-  <Name>Kubuno.Desktop.Views</Name>
+  <Name>Kubuno.Views</Name>
   <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
   <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
 </ProjectReference>
 ```
 
-`Kubuno.Desktop.Views.csproj` already references the exact same
+`Kubuno.Views.csproj` already references the exact same
 `Microsoft.VisualStudio.SDK`/`Microsoft.VisualStudio.LanguageServer.Client`/
 `Microsoft.VisualStudio.Workspace.VSIntegration` package versions `Kubuno.VisualStudio.csproj` does
 (verified by reading that file before this library was written) - no version reconciliation should
@@ -35,7 +35,7 @@ likewise, so `dotnet test`/the solution build cover it going forward.
 
 `Kubuno.VisualStudio.csproj`'s own `source.extension.vsixmanifest` already declares one
 `Microsoft.VisualStudio.MefComponent` asset sourced from `%CurrentProject%` (the VSIX project
-itself). Once `Kubuno.Desktop.Views.dll` is copied into the VSIX output directory by the
+itself). Once `Kubuno.Views.dll` is copied into the VSIX output directory by the
 `ProjectReference`'s output groups (step 1), MEF composition picks up its `[Export]`s
 (`LanguageService/ContentDefinition.cs`'s content type + file extension, and
 `LanguageService/KubunoViewsLanguageClient.cs`'s `ILanguageClient`) automatically from any assembly
@@ -48,7 +48,7 @@ or `Ctrl+.` on a `.kbview` file, or the "Kubuno" pane logging kubuno-views-ls's 
 if composition does not pick it up, the fallback is an explicit second `MefComponent` asset:
 
 ```xml
-<Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Desktop.Views" Path="|Kubuno.Desktop.Views|" />
+<Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Views" Path="|Kubuno.Views|" />
 ```
 
 ## 3. pkgdef / grammar inclusion
@@ -73,7 +73,7 @@ already is:
    subfolder option, is the safer choice for that reason).
 2. **Add `Content` items** in `Kubuno.VisualStudio.csproj` for whichever of this library's
    `Grammars\*` files end up copied in (mirror the existing `Content Include="Grammars\rust.tmLanguage.json"` block: `IncludeInVSIX=true`, `CopyToOutputDirectory=PreserveNewest`), pointing at this
-   library's files via a relative `..\Kubuno.Desktop.Views\Grammars\...` path and a `<Link>`
+   library's files via a relative `..\Kubuno.Views\Grammars\...` path and a `<Link>`
    that places them where the merged pkgdef (step 1) expects them.
 3. **Do not copy `kbview-languages.pkgdef` itself into the VSIX** - only its *keys*, merged into the
    existing `languages.pkgdef` (a VSIX package can register exactly one `Microsoft.VisualStudio.VsPkgUndockedTypeIndex`/pkgdef asset the way this project is currently set up; merging keys is simpler and matches the existing precedent for `languages.pkgdef` itself already being one file for the Rust grammar).
@@ -85,12 +85,12 @@ becomes a Tools > Options page once a VSIX package class declares it. Add to `Ku
 (alongside the existing `RustOptionsPage` attributes):
 
 ```csharp
-[ProvideOptionPage(typeof(Kubuno.Desktop.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true)]
-[ProvideProfile(typeof(Kubuno.Desktop.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
+[ProvideOptionPage(typeof(Kubuno.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true)]
+[ProvideProfile(typeof(Kubuno.Views.Options.KbviewOptionsPage), Constants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
 ```
 
 (`Constants.OptionsCategoryName` is already `"Kubuno"`, shared with the Rust page - no change needed
-there; `Kubuno.Desktop.Views.KbviewConstants.OptionsCategoryName`/`OptionsViewsPageName` carry
+there; `Kubuno.Views.KbviewConstants.OptionsCategoryName`/`OptionsViewsPageName` carry
 the same two strings on this library's side, for reference in its own code and tests.)
 
 Then, in `KubunoPackage.InitializeAsync` (after the package is sited, alongside where the Rust
@@ -98,37 +98,37 @@ options work today), publish the page into this library's static gateway so the 
 `KubunoViewsLanguageClient` can read it without needing a reference back to `KubunoPackage`:
 
 ```csharp
-Kubuno.Desktop.Views.Options.KubunoViewsOptionsHost.Current =
-    (Kubuno.Desktop.Views.Options.KbviewOptionsPage)GetDialogPage(typeof(Kubuno.Desktop.Views.Options.KbviewOptionsPage));
+Kubuno.Views.Options.KubunoViewsOptionsHost.Current =
+    (Kubuno.Views.Options.KbviewOptionsPage)GetDialogPage(typeof(Kubuno.Views.Options.KbviewOptionsPage));
 ```
 
 ## 5. Logging into the "Kubuno" Output pane
 
-This library never references `Kubuno.Core.Logging.KubunoLog` directly (that would be the
+This library never references `Kubuno.Shared.Logging.KubunoLog` directly (that would be the
 circular reference this whole document exists to avoid - see this library's own
 `Logging/IKubunoLog.cs` remarks). Instead, add a tiny adapter in the VSIX and install it once, in
 `KubunoPackage.InitializeAsync`, right after `KubunoLog.Initialize(pane)` is called:
 
 ```csharp
-// Adapter: forwards Kubuno.Desktop.Views.Logging.IKubunoLog calls to the existing "Kubuno" pane.
-internal sealed class KubunoLogAdapter : Kubuno.Desktop.Views.Logging.IKubunoLog
+// Adapter: forwards Kubuno.Views.Logging.IKubunoLog calls to the existing "Kubuno" pane.
+internal sealed class KubunoLogAdapter : Kubuno.Views.Logging.IKubunoLog
 {
-    public void WriteLine(string message) => Kubuno.Core.Logging.KubunoLog.WriteLine(message);
-    public void WriteException(string context, Exception exception) => Kubuno.Core.Logging.KubunoLog.WriteException(context, exception);
+    public void WriteLine(string message) => Kubuno.Shared.Logging.KubunoLog.WriteLine(message);
+    public void WriteException(string context, Exception exception) => Kubuno.Shared.Logging.KubunoLog.WriteException(context, exception);
 }
 ```
 
 ```csharp
-Kubuno.Desktop.Views.Logging.KubunoViewsLogHost.Current = new KubunoLogAdapter();
+Kubuno.Views.Logging.KubunoViewsLogHost.Current = new KubunoLogAdapter();
 ```
 
 Until this is wired up, `KubunoViewsLanguageClient` logs into a no-op logger
-(`Kubuno.Desktop.Views.Logging.NullKubunoLog`) rather than throwing - safe, but silent; do not
+(`Kubuno.Views.Logging.NullKubunoLog`) rather than throwing - safe, but silent; do not
 skip this step, or kubuno-views-ls discovery/startup/errors will never appear anywhere visible.
 
 ## 6. Shipping `kubuno-views-ls.exe`
 
-`Kubuno.Desktop.Views.Locating.KubunoViewsLanguageServerLocator` looks for the binary, in
+`Kubuno.Views.Locating.KubunoViewsLanguageServerLocator` looks for the binary, in
 order: the options override (step 4), then
 `<extension install dir>\tools\kubuno-views-ls.exe`, then PATH, then the two local dev build
 folders. The VSIX must ship the built `kubuno-views-ls.exe` (from
@@ -163,6 +163,6 @@ whole catalog, not just this feature), remove it and keep the current "code"-onl
 
 ## What NOT to change on this library's side
 
-Everything under `src/Desktop/Kubuno.Desktop/Views/` and `tests/Kubuno.Desktop.Tests/Views/` is
+Everything under `src/Views/Kubuno.Views/` and `tests/Kubuno.Desktop.Tests/Views/` is
 otherwise ready to reference as-is: no source file here needs editing to complete the integration,
 only the VSIX-side wiring above.

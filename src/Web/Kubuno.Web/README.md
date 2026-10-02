@@ -9,11 +9,12 @@ Phases 1 and 2 are built (docs/WEB.md): web solution generation (single and mult
 
 ## Rules
 
-- References `Kubuno.Core` and the Rust layer (`Kubuno.Rust`, `Kubuno.Rust.Logic`, and the other `Kubuno.Rust.*`
-  assemblies when needed). **Never** `Kubuno.Desktop*` or `Kubuno.Mobile*` - `tests/Kubuno.Architecture.Tests` fails
+- References `Kubuno.Shared`, the Rust layer (`Kubuno.Rust`, `Kubuno.Rust.Logic`, and the other `Kubuno.Rust.*`
+  assemblies when needed) and the views layer (`Kubuno.Views*`: the view designer the web views designer reuses,
+  docs/WEB-VIEWS.md). **Never** `Kubuno.Desktop*` or `Kubuno.Mobile*` - `tests/Kubuno.Architecture.Tests` fails
   the build's tests otherwise.
 - Something the desktop layer already has and a web module needs (the SQLx migrations and `.sqlx` cache commands, the
-  Data Explorer) moves **down** into the Rust layer (or Core) first; it is never referenced sideways.
+  Data Explorer) moves **down** into the Rust layer (or Views, or Shared) first; it is never referenced sideways.
 - Pure logic goes in a `Kubuno.Web.Logic` project without the Visual Studio SDK (tested by a `tests/Kubuno.Web.Tests`
   project); CPS exports for `.rsproj`/`.esproj` in a `Kubuno.Web.ProjectSystem` project, like the desktop layer's.
 - Namespaces start with the assembly name (`Kubuno.Web.*`).
@@ -28,5 +29,5 @@ Phases 1 and 2 are built (docs/WEB.md): web solution generation (single and mult
 | `module.toml` editor and validation, `SDK_VERSION` compatibility check, `/internal/*` and events contracts | MEF parts (content type, taggers, completion) of this assembly |
 | SQLx migrations and `.sqlx` offline cache commands | move the desktop layer's `Migrations\` down to the Rust layer, then use it from here |
 | CHANGELOG `[Unreleased]` helper, `release.sh` integration | commands of this layer |
-| Options (Tools > Options > Kubuno > Web) | an options page deriving from `Kubuno.Core.Settings.KubunoDialogPage`, declared on `KubunoPackage`, with its monikers in `UnifiedSettings\kubuno.registration.json` (tools/gen-unified-settings.ps1) |
-| Dialogs | derive from `Kubuno.Core.UI.ThemedDialog`, register samples with `Kubuno.Core.UI.DialogGallery.Register` |
+| Options (Tools > Options > Kubuno > Web) | an options page deriving from `Kubuno.Shared.Settings.KubunoDialogPage`, declared on `KubunoPackage`, with its monikers in `UnifiedSettings\kubuno.registration.json` (tools/gen-unified-settings.ps1) |
+| Dialogs | derive from `Kubuno.Shared.UI.ThemedDialog`, register samples with `Kubuno.Shared.UI.DialogGallery.Register` |

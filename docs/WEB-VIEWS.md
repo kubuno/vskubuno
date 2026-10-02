@@ -401,11 +401,26 @@ Everything except the surface is reused: the editor factory with Design | XML | 
 rasterised from the Lucide XAML), collection editors (`ChildCollectionPlanner`), smart tags, the resource picker
 (`.kbres`), the icon picker, F7/Shift+F7, the document outline (`documentSymbol`).
 
-All of it lives in `Kubuno.Desktop` today, and the web layer may not reference the desktop layer
+All of it lived in `Kubuno.Desktop`, and the web layer may not reference the desktop layer
 (`tests/Kubuno.Architecture.Tests`). Per `ARCHITECTURE.md` ("code moves DOWN"), **WV-8 moves the view designer into a
 shared lower layer** — `Kubuno.Views` / `Kubuno.Views.Logic` between Rust and the targets — leaving
 `RustDesignSurfaceHost`, the design build of `kubuno_ui.dll` and the desktop templates in `Kubuno.Desktop`; the web
 layer adds `WebDesignSurfaceHost`. The same move is already planned for the mobile renderer.
+
+**Done 2026-10-02 (WV-8).** `src/Views/Kubuno.Views` holds the designer (`Designer`), the `.kbview` language client
+(`LanguageService`, `Locating`, `Options`...) and the `.kbres` editor (`Resources`), started by its own `ViewsLayer`
+(listed before the targets); `Kubuno.Views.Logic` (netstandard2.0) the view file kinds and the `.kbres` model; their
+tests are `tests/Kubuno.Views.Tests`. The seam is `IProtocolDesignSurfaceHost : IDesignSurfaceHost` (the protocol
+events and commands the designer used to take from `RustDesignSurfaceHost` by a type test: drops, edit batches,
+context menus, double-clicks, unhandled keys, `select`/`selectMany`, `projectComponents`, `format`, zoom, design
+culture) plus the optional `IDesignSurfaceStatusAware` / `IDesignSurfaceRuntimeAware`; the design-surface protocol
+helpers (`DesignSurfaceProtocol`, `…DragDropProtocol`, `…ContextMenuProtocol`, `…ResourcesProtocol`, `…ThemeProtocol`,
+`…ZoomProtocol`) moved with it, so `WebSurfaceProtocol` can reuse them. `Kubuno.Desktop` keeps `RustDesignSurfaceHost`
+(+ factory, Win32 helpers, the `kubuno_ui` runtime handshake), the per-project design runtime, the Data Sources binding
+drop and the Kubuno control icons (handed to the Toolbox through `NativeToolboxInstaller.IconName`/`IconAssembly`); it
+plugs its factory into `DesignSurfaceHostFactoryHost`. `Kubuno.Web` references `Kubuno.Views` (never `Kubuno.Desktop`,
+checked transitively by `tests/Kubuno.Architecture.Tests`). Left for WV-9b: a factory chosen per document instead of
+the one `DesignSurfaceHostFactoryHost.Current`, and a runtime description that is not a `kubuno_ui` DLL hash.
 
 ### 4.2 The WebView2 design surface
 
@@ -631,7 +646,7 @@ enough.
 | **WV-5b** | List & navigation elements: `ListBox`, `CheckedListBox`, `ListView`, `TreeView` (virtualised, ARIA), `DataTable` alignment, `Toolbar`, `Sidebar*`, `StatusBar`, `Splitter`, `Popover`, `SearchField`, `MaskedField`, `Avatar`, `PaintBox`; Ribbon promoted to `@ui` on `RIBBON.md`'s classes | L | WV-5a | Ribbon unification touches 4 modules | **Visual** + keyboard/screen-reader pass (NVDA) on lists and trees |
 | **WV-6** | i18n: `.kbres` → i18next bundles in the plugin, `{Res}` arguments and plurals (both targets), converter `i18n.ts` → `.kbres` | M | WV-2 | 13 languages × keys: a lossy conversion would be silent | Round-trip test: every key/language identical before/after; RTL screenshot |
 | **WV-7** | Language server web profile: profile detection, registry from JSON, `oxc` code-behind reader, `createHandler`/rename/remove/compatible handlers for TS, go-to-definition into `.ts`, web diagnostics, `.d.ts` generation | L | WV-1, WV-4 | `oxc` version churn; TS edits must respect user formatting (insert, never reformat) | Unit + round-trip tests (as the 127 + 18 existing); live in VS |
-| **WV-8** | VS: move the designer down to `Kubuno.Views*` (shared layer), desktop keeps its surface host; architecture tests updated | M | — (can start now) | Concurrent edits in `Kubuno.Desktop/Designer` (uncommitted work today) — coordinate, move files without changing behaviour | Designer test suite (343) green; desktop designer smoke test in the experimental instance |
+| **WV-8** | VS: move the designer down to `Kubuno.Views*` (shared layer), desktop keeps its surface host; architecture tests updated | M | — (can start now) | Concurrent edits in `Kubuno.Desktop/Designer` (uncommitted work today) — coordinate, move files without changing behaviour | Designer test suite (343) green; desktop designer smoke test in the experimental instance. **Done 2026-10-02** (section 4.1) |
 | **WV-9a** | **Spike**: WebView2 in a VS document pane — focus/keyboard routing with VS accelerators, Toolbox drag into WebView2 (`text/plain` channel vs child-window `IDropTarget`), DPI 100/175 %, VS theme switch | S–M | — | Highest risk of the plan (like DSG-7 for desktop) | **Visual**, real mouse in the experimental instance (outside the agent sandbox; synthetic input is dropped inside it) |
 | **WV-9b** | `WebDesignSurfaceHost`: protocol bridge, `surfaceInfo`, design host via the project's dev server, bundled fallback + info bar, `@kubuno/host-runtime` package | L | WV-8, WV-9a, WV-3 | Dev-server lifecycle inside VS (ports, crashes, restarts) | **Visual**: open a view, select, edit property, undo; kill the dev server → fallback |
 | **WV-10** | Design mode in the browser: overlay, hit-test, adorners, insertion markers per layout, absolute move/resize, viewport toolbar, sample/live data, run mode | L | WV-3, WV-9b | Components that do not expose a DOM root; portals (menus, popovers) outside the page tree | **Visual** per container kind; hit-test unit tests in jsdom |

@@ -205,7 +205,7 @@ opens the same tunnel without starting a core (for the Data Explorer, psql or `c
   `ssh -N -L 55432:localhost:5432 -F none -i <key> -p <port> -o BatchMode=yes -o IdentitiesOnly=yes
   -o StrictHostKeyChecking=yes -o UserKnownHostsFile=<known_hosts_kubuno> -o ConnectTimeout=10
   -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=3 <user>@<host>`
-  (`SshCommandLine`, Kubuno.Core.Logic). `BatchMode` means no prompt ever; `-F none` and `IdentitiesOnly` keep the
+  (`SshCommandLine`, Kubuno.Shared.Logic). `BatchMode` means no prompt ever; `-F none` and `IdentitiesOnly` keep the
   user's own ssh configuration and agent out of it; host key checking is **strict**, against the Kubuno file only -
   it is never turned off.
 - **Lifetime**: the tunnel is up when its local port accepts connections. It is reused by the next launches while
@@ -351,8 +351,9 @@ layer) names a NEW solution `Kubuno.Core.Web.slnx` for the core repository, `Kub
 workspace and `Kubuno.<Module>.slnx` for a module (`SolutionNaming`); the commands are "Kubuno Core Web: ..."; the
 debugger is "Kubuno Core Web (serveur)"; the module template is "Kubuno Core Web Module" (tags `Kubuno`,
 `Kubuno Core Web`), and the desktop templates are tagged `Kubuno Core Desktop` ("Kubuno Core Desktop Application",
-item templates suffixed "(Kubuno Core Desktop)"; IDs unchanged). The extension's internal `Kubuno.Core` layer keeps its
-name for now.
+item templates suffixed "(Kubuno Core Desktop)"; IDs unchanged). The extension's internal shared layer, formerly
+`Kubuno.Core`, was renamed `Kubuno.Shared` on 2026-10-02 so it is never confused with either product
+(docs/ARCHITECTURE.md, "Layers (as built)").
 
 ## 13. Verification (2026-10-01, hive `/rootsuffix KubunoWeb`)
 

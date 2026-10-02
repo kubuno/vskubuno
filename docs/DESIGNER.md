@@ -192,7 +192,7 @@ exe`, appropriate there because Claude Code, not the VSIX, owns that process's
 lifecycle and must *find* an already-running `devenv.exe`). Here the VSIX
 starts the child itself, so reusing the LSP client's own transport shape needs
 no new discovery mechanism and is trivially testable with an in-memory duplex
-stream the same way `tests/Kubuno.Core.Mcp.Tests/McpProtocolTests.cs` already
+stream the same way `tests/Kubuno.Shared.Mcp.Tests/McpProtocolTests.cs` already
 proves out for a different pipe.
 
 Proposed methods (all JSON-RPC over the process's own stdio channel):

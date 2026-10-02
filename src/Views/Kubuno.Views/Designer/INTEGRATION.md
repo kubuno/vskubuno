@@ -1,7 +1,7 @@
-# Integrating Kubuno.Desktop.Designer into the Kubuno.VisualStudio VSIX
+# Integrating Kubuno.Views.Designer into the Kubuno.VisualStudio VSIX
 
-`Kubuno.Desktop.Designer` is a standalone net48 class library (same shape as
-`Kubuno.Desktop.Views` - see that project's own `INTEGRATION.md` for the precedent this one
+`Kubuno.Views.Designer` is a standalone net48 class library (same shape as
+`Kubuno.Views` - see that project's own `INTEGRATION.md` for the precedent this one
 follows): it builds and its tests run on their own (`dotnet build`/`dotnet test`, with
 `COMPLUS_LoadFromRemoteSources=1` on a mapped network drive such as `Z:`), but it produces no VSIX of
 its own and is never installed/loaded standalone. This document is the checklist for wiring it into
@@ -9,7 +9,7 @@ its own and is never installed/loaded standalone. This document is the checklist
 this document has been applied to the VSIX project - by design, this task must not touch
 `src/Kubuno.VisualStudio/`, `Kubuno.VisualStudio.sln`, `README.md` or `CHANGELOG.md`, and this library
 is deliberately **not yet** added to `Kubuno.VisualStudio.sln` either (same reason
-`Kubuno.Desktop.Views` was not added by its own integration task - it builds standalone until
+`Kubuno.Views` was not added by its own integration task - it builds standalone until
 this step runs).
 
 What this library provides, at a glance (see the class doc comments for the full reasoning):
@@ -23,7 +23,7 @@ What this library provides, at a glance (see the class doc comments for the full
   of this repo).
 - `UI\CodeWindowHost.cs` - a WPF `HwndHost` embedding a real `IVsCodeWindow` bound to the same
   `IVsTextLines` buffer the editor factory created/reused, so kubuno-views-ls's existing MEF
-  `ILanguageClient` (`Kubuno.Desktop.Views.LanguageService.KubunoViewsLanguageClient`, which
+  `ILanguageClient` (`Kubuno.Views.LanguageService.KubunoViewsLanguageClient`, which
   attaches by "kbview" content type, independent of which editor opened the file) keeps working
   unchanged.
 - `DesignSurface\IDesignSurfaceHost.cs` / `IDesignSurfaceHostFactory.cs` /
@@ -54,36 +54,36 @@ What this library provides, at a glance (see the class doc comments for the full
 ## 1. csproj reference
 
 Add a `ProjectReference` to `Kubuno.VisualStudio.csproj`, in the same style already used there for
-`Kubuno.Rust.Logic`/`Kubuno.Desktop.Views` (see that file's existing `ItemGroup`, and
-`Kubuno.Desktop.Views/INTEGRATION.md` §1 for the precedent):
+`Kubuno.Rust.Logic`/`Kubuno.Views` (see that file's existing `ItemGroup`, and
+`Kubuno.Views/INTEGRATION.md` §1 for the precedent):
 
 ```xml
 <ProjectReference Include="..\Kubuno.VisualStudio.Designer\Kubuno.VisualStudio.Designer.csproj">
   <Project>{PUT-A-NEW-GUID-HERE}</Project>
-  <Name>Kubuno.Desktop.Designer</Name>
+  <Name>Kubuno.Views.Designer</Name>
   <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
   <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
 </ProjectReference>
 ```
 
-`Kubuno.Desktop.Designer.csproj` already references the exact same `Microsoft.VisualStudio.SDK`
-package version `Kubuno.VisualStudio.csproj` and `Kubuno.Desktop.Views.csproj` do (verified by
+`Kubuno.Views.Designer.csproj` already references the exact same `Microsoft.VisualStudio.SDK`
+package version `Kubuno.VisualStudio.csproj` and `Kubuno.Views.csproj` do (verified by
 reading both before this library was written) - no version reconciliation should be needed. It also
-already has a `ProjectReference` to `Kubuno.Desktop.Views.csproj` (for `KbviewConstants`/
+already has a `ProjectReference` to `Kubuno.Views.csproj` (for `KbviewConstants`/
 `IKubunoLog`/`KubunoViewsLogHost` - see this library's own csproj comment), so once the VSIX
 references this project, both are pulled in; do not add a second, separate reference to
-`Kubuno.Desktop.Views` because of that transitive edge - the existing one already covers it,
+`Kubuno.Views` because of that transitive edge - the existing one already covers it,
 exactly as `Kubuno.Rust.Cargo`'s dependencies flow through today.
 
 Add the new project to `Kubuno.VisualStudio.sln` (a new `Project(...)` entry plus the matching
 `Debug|AnyCPU`/`Release|AnyCPU` lines in `ProjectConfigurationPlatforms`, following the existing
 entries for `Kubuno.Rust.Logic`), and add `tests\Kubuno.Desktop.Tests\Designer` likewise,
 so `dotnet test`/the solution build cover it going forward - mirroring exactly what
-`Kubuno.Desktop.Views/INTEGRATION.md` §1 asks for that library.
+`Kubuno.Views/INTEGRATION.md` §1 asks for that library.
 
 ## 2. No MEF pickup needed for the editor factory itself
 
-Unlike `Kubuno.Desktop.Views` (whose content-type/language-client classes are `[Export]`ed and
+Unlike `Kubuno.Views` (whose content-type/language-client classes are `[Export]`ed and
 picked up by MEF automatically once the DLL is in the VSIX output directory - see that project's
 `INTEGRATION.md` §2), `KbviewEditorFactory` is a **classic, package-registered** editor factory, not a
 MEF component: `IVsEditorFactory`/`IVsRegisterEditors` predate MEF-based extensibility, and VS's own
@@ -91,17 +91,17 @@ MEF component: `IVsEditorFactory`/`IVsRegisterEditors` predate MEF-based extensi
 pkgdef registration plus an explicit `Package.RegisterEditorFactory` call (§3 below) - not off
 assembly presence. No `Asset Type="Microsoft.VisualStudio.MefComponent"` entry is needed for this
 part; the VSIX's existing single `MefComponent` asset (pointing at `%CurrentProject%`) still covers
-`Kubuno.Desktop.Views`' own MEF exports unchanged.
+`Kubuno.Views`' own MEF exports unchanged.
 
 ## 3. Editor factory registration (`KubunoPackage.cs`)
 
 Add to `KubunoPackage.cs`, alongside the existing package-level attributes:
 
 ```csharp
-[ProvideEditorFactory(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), 110 /* VSPackage.resx string id - see note below */)]
-[ProvideEditorLogicalView(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
-[ProvideEditorLogicalView(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), "{7651a704-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
-[ProvideEditorExtension(typeof(Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory), Kubuno.Desktop.Views.KbviewConstants.FileExtension, Kubuno.Desktop.Designer.DesignerConstants.EditorExtensionPriority)]
+[ProvideEditorFactory(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), 110 /* VSPackage.resx string id - see note below */)]
+[ProvideEditorLogicalView(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_Designer
+[ProvideEditorLogicalView(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), "{7651a704-06e5-11d1-8ebd-00a0c90f26ea}")] // LOGVIEWID_TextView
+[ProvideEditorExtension(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), Kubuno.Views.KbviewConstants.FileExtension, Kubuno.Views.Designer.DesignerConstants.EditorExtensionPriority)]
 ```
 
 Notes:
@@ -113,7 +113,7 @@ Notes:
   needs a `#nnn`-style resource id resolving through the package's satellite resources, the standard
   VSSDK convention (see any `New Editor Extension` project template). Add a `VSPackage.resx` (or reuse
   one if this task's own work created one in parallel) with an entry whose value is
-  `Kubuno.Desktop.Designer.DesignerConstants.EditorName` ("Kubuno View Designer"), and pick a
+  `Kubuno.Views.Designer.DesignerConstants.EditorName` ("Kubuno View Designer"), and pick a
   free id in whatever numbering scheme that resx ends up using.
 - The two `ProvideEditorLogicalView` GUIDs are `VSConstants.LOGVIEWID_Designer` and
   `VSConstants.LOGVIEWID_TextView` written as literal strings (verified against
@@ -121,7 +121,7 @@ Notes:
   GUIDs, not invented here). `KbviewEditorFactory.MapLogicalView` already accepts both (and
   `LOGVIEWID_Primary`) and maps either to the one physical "Design" view - see that method's own
   remarks for why a single physical view is correct here.
-- `Kubuno.Desktop.Designer.DesignerConstants.EditorExtensionPriority` (`0x60`) is deliberately
+- `Kubuno.Views.Designer.DesignerConstants.EditorExtensionPriority` (`0x60`) is deliberately
   higher (lower-precedence) than the `0x32` many VSSDK samples use for a *default* editor - see
   `DesignerConstants.cs`'s own doc comment. **This priority number is the one part of "Open With
   registration" that could not be verified without a live VS instance in this task** (no `devenv` was
@@ -145,7 +145,7 @@ In `KubunoPackage.InitializeAsync` (after the package is sited), register the fa
 - `[ProvideEditorFactory]` only emits pkgdef metadata; VS still needs a live instance handed to it:
 
 ```csharp
-RegisterEditorFactory(new Kubuno.Desktop.Designer.EditorFactory.KbviewEditorFactory());
+RegisterEditorFactory(new Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory());
 ```
 
 (`RegisterEditorFactory` is `Microsoft.VisualStudio.Shell.Package`'s own helper - it calls
@@ -155,12 +155,12 @@ same pattern `AsyncPackage`-derived packages use for any classic, non-MEF editor
 ## 4. Options page registration
 
 `Options\KbviewDesignerOptionsPage.cs` (in this library) is a real `DialogPage`, exactly like
-`Kubuno.Desktop.Views.Options.KbviewOptionsPage` - see that library's own `INTEGRATION.md` §4 for
+`Kubuno.Views.Options.KbviewOptionsPage` - see that library's own `INTEGRATION.md` §4 for
 the precedent. Add to `KubunoPackage.cs`:
 
 ```csharp
-[ProvideOptionPage(typeof(Kubuno.Desktop.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.Desktop.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true)]
-[ProvideProfile(typeof(Kubuno.Desktop.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.Desktop.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
+[ProvideOptionPage(typeof(Kubuno.Views.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.Views.Designer.DesignerConstants.OptionsPageName, 0, 0, supportsAutomation: true)]
+[ProvideProfile(typeof(Kubuno.Views.Designer.Options.KbviewDesignerOptionsPage), Constants.OptionsCategoryName, Kubuno.Views.Designer.DesignerConstants.OptionsPageName, 0, 0, isToolsOptionPage: true)]
 ```
 
 (`Constants.OptionsCategoryName` is already `"Kubuno"`, shared with the Rust and Views options pages -
@@ -170,8 +170,8 @@ Then, in `KubunoPackage.InitializeAsync`, publish the page into this library's s
 same shape as `KubunoViewsOptionsHost.Current`:
 
 ```csharp
-Kubuno.Desktop.Designer.Options.DesignerOptionsHost.Current =
-    (Kubuno.Desktop.Designer.Options.KbviewDesignerOptionsPage)GetDialogPage(typeof(Kubuno.Desktop.Designer.Options.KbviewDesignerOptionsPage));
+Kubuno.Views.Designer.Options.DesignerOptionsHost.Current =
+    (Kubuno.Views.Designer.Options.KbviewDesignerOptionsPage)GetDialogPage(typeof(Kubuno.Views.Designer.Options.KbviewDesignerOptionsPage));
 ```
 
 **What actually reads this option today: nothing yet.** `KbviewEditorFactory`/`CreateEditorInstance`
@@ -220,7 +220,7 @@ integration step needs to do:
 
 1. **Resolve the design surface exe's path.** There is no locator for it yet (unlike
    `KubunoViewsLanguageServerLocator` for `kubuno-views-ls.exe` -
-   `Kubuno.Desktop.Views/Locating/KubunoViewsLanguageServerLocator.cs`), because the exe itself
+   `Kubuno.Views/Locating/KubunoViewsLanguageServerLocator.cs`), because the exe itself
    does not exist as a shipped artifact yet: DSG-6 (`docs/DESIGNER.md` §6) is still examples-only
    (`kubuno-views/examples/view_embed.rs`, promoted out of `examples/` into a real
    `kubuno-views-designer` crate is that package's own scope). Until DSG-6 ships a real binary, either
@@ -233,7 +233,7 @@ integration step needs to do:
 2. **Set the factory**, in `KubunoPackage.InitializeAsync`, alongside the other static-gateway
    assignments (§3/§4's own pattern):
    ```csharp
-   Kubuno.Desktop.Designer.DesignSurface.DesignSurfaceHostFactoryHost.Current =
+   Kubuno.Views.Designer.DesignSurface.DesignSurfaceHostFactoryHost.Current =
        new Kubuno.Desktop.Designer.DesignSurface.RustDesignSurfaceHostFactory(resolvedExePath);
    ```
    No change to `DesignerWindowPane`/`DesignerSplitView` is needed - both already go through
@@ -421,7 +421,7 @@ this package produces.
 
 ## What NOT to change on this library's side
 
-Everything under `src/Desktop/Kubuno.Desktop/Designer/` and `tests/Kubuno.Desktop.Tests/Designer/`
+Everything under `src/Views/Kubuno.Views/Designer/` and `tests/Kubuno.Desktop.Tests/Designer/`
 is otherwise ready to reference as-is: no source file here needs editing to complete the integration,
 only the VSIX-side wiring above (§1, §3, §4, §6, §7, §8, §9) and, if a `VSPackage.resx` does not
 already exist by the time this runs, its creation (§3). §6's exe-path resolution (point 1), §7/§8's

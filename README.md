@@ -12,18 +12,19 @@ README is the full reference; the getting-started guide is the shorter path to a
 
 ## Repository layout
 
-The code is split into layers whose dependencies only go down - Core, then Rust, then the Kubuno targets (Desktop,
-Web, Mobile), which never reference each other. `docs/ARCHITECTURE.md`, "Layers (as built)", has the details and the
+The code is split into layers whose dependencies only go down - Shared, then Rust, then Views, then the Kubuno targets
+(Desktop, Web, Mobile), which never reference each other. `docs/ARCHITECTURE.md`, "Layers (as built)", has the details and the
 rules (enforced by `tests/Kubuno.Architecture.Tests`).
 
 ```
 src/
   Kubuno.VisualStudio/        The one VSIX: KubunoPackage (every registration, lists the layers), KubunoCommands.vsct,
                               the VSIX manifest, the unified settings manifest; ships every layer below
-  Core/                       Shared Visual Studio infrastructure
-    Kubuno.Core/              Layer contracts, themed dialogs, settings plumbing, Output pane, dialog gallery, MCP start
-    Kubuno.Core.Logic/        Pure helpers (LSP, QuickInfo model, UI language) - no VS SDK
-    Kubuno.Core.Mcp(.Bridge)/ The MCP server for Claude and its in-proc bridge (docs/MCP.md)
+  Shared/                     Shared Visual Studio infrastructure (not to be confused with Kubuno Core Web/Desktop)
+    Kubuno.Shared/            Layer contracts, themed dialogs, settings plumbing, Output pane, dialog gallery, MCP start
+    Kubuno.Shared.Logic/      Pure helpers (LSP, QuickInfo model, UI language) - no VS SDK
+    Kubuno.Shared.Mcp(.Bridge)/ The MCP server for Claude and its in-proc bridge (docs/MCP.md)
+    Kubuno.Shared.DevAssistant*/ The Kubuno Dev Assistant (docs/AI-ASSISTANT.md)
   Rust/                       Product-agnostic Rust support
     Kubuno.Rust/              rust-analyzer, IntelliSense, Cargo workspaces, debugging, .rsproj commands, templates
     Kubuno.Rust.Logic/        Pure logic of the above - no VS SDK
@@ -34,8 +35,11 @@ src/
     Kubuno.Rust.Debugger/     Concord component: Rust panics in the exception helper
     Kubuno.Rust.TemplateWizard/ Crate-name wizard of the templates
     Kubuno.Cargo.MSBuild.Tasks/ MSBuild tasks of the Kubuno.Rust.Sdk NuGet package
+  Views/                      What every target with .kbview views shares
+    Kubuno.Views/             .kbview language client, view designer (Toolbox, Properties, events, pickers), .kbres editor
+    Kubuno.Views.Logic/       Pure logic of the above (view files, .kbres model) - no VS SDK
   Desktop/                    Kubuno desktop applications (kubuno_ui, .kbview)
-    Kubuno.Desktop/           .kbview language client, view designer, data tooling, printing, desktop templates
+    Kubuno.Desktop/           The designer's Rust design surface, data tooling, printing, desktop templates
     Kubuno.Desktop.Logic/     Pure logic of the above - no VS SDK
     Kubuno.Desktop.ProjectSystem/ .kbview default editor and icon in a .rsproj, Kubuno control icons
     Kubuno.Desktop.TemplateWizard/ Control item wizard
@@ -43,7 +47,7 @@ src/
   Mobile/Kubuno.Mobile/       Kubuno mobile apps (skeleton, see its README.md)
 sdk/
   Kubuno.Rust.Sdk/            The MSBuild SDK of .rsproj projects
-tests/                        One test project per layer (Kubuno.Core.Tests, Kubuno.Rust.Tests, Kubuno.Desktop.Tests...)
+tests/                        One test project per layer (Kubuno.Shared.Tests, Kubuno.Rust.Tests, Kubuno.Views.Tests...)
                               plus Kubuno.Architecture.Tests (the layering rules)
 samples/
   hello-rust/                 Tiny Cargo project (bin + lib + example + test) for manual testing
@@ -168,16 +172,17 @@ Notes:
 
 ## Tests
 
-Each layer keeps its pure logic in an assembly with no VS SDK dependency (`Kubuno.Core.Logic`, `Kubuno.Rust.Logic`,
-`Kubuno.Rust.Cargo`, `Kubuno.Rust.Launch`, `Kubuno.Desktop.Logic`), specifically so it is testable without a Visual
+Each layer keeps its pure logic in an assembly with no VS SDK dependency (`Kubuno.Shared.Logic`, `Kubuno.Rust.Logic`,
+`Kubuno.Rust.Cargo`, `Kubuno.Rust.Launch`, `Kubuno.Views.Logic`, `Kubuno.Desktop.Logic`), specifically so it is testable without a Visual
 Studio host, one test project per layer:
 
 ```powershell
-dotnet test tests\Kubuno.Core.Tests\Kubuno.Core.Tests.csproj
+dotnet test tests\Kubuno.Shared.Tests\Kubuno.Shared.Tests.csproj
 dotnet test tests\Kubuno.Rust.Tests\Kubuno.Rust.Tests.csproj
+dotnet test tests\Kubuno.Views.Tests\Kubuno.Views.Tests.csproj
 dotnet test tests\Kubuno.Desktop.Tests\Kubuno.Desktop.Tests.csproj
 # ... and Kubuno.Rust.Cargo.Tests, Kubuno.Rust.Launch.Tests, Kubuno.Rust.TestAdapter.Tests,
-#     Kubuno.Cargo.MSBuild.Tasks.Tests, Kubuno.Core.Mcp.Tests
+#     Kubuno.Cargo.MSBuild.Tasks.Tests, Kubuno.Shared.Mcp.Tests
 ```
 
 `tests\Kubuno.Architecture.Tests` checks the layering rules on the project files and on the built assemblies of the

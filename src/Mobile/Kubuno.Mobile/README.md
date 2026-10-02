@@ -12,11 +12,12 @@ MEF part needs no manifest change.
 
 ## Rules
 
-- References `Kubuno.Core` and the Rust layer (Rust cores of the apps, the `aarch64-linux-android`/iOS targets, UniFFI).
+- References `Kubuno.Shared`, the Rust layer (Rust cores of the apps, the `aarch64-linux-android`/iOS targets, UniFFI) and
+  the views layer (`Kubuno.Views*`: the `.kbview` designer, when mobile gets a renderer).
   **Never** `Kubuno.Desktop*` or `Kubuno.Web*` - `tests/Kubuno.Architecture.Tests` fails otherwise.
-- The `.kbview` designer, the view registry and the design surface host live in `Kubuno.Desktop` today. When the portable
-  renderer lets mobile reuse them, they move **down** into a shared lower assembly first; Mobile never references
-  Desktop.
+- The `.kbview` designer and the view registry client moved down into `Kubuno.Views` (docs/WEB-VIEWS.md WV-8): when the
+  portable renderer lets mobile reuse them, this layer only adds its design surface (an `IProtocolDesignSurfaceHost`,
+  plugged in through `DesignSurfaceHostFactoryHost`); Mobile never references Desktop.
 - Pure logic in `Kubuno.Mobile.Logic` (no Visual Studio SDK, `tests/Kubuno.Mobile.Tests`); CPS parts in
   `Kubuno.Mobile.ProjectSystem`. Namespaces start with the assembly name (`Kubuno.Mobile.*`).
 
@@ -30,6 +31,6 @@ MEF part needs no manifest change.
 | Debugging: a JDWP/DAP bridge to Visual Studio, or a documented hand-off to Android Studio - decided by a spike first | here, after the spike |
 | Compose previews (layoutlib) in a tool window, if the spike says so | a tool window of this layer |
 | The portable Rust UI engine's shells (Android `SurfaceView`/`GameActivity`, iOS UIKit + Metal): designer device frames (phone/tablet, portrait/landscape), size classes and breakpoints in `.kbview` | this layer, on top of the designer once it has moved below Desktop |
-| **Pair to Mac**: a remote macOS build host driven over SSH (build, sign, run on simulator/device, stream logs, remote lldb debugging), as .NET MAUI does; CI on macOS as a complement | a connection service started in `MobileLayer.InitializeDeferredAsync`, its options page (`Kubuno.Core.Settings.KubunoDialogPage`), its themed dialogs (`Kubuno.Core.UI.ThemedDialog`) |
+| **Pair to Mac**: a remote macOS build host driven over SSH (build, sign, run on simulator/device, stream logs, remote lldb debugging), as .NET MAUI does; CI on macOS as a complement | a connection service started in `MobileLayer.InitializeDeferredAsync`, its options page (`Kubuno.Shared.Settings.KubunoDialogPage`), its themed dialogs (`Kubuno.Shared.UI.ThemedDialog`) |
 | Templates: "Kubuno mobile app (Android)" wired to the shared modules, "Shared mobile module" | `ProjectTemplates\` of this project, shipped by the packaging project |
 | Signing and release per app tag prefix (keystore opt-in, same certificate); publishing stays a user action | commands of this layer |

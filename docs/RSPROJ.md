@@ -454,7 +454,7 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
   (History: the first attempt reused `Kubuno.VisualStudio.dll` itself as the wizard assembly and
   was reverted for the `KubunoPackage`-breaking reason above; this pass's separate-assembly fix is
   what that revert's own note called for.)
-- Also fixed as part of getting a template to load at all: **`Kubuno.Core.Mcp.Bridge` had no
+- Also fixed as part of getting a template to load at all: **`Kubuno.Shared.Mcp.Bridge` had no
   `ProvideCodeBase` entry**, a latent, pre-existing gap unrelated to lot 7 (`KubunoPackage.
   StartMcpBridgeAsync` references it directly) - hit only once something else forced eager
   resolution of it; same fix pattern as the four assemblies already registered.
@@ -482,7 +482,7 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
     expected `$(CARGO_TARGET_DIR)` was confirmed directly.
   - **Two unrelated environment gotchas hit and worked around while re-verifying live, worth
     recording**: (1) the VSSDK `Deploy` target's copy of five specific assemblies (`Kubuno.Rust.Cargo`,
-    `Kubuno.Rust.Launch`, `Kubuno.Core.Mcp.Bridge`, `Kubuno.Rust.TestAdapter`, `Kubuno.Rust.Logic`) into the
+    `Kubuno.Rust.Launch`, `Kubuno.Shared.Mcp.Bridge`, `Kubuno.Rust.TestAdapter`, `Kubuno.Rust.Logic`) into the
     experimental extension folder is reproducibly racy in this VM - they land as 0-byte files with a
     later timestamp than the rest, causing `KubunoPackage` to fail to load
     (`FileNotFoundException` loading whichever one a given run needs first); the fix is to re-copy
