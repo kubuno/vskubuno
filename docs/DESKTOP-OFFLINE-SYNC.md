@@ -5,8 +5,8 @@
 > Status: design study (read-only survey of `desktop`, `core`, the module back-ends and the Android apps
 > (`mobile/android`); no database, no SSH, no server touched; every server fact below cites the file it comes from so
 > it can be re-checked before a lot starts). **2026-10-01: the foundation lots SE-0 to SE-3 are built on the library
-> side** (`desktop/common`: `kubuno-secrets`, `kubuno-api-client`, `kubuno-account`, `kubuno-sync-engine`), not yet
-> wired into the shell or the apps: see §19.
+> side** (`desktop/common`: `kubuno-secrets`, `kubuno-api-client`, `kubuno-account`, `kubuno-sync-engine`);
+> **2026-10-02: wired into the shell and chat** (secrets migrated, single token owner, broker, sign-out): see §19.4.
 
 Contents: 1 Summary - 2 What exists today - 3 Server API inventory - 4 Prior art - 5 Architecture -
 6 Local database - 7 Pull, push, conflicts - 8 Scheduling - 9 Auth and accounts - 10 Security - 11 Multi-OS paths -
@@ -841,22 +841,64 @@ Choices that differ from the text above, and why:
   the four crates **cross-compiled from Windows with `zig cc`** (C dependencies such as `ring` included), engine
   without `sqlcipher`; tests not run there. SQLCipher itself: see 19.1.
 
-### 19.4 Shell integration (next, after the shell's migration lot)
+### 19.4 Shell integration (as built, 2026-10-02)
 
-1. At start: `migrate::adopt_legacy_instances(paths::legacy_config_dir(), …)` (user id from the JWT `sub`, else
-   `GET /me`), then `TokenOwner::load`; on Linux, `OsSecretStore::probe()` first and the session-only / file fallback
-   dialog when there is no Secret Service.
-2. **Remove every `creds.json` refresh path of `kubuno-sync` in the same lot** (`Api::refresh`, `Creds::save`): the
-   file-sync daemon takes its tokens from `OwnerTokenSource` (risk "two token owners", §17).
-3. `BrokerServer::serve` with `BrokerEndpoint::for_current_user(paths::user_runtime_dir())` and
-   `ClientPolicy::ImagesUnder(install dir)`; apps use `BrokerClient::token_source(account)` and start
-   `kubuno-desktop --background` when the broker is unreachable (a transient error, never "session expired").
-4. Sign-in page: `login::login` -> `TotpRequired` -> `login_totp` -> `TokenOwner::sign_in`. Sign-out:
-   `unsent_count() > 0` opens « Envoyer d'abord / Exporter / Supprimer quand même », then `sign_out`,
-   `LocalDb::wipe` and `AccountStore::remove_dir`.
-5. Scheduler hooks: `shell.json` `sync_interval_min` -> `Scheduler::set_interval`; `WM_POWERBROADCAST` -> `Resume`;
-   network list manager -> `NetworkChanged`; websocket `<module>.changed` -> `PushHint`; `settings.json` `offline`
-   -> `set_forced_offline`.
+Module `windows/src/shell/src/session.rs`, called by `main` before the window (never under `--sample`):
+
+1. **Secrets migrated**: `kubuno_sync::migrate_legacy()` (old single-instance layout) then
+   `migrate::adopt_legacy_instances(paths::legacy_config_dir(), …)`: user id from the stored JWT's `sub`
+   (`resolve_user` returns `None`: an unresolvable instance keeps its file and shows "session expired"; signing in
+   again links the folder and shreds the leftover file, `migrate::discard_legacy_creds`). Instances linked to no
+   account are linked to the only account of their server, if there is exactly one. Linux probe / file fallback: not
+   wired (the shell is Windows-only today).
+2. **One token owner**: `Creds`, `Api::login`, `Api::refresh` (the `creds.json` rotation), `refresh_access` and
+   `access_token(id)` are **deleted** from `kubuno-sync`. Its `Api` asks a process-wide
+   `kubuno_sync::tokens::TokenProvider`: `OwnerProvider` (the shell's `TokenOwner`, in process, futures run on the
+   shell's runtime from the blocking sync threads) or `BrokerProvider` (any other program). The instance-to-account
+   map is `account.json`'s `linked_instances`; an instance of no account is a *genuine* failure (sign in again). The
+   CLI's `login` became `kubuno-sync add --server --folder` (an account signed in in the shell).
+3. **Broker**: `BrokerServer::bind` (new: takes the endpoint at once) then `BoundBroker::serve`, with
+   `ClientPolicy::ImagesUnder(<directory of kubuno-desktop.exe>)`. If the endpoint is taken, another shell owns the
+   accounts: this one installs a `BrokerProvider`, refuses sign-in and runs no file sync (never a second owner).
+   Apps use `kubuno_account::app::AppBroker::for_app("kubuno-chat")`: it verifies the server (below), and on
+   `Unreachable` starts `<install dir>/kubuno-desktop --background --no-splash` detached (at most once per 20 s
+   window) and polls until the broker answers. `AppTokenSource` is its `TokenSource` for `ApiClient`.
+4. **Squatting** (risk of §19.5): the client calls `GetNamedPipeServerProcessId`, requires the server process to run
+   as the current user (token SID) and, under `ServerPolicy::Images([shell exe])`, its image to be the installed shell;
+   otherwise `BrokerError::ServerRefused` before any byte is sent, mapped to a *transient* error, and no shell is
+   started instead. Unix: `peer_cred` uid + `/proc/<pid>/exe` or `proc_pidpath`. Authenticode signature checks are not
+   done (path equality is stricter while the install directory is not writable by the user).
+5. **Sign-in**: `session::sign_in` -> `SignIn::NeedsCode` -> the login page swaps the password row for a code row
+   (`sign_in_code`: 6-8 digits = TOTP, else backup code) -> `TokenOwner::sign_in`, `register_instance`,
+   `link_instance`, `switch`.
+6. **Sign-out**: `unsent_count` = the file-sync outbox of the instance (`kubuno_sync::unsent_changes`); > 0 opens
+   `SignOutDialog` (in-window, « Envoyer d'abord » default/Enter, « Exporter », « Supprimer quand même », Annuler).
+   Send first runs `sync_once` and re-asks if changes remain; Export copies the files of the pending ops to
+   `Documents\Kubuno - modifications non envoyées - <instance> - <ts>`. Then the instance is removed and, when it was
+   the account's last folder, `TokenOwner::sign_out` (server logout, refresh token and db key deleted) and
+   `AccountStore::remove_dir`. The engine databases (`<app>.db`) are not counted yet: no app writes one before D-1.
+7. **Remote revocation pauses**: the daemon checks the session before each cycle; a genuine failure emits one
+   `expired` event, skips push and pull (nothing deleted), and resumes after a new sign-in to the same key; the
+   WebSocket listener backs off to 60 s without network. The owner's `SessionExpired` event reaches the window
+   (`session::set_event_handler`): activity entry + toast « Session expirée — reconnectez-vous ».
+8. **Sandboxed profile** `KUBUNO_SANDBOX_DIR=<dir>` (`kubuno_account::paths`, now the home of the per-user
+   directories; the engine's `paths` re-exports them): config/data/cache/run/legacy under `<dir>`, secrets under
+   `Kubuno/sandbox-<tag>.<account>/…` (`PrefixedSecretStore`), pipe `kubuno-auth-<SID>-sandbox-<tag>`, and no `Run`
+   key, Explorer, Cloud Files or `kubuno://` registration (`paths::system_integration_allowed`).
+9. **Chat**: `api.rs` runs as `kubuno_sync::current_account()` (the shell's current account through the broker), with
+   `account_get_json` / `account_post_json` / `account_access_token`; `me` is the account's user id (no `/me` call).
+   `--sample` installs no provider and touches no network.
+10. Not done in this lot: the scheduler hooks (`sync_interval_min`, power, network, websocket hints, forced offline),
+    documents/drive wired to the broker (documents still compiles on `kubuno_sync::get_json`; it needs a
+    `BrokerProvider` once it talks to the server), the Linux Secret Service fallback dialog.
+
+Verified: unit tests; `tests/shell_broker.rs` (harness-less: the test binary is also the "shell" an app starts with
+`--background`; a squatter is refused with zero request reaching it); `tests/migrate_os.rs` (`--ignored`, real
+Credential Manager under a throw-away prefix, sample `creds.json`, no plaintext left); live in a sandbox against a
+fake core: chat alone starts the shell, which migrates the sample `creds.json` (gone, secret in the Credential
+Manager, no issued token found in any sandbox file or log) and lends chat a token; with the shell already up, an
+expired token makes the shell rotate once and the file sync adopts the same pair; a revocation pauses the sync with
+« Session expirée »; the two-factor page appears after the password step.
 
 ### 19.5 Open risks found while building
 
@@ -867,8 +909,15 @@ Choices that differ from the text above, and why:
 - Windows CI needs a native Perl (preinstalled on GitHub runners) and preferably NASM (not preinstalled).
 - On Linux the `os` back-end of `kubuno-secrets` uses zbus with Tokio: callers on a Tokio runtime call the store from
   `spawn_blocking` (the token owner does).
-- Pipe squatting by a process of the same user is only prevented while the shell runs
-  (`FILE_FLAG_FIRST_PIPE_INSTANCE`); the client does not yet verify the server's image path
-  (`GetNamedPipeServerProcessId`).
+- ~~Pipe squatting by a process of the same user~~: closed in 19.4 (the client verifies the server's user and image).
+- **`--background` never loads the shell's window** (found during 19.4): the view's `Load` is raised on the first
+  painted frame and a window created hidden never paints, so a shell started at logon or by an app serves the broker
+  (it starts in `main`) but adds no tray icon and starts no file sync until it is shown. Host/views fix needed
+  (raise `Load` at handle creation, as Windows Forms does), outside the shell.
+- **A `PasswordChar` text field binds its masked text** (found during 19.4): the sign-in page sent `••••` instead of
+  the typed password (observed live; the masking code is in `kubuno-ui`'s text field, not in the shell, but whether it
+  predates this lot was not isolated), so a password sign-in from the desktop fails until it is fixed.
+- Linux and macOS: the common crates could not be cross-checked this time (no `zig` on the build machine any more;
+  `ring` needs a C cross-compiler); the new Unix code is `cfg`-gated and must go through the CI matrix.
 - Server prerequisites unchanged: CORE-S1 (user-scoped idempotency), DRIVE-S1 (commit-ordered drive feed) before
   D-2, PIM-S1 before PIM writes.
