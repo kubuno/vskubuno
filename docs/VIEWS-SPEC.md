@@ -176,6 +176,13 @@ bottom"` px (or one value for all four); `Size` (`MinimumSize`) = `"width, heigh
 converter) = a **theme token** name (§4.1); icons = a Kubuno icon name (Lucide, `ICONS.md`), a path relative to the
 view, or `{Res key}`. Any bindable value MAY be `{Binding …}` or `{Res …}` (§6).
 
+Numbers with a `type_converter` (kind `F32`): `Opacity` = a percentage 0–100; `CornerRadius` = a radius in DIP, finite
+and ≥ 0 (`0` = square corners) — the language server reports anything else and completes `8` (the default, Windows
+11's), `4`, `0`, `12`, `16`, `24`. On the view's root it is the window's corner radius (desktop: 8 by default for a
+window with a title bar, square for a borderless one, always square while maximised or snapped — see
+`EVENTS.md` §19); on `FloatingWindow` the in-view window's (8 by default). Both are desktop properties: a web page
+is not a window, and the web `FloatingWindow` keeps the web's square corners (`--kb-window-radius: 0px`).
+
 ### 4.1 Styling rule (decision 3)
 
 - Colours, surfaces, typography and spacing come from **theme tokens** only: `ForeColor="TextSecondary"`,

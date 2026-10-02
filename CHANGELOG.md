@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Window corners in the designer** (`docs/EVENTS.md` §19). `CornerRadius` is now a property of every window
+  (the view's root), in the *Appearance* category with its default shown (8, Windows 11's radius; `0` for square
+  corners), and of `FloatingWindow`. The design surface draws the window frame at the chosen radius and clips the
+  view to it, live as the value changes; `CornerPreference` (in *Appearance* too) stays as the preset. The language
+  server rejects a radius that is not a number of pixels, 0 or more, and offers the usual radii (8, 4, 0, 12, 16,
+  24). Kubuno desktop windows are rounded by default at run time, square when maximised or snapped.
 - **Namespace declarations in views, XAML style** (`docs/VIEWS-SPEC.md` §3). Every template (project, Add New Item,
   inherited views) and every sample now writes `xmlns="https://kubuno.com/views"` and
   `xmlns:x="https://kubuno.com/views/x"` on the root element (`xmlns:d="https://kubuno.com/views/design"` when the

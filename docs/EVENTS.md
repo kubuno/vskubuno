@@ -1952,3 +1952,88 @@ and the padlock sits in the locked control's top-right corner, clear of its text
 - C#: `UserControlDesignerTests` (design size, colour and lines editors, Toolbox bitmap, out-of-date texts, design
   culture),
   `InheritedViewNamesTests`, `DesignSourceWatchTests`, `ControlItemNamesTests.A_control_added_at_the_project_root_is_declared_with_a_path`.
+
+## 19. Window corners (product owner, 2026-10-02; built the same day)
+
+> « les coins des fenêtres desktop doivent être arrondis par défaut (un arrondi paramétrable dans Visual Studio bien
+> sûr) ».
+
+**The property.** `CornerRadius` (F32, DIP, category *Appearance*, type converter `CornerRadius`) on the view's root
+— every window kind — and on `FloatingWindow`; `CornerPreference` (`Default`, `Round` = 8, `RoundSmall` = 4,
+`DoNotRound` = 0) stays as the preset, `CornerRadius` wins when both are written. Code: `Form::set_corner_radius` /
+`corner_radius`, `host::FormOptions::corner_radius` (`None`: the preset's), `FormOptions::corner_radius()` (the
+radius asked for, a floating panel's included).
+
+**Defaults, decided.**
+
+| Window | Radius | Why |
+|---|---|---|
+| main window, dialog, tool window, owned window (anything with a title bar) | **8 DIP** | Windows 11's own radius (`DWMWCP_ROUND`) and the design system's `--radius-xl`. The web's floating windows are square (`--kb-window-radius: 0px`), a Chromium GPU workaround of 2026-08-30 that has no reason to exist on the desktop. |
+| splash screen | 8 DIP | A splash is a floating card; Windows 11's own splashes are rounded. |
+| borderless (`FormBorderStyle="None"`) | 0 | The application's own canvas (an overlay, a kiosk, a custom shape); Windows itself rounds no popup. A radius can still be asked. |
+| flyout | 8 by DWM (no `CornerRadius`); a floating panel at its radius when `CornerRadius` > 0 (the shell's 28); square with `CornerRadius="0"` | Unchanged, except `0`, which used to mean « a plain flyout » and now means square, consistently. |
+| MDI child, in-window dialog (`kubuno::Application`'s inner windows), `FloatingWindow`, `kubuno_ui::dialogs::FloatingWindow` (`ConfirmDialog`…) | 8 DIP | Desktop windows drawn inside a window; square while maximised in their parent. |
+| maximised, snapped, full screen | 0 | As Windows does, whatever is asked. |
+
+**Two paths** (`kubuno_controls::host::frame`).
+
+- **DWM** — Windows 11 (build ≥ 22000) and a radius equal to a DWM preset (8, 4) or 0: `DWMWA_WINDOW_CORNER_PREFERENCE`.
+  DWM's shadow, its 1 px border (tinted with the band's colour, as before), the system materials clipped to the curve,
+  and DWM squares a maximised or snapped window itself. The default window takes this path: nothing else changes for
+  it (same window, same swap chain).
+- **Host** — any other radius, and every radius on Windows 10 (DWM rounds nothing there): the window is created
+  `WS_EX_NOREDIRECTIONBITMAP` (its pixels come from its DirectComposition swap chain only, transparent where nothing is
+  painted, like a floating panel's), DWM's non-client rendering is turned off (`DWMNCRP_DISABLED`: no square shadow or
+  border behind the curve), `WM_NCCALCSIZE` makes it all client area, and the window is the visible frame plus an
+  8-DIP margin on every side. Each frame the host clears to transparent, paints the shadow in the margin
+  (`frame::FRAME_SHADOW`: `0 2px 12px` at 22 % plus a contact shadow — the web window's shadow tightened to the
+  margin), fills the frame's rounded rectangle with the ground, draws the band, the page, the caption and the grip in
+  the frame's coordinates under a rounded clip, then the 1 px border along the curve (the form's `BorderColor`, else
+  the band's colour, else the theme's floating-surface border). The page's coordinates are the frame's, one margin
+  in: its `Frame` (size, pointer, origin on screen) and its content offset (`host::content_offset`: the offset the
+  host pushes for the frame is taken back out of it, so the rectangles a view registers for hit-testing, its
+  accessibility nodes and its popups are in the same space as its pointer — measured: before that, a click 5 pixels
+  inside a field's edge missed it). The host adds the margin back where it meets Windows: popup windows, drops,
+  accessibility bounds and `host::screen_geometry` (a window property, `KubunoPageInset`, carries the inset for it).
+  A floating panel (the shell's flyouts) shares this code and gets the same fix.
+- **Square when Windows squares** — the host path checks every size change and frame (`frame::squared`): `IsZoomed`,
+  `IsWindowArranged` (Aero Snap, snap layouts; before it exists, a normal window away from its restore rectangle),
+  or a window covering its monitor. The margin then goes (the frame fills the snapped area exactly), the curve and
+  the border too; the maximised window's off-screen frame is taken back in `WM_NCCALCSIZE`.
+- **What the host path does not do** — the window then gets DWM's nearest preset on Windows 11 (0 below 2 DIP, 4
+  below 6, else 8) and square corners on Windows 10: a system material where the system draws one (`Backdrop` Mica,
+  Mica Alt, Acrylic on Windows 11 22H2+, build 22621: only DWM clips its material to a curve, so no black or white
+  corner can show; before 22H2 `Backdrop` is a no-op and does not count — the shell's `MicaAlt` window is rounded by
+  the host there), Windows' own title bar (`Chrome="System"`), a
+  translucent window at creation (`Opacity` < 100, `TransparencyKey`: a layered window), an embedded window (the
+  designer's surface) and a floating panel (its own composition clip). The path is chosen when the window is created
+  (`WS_EX_NOREDIRECTIONBITMAP` only works then): a radius changed later stays on the window's path (a DWM-path window
+  takes the nearest preset, a host-path window draws any radius).
+
+**Hit testing (host path).** The margin is the resize band, as Windows' invisible borders are. A window region
+(`CreateRoundRectRgn`, the frame grown by the margin, rounded at radius + margin) cuts the window rectangle's corners
+off, so a click there reaches what is behind. The region also cuts what the window draws — measured: a 16-DIP shadow
+came out cut at its edge, hence a margin and a shadow that fit in it. A squared window gets its whole rectangle as its
+region, never no region: a window without DWM's frame and without a region of its own gets the classic theme's, with
+rounded top corners (measured on a snapped window). `frame::shape_hit` answers first: on the curve's resize band, on
+either side of the curve, the corner's resize code (the close button's corner included: nothing outside the curve is a
+caption button); in the margin beyond, `HTTRANSPARENT`; a window that cannot be resized lets its margin do nothing. The
+rest is the window's usual hit test in the frame's coordinates. The resize grip moves in from a rounded corner by
+`radius × (1 − 1/√2) − 2` DIP (`frame::grip_inset`), on both paths, in the designer and in the inner windows too.
+
+**Designer.** The Properties window shows `CornerRadius` (default 8, category *Appearance*, French doc), the surface
+draws the frame at `ViewFrameStyle::corner_radius` (the same `FormOptions::corner_radius()` as the running window) and
+clips the view to it, live as the property changes. The language server validates the value (finite, ≥ 0) and
+completes the usual radii.
+
+**Testing switches** (environment variables, read once per process): `KUBUNO_CUSTOM_CORNERS=1` forces the host path
+for every radius it can draw — what Windows 10 gets, reproduced on Windows 11; `KUBUNO_CORNER_RADIUS=<dip>` overrides
+the radius of every top-level window of the process (not a floating panel's). The gallery also takes
+`KUBUNO_UI_ZOOM=0.5714` to render at 100 % on a 175 % monitor.
+
+**Tests.** `kubuno-controls::host::frame` (the plan per platform and radius, the forced path, the nearest preset, the
+squared radius, the curve's resize band, the grip inset), `host::form` (`corner_radius()`, `parse_corner_radius`),
+`kubuno-views` (`CornerRadius` read per window kind, validation), `kubuno-views-ls` (completion). Live on Windows 11
+(build 22000, 175 %): captures of the gallery at the default radius, 0, 16 and 24, light and dark, the forced host
+path, maximised and snapped (`WM_NCHITTEST` and `WindowFromPoint` checked at the corners, in the margin, on the close
+button and the grip).
