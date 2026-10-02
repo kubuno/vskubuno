@@ -168,6 +168,26 @@ namespace Kubuno.Views.Tests.Designer.Registry
             }
         }
 
+        [TestMethod]
+        public void A_kubuno_named_control_library_is_the_applications_the_framework_crates_are_not()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "kubuno-appdeps-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            File.WriteAllText(
+                Path.Combine(root, "Cargo.toml"),
+                "[package]\nname = \"app\"\n\n[dependencies]\nkubuno = { path = \"../kubuno\" }\nkubuno-views = { path = \"../kubuno-views\" }\nkubuno_ui = { path = \"../kubuno-ui\" }\n" +
+                "kubuno-data = { path = \"../kubuno-data\" }\nkubuno-shell-controls = { path = \"../kubuno-shell-controls\" }\nwidgets = { package = \"kubuno-acme-widgets\", path = \"../acme\" }\n");
+            try
+            {
+                var crates = ProjectComponentsFile.ApplicationDependencyCrates(Path.Combine(root, "Cargo.toml"));
+                CollectionAssert.AreEquivalent(new[] { "kubuno_shell_controls", "kubuno_acme_widgets" }, crates.ToList());
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
         private sealed class Host : IKbviewElementHost
         {
             private readonly string _text;

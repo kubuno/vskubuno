@@ -129,7 +129,11 @@ A control used by several apps (the header's menus) lives in a **shared library 
 `desktop/windows/src/crates`, never in an app crate: `shell-controls` (`WaffleMenu`, `AccountMenu`, `WaffleButton`,
 `AccountButton`, `HeaderActions`, and their parts). It follows the same layout (`controls/` with each `.kbcontrol`
 next to its code-behind and `design/` data, `model/`, `resources/`), depends on the `kubuno` facade only, and takes
-its data from the app through traits (`LauncherService`, `AccountService`). Its name must not start with `kubuno`:
-the macros, the language server and the designer skip `kubuno*` crates when they look for an app's control
-libraries. An app adds it as a path dependency; its controls then show in the Toolbox and the designer.
+its data from the app through traits (`LauncherService`, `AccountService`). Its name is free, `kubuno-…` included
+(`kubuno-shell-controls`, a third party's `kubuno-acme-widgets`): when they look for an app's control libraries, the
+macros, the language server and the designer skip only the framework's own crates, by an explicit list —
+`FRAMEWORK_CRATES` in `kubuno-views-meta` (`src/framework.rs`) and `FrameworkCrates` in `Kubuno.Views.Logic`, kept
+identical by a test — never by a `kubuno` prefix. A new framework crate is added to both lists (a test of
+`kubuno-views-meta` fails on an unlisted `kubuno-*` folder of `desktop/windows/src/crates`). An app adds the library
+as a path dependency; its controls then show in the Toolbox and the designer.
 How to wire it in an app's header: `src/crates/shell-controls/README.md`.

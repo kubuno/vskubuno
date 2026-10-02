@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Kubuno.Views.Logging;
+using Kubuno.Views.Logic;
 using Newtonsoft.Json.Linq;
 
 namespace Kubuno.Views.Designer.Registry
@@ -38,7 +39,8 @@ namespace Kubuno.Views.Designer.Registry
         /// The crates of the application itself that the project at <paramref name="manifestPath"/> depends on:
         /// its <c>path = "…"</c> dependencies of <c>[dependencies]</c>, and its <c>workspace = true</c> ones whose
         /// <c>[workspace.dependencies]</c> entry has a path - except the Kubuno framework's own crates
-        /// (<c>kubuno*</c>). Their controls go to the project's Toolbox tab like its own (a control library of
+        /// (<see cref="FrameworkCrates"/>, an explicit list: a <c>kubuno-shell-controls</c> library is the
+        /// application's). Their controls go to the project's Toolbox tab like its own (a control library of
         /// the application). Names are normalized (<c>-</c> as <c>_</c>); empty when the manifest is unreadable.
         /// </summary>
         public static HashSet<string> ApplicationDependencyCrates(string? manifestPath)
@@ -63,7 +65,7 @@ namespace Kubuno.Views.Designer.Registry
             foreach (var (key, value) in Entries(text, "[dependencies]"))
             {
                 var name = PackageName(key, value);
-                if (name.StartsWith("kubuno", StringComparison.Ordinal))
+                if (FrameworkCrates.Contains(name))
                 {
                     continue;
                 }

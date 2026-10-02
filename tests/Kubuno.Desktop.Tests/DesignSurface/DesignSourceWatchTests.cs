@@ -17,6 +17,15 @@ namespace Kubuno.Desktop.Tests.DesignSurface
         }
 
         [TestMethod]
+        public void A_kubuno_named_control_library_is_watched_the_framework_crates_are_not()
+        {
+            const string toml = "[package]\nname = \"app\"\n\n[dependencies]\nkubuno = { path = \"../kubuno\" }\nkubuno-views = { path = \"../kubuno-views\" }\n" +
+                "kubuno_ui = { path = \"../kubuno-ui\" }\nkubuno-shell-controls = { path = \"../ShellControls\" }\nkubuno-acme-widgets = { path = \"../Acme\" }\n";
+            var dirs = DesignSourceWatch.WatchedDirectories(@"C:\s\App\Cargo.toml", toml);
+            CollectionAssert.AreEqual(new[] { @"C:\s\App", @"C:\s\ShellControls", @"C:\s\Acme" }, dirs.ToArray());
+        }
+
+        [TestMethod]
         public void Only_files_declaring_controls_and_user_control_views_count()
         {
             Assert.IsTrue(DesignSourceWatch.AffectsDesign(@"C:\s\App\src\address_editor.rs", "#[derive(UserControl, Default)]\npub struct AddressEditor {}"));

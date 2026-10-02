@@ -22,7 +22,8 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
         /// <summary>
         /// The folders whose sources the project's design build compiles: the package's own, and those of its path
-        /// dependencies that are not Kubuno's own crates (a control library of the solution).
+        /// dependencies that are not the framework's own crates (<see cref="FrameworkCrates"/>, an explicit list: a
+        /// control library of the solution may be named <c>kubuno-shell-controls</c>).
         /// </summary>
         public static IReadOnlyList<string> WatchedDirectories(string manifestPath, string? manifestText)
         {
@@ -31,7 +32,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             foreach (Match m in PathDependency.Matches(manifestText ?? string.Empty))
             {
                 var name = m.Groups["name"].Value;
-                if (name == "kubuno" || name.StartsWith("kubuno-", StringComparison.Ordinal) || name.StartsWith("kubuno_", StringComparison.Ordinal))
+                if (FrameworkCrates.Contains(name))
                 {
                     continue;
                 }

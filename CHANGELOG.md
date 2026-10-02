@@ -766,6 +766,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Control libraries named `kubuno-…` show in the Toolbox and the designer.** A project's path dependency whose name
+  starts with `kubuno` (the shared `kubuno-shell-controls`, a third party's `kubuno-acme-widgets`) was taken for part
+  of the framework: its controls were missing from the project's Toolbox tab and editing them did not mark the design
+  surface out of date. Only the framework's own crates are skipped now, by an explicit list (`FrameworkCrates` in
+  `Kubuno.Views.Logic`, identical to `FRAMEWORK_CRATES` of the Rust crate `kubuno-views-meta`, a test checks both;
+  `docs/DESKTOP-MIGRATION.md`, "Shared control libraries").
 - **No more red `x:` everywhere in a view's code**: a view shown by Visual Studio's XML editor (a Visual Studio
   instance whose configuration cache missed the Kubuno registrations) underlined every `x:Name` as an undeclared
   prefix (43 errors on the ribbon sample) and offered no Kubuno completion. The views now declare their namespaces,
