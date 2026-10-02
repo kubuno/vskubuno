@@ -902,3 +902,35 @@ own controls and `ExtensionSlot` placeholders, never another module's controls. 
 7. Handle growth of ~8 per open/close to explain; a real 100 % session and a real monitor change to check.
 8. Seen once before the activation fix and not re-checked: the first click on an inactive design frame selected the
    root instead of the clicked element.
+
+## 12. WV-1 as built (2026-10-02)
+
+Two platform-neutral crates were split out of `kubuno-views` (`desktop/windows/src/crates/`), both in the workspace
+and in `Kubuno.Core.Desktop.slnx` under `/Libraries/` (`.rsproj`, `Kubuno.Rust.Sdk/1.1.1`). Neither depends on
+`kubuno_ui`, `kubuno_controls`, `windows` or any C library.
+
+| Crate | Depends on | Holds |
+|---|---|---|
+| `kubuno-views-model` | `serde`, `serde_json` | `meta`: `PropKind`, `PropertyMeta`, `EventCategory`, `Routing`, `EventMeta`, `ArgsChain`, `LevelMeta`, `ChildrenModel`, `LayoutKind`, `DesignTimeAttribute`/`DESIGN_TIME_ATTRIBUTES`; `schema`: the export's wire types (`ComponentJson`, `PropertyJson`, `EventJson`, `PropKindJson`, `ChildrenModelJson`, `LayoutKindJson`, `RegistryExport`, `fnv1a_hex`); `json`: **new** loader `load_registry` → owned `RegistryDocument`/`ComponentEntry`/`PropertyEntry`/`EventEntry` (desktop export and web file, unknown fields ignored, `schema` > 1 rejected, `web`/`typography` kept raw); `editor`: **new** `EditorKind`; `binding_sources`: the binding source schema (`Shape`, `MemberKind`, `Member<L>`, `Context<L, U>`, `ConverterInfo<L>`, `Schema<L, U>`, `Resolution<'a, L>`), generic over the location types |
+| `kubuno-views-syntax` | `rowan`, `kubuno-views-model` | `syntax` (lexer, parser, rowan CST, `Diagnostic`, `LineIndex`), `ast` (typed layer, `stable_id`/`resolve_id`), `edit` (all surgical edits, `match_line_endings`); `binding`: the `{Binding}` grammar (`BindingMode`, `UpdateSourceTrigger`, `BindingFormat`, `BindingPart`, `BINDING_KEYS`, `BindingIssue`, `binding_parts`, `canonical_key`, `is_binding_expr`, **new** `BindingSyntax`/`parse_binding_syntax`/`binding_issues`); `res`: the `{Res}` grammar (`RES_PREFIX`, `parse_res_path`, `res_reference`, `is_res_expr`); `ids`: `parent_id_of`, `is_ancestor_id`, `top_level_ids`; `markup`: `x:`/`d:` attributes; `view_kind`: `.kbview`/`.kbcontrol` rules (from `kubuno-views-ls`); `validate`: the registry-independent validator core (`COMMON_ATTRIBUTES`, `check_value`, `is_binding_expression`, `is_root_element`, `distance`/`closest`/`with_suggestion`) |
+
+**What stayed in `kubuno-views`, and why.** `ComponentMeta` (its `build` field is a runtime `fn` returning a
+`ViewNode`, and its methods read the runtime class chain `controls::class_of`), the registry *tables* (`COMMON_EVENTS`
+and `VIEW_EVENTS` name runtime args types, `LEVELS`, the families), `BindingSpec` (it carries a run-time
+`BindingState`; it is now built from `BindingSyntax`), the validator's registry walk (`validate`, `warnings`, `hints`,
+`contrast_warnings`: they read `ComponentMeta`, the colour/font grammars of `style` and the icon set), and everything
+runtime, rendering, Windows and design mode. A web consumer reads the registry through `json` (the export repeats
+every inherited and root-only member on each element, so `ComponentEntry` needs no class chain).
+
+**Paths kept.** `kubuno-views` re-exports `syntax`, `ast`, `edit` as modules and every moved item at its old path
+(`registry::PropKind`, `events::ArgsChain`, `registry::export::ComponentJson`, `binding::BindingMode`,
+`resources::RES_PREFIX`, `design::parent_id_of`…); `kubuno-views-ls` re-exports `view_kind`'s items and aliases the
+binding source types to their LSP instantiation (`type Member = model::Member<lsp_types::Location>`…). No
+downstream source changed (the facade `kubuno`, the macros, chat, shell, documents, drive, the gallery,
+`view_embed`).
+
+**Verified.** Tests, before → after: `kubuno-views` lib 745 → 673 (the 73 tests of `syntax`, `ast` and `edit` moved with their modules, +1 new: the model loader reads the real export back), its integration tests 7/16/7/1 and 24 doc-tests unchanged; `kubuno-views-syntax` 83 (73 moved + 10 new), `kubuno-views-model` 8 + 1 doc-test (new); `kubuno-views-ls` 156 + 1 + 18 unchanged; `kubuno-views-macros` 25 + 28 doc, `kubuno-views-meta` 14, `kubuno` 25 + 15 doc, `kubuno-chat` 19 unchanged. `kubuno-desktop` (shell) was being edited by another agent during this lot (78 → 82 tests; its new `signout_dialog::the_dialog_says_how_many_changes_wait` fails identically with the original `kubuno-views`, checked on a copy of the tree): 81 pass. Cross-checks of the two new crates (`cargo check --all-targets`): `wasm32-unknown-unknown`,
+`x86_64-unknown-linux-gnu`, `x86_64-apple-darwin`, `aarch64-apple-darwin` all clean; `clippy -D warnings` clean on
+Windows and on `wasm32-unknown-unknown`. Not done: the desktop designer smoke test in Visual Studio (no VS session in
+this lot; the export and `view_embed` compile unchanged, and the export is now also read back by the model loader in a
+test).
