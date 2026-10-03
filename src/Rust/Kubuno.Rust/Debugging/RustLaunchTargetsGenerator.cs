@@ -83,7 +83,7 @@ namespace Kubuno.Rust.Debugging
                 // is more correct (and more robust to PATH changes between generating this file and
                 // pressing F5) than baking in devenv's own PATH from generation time. Confirmed live
                 // that embedding a literal snapshot here still left the launched exe unable to find
-                // `kubuno_ui.dll`'s own `std-*.dll` dependency (STATUS_DLL_NOT_FOUND) - see
+                // a `-C prefer-dynamic` build's `std-*.dll` (STATUS_DLL_NOT_FOUND) - see
                 // LaunchVsJsonWriter's own remarks for the other half of that bug (the `env` shape
                 // itself, fixed independently of this).
                 const string existingPath = "${env.PATH}";

@@ -30,8 +30,8 @@ namespace Kubuno.Rust.ProjectSystem
     /// The launch itself is <see cref="LaunchDescriptionBuilder"/>'s logic without the JSON file
     /// Open Folder needs: native (MSVC/PDB) engine, <c>$(TargetPath)</c>, and PATH prepended with
     /// the profile directory, its <c>deps</c> and the toolchain's std lib directory
-    /// (<see cref="RustDebugEnvironment"/>) - what a <c>-C prefer-dynamic</c> build such as the
-    /// Kubuno desktop workspace (<c>kubuno_ui.dll</c> + <c>std-*.dll</c>) needs to start at all.
+    /// (<see cref="RustDebugEnvironment"/>) - the directories <c>cargo run</c> puts on PATH, which a
+    /// <c>-C prefer-dynamic</c> build needs to start at all (Kubuno desktop applications link statically).
     /// </summary>
     [ExportDebugger(DebuggerName)]
     [AppliesTo(RustProjectCapabilities.RustProjectSystem)]

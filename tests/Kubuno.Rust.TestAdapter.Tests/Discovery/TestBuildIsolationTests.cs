@@ -6,7 +6,7 @@ using Kubuno.Rust.TestAdapter.Discovery;
 namespace Kubuno.Rust.TestAdapter.Tests.Discovery
 {
     /// <summary>
-    /// The Kubuno desktop workspace's shape: kubuno-views-macros (a proc-macro) has kubuno-views as a dev-dependency, which uses
+    /// The Kubuno desktop workspace's former shape (before kubuno-ui became an rlib on 2026-10-03): kubuno-views-macros (a proc-macro) has kubuno-views as a dev-dependency, which uses
     /// the kubuno-ui dylib; `cargo test --workspace` then builds kubuno_ui.dll twice into the same file.
     /// </summary>
     public class TestBuildIsolationTests

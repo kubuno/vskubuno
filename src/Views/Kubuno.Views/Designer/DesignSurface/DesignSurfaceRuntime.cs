@@ -3,28 +3,21 @@ using System;
 namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
-    /// Which design surface exe a designer pane runs (docs/DESIGNER.md section 15): the one built against
-    /// the project's own <c>kubuno_ui.dll</c> (<see cref="IsProjectRuntime"/>), or the fallback bundled
-    /// with the extension (<c>tools\surface\</c>) while the project has not been built.
+    /// Which design surface exe a designer pane runs (docs/DESIGNER.md section 15): the one statically
+    /// linked against the project's own <c>kubuno_ui</c> build (<see cref="IsProjectRuntime"/>), or the
+    /// fallback bundled with the extension (<c>tools\surface\</c>) while the project has not been built.
     /// </summary>
     public sealed class DesignSurfaceRuntime
     {
-        public DesignSurfaceRuntime(string exePath, bool isProjectRuntime, string? expectedUiDllSha256)
+        public DesignSurfaceRuntime(string exePath, bool isProjectRuntime)
         {
             ExePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
             IsProjectRuntime = isProjectRuntime;
-            ExpectedUiDllSha256 = expectedUiDllSha256;
         }
 
         public string ExePath { get; }
 
         public bool IsProjectRuntime { get; }
-
-        /// <summary>
-        /// SHA-256 of the <c>kubuno_ui.dll</c> the exe was linked against, when known (the design build
-        /// records it); the <c>surfaceInfo</c> handshake must report a loaded DLL with this very hash.
-        /// </summary>
-        public string? ExpectedUiDllSha256 { get; }
 
         /// <summary>EVT-7b: the registry the project surface exported after its design build (its linked project controls), when known.</summary>
         public string? RegistryPath { get; set; }
@@ -39,8 +32,7 @@ namespace Kubuno.Views.Designer.DesignSurface
         public string? ProjectKey { get; set; }
 
         public bool IsSameAs(DesignSurfaceRuntime? other) =>
-            other is not null && string.Equals(ExePath, other.ExePath, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(ExpectedUiDllSha256, other.ExpectedUiDllSha256, StringComparison.Ordinal);
+            other is not null && string.Equals(ExePath, other.ExePath, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>What the designer's info bar says about the runtime (docs/DESIGNER.md section 15).</summary>
@@ -87,7 +79,7 @@ namespace Kubuno.Views.Designer.DesignSurface
         /// <summary>The bar's action: build the project (<see cref="DesignSurfaceRuntimeState.NotBuilt"/>/<see cref="DesignSurfaceRuntimeState.Failed"/>) or cancel the design build (<see cref="DesignSurfaceRuntimeState.Building"/>).</summary>
         void RunAction();
 
-        /// <summary>A pane reports that a surface refused the handshake (ABI mismatch): the source rebuilds.</summary>
+        /// <summary>A pane reports that a surface refused the handshake (another protocol version): the source rebuilds.</summary>
         void ReportRejected(string message);
     }
 

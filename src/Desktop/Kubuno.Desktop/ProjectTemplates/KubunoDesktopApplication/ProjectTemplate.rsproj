@@ -9,12 +9,10 @@
          (keep both in sync). Resolved at project creation from KUBUNO_DESKTOP_SRC. -->
     <KubunoDesktopSrc Condition="'$(KubunoDesktopSrc)' == ''">$kubunodesktopsrc$</KubunoDesktopSrc>
 
-    <!-- This project's OWN cargo target directory. kubuno-ui is a Rust dylib, and cargo names a dylib
-         without a hash (`deps\kubuno_ui.dll`): two cargo workspaces sharing one target directory (e.g.
-         a machine-wide CARGO_TARGET_DIR that the desktop workspace also builds into) overwrite each
-         other's kubuno_ui.dll, and the next build fails with "E0463: can't find crate for kubuno_ui".
-         When CARGO_TARGET_DIR is set (a local disk for sources on a network share), this project gets
-         a subfolder of it; otherwise cargo's usual <project>\target. -->
+    <!-- This project's OWN cargo target directory, so that its builds never wait on, or clean, the
+         desktop workspace's (e.g. a machine-wide CARGO_TARGET_DIR that the desktop workspace also
+         builds into). When CARGO_TARGET_DIR is set (a local disk for sources on a network share), this
+         project gets a subfolder of it; otherwise cargo's usual <project>\target. -->
     <CargoTargetDir Condition="'$(CARGO_TARGET_DIR)' != ''">$(CARGO_TARGET_DIR)\rsproj\$(CargoPackage)</CargoTargetDir>
     <CargoTargetDir Condition="'$(CARGO_TARGET_DIR)' == ''">$(MSBuildProjectDirectory)\target</CargoTargetDir>
   </PropertyGroup>

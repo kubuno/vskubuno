@@ -546,6 +546,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Kubuno desktop programs are linked statically: no `kubuno_ui` DLL anywhere** (`docs/DESIGNER.md` §16, product
+  decision of 2026-10-03: the apps ship from their own repositories on their own schedules, so no Rust DLL is
+  shared; Kubuno Desktop is a service dependency, never a binary one). The designer's design build compiles the
+  surface against the project's own `kubuno_ui`/`kubuno_views`/`kubuno_controls` rlibs and the project's crate into
+  one self-contained `kubuno-design-surface.exe` (no DLL copy, no SHA-256 check; the graph's native library paths
+  are passed to the link). The `surfaceInfo` handshake is version 2; a surface built against a `kubuno_ui` DLL (a
+  desktop checkout older than 2026-10-03) is refused with a message asking to update it, and such a project shows
+  the bundled preview with the reason. The VSIX ships `kubuno-views-ls.exe`, `kubuno-data-tool.exe`,
+  `kubuno-resources-tool.exe` and `view_embed.exe` alone, and its build refuses a tool that still imports a Rust DLL.
+  F5 and Test Explorer keep the PATH entries `cargo run`/`cargo test` add, for other Rust programs built with
+  `-C prefer-dynamic`; Kubuno programs need none. Just My Code treats the framework as external code by function
+  name only. Info bar and refusal texts no longer mention `kubuno_ui.dll`.
 - **Kubuno Core Web F5 opens Google Chrome by default.** The dev core's page opens in Chrome, Microsoft Edge only when
   Chrome is not installed, then the default browser (`KubunoBrowser`: `chrome`, `edge`, `default`); generated and
   template `launch.json` files, and their `.vscode` copies, list the Chrome configuration first, so script debugging
@@ -1062,6 +1074,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 
+- `KubunoUiLibrary` (the PE import reader that found a program's `kubuno_ui-<hash>.dll`), the design surface's DLL
+  and `std-*.dll` copies, the `UiDll*` fields of `surface.json` (now version 4: older design folders are rebuilt),
+  the DLL folders on the design surface's PATH, and the `kubuno_ui`/`std` DLL `Content` items of the VSIX.
 - **The fallback "Kubuno Toolbox" and "Kubuno Properties" tool windows** and their Tools-menu
   commands. The `.kbview` designer fills Visual Studio's own Toolbox and Properties window
   (`docs/DESIGNER.md` §11), so the fallbacks were redundant - and the "Kubuno Toolbox" one could stay

@@ -20,8 +20,8 @@ namespace Kubuno.Rust.Logic
     ///   matching the toolchain that built it - the first place the debugger looks. The copies an earlier
     ///   version of this extension put into the per-user folder are removed (<see cref="LegacyToolchainNatvis"/>).
     /// - <b>Kubuno natvis</b> (<c>Kubuno.natvis</c>): a <c>NativeVisualizer</c> asset of the VSIX, applied to
-    ///   every module (a PDB-embedded natvis would only apply to the types of its own module, and the Kubuno
-    ///   types live in <c>kubuno_ui.dll</c> as well as in each application's exe).
+    ///   every module (it also covers applications built against an older <c>kubuno_views</c>, whose PDB embeds
+    ///   no natvis, and the standard-library types of any Rust program).
     /// - <b>Just My Code and step filters</b> (<c>.natjmc</c>, <c>.natstepfilter</c>): Visual Studio only reads
     ///   them from its installation folder (administrator) or the per-user
     ///   <c>Documents\&lt;Visual Studio version&gt;\Visualizers</c> folder - hence this class. The files are named

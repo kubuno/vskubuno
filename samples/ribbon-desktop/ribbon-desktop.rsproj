@@ -4,7 +4,7 @@
   <PropertyGroup>
     <CargoPackage>ribbon-desktop</CargoPackage>
     <KubunoDesktopSrc Condition="'$(KubunoDesktopSrc)' == ''">Z:\src\desktop\windows</KubunoDesktopSrc>
-    <!-- Its own cargo target directory (kubuno_ui is a Rust dylib: see the template's comment). -->
+    <!-- Its own cargo target directory (see the template's comment). -->
     <CargoTargetDir Condition="'$(CARGO_TARGET_DIR)' != ''">$(CARGO_TARGET_DIR)\rsproj\$(CargoPackage)</CargoTargetDir>
     <CargoTargetDir Condition="'$(CARGO_TARGET_DIR)' == ''">$(MSBuildProjectDirectory)\target</CargoTargetDir>
   </PropertyGroup>

@@ -17,7 +17,7 @@
   library's own module names only, so the C++ standard library keeps its usual Just My Code treatment.
 -->
 <NonUserCode xmlns="http://schemas.microsoft.com/vstudio/debugger/jmc/2015">
-  <!-- `-C prefer-dynamic` builds (the Kubuno desktop apps) load the standard library as std-<hash>.dll. -->
+  <!-- `-C prefer-dynamic` builds load the standard library as std-<hash>.dll. -->
   <Module Name="*\std-*.dll" />
 
   <!-- The panic machinery, from the panicking call (unwrap, indexing, panic!) down to the C++ throw. -->

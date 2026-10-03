@@ -31,7 +31,7 @@ namespace Kubuno.Desktop.DesignerIntegration
 
         public ProjectDesignSurfaceRuntimeProvider(string bundledExePath, JoinableTaskFactory joinableTaskFactory)
         {
-            _bundled = new DesignSurfaceRuntime(bundledExePath, isProjectRuntime: false, expectedUiDllSha256: null);
+            _bundled = new DesignSurfaceRuntime(bundledExePath, isProjectRuntime: false);
             _joinableTaskFactory = joinableTaskFactory;
         }
 
@@ -405,7 +405,7 @@ namespace Kubuno.Desktop.DesignerIntegration
                 // EVT-7b: the project's linked controls (the Toolbox's project tab) come with the runtime.
                 var name = ErrorHandler.Succeeded(_hierarchy.GetProperty((uint)VSConstants.VSITEMID.Root, (int)__VSHPROPID.VSHPROPID_Name, out var value)) ? value as string : null;
                 Set(
-                    new DesignSurfaceRuntime(build.ExePath, isProjectRuntime: true, expectedUiDllSha256: build.UiDllSha256)
+                    new DesignSurfaceRuntime(build.ExePath, isProjectRuntime: true)
                     {
                         RegistryPath = build.RegistryPath,
                         ProjectCrate = build.ProjectCrate,
@@ -427,7 +427,7 @@ namespace Kubuno.Desktop.DesignerIntegration
 
                 if (runtime.IsProjectRuntime && !runtime.IsSameAs(_current))
                 {
-                    KubunoLog.WriteLine($"Kubuno: the designer now renders with the project's kubuno_ui.dll ({runtime.ExePath}).");
+                    KubunoLog.WriteLine($"Kubuno: the designer now renders with the project's own kubuno_ui build ({runtime.ExePath}).");
                 }
 
                 _current = runtime;

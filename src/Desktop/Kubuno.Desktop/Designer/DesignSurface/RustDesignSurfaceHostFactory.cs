@@ -7,7 +7,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// <summary>
     /// The production <see cref="IDesignSurfaceHostFactory"/>: one <see cref="RustDesignSurfaceHost"/>
     /// per open designer pane. Each pane runs the design surface built against its project's own
-    /// <c>kubuno_ui.dll</c> when the <see cref="IDesignSurfaceRuntimeProvider"/> has one (docs/DESIGNER.md
+    /// <c>kubuno_ui</c> build when the <see cref="IDesignSurfaceRuntimeProvider"/> has one (docs/DESIGNER.md
     /// section 15), else the surface bundled with the extension (<c>tools\surface\</c>).
     /// </summary>
     public sealed class RustDesignSurfaceHostFactory : IDesignSurfaceHostFactory
@@ -37,7 +37,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         {
             var lease = document is not null && _runtimeProvider is not null
                 ? _runtimeProvider.Acquire(document)
-                : new DesignSurfaceRuntimeLease(new FixedDesignSurfaceRuntimeSource(new DesignSurfaceRuntime(_bundledExePath, isProjectRuntime: false, expectedUiDllSha256: null), DesignSurfaceRuntimeState.NotApplicable), null);
+                : new DesignSurfaceRuntimeLease(new FixedDesignSurfaceRuntimeSource(new DesignSurfaceRuntime(_bundledExePath, isProjectRuntime: false), DesignSurfaceRuntimeState.NotApplicable), null);
             var host = new RustDesignSurfaceHost(lease, _extraArgs, _oleServiceProvider);
             if (document is not null && !string.IsNullOrEmpty(document.Path))
             {

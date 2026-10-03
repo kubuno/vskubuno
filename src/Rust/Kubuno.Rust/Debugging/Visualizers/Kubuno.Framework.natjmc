@@ -11,9 +11,6 @@
   on Kubuno itself).
 -->
 <NonUserCode xmlns="http://schemas.microsoft.com/vstudio/debugger/jmc/2015">
-  <!-- One file name per build of the shared library (kubuno_ui-<hash>.dll); the plain name for older builds. -->
-  <Module Name="*\kubuno_ui-*.dll" />
-  <Module Name="*\kubuno_ui.dll" />
   <Function Name="kubuno_views::*" ExceptionImplementation="true" />
   <Function Name="kubuno_controls::*" ExceptionImplementation="true" />
   <Function Name="kubuno_ui::*" ExceptionImplementation="true" />

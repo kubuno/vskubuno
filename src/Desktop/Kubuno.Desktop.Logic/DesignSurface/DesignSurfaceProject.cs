@@ -9,8 +9,8 @@ namespace Kubuno.Desktop.Logic.DesignSurface
     /// <c>CargoBuild</c> task runs it (same manifest, package, bin, profile, extra arguments and
     /// <c>CARGO_TARGET_DIR</c>): the design build re-runs that very command to learn the artifacts of
     /// the project's dependency graph (docs/DESIGNER.md section 15). Any difference - a feature, a
-    /// profile - would make cargo rebuild <c>kubuno_ui.dll</c> with other metadata into the same,
-    /// unhashed file (the shared-target lesson of docs/RSPROJ.md, "Template build fix").
+    /// profile - would make cargo build other variants of the crates than the ones the project's
+    /// application links, and the surface would no longer render with the project's own build.
     /// </summary>
     public sealed class DesignSurfaceProject
     {

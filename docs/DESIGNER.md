@@ -417,7 +417,7 @@ accelerators** and **Tab-out** (see below).
 | Child crash | **Host survives** (hard kill of the Rust process: container alive, WPF fine); `StartSurface()` relaunches into the same container. The VSIX should restart it with backoff and show a placeholder while it is down. |
 | Host closes normally | Container destroyed -> child gets `WM_DESTROY` -> Rust exits with code 0 within ~60-90 ms. |
 | Host process crashes | First attempt **failed**: the system destroyed the child window along with the dead parent but sent this thread **no message**, and an HWND-bound watchdog timer died with the window, so the Rust process lived on. Fixed with a **thread** timer (`SetTimer(None, .., TIMERPROC)`) that ends the loop once the parent is gone: Rust now exits ~250 ms after `Stop-Process -Force` on the host. Belt and braces for VS: also put the child in a Job Object with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, owned by devenv. |
-| Runtime DLLs | The workspace links with `-C prefer-dynamic`: the exe needs `kubuno_ui.dll` **and** Rust's `std-*.dll` beside it (`tools/stage-runtime.ps1`). A missing DLL pops the loader's modal "DLL not found" dialog on the user's desktop. The spike checks the files before launching and calls `SetErrorMode(SEM_FAILCRITICALERRORS \| SEM_NOOPENFILEERRORBOX)` (inherited by the child). The VSIX must ship/stage the runtime with the designer exe and do the same. |
+| Runtime DLLs | (Historical: since 2026-10-03 the surface links statically, section 16.) The workspace linked with `-C prefer-dynamic`: the exe needed `kubuno_ui.dll` **and** Rust's `std-*.dll` beside it (`tools/stage-runtime.ps1`). A missing DLL pops the loader's modal "DLL not found" dialog on the user's desktop. The spike checks the files before launching and calls `SetErrorMode(SEM_FAILCRITICALERRORS \| SEM_NOOPENFILEERRORBOX)` (inherited by the child). The VSIX must ship/stage the runtime with the designer exe and do the same. |
 
 ### Recommended approach for DSG-7 proper
 
@@ -1685,27 +1685,28 @@ nothing, whereas a new WinForms `Form` is an absolute surface where Anchor works
   SameAnchor`, so `Left, Top` is not bold); a typed value is normalized like WinForms' enum converter
   (`LayoutAttributeText.NormalizeAnchor`: `right,bottom` → `Bottom, Right`, anything else refused).
 
-## 15. The design surface uses the project's own `kubuno_ui.dll`
+## 15. The design surface uses the project's own `kubuno_ui` build
 
-Product-owner decision (2026-09-29): the designer must render with exactly the same `kubuno_ui.dll` as the
-project it edits - no ABI mismatch, the project's Kubuno controls and styles visible immediately
-(prerequisite for EVENTS.md EVT-7, custom controls in the designer). Implemented as below; the surface
-bundled in the VSIX (`tools\surface\view_embed.exe`) is only the fallback.
+Product-owner decision (2026-09-29): the designer must render with exactly the same `kubuno_ui` build as the
+project it edits - the project's Kubuno controls and styles visible immediately (prerequisite for EVENTS.md
+EVT-7, custom controls in the designer). Implemented as below; the surface bundled in the VSIX
+(`tools\surface\view_embed.exe`) is only the fallback. Since 2026-10-03 everything is linked statically
+(section 16): the design build produces ONE self-contained exe that statically links the project's own
+`kubuno_ui`/`kubuno_views`/`kubuno_controls` rlibs and the project's crate.
 
 ### Why not `cargo build --example` or a surface crate
 
-`kubuno-ui` is `crate-type = ["dylib"]` and cargo names a dylib without a hash: every build of it lands in
-the same `deps\kubuno_ui.dll` (docs/RSPROJ.md, "Template build fix"). Anything cargo builds into the
-project's target directory with a different feature set or lock file rebuilds that one file with other
-metadata - the E0463 lesson. Both obvious designs do exactly that:
+Anything cargo builds into the project's target directory with a different feature set or lock file builds
+other variants of the crates than the ones the project's application links (and, while `kubuno-ui` was a
+dylib, overwrote its unhashed `deps\kubuno_ui.dll` - the E0463 lesson of docs/RSPROJ.md). Both obvious designs
+do exactly that:
 - `cargo build -p kubuno-views --example view_embed` against the project's manifest: the dev-dependencies
   of a non-member package are not even resolved, and building an example of it activates other features;
 - a `kubuno-design-surface` crate added to the project's graph (or a shadow workspace next to it): its
-  dependencies unify features differently (the example's former `windows` OLE features alone changed
-  `windows`, hence `kubuno-ui`'s metadata hash), and a user's own `[dependencies]` would have to be mirrored
+  dependencies unify features differently, and a user's own `[dependencies]` would have to be mirrored
   exactly.
 
-### Design build (`Kubuno.Rust.Cargo.DesignSurface`)
+### Design build (`Kubuno.Desktop.Logic.DesignSurface`)
 
 `DesignSurfaceBuilder.BuildAsync(DesignSurfaceProject)`:
 1. **The project's own cargo build**, argument for argument what `Kubuno.Rust.Sdk`'s `CargoBuild` task
@@ -1713,39 +1714,37 @@ metadata - the E0463 lesson. Both obvious designs do exactly that:
    `CARGO_TARGET_DIR` and message format, read from the `.rsproj`'s evaluated properties through
    `IVsBuildPropertyStorage` for the active configuration). Right after a Visual Studio build it is a
    no-op (0.5 s); it never builds anything differently. Its `compiler-artifact` messages give the exact
-   artifacts of the graph (`DesignSurfaceInputs`): `kubuno_ui.dll` (its `deps` copy, the file rustc
-   linked), the `kubuno_views`/`kubuno_controls` rlibs (the right hash: a `deps` folder can hold several),
-   and `kubuno-views/examples/view_embed.rs` of that very `kubuno-views` (`target.src_path`) - the surface
-   source always matches the `kubuno_views` API it is compiled against. A failed build is tolerated when
-   those inputs were built (e.g. the application's exe locked by a running instance).
+   artifacts of the graph (`DesignSurfaceInputs`): the `kubuno_ui`, `kubuno_views` and `kubuno_controls`
+   rlibs (the right hash: a `deps` folder can hold several), and `kubuno-views/examples/view_embed.rs` of
+   that very `kubuno-views` (`target.src_path`) - the surface source always matches the `kubuno_views` API it
+   is compiled against. Its `build-script-executed` messages give the native library search paths of the
+   graph (`cargo:rustc-link-search`), which the surface's link needs too. A failed build is tolerated when
+   those inputs were built (e.g. the application's exe locked by a running instance). A `kubuno_ui` still
+   built as a dylib (a desktop checkout older than 2026-10-03) makes the project *NotApplicable*, with a
+   message asking to update the checkout.
 2. **`rustc` directly** (`RustcArgumentsFor`): `view_embed.rs` as a bin, `--extern` the three `kubuno_*`
-   crates by path, `-L dependency=<deps>` for everything else (resolved by the crate hashes recorded in
-   them), `-C prefer-dynamic` (one `std` shared with `kubuno_ui.dll`), `opt-level=0` (`3` for release),
-   `--cap-lints allow`, `rustc`/sysroot as rustup picks them in the manifest folder. Nothing in the
-   project's target directory is built or overwritten. ~1 s. The surface therefore uses **no crate and no
-   `windows` feature the project graph lacks**: `view_embed.rs` declares its few Win32/OLE calls itself
-   (`mod win32`) and implements `IDropTarget` over a hand-written vtable (`mod ole_drop`), and
-   `kubuno-views` no longer has dev-dependencies (which also stops the desktop workspace's own example
-   build from rebuilding `kubuno_ui.dll` with extra features). The SHA-256 of the linked
-   `kubuno_ui.dll` is passed as `KUBUNO_DESIGN_UI_DLL_SHA256` and embedded (`option_env!`).
-3. **A shadow copy**, like the WinForms designer's: `<target dir>\kubuno-design\<profile>\<key>\` holds the
-   exe, a byte-identical copy of the project's `kubuno_ui.dll` (hash re-checked after the copy) under the
-   name the exe imports, `kubuno_ui-<hash>.dll` (section 16; read from the exe's import table,
-   `KubunoUiLibrary.ImportedBy`, recorded as `UiDllFileName` in `surface.json` v3), its PDB
-   (`kubuno_ui-<hash>.pdb`, for a debugger attached to the surface) and the toolchain's `std-*.dll`. A surface loading the project's `deps\kubuno_ui.dll` itself would lock it and
-   the project's next build could not replace it (checked: a loaded image cannot be overwritten). The folder
-   is outside `<target dir>\<profile>` so the SDK's `cargo clean --profile ...` (Clean/Rebuild) never meets
-   a file a running surface holds. `<key>` = hash of the DLL's SHA-256, every input's path/size/write time,
-   `rustc -vV` and the profile; `surface.json` (written last: "complete") records the inputs, `current.json`
-   points at the current folder. `TryReuse` (no process at all) reuses it while no input changed; stale
-   folders are deleted (one still in use is kept and removed by a later build).
+   rlibs by path, `-L dependency=<deps>` for everything else (resolved by the crate hashes recorded in
+   them), `-L` for the graph's native search paths, no `-C prefer-dynamic` (static, like every Kubuno
+   program), `opt-level=0` (`3` for release), `--cap-lints allow`, `rustc`/sysroot as rustup picks them in
+   the manifest folder. The project's own crate is compiled as an rlib first and linked in (EVT-7b). Nothing
+   in the project's target directory is built or overwritten. ~1 s plus the link. The surface uses **no
+   crate and no `windows` feature the project graph lacks**: `view_embed.rs` declares its few Win32/OLE calls
+   itself (`mod win32`) and implements `IDropTarget` over a hand-written vtable (`mod ole_drop`), and
+   `kubuno-views` has no dev-dependencies.
+3. **Its own folder**: `<target dir>\kubuno-design\<profile>\<key>\` holds the exe (with its PDB and the
+   exported `registry.json`) and nothing else - no DLL to copy. A folder of its own, outside
+   `<target dir>\<profile>`, so a running surface never holds a file the project's next build or the SDK's
+   `cargo clean --profile ...` (Clean/Rebuild) must replace. `<key>` = hash of every input's path/size/write
+   time, `rustc -vV` and the profile; `surface.json` (v4, written last: "complete") records the inputs,
+   `current.json` points at the current folder. `TryReuse` (no process at all) reuses it while no input
+   changed; stale folders are deleted (one still in use is kept and removed by a later build).
 
 ### Runtime selection and hot swap (`ProjectDesignSurfaceRuntimeProvider`, `RustDesignSurfaceHost.Runtime.cs`)
 
 - `KbviewEditorFactory` passes the document's hierarchy/item id down to `IDesignSurfaceHostFactory.Create
   (DesignSurfaceDocument)`. The VSIX's `ProjectDesignSurfaceRuntimeProvider` gives every pane of one
   `.rsproj` a shared `IDesignSurfaceRuntimeSource` (a lease, released with the pane): *Project* (the design
-  build's exe), or the bundled exe with *NotBuilt* (no `kubuno_ui.dll` in the profile folder yet),
+  build's exe), or the bundled exe with *NotBuilt* (no `kubuno_ui` rlib in the profile's `deps` folder yet),
   *Building*, *Failed* or *NotApplicable* (no `.rsproj`, e.g. Open Folder, or no `kubuno-views` in it).
 - Triggers: opening a designer (reuse at once, else a design build when the project is built); every
   `IVsUpdateSolutionEvents2.UpdateProjectCfg_Done` of that project (build, rebuild, clean - a clean makes it
@@ -1756,141 +1755,67 @@ metadata - the E0463 lesson. Both obvious designs do exactly that:
   `selectionChanged`/`select`/`selectMany`, as `selectMany` for a multi-selection). Late stdout lines and
   the `Exited` event of the replaced process are ignored (`sender != _surface`).
 - **Info bar** (`DesignerSplitView`, VS info colours): shown in Design/Split mode unless the state is
-  *Project* - "Aperçu : runtime intégré — générez le projet pour utiliser sa kubuno_ui.dll." + **Générer**
+  *Project* - "Aperçu : runtime intégré — générez le projet pour utiliser sa propre kubuno_ui." + **Générer**
   (`IVsSolutionBuildManager.StartSimpleUpdateProjectConfiguration`, a normal build whose completion runs the
   design build), "Aperçu : compilation de l'aperçu…" + **Annuler**, failure (+ detail) + **Générer**, or the
   not-applicable text. Progress and errors (cargo stderr, rustc output) go to the *Kubuno* output pane.
 
-### ABI handshake (`surfaceInfo`)
+### Handshake (`surfaceInfo`)
 
-The surface's first stdout line: `{"type":"surfaceInfo","version":1,"uiDll":<path of the loaded
-kubuno_ui-<hash>.dll, kubuno_ui::library::module_path()>,"uiDllSha256":<embedded hash or null>}`. The host
-(`DesignSurfaceProtocol.CheckSurfaceInfo`, unit-tested) refuses the surface when the version differs, the
-loaded DLL is not the copy next to the exe (another `kubuno_ui.dll` found on PATH), the embedded hash
-differs from the design build's record, or the loaded file's SHA-256 differs from it; a surface whose first
-line is not `surfaceInfo` (an older build) is refused too. Refused: the process is killed, the container
-shows "Aperçu refusé : la kubuno_ui.dll chargée par l'aperçu n'est pas celle avec laquelle il a été
-compilé (…)", the source forgets that design build and falls back to the bundled runtime (*Failed*, with
-**Générer**). The bundled surface carries no hash: only the "copy next to the exe" rule applies (the VSIX
-ships both from one cargo build).
+The surface's first stdout line: `{"type":"surfaceInfo","version":2}`. The host
+(`DesignSurfaceProtocol.CheckSurfaceInfo`, unit-tested) refuses a surface whose version differs - in
+particular a version 1 surface, built against a `kubuno_ui-<hash>.dll` by a desktop checkout older than
+2026-10-03 - and one whose first line is not `surfaceInfo`. Refused: the process is killed, the container
+shows "Aperçu refusé : cet aperçu ne parle pas le protocole du concepteur (…)", the source forgets that
+design build and falls back to the bundled runtime (*Failed*, with **Générer**). Version 1 also carried the
+loaded DLL's path and the SHA-256 it was linked against, which the host compared: with static linking
+there is no DLL left to mismatch.
 
-### Live verification (regular Visual Studio, 2026-09-29)
+### Live verification (regular Visual Studio, 2026-09-29, then a dylib build)
 
 A new *Kubuno Desktop Application* (`DsurfApp`, never built): the designer opened on the bundled runtime
-with the bar; **Générer** built the project (53 s) and 2 s later the preview restarted on
-`C:\kubuno-build\desktop-target\rsproj\dsurfapp\kubuno-design\debug\be16e8fde0eee94f\kubuno-design-surface.exe`,
-bar gone; the process's module list showed `kubuno_ui.dll` loaded from that folder, SHA-256 equal to the
-project's `debug\deps\kubuno_ui.dll`. With `kubuno_ui::buttons::RADIUS` changed to 18 and the project
-rebuilt, the preview swapped to a new folder (new DLL hash `5CDD2A2B…`) with the selected button still
-selected (`select Some("1")` re-sent), and the application started with F5's PATH loaded a `kubuno_ui.dll`
-with the same hash. A tampered copy (one byte appended, surface restarted) was refused by the handshake
-(`loaded kubuno_ui.dll 8FC006F7…, linked against 5CDD2A2B…`) and the pane fell back to the bundled runtime;
-the next build restored the project runtime. The source was then restored byte for byte and rebuilt.
+with the bar; **Générer** built the project (53 s) and 2 s later the preview restarted on the design build's
+`kubuno-design-surface.exe`, bar gone. With `kubuno_ui::buttons::RADIUS` changed to 18 and the project
+rebuilt, the preview swapped to a new folder with the selected button still selected (`select Some("1")`
+re-sent). The static design build was verified again on 2026-10-03 (CHANGELOG).
 
 **Known limitation**: the SDK's `CoreCompile` incremental gate only lists the project's own sources, so after
 editing a path dependency's sources (e.g. `kubuno_ui` in the desktop checkout) a plain *Build* is considered
 up to date - use *Rebuild* (or `cargo build`, then any build) to pick the change up.
 
-## 16. One file name per kubuno_ui build
+## 16. Static linking: no shared Rust DLL
 
-Product-owner decision (2026-09-30): a Kubuno program must never load a `kubuno_ui` DLL of another build.
-`kubuno-ui` is a Rust `dylib`, and Rust has no stable ABI: any rebuild (an added impl block, another generic
-instantiation, another compiler) renames or reshapes the symbols it exports. Under one fixed name, an exe
-linked against the previous build loaded the new file and died in the loader with the modal
-« Point d'entrée introuvable … `_RNvMs8_…9kubuno_ui` » (`0xC0000139`) - or, worse, ran on a changed layout
-with unchanged symbol names (v0 mangling does not encode a non-generic function's signature).
+Product-owner decision (2026-10-03): `kubuno-ui` is an ordinary Rust library (rlib) and **every Kubuno
+desktop program links it, and Rust's `std`, statically** - the apps, the tools the VSIX ships
+(`kubuno-views-ls.exe`, `kubuno-data-tool.exe`, `kubuno-resources-tool.exe`, `view_embed.exe`) and the
+designer's surface. An exe runs from a folder that holds only itself.
 
-**Every build is now named after itself, `kubuno_ui-<16 hex digits>.dll`, and every program imports that
-exact name.** Two builds coexist in one folder or on `PATH`, each program loads its own, and a program whose
-build is missing fails with `STATUS_DLL_NOT_FOUND` (`0xC0000135`) - the loader's message names
-`kubuno_ui-<hash>.dll`, a clearly *missing* file instead of an obscure entry point.
+Why: the apps will be released from their own per-module repositories, each on its own schedule. A Rust
+dylib has no stable ABI, so a shared `kubuno_ui` DLL would tie every app to one build of it; no Rust DLL may
+be shared between them. Kubuno Desktop (the shell) stays mandatory on every PC, but as a **service**
+dependency - the account/token broker over its named pipe, the sync, the launcher - never as a binary one.
 
-### Mechanisms considered
+What it replaced (2026-09-30 to 2026-10-02): `kubuno-ui` was `crate-type = ["dylib"]`, the desktop workspace
+was linked with `-C prefer-dynamic`, and every build of the DLL was named after itself
+(`kubuno_ui-<hash>.dll`, through a link shim in `kubuno-ui`'s `build.rs`) so that a program never loaded
+another build. The shim, `kubuno_ui::library`, `tools/stage-runtime.ps1`, the DLL shipping of the MSIX
+script and of the VSIX, `KubunoUiLibrary` (import-table reader), the DLL copy and SHA-256 handshake of the
+design build and the DLL folders on the designer's PATH are all gone.
 
-The name a program imports is the one the import library (`kubuno_ui.dll.lib`) records, which MSVC's
-`link.exe` takes from `/OUT:` (or from a `LIBRARY` statement of the `.def` file) when it links the DLL. So
-the name must be decided at that link, from what can change the ABI - and in a plain `cargo build`,
-`cargo run`, `cargo test`, the SDK's `.rsproj` build and the designer's design build alike.
-
-| Option | Verdict |
-|---|---|
-| Cargo's own hashed names (`-C extra-filename`, as `std-<hash>.dll`) | Cargo gives a *path* dylib no hash on purpose; the only switch is the internal `__CARGO_DEFAULT_LIB_METADATA` variable (used to build `std`), which must be in Cargo's own environment (not `[env]`), renames every path dylib, cdylib and MSVC exe, and hashes Cargo-level metadata only: an edit of `kubuno_ui`'s sources would keep the name. Rejected. |
-| `-C extra-filename` through `RUSTFLAGS`/a rustc wrapper | Cargo computes the output names itself and would not find the renamed files (no uplift, no `--extern`, rebuild every time); per-package `rustflags` are nightly-only. Rejected. |
-| A `build.rs`-generated crate name | A crate's name is static in `Cargo.toml`. Rejected. |
-| A second `/DEF` with `LIBRARY kubuno_ui-<hash>.dll` passed by `build.rs` | `link.exe` takes one `.def` (rustc's, with the export list); the name would also have to be known before compiling, from sources alone, missing dependency-version changes. Rejected. |
-| Rename after linking + a regenerated import library (`lib /DEF /NAME`) | Needs a hook between the DLL's link and its dependents' - Cargo has none in a plain build - and leaves the DLL recording `kubuno_ui.pdb`, so two builds' PDBs would collide. Rejected as a post-step; kept as the idea. |
-| A side-by-side assembly manifest per exe | Also needs the hash when each exe is linked, plus a manifest per program and per build folder layout. Rejected. |
-| Patching import tables | Last resort, rewrites signed/linked binaries. Rejected. |
-| **A link shim installed by `kubuno-ui`'s own `build.rs`** | Chosen: see below. |
-
-### The link shim (`desktop: src/crates/kubuno-ui/build.rs`)
-
-The build script copies itself to `OUT_DIR\link-shim\link.exe` (with the Rust runtime DLL it needs) and
-emits, through the documented `cargo::rustc-env` instruction, `VCINSTALLDIR`/`VSCMD_ARG_TGT_ARCH` and a
-`PATH` that starts with that folder - for **this package's rustc invocations only** (its lib, tests and
-examples). With `VCINSTALLDIR` set, rustc's MSVC discovery (`find-msvc-tools`, the "developer prompt" rule)
-takes `link.exe` from `PATH`, i.e. the shim. The shim finds the real `link.exe` exactly as rustc would have
-(same crate, the original environment restored) and forwards every link unchanged, except the one whose
-output is `kubuno_ui.dll`:
-- `/OUT:` becomes `kubuno_ui-<hash>.dll`, so the import library records that name, the export directory
-  carries it, and the PDB becomes `kubuno_ui-<hash>.pdb` (rustc links with `/PDBALTPATH:%_PDB%`: the DLL
-  records the PDB's file name, which a debugger looks for beside the DLL);
-- `<hash>` covers every input of that link: the arguments (rustc's temporary folder normalized out) and each
-  input file - its content inside rustc's temporary folder (rewritten on every run: `lib.def`, the metadata
-  and symbol objects), its size and modification time elsewhere (the crate's objects, every dependency rlib,
-  `std`, the natvis files). It therefore changes whenever the DLL is relinked from anything different, which
-  is whenever its ABI can change, and stays the same when nothing did;
-- afterwards `kubuno_ui.dll`/`kubuno_ui.pdb` are re-created (one rename, never missing in between) as hard
-  links to the hashed files: Cargo uplifts them and rustc keeps reading the crate's metadata from
-  `deps\kubuno_ui.dll`. That plain name is only an alias now - no program imports it;
-- the three most recent hashed builds are kept in the output folder, older ones deleted (best effort: a file
-  a running program holds is left for the next link).
-
-The shim travels with the crate: any workspace that builds `kubuno-ui` - the desktop workspace, a template
-project, the designer's design build (which links against `deps\kubuno_ui.dll` and so imports the hashed
-name) - gets it without configuration. It is inert on non-MSVC targets, and a failure to install it only
-warns (the DLL then keeps its plain name). The guard is an integration test of `kubuno-ui`
-(`tests/library_file_name.rs`) asserting that the DLL a test program loaded is `kubuno_ui-<hash>.dll`.
-Changing `PATH` between builds does not rebuild anything (the build script does not track it).
-
-Delay-loading `kubuno_ui` (for a friendlier message than the loader's) is not possible: a Rust dylib exports
-statics, and data imports cannot be delay-loaded (`LNK1194`). The loader's own message is the failure mode.
-
-### Who looks for the DLL, and how
-
-A program's `kubuno_ui` build is read **from the program itself** (its import table), never assumed:
-- **cargo run / cargo test / F5**: nothing to do - Cargo puts `deps` on `PATH`, and so does F5
-  (`RustDebugEnvironment`: profile folder, `deps`, the toolchain's libraries). The debugger loads
-  `deps\kubuno_ui-<hash>.pdb` beside the DLL (verified: a breakpoint in `kubuno_ui::buttons` binds and hits,
-  frame module `…\deps\kubuno_ui-<hash>.dll`, locals shown). `Kubuno.Framework.natjmc` matches
-  `*\kubuno_ui-*.dll` as framework code.
-- **Design build**: `KubunoUiLibrary.ImportedBy(surface exe)` names the copy (section 15); `FindRuntimeProblem`
-  checks that very file; the handshake reports the loaded path through `kubuno_ui::library::module_path()`
-  (`GetModuleHandleExW` on an address inside the library).
-- **VSIX**: `Kubuno.VisualStudio.csproj` reads the name `kubuno-views-ls.exe`, `kubuno-data-tool.exe` and
-  `view_embed.exe` import (a regex over the exe, at evaluation) and ships that file from the build's `deps`
-  folder as `tools\kubuno_ui-<hash>.dll` / `tools\surface\kubuno_ui-<hash>.dll`; the build fails when the
-  two tools of `tools\` import different builds.
-- **Desktop scripts**: `tools/stage-runtime.ps1` copies, next to each exe, the build it imports (with its
-  PDB), removes staged builds no exe imports any more, and lists exes whose build left `deps`;
-  `packaging/package-msix.ps1` ships the name the packaged exe imports; `tools/ui-parity/shoot.ps1` puts
-  `deps` on `PATH`.
-- An exe of a desktop checkout older than this change imports the plain `kubuno_ui.dll`: the design build
-  and the VSIX fall back to that name; `stage-runtime.ps1` reports it as needing a relink.
-
-### Verification (2026-09-30)
-
-Desktop workspace, release, own target folder: all eight programs (`kubuno-desktop`, `drive`, `kubuno-chat`,
-`kubuno-documents`, `kubuno-views-ls`, `kubuno-data-tool`, `gallery`, `view_embed`) import
-`kubuno_ui-c766a537e389ff77.dll`; the gallery and the shell started from staged copies on C: with a
-`PATH` of System32 only. After an ABI-changing edit (a new impl block) and a rebuild, the new gallery
-imported `kubuno_ui-4ce638714d55639b.dll`; both galleries ran **at the same time from the same folder**, each
-with its own DLL loaded, and the old shell kept running on the old one. The new gallery without its DLL
-exits with `0xC0000135`. In an own Visual Studio hive, a copy of `samples/printing-desktop` built through
-the SDK (`printing-desktop.exe` → `kubuno_ui-ab21aba6a20de8c0.dll` in `deps`), F5 stopped on a breakpoint in
-`kubuno_ui::buttons::impl$7::paint` with symbols, and the designer first ran the VSIX's surface on its
-bundled `tools\surface\kubuno_ui-366da9519c380e46.dll`, then the design build's surface on its copy of
-`kubuno_ui-ab21aba6a20de8c0.dll` (SHA-256 equal to the project's), both "ABI check passed".
+Consequences:
+- **One copy of the framework per process**, as before: the dylib existed so that the framework's global
+  state (input queue, focus ring, floating surfaces) existed once per process; a program that links one copy
+  of the crate statically has the same property. The design surface links the project's crate and the
+  `kubuno_*` crates from the same rlibs (same crate hashes), so it holds one copy too.
+- **Size**: each exe carries its own copy of the framework (the CHANGELOG of the desktop repo has the figures).
+- **F5 and Test Explorer**: Kubuno programs need nothing on PATH. The PATH entries F5 and the test adapter
+  still prepend (profile folder, `deps`, the toolchain's library folder - `RustDebugEnvironment`) are the
+  ones `cargo run`/`cargo test` add, kept for any Rust program built with `-C prefer-dynamic`.
+- **Debugging**: the framework's code is in the program's own PDB; Just My Code treats it as external code by
+  function name (`Kubuno.Framework.natjmc`: `kubuno_ui::*`, `kubuno_views::*`, ...), no longer by module.
+- **Guards**: the VSIX build refuses a tool exe that still imports a `kubuno_ui`/`std-*.dll`
+  (`KubunoRustDllImport` in `Kubuno.VisualStudio.csproj`), and so does the desktop repo's
+  `packaging/package-msix.ps1` and the templates test (`tools/test-templates.ps1`).
 
 ## 17. The preview is never blank: tolerant compilation, last good preview, error banner
 

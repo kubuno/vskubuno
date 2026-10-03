@@ -78,8 +78,8 @@ namespace Kubuno.Shared.DevAssistant.Tests
         }
 
         /// <summary>
-        /// Copies the server with the DLLs it imports (kubuno_ui is a Rust dylib, std-*.dll comes from the toolchain) into
-        /// a private folder, as the VSIX ships it in tools\.
+        /// Copies the server into a private folder, as the VSIX ships it in tools\: alone, since it links kubuno_ui and
+        /// Rust's std statically.
         /// </summary>
         private static string Stage(string exe)
         {
@@ -87,20 +87,6 @@ namespace Kubuno.Shared.DevAssistant.Tests
             Directory.CreateDirectory(folder);
             var staged = Path.Combine(folder, Path.GetFileName(exe));
             File.Copy(exe, staged, overwrite: true);
-            var image = File.ReadAllText(exe, Encoding.Latin1);
-            var stdDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib");
-            foreach (var name in System.Text.RegularExpressions.Regex.Matches(image, @"(kubuno_ui(-[0-9a-f]{16})?|std-[0-9a-f]{16})\.dll").Select(m => m.Value).Distinct())
-            {
-                var source = new[] { Path.GetDirectoryName(exe)!, Path.Combine(Path.GetDirectoryName(exe)!, "deps"), stdDir }
-                    .Select(dir => Path.Combine(dir, name)).FirstOrDefault(File.Exists);
-                if (source is null)
-                {
-                    Assert.Inconclusive(name + " (imported by kubuno-views-ls.exe) was not found.");
-                }
-
-                File.Copy(source!, Path.Combine(folder, name), overwrite: true);
-            }
-
             return staged;
         }
 

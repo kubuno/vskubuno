@@ -1,8 +1,5 @@
 using System;
 using System.ComponentModel;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using Kubuno.Views.Logging;
 using Kubuno.Views.Designer;
 using Kubuno.Views.Designer.DesignSurface;
@@ -11,9 +8,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The runtime half of <see cref="RustDesignSurfaceHost"/> (docs/DESIGNER.md section 15): which exe
-    /// the pane runs, the hot swap onto a rebuilt project runtime, and the <c>surfaceInfo</c> ABI
-    /// handshake that refuses a surface whose loaded <c>kubuno_ui.dll</c> is not the one it was linked
-    /// against.
+    /// the pane runs, the hot swap onto a rebuilt project runtime, and the <c>surfaceInfo</c>
+    /// handshake that refuses a surface speaking another protocol version (e.g. one built against a
+    /// <c>kubuno_ui</c> DLL, before the static-linking change).
     /// </summary>
     public sealed partial class RustDesignSurfaceHost : IDesignSurfaceRuntimeAware
     {
@@ -104,23 +101,23 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         /// <summary>Handles the <c>surfaceInfo</c> line (on the stdout reader's thread); false for any other line.</summary>
         private bool TryHandleSurfaceInfo(string line)
         {
-            if (!DesignSurfaceProtocol.TryParseSurfaceInfo(line, out var version, out var uiDll, out var reportedSha))
+            if (!DesignSurfaceProtocol.TryParseSurfaceInfo(line, out var version))
             {
                 if (_handshake == HandshakeState.Waiting)
                 {
                     // Every surface starts with surfaceInfo: one that does not is older than this host.
-                    Refuse("the design surface did not identify its kubuno_ui.dll");
+                    Refuse("the design surface did not send its surfaceInfo handshake");
                 }
 
                 return false;
             }
 
             var runtime = _runtime;
-            var problem = DesignSurfaceProtocol.CheckSurfaceInfo(version, uiDll, reportedSha, runtime.ExePath, runtime.ExpectedUiDllSha256, Sha256OrNull);
+            var problem = DesignSurfaceProtocol.CheckSurfaceInfo(version);
             if (problem is null)
             {
                 _handshake = HandshakeState.Verified;
-                KubunoViewsLogHost.Current.WriteLine($"[designer] design surface uses {uiDll} ({(runtime.IsProjectRuntime ? "the project's runtime" : "the bundled runtime")}; ABI check passed).");
+                KubunoViewsLogHost.Current.WriteLine($"[designer] design surface {runtime.ExePath} ({(runtime.IsProjectRuntime ? "the project's runtime" : "the bundled runtime")}; handshake version {version}, kubuno_ui linked statically).");
             }
             else
             {
@@ -151,27 +148,6 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 _lease.Source.ReportRejected(problem);
             }));
 #pragma warning restore VSTHRD001, VSTHRD110
-        }
-
-        private static string? Sha256OrNull(string path)
-        {
-            try
-            {
-                using var sha = SHA256.Create();
-                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                var hash = sha.ComputeHash(stream);
-                var builder = new StringBuilder(hash.Length * 2);
-                foreach (var b in hash)
-                {
-                    builder.Append(b.ToString("X2", System.Globalization.CultureInfo.InvariantCulture));
-                }
-
-                return builder.ToString();
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                return null;
-            }
         }
 
         protected override void Dispose(bool disposing)

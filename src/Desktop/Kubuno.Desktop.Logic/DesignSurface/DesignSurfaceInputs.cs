@@ -9,11 +9,11 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 {
     /// <summary>
     /// What the design surface is compiled from, picked out of the project build's
-    /// <c>compiler-artifact</c> messages (docs/DESIGNER.md section 15): the project's own
-    /// <c>kubuno_ui.dll</c>, the <c>kubuno_views</c>/<c>kubuno_controls</c> rlibs its graph built (the
-    /// exact variants - a <c>deps</c> folder can hold several hashes of the same crate), the surface
-    /// source that ships with that very <c>kubuno-views</c> (<c>examples/view_embed.rs</c>), and the
-    /// <c>deps</c> folder for every transitive crate.
+    /// <c>compiler-artifact</c> messages (docs/DESIGNER.md section 15): the <c>kubuno_ui</c>,
+    /// <c>kubuno_views</c> and <c>kubuno_controls</c> rlibs the project's graph built (the exact variants -
+    /// a <c>deps</c> folder can hold several hashes of the same crate), the surface source that ships with
+    /// that very <c>kubuno-views</c> (<c>examples/view_embed.rs</c>), and the <c>deps</c> folder for every
+    /// transitive crate. Everything is linked statically into the surface (docs/DESIGNER.md section 16).
     /// </summary>
     public sealed class DesignSurfaceInputs
     {
@@ -24,17 +24,17 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         /// <summary>The surface's source, relative to the <c>kubuno-views</c> package folder.</summary>
         public static readonly string SurfaceSourceRelativePath = Path.Combine("examples", "view_embed.rs");
 
-        private DesignSurfaceInputs(string uiDll, string viewsRlib, string controlsRlib, string depsDirectory, string surfaceSource)
+        private DesignSurfaceInputs(string uiRlib, string viewsRlib, string controlsRlib, string depsDirectory, string surfaceSource)
         {
-            UiDll = uiDll;
+            UiRlib = uiRlib;
             ViewsRlib = viewsRlib;
             ControlsRlib = controlsRlib;
             DepsDirectory = depsDirectory;
             SurfaceSource = surfaceSource;
         }
 
-        /// <summary>The project's <c>kubuno_ui.dll</c> (its <c>deps</c> copy when present: the file rustc linked).</summary>
-        public string UiDll { get; }
+        /// <summary>The project's <c>libkubuno_ui-&lt;hash&gt;.rlib</c>.</summary>
+        public string UiRlib { get; }
 
         public string ViewsRlib { get; }
 
@@ -55,14 +55,15 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         public IReadOnlyList<KeyValuePair<string, string>> Externs => new[]
         {
             new KeyValuePair<string, string>(ControlsCrate, ControlsRlib),
-            new KeyValuePair<string, string>(UiCrate, UiDll),
+            new KeyValuePair<string, string>(UiCrate, UiRlib),
             new KeyValuePair<string, string>(ViewsCrate, ViewsRlib),
         };
 
         /// <summary>
         /// Picks the inputs out of <paramref name="artifacts"/>. <see langword="null"/> with a user-facing
-        /// reason when the project does not use <c>kubuno-views</c>, an input was not built, or this
-        /// <c>kubuno-views</c> ships no design surface. <paramref name="fileExists"/> is injectable for tests.
+        /// reason when the project does not use <c>kubuno-views</c>, an input was not built, the project's
+        /// <c>kubuno-ui</c> is still a Rust dylib (a desktop checkout older than the static-linking change),
+        /// or this <c>kubuno-views</c> ships no design surface. <paramref name="fileExists"/> is injectable for tests.
         /// </summary>
         public static DesignSurfaceInputs? From(IEnumerable<CargoArtifact> artifacts, Func<string, bool> fileExists, out string? reason)
         {
@@ -80,7 +81,13 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             }
 
             var controls = Library(list, ControlsCrate, CargoTargetKind.Lib, ".rlib");
-            var ui = Library(list, UiCrate, "dylib", ".dll");
+            var ui = Library(list, UiCrate, CargoTargetKind.Lib, ".rlib");
+            if (ui is null && Library(list, UiCrate, CargoTargetKind.Dylib, ".dll") is not null)
+            {
+                reason = "this kubuno-ui is built as a Rust dylib (kubuno_ui.dll), which the designer no longer supports: update the desktop checkout (kubuno-ui is linked statically since 2026-10-03)";
+                return null;
+            }
+
             if (controls is null || ui is null)
             {
                 reason = "kubuno-ui or kubuno-controls was not built with the project";
@@ -88,10 +95,6 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             }
 
             var depsDirectory = Path.GetDirectoryName(views.Value.File)!;
-            // Cargo reports the dylib's uplifted copy (<profile>\kubuno_ui.dll); rustc linked the deps one.
-            var depsUi = Path.Combine(depsDirectory, Path.GetFileName(ui.Value.File));
-            var uiDll = fileExists(depsUi) ? depsUi : ui.Value.File;
-
             var viewsPackageDirectory = Path.GetDirectoryName(Path.GetDirectoryName(views.Value.Target.SrcPath) ?? string.Empty);
             if (string.IsNullOrEmpty(viewsPackageDirectory))
             {
@@ -107,7 +110,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             }
 
             reason = null;
-            return new DesignSurfaceInputs(uiDll, views.Value.File, controls.Value.File, depsDirectory, source);
+            return new DesignSurfaceInputs(ui.Value.File, views.Value.File, controls.Value.File, depsDirectory, source);
         }
 
         private static (string File, CargoTarget Target)? Library(List<CargoArtifact> artifacts, string crateName, string kind, string extension)

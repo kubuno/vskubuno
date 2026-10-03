@@ -3,7 +3,7 @@ using Kubuno.Rust.TestAdapter.Execution;
 namespace Kubuno.Rust.TestAdapter.Tests.Execution
 {
     /// <summary>
-    /// A test program of a crate that links a Rust dylib (-C prefer-dynamic, the Kubuno desktop workspace) starts only with the
+    /// A test program of a crate that links a Rust dylib (-C prefer-dynamic) starts only with the
     /// dylib's folder and Rust's std-*.dll folder on PATH.
     /// </summary>
     public class TestProcessEnvironmentTests

@@ -9,7 +9,7 @@ publish = false
 # view binds to), a secret in the OS credential store (`<SecretStore>`) and a Windows Registry key
 # (`<RegistryKey>`), small values (`<KeyValueStore>`) and a file cache (`<FileStore>`), from the designer's
 # "Storage" Toolbox tab. Open storage-desktop.rsproj in Visual Studio (or
-# `cargo run` with CARGO_TARGET_DIR on a local disk: kubuno_ui is a dylib).
+# `cargo run`, with CARGO_TARGET_DIR on a local disk when the sources are on a share).
 #
 #   KUBUNO_SANDBOX_DIR=C:\temp\sbx storage-desktop.exe     everything (files, Registry, secrets) under the sandbox
 #   storage-desktop.exe --self-test C:\temp\report.txt     exercises the components and the typed class, writes a

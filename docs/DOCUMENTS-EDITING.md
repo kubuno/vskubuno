@@ -69,8 +69,8 @@ by its caller (the core never reads a clock).
 ## 2. Increments
 
 Each increment is verified before the next: `cargo test` (core + documents), `cargo clippy -- -D warnings`, the
-core's cross-target `cargo check`, real runs with captures in light and dark, then `dist\kubuno-documents.exe` and its
-`kubuno_ui-<hash>.dll` refreshed.
+core's cross-target `cargo check`, real runs with captures in light and dark, then `dist\kubuno-documents.exe`
+refreshed (a self-contained exe: kubuno-ui is linked statically).
 
 ### A — editable pages
 

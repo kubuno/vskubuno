@@ -43,7 +43,7 @@ namespace Kubuno.Views.Designer.UI
         private readonly ToggleButton _xmlTab;
         private readonly ToggleButton _splitTab;
         // The runtime info bar (docs/DESIGNER.md section 15): shown while the preview does not run on the
-        // project's own kubuno_ui.dll, with the action that gets it there ("Générer") or cancels the build.
+        // project's own kubuno_ui build, with the action that gets it there ("Générer") or cancels the build.
         private readonly Border _runtimeBar;
         private readonly TextBlock _runtimeBarText;
         private readonly Hyperlink _runtimeBarLink;

@@ -349,18 +349,13 @@ foreach ($dir in Get-ChildItem $templatesRoots -Directory) {
                 }
                 'KubunoDesktopApplication' {
                     $profileDir = Join-Path $cargoTarget 'debug'
-                    # The exe imports its own build of the shared library, kubuno_ui-<hash>.dll (docs/DESIGNER.md
-                    # section 16), which the build leaves in deps\ - never the plain kubuno_ui.dll (Cargo's alias).
+                    # The exe links kubuno_ui and Rust's std statically (docs/DESIGNER.md section 16): it imports
+                    # no Rust DLL and starts with an unchanged PATH.
                     $exeText = [Text.Encoding]::GetEncoding(28591).GetString([IO.File]::ReadAllBytes($exe))
-                    $uiName = [regex]::Match($exeText, 'kubuno_ui-[0-9a-f]{16}\.dll').Value
-                    if (-not $uiName) { $failures += "run: $exe does not import a kubuno_ui-<hash>.dll" }
-                    elseif (-not (Test-Path (Join-Path $profileDir "deps\$uiName"))) { $failures += "run: $uiName (imported by $exe) missing from $profileDir\deps" }
-                    if (-not (Get-ChildItem $stdDir -Filter 'std-*.dll')) { $failures += "run: no std-*.dll in $stdDir" }
+                    $rustDll = [regex]::Match($exeText, 'kubuno_ui(-[0-9a-f]{16})?\.dll|std-[0-9a-f]{16}\.dll').Value
+                    if ($rustDll) { $failures += "run: $exe imports $rustDll (kubuno_ui must be linked statically)" }
                     if (-not $failures) {
-                        # Same PATH as F5 (Kubuno.Rust.Launch.RustDebugEnvironment): profile dir, deps, Rust std.
-                        $savedPath = $env:PATH
-                        $env:PATH = "$profileDir;$profileDir\deps;$stdDir;$env:PATH"
-                        try { $proc = Start-Process -FilePath $exe -PassThru } finally { $env:PATH = $savedPath }
+                        $proc = Start-Process -FilePath $exe -PassThru
                         Start-Sleep -Seconds 6
                         $proc.Refresh()
                         if ($proc.HasExited) { $failures += "run: exited early (exit $($proc.ExitCode))" }
@@ -401,8 +396,8 @@ foreach ($dir in Get-ChildItem $templatesRoots -Directory) {
             if ($code -ne 0) { $failures += "MSBuild failed (exit $code, see $log)" }
             elseif ($msWarnings.Count) { $failures += "MSBuild: $($msWarnings.Count) warning(s) (see $log)" }
             else { "   MSBuild .rsproj: OK" }
-            # A dylib (kubuno_ui.dll) is named without a hash: it must never land in the shared directory.
-            if (Test-Path (Join-Path $sharedTarget 'debug\kubuno_ui.dll')) { $failures += "MSBuild built kubuno_ui.dll into the SHARED target directory $sharedTarget (E0463 hazard: the project needs its own)" }
+            # A Kubuno desktop project builds into its own subfolder of CARGO_TARGET_DIR (rsproj\<crate>), never its root.
+            if ($dir.Name -eq 'KubunoDesktopApplication' -and (Test-Path (Join-Path $sharedTarget 'debug'))) { $failures += "MSBuild built into the root of the SHARED target directory $sharedTarget (the project must use its own subfolder)" }
         }
     }
     catch { $failures += $_.Exception.Message }

@@ -12,6 +12,6 @@ edition = "2021"
 # message when that folder is missing). Once the crates publish git tags, this becomes
 # `kubuno = { git = "https://github.com/kubuno/desktop", tag = "..." }`.
 #
-# Kubuno's UI library is a Rust dylib (`kubuno_ui.dll`): this project must build into its OWN target
-# directory, never into the desktop workspace's (the .rsproj takes care of it - see its comment).
+# Kubuno's UI library is linked statically: the built exe needs no DLL beside it. This project builds
+# into its OWN target directory, apart from the desktop workspace's (the .rsproj - see its comment).
 kubuno = { path = "$kubunodesktopsrc$/src/crates/kubuno" }

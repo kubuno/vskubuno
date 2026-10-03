@@ -202,9 +202,9 @@ hit-testing.
 
 ## 4. The component metadata registry
 
-Given `kubuno-ui/Cargo.toml` deliberately keeps the dylib's dependency list
+Given `kubuno-ui/Cargo.toml` deliberately keeps its dependency list
 to `kubuno-controls`, `drive-app-controls`, `windows-numerics` and `windows`
-(it ships as one shared `kubuno_ui.dll` every app loads), the registry must
+(it is linked into every app), the registry must
 **not** live inside `kubuno_ui` itself and must not pull `syn`/`quote` into
 that crate. It belongs in a new sibling crate (e.g. `kubuno-views`) that
 depends on `kubuno-ui`, never the reverse — the same layering

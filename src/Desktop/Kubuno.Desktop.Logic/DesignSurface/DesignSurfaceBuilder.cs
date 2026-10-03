@@ -15,10 +15,10 @@ namespace Kubuno.Desktop.Logic.DesignSurface
     /// <summary>Outcome of <see cref="DesignSurfaceBuilder"/>.</summary>
     public enum DesignSurfaceBuildStatus
     {
-        /// <summary>A surface linked against the project's own <c>kubuno_ui.dll</c> is ready.</summary>
+        /// <summary>A surface statically linked against the project's own <c>kubuno_ui</c> build is ready.</summary>
         Ready,
 
-        /// <summary>The project has not been built yet (no <c>kubuno_ui.dll</c> in its profile folder).</summary>
+        /// <summary>The project has not been built yet (no <c>kubuno_ui</c> rlib in its profile's <c>deps</c> folder).</summary>
         NotBuilt,
 
         /// <summary>The project does not use <c>kubuno-views</c>, or its <c>kubuno-views</c> ships no surface.</summary>
@@ -29,14 +29,12 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         Canceled,
     }
 
-    /// <summary>A ready design surface: the exe and the folder holding it with its own copy of the project's <c>kubuno_ui.dll</c>.</summary>
+    /// <summary>A ready design surface: a self-contained exe (it links <c>kubuno_ui</c> and <c>std</c> statically) in its own folder.</summary>
     public sealed class DesignSurfaceBuild
     {
-        public DesignSurfaceBuild(string exePath, string uiDllSha256, string uiDllSource)
+        public DesignSurfaceBuild(string exePath)
         {
             ExePath = exePath;
-            UiDllSha256 = uiDllSha256;
-            UiDllSource = uiDllSource;
         }
 
         /// <summary>The project crate linked into the surface (EVT-7b: its controls render for real), null when it could not be.</summary>
@@ -48,18 +46,6 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         public string ExePath { get; }
 
         public string Directory => Path.GetDirectoryName(ExePath) ?? ExePath;
-
-        /// <summary>SHA-256 of the <c>kubuno_ui.dll</c> the exe was linked against (upper-case hex).</summary>
-        public string UiDllSha256 { get; }
-
-        /// <summary>The project's <c>kubuno_ui.dll</c> that was copied next to the exe.</summary>
-        public string UiDllSource { get; }
-
-        /// <summary>
-        /// The name the copy has next to the exe: the one the exe imports, <c>kubuno_ui-&lt;hash&gt;.dll</c>
-        /// (<see cref="KubunoUiLibrary"/>), or the plain name for a <c>kubuno-ui</c> built before per-build names.
-        /// </summary>
-        public string UiDllFileName { get; set; } = KubunoUiLibrary.PlainFileName;
     }
 
     public sealed class DesignSurfaceBuildResult
@@ -80,34 +66,25 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
     /// <summary>
     /// The design-time build of the <c>.kbview</c> designer's surface (docs/DESIGNER.md section 15): the
-    /// surface is compiled against the project's OWN dependency graph so that it links, and then loads,
-    /// the very <c>kubuno_ui.dll</c> the project's application loads - a Rust dylib has no stable ABI.
+    /// surface is compiled against the project's OWN dependency graph, so that it renders with exactly the
+    /// <c>kubuno_ui</c> build (and the project's own controls) the project's application links.
     ///
     /// <para>Steps: (1) re-run the project's own cargo build (<see cref="CargoCommandFor"/>, identical to
-    /// the SDK's, so it is a no-op right after a Visual Studio build and never rebuilds
-    /// <c>kubuno_ui.dll</c> differently) and read its <c>compiler-artifact</c> messages; (2) compile
-    /// <c>kubuno-views/examples/view_embed.rs</c> with <c>rustc</c> directly against those exact
-    /// artifacts (<see cref="RustcArgumentsFor"/>: no cargo, so nothing in the project's target folder
-    /// is rebuilt or overwritten - the surface needs no crate or <c>windows</c> feature the graph lacks);
-    /// (3) put the exe, a byte-identical copy of the project's <c>kubuno_ui.dll</c> under the name the exe
-    /// imports (<c>kubuno_ui-&lt;hash&gt;.dll</c>, <see cref="KubunoUiLibrary"/>) and the toolchain's
-    /// <c>std-*.dll</c> in <c>&lt;target dir&gt;\kubuno-design\&lt;profile&gt;\&lt;key&gt;\</c>. A copy, the
-    /// way the WinForms designer shadow-copies assemblies: a surface that loaded the project's own
-    /// <c>deps\kubuno_ui.dll</c> would lock it, and the project's next build could not replace it.
-    /// Outside the profile folder, so the SDK's <c>cargo clean --profile</c> never meets a file a running
+    /// the SDK's, so it is a no-op right after a Visual Studio build) and read its <c>compiler-artifact</c>
+    /// messages; (2) compile <c>kubuno-views/examples/view_embed.rs</c> with <c>rustc</c> directly against
+    /// those exact rlibs (<see cref="RustcArgumentsFor(DesignSurfaceInputs, string, string)"/>: no cargo, so
+    /// nothing in the project's target folder is rebuilt or overwritten - the surface needs no crate or
+    /// <c>windows</c> feature the graph lacks). Everything is linked statically (docs/DESIGNER.md section 16):
+    /// the exe is the whole surface. It is written to <c>&lt;target dir&gt;\kubuno-design\&lt;profile&gt;\&lt;key&gt;\</c>,
+    /// outside the profile folder, so the SDK's <c>cargo clean --profile</c> never meets a file a running
     /// surface holds. The key hashes every input, so an unchanged project reuses the folder
     /// (<see cref="TryReuse"/>, no process at all).</para>
     /// </summary>
     public sealed class DesignSurfaceBuilder
     {
         public const string ExeName = "kubuno-design-surface.exe";
-
-        /// <summary>The name Cargo gives the project's dylib (an alias of its latest <c>kubuno_ui-&lt;hash&gt;.dll</c>).</summary>
-        public const string UiDllName = KubunoUiLibrary.PlainFileName;
         public const string DesignFolderName = "kubuno-design";
         public const string CurrentFileName = "current.json";
-        /// <summary>The compile-time variable <c>view_embed.rs</c>'s <c>surfaceInfo</c> handshake embeds.</summary>
-        public const string UiDllShaVariable = "KUBUNO_DESIGN_UI_DLL_SHA256";
 
         /// <summary>The compile-time variable naming the generated file that links the project crate (EVT-7b, <c>view_embed.rs</c>'s <c>mod project</c>).</summary>
         public const string ProjectIncludeVariable = "KUBUNO_DESIGN_PROJECT_RS";
@@ -129,11 +106,18 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         public static string DesignDirectory(string targetDirectory, string profileDirectoryName) =>
             Path.Combine(targetDirectory, DesignFolderName, profileDirectoryName);
 
-        /// <summary>Whether the project's profile folder holds a built <c>kubuno_ui.dll</c> (cheap, no process).</summary>
+        /// <summary>Whether the project's profile folder holds a built <c>kubuno_ui</c> rlib (cheap, no process).</summary>
         public static bool IsProjectBuilt(DesignSurfaceProject project)
         {
-            var profile = Path.Combine(project.EffectiveExpectedTargetDirectory, project.EffectiveProfileDirectoryName);
-            return File.Exists(Path.Combine(profile, "deps", UiDllName)) || File.Exists(Path.Combine(profile, UiDllName));
+            var deps = Path.Combine(project.EffectiveExpectedTargetDirectory, project.EffectiveProfileDirectoryName, "deps");
+            try
+            {
+                return Directory.Exists(deps) && Directory.EnumerateFiles(deps, "lib" + DesignSurfaceInputs.UiCrate + "-*.rlib").Any();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -151,15 +135,15 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
             var folder = Path.Combine(designDirectory, stamp.Key);
             var exe = Path.Combine(folder, ExeName);
-            return File.Exists(exe) && File.Exists(Path.Combine(folder, stamp.UiDllFileName)) && File.Exists(Path.Combine(folder, DesignSurfaceStamp.FileName))
+            return File.Exists(exe) && File.Exists(Path.Combine(folder, DesignSurfaceStamp.FileName))
                 && stamp.InputsUnchanged(DesignSurfaceStamp.DescribeFile)
-                ? new DesignSurfaceBuild(exe, stamp.UiDllSha256, stamp.UiDllSource) { ProjectCrate = stamp.ProjectCrate, UiDllFileName = stamp.UiDllFileName }
+                ? new DesignSurfaceBuild(exe) { ProjectCrate = stamp.ProjectCrate }
                 : null;
         }
 
         /// <summary>
         /// Drops the last design build of <paramref name="project"/> (its <c>current.json</c> and folder, best
-        /// effort) - after a surface failed the ABI handshake, so the next design build compiles afresh.
+        /// effort) - after a surface failed the handshake, so the next design build compiles afresh.
         /// </summary>
         public static void Forget(DesignSurfaceProject project)
         {
@@ -212,8 +196,8 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         /// <summary>
         /// <c>rustc</c> arguments compiling the surface against <paramref name="inputs"/>: the three
         /// <c>kubuno_*</c> crates by exact path, everything else resolved in the project's <c>deps</c>
-        /// folder by the crate hashes recorded in them; <c>-C prefer-dynamic</c> like every Kubuno app
-        /// (one <c>std</c> shared with <c>kubuno_ui.dll</c>). Optimized for a release profile only.
+        /// folder by the crate hashes recorded in them, all linked statically like every Kubuno program
+        /// (no <c>-C prefer-dynamic</c>: the exe needs no DLL). Optimized for a release profile only.
         /// </summary>
         public static IReadOnlyList<string> RustcArgumentsFor(DesignSurfaceInputs inputs, string outputExe, string profile) =>
             RustcArgumentsFor(inputs, outputExe, profile, null, null);
@@ -222,32 +206,43 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         /// <see cref="RustcArgumentsFor(DesignSurfaceInputs, string, string)"/>, linking the project crate compiled
         /// at <paramref name="projectRlib"/> too (EVT-7b): <c>--cfg kubuno_design_project</c> turns on the surface's
         /// <c>mod project</c>, whose generated file (<see cref="ProjectIncludeVariable"/>) names the crate and its
-        /// libraries.
+        /// libraries. <paramref name="nativeLinkPaths"/> are the library search paths the graph's build scripts
+        /// asked for (<c>cargo:rustc-link-search</c>, e.g. import libraries): the surface links the whole graph
+        /// itself, so it needs them too.
         /// </summary>
-        public static IReadOnlyList<string> RustcArgumentsFor(DesignSurfaceInputs inputs, string outputExe, string profile, DesignProjectCrate? project, string? projectRlib)
+        public static IReadOnlyList<string> RustcArgumentsFor(DesignSurfaceInputs inputs, string outputExe, string profile, DesignProjectCrate? project, string? projectRlib, IReadOnlyList<string>? nativeLinkPaths = null)
         {
             var args = BaseRustcArguments(inputs, outputExe, profile).ToList();
-            if (project is null || projectRlib is null)
+            var linkProject = project is not null && projectRlib is not null;
+            var extra = new List<string>();
+            if (linkProject)
             {
-                return args;
+                extra.AddRange(new[] { "--cfg", "kubuno_design_project", "--extern", project!.CrateName + "=" + projectRlib });
             }
 
-            var output = args.Count - 2;
-            var extra = new List<string> { "--cfg", "kubuno_design_project", "--extern", project.CrateName + "=" + projectRlib };
-            foreach (var path in project.NativeLinkPaths)
+            var searchPaths = new List<string>();
+            foreach (var path in (nativeLinkPaths ?? Array.Empty<string>()).Concat(linkProject ? project!.NativeLinkPaths : Array.Empty<string>()))
             {
-                extra.Add("-L");
-                extra.Add(path);
+                if (!searchPaths.Contains(path, StringComparer.OrdinalIgnoreCase))
+                {
+                    searchPaths.Add(path);
+                    extra.Add("-L");
+                    extra.Add(path);
+                }
             }
 
-            foreach (var dependency in project.LinkedDependencies)
+            if (linkProject)
             {
-                var path = project.Externs.First(e => e.Key == dependency).Value;
-                extra.Add("--extern");
-                extra.Add(dependency + "=" + path);
+                foreach (var dependency in project!.LinkedDependencies)
+                {
+                    var path = project.Externs.First(e => e.Key == dependency).Value;
+                    extra.Add("--extern");
+                    extra.Add(dependency + "=" + path);
+                }
             }
 
-            args.InsertRange(output, extra);
+            // Before `-o <exe>`.
+            args.InsertRange(args.Count - 2, extra);
             return args;
         }
 
@@ -259,7 +254,6 @@ namespace Kubuno.Desktop.Logic.DesignSurface
                 "--crate-name", "kubuno_design_surface",
                 "--crate-type", "bin",
                 inputs.SurfaceSource,
-                "-C", "prefer-dynamic",
                 "-C", string.Equals(profile, "release", StringComparison.Ordinal) ? "opt-level=3" : "opt-level=0",
                 // Full debug info outside release (docs/DEBUGGING.md, "Debugging the design surface"): a custom control's
                 // code runs in the surface, and a developer attaching the debugger to kubuno-design-surface.exe gets a PDB.
@@ -279,11 +273,10 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         }
 
         /// <summary>The design folder's name: a hash of every input, the toolchain and the compile options.</summary>
-        public static string ComputeKey(string uiDllSha256, IEnumerable<DesignSurfaceStampInput> inputs, string rustc, string profile)
+        public static string ComputeKey(IEnumerable<DesignSurfaceStampInput> inputs, string rustc, string profile)
         {
             var text = new StringBuilder()
                 .Append(DesignSurfaceStamp.CurrentVersion).Append('\n')
-                .Append(uiDllSha256).Append('\n')
                 .Append(rustc).Append('\n')
                 .Append(profile).Append('\n');
             foreach (var input in inputs)
@@ -293,13 +286,6 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
             using var sha = SHA256.Create();
             return ToHex(sha.ComputeHash(Encoding.UTF8.GetBytes(text.ToString()))).Substring(0, 16).ToLowerInvariant();
-        }
-
-        public static string Sha256OfFile(string path)
-        {
-            using var sha = SHA256.Create();
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            return ToHex(sha.ComputeHash(stream));
         }
 
         /// <summary>
@@ -373,9 +359,11 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             var cargoResult = await _runner.RunAsync(cargoRequest, cargoProgress, cancellationToken).ConfigureAwait(false);
 
             List<CargoArtifact> snapshot;
+            List<string> nativeLinkPaths;
             lock (artifacts)
             {
                 snapshot = artifacts.ToList();
+                nativeLinkPaths = linkPaths.ToList();
             }
 
             var inputs = DesignSurfaceInputs.From(snapshot, File.Exists, out var reason);
@@ -402,8 +390,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             var rustc = Environment.GetEnvironmentVariable("RUSTC");
             rustc = string.IsNullOrWhiteSpace(rustc) ? "rustc" : rustc!;
             var version = await RunSimpleAsync(rustc, "-vV", project.ManifestDirectory, cancellationToken).ConfigureAwait(false);
-            var sysroot = (await RunSimpleAsync(rustc, "--print sysroot", project.ManifestDirectory, cancellationToken).ConfigureAwait(false)).Trim();
-            if (version.Length == 0 || sysroot.Length == 0)
+            if (version.Length == 0)
             {
                 return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Failed, null, "rustc could not be run");
             }
@@ -412,45 +399,39 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             var projectCrate = await ReadProjectCrateAsync(project, snapshot, log, cancellationToken).ConfigureAwait(false);
             if (projectCrate is not null)
             {
-                lock (artifacts)
-                {
-                    projectCrate.NativeLinkPaths = linkPaths.ToList();
-                }
+                projectCrate.NativeLinkPaths = nativeLinkPaths;
             }
 
-            var uiSha = Sha256OfFile(inputs.UiDll);
-            var stampInputs = new[] { inputs.UiDll, inputs.ViewsRlib, inputs.ControlsRlib, inputs.SurfaceSource }
+            var stampInputs = new[] { inputs.UiRlib, inputs.ViewsRlib, inputs.ControlsRlib, inputs.SurfaceSource }
                 .Concat(projectCrate is null ? Array.Empty<string>() : new[] { projectCrate.StampFile })
                 .Select(path => DesignSurfaceStamp.DescribeFile(path) is { } d
                     ? new DesignSurfaceStampInput { Path = path, Length = d.Length, LastWriteUtcTicks = d.LastWriteUtcTicks }
                     : throw new IOException($"'{path}' disappeared during the design build"))
                 .ToList();
             var versionLine = version.Split('\n')[0].Trim();
-            var key = ComputeKey(uiSha, stampInputs, version, project.Profile);
+            var key = ComputeKey(stampInputs, version, project.Profile);
             var designDirectory = DesignDirectory(inputs.TargetDirectory, Path.GetFileName(inputs.ProfileDirectory));
             var folder = Path.Combine(designDirectory, key);
-            var stamp = new DesignSurfaceStamp { Key = key, UiDllSha256 = uiSha, UiDllSource = inputs.UiDll, Rustc = versionLine, Inputs = stampInputs };
+            var stamp = new DesignSurfaceStamp { Key = key, Rustc = versionLine, Inputs = stampInputs };
             var exe = Path.Combine(folder, ExeName);
 
             var existing = File.Exists(exe) ? ReadStamp(Path.Combine(folder, DesignSurfaceStamp.FileName)) : null;
-            if (existing is not null
-                && File.Exists(Path.Combine(folder, existing.UiDllFileName))
-                && string.Equals(Sha256OfFile(Path.Combine(folder, existing.UiDllFileName)), uiSha, StringComparison.Ordinal))
+            if (existing is not null)
             {
                 log?.Report($"[design build] up to date: {folder}");
                 stamp.ProjectCrate = existing.ProjectCrate;
-                stamp.UiDllFileName = existing.UiDllFileName;
             }
             else
             {
-                // 3. Compile into a scratch folder, then publish it in one move.
+                // 3. Compile into a scratch folder, then publish it in one move. The exe (and its PDB) is the
+                // whole surface: kubuno_ui and std are linked statically, no DLL is copied beside it.
                 Directory.CreateDirectory(designDirectory);
                 var scratch = folder + ".tmp-" + Guid.NewGuid().ToString("N").Substring(0, 8);
                 Directory.CreateDirectory(scratch);
                 try
                 {
                     var scratchExe = Path.Combine(scratch, ExeName);
-                    var surfaceEnvironment = new Dictionary<string, string> { [UiDllShaVariable] = uiSha };
+                    var surfaceEnvironment = new Dictionary<string, string>();
                     string? projectRlib = null;
                     if (projectCrate is not null)
                     {
@@ -464,7 +445,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
                         }
                     }
 
-                    var rustcLine = new CargoCommandLine(rustc, RustcArgumentsFor(inputs, scratchExe, project.Profile, projectRlib is null ? null : projectCrate, projectRlib));
+                    var rustcLine = new CargoCommandLine(rustc, RustcArgumentsFor(inputs, scratchExe, project.Profile, projectRlib is null ? null : projectCrate, projectRlib, nativeLinkPaths));
                     log?.Report("[design build] " + rustcLine);
                     var rustcRequest = new ProcessRunRequest(rustcLine.FileName, rustcLine.Arguments)
                     {
@@ -475,36 +456,6 @@ namespace Kubuno.Desktop.Logic.DesignSurface
                     if (!rustcResult.Succeeded || !File.Exists(scratchExe))
                     {
                         return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Failed, null, $"rustc failed to compile the design surface (exit code {rustcResult.ExitCode})");
-                    }
-
-                    // The copy takes the name the exe imports: kubuno_ui-<hash>.dll, the build's own name (the
-                    // project's deps\kubuno_ui.dll is Cargo's alias of it), or kubuno_ui.dll for an older kubuno-ui.
-                    var uiName = KubunoUiLibrary.ImportedBy(scratchExe);
-                    if (uiName is null)
-                    {
-                        return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Failed, null, $"the design surface does not import kubuno_ui ({scratchExe})");
-                    }
-
-                    File.Copy(inputs.UiDll, Path.Combine(scratch, uiName), overwrite: true);
-                    if (!string.Equals(Sha256OfFile(Path.Combine(scratch, uiName)), uiSha, StringComparison.Ordinal))
-                    {
-                        return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Failed, null, "kubuno_ui.dll changed while the design surface was being built; build again");
-                    }
-
-                    stamp.UiDllFileName = uiName;
-
-                    // Its PDB, under the name the DLL records (kubuno_ui-<hash>.pdb, looked for beside the DLL), so a
-                    // debugger attached to the surface has kubuno_ui's symbols (docs/DEBUGGING.md, "Debugging the design surface").
-                    var uiPdb = Path.Combine(inputs.DepsDirectory, Path.ChangeExtension(uiName, ".pdb"));
-                    if (!string.Equals(uiName, UiDllName, StringComparison.OrdinalIgnoreCase) && File.Exists(uiPdb))
-                    {
-                        File.Copy(uiPdb, Path.Combine(scratch, Path.GetFileName(uiPdb)), overwrite: true);
-                    }
-
-                    var sysrootBin = Path.Combine(sysroot, "bin");
-                    foreach (var std in Directory.Exists(sysrootBin) ? Directory.GetFiles(sysrootBin, "std-*.dll") : Array.Empty<string>())
-                    {
-                        File.Copy(std, Path.Combine(scratch, Path.GetFileName(std)), overwrite: true);
                     }
 
                     // The registry the surface knows (its linked project controls included): the Toolbox's project tab.
@@ -526,8 +477,8 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
             File.WriteAllText(Path.Combine(designDirectory, CurrentFileName), stamp.ToJson());
             RemoveStaleFolders(designDirectory, key, log);
-            log?.Report($"[design build] design surface ready: {exe} ({stamp.UiDllFileName} {uiSha.Substring(0, 12)}...)");
-            return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Ready, new DesignSurfaceBuild(exe, uiSha, inputs.UiDll) { ProjectCrate = stamp.ProjectCrate, UiDllFileName = stamp.UiDllFileName }, "ready");
+            log?.Report($"[design build] design surface ready: {exe}");
+            return new DesignSurfaceBuildResult(DesignSurfaceBuildStatus.Ready, new DesignSurfaceBuild(exe) { ProjectCrate = stamp.ProjectCrate }, "ready");
         }
 
         /// <summary>

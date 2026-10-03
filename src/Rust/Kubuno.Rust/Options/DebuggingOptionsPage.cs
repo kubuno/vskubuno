@@ -25,7 +25,7 @@ namespace Kubuno.Rust.Options
         [Category("Just My Code")]
         [DisplayName("Treat the Kubuno framework as external code")]
         [Description("Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno " +
-            "framework (kubuno_views, kubuno_controls, kubuno_ui.dll, the event-handler dispatch glue) into [External Code] " +
+            "framework (kubuno_views, kubuno_controls, kubuno_ui, the event-handler dispatch glue) into [External Code] " +
             "and Step Into (F11) goes over it, straight to your handlers. Turn it off to debug Kubuno itself. The Rust " +
             "standard library is always stepped over. Takes effect at the next debug session.")]
         [DefaultValue(true)]

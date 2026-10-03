@@ -274,19 +274,20 @@ namespace Kubuno.Views.Designer.DesignSurface
         private static string? OptionalString(JsonElement element, string name) =>
             element.TryGetProperty(name, out var prop) && prop.ValueKind == JsonValueKind.String ? prop.GetString() : null;
 
-        /// <summary>The <c>surfaceInfo</c> handshake version this host speaks (<c>SURFACE_INFO_VERSION</c> in <c>view_embed.rs</c>).</summary>
-        public const int SurfaceInfoVersion = 1;
+        /// <summary>
+        /// The <c>surfaceInfo</c> handshake version this host speaks (<c>SURFACE_INFO_VERSION</c> in <c>view_embed.rs</c>).
+        /// 2: the surface links <c>kubuno_ui</c> statically. Version 1 surfaces loaded a <c>kubuno_ui-&lt;hash&gt;.dll</c>
+        /// (a desktop checkout older than 2026-10-03) and are refused.
+        /// </summary>
+        public const int SurfaceInfoVersion = 2;
 
         /// <summary>
         /// Parses the <c>surfaceInfo</c> handshake (docs/DESIGNER.md section 15), the first line a surface
-        /// writes: <c>{type, version, uiDll, uiDllSha256}</c> - the loaded <c>kubuno_ui-&lt;hash&gt;.dll</c>'s path and
-        /// the SHA-256 of the one the exe was linked against (null when not built by the design build).
+        /// writes: <c>{type, version}</c>. Other properties (version 1's <c>uiDll</c>/<c>uiDllSha256</c>) are ignored.
         /// </summary>
-        public static bool TryParseSurfaceInfo(string line, out int version, out string? uiDll, out string? uiDllSha256)
+        public static bool TryParseSurfaceInfo(string line, out int version)
         {
             version = 0;
-            uiDll = null;
-            uiDllSha256 = null;
             if (!TryParseAsType(line, "surfaceInfo", out var root))
             {
                 return false;
@@ -297,68 +298,20 @@ namespace Kubuno.Views.Designer.DesignSurface
                 version = v;
             }
 
-            if (root.TryGetProperty("uiDll", out var dllProp) && dllProp.ValueKind == JsonValueKind.String)
-            {
-                uiDll = dllProp.GetString();
-            }
-
-            if (root.TryGetProperty("uiDllSha256", out var shaProp) && shaProp.ValueKind == JsonValueKind.String)
-            {
-                uiDllSha256 = shaProp.GetString();
-            }
-
             return true;
         }
 
         /// <summary>
-        /// The ABI check of the <c>surfaceInfo</c> handshake: <see langword="null"/> when the surface may run,
-        /// else why it must not. The DLL it loaded must be the copy next to its exe (never another
-        /// build of <c>kubuno_ui</c> found on PATH), and when a hash is known - the design build's, recorded by the
-        /// host (<paramref name="expectedSha256"/>) and embedded in the exe (<paramref name="reportedSha256"/>) -
-        /// the loaded file must have it. <paramref name="loadedSha256"/> hashes the loaded file (injectable
-        /// for tests); it is only called when a hash is expected.
+        /// The check of the <c>surfaceInfo</c> handshake: <see langword="null"/> when the surface may run, else
+        /// why it must not. The surface links <c>kubuno_ui</c> statically, from the project's own build, so
+        /// there is no DLL to compare any more: only the protocol version matters.
         /// </summary>
-        public static string? CheckSurfaceInfo(int version, string? uiDll, string? reportedSha256, string exePath, string? expectedSha256, Func<string, string?> loadedSha256)
-        {
-            if (version != SurfaceInfoVersion)
-            {
-                return $"handshake version {version}, expected {SurfaceInfoVersion}";
-            }
-
-            if (string.IsNullOrEmpty(uiDll))
-            {
-                return "the surface did not report its kubuno_ui.dll";
-            }
-
-            var exeDirectory = System.IO.Path.GetDirectoryName(exePath) ?? string.Empty;
-            if (!string.Equals(System.IO.Path.GetDirectoryName(uiDll), exeDirectory, StringComparison.OrdinalIgnoreCase))
-            {
-                return $"loaded {uiDll} instead of the copy in {exeDirectory}";
-            }
-
-            if (expectedSha256 is not null && reportedSha256 is not null && !string.Equals(expectedSha256, reportedSha256, StringComparison.OrdinalIgnoreCase))
-            {
-                return $"the exe was linked against {Short(reportedSha256)}, the design build recorded {Short(expectedSha256)}";
-            }
-
-            var expected = expectedSha256 ?? reportedSha256;
-            if (expected is null)
-            {
-                return null;
-            }
-
-            var actual = loadedSha256(uiDll!);
-            if (actual is null)
-            {
-                return $"{uiDll} could not be read";
-            }
-
-            return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase)
+        public static string? CheckSurfaceInfo(int version) =>
+            version == SurfaceInfoVersion
                 ? null
-                : $"loaded {System.IO.Path.GetFileName(uiDll)} {Short(actual)}, linked against {Short(expected)}";
-        }
-
-        private static string Short(string sha) => sha.Length > 12 ? sha.Substring(0, 12) : sha;
+                : version < SurfaceInfoVersion
+                    ? $"handshake version {version}, expected {SurfaceInfoVersion}: the surface was built against a kubuno_ui DLL (update the desktop checkout and build again)"
+                    : $"handshake version {version}, expected {SurfaceInfoVersion}: update the Kubuno extension";
 
         /// <summary>
         /// Parses `line` as JSON and checks its `type` property equals `expectedType` - the one place

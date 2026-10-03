@@ -12,8 +12,8 @@ namespace Kubuno.Rust.TestAdapter.Discovery
     /// <summary>
     /// Which packages of a workspace must build their tests apart from the others (docs/RSPROJ.md, "Cargo workspaces").
     /// cargo names a <c>dylib</c> without a hash, and resolver 2 resolves the dependencies of a proc-macro separately
-    /// (host dependencies). A proc-macro whose tests use the workspace's dylib (the Kubuno desktop workspace's
-    /// <c>kubuno-views-macros</c>, whose dev-dependency <c>kubuno-views</c> uses <c>kubuno_ui.dll</c>) makes
+    /// (host dependencies). A proc-macro whose tests use the workspace's dylib (as the Kubuno desktop workspace's
+    /// <c>kubuno-views-macros</c> did while <c>kubuno-ui</c> was a dylib, before 2026-10-03) makes
     /// <c>cargo test --workspace</c> build that dylib twice into the same file - "output filename collision", then a link
     /// failure (LNK1104) - and no test of the workspace can be listed. Such packages are excluded from the workspace
     /// build and built on their own, each in a target directory of its own under the workspace's. And the tests of a

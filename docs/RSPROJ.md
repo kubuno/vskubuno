@@ -929,6 +929,10 @@ dynamically when a dylib dependency needs it (the exe imports `kubuno_ui.dll` an
 `std-<hash>.dll`, verified with `dumpbin /dependents`). The clobbering also works the other way (a
 template project build can break the next desktop-workspace build).
 
+*Update 2026-10-03:* `kubuno-ui` is now an ordinary rlib linked statically (docs/DESIGNER.md section 16). Its
+builds have hashed file names like every rlib, so this collision can no longer happen; the template keeps its own
+target directory anyway.
+
 **Fix (template, no SDK change).**
 - The template's `.rsproj` sets `<CargoTargetDir>`: `$(CARGO_TARGET_DIR)\rsproj\$(CargoPackage)` when
   `CARGO_TARGET_DIR` is set (keeps the build on the local disk that variable was chosen for), else
@@ -1204,6 +1208,12 @@ selects. Measured on this workspace: `cargo build -p kubuno-desktop` then `-p ku
 each time ("info of dependency `drive-app-controls` changed"), leaving the other executable linked against a DLL that
 no longer matches it ("Point d'entree introuvable" at start - seen live with a stale `kubuno-desktop.exe`).
 `cargo build --workspace` (whatever bins are selected) keeps one feature set for every build of the workspace.
+
+*Update 2026-10-03:* `kubuno-ui` is now an ordinary rlib linked statically (docs/DESIGNER.md section 16), so the
+reason above is gone (rlibs have hashed names; another feature set is another file). The desktop `.rsproj` files
+keep `<CargoBuildScope>Workspace</CargoBuildScope>` by choice - one cargo build per solution build, each shared
+crate compiled once - and, with no dylib member left, `TestBuildIsolation` no longer sets `kubuno-views-macros`
+apart (checked: `cargo test -p kubuno-views -p kubuno-views-macros ...` in one run, which used to collide).
 
 **SDK changes (`Kubuno.Rust.Sdk` 1.1.0)** - the version is bumped because NuGet caches an SDK by version: a changed
 1.0.0 would never reach a machine that already restored 1.0.0.

@@ -8,8 +8,8 @@ namespace Kubuno.Rust.Launch
     /// <summary>
     /// Computes the environment a Rust debuggee needs to start correctly under the native
     /// debugger, in particular the extra PATH entries a `-C prefer-dynamic` build needs to
-    /// find its dylibs (the Kubuno desktop workspace links `kubuno_ui.dll` this way, and it
-    /// pulls in `std-*.dll` — see `CLAUDE.md` and `docs/ARCHITECTURE.md`).
+    /// find its dylibs and `std-*.dll` - the same directories `cargo run` puts on PATH. (Kubuno
+    /// desktop applications link `kubuno_ui` and `std` statically and need none of them.)
     /// </summary>
     public static class RustDebugEnvironment
     {
@@ -17,9 +17,8 @@ namespace Kubuno.Rust.Launch
         /// The PATH entries to prepend, in the order the loader should search them:
         /// 1. the profile directory itself (`&lt;target-dir&gt;/[&lt;triple&gt;/]&lt;profile&gt;`) —
         ///    where Cargo uplifts the crate's own dylibs;
-        /// 2. its `deps` subdirectory — where dependency dylibs land, among them each build of
-        ///    the Kubuno desktop workspace's `kubuno_ui-&lt;hash&gt;.dll` (one file name per build, the
-        ///    exe imports its own) with its PDB, which the debugger finds beside it;
+        /// 2. its `deps` subdirectory — where dependency dylibs land, with their PDBs, which the
+        ///    debugger finds beside them;
         /// 3. the toolchain's host-triple std lib directory — where `std-*.dll` lives when
         ///    the build links it dynamically.
         /// </summary>

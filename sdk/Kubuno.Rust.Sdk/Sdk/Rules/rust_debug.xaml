@@ -24,7 +24,7 @@
 
   <StringProperty Name="RustDebugPageDescription"
                   DisplayName="Ignored"
-                  Description="F5 starts the executable of the 'Binary to build and debug' (Application page) under the native debugger, with Rust visualizers (natvis). Its PATH already includes the profile directory, its deps folder and the Rust standard library, so -C prefer-dynamic builds such as Kubuno desktop applications start as is."
+                  Description="F5 starts the executable of the 'Binary to build and debug' (Application page) under the native debugger, with Rust visualizers (natvis). Its PATH already includes the profile directory, its deps folder and the Rust standard library, so -C prefer-dynamic builds start as is, as under cargo run."
                   Category="General">
     <StringProperty.ValueEditors>
       <ValueEditor EditorType="Description" />

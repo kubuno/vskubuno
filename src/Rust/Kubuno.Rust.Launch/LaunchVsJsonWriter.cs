@@ -29,7 +29,7 @@ namespace Kubuno.Rust.Launch
     ///   `environment` property (and real-world CMake `launch.vs.json` files) use, which VS's
     ///   native debug engine silently ignores for `"type": "default"` (no error, no warning -
     ///   the configuration parses fine, PATH is just never extended, and the launched exe dies
-    ///   immediately with a `STATUS_DLL_NOT_FOUND` dialog for `kubuno_ui.dll`'s own dependency,
+    ///   immediately with a `STATUS_DLL_NOT_FOUND` dialog for a `-C prefer-dynamic` build's
     ///   `std-*.dll`). `${env.VAR}` interpolation (e.g. `"PATH": "C:\\a;C:\\b;${env.PATH}"`) is
     ///   how a value is appended to whatever the debuggee would otherwise inherit - see
     ///   <see cref="RustDebugEnvironment"/>'s own remarks on why the VSIX's launch.vs.json

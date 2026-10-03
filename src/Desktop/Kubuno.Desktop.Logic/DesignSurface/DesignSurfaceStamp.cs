@@ -15,22 +15,13 @@ namespace Kubuno.Desktop.Logic.DesignSurface
     {
         public const string FileName = "surface.json";
         // 2: surfaces built with debug info (debug profile); 3: the DLL is copied under the name the surface
-        // imports (kubuno_ui-<hash>.dll, UiDllFileName).
-        public const int CurrentVersion = 3;
+        // imports; 4: kubuno_ui is linked statically, the folder holds the exe alone (no DLL, no hash).
+        public const int CurrentVersion = 4;
 
         public int Version { get; set; } = CurrentVersion;
 
         /// <summary>The folder name under <c>kubuno-design\&lt;profile&gt;</c>.</summary>
         public string Key { get; set; } = string.Empty;
-
-        /// <summary>SHA-256 (upper-case hex) of the <c>kubuno_ui.dll</c> the surface was linked against, also embedded in the exe.</summary>
-        public string UiDllSha256 { get; set; } = string.Empty;
-
-        /// <summary>The project's <c>kubuno_ui.dll</c> it was copied from.</summary>
-        public string UiDllSource { get; set; } = string.Empty;
-
-        /// <summary>The copy's name in the folder: the one the surface imports (<see cref="KubunoUiLibrary"/>).</summary>
-        public string UiDllFileName { get; set; } = KubunoUiLibrary.PlainFileName;
 
         public string Rustc { get; set; } = string.Empty;
 
@@ -48,10 +39,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             try
             {
                 var stamp = JsonSerializer.Deserialize<DesignSurfaceStamp>(json);
-                return stamp is { Version: CurrentVersion } && stamp.Key.Length > 0 && stamp.UiDllSha256.Length > 0
-                    && KubunoUiLibrary.IsLibraryFileName(stamp.UiDllFileName)
-                    ? stamp
-                    : null;
+                return stamp is { Version: CurrentVersion } && stamp.Key.Length > 0 ? stamp : null;
             }
             catch (JsonException)
             {

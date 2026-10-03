@@ -76,9 +76,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     // it does not collide with concurrent work on this file's own keyboard-forwarding code.
     public sealed partial class RustDesignSurfaceHost : HwndHost, IProtocolDesignSurfaceHost
     {
-        // Backoff for both "the surface just crashed" and "the runtime DLLs are still missing" -
-        // unified into one retry loop (see ScheduleRetry): a user who runs tools/stage-runtime.ps1
-        // while the pane is open should not have to close and reopen it.
+        // Backoff for both "the surface just crashed" and "the surface exe is still missing" -
+        // unified into one retry loop (see ScheduleRetry): a user who builds the surface while the
+        // pane is open should not have to close and reopen it.
         private const int BackoffInitialMs = 250;
         private const int BackoffMaxMs = 30_000;
         private const int StableAfterMs = 10_000;
@@ -125,7 +125,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         // for a statement before a constructor initializer.
 #pragma warning disable VSTHRD010
         public RustDesignSurfaceHost(string exePath, string extraArgs = "", object? oleServiceProvider = null)
-            : this(new DesignSurfaceRuntimeLease(new FixedDesignSurfaceRuntimeSource(new DesignSurfaceRuntime(exePath ?? throw new ArgumentNullException(nameof(exePath)), isProjectRuntime: false, expectedUiDllSha256: null)), null), extraArgs, oleServiceProvider)
+            : this(new DesignSurfaceRuntimeLease(new FixedDesignSurfaceRuntimeSource(new DesignSurfaceRuntime(exePath ?? throw new ArgumentNullException(nameof(exePath)), isProjectRuntime: false)), null), extraArgs, oleServiceProvider)
         {
         }
 #pragma warning restore VSTHRD010
@@ -227,7 +227,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             if (problem != null)
             {
                 KubunoViewsLogHost.Current.WriteLine($"[designer] surface not started: {problem}");
-                NativeMethods.SetWindowText(_container, problem + "\r\n\r\nRun tools/stage-runtime.ps1, then reopen this file.");
+                NativeMethods.SetWindowText(_container, problem + "\r\n\r\nBuild the project, then reopen this file.");
                 ScheduleRetry();
                 return;
             }
@@ -236,9 +236,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         }
 
         /// <summary>
-        /// <see langword="null"/> when the exe and its runtime DLLs (the <c>kubuno_ui-&lt;hash&gt;.dll</c> it imports, Rust's own
-        /// <c>std-*.dll</c> - the workspace links <c>-C prefer-dynamic</c>) are all present next to it;
-        /// otherwise a one-line, user-facing description of what is missing.
+        /// <see langword="null"/> when the surface exe is present (it links <c>kubuno_ui</c> and Rust's <c>std</c>
+        /// statically: nothing else has to be next to it); otherwise a one-line, user-facing description of what is missing.
         /// </summary>
         private string? FindRuntimeProblem()
         {
@@ -247,22 +246,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 return $"Design surface exe not found: {CurrentExePath}";
             }
 
-            var dir = Path.GetDirectoryName(CurrentExePath);
-            if (string.IsNullOrEmpty(dir))
+            if (string.IsNullOrEmpty(Path.GetDirectoryName(CurrentExePath)))
             {
                 return $"Design surface exe has no directory: {CurrentExePath}";
-            }
-
-            // The exe imports its own build of kubuno_ui by name (kubuno_ui-<hash>.dll): that file, not any kubuno_ui.dll.
-            var uiDll = Kubuno.Desktop.Logic.DesignSurface.KubunoUiLibrary.ImportedBy(CurrentExePath);
-            if (uiDll is not null && !File.Exists(Path.Combine(dir, uiDll)))
-            {
-                return $"{uiDll} missing next to {CurrentExePath}";
-            }
-
-            if (Directory.GetFiles(dir, "std-*.dll").Length == 0)
-            {
-                return $"Rust runtime (std-*.dll) missing next to {CurrentExePath}";
             }
 
             return null;
@@ -294,11 +280,6 @@ namespace Kubuno.Desktop.Designer.DesignSurface
                 CreateNoWindow = true,
                 WorkingDirectory = dir,
             };
-            // The exe's own folder holds its kubuno_ui-<hash>.dll and std-*.dll (the loader looks there first
-            // anyway); the parent folder is a dev build's profile folder. Both before the inherited PATH,
-            // so no other build of kubuno_ui can be picked up - the surfaceInfo handshake checks it anyway.
-            var parentDir = Path.GetDirectoryName(dir);
-            psi.EnvironmentVariables["PATH"] = dir + ";" + (string.IsNullOrEmpty(parentDir) ? string.Empty : parentDir + ";") + psi.EnvironmentVariables["PATH"];
             // The paint-debug overlay (Debug > Kubuno > Paint debug) is for the running application only:
             // a design surface draws every control exactly as it looks at run time, so it never inherits the
             // switch (a surface built from an older checkout would otherwise box every element in cyan).

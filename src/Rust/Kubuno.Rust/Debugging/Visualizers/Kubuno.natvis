@@ -6,8 +6,8 @@
 
   This is a COPY of the Kubuno desktop repository's src/crates/kubuno-views/natvis/kubuno_views.natvis, which
   kubuno_views embeds in the PDB of every application linking it (#![debugger_visualizer]) - the copy that wins there,
-  since the debugger looks at PDB-embedded natvis first. This one covers what the PDBs do not: kubuno_ui.dll's own
-  frames, applications built against an older kubuno_views, and the std types above for any Rust program. Its
+  since the debugger looks at PDB-embedded natvis first. This one covers what the PDBs do not: applications
+  built against an older kubuno_views, and the std types above for any Rust program. Its
   Option/Result entries only take effect where no PDB natvis (the toolchain's generic enum2$<*> view) applies first.
   Keep both files in sync.
 

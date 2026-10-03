@@ -8,12 +8,14 @@
     session: a solution build therefore runs one workspace-wide `cargo build`, reports its errors once,
     and hands the same list of executables back to every project, which picks its own.
 
-    Why a workspace-wide build at all: a workspace with a Rust dylib (the Kubuno desktop workspace's
-    kubuno_ui.dll) must build the dylib and every program loading it together. With resolver 2, the
-    features of a dependency depend on which packages a command selects, and cargo names a dylib
-    without a hash, so `cargo build -p app-a` and `cargo build -p app-b` rebuild the same
-    deps\kubuno_ui.dll with different features in turn, leaving the other program linked against a
-    DLL that no longer matches it (docs/RSPROJ.md, "Cargo workspaces").
+    Why a workspace-wide build at all: a workspace with a Rust dylib must build the dylib and every
+    program loading it together. With resolver 2, the features of a dependency depend on which
+    packages a command selects, and cargo names a dylib without a hash, so `cargo build -p app-a` and
+    `cargo build -p app-b` rebuild the same deps\<name>.dll with different features in turn, leaving
+    the other program linked against a DLL that no longer matches it (docs/RSPROJ.md, "Cargo
+    workspaces"). A workspace may also opt in (CargoBuildScope=Workspace) just to have a solution
+    build run one cargo build, as the Kubuno desktop workspace does (its kubuno-ui is an rlib, linked
+    statically, since 2026-10-03).
 
     Never imported: an ordinary project file, only ever built through the MSBuild task.
   -->

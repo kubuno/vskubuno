@@ -361,8 +361,8 @@ JavaScript project system uses (checked by reflection against the installed CPS 
 
 - **Environment**: PATH is prepended with the profile directory, its `deps` folder and the Rust
   standard library directory (`Kubuno.Rust.Launch.RustDebugEnvironment`, the same logic Open Folder's
-  `launch.vs.json` uses), which is what `-C prefer-dynamic` builds need (the program's
-  `kubuno_ui-<hash>.dll` in `deps`, `std-*.dll`); `RUST_BACKTRACE=1` is set; the Just My Code/step-filter files and the Rust panic exception
+  `launch.vs.json` uses, the directories `cargo run` adds), which is what `-C prefer-dynamic` builds need
+  (Kubuno programs link `kubuno_ui` and `std` statically and need none of it); `RUST_BACKTRACE=1` is set; the Just My Code/step-filter files and the Rust panic exception
   setting are applied as for Open Folder (`docs/DEBUGGING.md`).
 - **Debug settings**: the Project Properties editor's Debug page (`Sdk/Rules/rust_debug.xaml`) and its
   "Open debug launch profile UI" dialog edit the selected debugger rule's properties

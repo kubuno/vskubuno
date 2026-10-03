@@ -105,10 +105,10 @@ graphics() }` — all `CancelEventArgs` in the args chain (the ⚡ tab offers `&
   spooler's XPS-to-GDI conversion, and lets the same command lists feed the preview. `rasterDPI` (fallback for
   effects that cannot be vector) is the printer's resolution clamped to 150–600.
 - **No new `windows` feature**: `ID2D1Device::CreatePrintControl` and `IPrintDocumentPackageTargetFactory` sit behind
-  `Win32_Storage_Xps_Printing`, absent from `kubuno_ui.dll`'s graph; adding it would rebuild the shared dylib for every
-  application. `src/xps.rs` declares the two interfaces with `windows_core::interface` and calls `CreatePrintControl`
+  `Win32_Storage_Xps_Printing`, absent from `kubuno-ui`'s graph; adding it would rebuild `windows` and every crate built on it
+  for every application. `src/xps.rs` declares the two interfaces with `windows_core::interface` and calls `CreatePrintControl`
   through its vtable slot (documented). The flat APIs (winspool, gdi32 metrics, prntvpt, comdlg32) use `windows-sys`,
-  which is not in the dylib's graph (as `kubuno-data` does).
+  which is not in `kubuno-ui`'s graph (as `kubuno-data` does).
 - Printer drivers are not all thread-safe (two threads asking "Microsoft Print to PDF" for its settings crashed the test
   harness): every driver call takes a process-wide lock.
 

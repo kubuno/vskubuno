@@ -72,7 +72,7 @@ namespace Kubuno.Desktop
             if (_surfaceExePath is not null)
             {
                 var oleServiceProvider = (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)package;
-                // docs/DESIGNER.md section 15: each designer renders with its project's own kubuno_ui.dll
+                // docs/DESIGNER.md section 15: each designer renders with its project's own kubuno_ui build
                 // (a design build against the project); the bundled surface is the fallback.
                 _designSurfaceRuntimes = new ProjectDesignSurfaceRuntimeProvider(_surfaceExePath, context.JoinableTaskFactory);
                 if (buildManager is not null)

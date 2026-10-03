@@ -25,7 +25,7 @@
 
   <StringProperty Name="RustDebugPageDescription"
                   DisplayName="Ignoré"
-                  Description="F5 démarre l’exécutable du « Binaire à générer et à déboguer » (page Application) sous le débogueur natif, avec les visualiseurs Rust (natvis). Son PATH inclut déjà le répertoire du profil, son dossier deps et la bibliothèque standard de Rust : les builds -C prefer-dynamic, comme les applications Kubuno desktop, démarrent donc telles quelles."
+                  Description="F5 démarre l’exécutable du « Binaire à générer et à déboguer » (page Application) sous le débogueur natif, avec les visualiseurs Rust (natvis). Son PATH inclut déjà le répertoire du profil, son dossier deps et la bibliothèque standard de Rust : les builds -C prefer-dynamic démarrent donc tels quels, comme sous cargo run."
                   Category="General">
     <StringProperty.ValueEditors>
       <ValueEditor EditorType="Description" />

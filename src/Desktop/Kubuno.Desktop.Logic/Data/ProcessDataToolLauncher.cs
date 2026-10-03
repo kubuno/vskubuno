@@ -10,7 +10,7 @@ namespace Kubuno.Desktop.Logic.Data
 {
     /// <summary>
     /// Finds <c>kubuno-data-tool.exe</c>: the extension's own <c>tools\</c> folder (where the VSIX ships it, beside
-    /// <c>kubuno-views-ls.exe</c> and the <c>kubuno_ui.dll</c>/<c>std-*.dll</c> of the same cargo build), then a local
+    /// <c>kubuno-views-ls.exe</c>; both are self-contained, statically linked exes), then a local
     /// development build folder. Never throws; <see langword="null"/> means "not found".
     /// </summary>
     public static class DataToolLocator

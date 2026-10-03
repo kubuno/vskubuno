@@ -7,8 +7,8 @@ using Kubuno.Rust.Launch;
 namespace Kubuno.Rust.TestAdapter.Execution
 {
     /// <summary>
-    /// The environment a test executable needs to start at all when its crate links a Rust dylib (the Kubuno desktop
-    /// workspace's <c>kubuno_ui.dll</c>, built with <c>-C prefer-dynamic</c>): the dylib sits next to the test executable in
+    /// The environment a test executable needs to start at all when its crate links a Rust dylib (built with
+    /// <c>-C prefer-dynamic</c>; the same directories <c>cargo test</c> puts on PATH): the dylib sits next to the test executable in
     /// <c>&lt;target&gt;\&lt;profile&gt;\deps</c>, and Rust's <c>std-*.dll</c> in the toolchain - neither on the PATH Visual Studio
     /// hands to the test host. Without them, <c>--list</c> and the run itself exit with <c>STATUS_DLL_NOT_FOUND</c> and Test
     /// Explorer shows no tests. The same directories F5 prepends (<see cref="RustDebugEnvironment.BuildPathAdditions"/>).

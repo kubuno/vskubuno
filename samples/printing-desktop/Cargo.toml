@@ -7,7 +7,7 @@ publish = false
 # A Kubuno desktop application that prints (vskubuno docs/PRINTING.md): a designed PrintDocument with
 # its BeginPrint/PrintPage handlers, the preview, Print and Page Setup dialogs of the designer's
 # "Printing" Toolbox tab, and a document built in code. Open printing-desktop.rsproj in Visual Studio
-# (or `cargo run` with CARGO_TARGET_DIR on a local disk: kubuno_ui is a dylib).
+# (or `cargo run`, with CARGO_TARGET_DIR on a local disk when the sources are on a share).
 #
 #   printing-desktop.exe --print-to C:\temp\sample.pdf   prints the text to "Microsoft Print to PDF"
 #                                                         into that file, then closes (a smoke test).

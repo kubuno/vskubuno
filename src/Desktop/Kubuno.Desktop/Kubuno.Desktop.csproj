@@ -4,7 +4,7 @@
     Desktop layer, Visual Studio side (docs/ARCHITECTURE.md, "Layers (as built)"): everything that exists because the
     target is a Kubuno desktop application (kubuno_ui, Rust code-behind):
       - Designer\DesignSurface\  the Design pane's renderer: RustDesignSurfaceHost (view_embed.exe hosted in an HwndHost,
-                    the kubuno_ui runtime handshake) and its factory, the desktop implementation of the views layer's
+                    the surfaceInfo handshake) and its factory, the desktop implementation of the views layer's
                     IProtocolDesignSurfaceHost (docs/DESIGNER.md; docs/WEB-VIEWS.md WV-8);
       - Designer\Bindings\BindingDropPlanner  the Data Sources window's drop of a bindable member;
       - DesignerIntegration\  the design surface locator and the per-project design runtime (docs/DESIGNER.md 15);

@@ -70,9 +70,8 @@ TypeScript in the language dropdown) or just search "rust". Four project templat
   `<KubunoDesktopSrc>`, to be changed together if you move the checkout later); a build with that
   folder missing stops with error `KUBUNO0001` saying exactly this. The project then builds and
   runs with F5 as created, with no other step: its `.rsproj` gives it its own cargo target
-  directory (see "E0463" in Troubleshooting) and F5 puts the program's `kubuno_ui-<hash>.dll` (every
-  build of the shared library has its own name, docs/DESIGNER.md section 16) and Rust's `std-*.dll` on
-  the program's PATH.
+  directory, and the program links `kubuno_ui` and Rust's `std` statically (docs/DESIGNER.md
+  section 16): the exe runs on its own, with no DLL beside it.
 - **Kubuno Module** - an Axum/Tokio backend module skeleton (`/health` + `/internal/*` guarded by
   `X-Internal-Secret`, a `sqlx::migrate!`-driven Postgres schema, `module.toml`,
   `build_kbpkg.sh`), following the platform's own module conventions.
@@ -155,7 +154,8 @@ executables at its root and the library-only members under a `Libraries` folder.
   formatting are preserved).
 - A library-only member is only added to a `.slnx`; a classic `.sln` keeps the executables only.
 - A workspace in which a member is a Rust `dylib` gets `<CargoBuildScope>Workspace</CargoBuildScope>`
-  in every project: see "Working on the Kubuno desktop apps" below.
+  in every project (the Kubuno desktop workspace, which has none since 2026-10-03, keeps it by choice: see
+  "Working on the Kubuno desktop apps" below).
 - The MSBuild SDK a generated `.rsproj` needs (`Kubuno.Rust.Sdk`) ships inside the extension and
   registers itself as a local NuGet source on first package load - no manual SDK setup, no
   internet access required for that step.
@@ -179,34 +179,23 @@ workspace. To work on them in Visual Studio:
    shell), `kubuno-chat`, `kubuno-documents`, `drive-app` (its executable is `drive.exe`),
    `kubuno-views-ls`, `kubuno-data-tool` - and the libraries and procedural macros under **Libraries**,
    each project showing exactly its own crate's files.
-4. **Build** (Ctrl+Shift+B). `kubuno-ui` is a Rust `dylib` loaded by every program. A Rust dylib has no
-   stable ABI, so every build of it has its own file name, `kubuno_ui-<hash>.dll`, and each program imports
-   the build it was linked against (docs/DESIGNER.md section 16): a program can no longer load another
-   build and die with "entry point not found". Building one package at a time would still give that
-   package another build of the DLL (its own features) and leave the other programs on the previous one,
-   so every project of this workspace builds **the whole workspace** (`<CargoBuildScope>Workspace</CargoBuildScope>`, written by the generator): one
-   `cargo build --workspace --keep-going` per solution build or F5, whatever the number of projects.
+4. **Build** (Ctrl+Shift+B). Every program links `kubuno-ui` (an ordinary rlib) and Rust's `std`
+   statically (docs/DESIGNER.md section 16). The programs share most of their crates, so every project of
+   this workspace builds **the whole workspace** (`<CargoBuildScope>Workspace</CargoBuildScope>`, kept in
+   the generated `.rsproj` files): one `cargo build --workspace --keep-going` per solution build or F5,
+   whatever the number of projects, and each shared crate compiled once, with one feature set.
    Each error and warning is listed once, under the project that owns the file; a program that did
    build is still built when another crate has an error.
 5. **Run and debug**: right-click a program > **Set as Startup Project**, put a breakpoint, press **F5**.
-   The program's `kubuno_ui-<hash>.dll` (in the `deps` folder, with its PDB) and Rust's `std-*.dll` are
-   found through the PATH the extension gives the program (the profile folder, its `deps` folder and the
-   toolchain) - nothing to copy. Ctrl+F5 runs without the
-   debugger. To start a program outside Visual Studio, stage the DLLs next to it with
-   `tools\stage-runtime.ps1`, as before.
-6. **Tests**: Test Explorer lists the whole workspace's `#[test]`s after a build. They are built into
-   folders of their own under the target directory (`kubuno-tests`, and
-   `kubuno-isolated-tests\kubuno-views-macros`): a test build turns on the dev-dependencies' features, so
-   sharing the programs' folder would rebuild `kubuno_ui.dll` back and forth, and
-   `kubuno-views-macros`' tests need a second build of `kubuno_ui.dll` (plain
-   `cargo test --workspace` fails on this workspace with "output filename collision" on
-   `kubuno_ui.dll`). The first discovery builds all the tests (a few minutes, and several gigabytes).
+   The exe is self-contained (the framework's symbols are in its own PDB) - nothing to copy, and it can be
+   started from anywhere outside Visual Studio too. Ctrl+F5 runs without the debugger.
+6. **Tests**: Test Explorer lists the whole workspace's `#[test]`s after a build. The first discovery
+   builds all the tests (a few minutes, and several gigabytes).
 
 Good to know:
 
 - **Close the running programs before building**: a program that is running keeps its own exe open, and
-  the linker cannot replace it (`LNK1104`). Its `kubuno_ui-<hash>.dll` is no obstacle: a new build of the
-  library gets a new name.
+  the linker cannot replace it (`LNK1104`).
 - **Rebuild** cleans the workspace's profile once (not once per project) and rebuilds everything.
 - **Open Folder keeps working** on the same folder (the `.rsproj`/`.slnx` files are ignored there); use
   it for a quick look, the solution for F5, breakpoints and tests.
@@ -535,35 +524,27 @@ full tool list and the transport/discovery mechanism.
   installing.** Visual Studio's template dialogs read from a cache that is only rebuilt the first
   time Visual Studio *starts* after a template-shipping VSIX is installed or updated, not at
   install time itself. Close Visual Studio and start it once more; the templates then appear.
-- **A "the program can't start because ... .dll is missing" dialog** when running a Kubuno Desktop
-  Application (F5/Ctrl+F5), or any Rust binary built with `-C prefer-dynamic`: the executable's own
-  directory does not have its `kubuno_ui-<hash>.dll`/the matching Rust `std-*.dll` next to it, and something
-  outside the extension's own PATH-prepending logic (a manual launch outside VS, a custom launch
-  profile with `PATH` overridden rather than extended) short-circuited it. Inside a `.rsproj`/Open
-  Folder launch through F5/Ctrl+F5, the extension already prepends the profile directory, its
-  `deps` folder and the Rust standard library directory to PATH for you - if you still see this
-  dialog, check whether your own "Debug" property page / `launch.vs.json` environment entry
-  *replaces* `PATH` instead of extending it (setting `PATH` directly there overrides the computed
+- **A "the program can't start because ... .dll is missing" dialog** when running a Rust binary built
+  with `-C prefer-dynamic` (Kubuno programs link `kubuno_ui` and `std` statically and never need a DLL
+  beside them): the executable's own directory does not have its dylibs/the matching Rust `std-*.dll` next
+  to it, and something outside the extension's own PATH-prepending logic (a manual launch outside VS, a
+  custom launch profile with `PATH` overridden rather than extended) short-circuited it. Inside a
+  `.rsproj`/Open Folder launch through F5/Ctrl+F5, the extension already prepends the profile directory,
+  its `deps` folder and the Rust standard library directory to PATH for you, as `cargo run` does - if you
+  still see this dialog, check whether your own "Debug" property page / `launch.vs.json` environment
+  entry *replaces* `PATH` instead of extending it (setting `PATH` directly there overrides the computed
   value rather than adding to it).
-- **"`kubuno_ui-<hash>.dll` was not found"** (`0xC0000135`) when starting a Kubuno program outside
-  Visual Studio: the build of the shared library this program was linked against is not next to it
-  nor on PATH. Every build of `kubuno_ui` has its own name (docs/DESIGNER.md section 16) and the build
-  folder keeps the three most recent ones in `deps`: rebuild the program, or stage it again
-  (`tools\stage-runtime.ps1` in the desktop repo copies the build each exe imports).
-- **"Point d'entrée introuvable … `kubuno_ui`" / "entry point not found"** (`0xC0000139`): the program
-  was built before per-build names (it imports the plain `kubuno_ui.dll`) and found a newer one.
-  Rebuild it: programs built since then import `kubuno_ui-<hash>.dll` and cannot meet this error.
+- **A Kubuno program asks for `kubuno_ui-<hash>.dll`, `kubuno_ui.dll` or `std-*.dll`**
+  (`0xC0000135`, or "entry point not found", `0xC0000139`): it was built from a desktop checkout older
+  than 2026-10-03, when `kubuno-ui` was a shared Rust DLL. Update the checkout and rebuild the program:
+  it then links everything statically (docs/DESIGNER.md section 16).
 - **`error[E0463]: can't find crate for 'kubuno_ui'`** (reported in `kubuno-views`' own sources)
-  when building a Kubuno Desktop Application created before this was fixed. `kubuno-ui` is a Rust
-  dylib, and cargo names a dylib without a hash (`deps\kubuno_ui.dll`): when two cargo workspaces
-  build into the SAME target directory - typically a machine-wide `CARGO_TARGET_DIR` that the
-  `desktop` workspace also builds into - each overwrites the other's `kubuno_ui.dll`, and the next
-  compile of a crate that uses it rejects the foreign DLL. Projects created from the current
-  template are not affected: their `.rsproj` builds into `$(CARGO_TARGET_DIR)\rsproj\<crate>` (or
-  `<project>\target` when `CARGO_TARGET_DIR` is not set). For an older project, add the two
-  `<CargoTargetDir>` lines of the current template to its `.rsproj`. Running plain `cargo build`
-  in such a project from a terminal where `CARGO_TARGET_DIR` points at a shared directory has the
-  same problem - set `CARGO_TARGET_DIR` to a directory of its own for that shell.
+  when building against a desktop checkout older than 2026-10-03 with a Kubuno Desktop Application
+  created before this was fixed. `kubuno-ui` was then a Rust dylib, and cargo names a dylib without a hash
+  (`deps\kubuno_ui.dll`): two cargo workspaces building into the SAME target directory overwrote each
+  other's `kubuno_ui.dll`. Update the checkout (`kubuno-ui` is now a hashed rlib, which cannot collide).
+  Projects created from the current template build into a directory of their own anyway
+  (`$(CARGO_TARGET_DIR)\rsproj\<crate>`, or `<project>\target` when `CARGO_TARGET_DIR` is not set).
 - **A one-time "would you like to create a browse database" / IntelliSense database prompt**
   the first time Visual Studio's C++ tooling touches files on a network drive (relevant here
   because the C++ workload backs the native debug engine): this is standard Visual Studio behavior

@@ -496,8 +496,8 @@ became dirty; closed without saving). C#: `Kubuno.Views.Tests`, `Kubuno.Desktop.
   Location, Size), like the printing components (a designer-wide behaviour, not specific to this lot).
 - `kubuno-sync-engine` (which re-exports the moved paths) could not be rebuilt on this machine (its vendored OpenSSL needs
   a native Perl); its use of `kubuno_account::paths` names is unchanged.
-- The doctests of `kubuno-views-macros` fail to link on this machine (LNK1120, the `prefer-dynamic` dylib without
-  `RUSTDOCFLAGS`), independently of this lot.
+- The doctests of `kubuno-views-macros` failed to link on this machine (LNK1120, the `prefer-dynamic` dylib without
+  `RUSTDOCFLAGS`), independently of this lot (no longer applies: kubuno-ui is linked statically since 2026-10-03).
 
 ---
 

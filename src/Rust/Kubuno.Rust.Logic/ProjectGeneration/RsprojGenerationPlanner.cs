@@ -47,7 +47,7 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
             var memberIds = new HashSet<string>(metadata.WorkspaceMembers, StringComparer.Ordinal);
             var items = new List<RsprojProjectPlanItem>();
 
-            // A Rust dylib shared inside the workspace (the Kubuno desktop workspace's kubuno_ui.dll) must be built together
+            // A Rust dylib shared inside the workspace must be built together
             // with every program that loads it: cargo names a dylib without a hash, and building one package at a time
             // rebuilds it with that package's feature set, breaking the programs built before (docs/RSPROJ.md, "Cargo
             // workspaces"). Such a workspace's projects build the whole workspace instead.

@@ -25,7 +25,7 @@ namespace Kubuno.Desktop.Tests.DesignSurface
 
         private static CargoArtifact[] Artifacts() => new[]
         {
-            Artifact("ui", "kubuno_ui", "dylib", Profile + @"\kubuno_ui.dll", Profile + @"\kubuno_ui.dll.lib"),
+            Artifact("ui", "kubuno_ui", "lib", Deps + @"\libkubuno_ui-1b.rlib", Deps + @"\libkubuno_ui-1b.rmeta"),
             Artifact("views", "kubuno_views", "lib", Deps + @"\libkubuno_views-8c.rlib", Deps + @"\libkubuno_views-8c.rmeta"),
             Artifact("controls", "kubuno_controls", "lib", Deps + @"\libkubuno_controls-6d.rlib"),
             Artifact("tracing", "tracing", "lib", Deps + @"\libtracing-a3.rlib"),
@@ -79,7 +79,7 @@ namespace Kubuno.Desktop.Tests.DesignSurface
             Assert.AreEqual(@"C:\p\app\src\main.rs", crate.SourcePath);
             Assert.AreEqual(Profile + @"\app.exe", crate.StampFile);
             CollectionAssert.AreEqual(new[] { "kubuno_ui", "kubuno_views", "kubuno_controls", "tracing", "gauges", "my_derive" }, crate.Externs.Select(e => e.Key).ToArray());
-            Assert.AreEqual(Deps + @"\kubuno_ui.dll", crate.Externs[0].Value);
+            Assert.AreEqual(Deps + @"\libkubuno_ui-1b.rlib", crate.Externs[0].Value);
 
             var inputs = DesignSurfaceInputs.From(Artifacts(), _ => true, out _) ?? throw new System.InvalidOperationException("inputs");
             var args = crate.RustcArguments(inputs, @"C:\d\libapp.rlib", "debug");

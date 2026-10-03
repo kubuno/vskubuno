@@ -32,14 +32,14 @@ namespace Kubuno.Views.Designer
         public static string RuntimeBarMessage(DesignSurface.DesignSurfaceRuntimeState state) => state switch
         {
             DesignSurface.DesignSurfaceRuntimeState.NotBuilt => T(
-                "Preview: bundled runtime - build the project to use its kubuno_ui.dll.",
-                "Aperçu : runtime intégré — générez le projet pour utiliser sa kubuno_ui.dll."),
+                "Preview: bundled runtime - build the project to use its own kubuno_ui.",
+                "Aperçu : runtime intégré — générez le projet pour utiliser sa propre kubuno_ui."),
             DesignSurface.DesignSurfaceRuntimeState.Building => T(
-                "Preview: building the preview with the project's kubuno_ui.dll...",
-                "Aperçu : compilation de l'aperçu avec la kubuno_ui.dll du projet…"),
+                "Preview: building the preview with the project's kubuno_ui...",
+                "Aperçu : compilation de l'aperçu avec la kubuno_ui du projet…"),
             DesignSurface.DesignSurfaceRuntimeState.Failed => T(
-                "Preview: bundled runtime - the preview could not be built with the project's kubuno_ui.dll (see Output > Kubuno).",
-                "Aperçu : runtime intégré — l'aperçu n'a pas pu être compilé avec la kubuno_ui.dll du projet (voir Sortie > Kubuno)."),
+                "Preview: bundled runtime - the preview could not be built with the project's kubuno_ui (see Output > Kubuno).",
+                "Aperçu : runtime intégré — l'aperçu n'a pas pu être compilé avec la kubuno_ui du projet (voir Sortie > Kubuno)."),
             DesignSurface.DesignSurfaceRuntimeState.NotApplicable => T(
                 "Preview: bundled runtime - this view is not part of a project that uses kubuno-views.",
                 "Aperçu : runtime intégré — cette vue n'appartient pas à un projet qui utilise kubuno-views."),
@@ -59,10 +59,10 @@ namespace Kubuno.Views.Designer
             _ => string.Empty,
         };
 
-        /// <summary>Shown in the design pane when a surface's kubuno_ui.dll does not match the one it was built against.</summary>
+        /// <summary>Shown in the design pane when a surface fails the surfaceInfo handshake (another protocol version).</summary>
         public static string RuntimeRejected(string detail) => T(
-            "Preview refused: the kubuno_ui.dll this preview loaded is not the one it was built against (" + detail + "). Build the project again.",
-            "Aperçu refusé : la kubuno_ui.dll chargée par l'aperçu n'est pas celle avec laquelle il a été compilé (" + detail + "). Générez à nouveau le projet.");
+            "Preview refused: this preview does not speak the designer's protocol (" + detail + "). Build the project again.",
+            "Aperçu refusé : cet aperçu ne parle pas le protocole du concepteur (" + detail + "). Générez à nouveau le projet.");
 
         // ---- The design surface's error banner (docs/DESIGNER.md section 17) ----
 

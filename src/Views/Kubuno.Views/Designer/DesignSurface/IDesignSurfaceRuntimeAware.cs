@@ -15,7 +15,7 @@ namespace Kubuno.Views.Designer.DesignSurface
     {
         IDesignSurfaceRuntimeSource RuntimeSource { get; }
 
-        /// <summary>Raised on the UI thread when a surface failed the <c>surfaceInfo</c> ABI check (the message says why).</summary>
+        /// <summary>Raised on the UI thread when a surface failed the <c>surfaceInfo</c> handshake (the message says why).</summary>
         event EventHandler<string>? RuntimeRejected;
     }
 }

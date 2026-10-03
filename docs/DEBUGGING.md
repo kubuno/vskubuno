@@ -33,7 +33,7 @@ handlers, a panicking button, a worker thread and an `async` handler, driven thr
 |---|---|---|
 | Toolchain natvis (`liballoc`, `libcore`, `libstd`, `intrinsic`) | **Nothing to install**: rustc links every MSVC binary with `/NATVIS:` for `lib\rustlib\etc\*.natvis`, so each PDB embeds them (checked in the PDB of an ordinary crate) | Always matches the toolchain that built the binary; highest-priority natvis source |
 | Kubuno natvis | `kubuno-views/natvis/kubuno_views.natvis` in the desktop repository, embedded in every application's PDB by `#![debugger_visualizer]` in `kubuno_views` | Travels with the crate version whose layouts it describes. Being in the PDB is also what lets its `Option`/`Result`/`Value` entries win over the toolchain's generic `enum2$<*>` view (checked: the same entries loaded from the VSIX are ignored) |
-| `Kubuno.natvis` (copy of the above) | VSIX `NativeVisualizer` asset (`Debugging\Visualizers\`) | Every module of every session: `kubuno_ui.dll`'s own frames, apps built on an older `kubuno_views`, `Mutex`/`PathBuf`/`Box<dyn>` for any Rust program. Keep both copies in sync |
+| `Kubuno.natvis` (copy of the above) | VSIX `NativeVisualizer` asset (`Debugging\Visualizers\`) | Every module of every session: apps built on an older `kubuno_views`, `Mutex`/`PathBuf`/`Box<dyn>` for any Rust program. Keep both copies in sync |
 | `Kubuno.Rust.natjmc`, `Kubuno.Rust.natstepfilter` | `%USERPROFILE%\Documents\Visual Studio 18\Visualizers` and `...\Visual Studio 2022\Visualizers`, copied from the VSIX before every Rust debug launch | Visual Studio reads `.natjmc`/`.natstepfilter` only from its installation folder or this per-user folder, near the start of each session |
 | `Kubuno.Framework.natjmc`, `Kubuno.Framework.natstepfilter` | Same folder, unless Tools > Options > Kubuno > **Debugging** > "Treat the Kubuno framework as external code" is off (then removed) | For people who debug Kubuno itself |
 | ` ?? ::st_panic` exception entry | `debugging.pkgdef` (default: checked), re-applied before each launch through `Debugger3.ExceptionGroups` | A registry default that was never touched was found not to reach the engine |
@@ -194,7 +194,7 @@ library occasionally, set a breakpoint inside it (its source is available with t
   `[External Code]` instead (right-click > Show External Code to see them).
 - The parameter list in a frame's label can be shifted when a parameter is a fat pointer (`element_at(ref$<slice2$<i32>>
   index, unsigned __int64)`); Locals are right (`values = { len=3 }`, `index = 4`).
-- A few frames of `kubuno_ui.dll` may show a raw v0-mangled name (`_RINvNtCs...catch_unwind...`) - a symbol without a
+- A few frames of the Kubuno framework may show a raw v0-mangled name (`_RINvNtCs...catch_unwind...`) - a symbol without a
   function record in the PDB.
 - **Threads window / Parallel Stacks**: the Kubuno host names the UI thread **`Kubuno UI thread`**
   (`SetThreadDescription`); Rust threads created with `std::thread::Builder::new().name("...")` show that name
@@ -209,10 +209,9 @@ library occasionally, set a breakpoint inside it (its source is available with t
 
 - **Handlers under the debugger**: press F5, click in the running application, the breakpoint in the handler is hit
   (verified), including when the click comes from UI Automation.
-- **Breakpoints in the Kubuno framework**: each build of the shared library is `kubuno_ui-<hash>.dll` (docs/DESIGNER.md
-  section 16) with its `kubuno_ui-<hash>.pdb` beside it in `deps`, where F5's PATH finds the DLL and the debugger the
-  PDB (the DLL records the PDB's file name only). Verified 2026-09-30: a breakpoint in `kubuno_ui::buttons`'
-  `Button::paint` bound and hit, frame module `...\debug\deps\kubuno_ui-<hash>.dll`, locals shown.
+- **Breakpoints in the Kubuno framework**: `kubuno_ui` is linked statically into the program (docs/DESIGNER.md
+  section 16), so its code and symbols are in the program's own exe and PDB; a breakpoint in `kubuno_ui::buttons`'
+  `Button::paint` binds like one in the application's code (frame module: the application's exe).
 - **Attach to Process** (Debug > Attach to Process, *Native* code): works for a Kubuno application started with Ctrl+F5
   or from Explorer (verified: attached by PID, then a click hit a handler breakpoint). The panic behaviour follows
   `IsDebuggerPresent` at the time of the panic, so attaching later is enough.
@@ -221,7 +220,8 @@ library occasionally, set a breakpoint inside it (its source is available with t
   controls' code (`on_paint`, `get_preferred_size`...) runs with `design_mode()` true. Debug > Attach to Process >
   `kubuno-design-surface.exe` (Native), then set breakpoints in the control's code. Design surfaces are now built with
   full debug information in the debug profile (they were built without, so there was nothing to bind to), and each
-  surface keeps its own PDB next to it, with the one of its `kubuno_ui-<hash>.dll` (docs/DESIGNER.md section 16).
+  surface keeps its own PDB next to it, which holds the framework's symbols too (kubuno_ui is linked statically,
+  docs/DESIGNER.md section 16).
   While the surface is stopped the designer pane is frozen; detach
   (Debug > Detach All) rather than stopping, or the designer restarts the surface. *Not verified live in this pass*
   (the build change is covered by unit tests only).
