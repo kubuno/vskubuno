@@ -40,7 +40,7 @@ namespace Kubuno.Views.Designer.Registry
     /// <summary>
     /// The Kubuno theme colours offered first by the colour editor (the "theme tokens by default + free colours allowed"
     /// policy, docs/EVENTS.md): a token follows the light, dark and high-contrast themes on its own, a free colour does
-    /// not. Mirrors the runtime's own table (<c>kubuno-views</c>); a test compares the two through the generated
+    /// not. Mirrors the runtime's own table (<c>kubuno-desktop-views</c>); a test compares the two through the generated
     /// <c>theme-tokens.json</c> fixture when it is present.
     /// </summary>
     public static class ThemeTokens

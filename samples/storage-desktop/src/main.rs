@@ -7,9 +7,9 @@ mod main_view;
 
 // The typed class of the project's settings (Windows Forms' `Properties.Settings`): `Settings::theme()`,
 // `Settings::set_launch_count(…)`, `Settings::store()`. Generated at compile time from the file.
-kubuno::settings!("settings.kbsettings");
+kubuno_desktop::settings!("settings.kbsettings");
 
-fn main() -> kubuno::Result {
-    kubuno::Application::set_theme(main_view::theme_of(&Settings::theme()));
-    kubuno::Application::run(main_view::MainView::new())
+fn main() -> kubuno_desktop::Result {
+    kubuno_desktop::Application::set_theme(main_view::theme_of(&Settings::theme()));
+    kubuno_desktop::Application::run(main_view::MainView::new())
 }

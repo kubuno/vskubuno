@@ -49,7 +49,7 @@
   <data name="S_kubuno_remote_connection_Title" xml:space="preserve"><value>Connection</value></data>
   <data name="S_kubuno_remote_connection_Description" xml:space="preserve"><value>How Kubuno connects to the host: non-interactive SSH with a dedicated key, never a password.</value></data>
   <data name="S_kubuno_remote_devDatabase_Title" xml:space="preserve"><value>Development database</value></data>
-  <data name="S_kubuno_remote_devDatabase_Description" xml:space="preserve"><value>The SSH tunnel the Kubuno Core Web launch profiles open to the host&apos;s PostgreSQL.</value></data>
+  <data name="S_kubuno_remote_devDatabase_Description" xml:space="preserve"><value>The SSH tunnel the Kubuno Core launch profiles open to the host&apos;s PostgreSQL.</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Title" xml:space="preserve"><value>Path override</value></data>
   <data name="S_kubuno_rust_rustAnalyzer_pathOverride_Description" xml:space="preserve"><value>Full path to rust-analyzer.exe. When empty, Kubuno tries &quot;rustup which rust-analyzer&quot;, then %USERPROFILE%\.cargo\bin\rust-analyzer.exe, then the PATH environment variable. Applies the next time the server starts.</value></data>
   <data name="S_kubuno_rust_editor_formatOnSave_Title" xml:space="preserve"><value>Format on save</value></data>
@@ -104,7 +104,7 @@
   <data name="S_kubuno_designer_surface_showDesignOutlines_Title" xml:space="preserve"><value>Show design outlines</value></data>
   <data name="S_kubuno_designer_surface_showDesignOutlines_Description" xml:space="preserve"><value>Draws a faint dashed outline around the containers that are otherwise invisible (a Panel or Stack with no surface, border or background), so they can be found and dropped into, like the dotted border Windows Forms shows around a borderless Panel. Controls always look exactly as at run time. Applies to the designers opened afterwards.</value></data>
   <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Title" xml:space="preserve"><value>Treat the Kubuno framework as external code</value></data>
-  <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Description" xml:space="preserve"><value>Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno framework (kubuno_views, kubuno_controls, kubuno_ui, the event-handler dispatch glue) into [External Code] and Step Into (F11) goes straight to your handlers. Turn it off to see and debug Kubuno&apos;s own code. The Rust standard library is always stepped over. Takes effect at the next debug session.</value></data>
+  <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Description" xml:space="preserve"><value>Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno framework (kubuno_desktop_views, kubuno_desktop_controls, kubuno_desktop_ui, the event-handler dispatch glue) into [External Code] and Step Into (F11) goes straight to your handlers. Turn it off to see and debug Kubuno&apos;s own code. The Rust standard library is always stepped over. Takes effect at the next debug session.</value></data>
   <data name="S_kubuno_data_explorer_showDataRows_Title" xml:space="preserve"><value>Rows shown by Show Table Data</value></data>
   <data name="S_kubuno_data_explorer_showDataRows_Description" xml:space="preserve"><value>How many rows &quot;Show Table Data&quot; reads from a table or view (1 to 100000).</value></data>
   <data name="S_kubuno_data_explorer_defaultCredentialStore_Title" xml:space="preserve"><value>Default credential storage</value></data>
@@ -128,7 +128,7 @@
   <data name="S_kubuno_remote_connection_knownHostsPath_Title" xml:space="preserve"><value>Known hosts file</value></data>
   <data name="S_kubuno_remote_connection_knownHostsPath_Description" xml:space="preserve"><value>The host keys Kubuno accepts, kept apart from your own known_hosts. An unknown host is never accepted silently: an info bar shows its fingerprint and adds it here only when you click Accept.</value></data>
   <data name="S_kubuno_remote_devDatabase_tunnel_Title" xml:space="preserve"><value>SSH tunnel</value></data>
-  <data name="S_kubuno_remote_devDatabase_tunnel_Description" xml:space="preserve"><value>When F5 / Ctrl+F5 of the Kubuno Core Web profiles opens the tunnel from localhost to the host&apos;s PostgreSQL (ssh -N -L). It is reused by the next launches and closed with Visual Studio; errors appear in an info bar and the Kubuno Output pane.</value></data>
+  <data name="S_kubuno_remote_devDatabase_tunnel_Description" xml:space="preserve"><value>When F5 / Ctrl+F5 of the Kubuno Core profiles opens the tunnel from localhost to the host&apos;s PostgreSQL (ssh -N -L). It is reused by the next launches and closed with Visual Studio; errors appear in an info bar and the Kubuno Output pane.</value></data>
   <data name="S_kubuno_remote_devDatabase_tunnel_Item_auto" xml:space="preserve"><value>When KUBUNO_DEV_DATABASE_URL points at the local port</value></data>
   <data name="S_kubuno_remote_devDatabase_tunnel_Item_always" xml:space="preserve"><value>At every launch</value></data>
   <data name="S_kubuno_remote_devDatabase_tunnel_Item_never" xml:space="preserve"><value>Never</value></data>

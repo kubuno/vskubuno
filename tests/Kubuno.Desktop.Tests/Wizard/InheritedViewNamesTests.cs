@@ -48,7 +48,7 @@ namespace Kubuno.Desktop.Tests.Wizard
         [TestMethod]
         public void The_base_type_is_read_from_the_code_behind()
         {
-            Assert.AreEqual("MainView", InheritedViewNames.BaseTypeName("use kubuno::prelude::*;\n#[kubuno::view(\"main_view.kbview\")]\n#[derive(Default)]\npub struct MainView {}", userControl: false));
+            Assert.AreEqual("MainView", InheritedViewNames.BaseTypeName("use kubuno_desktop::prelude::*;\n#[kubuno_desktop::view(\"main_view.kbview\")]\n#[derive(Default)]\npub struct MainView {}", userControl: false));
             Assert.AreEqual("AddressEditor", InheritedViewNames.BaseTypeName("#[derive(UserControl, Default)]\n#[user_control(view = \"a.kbview\")]\npub struct AddressEditor { base: UserControlCore }", userControl: true));
             Assert.IsNull(InheritedViewNames.BaseTypeName("pub struct Nothing;", userControl: true));
             Assert.AreEqual("crate::address_editor::AddressEditor", InheritedViewNames.BaseTypePath(@"C:\app\address_editor.kbview", "AddressEditor"));

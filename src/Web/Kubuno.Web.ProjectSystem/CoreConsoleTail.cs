@@ -14,7 +14,7 @@ namespace Kubuno.Web.ProjectSystem
     /// <summary>
     /// The dev core's console in the Output window (docs/WEB.md, "F5"): F5 starts the core with its standard output and
     /// error redirected to <c>dev-core\logs\core-console.log</c> (the native debugger's <c>&gt; file 2&gt;&amp;1</c>), and this
-    /// follows the file into the "Kubuno Core Web (serveur)" pane - the core's tracing log, including what the modules
+    /// follows the file into the "Kubuno Core (server)" pane - the core's tracing log, including what the modules
     /// it supervises print. ANSI colours are removed and the secrets of the launch (the database password) masked.
     /// Lines are written on the UI thread only.
     /// </summary>
@@ -36,7 +36,7 @@ namespace Kubuno.Web.ProjectSystem
             _masks = masks.Where(mask => mask.Length >= 4).Distinct().OrderByDescending(mask => mask.Length).ToList();
         }
 
-        public const string PaneTitle = "Kubuno Core Web (serveur)";
+        public const string PaneTitle = "Kubuno Core (server)";
 
         /// <summary>Reads what the core wrote since the last call and appends the complete lines (all of them when <paramref name="final"/>).</summary>
         public async Task PumpAsync(bool final = false)

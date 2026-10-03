@@ -1,5 +1,5 @@
-// Builds one of Kubuno Core Web's npm packages from the host app's sources, for the package projects of
-// Kubuno.Core.Web.slnx (docs/WEB.md, "Packages"):
+// Builds one of Kubuno Core's npm packages from the host app's sources, for the package projects of
+// Kubuno.Core.slnx (docs/WEB.md, "Packages"):
 //
 //   node kubuno-packages.mjs <frontend folder> <ui|sdk|drive>
 //

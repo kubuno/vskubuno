@@ -40,11 +40,29 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
         /// </summary>
         public Func<CargoPackage, string> ResolveProjectDirectory { get; }
 
+        /// <summary>
+        /// The Visual Studio project name of a member - also the <c>.rsproj</c>'s file name (docs/RSPROJ.md, "Project and
+        /// solution names"): by default the package name; the Kubuno repositories pass
+        /// <see cref="Kubuno.Rust.Cargo.Naming.ProjectNaming"/> (<c>kubuno-desktop-ui</c> → <c>Kubuno.Desktop.UI</c>).
+        /// </summary>
+        public Func<CargoPackage, string> ResolveProjectName { get; }
+
+        /// <summary>
+        /// Builds the whole workspace from every project (<c>CargoBuildScope=Workspace</c>) as soon as the workspace has
+        /// more than one program - its programs share most of their crates, so a solution build compiles each shared crate
+        /// once, with one feature set. Off by default (only a shared Rust dylib asks for it then).
+        /// </summary>
+        public bool WorkspaceBuildForSeveralPrograms { get; }
+
         public RsprojGenerationOptions(
             string sdkVersion,
             bool includeLibraryOnlyMembers = false,
-            Func<CargoPackage, string>? resolveProjectDirectory = null)
+            Func<CargoPackage, string>? resolveProjectDirectory = null,
+            Func<CargoPackage, string>? resolveProjectName = null,
+            bool workspaceBuildForSeveralPrograms = false)
         {
+            ResolveProjectName = resolveProjectName ?? (package => package.Name);
+            WorkspaceBuildForSeveralPrograms = workspaceBuildForSeveralPrograms;
             if (string.IsNullOrWhiteSpace(sdkVersion))
             {
                 throw new ArgumentException("SDK version must not be empty.", nameof(sdkVersion));

@@ -56,7 +56,7 @@ need checking against real assemblies before coding is marked "(unverified)".
 **Goals**
 
 - A `.rsproj` can sit in a mixed `.sln` next to `.csproj`/`.vcxproj` (the C# host side of
-  `kubuno_ui`-consuming apps, or a future mixed Rust/.NET solution), with real Debug/Release
+  `kubuno_desktop_ui`-consuming apps, or a future mixed Rust/.NET solution), with real Debug/Release
   configurations MSBuild and VS both understand natively.
 - A **real startup project** — "Set as Startup Project" in Solution Explorer, not the Open Folder
   "Select Startup Item" dropdown the README already documents as flaky for a workspace-only
@@ -248,7 +248,7 @@ just verified.
 
 **Live test** (`Z:\src\desktop\windows`, a 13-member workspace): generated into a scratch mirror
 under `C:\kubuno-build\rsproj-test\desktop-mirror\` (never written into the desktop tree itself) —
-5 members have a `[[bin]]` target (`drive-app`, `kubuno-chat`, `kubuno-desktop`,
+5 members have a `[[bin]]` target (`kubuno-drive-desktop`, `kubuno-chat`, `kubuno-desktop`,
 `kubuno-documents`, `kubuno-views-ls`), each got a `.rsproj` with `<CargoManifestPath>` pointing
 back at the real manifest on `Z:` (the mirror's project directory differs from the manifest's own),
 plus a `windows.sln` listing all 5. Opened in the experimental instance, built through the real
@@ -271,6 +271,50 @@ ambiguous, fails). No code change was needed; the original claim was inaccurate,
 **Not done in this pass**: `.slnx` (kept to classic `.sln` — simpler, universally supported, no
 VS-2026-specific schema risk to verify; since done, see "Cargo workspaces" below); diffing/reporting a changed
 target shape for an existing `.rsproj` (see idempotency note above — deliberately simplified instead).
+
+### 4.1 Project and solution names (2026-10-03)
+
+The product owner's rule for every Kubuno repository (shared helper `Kubuno.Rust.Cargo.Naming.ProjectNaming`, used by
+this command and by the web layer's "Generate Solution"):
+
+- **A Visual Studio project is `Kubuno.<Product>.<Component>`** and the Rust crate it builds is
+  `kubuno-<product>-<component>` (library `kubuno_<product>_<component>`): `kubuno-desktop-ui` is `Kubuno.Desktop.UI`.
+  The segments of the crate name after `kubuno` become dotted PascalCase segments (`ui` → `UI`, `ls` → `LS`). The
+  project FILE is named after the project (`Kubuno.Desktop.UI.rsproj`, next to its `Cargo.toml`); `<CargoPackage>`
+  keeps the crate name, and `<CargoBin>` is written whenever the executable's name differs from the package's (the
+  SDK otherwise looks for `<package>.exe`). A crate outside this naming (a template, a sample, a third-party
+  workspace) keeps its package name as project name, as before.
+- **A solution is its repository**, versioned in it, at its root, with relative paths to its own projects only:
+  `Kubuno.Core.slnx`, `Kubuno.Desktop.slnx`, `Kubuno.<Module>.slnx` (`SolutionNaming`). An existing solution is merged
+  into (only missing projects are added), an existing project file is never rewritten.
+- **The desktop repository** has ONE solution at its root over its two Cargo workspaces (`windows/` and `common/`,
+  found by `DesktopRepositoryLayout.WorkspaceManifests`; build outputs and vendored crates skipped). "Generate Visual
+  Studio Projects" run from anywhere in it writes `Kubuno.Desktop.slnx` at the repository root, every member - the
+  libraries included - in one of these folders: **Applications** (the programs outside `src/crates`: the shell, chat,
+  documents, drive), **Framework** (`windows/src/crates`), **Shared controls** (`kubuno-desktop-shell-controls`,
+  `kubuno-desktop-header-data`), **Common (multi-OS)** (`common/`), **Drive engine** (the `kubuno-drive-desktop-*`
+  libraries), **Tools** (the programs of `windows/src/crates`: the views language server, the data and resources
+  tools) and **Web** (`kubuno-web-*`: the web views compiler, kept in the desktop repository for now). A workspace with
+  several programs builds as a whole from every project (`<CargoBuildScope>Workspace</CargoBuildScope>`). The SDK feed
+  (`NuGet.Config` + `.kubuno/sdk-feed`) sits next to the solution.
+
+| Desktop crate (before → since 2026-10-03) | Project |
+|---|---|
+| `kubuno` → `kubuno-desktop` (the facade: `kubuno_desktop::prelude`, `#[kubuno_desktop::view]`) | `Kubuno.Desktop` |
+| `kubuno-ui`, `kubuno-controls` → `kubuno-desktop-ui`, `kubuno-desktop-controls` | `Kubuno.Desktop.UI`, `.Controls` |
+| `kubuno-views(-macros, -meta, -model, -syntax, -ls)` → `kubuno-desktop-views(...)` | `Kubuno.Desktop.Views(.Macros, ...)` |
+| `kubuno-data(...)`, `kubuno-print`, `kubuno-resources(...)`, `kubuno-app-storage-components` → `kubuno-desktop-…` | `Kubuno.Desktop.Data`, ... |
+| `kubuno-shell-controls`, `kubuno-header-data` → `kubuno-desktop-shell-controls`, `kubuno-desktop-header-data` | `Kubuno.Desktop.Shell.Controls`, `.Header.Data` |
+| `kubuno-views-web` → `kubuno-web-views-compiler-core` | `Kubuno.Web.Views.Compiler.Core` |
+| common: `kubuno-account`, `-secrets`, `-sync`, `-sync-engine`, `-api-client`, `-app-storage` → `kubuno-desktop-…` | `Kubuno.Desktop.Account`, ... |
+| `kubuno-docs-core` → `kubuno-office-docs-core` | `Kubuno.Office.Docs.Core` |
+| apps: `kubuno-desktop` (shell), `kubuno-chat`, `kubuno-documents`, `drive-app` → `kubuno-desktop-shell`, `kubuno-chat-desktop`, `kubuno-office-desktop`, `kubuno-drive-desktop` | `Kubuno.Desktop.Shell`, `Kubuno.Chat.Desktop`, `Kubuno.Office.Desktop`, `Kubuno.Drive.Desktop` |
+| `drive-app-controls`, `-app-storage`, `-core-storage`, `-shared`, `-localization` → `kubuno-drive-desktop-…` | `Kubuno.Drive.Desktop.App.Controls`, ... |
+
+The executables keep their names (`kubuno-desktop.exe`, `kubuno-chat.exe`, `kubuno-documents.exe`, `drive.exe`,
+`kubuno-sync`, `kubuno-views-ls.exe`, `kubuno-data-tool.exe`, `kubuno-resources-tool.exe`). The tooling still accepts
+the former crate names (an older desktop checkout): the framework crate list (`FrameworkCrates`), the design
+surface's `--extern` crates, the debugger visualizers and step filters, the code-behind and dependency detection.
 
 ## 5. Coexistence with Open Folder and rust-analyzer
 
@@ -389,18 +433,18 @@ nothing, verified live by unzipping the built `.vsix`). Custom tags on every tem
 `LanguageTag=Rust`, `PlatformTag=Windows`, `ProjectTypeTag=Console` / `Library` / `Kubuno`.
 
 - Project templates: **Rust console application**, **Rust library**, **Kubuno desktop application**
-  (a `kubuno_controls::host::run_with_chrome` window loading a starter view through
-  `kubuno_views::runtime::Runtime`/`FileWatcher` - the same API `kubuno-views/examples/
+  (a `kubuno_desktop_controls::host::run_with_chrome` window loading a starter view through
+  `kubuno_desktop_views::runtime::Runtime`/`FileWatcher` - the same API `kubuno-desktop-views/examples/
   view_preview.rs` uses - with a starter `main_view.kbview` + same-stem `main_view.rs` code-behind,
   deliberately named that way for lot 8's planned nesting). Since 2026-09-29 the starter view is an
   absolute surface like a new WinForms form (docs/DESIGNER.md §14): a `<Panel DesignWidth="800"
   DesignHeight="450">` root with anchored children, and `main.rs` opens the window with that design
   size as its page area (`Runtime::design_size`, `HostOptions::client_size`), painting the view over
   the whole client area so the anchors follow every resize. Its `Cargo.toml` depends on
-  `kubuno-ui`/`kubuno-controls`/`kubuno-views` via **path dependencies on this machine's own
+  `kubuno-desktop-ui`/`kubuno-desktop-controls`/`kubuno-desktop-views` via **path dependencies on this machine's own
   `desktop/windows` checkout** (`Z:/src/desktop/windows/src/crates/...`, decision documented in the
   Cargo.toml itself) rather than git-tagged dependencies: this template's own bar is "must build on
-  this machine", and `kubuno-ui` et al. are not (yet) published with git tags the way `kubuno/core`'s
+  this machine", and `kubuno-desktop-ui` et al. are not (yet) published with git tags the way `kubuno/core`'s
   shared crates are (CLAUDE.md §3) - switch to `git = "https://github.com/kubuno/desktop", tag =
   "..."` once they are.
 - **Kubuno Module** (a follow-up pass shipped this): an Axum/Tokio backend module skeleton
@@ -660,7 +704,7 @@ real *Create a new project* dialog (UI Automation) under `C:\kubuno-build\rsproj
 
 ```
 KubunoLot8App
-  Dependencies > Crates > kubuno-controls (path), kubuno-ui (path), kubuno-views (path)
+  Dependencies > Crates > kubuno-desktop-controls (path), kubuno-desktop-ui (path), kubuno-desktop-views (path)
   src
     main.rs > main_view, VIEW_PATH: &str, main() -> std::process::ExitCode
     main_view.kbview
@@ -681,8 +725,8 @@ Icons and dark theme: checked visually by the orchestrator (screenshot), not by 
 expansion does NOT currently work.** Opened `Z:\src\desktop\windows` (a plain Cargo
 workspace, no `.rsproj`) directly with `devenv "Z:\src\desktop\windows"` and read Solution
 Explorer - "Affichage des dossiers" (Folder View) - back through UI Automation: the tree itself is
-correct (`src\crates\kubuno-views\examples\views\settings.kbview`/`showcase.kbview`,
-`src\crates\kubuno-views-ls\src\symbols.rs` and its siblings all listed with the right names), but
+correct (`src\crates\kubuno-desktop-views\examples\views\settings.kbview`/`showcase.kbview`,
+`src\crates\kubuno-desktop-views-ls\src\symbols.rs` and its siblings all listed with the right names), but
 every `.rs`/`.kbview` file node reports `ExpandCollapseState.LeafNode` - not "Collapsed" (would-
 expand-if-asked) - both right after the node appears and after an 8+ second wait (ruling out the
 debounced/lazy load itself just being slow: `FileSymbolsSource.HasItems` is `true`, i.e. the node
@@ -912,24 +956,24 @@ unregistered, a persisted layout entry can no longer recreate them.
 
 **Report** (product owner, regular Visual Studio): a project freshly created from *Kubuno Desktop
 Application* (`KubunoDesktopApp1`) failed on its first build/F5 with `error[E0463]: can't find crate
-for 'kubuno_ui'` at `kubuno-views\src\runtime.rs:25`.
+for 'kubuno_desktop_ui'` at `kubuno-desktop-views\src\runtime.rs:25`.
 
 **Root cause (reproduced with `cargo build -v`).** The user environment sets
 `CARGO_TARGET_DIR=C:\kubuno-build\desktop-target` - the target directory the `desktop` workspace
 itself builds into - and the SDK passes it on (`Sdk.props`), so the new project built into the
-desktop workspace's own target directory. `kubuno-ui` is `crate-type = ["dylib"]`, and cargo gives a
+desktop workspace's own target directory. `kubuno-desktop-ui` is `crate-type = ["dylib"]`, and cargo gives a
 dylib no hash suffix: every build of it, whatever its flags, features or lock file, is written to the
 same `debug\deps\kubuno_ui.dll` (twelve different `kubuno-ui-<hash>` fingerprints shared that one file
-on this machine). The project's `kubuno-ui` fingerprint was still "fresh" while the DLL on disk had
+on this machine). The project's `kubuno-desktop-ui` fingerprint was still "fresh" while the DLL on disk had
 since been rewritten by a desktop-workspace build (different metadata), so rustc, given
-`--extern kubuno_ui=...\deps\kubuno_ui.dll` when compiling `kubuno-views`, rejected it: E0463. The
+`--extern kubuno_ui=...\deps\kubuno_ui.dll` when compiling `kubuno-desktop-views`, rejected it: E0463. The
 same project built from scratch into a directory of its own succeeds - neither the missing
 `.cargo/config.toml` (`-C prefer-dynamic`) nor the crate type is the cause: rustc already links std
 dynamically when a dylib dependency needs it (the exe imports `kubuno_ui.dll` and
 `std-<hash>.dll`, verified with `dumpbin /dependents`). The clobbering also works the other way (a
 template project build can break the next desktop-workspace build).
 
-*Update 2026-10-03:* `kubuno-ui` is now an ordinary rlib linked statically (docs/DESIGNER.md section 16). Its
+*Update 2026-10-03:* `kubuno-desktop-ui` is now an ordinary rlib linked statically (docs/DESIGNER.md section 16). Its
 builds have hashed file names like every rlib, so this collision can no longer happen; the template keeps its own
 target directory anyway.
 
@@ -946,7 +990,7 @@ target directory anyway.
   and the `.rsproj`'s `<KubunoDesktopSrc>`. A git dependency on `github.com/kubuno/desktop` is not
   possible yet (its `windows/` tree is not published). A `KubunoCheckDesktopSources` target (before
   `CargoRestore`/`CoreCompile`) fails with `KUBUNO0001` and instructions when that folder is missing.
-- Considered and rejected: `crate-type = ["rlib", "dylib"]` on `kubuno-ui` (it is dylib-only on
+- Considered and rejected: `crate-type = ["rlib", "dylib"]` on `kubuno-desktop-ui` (it is dylib-only on
   purpose, see its `Cargo.toml`: the component gallery must exercise the DLL the apps load) and a
   `.cargo/config.toml` in the template (not needed - see above - and it cannot override the
   `CARGO_TARGET_DIR` environment variable, which is what caused the collision).
@@ -1199,21 +1243,21 @@ in Visual Studio. Everything below is as built and verified live in an experimen
 **Entry point.** A `.slnx` at the workspace root, generated by *Kubuno: Generate Visual Studio Projects* and
 renamed `Kubuno.Desktop.slnx`: one `.rsproj` next to each member's `Cargo.toml` (so each project's glob shows
 exactly that crate's files), the six executables at the solution root (`kubuno-desktop` = shell, `kubuno-chat`,
-`kubuno-documents`, `drive-app` whose bin is `drive`, `kubuno-views-ls`, `kubuno-data-tool`), the fifteen libraries
+`kubuno-documents`, `kubuno-drive-desktop` whose bin is `drive`, `kubuno-views-ls`, `kubuno-data-tool`), the fifteen libraries
 and proc-macros under `/Libraries/`, plus the solution's own SDK feed (`NuGet.Config` + `.kubuno/sdk-feed`).
 
-**Why the workspace must be built as a whole.** `kubuno-ui` is `crate-type = ["dylib"]`, cargo names a dylib without
+**Why the workspace must be built as a whole.** `kubuno-desktop-ui` is `crate-type = ["dylib"]`, cargo names a dylib without
 a hash (`deps\kubuno_ui.dll`), and with resolver 2 the features of a dependency depend on which packages a command
 selects. Measured on this workspace: `cargo build -p kubuno-desktop` then `-p kubuno-chat` rebuilds `kubuno_ui.dll`
-each time ("info of dependency `drive-app-controls` changed"), leaving the other executable linked against a DLL that
+each time ("info of dependency `kubuno-drive-desktop-app-controls` changed"), leaving the other executable linked against a DLL that
 no longer matches it ("Point d'entree introuvable" at start - seen live with a stale `kubuno-desktop.exe`).
 `cargo build --workspace` (whatever bins are selected) keeps one feature set for every build of the workspace.
 
-*Update 2026-10-03:* `kubuno-ui` is now an ordinary rlib linked statically (docs/DESIGNER.md section 16), so the
+*Update 2026-10-03:* `kubuno-desktop-ui` is now an ordinary rlib linked statically (docs/DESIGNER.md section 16), so the
 reason above is gone (rlibs have hashed names; another feature set is another file). The desktop `.rsproj` files
 keep `<CargoBuildScope>Workspace</CargoBuildScope>` by choice - one cargo build per solution build, each shared
-crate compiled once - and, with no dylib member left, `TestBuildIsolation` no longer sets `kubuno-views-macros`
-apart (checked: `cargo test -p kubuno-views -p kubuno-views-macros ...` in one run, which used to collide).
+crate compiled once - and, with no dylib member left, `TestBuildIsolation` no longer sets `kubuno-desktop-views-macros`
+apart (checked: `cargo test -p kubuno-desktop-views -p kubuno-desktop-views-macros ...` in one run, which used to collide).
 
 **SDK changes (`Kubuno.Rust.Sdk` 1.1.0)** - the version is bumped because NuGet caches an SDK by version: a changed
 1.0.0 would never reach a machine that already restored 1.0.0.
@@ -1245,7 +1289,7 @@ apart (checked: `cargo test -p kubuno-views -p kubuno-views-macros ...` in one r
 - Limitation: `KubunoWin32Resources` (`cargo rustc -p`) still builds one package; the desktop apps embed their
   resources with their own `build.rs`.
 
-**Generator.** `<CargoBin>` is written for a single bin not named after its package (`drive-app` -> `drive`; F5 looked
+**Generator.** `<CargoBin>` is written for a single bin not named after its package (`kubuno-drive-desktop` -> `drive`; F5 looked
 for `drive-app.exe`); `<CargoBuildScope>Workspace</CargoBuildScope>` when a member is a dylib; the solution goes to
 `cargo metadata`'s workspace root (with a member's `main.rs` active it went to `src\shell\shell.slnx`); a new solution
 is a `.slnx` (`RsprojSlnxGenerator`, merge-only like the `.sln` one, unit-tested) listing libraries under
@@ -1261,8 +1305,8 @@ is a `.slnx` (`RsprojSlnxGenerator`, merge-only like the `.sln` one, unit-tested
 - A dylib library's unit tests were skipped (kind `dylib`, not `lib`); proc-macro/cdylib/staticlib too.
 - `cargo test --no-run --no-fail-fast` (cargo test has no `--keep-going`): one crate that does not compile no longer
   hides the tests of the others.
-- `cargo test --workspace` fails on this workspace from the command line too: `kubuno-views-macros` (a proc-macro)
-  has `kubuno-views` as a dev-dependency, its tests are host units, and cargo builds `kubuno_ui.dll` twice into the
+- `cargo test --workspace` fails on this workspace from the command line too: `kubuno-desktop-views-macros` (a proc-macro)
+  has `kubuno-desktop-views` as a dev-dependency, its tests are host units, and cargo builds `kubuno_ui.dll` twice into the
   same file ("output filename collision", cargo#6313, then LNK1104). `TestBuildIsolation` builds such proc-macros
   (members whose dependency closure reaches a dylib member) apart, each in `<target>\kubuno-isolated-tests\<name>`,
   and the rest of a dylib workspace's tests in `<target>\kubuno-tests` (a test build turns dev-dependency features
@@ -1281,7 +1325,7 @@ and the file kept the regular install's path.
 **Live verification (KubunoDesk hive, `Z:\src\desktop\windows` on the SMB share, target directory
 `C:\kubuno-build\agent-desk\target`).** Solution load (21 projects), solution build (21 succeeded), F5 with a
 breakpoint in `main` hit for `kubuno-desktop` (`main.rs:132`), `kubuno-chat` (`:80`), `kubuno-documents` (`:37`) and
-`drive-app` (`drive::main`, `:42`), each window then running (`Kubuno`, `Kubuno Chat`, `Kubuno Documents`, `Drive`)
+`kubuno-drive-desktop` (`drive::main`, `:42`), each window then running (`Kubuno`, `Kubuno Chat`, `Kubuno Documents`, `Drive`)
 with `kubuno_ui.dll`/`std-*.dll` found through the launch PATH (no staging); Error List 0 errors / 0 warnings with
 rust-analyzer running on the share. Error routing, keep-going F5 and a Test Explorer run were also verified on a
 scratch workspace of the same shape (`ui` dylib, two apps with different features): the error under `app-b`, the

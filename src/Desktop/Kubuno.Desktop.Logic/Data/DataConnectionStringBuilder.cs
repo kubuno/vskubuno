@@ -29,7 +29,7 @@ namespace Kubuno.Desktop.Logic.Data
 
         public string User { get; set; } = string.Empty;
 
-        /// <summary>PostgreSQL <c>sslmode</c> / MySQL <c>SslMode</c>; empty = kubuno-data's default (TLS required for a non-local host).</summary>
+        /// <summary>PostgreSQL <c>sslmode</c> / MySQL <c>SslMode</c>; empty = kubuno-desktop-data's default (TLS required for a non-local host).</summary>
         public string SslMode { get; set; } = string.Empty;
 
         /// <summary>SQL Server <c>Encrypt</c>: empty = default (required for a non-local server), <c>true</c>, <c>false</c>.</summary>
@@ -40,7 +40,7 @@ namespace Kubuno.Desktop.Logic.Data
     }
 
     /// <summary>
-    /// Builds connection strings in the forms kubuno-data parses (<c>conn_string.rs</c>'s <c>ConnectionStringBuilder</c>,
+    /// Builds connection strings in the forms kubuno-desktop-data parses (<c>conn_string.rs</c>'s <c>ConnectionStringBuilder</c>,
     /// then sqlx / tiberius): the ADO.NET-like <c>Key=Value;</c> form for PostgreSQL, MySQL/MariaDB and SQL Server, a
     /// <c>sqlite:</c> URL for SQLite. Values are quoted the way that parser reads them: <c>'…'</c> with doubled quotes when
     /// they contain <c>;</c>, a quote, or leading/trailing spaces. The password is never part of <see cref="Display"/>
@@ -180,7 +180,7 @@ namespace Kubuno.Desktop.Logic.Data
             return true;
         }
 
-        /// <summary>Quotes an ADO value the way kubuno-data's parser reads it back.</summary>
+        /// <summary>Quotes an ADO value the way kubuno-desktop-data's parser reads it back.</summary>
         public static string QuoteValue(string value)
         {
             if (value.IndexOf(';') >= 0 || value.IndexOf('\'') >= 0 || value.IndexOf('"') >= 0 || value.Trim() != value)

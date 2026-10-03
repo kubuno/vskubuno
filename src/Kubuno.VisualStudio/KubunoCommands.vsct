@@ -507,13 +507,13 @@
           <ButtonText>Kubuno: Restart rust-analyzer</ButtonText>
         </Strings>
       </Button>
-      <!-- Web layer (docs/WEB.md): Kubuno Core Web (the web server) and its modules - solutions, version tools, .kbpkg. -->
+      <!-- Web layer (docs/WEB.md): Kubuno Core (the web server) and its modules - solutions, version tools, .kbpkg. -->
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidGenerateWebSolution" priority="0x0110" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Icon guid="ImageCatalogGuid" id="WebApplication" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Kubuno Core Web: Generate Solution</ButtonText>
+          <ButtonText>Kubuno Web: Generate Solution</ButtonText>
           <CanonicalName>.Kubuno.GenerateWebSolution</CanonicalName>
           <LocCanonicalName>.Kubuno.GenerateWebSolution</LocCanonicalName>
         </Strings>
@@ -521,7 +521,7 @@
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidGenerateMultiRepoSolution" priority="0x0111" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Strings>
-          <ButtonText>Kubuno Core Web: Generate Multi-Repository Solution...</ButtonText>
+          <ButtonText>Kubuno Web: Generate Multi-Repository Solution...</ButtonText>
           <CanonicalName>.Kubuno.GenerateMultiRepositoryWebSolution</CanonicalName>
           <LocCanonicalName>.Kubuno.GenerateMultiRepositoryWebSolution</LocCanonicalName>
         </Strings>
@@ -531,7 +531,7 @@
         <Icon guid="ImageCatalogGuid" id="Package" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Kubuno Core Web: Package Module (.kbpkg)</ButtonText>
+          <ButtonText>Kubuno Web: Package Module (.kbpkg)</ButtonText>
           <CanonicalName>.Kubuno.PackageModule</CanonicalName>
           <LocCanonicalName>.Kubuno.PackageModule</LocCanonicalName>
         </Strings>
@@ -539,7 +539,7 @@
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidCheckVersions" priority="0x0113" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Strings>
-          <ButtonText>Kubuno Core Web: Check Versions</ButtonText>
+          <ButtonText>Kubuno Web: Check Versions</ButtonText>
           <CanonicalName>.Kubuno.CheckVersions</CanonicalName>
           <LocCanonicalName>.Kubuno.CheckVersions</LocCanonicalName>
         </Strings>
@@ -547,7 +547,7 @@
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidPrepareNpmFloors" priority="0x0114" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Strings>
-          <ButtonText>Kubuno Core Web: Prepare npm Floors...</ButtonText>
+          <ButtonText>Kubuno Web: Prepare npm Floors...</ButtonText>
           <CanonicalName>.Kubuno.PrepareNpmFloors</CanonicalName>
           <LocCanonicalName>.Kubuno.PrepareNpmFloors</LocCanonicalName>
         </Strings>
@@ -555,7 +555,7 @@
       <Button guid="guidKubunoCommandsPackageCmdSet" id="cmdidPrepareSharedCrateTags" priority="0x0115" type="Button">
         <Parent guid="guidKubunoCommandsPackageCmdSet" id="KubunoToolsMenuGroup" />
         <Strings>
-          <ButtonText>Kubuno Core Web: Prepare Shared Crate Tags...</ButtonText>
+          <ButtonText>Kubuno Web: Prepare Shared Crate Tags...</ButtonText>
           <CanonicalName>.Kubuno.PrepareSharedCrateTags</CanonicalName>
           <LocCanonicalName>.Kubuno.PrepareSharedCrateTags</LocCanonicalName>
         </Strings>
@@ -565,7 +565,7 @@
         <Icon guid="ImageCatalogGuid" id="ConnectToDatabase" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Kubuno Core Web: Open Development Database Tunnel</ButtonText>
+          <ButtonText>Kubuno Web: Open Development Database Tunnel</ButtonText>
           <CanonicalName>.Kubuno.OpenDevDatabaseTunnel</CanonicalName>
           <LocCanonicalName>.Kubuno.OpenDevDatabaseTunnel</LocCanonicalName>
         </Strings>

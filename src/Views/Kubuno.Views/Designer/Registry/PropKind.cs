@@ -13,7 +13,7 @@ namespace Kubuno.Views.Designer.Registry
     }
 
     /// <summary>
-    /// Mirrors <c>kubuno_views::registry::PropKind</c> (docs/DESIGNER.md §5: "kind serializes PropKind
+    /// Mirrors <c>kubuno_desktop_views::registry::PropKind</c> (docs/DESIGNER.md §5: "kind serializes PropKind
     /// as 'Bool'/'F32'/'String'/{'Enum': [...]}"): the three scalar variants are plain JSON strings, and
     /// <c>Enum</c> alone carries data (its variant list), so it round-trips as a one-key object. This is
     /// a Rust-style closed sum type reimplemented as a class with a <see cref="Tag"/> discriminant

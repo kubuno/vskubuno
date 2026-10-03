@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   docs/RSPROJ.md Addendum (lot 7): "Kubuno desktop application" - a .rsproj + Cargo.toml depending on
-  kubuno-ui/kubuno-controls/kubuno-views (path dependencies on a local desktop/windows checkout, found
+  kubuno-desktop-ui/kubuno-desktop-controls/kubuno-desktop-views (path dependencies on a local desktop/windows checkout, found
   at creation time through KUBUNO_DESKTOP_SRC by the wizard's $kubunodesktopsrc$ token - see the
   Cargo.toml and .rsproj comments; the .rsproj also gives the project its own cargo target directory,
-  required by the kubuno_ui dylib, docs/RSPROJ.md "Template build fix"), a window
+  required by the kubuno_desktop_ui dylib, docs/RSPROJ.md "Template build fix"), a window
   hosting a starter .kbview view (main_view.kbview) with its code-behind (main_view.rs, same stem/
   folder on purpose - docs/RSPROJ.md's "lot 8" addendum plans to nest one under the other in Solution
   Explorer, WPF .xaml/.xaml.cs-style).
 -->
 <VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Core Desktop Application</Name>
-    <Description>A native Kubuno desktop app (kubuno_ui/kubuno_controls/kubuno_views, no web view) with a starter view and code-behind, built through Cargo as a real MSBuild/CPS project (.rsproj).</Description>
+    <Name>Kubuno Desktop Application</Name>
+    <Description>A native Kubuno desktop app (kubuno_desktop_ui/kubuno_desktop_controls/kubuno_desktop_views, no web view) with a starter view and code-behind, built through Cargo as a real MSBuild/CPS project (.rsproj).</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoDesktopApplication</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
-    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>30</SortOrder>
     <CreateNewFolder>true</CreateNewFolder>

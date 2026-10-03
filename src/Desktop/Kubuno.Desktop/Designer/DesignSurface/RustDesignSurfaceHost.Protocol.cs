@@ -15,7 +15,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// The DSG-6 IPC protocol (`vskubuno/docs/DESIGNER.md`'s "DSG-6 protocol" section): line-delimited
     /// JSON on the design surface's own stdin (host -> surface: `setText`/`setDesignMode`/`select`) and
     /// stdout (surface -> host: `selectionChanged`/`editRequest`), matching exactly what
-    /// `kubuno-views/src/protocol.rs` implements on the Rust side. Split out from
+    /// `kubuno-desktop-views/src/protocol.rs` implements on the Rust side. Split out from
     /// <c>RustDesignSurfaceHost.cs</c> (a `partial class` - see that file's own class-level comment) so
     /// this work does not collide with concurrent changes to that file's keyboard-forwarding code.
     /// </summary>

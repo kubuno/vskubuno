@@ -69,8 +69,8 @@ namespace Kubuno.Rust.ProjectSystem.ProjectProperties
 
         // ----- .kbres -----
         public static string KbresNotAvailable => T(
-            "Kubuno resource files (.kbres) are not available yet. Images and strings can be placed next to the views and loaded with kubuno_ui; the resource editor is planned (docs/EVENTS.md, \"Resources\").",
-            "Les fichiers de ressources Kubuno (.kbres) ne sont pas encore disponibles. Les images et chaînes peuvent être placées à côté des vues et chargées avec kubuno_ui ; l'éditeur de ressources est prévu (docs/EVENTS.md, « Resources »).");
+            "Kubuno resource files (.kbres) are not available yet. Images and strings can be placed next to the views and loaded with kubuno_desktop_ui; the resource editor is planned (docs/EVENTS.md, \"Resources\").",
+            "Les fichiers de ressources Kubuno (.kbres) ne sont pas encore disponibles. Les images et chaînes peuvent être placées à côté des vues et chargées avec kubuno_desktop_ui ; l'éditeur de ressources est prévu (docs/EVENTS.md, « Resources »).");
 
         public static string PropertyWriteFailed(string property, string message) =>
             T($"The property '{property}' could not be saved: {message}", $"La propriété « {property} » n'a pas pu être enregistrée : {message}");

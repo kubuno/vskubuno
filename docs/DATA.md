@@ -2,7 +2,7 @@
 
 Goal: make database access as easy as WinForms/ADO.NET + VS data tooling, idiomatic Rust, secure by default.
 
-## Runtime components (kubuno-views / a new `kubuno-data` crate)
+## Runtime components (kubuno-desktop-views / a new `kubuno-desktop-data` crate)
 - **Connection component** (non-visual, in the component tray): provider (PostgreSQL first — Kubuno's stack —, SQLite, MySQL/MariaDB, SQL Server), connection string **resolved from settings/user secrets or an OS credential store, never hard-coded**, pooling (sqlx pools), async open/close on the UI dispatcher, state events (StateChange), retry policy.
 - **Query/command components** (TableAdapter-like): parameterized queries only (no string concatenation), `Fill`/`Update`/`Insert`/`Delete`, typed rows generated from the schema (compile-time checked via `sqlx::query_as!` with an offline `.sqlx` cache — `SQLX_OFFLINE`), transactions (`TransactionScope`-like), stored procedures/functions, cancellation, paging.
 - **BindingSource**: current item, position, filter, sort, add/edit/cancel/end-edit, change tracking (row states Added/Modified/Deleted/Unchanged), `ListChanged`/`CurrentChanged`/`PositionChanged` events; binds controls (`{Binding Source=customersBinding, Path=Name}`), master/detail relations.
@@ -25,7 +25,7 @@ No credentials in source, logs or `.kbview`; secrets via settings with user-secr
 
 # Design (2026-09-30)
 
-> Scope: the requirements above, mapped onto the existing Kubuno desktop stack: `kubuno-views` (XML views,
+> Scope: the requirements above, mapped onto the existing Kubuno desktop stack: `kubuno-desktop-views` (XML views,
 > the binding engine, the EVT-6 executor, the EVT-7 component hierarchy and registry), the designer (component
 > tray, Properties window, ⚡ tab) and `vskubuno`. Status: **DATA-1 to DATA-8 are built** (see the
 > "as built" sections at the end — §12 to §20).
@@ -39,7 +39,7 @@ No credentials in source, logs or `.kbview`; secrets via settings with user-secr
   schema discovered at run time) cover the designer's drag-and-drop scenarios; *typed* access (`sqlx::query_as!`
   against an offline `.sqlx` cache, generated at compile time from a data-source description, DATA-4) covers business
   code. Both run on the same connection component, pools and secrets.
-- **The UI thread never waits on the database.** Every I/O runs on a private Tokio runtime owned by `kubuno-data`;
+- **The UI thread never waits on the database.** Every I/O runs on a private Tokio runtime owned by `kubuno-desktop-data`;
   the UI side awaits a runtime-agnostic handle from an EVT-6 task (`spawn_local` / async handlers) and applies the
   result on the UI thread (`UiHandle::update`). Components that raise events (`BindingSource`, `DbConnection`) are
   UI-thread objects (`!Send`, like `Event<A>`); the data they exchange with the I/O side (`Table`, `DbValue`, change
@@ -53,19 +53,19 @@ No credentials in source, logs or `.kbview`; secrets via settings with user-secr
 
 ## 2. Crate layout
 
-New workspace member `desktop/windows/src/crates/kubuno-data` (library, rlib — never part of the `kubuno_ui` dylib, so
+New workspace member `desktop/windows/src/crates/kubuno-desktop-data` (library, rlib — never part of the `kubuno_desktop_ui` dylib, so
 adding it rebuilds nothing of the shared runtime):
 
 ```text
-kubuno-data/
+kubuno-desktop-data/
   Cargo.toml            features: default = ["sqlite", "postgres", "credential-manager"]
                         sqlite, postgres (sqlx 0.8 drivers), mysql (DATA-3), mssql (DATA-3, tiberius)
                         credential-manager (Windows Credential Manager through windows-sys)
   src/lib.rs            re-exports, `user_secrets!()`
   src/error.rs          DataError (thiserror): Config, Secret, Validation, Conversion, Database, Concurrency,
                         Cancelled, Closed — Display never contains a connection string or a value of a secret
-  src/value.rs          DbValue (Null, Bool, Int, Float, Text, Bytes) ↔ kubuno_views Value; DbType
-  src/rt.rs             the private Tokio runtime (2 workers, "kubuno-data"), DataTask<T> (await from any
+  src/value.rs          DbValue (Null, Bool, Int, Float, Text, Bytes) ↔ kubuno_desktop_views Value; DbType
+  src/rt.rs             the private Tokio runtime (2 workers, "kubuno-desktop-data"), DataTask<T> (await from any
                         executor, cancel = abort), block_on for tests and tools
   src/secrets.rs        SecretSource trait; UserSecrets, CredentialManager, Environment; SecretResolver chain
   src/conn_string.rs    ConnectionStringBuilder (key=value and URL forms, redacted Display/Debug)
@@ -118,7 +118,7 @@ pub struct DbConnection {
   **user secrets store** `%APPDATA%\Kubuno\UserSecrets\<UserSecretsId>\secrets.json`, a flat JSON object
   (`{"ConnectionStrings:Northwind": "postgres://…"}`), for development. The id comes from the application's
   manifest: `[package.metadata.kubuno] user-secrets-id = "<uuid>"`, read at compile time by
-  `kubuno_data::user_secrets!()` (`include_str!` of the manifest, no build script). A connection string may also
+  `kubuno_desktop_data::user_secrets!()` (`include_str!` of the manifest, no build script). A connection string may also
   keep secrets out of itself with placeholders, `Password={secret:NorthwindPassword}`, resolved through the same
   chain at open time. A literal `ConnectionString` containing a password, or a `ConnectionString` with a
   `{secret:…}` that no source resolves, is refused with a `DataError::Secret` naming the key, never the value.
@@ -239,7 +239,7 @@ show record fields are text controls; a number keeps its exact digits). Typed co
 
 **Events declared in XML** (`<BindingSource OnCurrentChanged="customers_current_changed"/>`) are queued by the
 component and delivered by `DataContext::pump(vm)` through the view model's typed handlers
-(`kubuno_views::events::dispatch_typed`), so the ⚡ tab and `#[event_handlers]` work for data components as for
+(`kubuno_desktop_views::events::dispatch_typed`), so the ⚡ tab and `#[event_handlers]` work for data components as for
 controls. The async helpers pump after each operation; a view model calls `pump` at the end of `set`.
 
 **Async operations** follow EVT-6's rule (no borrow across `.await`): `DataContext` starts an operation on the UI
@@ -248,15 +248,15 @@ completes it on the UI thread (`end_fill`, `end_save`: replace/accept rows, rais
 ErrorProvider). The one-liners for handlers:
 
 ```rust
-async fn on_load(ui: UiHandle<Self>) { let _ = kubuno_data::fill(&ui, "customers").await; }
-async fn save_click(ui: UiHandle<Self>) { let _ = kubuno_data::save(&ui, "customers").await; }
+async fn on_load(ui: UiHandle<Self>) { let _ = kubuno_desktop_data::fill(&ui, "customers").await; }
+async fn save_click(ui: UiHandle<Self>) { let _ = kubuno_desktop_data::save(&ui, "customers").await; }
 ```
 
 (`V: HasDataContext`, a one-method trait returning the view model's `DataContext`). DATA-2 moves the ownership of the
 components into the view runtime (the XML-created instances become the live ones, reachable as
 `runtime.component::<BindingSource>("customers")`), after which the forwarding in `get`/`set` is no longer needed.
 *As built (§13): the runtime owns them; `runtime.with_component::<BindingSource, _>("customers", |bs| …)`, the
-helpers `kubuno_data::fill/save/save_all(&ui, …)` need no trait, and `DataContext` remains for code outside a view.*
+helpers `kubuno_desktop_data::fill/save/save_all(&ui, …)` need no trait, and `DataContext` remains for code outside a view.*
 
 ## 8. BindingNavigator (DATA-2)
 
@@ -268,7 +268,7 @@ designer's "drag a table from Data Sources" drops one above the grid.
 ## 9. Designer and Visual Studio integration
 
 - **Registry**: every component is a `#[derive(Component)] #[kubuno(extends = Component)]` class; its static
-  constructor registers it (EVT-7b), so an application that links `kubuno-data` (`extern crate kubuno_data as _;` in
+  constructor registers it (EVT-7b), so an application that links `kubuno-desktop-data` (`extern crate kubuno_desktop_data as _;` in
   `main.rs`, which the template adds) gets `<DbConnection>`, `<DbCommand>`, `<TableAdapter>`, `<BindingSource>` and
   `<ErrorProvider>` as known elements: validation, completion, hover, the Toolbox (*Données* tab, after a build), the
   **component tray** (non-visual: `registry::is_non_visual`), the Properties window (categories *Données*,
@@ -285,7 +285,7 @@ designer's "drag a table from Data Sources" drops one above the grid.
   données", a query window with a results grid, "Générer SELECT/INSERT".
 - **Data Sources window and wizard** (DATA-6): "Ajouter une source de données…" (connection → tables/views/queries →
   name) writes a declarative `src/data/<name>.kbdata` (connection name, schema, tables with their columns and keys,
-  named queries) — the developer-owned source of truth —, and `kubuno_data::data_source!("customers.kbdata")` expands
+  named queries) — the developer-owned source of truth —, and `kubuno_desktop_data::data_source!("customers.kbdata")` expands
   at compile time into typed row structs and `sqlx::query_as!` calls (offline `.sqlx` cache, `SQLX_OFFLINE=true` in
   builds); user code extends them in plain `impl` blocks next to it. Nothing generated is written into the project.
   Dragging a table onto a view inserts, surgically, a `<DataTable>` (or detail fields: label + bound control per
@@ -304,7 +304,7 @@ designer's "drag a table from Data Sources" drops one above the grid.
 
 | Lot | Content | Size | Depends on | Tests / live verification |
 |---|---|---|---|---|
-| **DATA-1** ✅ | `kubuno-data` crate: private runtime + `DataTask`, secrets chain (env, Credential Manager, user secrets) and `ConnectionStringBuilder`, `DbConnection` (PostgreSQL + SQLite, pools, states, retry, schema, TLS default), `DbCommand`, `Table`/row states, `TableAdapter` Fill/Update (transactional generated DML), `BindingSource` (position, filter, sort, edit, events), `ErrorProvider`, `DataContext` (paths, event pump, async fill/save), registry metadata; `parse_binding` `Source=`/`Path=` | L | EVT-6, EVT-7b | Unit tests; SQLite in-memory integration tests; PostgreSQL tests gated on `KUBUNO_TEST_PG_URL`; live: scratch desktop app on a SQLite file (grid + detail, add/edit/delete, Save persists, ErrorProvider shows a validation error) |
+| **DATA-1** ✅ | `kubuno-desktop-data` crate: private runtime + `DataTask`, secrets chain (env, Credential Manager, user secrets) and `ConnectionStringBuilder`, `DbConnection` (PostgreSQL + SQLite, pools, states, retry, schema, TLS default), `DbCommand`, `Table`/row states, `TableAdapter` Fill/Update (transactional generated DML), `BindingSource` (position, filter, sort, edit, events), `ErrorProvider`, `DataContext` (paths, event pump, async fill/save), registry metadata; `parse_binding` `Source=`/`Path=` | L | EVT-6, EVT-7b | Unit tests; SQLite in-memory integration tests; PostgreSQL tests gated on `KUBUNO_TEST_PG_URL`; live: scratch desktop app on a SQLite file (grid + detail, add/edit/delete, Save persists, ErrorProvider shows a validation error) |
 | **DATA-2** ✅ | Runtime integration: view-owned data components (`runtime.component::<T>()`), `Source=` resolved by the runtime, XML `On*` of data components dispatched by the runtime, typed binding conversions (`F32`, dates, `NullValue`, `FormatString`), `BindingNavigator` control, ErrorProvider adornment (glyph + tooltip), in-place editing in `DataTable` cells (*built afterwards, §15*) | L | DATA-1 | Runtime tests with a fake host (bind, edit a cell, navigate, error glyph hit-test); live: the DATA-1 app without forwarding code |
 | **DATA-3** ✅ | Providers and depth: MySQL/MariaDB, SQL Server (`tiberius` + pool), `TransactionScope`-like transactions across adapters, stored procedures/functions, paging (keyset and offset), cancellation tokens and progress, optimistic concurrency (original values, `xmin`, rowversion), custom DML commands, master/detail relations, hierarchical update manager | L | DATA-1 | Integration tests per provider gated by `KUBUNO_TEST_<PROVIDER>_URL`; SQLite always |
 | **DATA-4** ✅ | Typed data sources: `.kbdata` format, `data_source!` proc macro (typed rows, `query_as!`), `.sqlx` offline cache flow, typed adapters feeding the same `BindingSource` | M | DATA-1 | `trybuild` pass/fail, offline build with a committed `.sqlx` fixture |
@@ -324,16 +324,16 @@ Order: DATA-1 → DATA-2 ∥ DATA-3 ∥ DATA-5 → DATA-4 → DATA-6 → DATA-7 
 - **Immediate-mode bindings write on every keystroke.** Conversions must never lose what the user typed (the proposed
   text rule), and validation runs at `end_edit`, not per keystroke, apart from conversion errors.
 - **`Value` is small** (no integer, no null, no date): exact numbers travel as text until DATA-2's conversions.
-- **Static constructors** register the classes only when the rlib's objects are linked: `extern crate kubuno_data as _;`
+- **Static constructors** register the classes only when the rlib's objects are linked: `extern crate kubuno_desktop_data as _;`
   (template) — the same rule as EVT-7b project controls.
 - **Driver differences** (placeholders, `RETURNING`, type names) are confined to `provider.rs`; SQL Server lacks
   `RETURNING` (`OUTPUT INSERTED.key`), handled in its arm.
 
 ## 12. DATA-1 as built (2026-09-30)
 
-In `Z:\src\desktop\windows` (uncommitted there): new workspace member `src/crates/kubuno-data` (layout of §2 plus
-`events.rs` for the args and the outbox), and one change in `kubuno-views` (`binding::parse_binding` accepts `Path=` and
-`Source=`; `Source=S, Path=P` is the path `S.P`). `kubuno_ui` is unchanged (no dylib rebuild needed).
+In `Z:\src\desktop\windows` (uncommitted there): new workspace member `src/crates/kubuno-desktop-data` (layout of §2 plus
+`events.rs` for the args and the outbox), and one change in `kubuno-desktop-views` (`binding::parse_binding` accepts `Path=` and
+`Source=`; `Source=S, Path=P` is the path `S.P`). `kubuno_desktop_ui` is unchanged (no dylib rebuild needed).
 
 - **Components** are `#[derive(Component)] #[kubuno(extends = Component)]` classes with `#[property]`/`#[event]` fields,
   so they register themselves (EVT-7b static constructors) as linked, non-visual components (`ClassKind::Component`,
@@ -359,7 +359,7 @@ In `Z:\src\desktop\windows` (uncommitted there): new workspace member `src/crate
 
 ### Tests
 
-`kubuno-data`: 47 unit tests (errors, values and conversions, runtime and cancellation, secrets chain/placeholders/
+`kubuno-desktop-data`: 47 unit tests (errors, values and conversions, runtime and cancellation, secrets chain/placeholders/
 manifest id, connection strings incl. redaction, SQL rewriting and identifiers, filter/sort, table states, update
 plans incl. PostgreSQL casts and injection text kept as a parameter, binding source navigation/edit/validation/
 add/delete/events/outbox, error provider, connection validation/state events/retry, `DataContext::from_view`) + 1
@@ -372,13 +372,13 @@ connections, typed columns without rows, XML handlers queued; configuration erro
 `tests/registry.rs` 2 (the five classes are linked non-visual components with their metadata; a view with data
 components, `Source=`/`Path=` bindings and `Invalid` bound to the ErrorProvider validates and compiles);
 `tests/postgres.rs` 1, **gated on `KUBUNO_TEST_PG_URL`** (a disposable database; the test creates and drops its own
-schema) — no PostgreSQL was reachable without looking for credentials, so it ran as a skip. `kubuno-views` 586 + 36
+schema) — no PostgreSQL was reachable without looking for credentials, so it ran as a skip. `kubuno-desktop-views` 586 + 36
 integration/doc tests and `kubuno-views-ls` 143 still pass; `cargo clippy --all-targets -D warnings` clean on
-`kubuno-views` and `kubuno-data`; no `unwrap` outside tests.
+`kubuno-desktop-views` and `kubuno-desktop-data`; no `unwrap` outside tests.
 
 ### Live verification (2026-09-30)
 
-Scratch *Kubuno Desktop Application* `C:\kubuno-build\data1` (template files + `kubuno-data`, `user-secrets-id =
+Scratch *Kubuno Desktop Application* `C:\kubuno-build\data1` (template files + `kubuno-desktop-data`, `user-secrets-id =
 "data1-live-check"`, the connection string `ConnectionStrings:Customers` = a SQLite file in
 `%APPDATA%\Kubuno\UserSecrets\data1-live-check\secrets.json`), built with cargo into its own target and run from C:.
 The view declares `<DbConnection ConnectionStringName="Customers">`, a `TableAdapter`, a `BindingSource`, an
@@ -396,11 +396,11 @@ handlers of the view ran through `pump`.
 
 ## 13. DATA-2 as built (2026-09-30)
 
-In `Z:\src\desktop\windows` (uncommitted there): `kubuno-views` (two new modules, `scope` and `format`, and changes to
-`binding`, `compile`, `design`, `runtime`, `component`, `events::executor`/`typed`) and `kubuno-data`. `kubuno_ui` and
-`kubuno-controls` are unchanged (no dylib rebuild).
+In `Z:\src\desktop\windows` (uncommitted there): `kubuno-desktop-views` (two new modules, `scope` and `format`, and changes to
+`binding`, `compile`, `design`, `runtime`, `component`, `events::executor`/`typed`) and `kubuno-desktop-data`. `kubuno_desktop_ui` and
+`kubuno-desktop-controls` are unchanged (no dylib rebuild).
 
-**Components owned by the runtime (`kubuno_views::scope`).**
+**Components owned by the runtime (`kubuno_desktop_views::scope`).**
 - `compile` gives every non-visual class of an application or a library (`ClassKind::Component`, linked) a place in
   the view's `ComponentScope` — its `x:Name`, else `<class>N` for the n-th element of its class (`bindingSource2`, the
   names `DataContext` gives) — and every *named* linked control too (a `BindingNavigator`). The instance is sited and
@@ -408,7 +408,7 @@ In `Z:\src\desktop\windows` (uncommitted there): `kubuno-views` (two new modules
   attributes follow at every paint, so `Filter="{Binding …}"` now works on a data component). A hot reload reuses the
   instance of an element with the same name and class (its rows survive); `DesignSlot` disposes an instance only when
   it is its last owner. The scope holds the instances weakly (the slots own them).
-- Reaching them: `Runtime::components()` / `Runtime::with_component::<T, _>(name, f)`, `kubuno_views::scope::current()`
+- Reaching them: `Runtime::components()` / `Runtime::with_component::<T, _>(name, f)`, `kubuno_desktop_views::scope::current()`
   inside a frame (handlers, timer ticks, tasks, posted closures), `UiHandle::components()` in an async handler;
   `ComponentScope::with/with_ref/with_dispatch`. *Deviation:* no `runtime.component::<T>()` returning a guard (the
   scope holds `Weak`s): a closure-based accessor instead. After `with`, the dependent components are synced (a
@@ -419,7 +419,7 @@ In `Z:\src\desktop\windows` (uncommitted there): `kubuno-views` (two new modules
   every other path to the view model — no forwarding code in the view model any more. After every binding write and
   once per frame (before the paint), `binding_sync` lets providers follow each other (master/detail, bound
   `Filter`/`Sort`, page requests).
-- **Events**: a data component raises to its Rust subscribers, then `kubuno_views::scope::raise_now(name, event,
+- **Events**: a data component raises to its Rust subscribers, then `kubuno_desktop_views::scope::raise_now(name, event,
   args)`: while the runtime or a binding is calling the component, a thread-local *sync sink* (scoped like
   `UiHandle::update`'s view-model pointer, `unsafe` confined to `scope.rs` with its SAFETY notes) runs the element's
   `.kbview` handler **synchronously** through the view model's typed handlers — `OnRowValidating` adds errors that
@@ -428,7 +428,7 @@ In `Z:\src\desktop\windows` (uncommitted there): `kubuno-views` (two new modules
   paint (a legacy `handlers!` table entry is reached this way too). `DesignSlot` now releases the instance before
   delivering its queued events (a handler may use its component).
 
-**Typed conversions (`kubuno_views::format`, `binding`).** `BindingSpec` gains `format: BindingFormat`
+**Typed conversions (`kubuno_desktop_views::format`, `binding`).** `BindingSpec` gains `format: BindingFormat`
 (`FormatString=`/`StringFormat=`, `NullValue=`/`TargetNullValue=`, `Culture=`/`ConverterCulture=`; values may be quoted
 `'#,##0.00'`). `FromValue::KIND` says what a property wants; `PropSource::resolve` calls `ViewModel::get_bound(spec,
 want)`, and the two-way writes (TextField, NumericField, CheckBox, sliders, lists…) call `set_bound` — defaults convert
@@ -443,7 +443,7 @@ formatted from their ISO text; `NULL` → `NullValue`, or the numeric property's
 (`from_bound`: `1 234,50`, `10/12/1815` with `d` in French → `1815-12-10`, a 31st of February refused with "Enter a date
 as dd/MM/yyyy." kept as proposed text).
 
-**`<BindingNavigator>`** (`kubuno-data`, a linked `Control`, Toolbox *Data*): first / previous | position box (type a
+**`<BindingNavigator>`** (`kubuno-desktop-data`, a linked `Control`, Toolbox *Data*): first / previous | position box (type a
 number, Enter moves, Escape gives up) `/ count` | next / last | add / delete | save, Lucide icons (`ChevronsLeft`,
 `ChevronLeft`, `ChevronRight`, `ChevronsRight`, `Plus`, `Trash2`, `Save`), hover/pressed fills from the theme, items
 disabled where the action is impossible (and while a fill or save runs). `ShowAddItem`, `ShowDeleteItem`,
@@ -461,25 +461,25 @@ danger-coloured round badge with a white exclamation mark at the control's `Icon
 control's own). `ErrorProvider.field_error` answers for the fields of its `DataSource` (`customers.email`,
 `customers.Current.email`), not for the source's own paths (`Position`…).
 
-**Also**: `kubuno_data::fill/save/save_all(&ui, …)` (and `fill_scope`/`save_scope` without a view model) work on the
-view's scope (`V: ViewModel + EventSink`, no `HasDataContext`); the operations themselves live in `kubuno_data::ops`
+**Also**: `kubuno_desktop_data::fill/save/save_all(&ui, …)` (and `fill_scope`/`save_scope` without a view model) work on the
+view's scope (`V: ViewModel + EventSink`, no `HasDataContext`); the operations themselves live in `kubuno_desktop_data::ops`
 (`begin_*`/`end_*` over a `ComponentScope`). `DataContext` is now a standalone `ComponentScope` it owns (accessors
 return `Ref`/`RefMut` guards; `set`/`get` go through the same `ScopedViewModel`; `take_events`/`pump` drain the
-components' queues); its async helpers moved to `kubuno_data::context::{fill, save}`.
+components' queues); its async helpers moved to `kubuno_desktop_data::context::{fill, save}`.
 
-**Not built**: in-place editing in `DataTable` cells (it needs editing support in `kubuno_ui::tables::DataTable`, i.e.
-a `kubuno_ui` change — left for a lot of its own); column `FormatString`s in a `DataTable` (cells show the held text);
+**Not built**: in-place editing in `DataTable` cells (it needs editing support in `kubuno_desktop_ui::tables::DataTable`, i.e.
+a `kubuno_desktop_ui` change — left for a lot of its own); column `FormatString`s in a `DataTable` (cells show the held text);
 the binding options in the language server's completion. (The first two were built afterwards: §15.)
 
 ### Tests (DATA-2)
 
-`kubuno-views`: 599 unit tests (the new ones: `format` — numbers, custom patterns, parsing per culture, dates, binding reads and
+`kubuno-desktop-views`: 599 unit tests (the new ones: `format` — numbers, custom patterns, parsing per culture, dates, binding reads and
 writes, cultures; `binding` — formatting options, typed reads; `scope` — paths routed to a provider, an XML handler
 cancelling synchronously, queued events delivered, a busy component; `runtime` with the fake host — a registered test
 provider: scope names, synchronous `Changing` handler cancelling, events from code delivered by the next frame, the
 error glyph recorded at `(114,17,130,33)` next to the bound `TextField` on a `RecordingCanvas` and gone when fixed,
 the instance kept by a hot reload; glyph placement and blink phases), 24 doc tests, `custom_controls` 4, `roundtrip`
-7, `showcase` 1; `kubuno-views-ls` 146. `kubuno-data` (DATA-2 part): `binding_source` typed reads/writes, detail list,
+7, `showcase` 1; `kubuno-views-ls` 146. `kubuno-desktop-data` (DATA-2 part): `binding_source` typed reads/writes, detail list,
 paging requests, queued events of a named component; `error_provider` paths; `navigator` item states, layout and hit
 test; `tests/sqlite.rs` — an `OnRowValidating` XML handler (a view model's `dispatch_event`) refuses a move
 synchronously through the scope, typed bindings with `N0`/`fr-FR`/`NullValue` save `1234` and NULL; `tests/registry.rs`
@@ -542,7 +542,7 @@ components of a view (configured before the first paint, kept by a hot reload, a
 
 ### Tests (DATA-3)
 
-`kubuno-data`: 63 unit tests (64 with `--features mysql,mssql`) + 1 ignored (Credential Manager round trip), among them: MySQL/SQL Server placeholders and
+`kubuno-desktop-data`: 63 unit tests (64 with `--features mysql,mssql`) + 1 ignored (Credential Manager round trip), among them: MySQL/SQL Server placeholders and
 quoting, top-level `ORDER BY`, generated DML per provider (backticks + `LAST_INSERT_ID`, brackets + `OUTPUT INSERTED`),
 `CompareAllSearchableValues` and `xmin` row versions, custom commands with `@Original_…`, paged/keyset selects,
 dependency order of master/detail plans and foreign-key rewriting, stored procedure calls per provider, transient
@@ -556,8 +556,8 @@ cancelled from another thread, the connection still usable). `tests/postgres.rs`
 gated on `KUBUNO_TEST_MYSQL_URL`), `tests/mssql.rs` 1 (feature `mssql`, gated on `KUBUNO_TEST_MSSQL_URL`: identity,
 `rowversion` read back and a stale version refused): **no PostgreSQL, MySQL or SQL Server server was reachable
 without looking for credentials, so these ran as skips**; the `mysql`/`mssql` code is compiled, clippy-clean and unit
-tested, not exercised against a server. `cargo clippy --all-targets -D warnings` clean on `kubuno-views` and
-`kubuno-data`, with and without `--features mysql,mssql`; no `unwrap` outside tests; the `kubuno` facade crate
+tested, not exercised against a server. `cargo clippy --all-targets -D warnings` clean on `kubuno-desktop-views` and
+`kubuno-desktop-data`, with and without `--features mysql,mssql`; no `unwrap` outside tests; the `kubuno-desktop` facade crate
 (`--features data`) still builds.
 
 ### Live verification (2026-09-30)
@@ -585,14 +585,14 @@ and the two error glyphs.
 
 ## 15. DataTable: formatted columns and in-place editing (DATA-2 left-overs, as built 2026-09-30)
 
-In `Z:\src\desktop\windows` (uncommitted): `kubuno-ui` (`tables.rs`, new `tables/edit.rs`, `text.rs`), `kubuno-views`
+In `Z:\src\desktop\windows` (uncommitted): `kubuno-desktop-ui` (`tables.rs`, new `tables/edit.rs`, `text.rs`), `kubuno-desktop-views`
 (`registry/families/data.rs` — `DataTableNode` rewritten —, `events/args.rs`, `registry/project.rs`, `registry/docs_fr.rs`,
-new `data_edit_tests.rs`), `kubuno-controls` (`host::input::set_frame_events`, doc-hidden, for tests) and `kubuno-data`
+new `data_edit_tests.rs`), `kubuno-desktop-controls` (`host::input::set_frame_events`, doc-hidden, for tests) and `kubuno-desktop-data`
 (`binding_source.rs`). `kubuno_ui.dll` changed: `tools/build-all.ps1` rebuilt the workspace and restaged the runtime.
 
 - **Formats** (WinForms `DefaultCellStyle.Format`): `<Column Header Binding FormatString Culture NullValue Alignment
   ReadOnly/>` — `FormatString`/`Culture`/`NullValue` may also be written in the column's `{Binding …}` (the attribute
-  wins); `<DataTable Culture=…>` is the default culture of its columns. Cells go through `kubuno_views::format` like
+  wins); `<DataTable Culture=…>` is the default culture of its columns. Cells go through `kubuno_desktop_views::format` like
   bound fields (`1 250,50`, `01/09/1843`, `-` for NULL); `Alignment` Left (default, as WinForms)/Center/Right. Header
   sorting compares the raw values (numbers numerically, empties first), never the formatted text.
 - **In-place editing** (`EditMode = EditOnKeystrokeOrF2`): `DataTable.ReadOnly` (default false, WinForms) and
@@ -615,15 +615,15 @@ new `data_edit_tests.rs`), `kubuno-controls` (`host::input::set_frame_events`, d
   line (`AllowUserToAddRows`), no Delete key, no tooltip on the cell's error glyph. Fixed on the way: a bound grid
   without `SelectedIndex` lost its selection at the next frame, and header sorting of a bound grid did not hold.
 - **Parity**: the `RecordingCanvas` calls of the showcase `DataTable`, a bound grid with `SelectedIndex` plus a static
-  grid over four frames (two hovered), and a hand-built `kubuno_ui::DataTable` like the gallery's (at rest and focused)
+  grid over four frames (two hovered), and a hand-built `kubuno_desktop_ui::DataTable` like the gallery's (at rest and focused)
   were recorded before and after: identical (560 lines).
 - **`BindingSource.AutoFill`** (new, for DATA-6's drag and drop): `AutoFill="true"` starts the fill of a list without
   master on the view's first live frame (never in the designer), through its `DataSource` adapter — the `Fill` call
   Windows Forms adds to `Form_Load`, without code.
 
-Tests: `kubuno-ui` 767 (7 new: the edit state machine), `kubuno-views` 609 + 4 ignored (10 new in `data_edit_tests.rs`
+Tests: `kubuno-desktop-ui` 767 (7 new: the edit state machine), `kubuno-desktop-views` 609 + 4 ignored (10 new in `data_edit_tests.rs`
 on a real `Runtime` and `RecordingCanvas`: column formats, F2/typing/double-click, commit paths, Escape, Tab wrap,
-events and cancelation, sorting on raw values), `kubuno-views-ls` 127 + 1 + 18, `kubuno-controls` 401, `kubuno-data`
+events and cancelation, sorting on raw values), `kubuno-views-ls` 127 + 1 + 18, `kubuno-desktop-controls` 401, `kubuno-desktop-data`
 `tests/sqlite.rs` +2 (a grid bound to a binding source over a SQLite file edited with the keyboard — `N2`/`d` in French,
 `abc` refused with the glyph, a second Escape cancels the row, Save → the file holds `2000.75` and `1952-05-01`; and
 `AutoFill` filling the grid with no view-model code). Live: scratch app `C:\kubuno-build\data-ui-live` driven by real
@@ -632,29 +632,29 @@ kept the row with "Enter a number.", Save → the database held the values.
 
 ## 16. DATA-4 as built (2026-09-30): typed data sources
 
-In `Z:\src\desktop\windows` (uncommitted): two new workspace crates, `kubuno-data-model` and `kubuno-data-macros`, and
-`kubuno-data` (`typed.rs`, `lib.rs`, `sql.rs`, `provider.rs`, the committed test cache `kubuno-data/.sqlx/`).
+In `Z:\src\desktop\windows` (uncommitted): two new workspace crates, `kubuno-desktop-data-model` and `kubuno-desktop-data-macros`, and
+`kubuno-desktop-data` (`typed.rs`, `lib.rs`, `sql.rs`, `provider.rs`, the committed test cache `kubuno-desktop-data/.sqlx/`).
 
-- **`kubuno-data-model`** (no driver, no UI — usable by a proc macro): the `.kbdata` format (`DataSource`,
+- **`kubuno-desktop-data-model`** (no driver, no UI — usable by a proc macro): the `.kbdata` format (`DataSource`,
   `TableSource`, `Column`, `Query`, `Param`, `ObjectKind`; TOML, `deny_unknown_fields`, `version = 1`, a header comment
   saying the file is the developer's and never holds a connection string), `ProviderName`, the native-type → Rust-type
   mapping `rust_type_for` (`RustType { ty, text_cast, sqlx_feature }`: SQLite affinities, PostgreSQL `int4`→`i32`,
   `timestamptz`→`chrono::DateTime<Utc>`, `uuid`, `json(b)`; types without a decoder the application surely has —
   NUMERIC, MONEY, intervals… — travel as text: `CAST(col AS TEXT)` when read, `CAST(CAST($n AS TEXT) AS <native>)` when
-  written), `naming` (row struct / field names), `sql` (the `@name` lexer moved here from `kubuno-data`, which delegates to
+  written), `naming` (row struct / field names), `sql` (the `@name` lexer moved here from `kubuno-desktop-data`, which delegates to
   it unchanged), `typed::plan(&DataSource) -> TypedPlan` (every generated statement, validated, with errors naming the
   table or query) and `cache` (`check`/`stale_reason` by modification times, `query_file_name(sql)`,
   `missing_queries(plan, dirs)`).
-- **`data_source!("shop.kbdata")`** (`kubuno_data::data_source!`, `kubuno::data::data_source!`: a `macro_rules!` that
+- **`data_source!("shop.kbdata")`** (`kubuno_desktop_data::data_source!`, `kubuno_desktop::data::data_source!`: a `macro_rules!` that
   passes `$crate` to the proc macro). The path is resolved from the calling file, then `src/`, then the package root, then — for rust-analyzer, whose
-  proc-macro server gives no calling file — the one file under `src` whose path ends with it (`#[kubuno::view]` does the same).
+  proc-macro server gives no calling file — the one file under `src` whose path ends with it (`#[kubuno_desktop::view]` does the same).
   **No direct `sqlx` dependency is needed**: the macro calls `sqlx_macros_core::query::expand_input` (the code of
   `query_as!` itself) and rewrites the `::sqlx::…` paths of the expansion to `$crate::sqlx::…`. Per table or view:
   `#[derive(Debug, Clone, PartialEq, Default)] pub struct Customer { pub id: i64, pub email: Option<String>, … }`
   (`PartialEq`/`Default` only when every field has them), `TABLE`/`COLUMNS`/`KEY`, `fetch_all`, `fetch_by_key`,
   `insert` (`RETURNING` the row; MySQL: `LAST_INSERT_ID`), `update`, `delete`/`delete_by_key` for tables with a key —
   each over any `sqlx::Executor` of the provider (pool, `&mut *tx`) — and the `_task` twins
-  (`fetch_all_task(&ConnectionHandle) -> DataTask<Vec<Self>>`) that run on `kubuno-data`'s private runtime, so UI code
+  (`fetch_all_task(&ConnectionHandle) -> DataTask<Vec<Self>>`) that run on `kubuno-desktop-data`'s private runtime, so UI code
   awaits them from the EVT-6 executor. Selected columns carry sqlx's overrides (`"id" AS "id!: i64"`,
   `"email" AS "email?: String"`) so the struct is exactly what the `.kbdata` says; identifiers are quoted per provider
   and schema-qualified (PostgreSQL, MySQL). Named `[[queries]]`: a free function `name(executor, params…)` (+ `_task`)
@@ -678,7 +678,7 @@ In `Z:\src\desktop\windows` (uncommitted): two new workspace crates, `kubuno-dat
   `include_bytes!` the `.kbdata` and the cache files it uses.
 - **Stale-cache build warning**: a real rustc warning (the `#[deprecated]` item-then-use trick, lint `deprecated`,
   level `warning` in `--message-format=json`, so it reaches the Error List):
-  ``use of deprecated unit struct `_::kubuno_data_stale_sqlx_cache`: kubuno-data: `src/data/shop.kbdata`: the offline
+  ``use of deprecated unit struct `_::kubuno_data_stale_sqlx_cache`: kubuno-desktop-data: `src/data/shop.kbdata`: the offline
   query cache (.sqlx) is older than the migration `20260930_add_vip.up.sql`: regenerate it: …``. It fires when a
   statement is missing from the cache (online builds; offline, sqlx already refuses) or a migration is newer than the
   source's cache files; never during a regeneration (`SQLX_OFFLINE_DIR` set) nor in an up-to-date build. It is checked
@@ -689,19 +689,19 @@ In `Z:\src\desktop\windows` (uncommitted): two new workspace crates, `kubuno-dat
   not match the database schema`), a malformed `.kbdata` (TOML error with its line), an unknown provider, an undeclared
   parameter, a provider feature not enabled (`mysql`).
 
-Tests: `kubuno-data-model` 19, `kubuno-data-macros` 10 (tokens of a table, a view, a query, SQL Server, PostgreSQL
-casts; path rewriting; stale reasons), `kubuno-data` 67 unit + `tests/typed.rs` 5 (a temp SQLite file: insert, fetch,
+Tests: `kubuno-desktop-data-model` 19, `kubuno-desktop-data-macros` 10 (tokens of a table, a view, a query, SQL Server, PostgreSQL
+casts; path rewriting; stale reasons), `kubuno-desktop-data` 67 unit + `tests/typed.rs` 5 (a temp SQLite file: insert, fetch,
 update, delete, transaction, view, three named queries, tasks awaited from a non-Tokio thread, a `BindingSource` round
 trip saved typed then through a `TableAdapter`) + `tests/typed_ui.rs` (trybuild: the pass case compiles offline
 against the committed cache; five offline failures and one online failure against a temp SQLite database, with their
-`.stderr`). The fixture cache is generated by `cargo test -p kubuno-data --test typed_fixture -- --ignored` (creates
+`.stderr`). The fixture cache is generated by `cargo test -p kubuno-desktop-data --test typed_fixture -- --ignored` (creates
 `shop.db` from `tests/typed/shop.sql` and prints the command) then the `cargo test --no-run` above with the three
-variables. PostgreSQL/MySQL typed sources: token-level tests only (no server); `kubuno::data::data_source!` through
-the facade not compiled (the same re-export mechanism is proven through `kubuno_data::`).
+variables. PostgreSQL/MySQL typed sources: token-level tests only (no server); `kubuno_desktop::data::data_source!` through
+the facade not compiled (the same re-export mechanism is proven through `kubuno_desktop_data::`).
 
 ## 17. DATA-5 as built (2026-09-30): `kubuno-data-tool` and the Data Explorer
 
-**`kubuno-data-tool`** (new workspace crate `src/crates/kubuno-data-tool`, lib + bin; features forward kubuno-data's,
+**`kubuno-data-tool`** (new workspace crate `src/crates/kubuno-desktop-data-tool`, lib + bin; features forward kubuno-desktop-data's,
 the Visual Studio build uses `--features mysql,mssql`; built with `kubuno-views-ls` into the same release folder, whose
 `kubuno_ui.dll`/`std-*.dll` it shares in the VSIX `tools\`). JSON lines over stdio (`--stdio`; `--version`), requests
 run concurrently, one output writer, `cancel {id}`; errors `{kind, message}` with `kind` = the `DataError` variant,
@@ -747,7 +747,7 @@ texts, testable without VS — and `src/Desktop/Kubuno.Desktop/DataExplorer/*`):
   Browse + create if missing; server, port, database, Windows/SQL authentication, user, password, SSL/encryption),
   *Advanced* with the connection string shown password-masked or typed raw, the store (Credential Manager default /
   user secrets) with the note that nothing is written into the project, *Test connection* (server version or error,
-  cancellable). Connection strings are built in the forms `kubuno-data` parses (tested with a password full of special
+  cancellable). Connection strings are built in the forms `kubuno-desktop-data` parses (tested with a password full of special
   characters).
 - **Query window** (document well, one per query): monospace editor, Execute (F5, Ctrl+Shift+E; the selection or all),
   Cancel (Alt+Break), results grids per result set (`NULL` greyed italic, column names with dots handled), Messages,
@@ -771,7 +771,7 @@ connection removed with its secret. PostgreSQL/MySQL/SQL Server not exercised li
 - **Recognised literals**: the SQL argument of `query!`, `query_scalar!`, `query_unchecked!`,
   `query_scalar_unchecked!`, `query_as!`/`query_as_unchecked!` (second argument), with or without `sqlx::`
   (`query_file*` skipped); `sqlx::query(`, `query_as::<…>(`, `query_scalar(`, the `*_with(` forms, `raw_sql(` (without
-  the `sqlx::` prefix only when the text starts with a SQL keyword); kubuno-data's `DbCommand::with_text("…")`,
+  the `sqlx::` prefix only when the text starts with a SQL keyword); kubuno-desktop-data's `DbCommand::with_text("…")`,
   `TableAdapter::new(conn, "…")` and the fields `command_text`, `select_command`, `insert_command`, `update_command`,
   `delete_command`. `"…"` with escapes, `r"…"`, `r#"…"#`, multi-line; a Rust lexer that knows nested comments, chars,
   lifetimes, `b""`/`c""`, `r#ident`. Typing inside a literal that inserts no `"`, `\` or `#` re-lexes only that literal.
@@ -817,11 +817,11 @@ drop planner, the code writer, the per-project settings, the wizard model, the c
   secrets by default, Credential Manager), with the note that nothing is written into the project → objects (schemas,
   tables, views with check boxes from `schema.load`; a Kubuno module's schema preselected) → the source's name and a
   summary. Finish writes `src/data/<name>.kbdata` (`kbdata.build`), `src/data/<name>.rs` (the developer's:
-  `kubuno::data::data_source!("<name>.kbdata");` and an empty `impl <Row> {}` per table — never rewritten),
-  `pub mod <name>;` in `src/data/mod.rs` and `mod data;` in `main.rs` (surgical, idempotent), the `kubuno` dependency's
+  `kubuno_desktop::data::data_source!("<name>.kbdata");` and an empty `impl <Row> {}` per table — never rewritten),
+  `pub mod <name>;` in `src/data/mod.rs` and `mod data;` in `main.rs` (surgical, idempotent), the `kubuno-desktop` dependency's
   `features = ["data"]` and `[package.metadata.kubuno] user-secrets-id` in `Cargo.toml` (the repo's TOML editor,
-  comments kept), `kubuno::data::set_user_secrets_id(kubuno::data::user_secrets_id!().as_deref());` at the top of `main`
-  (the `kubuno` facade does not register the id yet), copies the connection string into the project's store
+  comments kept), `kubuno_desktop::data::set_user_secrets_id(kubuno_desktop::data::user_secrets_id!().as_deref());` at the top of `main`
+  (the `kubuno-desktop` facade does not register the id yet), copies the connection string into the project's store
   (`secrets.copyToProject`), writes the SQL IntelliSense snapshot (`SchemaSnapshotStore.Write`), then runs
   `sqlx.prepare` in the background (Task Status Center, Kubuno pane, Error List on failure; in the `.rsproj`'s own
   `CargoTargetDir`). "Configure…" rewrites only the `.kbdata` (after confirmation, its header comments kept).
@@ -838,12 +838,12 @@ drop planner, the code writer, the per-project settings, the wizard model, the c
   label + bound control per column (`Text="{Binding Source=…, Path=…, FormatString=…, Mode=TwoWay}"`, `NumericField
   Value`, `CheckBox Checked`). A single column inserts its label + control. Components are shared when a table is
   dropped twice; names are unique (suffix 1, 2…). Deviation: `x:Name`s are snake_case (`customers_binding_source`) —
-  `#[kubuno::view]` makes each a Rust field, and camelCase gave `non_snake_case` warnings.
-- **`#[kubuno::view]` and data components**: the view macro knew only the controls of `kubuno_views` and the crate's own
-  `#[derive(Component)]` types, so a view holding named data components did not compile. `kubuno-views-meta` now has
+  `#[kubuno_desktop::view]` makes each a Rust field, and camelCase gave `non_snake_case` warnings.
+- **`#[kubuno_desktop::view]` and data components**: the view macro knew only the controls of `kubuno_desktop_views` and the crate's own
+  `#[derive(Component)]` types, so a view holding named data components did not compile. `kubuno-desktop-views-meta` now has
   `LIBRARY_ELEMENTS` (`BindingNavigator`, `BindingSource`, `DbCommand`, `DbConnection`, `ErrorProvider`,
-  `TableAdapter`) that the macro accepts (their fields are `kubuno::Control`), kept equal to what `kubuno-data`
-  registers by a test of `kubuno-data`. (The facade's own `tables` test compares `BUILTIN_ELEMENTS` with the registry and
+  `TableAdapter`) that the macro accepts (their fields are `kubuno_desktop::Control`), kept equal to what `kubuno-desktop-data`
+  registers by a test of `kubuno-desktop-data`. (The facade's own `tables` test compares `BUILTIN_ELEMENTS` with the registry and
   fails when run with `--features data`, the registry then holding the data classes — to be adapted by the owner of
   the facade.)
 
@@ -867,9 +867,9 @@ property editors and smart tags of §9 (component-reference and `ConnectionStrin
   read-only `TextField` (`Enabled="false"`, one-way binding) like Windows Forms' ReadOnly TextBox for the key, no longer a
   bare label.
 - In the designer, a bound `DataTable` shows its column headers over three blank rows (the Windows Forms designer's
-  DataGridView) instead of the empty-state illustration (`kubuno-views`, design frames only).
-- The designer surface the VSIX bundles (`tools\surface\view_embed.exe`) is now built from `kubuno-data`'s
-  `examples/view_embed.rs` — kubuno-views' surface unchanged, with the data components linked — so a view holding data
+  DataGridView) instead of the empty-state illustration (`kubuno-desktop-views`, design frames only).
+- The designer surface the VSIX bundles (`tools\surface\view_embed.exe`) is now built from `kubuno-desktop-data`'s
+  `examples/view_embed.rs` — kubuno-desktop-views' surface unchanged, with the data components linked — so a view holding data
   components renders before the project's own design build (it showed "Waiting for a view that compiles…").
 - The Data Explorer docks on the left, tabbed with the Toolbox (where Server Explorer lives), and Data Sources is
   tabbed with Solution Explorer, as in Windows Forms (a hive that already stored a floating position keeps it until
@@ -898,12 +898,12 @@ bar, `RsprojTargetDirectory`).
   connection error; double-click/Open opens the up file; context menus on the root, the migrations and the cache node;
   refreshed after each command and when `migrations/`, `.sqlx/` or a `.kbdata` changes (700 ms debounce).
 - **Stale cache**: the rustc warning of `data_source!` (§16) reaches the Error List (verified after a DTE build); now
-  it points at the application's `data_source!` call (the literal's span) instead of kubuno-data's wrapper, and the
+  it points at the application's `data_source!` call (the literal's span) instead of kubuno-desktop-data's wrapper, and the
   macro also tracks the existing migration files; after a build an info bar offers "The SQLx cache of <crate> is stale —
   Update". The SDK (`sdk/Kubuno.Rust.Sdk/Sdk/Sdk.targets`) adds `src\**\*.kbdata`, `.sqlx\*.json` and `migrations\*.sql`
   to the inputs that decide whether MSBuild runs cargo at all (the nupkg was repacked).
 - Helper additions: `sqlx.prepare` takes an optional `targetDir` (`CARGO_TARGET_DIR` of the child cargo);
-  `kubuno_data_model::cache` no longer names a migration as "the file needing a cache" when there is none yet.
+  `kubuno_desktop_data_model::cache` no longer names a migration as "the file needing a cache" when there is none yet.
 - Not built: the menu on folders in Open Folder mode; Kubuno module templates with `migrations/` (the templates belong
   to the programming-model work; the helper's first migration of a module already creates its schema).
 

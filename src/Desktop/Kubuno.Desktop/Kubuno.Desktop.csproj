@@ -2,7 +2,7 @@
 
   <!--
     Desktop layer, Visual Studio side (docs/ARCHITECTURE.md, "Layers (as built)"): everything that exists because the
-    target is a Kubuno desktop application (kubuno_ui, Rust code-behind):
+    target is a Kubuno desktop application (kubuno_desktop_ui, Rust code-behind):
       - Designer\DesignSurface\  the Design pane's renderer: RustDesignSurfaceHost (view_embed.exe hosted in an HwndHost,
                     the surfaceInfo handshake) and its factory, the desktop implementation of the views layer's
                     IProtocolDesignSurfaceHost (docs/DESIGNER.md; docs/WEB-VIEWS.md WV-8);

@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <Target Name="KubunoCheckDesktopSources" BeforeTargets="CargoRestore;CoreCompile">
-    <Error Condition="!Exists('$(KubunoDesktopSrc)/src/crates/kubuno-ui/Cargo.toml')"
+    <Error Condition="!Exists('$(KubunoDesktopSrc)/src/crates/kubuno-desktop-ui/Cargo.toml')"
            Code="KUBUNO0001"
            Text="The Kubuno desktop sources were not found at '$(KubunoDesktopSrc)'. Point &lt;KubunoDesktopSrc&gt; in this .rsproj and the kubuno path in Cargo.toml at a checkout of github.com/kubuno/desktop (its 'windows' folder)." />
   </Target>

@@ -63,6 +63,9 @@ namespace Kubuno.Web.Logic.Generation
             {
                 ["$moduleid$"] = id,
                 ["$cratename$"] = "kubuno-" + id,
+                // The Visual Studio projects (docs/RSPROJ.md, "Project and solution names"): Kubuno.<Module>.Server / .Web.
+                ["$serverprojectname$"] = "Kubuno." + Product(id) + ".Server",
+                ["$webprojectname$"] = "Kubuno." + Product(id) + ".Web",
                 ["$moduletitle$"] = Regex.Replace(title, "[\"\\\\<>&$]", string.Empty),
                 ["$kubunouiversion$"] = PackageVersion(coreRepository, "ui") ?? UiVersion,
                 ["$kubunosdkversion$"] = PackageVersion(coreRepository, "sdk") ?? SdkVersion,
@@ -71,6 +74,10 @@ namespace Kubuno.Web.Logic.Generation
                 ["$dbtag$"] = DbTag,
             };
         }
+
+        /// <summary>The product part of a module's project names (the id, first letter upper case: <c>calendar</c> → <c>Calendar</c>).</summary>
+        public static string Product(string id) =>
+            string.IsNullOrEmpty(id) ? id : char.ToUpperInvariant(id[0]) + id.Substring(1);
 
         /// <summary>The core repository next to <paramref name="directory"/> or one of its parents (the polyrepo layout), or null.</summary>
         public static string? FindCoreRepository(string? directory)

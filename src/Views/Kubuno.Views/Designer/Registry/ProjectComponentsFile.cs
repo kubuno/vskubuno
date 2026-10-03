@@ -39,7 +39,7 @@ namespace Kubuno.Views.Designer.Registry
         /// The crates of the application itself that the project at <paramref name="manifestPath"/> depends on:
         /// its <c>path = "…"</c> dependencies of <c>[dependencies]</c>, and its <c>workspace = true</c> ones whose
         /// <c>[workspace.dependencies]</c> entry has a path - except the Kubuno framework's own crates
-        /// (<see cref="FrameworkCrates"/>, an explicit list: a <c>kubuno-shell-controls</c> library is the
+        /// (<see cref="FrameworkCrates"/>, an explicit list: a <c>kubuno-desktop-shell-controls</c> library is the
         /// application's). Their controls go to the project's Toolbox tab like its own (a control library of
         /// the application). Names are normalized (<c>-</c> as <c>_</c>); empty when the manifest is unreadable.
         /// </summary>

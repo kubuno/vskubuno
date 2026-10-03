@@ -33,7 +33,7 @@ $categories = @(
     # French texts of the remote host entries are written with their accents (this file is UTF-8 with a BOM).
     @('kubuno.remote', 'Remote Linux host', 'Hôte Linux distant', 'The Linux machine that holds the development database (through an SSH tunnel) and, later, the Linux builds.', 'La machine Linux qui héberge la base de développement (par un tunnel SSH) et, plus tard, les builds Linux.'),
     @('kubuno.remote.connection', 'Connection', 'Connexion', 'How Kubuno connects to the host: non-interactive SSH with a dedicated key, never a password.', 'Comment Kubuno se connecte à l''hôte : SSH non interactif avec une clé dédiée, jamais de mot de passe.'),
-    @('kubuno.remote.devDatabase', 'Development database', 'Base de développement', 'The SSH tunnel the Kubuno Core Web launch profiles open to the host''s PostgreSQL.', 'Le tunnel SSH que les profils de lancement de Kubuno Core Web ouvrent vers le PostgreSQL de l''hôte.')
+    @('kubuno.remote.devDatabase', 'Development database', 'Base de développement', 'The SSH tunnel the Kubuno Core launch profiles open to the host''s PostgreSQL.', 'Le tunnel SSH que les profils de lancement de Kubuno Core ouvrent vers le PostgreSQL de l''hôte.')
 )
 
 # Properties: moniker, type (boolean/string/enum), default, English title, French title, English description, French description,
@@ -121,8 +121,8 @@ $properties = @(
        dfr = 'Dessine un fin contour en pointilles autour des conteneurs autrement invisibles (un Panel ou un Stack sans surface, bordure ni fond), pour les reperer et y deposer des controles, comme la bordure pointillee de Windows Forms autour d''un Panel sans bordure. Les controles gardent toujours leur apparence d''execution. Pris en compte par les concepteurs ouverts ensuite.' },
     @{ m = 'kubuno.debugging.justMyCode.frameworkIsExternalCode'; t = 'boolean'; d = $true
        en = 'Treat the Kubuno framework as external code'; fr = 'Traiter le framework Kubuno comme du code externe'
-       den = 'Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno framework (kubuno_views, kubuno_controls, kubuno_ui, the event-handler dispatch glue) into [External Code] and Step Into (F11) goes straight to your handlers. Turn it off to see and debug Kubuno''s own code. The Rust standard library is always stepped over. Takes effect at the next debug session.'
-       dfr = 'Comme Windows Forms pour une application C#: avec Uniquement mon code active, la Pile des appels replie le framework Kubuno (kubuno_views, kubuno_controls, kubuno_ui, la colle d''envoi des gestionnaires d''evenements) en [Code externe] et Pas a pas detaille (F11) va directement a vos gestionnaires. Decochez pour voir et deboguer le code de Kubuno lui-meme. La bibliotheque standard de Rust est toujours ignoree. Pris en compte a la prochaine session de debogage.' },
+       den = 'Like Windows Forms for a C# application: with Just My Code on, the Call Stack collapses the Kubuno framework (kubuno_desktop_views, kubuno_desktop_controls, kubuno_desktop_ui, the event-handler dispatch glue) into [External Code] and Step Into (F11) goes straight to your handlers. Turn it off to see and debug Kubuno''s own code. The Rust standard library is always stepped over. Takes effect at the next debug session.'
+       dfr = 'Comme Windows Forms pour une application C#: avec Uniquement mon code active, la Pile des appels replie le framework Kubuno (kubuno_desktop_views, kubuno_desktop_controls, kubuno_desktop_ui, la colle d''envoi des gestionnaires d''evenements) en [Code externe] et Pas a pas detaille (F11) va directement a vos gestionnaires. Decochez pour voir et deboguer le code de Kubuno lui-meme. La bibliotheque standard de Rust est toujours ignoree. Pris en compte a la prochaine session de debogage.' },
     @{ m = 'kubuno.data.explorer.showDataRows'; t = 'integer'; d = 200; extra = @{ minimum = 1; maximum = 100000 }
        en = 'Rows shown by Show Table Data'; fr = 'Lignes lues par Afficher les donnees'
        den = 'How many rows "Show Table Data" reads from a table or view (1 to 100000).'
@@ -165,8 +165,8 @@ $properties = @(
        dfr = 'Les clés d''hôte que Kubuno accepte, séparées de votre propre known_hosts. Un hôte inconnu n''est jamais accepté en silence : une barre d''informations affiche son empreinte et ne l''ajoute ici que si vous cliquez sur Accepter.' },
     @{ m = 'kubuno.remote.devDatabase.tunnel'; t = 'enum'; d = 'auto'; e = 'auto=When KUBUNO_DEV_DATABASE_URL points at the local port|Quand KUBUNO_DEV_DATABASE_URL vise le port local;always=At every launch|À chaque lancement;never=Never|Jamais'
        en = 'SSH tunnel'; fr = 'Tunnel SSH'
-       den = 'When F5 / Ctrl+F5 of the Kubuno Core Web profiles opens the tunnel from localhost to the host''s PostgreSQL (ssh -N -L). It is reused by the next launches and closed with Visual Studio; errors appear in an info bar and the Kubuno Output pane.'
-       dfr = 'Quand F5 / Ctrl+F5 des profils Kubuno Core Web ouvre le tunnel de localhost vers le PostgreSQL de l''hôte (ssh -N -L). Il est réutilisé par les lancements suivants et fermé avec Visual Studio ; les erreurs s''affichent dans une barre d''informations et le volet Sortie Kubuno.' },
+       den = 'When F5 / Ctrl+F5 of the Kubuno Core profiles opens the tunnel from localhost to the host''s PostgreSQL (ssh -N -L). It is reused by the next launches and closed with Visual Studio; errors appear in an info bar and the Kubuno Output pane.'
+       dfr = 'Quand F5 / Ctrl+F5 des profils Kubuno Core ouvre le tunnel de localhost vers le PostgreSQL de l''hôte (ssh -N -L). Il est réutilisé par les lancements suivants et fermé avec Visual Studio ; les erreurs s''affichent dans une barre d''informations et le volet Sortie Kubuno.' },
     @{ m = 'kubuno.remote.devDatabase.localPort'; t = 'integer'; d = 55432; extra = @{ minimum = 1; maximum = 65535 }
        en = 'Local port'; fr = 'Port local'
        den = 'The tunnel''s local end: KUBUNO_DEV_DATABASE_URL then reads postgres://kubuno:<password>@localhost:55432/kubuno_dev.'

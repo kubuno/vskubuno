@@ -66,7 +66,7 @@ namespace Kubuno.Rust.Tests
             {
                 Package("chat#0.1.0", "kubuno-chat", @"Z:\ws\src\chat", targets: new[] { Bin("kubuno-chat") }),
                 Package("shell#0.1.0", "kubuno-desktop", @"Z:\ws\src\shell", targets: new[] { Bin("kubuno-desktop") }),
-                Package("drive#0.1.0", "drive", @"Z:\ws\src\drive\crates\drive-app", targets: new[] { Bin("drive") }),
+                Package("drive#0.1.0", "drive", @"Z:\ws\src\drive\crates\kubuno-drive-desktop", targets: new[] { Bin("drive") }),
             });
 
             var result = StartupItemSelector.SelectDefaultBinTargetForWorkspace(metadata);

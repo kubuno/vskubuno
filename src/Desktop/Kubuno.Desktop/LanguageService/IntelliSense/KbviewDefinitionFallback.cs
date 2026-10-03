@@ -140,12 +140,13 @@ namespace Kubuno.Desktop.LanguageService.IntelliSense
                 return 0;
             }
 
-            if (path.IndexOf("/kubuno-ui/", StringComparison.OrdinalIgnoreCase) >= 0)
+            // The framework's crates, under their names since the 2026-10 rename or before it.
+            if (path.IndexOf("/kubuno-desktop-ui/", StringComparison.OrdinalIgnoreCase) >= 0 || path.IndexOf("/kubuno-ui/", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return 1;
             }
 
-            if (path.IndexOf("/kubuno-controls/", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (path.IndexOf("/kubuno-desktop-controls/", StringComparison.OrdinalIgnoreCase) >= 0 || path.IndexOf("/kubuno-controls/", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return 2;
             }

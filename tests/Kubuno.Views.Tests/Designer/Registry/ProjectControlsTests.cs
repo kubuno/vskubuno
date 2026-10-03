@@ -154,7 +154,7 @@ namespace Kubuno.Views.Tests.Designer.Registry
             File.WriteAllText(Path.Combine(root, "Cargo.toml"), "[workspace]\nmembers = [\"apps/*\"]\n\n[workspace.dependencies]\nchat-controls = { path = \"libs/chat-controls\" }\nserde = \"1\"\n");
             File.WriteAllText(
                 Path.Combine(app, "Cargo.toml"),
-                "[package]\nname = \"chat\"\n\n[dependencies]\n# A comment = \"x\"\nkubuno = { path = \"../../kubuno\" }\nfoundations-controls = { path = \"controls\" }\nrenamed = { package = \"ui-kit\", path = \"../ui\" }\nchat-controls.workspace = true\nserde = { workspace = true }\nregex = \"1\"\n\n[dev-dependencies]\ntest-helpers = { path = \"../h\" }\n");
+                "[package]\nname = \"chat\"\n\n[dependencies]\n# A comment = \"x\"\nkubuno-desktop = { path = \"../../kubuno\" }\nfoundations-controls = { path = \"controls\" }\nrenamed = { package = \"ui-kit\", path = \"../ui\" }\nchat-controls.workspace = true\nserde = { workspace = true }\nregex = \"1\"\n\n[dev-dependencies]\ntest-helpers = { path = \"../h\" }\n");
             try
             {
                 var crates = ProjectComponentsFile.ApplicationDependencyCrates(Path.Combine(app, "Cargo.toml"));
@@ -175,12 +175,12 @@ namespace Kubuno.Views.Tests.Designer.Registry
             Directory.CreateDirectory(root);
             File.WriteAllText(
                 Path.Combine(root, "Cargo.toml"),
-                "[package]\nname = \"app\"\n\n[dependencies]\nkubuno = { path = \"../kubuno\" }\nkubuno-views = { path = \"../kubuno-views\" }\nkubuno_ui = { path = \"../kubuno-ui\" }\n" +
-                "kubuno-data = { path = \"../kubuno-data\" }\nkubuno-shell-controls = { path = \"../kubuno-shell-controls\" }\nwidgets = { package = \"kubuno-acme-widgets\", path = \"../acme\" }\n");
+                "[package]\nname = \"app\"\n\n[dependencies]\nkubuno-desktop = { path = \"../kubuno\" }\nkubuno-desktop-views = { path = \"../kubuno-desktop-views\" }\nkubuno_desktop_ui = { path = \"../kubuno-desktop-ui\" }\n" +
+                "kubuno-desktop-data = { path = \"../kubuno-desktop-data\" }\nkubuno-desktop-shell-controls = { path = \"../kubuno-desktop-shell-controls\" }\nwidgets = { package = \"kubuno-acme-widgets\", path = \"../acme\" }\n");
             try
             {
                 var crates = ProjectComponentsFile.ApplicationDependencyCrates(Path.Combine(root, "Cargo.toml"));
-                CollectionAssert.AreEquivalent(new[] { "kubuno_shell_controls", "kubuno_acme_widgets" }, crates.ToList());
+                CollectionAssert.AreEquivalent(new[] { "kubuno_desktop_shell_controls", "kubuno_acme_widgets" }, crates.ToList());
             }
             finally
             {

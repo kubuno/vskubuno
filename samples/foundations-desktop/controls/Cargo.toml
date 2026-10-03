@@ -8,4 +8,4 @@ publish = false
 # the application that depends on it (`<ChipBar>`), and appear in the designer's Toolbox.
 
 [dependencies]
-kubuno = { path = "Z:/src/desktop/windows/src/crates/kubuno" }
+kubuno-desktop = { path = "Z:/src/desktop/windows/src/crates/kubuno-desktop" }

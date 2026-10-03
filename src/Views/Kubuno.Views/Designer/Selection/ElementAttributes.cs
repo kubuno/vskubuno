@@ -19,7 +19,7 @@ namespace Kubuno.Views.Designer.Selection
         /// <summary>
         /// Every attribute actually present on the start tag, keyed by name exactly as written (e.g.
         /// <c>"x:Name"</c>, <c>"OnClick"</c>) - raw values, quotes stripped, no entity decoding (mirrors
-        /// <c>kubuno_views::ast::Attribute::value</c>'s own "quotes stripped, nothing else" contract
+        /// <c>kubuno_desktop_views::ast::Attribute::value</c>'s own "quotes stripped, nothing else" contract
         /// verbatim, so this reader never shows a value the real edit engine would not also produce
         /// byte-for-byte). On a duplicate attribute name (malformed input), the FIRST occurrence wins -
         /// matching <c>Element::attribute</c>'s own <c>.find(...)</c> semantics.

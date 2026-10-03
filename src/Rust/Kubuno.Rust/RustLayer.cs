@@ -150,8 +150,8 @@ namespace Kubuno.Rust
                 new KeyValuePair<string, Func<bool?>>("Ajouter › (NewItemNameDialog)", () => new NewItemNameDialog("Ajouter - Vue Kubuno", "Nom :", "MainView").ShowModal()),
                 new KeyValuePair<string, Func<bool?>>(DependenciesText.ReferenceManagerTitle("Sample"), () => new ReferenceManagerDialog("Sample", new[]
                 {
-                    new ReferenceCandidate("kubuno-ui", @"C:\src\desktop\windows\src\crates\kubuno-ui\Cargo.toml", isReferenced: true),
-                    new ReferenceCandidate("kubuno-controls", @"C:\src\desktop\windows\src\crates\kubuno-controls\Cargo.toml", isReferenced: false),
+                    new ReferenceCandidate("kubuno-desktop-ui", @"C:\src\desktop\windows\src\crates\kubuno-desktop-ui\Cargo.toml", isReferenced: true),
+                    new ReferenceCandidate("kubuno-desktop-controls", @"C:\src\desktop\windows\src\crates\kubuno-desktop-controls\Cargo.toml", isReferenced: false),
                     new ReferenceCandidate("helper", @"C:\src\helper\Cargo.toml", isReferenced: false),
                 }).ShowModal()),
                 new KeyValuePair<string, Func<bool?>>(DependenciesText.RemoveUnusedTitle, () => new UnusedDependenciesDialog("cargo-machete", new[] { "itoa", "serde_json", "once_cell" }).ShowModal()),

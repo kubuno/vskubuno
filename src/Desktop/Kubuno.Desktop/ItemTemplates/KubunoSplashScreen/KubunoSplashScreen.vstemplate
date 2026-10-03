@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  "Add New Item > Kubuno Splash Screen": A splash screen. A .kbview (its design) and its code, a #[kubuno::view] struct,
+  "Add New Item > Kubuno Splash Screen": A splash screen. A .kbview (its design) and its code, a #[kubuno_desktop::view] struct,
   SAME STEM so Solution Explorer nests the code under the view (docs/PROGRAMMING-MODEL.md).
   ControlItemWizard names the struct ($classname$) and the load handler ($modulename$) and declares the module.
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Splash Screen (Kubuno Core Desktop)</Name>
+    <Name>Kubuno Splash Screen (Kubuno Desktop)</Name>
     <Description>The application's splash screen: Kubuno's artwork (Kubuno, Drive, Chat or Documents), the product name, version, a live status line with a progress bar, the legal lines. Shown at start-up on its own thread, faded out into the main window.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoSplashScreen</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
-    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>17</SortOrder>
     <DefaultName>SplashScreen.kbview</DefaultName>

@@ -29,7 +29,7 @@ namespace Kubuno.Desktop.Tests.SolutionExplorer
             Assert.AreEqual("hello (Button)", element.DisplayText);
         }
 
-        /// <summary>Every kubuno-views component of the registry fixture has its own Kubuno control icon (tools/generate-control-icons.ps1).</summary>
+        /// <summary>Every kubuno-desktop-views component of the registry fixture has its own Kubuno control icon (tools/generate-control-icons.ps1).</summary>
         [TestMethod]
         public void EveryRegistryComponentHasAControlIcon()
         {

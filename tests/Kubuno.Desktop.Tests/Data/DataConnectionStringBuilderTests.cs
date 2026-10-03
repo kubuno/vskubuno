@@ -30,7 +30,7 @@ namespace Kubuno.Desktop.Tests.Data
         {
             var settings = new DataConnectionSettings { Provider = DataProviderKind.Postgres, Server = "remote.example", User = "u" };
 
-            Assert.IsFalse(DataConnectionStringBuilder.Build(settings, null).Contains("SslMode"), "unset = kubuno-data requires TLS for a remote host");
+            Assert.IsFalse(DataConnectionStringBuilder.Build(settings, null).Contains("SslMode"), "unset = kubuno-desktop-data requires TLS for a remote host");
             Assert.AreEqual(string.Empty, DataConnectionStringBuilder.SslModes(DataProviderKind.Postgres)[0].Value);
             CollectionAssert.IsSubsetOf(new[] { "disable", "prefer", "require", "verify-full" }, DataConnectionStringBuilder.SslModes(DataProviderKind.Postgres).Select(m => m.Value).ToArray());
         }
@@ -43,7 +43,7 @@ namespace Kubuno.Desktop.Tests.Data
             string built = DataConnectionStringBuilder.Build(settings, NastyPassword);
 
             Assert.AreEqual("Host=localhost;Username=app;Password=' p;a''ss\"w=rd{secret} ';", built);
-            Assert.AreEqual(NastyPassword, ParsePassword(built), "round trip through kubuno-data's parsing rules");
+            Assert.AreEqual(NastyPassword, ParsePassword(built), "round trip through kubuno-desktop-data's parsing rules");
         }
 
         [TestMethod]

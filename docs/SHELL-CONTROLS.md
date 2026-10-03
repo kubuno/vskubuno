@@ -4,7 +4,7 @@ User request (2026-10-02): « le wafflemenu du core doit être un usercontrol »
 usercontrol » (the account menu). Both are **user controls** (`.kbcontrol`) on both targets, with the same names,
 properties, events and data shapes, so a view written for one target reads the same on the other and the designer
 shows the same members. This file is the contract; each target documents its own implementation (desktop: crate
-`kubuno-shell-controls`, `desktop/windows/src/crates/kubuno-shell-controls/README.md`; web: core/frontend).
+`kubuno-desktop-shell-controls`, `desktop/windows/src/crates/kubuno-desktop-shell-controls/README.md`; web: core/frontend).
 
 **What is inside the user control, and what is not.** The user control is the panel's *content*: everything the
 user reads and clicks. The *chrome* that carries it stays with the host, because it differs per platform: on the
@@ -69,7 +69,7 @@ LauncherService {
 }
 ```
 
-Desktop: the Rust trait `kubuno_shell_controls::LauncherService`, given with `WaffleMenu::set_service(Rc<dyn …>)`.
+Desktop: the Rust trait `kubuno_desktop_shell_controls::LauncherService`, given with `WaffleMenu::set_service(Rc<dyn …>)`.
 
 ### Rules (both targets)
 
@@ -155,7 +155,7 @@ AccountService {
 AccountAction = ManageAccount | OpenAccount(id) | RemoveAccount(id) | AddAccount | OpenLabels | OpenAdmin | SignOut | ChangeAvatar
 ```
 
-Desktop: the Rust trait `kubuno_shell_controls::AccountService` (+ enum `AccountAction`), given with
+Desktop: the Rust trait `kubuno_desktop_shell_controls::AccountService` (+ enum `AccountAction`), given with
 `AccountMenu::set_service(Rc<dyn …>)`. An `AccountMenu` placed in a view raises its events; the `AccountButton`
 (§3), which creates its menu itself, hands the same picks to `act`.
 
@@ -176,8 +176,8 @@ Three more user controls, so an app drops ONE control in its header and gets the
   its right edge, `PopupOffset` below its client top — the shell's header, whose panels line up with the window.
 - A click on the button while its panel is open closes it (the panel loses the focus) and does not reopen it.
 - **Other apps** (desktop, 2026-10-02): an app that is not the shell (Documents, Chat) gets both services from the
-  shared crate `kubuno-header-data` (`desktop/windows/src/crates/kubuno-header-data`, see its README): one
-  `kubuno_header_data::start(...)` in the window's `Load`, with `ShowWaffle="true" ShowAccount="true"` on the view's
+  shared crate `kubuno-desktop-header-data` (`desktop/windows/src/crates/kubuno-desktop-header-data`, see its README): one
+  `kubuno_desktop_header_data::start(...)` in the window's `Load`, with `ShowWaffle="true" ShowAccount="true"` on the view's
   root. A worker borrows the shell's current account from the token broker, fetches `/api/v1/modules` and
   `/api/v1/me`, keeps them under `<data>/accounts/<key>/blobs/header/` (offline-first), follows the broker's events
   and re-installs the services at each snapshot. Picks: the app's own tile brings its window forward, an installed
@@ -192,11 +192,11 @@ Three more user controls, so an app drops ONE control in its header and gets the
 User requirement (2026-10-02): « le WaffleMenu et l'AccountMenu ne doivent pas rester enfermés dans la fenêtre qui
 les contient, ils doivent pouvoir s'afficher à l'extérieur ».
 
-- **Desktop**: the panel is a top-level window of its own — `kubuno::popup::Popup` (facade): a code-built
+- **Desktop**: the panel is a top-level window of its own — `kubuno_desktop::popup::Popup` (facade): a code-built
   `WindowKind="Flyout"` form holding the user control (docked to fill), `CornerRadius` 28 over the blur
-  (`kubuno-controls::host::backdrop`), its shadow margin, the theme's tint, owned by the anchor's window (above it,
+  (`kubuno-desktop-controls::host::backdrop`), its shadow margin, the theme's tint, owned by the anchor's window (above it,
   top-most when it is), closing when it loses the focus (click outside, another window activated) and on Escape
-  (`on_escape` lets the content abandon an edit first). `kubuno::popup::place` puts it next to the anchor on the
+  (`on_escape` lets the content abandon an edit first). `kubuno_desktop::popup::place` puts it next to the anchor on the
   side `Placement` names (`BottomEnd` by default), flips it to the other side when that one has more room, and clamps
   it into the work area of the anchor's monitor (`host::screen_geometry`: per-window DPI, any monitor, negative
   coordinates included). Its height is capped by the room below the anchor (the monitor's, not the window's). It
@@ -232,8 +232,8 @@ and three free regions take any control. Everything sits in the title bar's own 
   title band: the items are not shown there (nor under `Chrome="System"`).
 - Code first: `form.set_header_items(HeaderItems { waffle: true, account: true, ..Default::default() })`
   (`HeaderItems::ALL`), `form.set_unread_count(n)`, `form.search_clicked()`, `notifications_clicked()`,
-  `settings_clicked()`, `help_clicked()` (facade `kubuno::Form`).
-- **Composition** (`kubuno_views::window::HeaderSpec`, `build_header_items`): the root `<Panel>` builds, after its own
+  `settings_clicked()`, `help_clicked()` (facade `kubuno_desktop::Form`).
+- **Composition** (`kubuno_desktop_views::window::HeaderSpec`, `build_header_items`): the root `<Panel>` builds, after its own
   children, the search `IconButton` and one `<HeaderActions>` element **by class name** (`HEADER_ACTIONS_CLASS`) with the
   view's `Show…`, `UnreadCount` and handler names copied on it (`OnNotificationsClicked="bell_click"`, the view's own
   handler: a click reaches the form's code-behind, or a code-first subscriber, as any event of the view). The framework
@@ -291,14 +291,14 @@ and three free regions take any control. Everything sits in the title bar's own 
   standard item (checked when shown; switching off removes the attribute). Each task is one undo unit
   (`TitleBarDesignerTasks`).
 
-Example: `kubuno-shell-controls/examples/form_header.rs` (`--dark`, `--compact`, `--rtl`, `--minimal`, `--accent`): a
+Example: `kubuno-desktop-shell-controls/examples/form_header.rs` (`--dark`, `--compact`, `--rtl`, `--minimal`, `--accent`): a
 code-first Form with every item, a menu button on the left and a search field in the centre.
 
 ## 6. Platform notes
 
-| | Desktop (`kubuno-shell-controls`) | Web (core/frontend) |
+| | Desktop (`kubuno-desktop-shell-controls`) | Web (core/frontend) |
 |---|---|---|
-| Host chrome | `kubuno::popup::Popup` (a `WindowKind="Flyout"` window, §4), opened by `WaffleButton` / `AccountButton`; the shell's header uses them (`PopupAnchor="Window"`) | Popover in a portal (§4) |
+| Host chrome | `kubuno_desktop::popup::Popup` (a `WindowKind="Flyout"` window, §4), opened by `WaffleButton` / `AccountButton`; the shell's header uses them (`PopupAnchor="Window"`) | Popover in a portal (§4) |
 | Strings | the crate's own `resources/shell_controls.kbres` (+ `.fr`): `launcher_*`, `account_*`, `header_*` keys, read with `{Res key, Source=shell_controls}` | the core's i18n (`shell.*`) |
 | Designer data | `controls/design/apps.json` (12 apps), `controls/design/accounts.json` (3 accounts) | none yet (the views' design-time data, WV-10) |
 | Differences today | see §8 | see §8 |
@@ -333,7 +333,7 @@ Details and parity numbers: `WEB-VIEWS.md`, "Core pilot: WaffleMenu & AccountMen
 
 ## 8. Reconciliation of the two targets (2026-10-02)
 
-Read side by side (desktop `kubuno-shell-controls`, web `core/frontend/src/core/shell/menus`), the user controls carry the
+Read side by side (desktop `kubuno-desktop-shell-controls`, web `core/frontend/src/core/shell/menus`), the user controls carry the
 same names, properties, events and data shapes (§1–§3). What remains different is listed here, each on purpose:
 
 | Topic | Desktop | Web | Why |

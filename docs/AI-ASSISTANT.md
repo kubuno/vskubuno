@@ -72,7 +72,7 @@ calls the provider **in-proc**; it does not go through the pipe.
   The designer selection is synchronised by `Designer/Selection/SelectionSyncService` + `StableElementId`.
 - **Development database guard**: `Kubuno.Web.Logic.DevDatabase.DevDatabaseGuard` (`KUBUNO_DEV_DATABASE_URL`, name must
   look like a dev database). It is reused as-is to refuse any database action on a non-dev database (§7.4).
-- `kubuno-secrets` (desktop repo, `common/kubuno-secrets`) is the Rust OS secret store. On Windows it uses the
+- `kubuno-desktop-secrets` (desktop repo, `common/kubuno-desktop-secrets`) is the Rust OS secret store. On Windows it uses the
   Credential Manager with `CRED_PERSIST_LOCAL_MACHINE`, deliberately so that credentials do not roam. The VSIX side
   uses the same store and the same persistence choice (§8.1).
 
@@ -483,7 +483,7 @@ unit). The alternative policy "**ask before each write**" (review every change s
 
 - API keys are stored in the **Windows Credential Manager**, generic credential
   `Kubuno:DevAssistant:Provider:<provider-id>`, with `CRED_PERSIST_LOCAL_MACHINE`. This is the same choice as
-  `kubuno-secrets`: credentials do not roam with a roaming profile.
+  `kubuno-desktop-secrets`: credentials do not roam with a roaming profile.
 - They are entered in a ThemedDialog with a password box. Settings only show « clé enregistrée » / Remplacer /
   Supprimer and **never display the key**.
 - **The host reads the key itself** (P/Invoke `CredRead`) when it builds a provider. The key never crosses the stdio
@@ -735,7 +735,7 @@ lots.
 - In-repo: `docs/MCP.md`, `docs/ARCHITECTURE.md`, `docs/DESIGNER.md` §5/§8, `docs/DATA.md` §17,
   `docs/WEB-VIEWS.md` §6/§10/§11, `docs/RESOURCES.md`, `docs/VIEWS-SPEC.md`, `docs/MULTI-OS-AUDIT.md`,
   `src/Shared/Kubuno.Shared.Mcp/Tools/KubunoVsTools.cs`, `src/Web/Kubuno.Web.Logic/DevDatabase/DevDatabaseGuard.cs`,
-  desktop `common/kubuno-secrets/src/lib.rs`; `Z:\src\assistant` (read only, to explain why it is out of scope).
+  desktop `common/kubuno-desktop-secrets/src/lib.rs`; `Z:\src\assistant` (read only, to explain why it is out of scope).
 
 ---
 

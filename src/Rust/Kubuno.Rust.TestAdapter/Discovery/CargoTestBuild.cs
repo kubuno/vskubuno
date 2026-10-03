@@ -223,7 +223,7 @@ namespace Kubuno.Rust.TestAdapter.Discovery
         private static CargoTestBinaryKind? ClassifyKind(IReadOnlyList<string> rawKind)
         {
             // A library's unit tests, whatever its crate type: `crate-type = ["dylib"]` (the Kubuno desktop workspace's
-            // kubuno-ui) reports "dylib" instead of "lib", a proc-macro crate "proc-macro".
+            // kubuno-desktop-ui) reports "dylib" instead of "lib", a proc-macro crate "proc-macro".
             if (rawKind.Contains("lib") || rawKind.Contains("rlib") || rawKind.Contains("dylib") || rawKind.Contains("cdylib")
                 || rawKind.Contains("staticlib") || rawKind.Contains("proc-macro"))
             {

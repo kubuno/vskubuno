@@ -1,9 +1,9 @@
 //! The code of `$fileinputname$.kbview`, a modal dialog. Open it from a handler of another form:
 //! `let result = $classname$::new().show_dialog(self);` - it returns how it was closed.
 
-use kubuno::prelude::*;
+use kubuno_desktop::prelude::*;
 
-#[kubuno::view("$fileinputname$.kbview")]
+#[kubuno_desktop::view("$fileinputname$.kbview")]
 #[derive(Default)]
 pub struct $classname$ {}
 

@@ -78,7 +78,7 @@ namespace Kubuno.Shared.DevAssistant.Tests
         }
 
         /// <summary>
-        /// Copies the server into a private folder, as the VSIX ships it in tools\: alone, since it links kubuno_ui and
+        /// Copies the server into a private folder, as the VSIX ships it in tools\: alone, since it links kubuno_desktop_ui and
         /// Rust's std statically.
         /// </summary>
         private static string Stage(string exe)

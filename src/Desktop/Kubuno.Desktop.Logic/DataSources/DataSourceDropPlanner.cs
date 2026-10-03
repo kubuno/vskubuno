@@ -476,7 +476,7 @@ namespace Kubuno.Desktop.Logic.DataSources
             };
         }
 
-        /// <summary>The <c>Provider</c> attribute of a <c>&lt;DbConnection&gt;</c> (kubuno-data's <c>Provider</c> enum).</summary>
+        /// <summary>The <c>Provider</c> attribute of a <c>&lt;DbConnection&gt;</c> (kubuno-desktop-data's <c>Provider</c> enum).</summary>
         public static string ProviderValue(string provider) => provider.ToLowerInvariant() switch
         {
             "sqlite" => "Sqlite",

@@ -1,6 +1,6 @@
 
 ```rust
-kubuno_views::events::sender::ElementProps
+kubuno_desktop_views::events::sender::ElementProps
 ```
 
 ```rust

@@ -7,8 +7,8 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
     /// DSG-6: <see cref="DesignSurfaceProtocol"/> is the pure encode/parse half of the design-surface
     /// IPC protocol (`vskubuno/docs/DESIGNER.md`'s "DSG-6 protocol" section) - no live process, no
     /// event, no WPF <c>Dispatcher</c>, so every wire shape is checked here directly against the exact
-    /// strings `kubuno-views/src/protocol.rs`'s own tests assert on the Rust side
-    /// (`kubuno-views/src/protocol.rs`'s `tests` module), so the two sides cannot silently drift.
+    /// strings `kubuno-desktop-views/src/protocol.rs`'s own tests assert on the Rust side
+    /// (`kubuno-desktop-views/src/protocol.rs`'s `tests` module), so the two sides cannot silently drift.
     /// </summary>
     [TestClass]
     public class RustDesignSurfaceHostProtocolTests
@@ -31,7 +31,7 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
         [TestMethod]
         public void EncodeSetDesignOptions_MatchesTheRustWireShape()
         {
-            // kubuno_views::protocol's set_design_options_round_trips_and_defaults_to_outlines_on.
+            // kubuno_desktop_views::protocol's set_design_options_round_trips_and_defaults_to_outlines_on.
             Assert.AreEqual(@"{""type"":""setDesignOptions"",""containerOutlines"":false}", DesignSurfaceProtocol.EncodeSetDesignOptions(false));
             Assert.AreEqual(@"{""type"":""setDesignOptions"",""containerOutlines"":true}", DesignSurfaceProtocol.EncodeSetDesignOptions(true));
         }

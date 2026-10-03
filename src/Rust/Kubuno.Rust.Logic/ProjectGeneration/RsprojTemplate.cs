@@ -73,8 +73,8 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
 
             if (workspaceBuild)
             {
-                builder.Append("    <!-- The workspace shares a Rust dylib between several crates: build the whole workspace, so that the").Append('\n');
-                builder.Append("         dylib and every program loading it always get the same features (docs/RSPROJ.md, \"Cargo workspaces\"). -->").Append('\n');
+                builder.Append("    <!-- The workspace's programs share most of their crates: build the whole workspace in one cargo run, so that").Append('\n');
+                builder.Append("         a solution build compiles each shared crate once, with one feature set (docs/RSPROJ.md, \"Cargo workspaces\"). -->").Append('\n');
                 builder.Append("    <CargoBuildScope>Workspace</CargoBuildScope>").Append('\n');
             }
 

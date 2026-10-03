@@ -6,7 +6,7 @@ publish = false
 
 # A Kubuno desktop application with resources (vskubuno docs/RESOURCES.md): `src/resources.kbres`
 # (strings, images, a multi-size icon, a colour) and its French satellite `src/resources.fr.kbres`
-# (strings and a localised banner), embedded at compile time by `kubuno::resources!`. The view binds
+# (strings and a localised banner), embedded at compile time by `kubuno_desktop::resources!`. The view binds
 # them with `{Res key}`; the "Français / English" button switches the UI culture live.
 #
 #   resources-desktop.exe --culture fr     starts in French (default: Windows' display language)
@@ -14,4 +14,4 @@ publish = false
 [dependencies]
 # Kubuno, from a local checkout of github.com/kubuno/desktop (its `windows` workspace), like the
 # Kubuno Desktop Application template (change it here AND <KubunoDesktopSrc> in the .rsproj).
-kubuno = { path = "Z:/src/desktop/windows/src/crates/kubuno" }
+kubuno-desktop = { path = "Z:/src/desktop/windows/src/crates/kubuno-desktop" }

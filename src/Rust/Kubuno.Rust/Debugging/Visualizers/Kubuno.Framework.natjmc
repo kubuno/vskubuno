@@ -11,11 +11,15 @@
   on Kubuno itself).
 -->
 <NonUserCode xmlns="http://schemas.microsoft.com/vstudio/debugger/jmc/2015">
+  <Function Name="kubuno_desktop_views::*" ExceptionImplementation="true" />
+  <Function Name="kubuno_desktop_controls::*" ExceptionImplementation="true" />
+  <Function Name="kubuno_desktop_ui::*" ExceptionImplementation="true" />
+  <!-- The same crates under their names before the 2026-10 rename (applications built from an older desktop checkout). -->
   <Function Name="kubuno_views::*" ExceptionImplementation="true" />
   <Function Name="kubuno_controls::*" ExceptionImplementation="true" />
   <Function Name="kubuno_ui::*" ExceptionImplementation="true" />
   <Function Name="drive_app_controls::*" ExceptionImplementation="true" />
-  <!-- The dispatch glue #[kubuno_views::event_handlers] generates in the application's own crate. -->
+  <!-- The dispatch glue #[kubuno_desktop_views::event_handlers] generates in the application's own crate. -->
   <!-- (`impl$N`: Rust's name for an impl block, so a C++ Foo::handle_event is never matched.) -->
   <Function Name="*::impl$*::handle_event" ExceptionImplementation="true" />
   <Function Name="*::impl$*::handle_event::*" ExceptionImplementation="true" />

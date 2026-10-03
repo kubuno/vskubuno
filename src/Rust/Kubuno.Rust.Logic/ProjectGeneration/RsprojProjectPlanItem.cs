@@ -24,14 +24,22 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
         /// <summary>True when the member has no <c>[[bin]]</c> target at all (a library-only project - only ever planned when <see cref="RsprojGenerationOptions.IncludeLibraryOnlyMembers"/> is set).</summary>
         public bool IsLibraryOnly { get; }
 
+        /// <summary>The Visual Studio project name (the <c>.rsproj</c>'s file name without its extension).</summary>
+        public string ProjectName => System.IO.Path.GetFileNameWithoutExtension(ProjectPath);
+
+        /// <summary>True when the member has at least one <c>[[bin]]</c> target (a program).</summary>
+        public bool HasBin { get; }
+
         public RsprojProjectPlanItem(
             string packageName,
             string projectPath,
             string manifestPath,
             RsprojPlanAction action,
             string content,
-            bool isLibraryOnly)
+            bool isLibraryOnly,
+            bool? hasBin = null)
         {
+            HasBin = hasBin ?? !isLibraryOnly;
             PackageName = packageName;
             ProjectPath = projectPath;
             ManifestPath = manifestPath;

@@ -5,7 +5,7 @@ using System.Linq;
 namespace Kubuno.Views.Designer.Registry
 {
     /// <summary>
-    /// Mirrors one entry of <c>kubuno_views::registry::ComponentMeta.properties</c> (docs/DESIGNER.md
+    /// Mirrors one entry of <c>kubuno_desktop_views::registry::ComponentMeta.properties</c> (docs/DESIGNER.md
     /// §5: "properties: [{name, kind, default, doc}]"). Plain settable properties (not <c>init</c>-only
     /// records) so <c>System.Text.Json</c> can populate them with the default parameterless-constructor
     /// deserializer, matching the rest of this bridge (see <see cref="ComponentMeta"/>).

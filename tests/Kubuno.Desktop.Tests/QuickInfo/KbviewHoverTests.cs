@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Kubuno.Desktop.Tests.QuickInfo
 {
-    /// <summary>kubuno-views-ls hovers (formats of crates/kubuno-views-ls/src/hover.rs) turned into C#-style QuickInfo.</summary>
+    /// <summary>kubuno-views-ls hovers (formats of crates/kubuno-desktop-views-ls/src/hover.rs) turned into C#-style QuickInfo.</summary>
     [TestClass]
     public class KbviewHoverTests
     {

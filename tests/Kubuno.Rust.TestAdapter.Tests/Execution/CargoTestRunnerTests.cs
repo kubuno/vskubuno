@@ -70,7 +70,7 @@ namespace Kubuno.Rust.TestAdapter.Tests.Execution
         [Fact]
         public async Task Hundreds_of_tests_run_in_several_launches_and_every_outcome_is_kept()
         {
-            // kubuno-controls has hundreds of tests: all their names in one launch exceed Windows' 32,767-character command line.
+            // kubuno-desktop-controls has hundreds of tests: all their names in one launch exceed Windows' 32,767-character command line.
             var names = System.Linq.Enumerable.Range(0, 1500).Select(i => $"module::tests::a_reasonably_long_test_name_number_{i}").ToList();
             var runner = new FakeProcessRunner(request =>
             {
@@ -80,7 +80,7 @@ namespace Kubuno.Rust.TestAdapter.Tests.Execution
                 return new ProcessRunResult(0, lines, Array.Empty<string>());
             });
 
-            CargoTestRunResult result = await CargoTestRunner.RunAsync(runner, @"C:\target\debug\deps\kubuno_controls-1.exe", @"C:\root", names, CancellationToken.None);
+            CargoTestRunResult result = await CargoTestRunner.RunAsync(runner, @"C:\target\debug\deps\kubuno_desktop_controls-1.exe", @"C:\root", names, CancellationToken.None);
 
             Assert.True(runner.Requests.Count > 1);
             Assert.All(runner.Requests, request => Assert.True(request.Arguments.Length < 32_000));

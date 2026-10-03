@@ -5,7 +5,7 @@ namespace Kubuno.Views.Designer.Selection
     /// <summary>
     /// Pure helpers over the stable element id scheme docs/DESIGNER.md §8 documents ("a dot-separated
     /// path of child-ordinal indices from the document root ... independent of x:Name") -
-    /// [`kubuno_views::ast::Element::stable_id`]/<c>Document::resolve_id</c>'s exact C# mirror, needed on
+    /// [`kubuno_desktop_views::ast::Element::stable_id`]/<c>Document::resolve_id</c>'s exact C# mirror, needed on
     /// this side of the wire wherever a caller must build or walk an id itself rather than just carrying
     /// one around opaquely: <see cref="ElementAttributeReader"/> (walking down TO an id) and
     /// <see cref="Outline.DocumentSymbolTreeBuilder"/> (assigning one to each node of a

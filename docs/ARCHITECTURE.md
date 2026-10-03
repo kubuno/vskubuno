@@ -50,8 +50,8 @@ touching the layers below it and the targets never depend on each other:
                     Kubuno.Shared*                             (shared Visual Studio infrastructure)
 ```
 
-The lowest layer is named **Shared** (`Kubuno.Shared*`, `src/Shared`), not "Core": "Kubuno Core Web" (the server) and
-"Kubuno Core Desktop" (the desktop workspace) are product names, and the extension's own infrastructure must not be
+The lowest layer is named **Shared** (`Kubuno.Shared*`, `src/Shared`), not "Core": "Kubuno Core" (the server) and
+"Kubuno Desktop" (the desktop workspace) are product names, and the extension's own infrastructure must not be
 confused with them (renamed from `Kubuno.Core*` on 2026-10-02; every GUID, settings key, unified settings id, CPS
 capability and template id was kept).
 
@@ -68,10 +68,10 @@ capability and template id was kept).
 | Rust | `Kubuno.Cargo.MSBuild.Tasks` | The MSBuild tasks inside the `Kubuno.Rust.Sdk` NuGet package (name kept: it is part of the SDK's `UsingTask`s). |
 | Views | `Kubuno.Views` | What every target with `.kbview` views shares, whatever renders them: the `.kbview` language client of `kubuno-views-ls` (`LanguageService\`, `Locating\`, `Logging\`, `Options\`, content type, grammar, `kbview-languages.pkgdef`); the WinForms-like designer (`Designer\`: editor factory with Design \| XML \| Split, the design surface seam `IDesignSurfaceHost` / `IProtocolDesignSurfaceHost` and the design-surface protocol, editing pipeline, Toolbox, Properties (`ICustomTypeDescriptor`), events ⚡, collection editors, smart tags, resource/icon/binding pickers, error banner, outline, handlers); the `.kbres` resource editor (`Resources\`); `ViewsLayer`. |
 | Views | `Kubuno.Views.Logic` | Pure logic (netstandard2.0): view file kinds (`ViewFiles`), the `.kbres` resource model (`Resources\`). |
-| Desktop | `Kubuno.Desktop` | The Design pane's renderer: `RustDesignSurfaceHost` (`view_embed.exe` in an `HwndHost`, the `kubuno_ui` runtime handshake) and its factory (`Designer\DesignSurface\`), the per-project design runtime and surface locator (`DesignerIntegration\`); what `.kbview` adds to Rust files (`LanguageService\`: cross-language completion and navigation, override members, SQL in Rust strings); the data tooling (`DataExplorer\`, `DataSources\` with the binding drop `Designer\Bindings\BindingDropPlanner`, `Migrations\`); the Toolbox icon names of the Kubuno controls; printing (through the designer's library component tabs), paint debug, desktop templates. |
-| Desktop | `Kubuno.Desktop.Logic` | Pure logic: data, data sources, migrations, SQL, `.kbview` editor helpers, override members, control icons, the design build of a project's `kubuno_ui`, paint debug. |
+| Desktop | `Kubuno.Desktop` | The Design pane's renderer: `RustDesignSurfaceHost` (`view_embed.exe` in an `HwndHost`, the `kubuno_desktop_ui` runtime handshake) and its factory (`Designer\DesignSurface\`), the per-project design runtime and surface locator (`DesignerIntegration\`); what `.kbview` adds to Rust files (`LanguageService\`: cross-language completion and navigation, override members, SQL in Rust strings); the data tooling (`DataExplorer\`, `DataSources\` with the binding drop `Designer\Bindings\BindingDropPlanner`, `Migrations\`); the Toolbox icon names of the Kubuno controls; printing (through the designer's library component tabs), paint debug, desktop templates. |
+| Desktop | `Kubuno.Desktop.Logic` | Pure logic: data, data sources, migrations, SQL, `.kbview` editor helpers, override members, control icons, the design build of a project's `kubuno_desktop_ui`, paint debug. |
 | Desktop | `Kubuno.Desktop.ProjectSystem`, `Kubuno.Desktop.TemplateWizard` | The desktop target's CPS exports in a `.rsproj` (the designer as default `.kbview` editor, the `.kbview` icon) and the Kubuno control icons (`KubunoControls.imagemanifest`); the control item wizard. |
-| Web | `Kubuno.Web` | The Kubuno core and web modules (docs/WEB.md): Tools commands (web solution generation, multi-repository solution, version tools, `.kbpkg`), the "Kubuno Core Web Module" template (moved here from the Rust layer), the WV-9a WebView2 surface spike (`WebDesigner\Spike\`). References `Kubuno.Views` for the web views designer (docs/WEB-VIEWS.md; WV-9b's `WebDesignSurfaceHost` implements `IProtocolDesignSurfaceHost`). |
+| Web | `Kubuno.Web` | The Kubuno core and web modules (docs/WEB.md): Tools commands (web solution generation, multi-repository solution, version tools, `.kbpkg`), the "Kubuno Web Module" template (moved here from the Rust layer), the WV-9a WebView2 surface spike (`WebDesigner\Spike\`). References `Kubuno.Views` for the web views designer (docs/WEB-VIEWS.md; WV-9b's `WebDesignSurfaceHost` implements `IProtocolDesignSurfaceHost`). |
 | Web | `Kubuno.Web.Logic`, `Kubuno.Web.MSBuild.Tasks` | Pure logic (netstandard2.0: development database guard, dev core, deployment, `.kbpkg`, node_modules from another OS, generation, version audit); the tasks of the `Kubuno.Web.Sdk` NuGet package (sdk/Kubuno.Web.Sdk). |
 | Web | `Kubuno.Web.ProjectSystem`, `Kubuno.Web.TemplateWizard` | F5 of a core or module `.rsproj` (`KubunoWebDebugger`); the module template's wizard. |
 | Mobile | `Kubuno.Mobile` | Skeleton: `MobileLayer`, registered, no feature yet (src/Mobile/Kubuno.Mobile/README.md). |
@@ -181,6 +181,14 @@ describe its dev server); the `.kbview` language client still starts `kubuno-vie
 (docs/WEB-VIEWS.md section 5); `Kubuno.Web` references `Kubuno.Views` but uses none of it yet (its compiled assembly does
 not reference it until WV-9b).
 
+## Project and solution names
+
+Every Kubuno repository has one versioned solution named after it (`Kubuno.Core.slnx`, `Kubuno.Desktop.slnx`,
+`Kubuno.<Module>.slnx`), and every project is `Kubuno.<Product>.<Component>` for the crate
+`kubuno-<product>-<component>` (docs/RSPROJ.md section 4.1, docs/WEB.md section 12). One helper computes the names for
+both generators: `Kubuno.Rust.Cargo.Naming.ProjectNaming` (netstandard2.0, so the web layer's pure logic shares it);
+the desktop repository's folders and its two-workspace solution are `Kubuno.Rust.Logic.ProjectGeneration.DesktopRepositoryLayout`.
+
 ## Themed dialogs
 
 Every dialog and WPF surface the extension shows must look like Visual Studio's own in the dark, light, blue and
@@ -215,7 +223,7 @@ high-contrast themes (no white window, no default WPF buttons or selection color
    - 1a. VSIX skeleton, rust-analyzer LSP client, TextMate grammar, rustfmt on save.
    - 1b. Cargo workspace: targets from `cargo metadata`, Build/Rebuild/Clean, Error List.
    - 1c. Launch/debug any bin/example/test target with the native debugger.
-2. **XML view framework in `kubuno_ui`** (Rust): component metadata registry (single source
+2. **XML view framework in `kubuno_desktop_ui`** (Rust): component metadata registry (single source
    for loader, schema, language server, property grid), XML loader, hot reload.
 3. **View editing in VS**: XML language server (Rust), embedded live preview.
 4. **Reduced designer**: preview ⇄ XML selection sync, property grid, toolbox.
@@ -232,7 +240,7 @@ high-contrast themes (no white window, no default WPF buttons or selection color
 ## Roadmap — Kubuno web modules in the same VSIX (product owner, 2026-09-29)
 
 The same extension must eventually cover **Kubuno web modules** (Rust/Axum backend process + React/TypeScript frontend loaded by the core host), not only desktop apps. Organisation to keep in mind now:
-- **Layers**: `Kubuno.Rust.*` (language, Cargo, `.rsproj`, debugging — product-agnostic Rust support) · `Kubuno.Desktop.*` (kubuno_ui, the Rust design surface) · `Kubuno.Views.*` (`.kbview` designer and language client, shared by the targets) · `Kubuno.Web.*` (web modules) · `Kubuno.Shared` (settings, output pane, MCP bridge). Keep desktop-only concepts out of the Rust layer so web modules reuse it untouched. **Done 2026-09-30**, see "Layers (as built)" above (`Kubuno.Web` exists as a registered skeleton).
+- **Layers**: `Kubuno.Rust.*` (language, Cargo, `.rsproj`, debugging — product-agnostic Rust support) · `Kubuno.Desktop.*` (kubuno_desktop_ui, the Rust design surface) · `Kubuno.Views.*` (`.kbview` designer and language client, shared by the targets) · `Kubuno.Web.*` (web modules) · `Kubuno.Shared` (settings, output pane, MCP bridge). Keep desktop-only concepts out of the Rust layer so web modules reuse it untouched. **Done 2026-09-30**, see "Layers (as built)" above (`Kubuno.Web` exists as a registered skeleton).
 - **Web module = one solution, two projects**: the backend `.rsproj` (existing "Kubuno Module" template) + the frontend as VS's own JavaScript/TypeScript project (`.esproj`, Vite 8, React 19, TS 6, Tailwind v4, `@kubuno/ui`/`@kubuno/sdk`/`@kubuno/drive` from npm, `@ui` specifier mapping, `kubuno-module` cascade layer) — reuse Microsoft's JS project system rather than reinventing it.
 - **F5 for a web module**: build backend + frontend, deploy into a local core (the `deploy_local.sh` equivalent on Windows, or a dev core instance), start/attach: native debugger on the module process + browser/JS debugging of the module's frontend inside the core host; `.kbpkg` packaging command (`build_kbpkg`) and "Install into core".
 - **Kubuno-specific tooling**: `module.toml` editor/validation, SQLx migrations & `.sqlx` offline cache commands, `/internal/*` + events contracts, `SDK_VERSION` compatibility check, CHANGELOG `[Unreleased]` helper, release (`release.sh`) integration.
@@ -253,8 +261,8 @@ The mobile repo (`mobile`, ex-`android`) is a multi-app Gradle project: Kotlin +
 ## Roadmap — Kubuno view rendering engine for mobile (Android, iOS, iPadOS) (product owner, 2026-09-29)
 
 Requirement: like desktop, Kubuno views (`.kbview` + Rust view models/handlers) must render on Android and iOS/iPadOS (phones, tablets, other form factors), with the same designer workflow.
-Recommended direction (to confirm by a spike): **one Rust UI core, several backends** rather than mapping `.kbview` to Compose/SwiftUI (two extra renderers that would drift from kubuno_ui):
-- split `kubuno_ui`/`kubuno-controls` into a portable core (layout, widgets, theming, the existing `Canvas` trait, events of EVENTS.md) and platform backends: Windows (Direct2D/DirectWrite, today), Android and iOS via a portable GPU 2D renderer (Skia via `skia-safe`, or `vello`/`wgpu`) + portable text stack (shaping/fallback, e.g. `cosmic-text`/HarfBuzz) — spike compares fidelity with the Direct2D output and binary size;
+Recommended direction (to confirm by a spike): **one Rust UI core, several backends** rather than mapping `.kbview` to Compose/SwiftUI (two extra renderers that would drift from kubuno_desktop_ui):
+- split `kubuno_desktop_ui`/`kubuno-desktop-controls` into a portable core (layout, widgets, theming, the existing `Canvas` trait, events of EVENTS.md) and platform backends: Windows (Direct2D/DirectWrite, today), Android and iOS via a portable GPU 2D renderer (Skia via `skia-safe`, or `vello`/`wgpu`) + portable text stack (shaping/fallback, e.g. `cosmic-text`/HarfBuzz) — spike compares fidelity with the Direct2D output and binary size;
 - platform shells: Android (`NativeActivity`/`GameActivity` or a `SurfaceView` hosted in a Kotlin activity so it can coexist with the existing Kotlin/Compose apps), iOS/iPadOS (UIKit view + Metal layer, Swift host); touch/gestures, IME/soft keyboard, safe areas, rotation, per-device DPI, accessibility (AccessKit → TalkBack/VoiceOver), clipboard, file pickers, notifications;
 - adaptive layouts: size classes (compact/regular) and breakpoints in `.kbview` (phone/tablet/desktop variants or responsive props), designer device frames (phone/tablet, portrait/landscape) rendered by the same core;
 - toolchain: `aarch64-linux-android`/`x86_64-linux-android` via the NDK (buildable on Windows); **iOS requires macOS/Xcode** for build, signing and simulators — the product owner HAS a Mac: plan a "Pair to Mac" remote build host (as .NET MAUI does) driven from VS over SSH (build, sign, run on simulator/device, stream logs, remote debugging via lldb), with CI on macOS as a complement;

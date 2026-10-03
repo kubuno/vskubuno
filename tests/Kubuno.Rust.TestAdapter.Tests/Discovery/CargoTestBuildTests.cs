@@ -56,7 +56,7 @@ namespace Kubuno.Rust.TestAdapter.Tests.Discovery
         [InlineData("cdylib")]
         public async Task The_unit_tests_of_a_library_of_any_crate_type_are_found(string crateType)
         {
-            // Real shape of a `crate-type = ["dylib"]` library's test harness artifact (the Kubuno desktop workspace's kubuno-ui).
+            // Real shape of a `crate-type = ["dylib"]` library's test harness artifact (the Kubuno desktop workspace's kubuno-desktop-ui).
             string line = "{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file:///C:/ws/crates/ui#0.1.0\",\"manifest_path\":\"C:\\\\ws\\\\crates\\\\ui\\\\Cargo.toml\","
                 + "\"target\":{\"kind\":[\"" + crateType + "\"],\"crate_types\":[\"" + crateType + "\"],\"name\":\"ui\",\"src_path\":\"C:\\\\ws\\\\crates\\\\ui\\\\src\\\\lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},"
                 + "\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],"

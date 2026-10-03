@@ -14,7 +14,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// <summary>
     /// The project's resources on the design surface (docs/RESOURCES.md): the surface is sent every <c>.kbres</c> set of
     /// the view's project with the design-time language (<c>setResources</c>,
-    /// <c>kubuno_views::protocol::HostMessage::SetResources</c>) when it starts, when the language picker of the designer
+    /// <c>kubuno_desktop_views::protocol::HostMessage::SetResources</c>) when it starts, when the language picker of the designer
     /// changes, and when a resource file or a picture of the project changes on disk - so <c>{Res …}</c> values and
     /// localised pictures show as they will at run time, in the culture chosen.
     /// </summary>

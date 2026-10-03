@@ -11,7 +11,7 @@ namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>One `kubuno/applyEdit` op (DSG-2's shape, `vskubuno/docs/DESIGNER.md` §8) a design-mode
     /// gesture produced - `SetAttribute` for a nudge/resize `X`/`Y`/`Width`/`Height`, `RemoveElement` for
-    /// Delete. Mirrors `kubuno_views::design::EditOp` on the Rust side field-for-field.</summary>
+    /// Delete. Mirrors `kubuno_desktop_views::design::EditOp` on the Rust side field-for-field.</summary>
     public enum DesignSurfaceEditOpKind
     {
         SetAttribute,
@@ -62,9 +62,9 @@ namespace Kubuno.Views.Designer.DesignSurface
         /// <summary>
         /// <see cref="System.Text.Json.JsonSerializer"/>'s default encoder HTML-escapes `&lt;`/`&gt;`/`&amp;`
         /// (and a few other code points) for browser-embedding safety - `serde_json` on the Rust side
-        /// (`kubuno_views::protocol`) does not escape any of these, so a line like `setText` for a
+        /// (`kubuno_desktop_views::protocol`) does not escape any of these, so a line like `setText` for a
         /// `.kbview` document (all angle brackets) would otherwise come out byte-for-byte different from
-        /// what `kubuno_views::protocol`'s own round-trip tests assert (`vskubuno/docs/DESIGNER.md`'s
+        /// what `kubuno_desktop_views::protocol`'s own round-trip tests assert (`vskubuno/docs/DESIGNER.md`'s
         /// "DSG-6 protocol" §9, "unit-tests every wire shape byte-for-byte"). `UnsafeRelaxedJsonEscaping`
         /// is safe here: this JSON never renders in a browser, only parsed back by `view_embed`'s own
         /// `serde_json` on the other end of a pipe.
@@ -81,7 +81,7 @@ namespace Kubuno.Views.Designer.DesignSurface
 
         /// <summary>
         /// <c>setDesignOptions {containerOutlines}</c>: the designer options that change what the surface draws
-        /// (Tools &gt; Options &gt; Kubuno &gt; Designer; <c>kubuno_views::protocol::HostMessage::SetDesignOptions</c>).
+        /// (Tools &gt; Options &gt; Kubuno &gt; Designer; <c>kubuno_desktop_views::protocol::HostMessage::SetDesignOptions</c>).
         /// </summary>
         public static string EncodeSetDesignOptions(bool containerOutlines) => JsonSerializer.Serialize(new { type = "setDesignOptions", containerOutlines }, WireOptions);
 
@@ -276,7 +276,7 @@ namespace Kubuno.Views.Designer.DesignSurface
 
         /// <summary>
         /// The <c>surfaceInfo</c> handshake version this host speaks (<c>SURFACE_INFO_VERSION</c> in <c>view_embed.rs</c>).
-        /// 2: the surface links <c>kubuno_ui</c> statically. Version 1 surfaces loaded a <c>kubuno_ui-&lt;hash&gt;.dll</c>
+        /// 2: the surface links <c>kubuno_desktop_ui</c> statically. Version 1 surfaces loaded a <c>kubuno_ui-&lt;hash&gt;.dll</c>
         /// (a desktop checkout older than 2026-10-03) and are refused.
         /// </summary>
         public const int SurfaceInfoVersion = 2;
@@ -303,7 +303,7 @@ namespace Kubuno.Views.Designer.DesignSurface
 
         /// <summary>
         /// The check of the <c>surfaceInfo</c> handshake: <see langword="null"/> when the surface may run, else
-        /// why it must not. The surface links <c>kubuno_ui</c> statically, from the project's own build, so
+        /// why it must not. The surface links <c>kubuno_desktop_ui</c> statically, from the project's own build, so
         /// there is no DLL to compare any more: only the protocol version matters.
         /// </summary>
         public static string? CheckSurfaceInfo(int version) =>

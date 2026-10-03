@@ -26,7 +26,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// <para><b>Container window.</b> Like the spike, <see cref="BuildWindowCore"/> creates a plain
     /// Win32 "Static" child of WPF's own hosting HWND (not the surface itself) and launches the surface
     /// with <c>--parent &lt;container&gt;</c>; the surface creates its OWN child of that container
-    /// (<c>kubuno_controls::host::HostOptions::parent</c>). Sizing follows the container's own
+    /// (<c>kubuno_desktop_controls::host::HostOptions::parent</c>). Sizing follows the container's own
     /// <c>WM_SIZE</c> (forwarded to the grandchild with <c>MoveWindow</c>) - DPI needs no extra code
     /// here: the surface reacts to <c>WM_DPICHANGED_AFTERPARENT</c> on its own, and WPF already sizes
     /// the container in DPI-correct device pixels per <c>HwndHost</c>'s normal layout, so the physical
@@ -47,8 +47,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// <list type="bullet">
     /// <item><b>unhandledKey</b>: the surface re-posts to the container the SAME
     /// <c>WM_KEYDOWN</c>/<c>WM_SYSKEYDOWN</c> a real keystroke would have produced, for whatever it did
-    /// not consume this frame (<c>kubuno_controls::host::forward_unhandled_keys</c>, additive in
-    /// <c>kubuno-controls/src/host/mod.rs</c>), preceded by a <c>kubuno_controls::host::WM_KUBUNO_KEY_MODS</c>
+    /// not consume this frame (<c>kubuno_desktop_controls::host::forward_unhandled_keys</c>, additive in
+    /// <c>kubuno-desktop-controls/src/host/mod.rs</c>), preceded by a <c>kubuno_desktop_controls::host::WM_KUBUNO_KEY_MODS</c>
     /// message carrying the modifiers held at that ORIGINAL, physical moment. Since the container never
     /// itself has the keyboard focus (the grandchild does), EVERY <c>WM_KEYDOWN</c>/<c>WM_SYSKEYDOWN</c>
     /// this window's own <see cref="WndProc"/> sees is, by construction, one of these forwarded messages
@@ -63,8 +63,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// `InputManager.ProcessInput`, which needed an explicit `Keyboard.Focus(this)` to route at all and
     /// that, confirmed live, moved native Win32 focus away from the surface with no reliable way to give
     /// it back without also stopping the very `KeyBinding` it was trying to reach).</item>
-    /// <item><b>tabOut</b>: a custom <c>WM_APP</c>-based message (<c>kubuno_controls::host::WM_KUBUNO_TAB_OUT</c>,
-    /// posted by <c>kubuno_controls::host::notify_tab_out</c>) - <see cref="WndProc"/> calls
+    /// <item><b>tabOut</b>: a custom <c>WM_APP</c>-based message (<c>kubuno_desktop_controls::host::WM_KUBUNO_TAB_OUT</c>,
+    /// posted by <c>kubuno_desktop_controls::host::notify_tab_out</c>) - <see cref="WndProc"/> calls
     /// <see cref="UIElement.MoveFocus"/> with a <see cref="TraversalRequest"/>, moving the WPF focus out
     /// of this element exactly as the spike's own <c>TabIntoCore</c> already does for the OPPOSITE
     /// direction (WPF into the surface).</item>
@@ -236,7 +236,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         }
 
         /// <summary>
-        /// <see langword="null"/> when the surface exe is present (it links <c>kubuno_ui</c> and Rust's <c>std</c>
+        /// <see langword="null"/> when the surface exe is present (it links <c>kubuno_desktop_ui</c> and Rust's <c>std</c>
         /// statically: nothing else has to be next to it); otherwise a one-line, user-facing description of what is missing.
         /// </summary>
         private string? FindRuntimeProblem()
@@ -284,7 +284,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             // a design surface draws every control exactly as it looks at run time, so it never inherits the
             // switch (a surface built from an older checkout would otherwise box every element in cyan).
             psi.EnvironmentVariables.Remove(Kubuno.Desktop.Logic.Painting.PaintDebug.EnvironmentVariableName);
-            // The surface's own texts and diagnostics in Visual Studio's UI language (kubuno_views::messages).
+            // The surface's own texts and diagnostics in Visual Studio's UI language (kubuno_desktop_views::messages).
             psi.EnvironmentVariables["KUBUNO_UI_LANG"] = DesignerText.IsFrench ? "fr" : "en";
             _handshake = HandshakeState.Waiting;
 
@@ -548,7 +548,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             }
             else if (msg == WmKubunoKeyMods)
             {
-                // See kubuno_controls::host::WM_KUBUNO_KEY_MODS's own doc: posted immediately BEFORE the
+                // See kubuno_desktop_controls::host::WM_KUBUNO_KEY_MODS's own doc: posted immediately BEFORE the
                 // key message it describes (same source thread, same destination - PostMessage is FIFO),
                 // so simply remembering it here and consuming it in HandleUnhandledKey is reliable.
                 _pendingKeyMods = (int)wParam.ToInt64();
@@ -608,8 +608,8 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         /// Either path reads modifiers from the calling (WPF UI) thread's per-thread key-state table
         /// ("input state" - what `GetKeyState`/`Keyboard.Modifiers`/`IVsFilterKeys2` all read modifiers
         /// from), briefly forced to match <paramref name="mods"/> - the modifiers
-        /// `kubuno_controls::host::forward_unhandled_keys` captured at the ORIGINAL, physical moment this
-        /// key went down (see `kubuno_controls::host::WM_KUBUNO_KEY_MODS`'s own doc) - confirmed live to
+        /// `kubuno_desktop_controls::host::forward_unhandled_keys` captured at the ORIGINAL, physical moment this
+        /// key went down (see `kubuno_desktop_controls::host::WM_KUBUNO_KEY_MODS`'s own doc) - confirmed live to
         /// be necessary too: `AttachThreadInput` alone shares only the CURRENT/ambient state, which by
         /// the time this method runs (after a frame, a `PostMessage` round trip and this thread's own
         /// queue) may already show a fast chord's modifiers released again. `AttachThreadInput` is kept
@@ -690,7 +690,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         /// <summary>
         /// The WPF fallback (no VS to route through - this library's own tests, the updated spike):
         /// converts the captured virtual key and modifiers (see
-        /// <c>kubuno_controls::host::WM_KUBUNO_KEY_MODS</c>'s own doc) into WPF's own
+        /// <c>kubuno_desktop_controls::host::WM_KUBUNO_KEY_MODS</c>'s own doc) into WPF's own
         /// <see cref="Key"/>/<see cref="ModifierKeys"/> types and asks
         /// <see cref="TryExecuteMatchingInputBinding"/> to find and execute a matching `KeyBinding`
         /// directly - see that method's own doc for why this, rather than synthesizing routed keyboard
@@ -871,9 +871,9 @@ namespace Kubuno.Desktop.Designer.DesignSurface
         private const int WmPaint = 0x000F;
         private const int WmKeyDown = 0x0100;
         private const int WmSysKeyDown = 0x0104;
-        /// <summary>Must match Rust's <c>kubuno_controls::host::WM_KUBUNO_TAB_OUT</c> exactly (<c>WM_APP + 0x4B4F</c>).</summary>
+        /// <summary>Must match Rust's <c>kubuno_desktop_controls::host::WM_KUBUNO_TAB_OUT</c> exactly (<c>WM_APP + 0x4B4F</c>).</summary>
         private const int WmKubunoTabOut = 0x8000 + 0x4B4F;
-        /// <summary>Must match Rust's <c>kubuno_controls::host::WM_KUBUNO_KEY_MODS</c> exactly (<c>WM_APP + 0x4B50</c>).</summary>
+        /// <summary>Must match Rust's <c>kubuno_desktop_controls::host::WM_KUBUNO_KEY_MODS</c> exactly (<c>WM_APP + 0x4B50</c>).</summary>
         private const int WmKubunoKeyMods = 0x8000 + 0x4B50;
     }
 }

@@ -25,7 +25,7 @@ namespace Kubuno.Views.Designer.Handlers
     /// A <c>kubuno/createHandler</c> result's <c>edit</c> field - a minimal <c>WorkspaceEdit</c>
     /// (<c>{changes: {uri: [TextEdit]}}</c>, the standard LSP shape <c>lsp_types::WorkspaceEdit</c>
     /// already serializes to). Reuses DSG-2/DSG-5's own <see cref="TextEditDto"/> for each file's edit
-    /// list - the exact <c>{range, newText}</c> pairs <c>kubuno_views::edit</c> already returns, so this
+    /// list - the exact <c>{range, newText}</c> pairs <c>kubuno_desktop_views::edit</c> already returns, so this
     /// bridge introduces no second edit type.
     /// </summary>
     public sealed class HandlerWorkspaceEdit

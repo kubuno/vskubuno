@@ -5,7 +5,7 @@
 use std::sync::Arc;
 
 use foundations_controls::ChipBar;
-use kubuno::prelude::*;
+use kubuno_desktop::prelude::*;
 
 /// The keys of the Sidebar's rows, in the order of the pages (the tabs).
 const PAGES: [&str; 4] = ["lists", "cards", "people", "form"];
@@ -13,7 +13,7 @@ const PAGES: [&str; 4] = ["lists", "cards", "people", "form"];
 const AUTHORS: [&str; 6] = ["Alice Martin", "Bob Durand", "Chloé Petit", "David Moreau", "Emma Leroy", "Farid Haddad"];
 const PRESENCES: [&str; 4] = ["Online", "Away", "Busy", "Offline"];
 
-#[kubuno::view("main_view.kbview")]
+#[kubuno_desktop::view("main_view.kbview")]
 pub struct MainView {
     /// The custom control of the `foundations-controls` crate, typed with its class.
     #[control]

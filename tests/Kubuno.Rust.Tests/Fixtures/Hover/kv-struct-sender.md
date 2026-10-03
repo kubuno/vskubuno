@@ -1,6 +1,6 @@
 
 ```rust
-kubuno_views::events::sender
+kubuno_desktop_views::events::sender
 ```
 
 ```rust
@@ -15,11 +15,11 @@ where
 
 ---
 
-A typed, read-only sender: the [`ElementRef`](https://docs.rs/kubuno_views/0.1.0-alpha/kubuno_views/events/sender/struct.ElementRef.html) plus the element's
+A typed, read-only sender: the [`ElementRef`](https://docs.rs/kubuno_desktop_views/0.1.0-alpha/kubuno_desktop_views/events/sender/struct.ElementRef.html) plus the element's
 resolved properties, reachable directly through `Deref`.
 
 ```rust
-use kubuno_views::events::{Component, ElementRef, Sender};
+use kubuno_desktop_views::events::{Component, ElementRef, Sender};
 
 struct Button;
 struct ButtonProps { text: String }

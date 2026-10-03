@@ -53,8 +53,8 @@ namespace Kubuno.Views.Settings
         public static string ColumnDescription => T("Description", "Description");
 
         public static string Hint => T(
-            "Settings of the app: typed values with a default, User (read-write, per user; Roaming follows the user between machines) or Application (machine-wide, read-only). Code: kubuno::settings!(\"{0}\") generates the typed class; views bind them through a <Settings> component. Lists: items separated by |.",
-            "Paramètres de l'application : valeurs typées avec un défaut, Utilisateur (lecture-écriture, par utilisateur ; Itinérant suit l'utilisateur d'une machine à l'autre) ou Application (pour toute la machine, lecture seule). Code : kubuno::settings!(\"{0}\") génère la classe typée ; les vues s'y lient par un composant <Settings>. Listes : éléments séparés par |.");
+            "Settings of the app: typed values with a default, User (read-write, per user; Roaming follows the user between machines) or Application (machine-wide, read-only). Code: kubuno_desktop::settings!(\"{0}\") generates the typed class; views bind them through a <Settings> component. Lists: items separated by |.",
+            "Paramètres de l'application : valeurs typées avec un défaut, Utilisateur (lecture-écriture, par utilisateur ; Itinérant suit l'utilisateur d'une machine à l'autre) ou Application (pour toute la machine, lecture seule). Code : kubuno_desktop::settings!(\"{0}\") génère la classe typée ; les vues s'y lient par un composant <Settings>. Listes : éléments séparés par |.");
 
         public static string Problems(int errors, int warnings) => T($"{errors} error(s), {warnings} warning(s): ", $"{errors} erreur(s), {warnings} avertissement(s) : ");
 

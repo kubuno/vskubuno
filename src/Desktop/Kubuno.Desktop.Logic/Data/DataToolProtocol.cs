@@ -30,7 +30,7 @@ namespace Kubuno.Desktop.Logic.Data
         public string Kind { get; }
     }
 
-    /// <summary>The <c>kind</c> values of the tool's errors (kubuno-data's <c>DataError</c> variants, plus the protocol ones).</summary>
+    /// <summary>The <c>kind</c> values of the tool's errors (kubuno-desktop-data's <c>DataError</c> variants, plus the protocol ones).</summary>
     public static class DataToolErrorKinds
     {
         public const string Config = "Config";

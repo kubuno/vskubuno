@@ -28,7 +28,7 @@ namespace Kubuno.Views.Designer.Icons
     /// The icon attribute syntax, shared by the Properties window, the icon picker and the tests: a glyph name
     /// (<c>Icon="Save"</c>), an image file relative to the view like <c>BackgroundImage</c>
     /// (<c>Icon="resources/save.svg"</c>), a resource (<c>Icon="{Res Logo}"</c>) or a binding. Mirrors
-    /// <c>kubuno_views::icon</c> and <c>drive_app_controls::icon_source</c> on the Rust side. Pure.
+    /// <c>kubuno_desktop_views::icon</c> and <c>kubuno_drive_desktop_app_controls::icon_source</c> on the Rust side. Pure.
     /// </summary>
     public static class IconValue
     {

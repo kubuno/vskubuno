@@ -9,7 +9,7 @@
 //! its events (raised with `self.raise_<field>(args)`). Override more of the `Control` behaviour with Ctrl+. >
 //! "Substituer des membres...".
 
-use kubuno_views::prelude::*;
+use kubuno_desktop_views::prelude::*;
 
 /// A custom control. Describe it here: this text is its description in the Toolbox and the Properties window.
 #[derive(Component, Default)]

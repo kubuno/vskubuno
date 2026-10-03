@@ -45,7 +45,7 @@ jobs:
 
       - name: Build kubuno-views-ls
         working-directory: desktop/windows
-        run: cargo build --release -p kubuno-views-ls
+        run: cargo build --release -p kubuno-desktop-views-ls
 
       - name: NuGet Restore
         run: nuget restore Kubuno.VisualStudio.sln

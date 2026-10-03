@@ -7,7 +7,7 @@ namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// What the design surface shows of the current text (docs/DESIGNER.md section 17) - the
-    /// <c>state</c> of a <c>renderStatus</c> line, mirroring <c>kubuno_views::protocol::RenderState</c>.
+    /// <c>state</c> of a <c>renderStatus</c> line, mirroring <c>kubuno_desktop_views::protocol::RenderState</c>.
     /// </summary>
     public enum DesignSurfaceRenderState
     {
@@ -28,7 +28,7 @@ namespace Kubuno.Views.Designer.DesignSurface
     }
 
     /// <summary>
-    /// One diagnostic of a <c>renderStatus</c> line (<c>kubuno_views::protocol::WireDiagnostic</c>): 1-based
+    /// One diagnostic of a <c>renderStatus</c> line (<c>kubuno_desktop_views::protocol::WireDiagnostic</c>): 1-based
     /// lines and 1-based columns counted in UTF-16 code units, as Visual Studio counts them.
     /// </summary>
     public sealed class DesignSurfaceDiagnostic

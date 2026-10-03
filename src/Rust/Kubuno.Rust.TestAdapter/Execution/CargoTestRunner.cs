@@ -63,7 +63,7 @@ namespace Kubuno.Rust.TestAdapter.Execution
             }
 
             // A Windows command line holds at most 32,767 characters: a test program with hundreds of tests (the Kubuno
-            // desktop workspace's kubuno-controls) cannot get all their names in one launch - the process never started
+            // desktop workspace's kubuno-desktop-controls) cannot get all their names in one launch - the process never started
             // and every test of the batch was reported failed. Run consecutive batches that fit instead.
             IReadOnlyList<IReadOnlyList<string>> batches = SplitIntoBatches(libtestNames, MaxNamesLength - executablePath.Length);
             if (batches.Count == 1)

@@ -15,14 +15,14 @@ The planning folder `C:\kubuno-build\documents-spec\` named by the request does 
 C:\ and E:\, 2026-10-02); its decisions survive in the code comments that cite them (`31-CORRECTIONS.md` C1, C7, C9 in
 `documents/src/api/session.rs` and `doc/images.rs`), which this plan follows.
 
-## 1. Shared code: the platform-neutral crate `kubuno-docs-core`
+## 1. Shared code: the platform-neutral crate `kubuno-office-docs-core`
 
 User direction (2026-10-02): share the algorithms with the web rather than write them once per platform. Everything
-that is not drawing, input or windowing lives in **`desktop/common/kubuno-docs-core`** (name per the
+that is not drawing, input or windowing lives in **`desktop/common/kubuno-office-docs-core`** (name per the
 `kubuno-<domain>-core` convention of the cross-module study), a member of the `desktop/common` workspace like
-`kubuno-sync`, depended on by path from `documents`. It has no Windows, Direct2D, DirectWrite or `kubuno_ui`
+`kubuno-desktop-sync`, depended on by path from `documents`. It has no Windows, Direct2D, DirectWrite or `kubuno_desktop_ui`
 dependency (only `serde`, `serde_json`) and is checked with `cargo check --all-targets` for `wasm32-unknown-unknown`,
-`x86_64-unknown-linux-gnu` and `aarch64-apple-darwin`, like `kubuno-views-syntax`.
+`x86_64-unknown-linux-gnu` and `aarch64-apple-darwin`, like `kubuno-desktop-views-syntax`.
 
 | Module | Content | Origin |
 |---|---|---|
@@ -70,7 +70,7 @@ by its caller (the core never reads a clock).
 
 Each increment is verified before the next: `cargo test` (core + documents), `cargo clippy -- -D warnings`, the
 core's cross-target `cargo check`, real runs with captures in light and dark, then `dist\kubuno-documents.exe`
-refreshed (a self-contained exe: kubuno-ui is linked statically).
+refreshed (a self-contained exe: kubuno-desktop-ui is linked statically).
 
 ### A — editable pages
 
@@ -136,7 +136,7 @@ maintained as commands land.
 * Ctrl+S, the dirty indicator in the title, a conflict dialog (Kubuno `ConfirmDialog`: keep mine / take theirs).
 * Offline-first: edits persist locally first — a journal of the document bytes per open document under the app's
   local data folder, replayed at start — before any server write (`DESKTOP-OFFLINE-SYNC.md`). Syncing documents
-  through `kubuno-sync-engine` (outbox, feeds) is a later increment: the document is one opaque blob of up to 2 MiB,
+  through `kubuno-desktop-sync-engine` (outbox, feeds) is a later increment: the document is one opaque blob of up to 2 MiB,
   not rows, and the conflict rule above (digest, owner-only sessions) is specific to it.
 * Tests against the dev core and dev database only (`KUBUNO_DEV_DATABASE_URL`, `docs/WEB.md` §6–7); if the office
   module cannot run locally, save is tested against a local mock and open read-only against the live server, and the
@@ -145,7 +145,7 @@ maintained as commands land.
 ## 3. Command coverage
 
 ✔ wired and verified · ◐ partial · ✘ not done (the model or the desktop lacks it). "Verified" = a unit test in
-`kubuno-docs-core` mirroring the web's command, plus a real run for the ones marked *(run)*. Clicks posted by the test driver
+`kubuno-office-docs-core` mirroring the web's command, plus a real run for the ones marked *(run)*. Clicks posted by the test driver
 (`PostMessage`, so as not to take the user's pointer) did not reach the ribbon's commands — most likely its hover
 tracking, which sees the real pointer elsewhere; not investigated further — so ribbon commands were run through their
 shortcuts, which execute the same `OnExecute` (`host::take_key` → `Command`).
@@ -174,7 +174,7 @@ shortcuts, which execute the same `OnExecute` (`host::take_key` → `Command`).
 
 ## 4. Later: the web on the same crate (WASM)
 
-The web keeps `canvas-engine.ts` for now. Switching it to `kubuno-docs-core` compiled to WASM:
+The web keeps `canvas-engine.ts` for now. Switching it to `kubuno-office-docs-core` compiled to WASM:
 
 * **API surface** (`wasm-bindgen`, behind a `wasm` feature): `Engine::new(doc_json)`, `set_doc(json)` /
   `apply_steps(steps_json)` (ProseMirror steps from `tr.steps` mapped to `Replace` on paths, or simply `set_doc` per
@@ -200,7 +200,7 @@ The web keeps `canvas-engine.ts` for now. Switching it to `kubuno-docs-core` com
 
 ## 5. Log
 
-**2026-10-02 — A, B, C, D (first pass).** `kubuno-docs-core`: 247 tests, clippy `-D warnings` clean, `cargo check`
+**2026-10-02 — A, B, C, D (first pass).** `kubuno-office-docs-core`: 247 tests, clippy `-D warnings` clean, `cargo check`
 for `wasm32-unknown-unknown`, `x86_64-unknown-linux-gnu` and `aarch64-apple-darwin`. `kubuno-documents`: 128 tests
 (the save session on its worker thread against an in-memory server and journal: Ctrl+S saves, a server-side change
 raises the conflict instead of overwriting, « take theirs » reloads, offline opens the journal and keeps it on close,

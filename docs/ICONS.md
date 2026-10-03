@@ -62,7 +62,7 @@ Windows asks for (an `.ico` is used as is).
 ## 3. In code
 
 ```rust
-use kubuno::prelude::*;
+use kubuno_desktop::prelude::*;
 
 let save = Button::new().text("Save").icon("Save");
 let open = Button::new().text("Open").icon(IconSource::file("resources/open.svg"));
@@ -72,7 +72,7 @@ let print = Button::new().text("Print").icon("Printer").icon_size(32.0).icon_col
 let form = Form::new().text("Editor").icon("resources/app.svg");
 ```
 
-`IconSource` converts from `&str`, `String`, `&Path` and `PathBuf`. (`kubuno::Icon` is the `<Icon>`
+`IconSource` converts from `&str`, `String`, `&Path` and `PathBuf`. (`kubuno_desktop::Icon` is the `<Icon>`
 control, hence the name.)
 
 ## 4. In Visual Studio
@@ -93,6 +93,6 @@ The language server answers `kubuno/icons` (the set, with every glyph's paths, i
 aliases and the named sizes) and `kubuno/renderIcon` (`{value, uri, size, color}` → straight-alpha
 BGRA pixels, base64), which the Visual Studio picker uses.
 
-On the Rust side: `drive_app_controls::icon_source` describes a value and its options,
-`kubuno_controls::icon_image` decodes and draws image icons, `kubuno_views::icon` resolves an icon
+On the Rust side: `kubuno_drive_desktop_app_controls::icon_source` describes a value and its options,
+`kubuno_desktop_controls::icon_image` decodes and draws image icons, `kubuno_desktop_views::icon` resolves an icon
 attribute (glyph, file, resource) for the controls.

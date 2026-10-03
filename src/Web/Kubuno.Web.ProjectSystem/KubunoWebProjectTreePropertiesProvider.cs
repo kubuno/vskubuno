@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.ProjectSystem;
 namespace Kubuno.Web.ProjectSystem
 {
     /// <summary>
-    /// Tells the Kubuno Core Web projects apart in Solution Explorer (docs/WEB.md, "Solutions"): the server project of the
+    /// Tells the Kubuno Core projects apart in Solution Explorer (docs/WEB.md, "Solutions"): the server project of the
     /// core (<c>KubunoWebRole=Core</c>, capability <c>KubunoWebCore</c>) shows a web server icon, a module's backend
     /// (<c>KubunoWebModule</c>) a web application icon, instead of the Rust "R" every <c>.rsproj</c> gets - the same
     /// project type GUID, only the capability added by Kubuno.Web.Sdk differs. Desktop apps and libraries keep theirs.

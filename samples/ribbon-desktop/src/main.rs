@@ -4,9 +4,9 @@
 
 mod main_view;
 
-fn main() -> kubuno::Result {
+fn main() -> kubuno_desktop::Result {
     if std::env::args().any(|a| a == "--dark") {
-        kubuno::Application::set_theme(kubuno::ui::Theme::dark());
+        kubuno_desktop::Application::set_theme(kubuno_desktop::ui::Theme::dark());
     }
-    kubuno::Application::run(main_view::MainView::new())
+    kubuno_desktop::Application::run(main_view::MainView::new())
 }

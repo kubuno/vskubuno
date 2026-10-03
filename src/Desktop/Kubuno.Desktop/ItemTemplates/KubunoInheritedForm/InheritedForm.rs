@@ -3,7 +3,7 @@
 //! handlers, which keep running for the controls it declares.
 
 /// A form inheriting `$basetypename$`.
-#[kubuno::view("$fileinputname$.kbview")]
+#[kubuno_desktop::view("$fileinputname$.kbview")]
 #[derive(Default)]
 pub struct $classname$ {
     /// The base form (Windows Forms' base class).

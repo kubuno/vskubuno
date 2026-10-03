@@ -100,7 +100,7 @@ namespace Kubuno.Views.Designer.Handlers
         /// <c>handler_insert</c> module always creates a real <c>fn</c> (never a closure-only table
         /// entry), precisely so "go to definition" keeps working (a legacy <c>fn</c>, or a typed method of the
         /// <c>#[event_handlers]</c> impl, EVT-4) - adjusted by <see cref="PositionAfterApply"/> for the other
-        /// edits of the same file that land before it (the <c>use kubuno_views::prelude::*;</c> a typed stub may
+        /// edits of the same file that land before it (the <c>use kubuno_desktop_views::prelude::*;</c> a typed stub may
         /// add), so the caret lands on the <c>fn</c> once everything is applied.
         /// </summary>
         private static (string Uri, LspPosition Position)? FindHandlerStubLocation(
@@ -123,7 +123,7 @@ namespace Kubuno.Views.Designer.Handlers
         /// <summary>
         /// Where <paramref name="needle"/> (inside <paramref name="stub"/>'s inserted text) lands once all of the
         /// file's <paramref name="edits"/> are applied: the stub's reported start, moved down by the lines the
-        /// edits placed before it add (a typed stub comes with a <c>use kubuno_views::prelude::*;</c> line at the
+        /// edits placed before it add (a typed stub comes with a <c>use kubuno_desktop_views::prelude::*;</c> line at the
         /// top of the file, EVT-4), then to the <c>fn</c> itself inside the inserted text (a typed method is
         /// indented, and may follow a separating blank line).
         /// </summary>

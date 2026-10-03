@@ -9,7 +9,7 @@ namespace Kubuno.Web.Logic.WebDesigner
 {
     /// <summary>
     /// SPIKE (docs/WEB-VIEWS.md, lot WV-9a, §4.4): the JSON protocol between Visual Studio and the WebView2 design
-    /// surface - the desktop design surface's wire shapes (<c>kubuno_views::protocol</c>, <c>DesignSurfaceProtocol</c>
+    /// surface - the desktop design surface's wire shapes (<c>kubuno_desktop_views::protocol</c>, <c>DesignSurfaceProtocol</c>
     /// and <c>DesignSurfaceDragDropProtocol</c> in Kubuno.Desktop) carried by <c>CoreWebView2.PostWebMessageAsJson</c>
     /// (host -&gt; page) and <c>window.chrome.webview.postMessage</c> (page -&gt; host) instead of stdin/stdout lines.
     /// Pure: no WebView2, no Visual Studio, unit-tested by tests/Kubuno.Web.Tests.

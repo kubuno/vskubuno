@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  "Add New Item > Kubuno Tool Window": A tool window. A .kbview (its design) and its code, a #[kubuno::view] struct,
+  "Add New Item > Kubuno Tool Window": A tool window. A .kbview (its design) and its code, a #[kubuno_desktop::view] struct,
   SAME STEM so Solution Explorer nests the code under the view (docs/PROGRAMMING-MODEL.md).
   ControlItemWizard names the struct ($classname$) and the load handler ($modulename$) and declares the module.
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Tool Window (Kubuno Core Desktop)</Name>
+    <Name>Kubuno Tool Window (Kubuno Desktop)</Name>
     <Description>A tool window (a palette, an inspector): a slim title band with only a close button, no task bar button, kept above the form that owns it.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoToolWindow</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
-    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>14</SortOrder>
     <DefaultName>NewToolWindow.kbview</DefaultName>

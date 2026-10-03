@@ -17,21 +17,21 @@ namespace Kubuno.Desktop.Tests.DesignSurface
     {
         private const string Profile = @"C:\t\rsproj\app\debug";
         private const string Deps = Profile + @"\deps";
-        private const string Views = @"Z:\desktop\src\crates\kubuno-views";
+        private const string Views = @"Z:\desktop\src\crates\kubuno-desktop-views";
 
         private static CargoArtifact Artifact(string name, string kind, params string[] files) => new CargoArtifact
         {
             PackageId = "path+file:///x#" + name,
-            Target = new CargoTarget { Name = name, Kind = new[] { kind }, SrcPath = name == "kubuno_views" ? Views + @"\src\lib.rs" : @"Z:\x\src\lib.rs" },
+            Target = new CargoTarget { Name = name, Kind = new[] { kind }, SrcPath = name == "kubuno_desktop_views" || name == "kubuno_views" ? Views + @"\src\lib.rs" : @"Z:\x\src\lib.rs" },
             Filenames = files,
         };
 
-        // Shapes from a real `cargo build --message-format json` of a Kubuno Desktop Application (kubuno-ui an rlib, 03/10/2026).
+        // Shapes from a real `cargo build --message-format json` of a Kubuno Desktop Application (kubuno-desktop-ui an rlib, 03/10/2026).
         private static CargoArtifact[] RealArtifacts() => new[]
         {
-            Artifact("kubuno_controls", "lib", Deps + @"\libkubuno_controls-6de35b5c49a7da48.rlib", Deps + @"\libkubuno_controls-6de35b5c49a7da48.rmeta"),
-            Artifact("kubuno_ui", "lib", Deps + @"\libkubuno_ui-1b2c3d4e5f607182.rlib", Deps + @"\libkubuno_ui-1b2c3d4e5f607182.rmeta"),
-            Artifact("kubuno_views", "lib", Deps + @"\libkubuno_views-8cdbad53981d1b62.rlib", Deps + @"\libkubuno_views-8cdbad53981d1b62.rmeta"),
+            Artifact("kubuno_desktop_controls", "lib", Deps + @"\libkubuno_controls-6de35b5c49a7da48.rlib", Deps + @"\libkubuno_controls-6de35b5c49a7da48.rmeta"),
+            Artifact("kubuno_desktop_ui", "lib", Deps + @"\libkubuno_ui-1b2c3d4e5f607182.rlib", Deps + @"\libkubuno_ui-1b2c3d4e5f607182.rmeta"),
+            Artifact("kubuno_desktop_views", "lib", Deps + @"\libkubuno_views-8cdbad53981d1b62.rlib", Deps + @"\libkubuno_views-8cdbad53981d1b62.rmeta"),
             Artifact("app", "bin", Profile + @"\app.exe", Profile + @"\app.pdb"),
         };
 
@@ -51,11 +51,29 @@ namespace Kubuno.Desktop.Tests.DesignSurface
             Assert.AreEqual(Views + @"\examples\view_embed.rs", inputs.SurfaceSource);
         }
 
+        // The same build from a desktop checkout older than the 2026-10 rename (kubuno_ui, kubuno_views, kubuno_controls).
+        private static CargoArtifact[] LegacyArtifacts() => RealArtifacts()
+            .Select(a => Artifact(a.Target.Name.Replace("kubuno_desktop_", "kubuno_"), a.Target.Kind.First(), a.Filenames.ToArray()))
+            .ToArray();
+
+        [TestMethod]
+        public void Inputs_of_an_older_checkout_link_the_former_crate_names()
+        {
+            var inputs = DesignSurfaceInputs.From(LegacyArtifacts(), _ => true, out var reason);
+
+            Assert.IsNotNull(inputs, reason);
+            CollectionAssert.AreEqual(new[] { "kubuno_controls", "kubuno_ui", "kubuno_views" }, inputs!.Externs.Select(e => e.Key).ToArray());
+            CollectionAssert.AreEqual(
+                new[] { "kubuno_desktop_controls", "kubuno_desktop_ui", "kubuno_desktop_views" },
+                DesignSurfaceInputs.From(RealArtifacts(), _ => true, out _)!.Externs.Select(e => e.Key).ToArray());
+            Assert.IsTrue(DesignSurfaceInputs.IsSurfaceCrate("kubuno_ui") && DesignSurfaceInputs.IsSurfaceCrate("kubuno_desktop_ui") && !DesignSurfaceInputs.IsSurfaceCrate("app"));
+        }
+
         [TestMethod]
         public void Inputs_refuse_a_kubuno_ui_still_built_as_a_dylib()
         {
             // A desktop checkout older than 2026-10-03: kubuno-ui was a Rust dylib (kubuno_ui.dll).
-            var artifacts = RealArtifacts().Where(a => a.Target.Name != "kubuno_ui")
+            var artifacts = LegacyArtifacts().Where(a => a.Target.Name != "kubuno_ui")
                 .Append(Artifact("kubuno_ui", "dylib", Profile + @"\kubuno_ui.dll", Profile + @"\kubuno_ui.dll.lib", Profile + @"\kubuno_ui.pdb"));
 
             Assert.IsNull(DesignSurfaceInputs.From(artifacts, _ => true, out var reason));
@@ -67,7 +85,7 @@ namespace Kubuno.Desktop.Tests.DesignSurface
         public void Inputs_explain_a_project_without_kubuno_views_or_without_a_surface()
         {
             Assert.IsNull(DesignSurfaceInputs.From(new[] { Artifact("app", "bin", Profile + @"\app.exe") }, _ => true, out var reason));
-            StringAssert.Contains(reason, "kubuno-views");
+            StringAssert.Contains(reason, "kubuno-desktop-views");
 
             Assert.IsNull(DesignSurfaceInputs.From(RealArtifacts(), path => !path.EndsWith("view_embed.rs"), out reason));
             StringAssert.Contains(reason, "no design surface");
@@ -98,12 +116,12 @@ namespace Kubuno.Desktop.Tests.DesignSurface
 
             var args = DesignSurfaceBuilder.RustcArgumentsFor(inputs, @"C:\out\kubuno-design-surface.exe", "debug");
 
-            CollectionAssert.DoesNotContain(args.ToList(), "prefer-dynamic", "kubuno_ui and std are linked statically");
+            CollectionAssert.DoesNotContain(args.ToList(), "prefer-dynamic", "kubuno_desktop_ui and std are linked statically");
             CollectionAssert.Contains(args.ToList(), "opt-level=0");
             CollectionAssert.Contains(args.ToList(), "dependency=" + Deps);
-            CollectionAssert.Contains(args.ToList(), "kubuno_ui=" + Deps + @"\libkubuno_ui-1b2c3d4e5f607182.rlib");
-            CollectionAssert.Contains(args.ToList(), "kubuno_views=" + Deps + @"\libkubuno_views-8cdbad53981d1b62.rlib");
-            CollectionAssert.Contains(args.ToList(), "kubuno_controls=" + Deps + @"\libkubuno_controls-6de35b5c49a7da48.rlib");
+            CollectionAssert.Contains(args.ToList(), "kubuno_desktop_ui=" + Deps + @"\libkubuno_ui-1b2c3d4e5f607182.rlib");
+            CollectionAssert.Contains(args.ToList(), "kubuno_desktop_views=" + Deps + @"\libkubuno_views-8cdbad53981d1b62.rlib");
+            CollectionAssert.Contains(args.ToList(), "kubuno_desktop_controls=" + Deps + @"\libkubuno_controls-6de35b5c49a7da48.rlib");
             Assert.IsFalse(args.Any(a => a.EndsWith(".dll", System.StringComparison.OrdinalIgnoreCase)), string.Join(" ", args));
             Assert.AreEqual(Views + @"\examples\view_embed.rs", args[6]);
             Assert.AreEqual(@"C:\out\kubuno-design-surface.exe", args[args.Count - 1]);
@@ -164,7 +182,7 @@ namespace Kubuno.Desktop.Tests.DesignSurface
             var stamp = new DesignSurfaceStamp { Key = "0123456789abcdef", Version = 3 };
 
             Assert.IsNull(DesignSurfaceStamp.TryParse(stamp.ToJson()), "a version 3 surface loaded a kubuno_ui DLL: rebuilt statically");
-            Assert.IsNull(DesignSurfaceStamp.TryParse(@"{""Version"":3,""Key"":""0123456789abcdef"",""UiDllSha256"":""AB"",""UiDllFileName"":""kubuno_ui-0123456789abcdef.dll""}"));
+            Assert.IsNull(DesignSurfaceStamp.TryParse(@"{""Version"":3,""Key"":""0123456789abcdef"",""UiDllSha256"":""AB"",""UiDllFileName"":""kubuno_desktop_ui-0123456789abcdef.dll""}"));
         }
 
         [TestMethod]
@@ -179,7 +197,7 @@ namespace Kubuno.Desktop.Tests.DesignSurface
                 Assert.IsFalse(DesignSurfaceBuilder.IsProjectBuilt(project));
 
                 File.WriteAllText(Path.Combine(deps, "kubuno_ui.dll"), string.Empty);
-                Assert.IsFalse(DesignSurfaceBuilder.IsProjectBuilt(project), "a dylib build is not a static kubuno_ui");
+                Assert.IsFalse(DesignSurfaceBuilder.IsProjectBuilt(project), "a dylib build is not a static kubuno_desktop_ui");
 
                 File.WriteAllText(Path.Combine(deps, "libkubuno_ui-1b2c3d4e5f607182.rlib"), string.Empty);
                 Assert.IsTrue(DesignSurfaceBuilder.IsProjectBuilt(project));

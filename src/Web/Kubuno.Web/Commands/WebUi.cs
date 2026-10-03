@@ -124,7 +124,7 @@ namespace Kubuno.Web.Commands
 
         public RepositoryPickerDialog(string parent, IReadOnlyList<(string Name, string Description, bool Selected)> repositories)
         {
-            Title = "Kubuno Core Web: Multi-Repository Solution";
+            Title = "Kubuno Web: Multi-Repository Solution";
             Width = 520;
             Height = 480;
             ResizeMode = ResizeMode.CanResizeWithGrip;

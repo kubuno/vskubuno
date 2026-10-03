@@ -49,7 +49,7 @@ namespace HwndHostSpike
             // child process is started (see its EnsureErrorModeSet) - no need to duplicate it here.
             string Arg(string name, string dflt) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : dflt; }
             var exe = Arg("--exe", @"C:\kubuno-build\agent-dsg7b\debug\examples\view_embed.exe");
-            var view = Arg("--view", @"Z:\src\desktop\windows\src\crates\kubuno-views\examples\views\settings.kbview");
+            var view = Arg("--view", @"Z:\src\desktop\windows\src\crates\kubuno-desktop-views\examples\views\settings.kbview");
             var logPath = Arg("--log", Path.Combine(Path.GetTempPath(), "hwndhostspike.log"));
             var simulateToolbox = Arg("--simulate-toolbox", string.Empty);
             File.WriteAllText(logPath, "");
@@ -326,7 +326,7 @@ namespace HwndHostSpike
 
                 // 3. A WPF accelerator while the child has focus - the "unhandledKey" protocol:
                 // the surface does not consume a bare Ctrl+S, forwards WM_KEYDOWN to the container
-                // (kubuno_controls::host::forward_unhandled_keys), and RustDesignSurfaceHost's WndProc
+                // (kubuno_desktop_controls::host::forward_unhandled_keys), and RustDesignSurfaceHost's WndProc
                 // routes it into WPF via ComponentDispatcher.RaiseThreadMessage, firing this window's
                 // own KeyBinding - the VS-accelerator stand-in.
                 _ctrlS = false; ClearRust();
@@ -359,7 +359,7 @@ namespace HwndHostSpike
 
                 // 5. Tab inside the child: the "tabOut" protocol. view_embed.rs's own two-control demo
                 // ring (save_btn, menu_btn - see that file's module doc) calls
-                // kubuno_controls::host::notify_tab_out once Tab runs past its LAST control;
+                // kubuno_desktop_controls::host::notify_tab_out once Tab runs past its LAST control;
                 // RustDesignSurfaceHost's WndProc turns that into MoveFocus, moving the keyboard focus
                 // out of the child and into whatever WPF element is next. Up to 6 Tabs for margin (the
                 // ring wraps within 3 from an unfocused state); the check is simply that focus is no

@@ -7,7 +7,7 @@ namespace Kubuno.Views.Designer.Menus
     /// <summary>
     /// The keyboard shortcut text of <c>ShortcutKeys</c> as the ShortcutKeys editor reads and writes it (docs/MENUS.md
     /// section 4): modifiers then one key, canonical spelling <c>Ctrl+Shift+Alt+Key</c>. The grammar itself is the
-    /// language server's (<c>kubuno_views_syntax::shortcut</c>); this is the editor's view of it. Pure, unit-tested.
+    /// language server's (<c>kubuno_desktop_views_syntax::shortcut</c>); this is the editor's view of it. Pure, unit-tested.
     /// </summary>
     public static class ShortcutText
     {

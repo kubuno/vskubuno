@@ -13,7 +13,7 @@ namespace Kubuno.Desktop.Tests.Overrides
         private static readonly string Round = RoundSource.Replace("\r\n", "\n");
 
         private const string RoundSource = @"//! RoundButton.
-use kubuno_views::prelude::*;
+use kubuno_desktop_views::prelude::*;
 
 /// A pill.
 #[derive(Component, Default)]
@@ -127,7 +127,7 @@ impl RoundButton {
 
             StringAssert.Contains(result, "#[user_control(view = \"stars.kbview\")]\r\n#[kubuno(overrides(UserControl))]\r\npub struct Stars");
             StringAssert.Contains(result, "impl UserControl for Stars {\r\n    fn on_load(&mut self, e: &mut EventCx<'_, EmptyEventArgs>) {\r\n        self.base_mut().on_load(e);\r\n    }\r\n}\r\n");
-            StringAssert.StartsWith(result.Substring(result.IndexOf("use kubuno", System.StringComparison.Ordinal)), "use kubuno_views::prelude::*;\r\n");
+            StringAssert.StartsWith(result.Substring(result.IndexOf("use kubuno", System.StringComparison.Ordinal)), "use kubuno_desktop_views::prelude::*;\r\n");
         }
 
         [TestMethod]

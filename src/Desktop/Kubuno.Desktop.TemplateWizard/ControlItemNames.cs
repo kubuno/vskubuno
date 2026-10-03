@@ -225,40 +225,67 @@ namespace Kubuno.Desktop.TemplateWizard
         }
 
         /// <summary>
-        /// A project that reaches Kubuno through the <c>kubuno</c> facade only (docs/PROGRAMMING-MODEL.md: one
-        /// Kubuno dependency) names <c>kubuno_views</c> as <c>kubuno::views</c>: the paths of a generated file are
-        /// rewritten (<c>use kubuno_views::prelude::*;</c> → <c>use kubuno::views::prelude::*;</c>).
+        /// A project that reaches Kubuno through the <c>kubuno-desktop</c> facade only (docs/PROGRAMMING-MODEL.md: one
+        /// Kubuno dependency) names <c>kubuno_desktop_views</c> as <c>kubuno_desktop::views</c>: the paths of a generated file
+        /// are rewritten (<c>use kubuno_desktop_views::prelude::*;</c> → <c>use kubuno_desktop::views::prelude::*;</c>). The
+        /// names before the 2026-10 rename (<c>kubuno_views::</c> → <c>kubuno::views::</c>) are rewritten the same way.
         /// </summary>
-        public static string RetargetToFacade(string rsText) => Regex.Replace(rsText ?? string.Empty, @"(?<![\w:])kubuno_views::", "kubuno::views::");
+        public static string RetargetToFacade(string rsText) =>
+            Regex.Replace(
+                Regex.Replace(rsText ?? string.Empty, @"(?<![\w:])kubuno_desktop_views::", "kubuno_desktop::views::"),
+                @"(?<![\w:])kubuno_views::",
+                "kubuno::views::");
 
         /// <summary>
-        /// <paramref name="cargoToml"/> with a <c>kubuno</c> dependency added next to its <c>kubuno-views</c> one (same
-        /// checkout: <c>…/crates/kubuno-views</c> → <c>…/crates/kubuno</c>), for a form (<c>#[kubuno::view]</c>) added to a
-        /// project created before the facade; null when there is nothing to add or no <c>kubuno-views</c> path to derive it from.
+        /// The crate paths of a generated file in a project that still uses the framework's names from before the 2026-10
+        /// rename (<c>kubuno</c>, <c>kubuno-views</c>): <c>kubuno_desktop_views::</c> → <c>kubuno_views::</c>,
+        /// <c>kubuno_desktop::</c> → <c>kubuno::</c>.
+        /// </summary>
+        public static string RetargetToLegacyNames(string rsText) =>
+            Regex.Replace(
+                Regex.Replace(rsText ?? string.Empty, @"(?<![\w:])kubuno_desktop_views::", "kubuno_views::"),
+                @"(?<![\w:])kubuno_desktop::",
+                "kubuno::");
+
+        /// <summary>Whether <paramref name="cargoToml"/> uses only the framework's names from before the 2026-10 rename.</summary>
+        public static bool UsesLegacyNames(string cargoToml) =>
+            (DependsOn(cargoToml, "kubuno") || DependsOn(cargoToml, "kubuno-views"))
+            && !DependsOn(cargoToml, "kubuno-desktop") && !DependsOn(cargoToml, "kubuno-desktop-views");
+
+        /// <summary>
+        /// <paramref name="cargoToml"/> with a <c>kubuno-desktop</c> dependency added next to its <c>kubuno-desktop-views</c>
+        /// one (same checkout: <c>…/crates/kubuno-desktop-views</c> → <c>…/crates/kubuno-desktop</c>), for a form
+        /// (<c>#[kubuno_desktop::view]</c>) added to a project created before the facade; null when there is nothing to add or
+        /// no <c>kubuno-desktop-views</c> path to derive it from. A project with the names from before the 2026-10 rename gets
+        /// <c>kubuno</c> next to its <c>kubuno-views</c>.
         /// </summary>
         public static string? AddFacadeDependency(string cargoToml)
         {
-            if (DependsOn(cargoToml, "kubuno"))
+            var legacy = UsesLegacyNames(cargoToml ?? string.Empty);
+            var facade = legacy ? "kubuno" : "kubuno-desktop";
+            var views = legacy ? "kubuno-views" : "kubuno-desktop-views";
+            if (DependsOn(cargoToml ?? string.Empty, facade))
             {
                 return null;
             }
 
-            var match = Regex.Match(cargoToml ?? string.Empty, @"(?m)^(?<indent>[ \t]*)kubuno-views(?<pad>[ \t]*)=[^\n]*?path[ \t]*=[ \t]*""(?<path>[^""]*?)kubuno-views""[^\n]*$");
+            var match = Regex.Match(cargoToml ?? string.Empty, @"(?m)^(?<indent>[ \t]*)" + Regex.Escape(views) + @"(?<pad>[ \t]*)=[^\n]*?path[ \t]*=[ \t]*""(?<path>[^""]*?)" + Regex.Escape(views) + @"""[^\n]*$");
             if (!match.Success)
             {
                 return null;
             }
 
             var newline = cargoToml!.Contains("\r\n") ? "\r\n" : "\n";
-            var line = match.Groups["indent"].Value + "kubuno" + new string(' ', Math.Max(1, match.Groups["pad"].Value.Length + 6)) + "= { path = \"" + match.Groups["path"].Value + "kubuno\" }";
+            var line = match.Groups["indent"].Value + facade + new string(' ', Math.Max(1, match.Groups["pad"].Value.Length + views.Length - facade.Length)) + "= { path = \"" + match.Groups["path"].Value + facade + "\" }";
             var lineEnd = cargoToml.IndexOf('\n', match.Index + match.Length);
             return lineEnd < 0 ? cargoToml + newline + line + newline : cargoToml.Substring(0, lineEnd + 1) + line + newline + cargoToml.Substring(lineEnd + 1);
         }
 
         /// <summary>
-        /// Adapts a generated Rust file to its project (on disk): in a <c>kubuno</c>-only project its
-        /// <c>kubuno_views::</c> paths become <c>kubuno::views::</c>; a file using <c>kubuno::</c> in a project without that
-        /// dependency gets it added to <c>Cargo.toml</c>. Returns whether something changed.
+        /// Adapts a generated Rust file to its project (on disk): in a project that still uses the names from before the
+        /// 2026-10 rename, the file's paths take those names (<see cref="RetargetToLegacyNames"/>); in a facade-only project
+        /// its <c>kubuno_desktop_views::</c> paths become <c>kubuno_desktop::views::</c>; a file using the facade in a project
+        /// without that dependency gets it added to <c>Cargo.toml</c>. Returns whether something changed.
         /// </summary>
         public static bool AdaptToProjectOnDisk(string rsPath)
         {
@@ -270,20 +297,30 @@ namespace Kubuno.Desktop.TemplateWizard
             }
 
             var toml = File.ReadAllText(manifest);
-            var text = File.ReadAllText(rsPath);
-            if (DependsOn(toml, "kubuno") && !DependsOn(toml, "kubuno-views") && text.Contains("kubuno_views::"))
+            var original = File.ReadAllText(rsPath);
+            var legacy = UsesLegacyNames(toml);
+            var text = legacy ? RetargetToLegacyNames(original) : original;
+            var facade = legacy ? "kubuno" : "kubuno-desktop";
+            var views = legacy ? "kubuno-views" : "kubuno-desktop-views";
+            var viewsPath = views.Replace('-', '_') + "::";
+            if (DependsOn(toml, facade) && !DependsOn(toml, views) && text.Contains(viewsPath))
             {
-                File.WriteAllText(rsPath, RetargetToFacade(text), new UTF8Encoding(false));
-                return true;
+                text = RetargetToFacade(text);
             }
 
-            if (Regex.IsMatch(text, @"(?<![\w:])kubuno::") && AddFacadeDependency(toml) is { } updated)
+            var changed = !string.Equals(text, original, StringComparison.Ordinal);
+            if (changed)
+            {
+                File.WriteAllText(rsPath, text, new UTF8Encoding(false));
+            }
+
+            if (Regex.IsMatch(text, @"(?<![\w:])" + facade.Replace('-', '_') + "::") && AddFacadeDependency(toml) is { } updated)
             {
                 File.WriteAllText(manifest, updated, new UTF8Encoding(false));
                 return true;
             }
 
-            return false;
+            return changed;
         }
 
         /// <summary>

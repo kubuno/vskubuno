@@ -31,14 +31,14 @@ namespace Kubuno.Web
             context.RegisterEditorFactory(new WebDesigner.Spike.WebDesignSpikeEditorFactory());
 
             // The dialog gallery (docs/ARCHITECTURE.md, "Themed dialogs"): built only when the gallery opens.
-            Kubuno.Shared.UI.DialogGallery.Register("Kubuno Core Web: Multi-Repository Solution (RepositoryPickerDialog)", () => new RepositoryPickerDialog(@"Z:\src", new[]
+            Kubuno.Shared.UI.DialogGallery.Register("Kubuno Web: Multi-Repository Solution (RepositoryPickerDialog)", () => new RepositoryPickerDialog(@"Z:\src", new[]
             {
-                ("core", "Kubuno Core Web (the server)", true),
+                ("core", "Kubuno Core (the server)", true),
                 ("calendar", "module calendar", false),
                 ("drive", "module drive", true),
             }).ShowModal());
 
-            // The "Kubuno Core Web Module" template's wizard is loaded by the template engine with a plain Assembly.Load:
+            // The "Kubuno Web Module" template's wizard is loaded by the template engine with a plain Assembly.Load:
             // have it in the AppDomain already (same reason as the Rust and Desktop layers' wizards).
             try
             {

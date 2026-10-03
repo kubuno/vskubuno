@@ -10,7 +10,7 @@ namespace Kubuno.Desktop.Migrations
     /// <summary>
     /// The cargo target directory a crate's <c>.rsproj</c> builds into (its evaluated <c>CargoTargetDir</c>), so
     /// <c>sqlx.prepare</c> (docs/DATA.md DATA-7) builds where the project builds rather than into the
-    /// <c>CARGO_TARGET_DIR</c> Visual Studio inherited: a Kubuno application builds its own <c>kubuno_ui</c> variant and must
+    /// <c>CARGO_TARGET_DIR</c> Visual Studio inherited: a Kubuno application builds its own <c>kubuno_desktop_ui</c> variant and must
     /// never share the desktop workspace's target directory. <see langword="null"/> for an Open Folder crate or a
     /// project without the property (the helper then keeps cargo's own choice).
     /// </summary>

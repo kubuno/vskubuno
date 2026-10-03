@@ -11,7 +11,7 @@ namespace Kubuno.Views.Tests.Resources
     [TestClass]
     public class ResourceModelTests
     {
-        /// <summary>The sample of kubuno-resources-model's own round-trip test (format.rs): already canonical.</summary>
+        /// <summary>The sample of kubuno-desktop-resources-model's own round-trip test (format.rs): already canonical.</summary>
         private const string Sample =
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
             "<Resources Version=\"1\">\n" +

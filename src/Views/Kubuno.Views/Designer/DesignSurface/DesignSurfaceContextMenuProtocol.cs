@@ -36,7 +36,7 @@ namespace Kubuno.Views.Designer.DesignSurface
         public string? Menu { get; }
     }
 
-    /// <summary>A design-surface keyboard command (mirrors <c>kubuno_views::design::DesignCommand</c>).</summary>
+    /// <summary>A design-surface keyboard command (mirrors <c>kubuno_desktop_views::design::DesignCommand</c>).</summary>
     public enum DesignSurfaceCommand
     {
         Copy,
@@ -75,7 +75,7 @@ namespace Kubuno.Views.Designer.DesignSurface
     /// <summary>The pure parse half of <c>contextMenu</c>/<c>command</c> (unit-tested with no live process).</summary>
     public static class DesignSurfaceContextMenuProtocol
     {
-        /// <summary>Parses <c>{"type":"doubleClick","elementId":"1"}</c> (<c>kubuno_views::protocol::SurfaceMessage::DoubleClick</c>).</summary>
+        /// <summary>Parses <c>{"type":"doubleClick","elementId":"1"}</c> (<c>kubuno_desktop_views::protocol::SurfaceMessage::DoubleClick</c>).</summary>
         public static bool TryParseDoubleClick(string line, out DesignSurfaceDoubleClickEventArgs? doubleClick)
         {
             doubleClick = null;

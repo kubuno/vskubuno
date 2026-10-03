@@ -2,9 +2,9 @@
 //! code — commands bound to the view's state (`Bold`, `Italic`), typed fields of the ribbon's
 //! elements (`self.bold`, `self.ctx_table`), their events, and a ribbon element added from code.
 
-use kubuno::prelude::*;
+use kubuno_desktop::prelude::*;
 
-#[kubuno::view("main_view.kbview")]
+#[kubuno_desktop::view("main_view.kbview")]
 pub struct MainView {
     #[bind]
     bold: bool,

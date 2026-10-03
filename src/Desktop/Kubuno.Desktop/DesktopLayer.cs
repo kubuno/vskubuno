@@ -19,7 +19,7 @@ namespace Kubuno.Desktop
 {
     /// <summary>
     /// The desktop layer's part of the package (docs/ARCHITECTURE.md, "Layers (as built)"): the Design pane's renderer of
-    /// the Kubuno View Designer (the Rust view_embed surface, rendering with the project's own kubuno_ui - plugged into the
+    /// the Kubuno View Designer (the Rust view_embed surface, rendering with the project's own kubuno_desktop_ui - plugged into the
     /// views layer's designer through DesignSurfaceHostFactoryHost), the Toolbox icons of the Kubuno controls, the data
     /// tooling and paint debug commands, the view and control entries of the "Ajouter" submenu, and the rest of what a
     /// Kubuno desktop application needs from the package. Its MEF parts (the Rust-side .kbview IntelliSense, SQL in Rust
@@ -40,7 +40,7 @@ namespace Kubuno.Desktop
         };
 
         private const string SampleComponent =
-            "use kubuno_views::prelude::*;\n\n#[derive(Component, Default)]\n#[kubuno(extends = Button)]\npub struct RoundButton {\n    base: Button,\n}\n";
+            "use kubuno_desktop_views::prelude::*;\n\n#[derive(Component, Default)]\n#[kubuno(extends = Button)]\npub struct RoundButton {\n    base: Button,\n}\n";
 
         private string? _surfaceExePath;
         private object? _buildManagerService;
@@ -72,7 +72,7 @@ namespace Kubuno.Desktop
             if (_surfaceExePath is not null)
             {
                 var oleServiceProvider = (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)package;
-                // docs/DESIGNER.md section 15: each designer renders with its project's own kubuno_ui build
+                // docs/DESIGNER.md section 15: each designer renders with its project's own kubuno_desktop_ui build
                 // (a design build against the project); the bundled surface is the fallback.
                 _designSurfaceRuntimes = new ProjectDesignSurfaceRuntimeProvider(_surfaceExePath, context.JoinableTaskFactory);
                 if (buildManager is not null)
@@ -86,7 +86,7 @@ namespace Kubuno.Desktop
             }
             else
             {
-                KubunoLog.WriteLine("Kubuno: kubuno-views-surface.exe not found - the Kubuno View Designer's Design pane will show its placeholder. Build it: cd Z:\\projects\\kubuno\\desktop\\windows ; $env:CARGO_TARGET_DIR='C:\\kubuno-build\\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-views -j 1");
+                KubunoLog.WriteLine("Kubuno: kubuno-views-surface.exe not found - the Kubuno View Designer's Design pane will show its placeholder. Build it: cd Z:\\projects\\kubuno\\desktop\\windows ; $env:CARGO_TARGET_DIR='C:\\kubuno-build\\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-desktop-views -j 1");
             }
 
             if (context.CommandService is { } commandService)

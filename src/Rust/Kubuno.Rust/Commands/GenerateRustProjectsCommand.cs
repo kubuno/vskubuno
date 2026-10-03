@@ -109,6 +109,15 @@ namespace Kubuno.Rust.Commands
                 workspaceRoot = metadata.WorkspaceRoot;
             }
 
+            // The desktop repository has ONE solution at its root, over its two workspaces (windows/ and common/), with
+            // Kubuno.<Product>.<Component> project names and solution folders (DesktopRepositoryLayout).
+            var repositoryRoot = Kubuno.Rust.Cargo.Naming.ProjectNaming.RepositoryRoot(workspaceRoot);
+            if (repositoryRoot is not null && Kubuno.Rust.Cargo.Naming.ProjectNaming.IsDesktopRepository(repositoryRoot))
+            {
+                await GenerateDesktopRepositoryAsync(package, repositoryRoot);
+                return;
+            }
+
             // A .slnx (the default for a new solution) also lists the library-only members, in a "Libraries" solution
             // folder: their sources become browsable and buildable in Solution Explorer. A classic .sln keeps the
             // executables only, as it always did.
@@ -183,6 +192,47 @@ namespace Kubuno.Rust.Commands
             ShowMessage(package, summary);
         }
 
+        private static async Task GenerateDesktopRepositoryAsync(AsyncPackage package, string repositoryRoot)
+        {
+            string? solutionPath;
+            var lines = new System.Collections.Generic.List<string>();
+            try
+            {
+                var reader = new CargoMetadataReader(new ProcessRunner());
+                solutionPath = DesktopRepositoryLayout.Generate(
+                    repositoryRoot,
+                    manifest => reader.ReadAsync(Path.GetDirectoryName(manifest)!, manifest).GetAwaiter().GetResult(),
+                    RsprojSdkVersion,
+                    line =>
+                    {
+                        lines.Add(line);
+                        KubunoLog.WriteLine(line);
+                    });
+            }
+            catch (Exception exception)
+            {
+                KubunoLog.WriteException("Kubuno: generating the desktop repository's projects failed", exception);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                ShowMessage(package, $"Generating the desktop repository's projects failed - see the \"Kubuno\" Output pane for details.\n\n{exception.Message}");
+                return;
+            }
+
+            if (solutionPath is not null)
+            {
+                SdkFeedDistribution.EnsureSolutionLocal(
+                    Path.GetDirectoryName(solutionPath)!,
+                    Path.GetDirectoryName(typeof(GenerateRustProjectsCommand).Assembly.Location),
+                    KubunoLog.WriteLine);
+            }
+
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            var created = lines.Count(line => line.Contains("  created  "));
+            var kept = lines.Count(line => line.Contains("  kept     "));
+            ShowMessage(package, solutionPath is null
+                ? "No Cargo workspace was found in the desktop repository - nothing to generate."
+                : $"{created} file(s) created, {kept} project(s) already existed and were left untouched.\n\nSolution: {solutionPath}");
+        }
+
         /// <summary>
         /// One solution at the workspace root: an existing <c>.sln</c> or <c>.slnx</c> is reused (merged into - see
         /// <see cref="RsprojSolutionGenerator"/>/<see cref="RsprojSlnxGenerator"/>) when exactly one is found there; with
@@ -215,7 +265,7 @@ namespace Kubuno.Rust.Commands
                 return null;
             }
 
-            // Kubuno.Core.Web.slnx, Kubuno.Core.Desktop.slnx, Kubuno.<Module>.slnx, else the folder's name.
+            // Kubuno.Core.slnx, Kubuno.Desktop.slnx, Kubuno.<Module>.slnx, else the folder's name.
             return Path.Combine(workspaceRoot, SolutionNaming.DefaultSolutionFileName(workspaceRoot));
         }
 

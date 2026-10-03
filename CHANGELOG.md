@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Project and solution names follow the Kubuno repositories** (`docs/RSPROJ.md` section 4.1, `docs/WEB.md`
+  section 12). A Visual Studio project is now `Kubuno.<Product>.<Component>` for the crate
+  `kubuno-<product>-<component>` (`Kubuno.Desktop.UI` builds `kubuno-desktop-ui`), its file is named after it, and a
+  solution is its repository: `Kubuno.Core.slnx`, `Kubuno.Desktop.slnx`, `Kubuno.<Module>.slnx`. "Generate Visual
+  Studio Projects" run in the desktop repository writes one `Kubuno.Desktop.slnx` at the repository root over both
+  Cargo workspaces (`windows/`, `common/`), with the folders Applications, Framework, Shared controls, Common
+  (multi-OS), Drive engine, Tools and Web. "Kubuno Web: Generate Solution" names the core's projects
+  `Kubuno.Core.Server`, `Kubuno.Core.<Library>`, `Kubuno.Core.Frontend` and its npm packages `Kubuno.Web.UI`,
+  `Kubuno.Web.Sdk`, `Kubuno.Web.Drive`... (folder "npm packages"; the npm names are unchanged), and a module's
+  `Kubuno.<Module>.Server` / `Kubuno.<Module>.Web`. The "Kubuno Web Module" template creates projects with these names.
+- **"Kubuno Core Web" is now "Kubuno Core"** and "Kubuno Core Desktop" **"Kubuno Desktop"**: the web commands are
+  "Kubuno Web: ...", the launch profiles and debugger "Kubuno Core (server)", "Kubuno Core (server + Vite)" and
+  "<Module> (Kubuno Core + browser)", the module template "Kubuno Web Module".
+- **The desktop framework's new crate names** (`kubuno-desktop`, `kubuno-desktop-ui`, `kubuno-desktop-controls`,
+  `kubuno-desktop-views*`, `kubuno-desktop-data*`, `kubuno-desktop-print`, `kubuno-desktop-resources*`, ...): the
+  Kubuno Desktop Application template and the item templates use `kubuno-desktop` (`kubuno_desktop::prelude`,
+  `#[kubuno_desktop::view]`), the samples too. The designer, the design surface build, the data sources, the code
+  generation, the debugger visualizers and step filters, and the framework crate list accept the new names and still
+  the former ones (a desktop checkout older than the rename). The tools keep their executable names
+  (`kubuno-views-ls.exe`, `kubuno-data-tool.exe`, `kubuno-resources-tool.exe`).
+
 ### Added
 
 - **More storage components and tools** (lot ST-2, `docs/STORAGE-COMPONENTS.md` §12). The « Stockage » tab gains

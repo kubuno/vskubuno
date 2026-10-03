@@ -10,7 +10,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 {
     /// <summary>
     /// The canvas around the edited view follows Visual Studio's theme, live: the surface is told the
-    /// theme's designer background (<c>setCanvasBackground</c>, <c>kubuno_views::protocol::HostMessage::SetCanvasBackground</c>)
+    /// theme's designer background (<c>setCanvasBackground</c>, <c>kubuno_desktop_views::protocol::HostMessage::SetCanvasBackground</c>)
     /// when it starts and again whenever the theme changes, like the WinForms designer's own canvas.
     /// </summary>
     public sealed partial class RustDesignSurfaceHost

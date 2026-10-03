@@ -427,7 +427,7 @@ namespace Kubuno.Desktop.DesignerIntegration
 
                 if (runtime.IsProjectRuntime && !runtime.IsSameAs(_current))
                 {
-                    KubunoLog.WriteLine($"Kubuno: the designer now renders with the project's own kubuno_ui build ({runtime.ExePath}).");
+                    KubunoLog.WriteLine($"Kubuno: the designer now renders with the project's own kubuno_desktop_ui build ({runtime.ExePath}).");
                 }
 
                 _current = runtime;

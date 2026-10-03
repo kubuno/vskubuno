@@ -162,7 +162,7 @@ namespace Kubuno.Desktop.Logic.DataSources
 
         /// <summary>
         /// <c>Customers</c> → <c>customers</c>, <c>customerId</c> → <c>customer_id</c>, <c>Order Date</c> → <c>order_date</c>: the base of an
-        /// <c>x:Name</c>, which <c>#[kubuno::view]</c> turns into a field of the view's struct - so snake case, like the template's own
+        /// <c>x:Name</c>, which <c>#[kubuno_desktop::view]</c> turns into a field of the view's struct - so snake case, like the template's own
         /// names (a camelCase field is a <c>non_snake_case</c> warning in the application's build).
         /// </summary>
         public static string ToFieldName(string? text)
@@ -228,7 +228,7 @@ namespace Kubuno.Desktop.Logic.DataSources
             return string.Join(" ", parts);
         }
 
-        /// <summary>The row struct kubuno-data-model derives from a table (<c>customers</c> → <c>Customer</c>): the port of <c>naming::row_struct_name</c>.</summary>
+        /// <summary>The row struct kubuno-desktop-data-model derives from a table (<c>customers</c> → <c>Customer</c>): the port of <c>naming::row_struct_name</c>.</summary>
         public static string RowName(string table)
         {
             string bare = table.Contains('.') ? table.Substring(table.LastIndexOf('.') + 1) : table;

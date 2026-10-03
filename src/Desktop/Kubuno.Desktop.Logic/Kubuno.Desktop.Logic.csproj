@@ -4,7 +4,7 @@
     Desktop layer, pure logic (docs/ARCHITECTURE.md, "Layers (as built)"): what Kubuno.Desktop computes without Visual
     Studio - the data tooling models (Data, DataSources, Migrations, Sql: docs/DATA.md), the .kbview editor helpers
     (IntelliSense, QuickInfo), the override members of the control hierarchy (Overrides), the Kubuno control icons
-    (SolutionExplorer\ControlIcons), the design build of a project's own kubuno_ui (DesignSurface, docs/DESIGNER.md
+    (SolutionExplorer\ControlIcons), the design build of a project's own kubuno_desktop_ui (DesignSurface, docs/DESIGNER.md
     section 15) and the paint debug switch (PaintDebug). No dependency on the VS SDK: plain `dotnet test`
     (tests/Kubuno.Desktop.Tests). References the Shared, Rust and Views pure assemblies only.
   -->
@@ -18,8 +18,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- docs/EVENTS.md EVT-7b: the overridable members of the control hierarchy, generated from kubuno-views
-         (the ignored Rust test kubuno-views component::overrides::tests::write_overrides_fixture). -->
+    <!-- docs/EVENTS.md EVT-7b: the overridable members of the control hierarchy, generated from kubuno-desktop-views
+         (the ignored Rust test kubuno-desktop-views component::overrides::tests::write_overrides_fixture). -->
     <EmbeddedResource Include="Overrides\OverridableMembers.json" LogicalName="Kubuno.OverridableMembers.json" />
   </ItemGroup>
 

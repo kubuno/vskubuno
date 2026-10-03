@@ -8,12 +8,12 @@
 //! splash.step("Chargement des réglages…", 0.3);
 //! let main_form = MainView::new();
 //! splash.close_when(main_form.form());
-//! kubuno::Application::run(main_form)
+//! kubuno_desktop::Application::run(main_form)
 //! ```
 
-use kubuno::prelude::*;
+use kubuno_desktop::prelude::*;
 
-#[kubuno::view("$fileinputname$.kbview")]
+#[kubuno_desktop::view("$fileinputname$.kbview")]
 #[derive(Default)]
 pub struct $classname$ {}
 
@@ -29,8 +29,8 @@ impl $classname$ {
     /// reports the start-up steps (`splash.step("...", 0.5)`) and closes it (`splash.close_when(...)`;
     /// by default it fades out once the application shows its first window). `--no-splash` on the
     /// command line turns it off.
-    pub fn show_at_startup() -> kubuno::Splash {
-        kubuno::splash::from_kbview(include_str!("$fileinputname$.kbview"))
+    pub fn show_at_startup() -> kubuno_desktop::Splash {
+        kubuno_desktop::splash::from_kbview(include_str!("$fileinputname$.kbview"))
             .version(env!("CARGO_PKG_VERSION"))
             .license(env!("CARGO_PKG_LICENSE"))
             .show()

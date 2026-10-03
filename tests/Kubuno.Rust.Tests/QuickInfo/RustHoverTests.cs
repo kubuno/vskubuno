@@ -260,14 +260,14 @@ namespace Kubuno.Rust.Tests.QuickInfo
         {
             var sender = Hover("kv-struct-sender");
             Assert.AreEqual("pub struct Sender<'a, C>", sender.Signature);
-            Assert.AreEqual("kubuno_views::events::sender", sender.Container);
+            Assert.AreEqual("kubuno_desktop_views::events::sender", sender.Container);
             var runs = RustSyntax.ClassifySignature(sender.Signature, sender.Kind);
             Assert.AreEqual(QuickInfoTextKind.TypeParameter, KindOf(runs, "C"));
             Assert.AreEqual(QuickInfoTextKind.Struct, KindOf(runs, "Sender"));
 
             var clicks = Hover("kv-field-clicks");
             Assert.AreEqual("pub clicks: u8", clicks.Signature);
-            Assert.AreEqual("kubuno_views::events::args::MouseEventArgs", clicks.Container);
+            Assert.AreEqual("kubuno_desktop_views::events::args::MouseEventArgs", clicks.Container);
             Assert.AreEqual("FieldPublic", clicks.IconMonikerName);
 
             var text = Hover("kv-method-text");
@@ -292,7 +292,7 @@ namespace Kubuno.Rust.Tests.QuickInfo
         {
             var code = "pub fn frame_typed<V: ViewModel>(\n    &mut self,\n    canvas: &mut Canvas,\n    body: Rect,\n) -> Vec<Event>\nwhere\n    V: 'static,";
             Assert.AreEqual("pub fn frame_typed<V: ViewModel>(&mut self, canvas: &mut Canvas, body: Rect) -> Vec<Event> where V: 'static",
-                RustSyntax.ToOneLine(code, "kubuno_views::runtime::Runtime", out var kind));
+                RustSyntax.ToOneLine(code, "kubuno_desktop_views::runtime::Runtime", out var kind));
             Assert.AreEqual(RustItemKind.Method, kind);
         }
 

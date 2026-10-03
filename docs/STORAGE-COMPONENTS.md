@@ -5,10 +5,10 @@
 > le web, etc. »
 >
 > Status: **design** for every lot; **lot ST-1 built** (desktop: `Settings`, `SecretStore`, `RegistryKey`, the
-> `.kbsettings` file, its typed class and its Visual Studio editor). Code: `Z:\src\desktop\common\kubuno-app-storage`
-> (portable engine), `Z:\src\desktop\windows\src\crates\kubuno-app-storage-components` (view components), small
-> additive changes in `kubuno`, `kubuno-views-meta`, `kubuno-views-macros`, `kubuno-views-ls`, `kubuno-resources-model`,
-> `kubuno-resources-macros`, `kubuno-print` (its bundled design surface), `kubuno-account` (its `paths` became a
+> `.kbsettings` file, its typed class and its Visual Studio editor). Code: `Z:\src\desktop\common\kubuno-desktop-app-storage`
+> (portable engine), `Z:\src\desktop\windows\src\crates\kubuno-desktop-app-storage-components` (view components), small
+> additive changes in `kubuno-desktop`, `kubuno-desktop-views-meta`, `kubuno-desktop-views-macros`, `kubuno-views-ls`, `kubuno-desktop-resources-model`,
+> `kubuno-desktop-resources-macros`, `kubuno-desktop-print` (its bundled design surface), `kubuno-desktop-account` (its `paths` became a
 > re-export); in this repository the Toolbox tab, the icons, the settings editor, the item template, the sample
 > `samples/storage-desktop` and this note. Part 2 (§11) is the as-built record.
 
@@ -45,7 +45,7 @@ model this note copies for `.kbsettings`), `SHARED-CORES.md`, `WEB-VIEWS.md`, `M
 | R2 | One canonical API across platforms | portable components with identical names, properties, events and binding paths everywhere; platform components only add |
 | R3 | Module isolation | every location is derived from a validated `AppId`; no component takes a raw path or key outside its app (except `RegistryKey`/`CookieStore`, which name a system location on purpose and are read-only by default) |
 | R4 | Never log secrets | errors name keys, files and Registry paths, never values; a `Secret` is zeroed on drop and redacted in `Debug`; bindings never expose a secret's value |
-| R5 | Reuse, do not duplicate | `kubuno-paths` rules (override variables, never infer from `is_dir()`), `kubuno-secrets` (OS credential stores), `kubuno-account` (the sandbox, the token broker), `kubuno-sync-engine` (SQLCipher), the `.kbres` tooling model |
+| R5 | Reuse, do not duplicate | `kubuno-paths` rules (override variables, never infer from `is_dir()`), `kubuno-desktop-secrets` (OS credential stores), `kubuno-desktop-account` (the sandbox, the token broker), `kubuno-desktop-sync-engine` (SQLCipher), the `.kbres` tooling model |
 | R6 | Testable without touching the user's profile | in-memory back-ends everywhere, the sandboxed profile, throw-away Registry keys deleted after the test; no test writes the real `Run` key or the Credential Manager |
 
 ---
@@ -55,11 +55,11 @@ model this note copies for `.kbsettings`), `SHARED-CORES.md`, `WEB-VIEWS.md`, `M
 | Where | What | Notes |
 |---|---|---|
 | `core/crates/kubuno-paths` | server locations (`/etc/kubuno`, `%ProgramData%\Kubuno`…), `write_private` with a Windows DACL | server side only; tag `paths-v0.1.0` |
-| `desktop/common/kubuno-account::paths` (now `kubuno-app-storage::paths`, re-exported) | per-user directories (`%APPDATA%\Kubuno`, `%LOCALAPPDATA%\Kubuno`, XDG, `~/Library`), `KUBUNO_SANDBOX_DIR`, `system_integration_allowed()` | same rules as `kubuno-paths`; moved in ST-1 so an app can keep settings without linking the network stack |
-| `desktop/common/kubuno-secrets` | `SecretStore` trait; Windows Credential Manager (`CRED_PERSIST_LOCAL_MACHINE`, never roams), macOS Keychain, Linux Secret Service (zbus), file fallback (opt-in, `0600`), `PrefixedSecretStore` for sandboxes | target `Kubuno/<scope>/<item>` |
-| `desktop/common/kubuno-account` | accounts, token owner, **token broker** over a named pipe / Unix socket (squatting checks) | the first inter-app channel of the desktop |
-| `desktop/common/kubuno-sync-engine` | SQLCipher database per account and app, outbox | key in the OS store (`dbkey`) |
-| `windows/src/crates/kubuno-data` | `DbConnection`… and a `SecretResolver` (environment `ConnectionStrings__X`, Credential Manager `Kubuno:<UserSecretsId>:…`, `%APPDATA%\Kubuno\UserSecrets\<id>\secrets.json`) | a **third** secret naming scheme (open question Q4) |
+| `desktop/common/kubuno-desktop-account::paths` (now `kubuno-desktop-app-storage::paths`, re-exported) | per-user directories (`%APPDATA%\Kubuno`, `%LOCALAPPDATA%\Kubuno`, XDG, `~/Library`), `KUBUNO_SANDBOX_DIR`, `system_integration_allowed()` | same rules as `kubuno-paths`; moved in ST-1 so an app can keep settings without linking the network stack |
+| `desktop/common/kubuno-desktop-secrets` | `SecretStore` trait; Windows Credential Manager (`CRED_PERSIST_LOCAL_MACHINE`, never roams), macOS Keychain, Linux Secret Service (zbus), file fallback (opt-in, `0600`), `PrefixedSecretStore` for sandboxes | target `Kubuno/<scope>/<item>` |
+| `desktop/common/kubuno-desktop-account` | accounts, token owner, **token broker** over a named pipe / Unix socket (squatting checks) | the first inter-app channel of the desktop |
+| `desktop/common/kubuno-desktop-sync-engine` | SQLCipher database per account and app, outbox | key in the OS store (`dbkey`) |
+| `windows/src/crates/kubuno-desktop-data` | `DbConnection`… and a `SecretResolver` (environment `ConnectionStrings__X`, Credential Manager `Kubuno:<UserSecretsId>:…`, `%APPDATA%\Kubuno\UserSecrets\<id>\secrets.json`) | a **third** secret naming scheme (open question Q4) |
 | `windows/src/shell/services/settings.rs` | the shell's preferences in `shell.json` (serde struct, defaults, no versioning, write errors ignored) and the `Run` key through `winreg` (skipped in a sandbox) | to migrate onto `Settings` (lot ST-6) |
 | `windows/src/drive/…/services/settings` | drive's settings, one JSON store at `%LOCALAPPDATA%\KubunoDrive\settings.json` (port of Files' `UserSettingsService`) | idem |
 | `core/frontend` (web) | `localStorage` in ~29 files (theme, favourites, panel layouts, admin pins, recents, i18n `instance-lang`), `sessionStorage` (setup draft id), cookies: `access_token` (**JS-readable**, `SameSite=Strict`, 15 min, `Secure` on https — for downloads, see `kubuno-core/src/auth/middleware.rs`), language cookie (`SameSite=Lax`, 1 year), OAuth state cookie (path `/auth/oauth/callback`); the `refresh_token` cookie is **HttpOnly**, set by the server and never touched by JS; `BroadcastChannel` `kubuno-auth` and `kubuno-session-activity` | no common wrapper: each feature names its keys; modules share the host origin, so web isolation is a naming convention (§6.1) |
@@ -122,7 +122,7 @@ a URL, a log, a crash report.
 The existing data components (`DbConnection Provider="Sqlite"`, `TableAdapter`, `BindingSource`, `DATA.md`) with a
 **`LocalDatabase`** component (ST-2, a `DbConnection` subclass): `Data Source=app:<name>` resolves to
 `<user_data_dir>/<app>/databases/<name>.db`, `account:<name>` to the signed-in account's folder. Encryption
-(`Encrypted="true"`, SQLCipher with the key in the OS store, the `kubuno-sync-engine` scheme) is left for later. Web: IndexedDB (or SQLite WASM on
+(`Encrypted="true"`, SQLCipher with the key in the OS store, the `kubuno-desktop-sync-engine` scheme) is left for later. Web: IndexedDB (or SQLite WASM on
 OPFS, `sqlite-wasm`, when SQL is required). Android: Room. iOS: SQLite / GRDB.
 
 ### 3.6 Session vs persistent
@@ -207,7 +207,7 @@ row), `design_mode` / design surface → memory, never the developer's profile; 
 | `GSettingsKey` (`Schema`, `Key`, read-only) | linux | | ST-5 |
 | `KeychainItem` (`AccessGroup`) | ios, macos | | ST-7 |
 
-Availability is declared once, in `kubuno_views_meta::kbview::PLATFORM_ELEMENTS` (`("RegistryKey", &["windows"])`):
+Availability is declared once, in `kubuno_desktop_views_meta::kbview::PLATFORM_ELEMENTS` (`("RegistryKey", &["windows"])`):
 
 - the **language server** reads the project's targets — `[package.metadata.kubuno] targets = ["windows", "linux",
   "macos"]` in `Cargo.toml` (desktop default: `windows`; web projects: `web`) — and warns on an element whose platforms
@@ -229,18 +229,18 @@ the view keeps working. The engine never silently switches media for persisted d
 ### 4.4 How code reaches them (Rust, desktop)
 
 ```rust
-kubuno::settings!("settings.kbsettings");             // the typed class (Properties.Settings), from the file
+kubuno_desktop::settings!("settings.kbsettings");             // the typed class (Properties.Settings), from the file
 
 let theme: String = Settings::theme();                // user value, else the administrator's, else the default
 Settings::set_theme("Dark");                          // saved at once (a failure is logged, never the value)
 let channel = Settings::update_channel();             // Application scope: no setter
 let _sub = Settings::on_changed(|c| println!("{} changed", c.name));
-Settings::store().reload();                           // the shared kubuno::storage::engine::Settings
+Settings::store().reload();                           // the shared kubuno_desktop::storage::engine::Settings
 
-// x:Name'd components are typed fields of the form (#[kubuno::view]):
-self.settings.set("ShowHidden", true)?;              // kubuno::storage::Settings (handle)
-self.secrets.set_str("ApiKey", &key)?;               // kubuno::storage::SecretStore
-let hidden = self.explorer.get_string("Hidden")?;    // kubuno::storage::RegistryKey (Windows)
+// x:Name'd components are typed fields of the form (#[kubuno_desktop::view]):
+self.settings.set("ShowHidden", true)?;              // kubuno_desktop::storage::Settings (handle)
+self.secrets.set_str("ApiKey", &key)?;               // kubuno_desktop::storage::SecretStore
+let hidden = self.explorer.get_string("Hidden")?;    // kubuno_desktop::storage::RegistryKey (Windows)
 ```
 
 The typed class, the view's `<Settings>` components and background code share **one** `Settings` instance per app,
@@ -250,7 +250,7 @@ set and back-end in the process (`Settings::shared`): a change from any of them 
 
 Same element names and properties (`VIEWS-SPEC.md` registry, `web` block), `@kubuno/views` runtime: `settings.get('Theme')`,
 `settings.set('Theme', 'Dark')`, a typed `Settings` generated from the same `.kbsettings` by the views compiler
-(`kubuno-views-web` reads it with `kubuno-resources-model::settings`); the web counterparts live in `core/frontend`
+(`kubuno-web-views-compiler-core` reads it with `kubuno-desktop-resources-model::settings`); the web counterparts live in `core/frontend`
 (owned by the web views agent, not edited by lot ST-1).
 
 ---
@@ -259,8 +259,8 @@ Same element names and properties (`VIEWS-SPEC.md` registry, `web` block), `@kub
 
 ### 5.1 Toolbox and component tray
 
-A « Stockage » (FR) / « Storage » tab, present in every project that links the `kubuno` crate, without « Choisir des
-éléments… » (`NativeToolboxInstaller.LibraryCrates` gains `kubuno_app_storage_components`), Lucide icons
+A « Stockage » (FR) / « Storage » tab, present in every project that links the `kubuno-desktop` crate, without « Choisir des
+éléments… » (`NativeToolboxInstaller.LibraryCrates` gains `kubuno_desktop_app_storage_components`), Lucide icons
 `settings-2` (Settings), `key-round` (SecretStore), `folder-key` (RegistryKey) from `tools/generate-control-icons.ps1`.
 Dropped on a view, the components go to the component tray (non-visual), like the printing and data components.
 
@@ -300,7 +300,7 @@ canonical form both writers produce byte for byte):
   Rust rules: names, duplicates ignoring case, defaults per type, accepted values, secret-like names); the document stays
   the XML buffer (Save, source control and View Code work on it), changes are minimal edits.
 - **Add > New Item > Kubuno Settings File**.
-- The **typed class**: `kubuno::settings!("settings.kbsettings")` reads the file at compile time (an invalid file is a
+- The **typed class**: `kubuno_desktop::settings!("settings.kbsettings")` reads the file at compile time (an invalid file is a
   compile error at the path literal), embeds it for change tracking, and generates one accessor per setting (`theme()`,
   `set_theme(…)`; no setter for an `Application` setting), `SET`, `VERSION`, `NAMES`, `app()`, `schema()`, `store()`,
   `save()`, `reload()`, `reset_all()`, `refresh_if_changed()`, `on_changed(f)`; it registers its schema before `main`
@@ -316,8 +316,8 @@ both targets — open question Q2).
 
 ### 5.5 Language server
 
-- completion, hover and Properties of the components come from the scan of `kubuno-app-storage-components` (reached
-  through the `kubuno` facade's workspace dependencies, like printing);
+- completion, hover and Properties of the components come from the scan of `kubuno-desktop-app-storage-components` (reached
+  through the `kubuno-desktop` facade's workspace dependencies, like printing);
 - the members of a `<Settings>` come from its `.kbsettings` (`binding_sources`: completion of `{Binding …, Source=s}`,
   hover with type/scope/default/description, F12 to the setting's line, **unknown setting = error**, two-way binding of
   an `Application` setting = warning);
@@ -344,7 +344,7 @@ both targets — open question Q2).
 ### 6.2 Encryption at rest
 
 Secrets: the OS stores (DPAPI, Keychain, Secret Service). Databases with personal data: SQLCipher, key in the OS store
-(`kubuno-sync-engine`). Settings and key/value files: **not encrypted** (they hold preferences, never secrets — the
+(`kubuno-desktop-sync-engine`). Settings and key/value files: **not encrypted** (they hold preferences, never secrets — the
 format and the tooling warn on secret-like names); on Windows they inherit the profile's ACL, on Unix the user's
 `0700` XDG directories. Web: nothing encrypted client-side (no key would be safer than the data).
 
@@ -390,10 +390,10 @@ the OS error; a corrupted settings file is reported with its position only (the 
   refuses a key that still has sub-keys, so a concurrent test's key is never deleted). Checked after the runs:
   `HKCU\Software\Kubuno` keeps nothing.
 - **Credential Manager**: the components' tests use `Backend="Memory"`; the engine's sandbox test uses a recording store;
-  the real store is only exercised by `kubuno-secrets`' existing `--ignored` test.
+  the real store is only exercised by `kubuno-desktop-secrets`' existing `--ignored` test.
 - **Cross-language format**: the same `.kbsettings` sample is parsed and re-written by Rust and C#, both must give the
   same bytes; the Rust format and engine agree on types and spellings (a test).
-- **Multi-OS CI**: `cargo test -p kubuno-app-storage` on Windows, Linux and macOS runners (the Registry tests are
+- **Multi-OS CI**: `cargo test -p kubuno-desktop-app-storage` on Windows, Linux and macOS runners (the Registry tests are
   `cfg(windows)`; the sandbox test covers files and secrets everywhere); `cargo check`/`clippy` for
   `x86_64-unknown-linux-gnu`, `aarch64-apple-darwin`, `x86_64-apple-darwin` from Windows (done in ST-1).
 
@@ -418,7 +418,7 @@ the OS error; a corrupted settings file is reported with its position only (the 
 
 | Lot | Content | Size | Order / depends on |
 |---|---|---|---|
-| **ST-1** (done) | `kubuno-app-storage` (paths moved from `kubuno-account`, `machine_config_dir`, `AppId`, typed settings engine with scopes, defaults, notifications, external-change refresh, versioned upgrade, shared instances; File / Registry / Memory back-ends; `AppSecrets`; Windows Registry API with views and sandbox redirection); `<Settings>`, `<SecretStore>`, `<RegistryKey>` components; `.kbsettings` format + `settings!` typed class; `kubuno::storage` handles; LS members/diagnostics; Toolbox tab, icons, Properties category; settings editor + item template; sample; tests | L | — |
+| **ST-1** (done) | `kubuno-desktop-app-storage` (paths moved from `kubuno-desktop-account`, `machine_config_dir`, `AppId`, typed settings engine with scopes, defaults, notifications, external-change refresh, versioned upgrade, shared instances; File / Registry / Memory back-ends; `AppSecrets`; Windows Registry API with views and sandbox redirection); `<Settings>`, `<SecretStore>`, `<RegistryKey>` components; `.kbsettings` format + `settings!` typed class; `kubuno_desktop::storage` handles; LS members/diagnostics; Toolbox tab, icons, Properties category; settings editor + item template; sample; tests | L | — |
 | **ST-2** (done, §12) | `KeyValueStore`, `FileStore` (data/cache/temp, eviction), `LocalDatabase` for the data components; **Registry key picker** in Properties; `AccountScoped` settings (Q6); one secret naming scheme (Q4); the shell's `shell.json` and drive's `settings.json` migrated onto `Settings` (one-time import, logged); undo/redo in the settings editor; the declared defaults on the design surface. Moved to a later lot: the `Schema` drop-down, platform badges and target filtering in the Toolbox, the `Error` event | L | ST-1 |
 | ST-3 | **web**: `@kubuno/views` `Settings` (server user preferences + `localStorage` cache, `storage`/`BroadcastChannel` notifications), `CookieStore`, `WebStorage`, `KeyValueStore`/`FileStore` on IndexedDB/OPFS/Cache Storage, `SecretStore` memory-only; per-module budgets; registry `web` blocks; conformance with the desktop export; a server endpoint for user preferences per module (core) | L | ST-1; coordinate with the web views agent (core/frontend) |
 | ST-4 | `SharedChannel` (pipes / Unix sockets / BroadcastChannel), file and Registry change watchers (`ReadDirectoryChangesW`, `RegNotifyChangeKeyValue`, inotify, FSEvents) replacing the 2 s poll | M | ST-1 |
@@ -439,11 +439,11 @@ that lot and the web views work to settle.
 | Q1 | Default back-end of `Settings` on Windows: files or the Registry? | **Files** (§4.3): portable, inspectable, sandbox-friendly, one code path; the Registry stays one property away. |
 | Q2 | Add a `{Setting Name}` markup extension? | **Not now**: `{Binding Name, Source=settings, Mode=TwoWay}` already works on both targets and the designer's binding picker writes it; revisit when the web compiler (ST-3) shares the binding grammar change. |
 | Q3 | Where does `Settings` roam on the web: browser storage or server? | **Server** (per user and module, like the core's existing user preferences) with a `localStorage` cache; `Roaming="false"` stays in the browser. |
-| Q4 | Unify the three secret naming schemes? | Yes, in ST-2: `kubuno-data`'s `SecretResolver` gains an `AppSecrets` source (`Kubuno/app.<UserSecretsId>/ConnectionStrings.X`) before its own Credential Manager lookup, which stays for compatibility one release. |
+| Q4 | Unify the three secret naming schemes? | Yes, in ST-2: `kubuno-desktop-data`'s `SecretResolver` gains an `AppSecrets` source (`Kubuno/app.<UserSecretsId>/ConnectionStrings.X`) before its own Credential Manager lookup, which stays for compatibility one release. |
 | Q5 | Allow data shared between Kubuno apps? | Only through an explicit, reviewed namespace (`AppId="kubuno"` settings, `SharedChannel Scope="User"`), never by reading another app's id; the token broker remains the only path for tokens. |
 | Q6 | Settings per account (multi-account apps)? | Add `AccountScoped="true"` in ST-2: the set goes under `<data>/accounts/<key>/<app>/` (the sync engine's layout), wiped with the account. |
 | Q7 | The JS-readable `access_token` cookie of the web host? | Out of this lot; recommend short-lived signed download tickets so no bearer token is ever in a JS-readable cookie (core security review). |
-| Q8 | Linux without a Secret Service | Keep `kubuno-secrets`' rule: session-only by default, the `0600` file only after an explicit warning; `SecretStore.Available` lets a view show it. |
+| Q8 | Linux without a Secret Service | Keep `kubuno-desktop-secrets`' rule: session-only by default, the `0600` file only after an explicit warning; `SecretStore.Available` lets a view show it. |
 | Q9 | macOS plist back-end now? | No file back-end on `~/Library/Preferences` (cfprefsd caches and overwrites it); `UserDefaults` through `CFPreferences` in ST-5; files meanwhile. |
 
 ---
@@ -454,16 +454,16 @@ that lot and the web views work to settle.
 
 | Where | What |
 |---|---|
-| `desktop/common/kubuno-app-storage` (new, workspace `desktop/common`) | `paths` (moved from `kubuno-account`, + `machine_config_dir`), `app` (`AppId`, default app id), `settings::{value, schema, store}` (`SettingValue`/`SettingType` with coercions, `SettingDef`/`SettingsSchema` with validation and limits, `Settings` engine), `backend::{file, registry, memory}`, `secrets` (`AppSecrets`), `registry` (Windows: `RegistryRoot`, `RegistryKey`, `RegValue`, `Hive`, `RegistryView`). Deps: `kubuno-secrets`, `serde_json`, `thiserror`, `tracing`, `sha2`, `hex`, `windows-sys` 0.61 |
-| `desktop/common/kubuno-account` | `paths.rs` is now `pub use kubuno_app_storage::paths::*` (same API, same locations) |
-| `windows/src/crates/kubuno-app-storage-components` (new) | `Settings`, `SecretStore`, `RegistryKey` (`#[derive(Component)]`, Toolbox category `Storage`), their args, the binding conversions |
-| `kubuno-resources-model::settings` | the `.kbsettings` format (lenient read with positioned diagnostics, canonical write) |
-| `kubuno-resources-macros` | `settings!` (next to `resources!`) |
-| `kubuno` (facade) | `kubuno::storage` (handles `Settings`/`SecretStore`/`RegistryKey`, the engine as `kubuno::storage::engine`), `kubuno::settings!`, the event args in the prelude |
-| `kubuno-views-meta` | `STORAGE_ELEMENTS`, `STORAGE_TYPED`, `PLATFORM_ELEMENTS`; `LIBRARY_ELEMENTS` extended |
-| `kubuno-views-macros` | `<Settings x:Name>` → `kubuno::storage::Settings` field (likewise the two others) |
+| `desktop/common/kubuno-desktop-app-storage` (new, workspace `desktop/common`) | `paths` (moved from `kubuno-desktop-account`, + `machine_config_dir`), `app` (`AppId`, default app id), `settings::{value, schema, store}` (`SettingValue`/`SettingType` with coercions, `SettingDef`/`SettingsSchema` with validation and limits, `Settings` engine), `backend::{file, registry, memory}`, `secrets` (`AppSecrets`), `registry` (Windows: `RegistryRoot`, `RegistryKey`, `RegValue`, `Hive`, `RegistryView`). Deps: `kubuno-desktop-secrets`, `serde_json`, `thiserror`, `tracing`, `sha2`, `hex`, `windows-sys` 0.61 |
+| `desktop/common/kubuno-desktop-account` | `paths.rs` is now `pub use kubuno_desktop_app_storage::paths::*` (same API, same locations) |
+| `windows/src/crates/kubuno-desktop-app-storage-components` (new) | `Settings`, `SecretStore`, `RegistryKey` (`#[derive(Component)]`, Toolbox category `Storage`), their args, the binding conversions |
+| `kubuno-desktop-resources-model::settings` | the `.kbsettings` format (lenient read with positioned diagnostics, canonical write) |
+| `kubuno-desktop-resources-macros` | `settings!` (next to `resources!`) |
+| `kubuno-desktop` (facade) | `kubuno_desktop::storage` (handles `Settings`/`SecretStore`/`RegistryKey`, the engine as `kubuno_desktop::storage::engine`), `kubuno_desktop::settings!`, the event args in the prelude |
+| `kubuno-desktop-views-meta` | `STORAGE_ELEMENTS`, `STORAGE_TYPED`, `PLATFORM_ELEMENTS`; `LIBRARY_ELEMENTS` extended |
+| `kubuno-desktop-views-macros` | `<Settings x:Name>` → `kubuno_desktop::storage::Settings` field (likewise the two others) |
 | `kubuno-views-ls` | `storage.rs` (settings members, `platform-only`, `open-settings`), hooks in `binding_sources` and `server` |
-| `kubuno-print/examples/view_embed.rs` | the bundled design surface links the storage components |
+| `kubuno-desktop-print/examples/view_embed.rs` | the bundled design surface links the storage components |
 | vskubuno | `LibraryCrates`, the « Stockage » tab and category, icons, `Kubuno.Views.Logic\Settings\KbsettingsFile`, `Kubuno.Views\Settings\Editor\*`, `KbsettingsEditorProvider` (CPS), package registration (`113`), the `KubunoSettingsFile` item template, `samples/storage-desktop`, tests |
 
 ### 11.2 Verified
@@ -494,10 +494,10 @@ became dirty; closed without saving). C#: `Kubuno.Views.Tests`, `Kubuno.Desktop.
   schema (an open set): bound controls show their fallbacks, not the declared defaults; `d:` attributes cover it.
 - The Properties window of a non-visual component also lists the view-level « Disposition » rows (Anchor, Dock,
   Location, Size), like the printing components (a designer-wide behaviour, not specific to this lot).
-- `kubuno-sync-engine` (which re-exports the moved paths) could not be rebuilt on this machine (its vendored OpenSSL needs
-  a native Perl); its use of `kubuno_account::paths` names is unchanged.
-- The doctests of `kubuno-views-macros` failed to link on this machine (LNK1120, the `prefer-dynamic` dylib without
-  `RUSTDOCFLAGS`), independently of this lot (no longer applies: kubuno-ui is linked statically since 2026-10-03).
+- `kubuno-desktop-sync-engine` (which re-exports the moved paths) could not be rebuilt on this machine (its vendored OpenSSL needs
+  a native Perl); its use of `kubuno_desktop_account::paths` names is unchanged.
+- The doctests of `kubuno-desktop-views-macros` failed to link on this machine (LNK1120, the `prefer-dynamic` dylib without
+  `RUSTDOCFLAGS`), independently of this lot (no longer applies: kubuno-desktop-ui is linked statically since 2026-10-03).
 
 ---
 
@@ -505,15 +505,15 @@ became dirty; closed without saving). C#: `Kubuno.Views.Tests`, `Kubuno.Desktop.
 
 ### 12.1 Built
 
-- Engine (`desktop/common/kubuno-app-storage`): `account` (current account, `<data>/accounts/<key>/<app>/`,
+- Engine (`desktop/common/kubuno-desktop-app-storage`): `account` (current account, `<data>/accounts/<key>/<app>/`,
   Registry `Software\Kubuno\Accounts\<key>\Apps\<app>`), `AccountScoped` schemas (no account: memory + warning),
   `kv` (`KeyValueStore`, JSON file, TTL, read-merge-write), `files` (`FileStore` Data/Cache/Temp, LRU eviction,
   name-only API, `local_database_path`), `settings::migrate::import_legacy_json` (one-time import, file renamed
   `*.migrated`), `settings::serde_bridge` (a serde struct as an open-schema set).
-- Components: `KeyValueStore`, `FileStore` (`kubuno-app-storage-components`), `LocalDatabase` (`kubuno-data`,
+- Components: `KeyValueStore`, `FileStore` (`kubuno-desktop-app-storage-components`), `LocalDatabase` (`kubuno-desktop-data`,
   a `DbConnection` subclass, `app:`/`account:` specs); `AccountScoped` on `Settings`; the designer reads the
   declared defaults of the project's `.kbsettings` (also when the surface never syncs the providers).
-- Secrets (Q4): `kubuno-data`'s default chain = environment → `Kubuno/app.<id>/<key>` (`AppSecretsSource`) →
+- Secrets (Q4): `kubuno-desktop-data`'s default chain = environment → `Kubuno/app.<id>/<key>` (`AppSecretsSource`) →
   the legacy Credential Manager names (read, then migrated) → user secrets.
 - Shell (`shell.json` → `shell.kbsettings`) and drive (`settings.json` → `kubuno-drive` settings) moved onto the
   engine with a one-time import, both tested in a sandbox.
@@ -536,7 +536,7 @@ VS (hive `KubunoStorage`, Release VSIX): `state` and `thumbs` in the component t
   compte » check box, the « Stockage » tab listing the 5 components (covered by the C# tests and the fixture).
 - Moved to a later lot: the `Schema` drop-down, platform badges and target filtering, the `Error` event,
   `LocalDatabase` encryption (SQLCipher).
-- `kubuno-views-meta`'s `framework` test fails on `kubuno-header-data` (another lot's new crate, not listed).
-- `kubuno-sync-engine` still needs a native Perl (vendored OpenSSL) to compile here; nothing was installed.
-- Lesson: the sample and the `windows` workspace must not share a target dir (two `drive-app-controls` builds
+- `kubuno-desktop-views-meta`'s `framework` test fails on `kubuno-desktop-header-data` (another lot's new crate, not listed).
+- `kubuno-desktop-sync-engine` still needs a native Perl (vendored OpenSSL) to compile here; nothing was installed.
+- Lesson: the sample and the `windows` workspace must not share a target dir (two `kubuno-drive-desktop-app-controls` builds
   conflict); clean those crates after building the sample.

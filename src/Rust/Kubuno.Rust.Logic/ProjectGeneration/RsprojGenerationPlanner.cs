@@ -54,6 +54,12 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
             var workspaceBuild = metadata.WorkspaceMembers.Count > 1 && metadata.Packages
                 .Where(package => memberIds.Contains(package.Id))
                 .Any(package => package.Targets.Any(target => target.IsKind(CargoTargetKind.Dylib) || target.CrateTypes.Contains(CargoTargetKind.Dylib)));
+            if (options.WorkspaceBuildForSeveralPrograms && metadata.Packages
+                .Where(package => memberIds.Contains(package.Id))
+                .Count(package => package.Targets.Any(target => target.IsKind(CargoTargetKind.Bin))) > 1)
+            {
+                workspaceBuild = true;
+            }
 
             foreach (var package in metadata.Packages)
             {
@@ -83,14 +89,15 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
                     continue;
                 }
 
-                var projectPath = Path.Combine(projectDirectory, package.Name + ".rsproj");
+                var projectName = options.ResolveProjectName(package);
+                var projectPath = Path.Combine(projectDirectory, (string.IsNullOrEmpty(projectName) ? package.Name : projectName) + ".rsproj");
                 var manifestPathRelativeToProject = ComputeManifestPathForProject(projectDirectory, package.ManifestPath);
                 var cargoBin = SelectCargoBinIfNeeded(package, binNames);
 
                 var content = RsprojTemplate.Build(package.Name, options.SdkVersion, cargoBin, manifestPathRelativeToProject, workspaceBuild);
                 var action = projectFileExists(projectPath) ? RsprojPlanAction.SkipExisting : RsprojPlanAction.Create;
 
-                items.Add(new RsprojProjectPlanItem(package.Name, projectPath, package.ManifestPath, action, content, isLibraryOnly));
+                items.Add(new RsprojProjectPlanItem(package.Name, projectPath, package.ManifestPath, action, content, isLibraryOnly, hasBin: !isLibraryOnly));
             }
 
             return items

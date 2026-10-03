@@ -2,11 +2,11 @@
 //! themselves when the culture changes; the status line, written from code, reads the typed
 //! accessors of `crate::Resources` again.
 
-use kubuno::prelude::*;
+use kubuno_desktop::prelude::*;
 
 use crate::Resources;
 
-#[kubuno::view("main_view.kbview")]
+#[kubuno_desktop::view("main_view.kbview")]
 #[derive(Default)]
 pub struct MainView {}
 

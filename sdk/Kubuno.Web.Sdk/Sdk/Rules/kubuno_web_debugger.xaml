@@ -5,9 +5,9 @@
      (the .rsproj.user file). The database URL is deliberately NOT a property here: it comes from the
      KUBUNO_DEV_DATABASE_URL environment variable, so no password is written next to the sources. -->
 <Rule Name="KubunoWebDebugger"
-      DisplayName="Kubuno Core Web (serveur)"
+      DisplayName="Kubuno Core (server)"
       PageTemplate="debugger"
-      Description="Starts a development Kubuno Core Web server (and deploys this module into it) under the native debugger"
+      Description="Starts a development Kubuno Core server (and deploys this module into it) under the native debugger"
       xmlns="http://schemas.microsoft.com/build/2009/properties">
   <Rule.Categories>
     <Category Name="Debug" DisplayName="Debug" />

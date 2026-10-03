@@ -9,7 +9,7 @@ namespace Kubuno.Desktop.Logic.Sql
     /// Finds the Rust string literals that hold SQL: the query of the sqlx macros (<c>query!</c>, <c>query_as!</c> after
     /// the row type, <c>query_scalar!</c> and their <c>_unchecked</c> forms, with or without <c>sqlx::</c>), of the sqlx
     /// functions (<c>sqlx::query(</c>, <c>sqlx::query_as::&lt;…&gt;(</c>, <c>sqlx::query_scalar(</c>, <c>raw_sql</c>...), and
-    /// of kubuno-data (<c>DbCommand::with_text(</c>, <c>TableAdapter::new(conn, </c>, the <c>command_text</c> /
+    /// of kubuno-desktop-data (<c>DbCommand::with_text(</c>, <c>TableAdapter::new(conn, </c>, the <c>command_text</c> /
     /// <c>select_command</c> / <c>insert_command</c> / <c>update_command</c> / <c>delete_command</c> fields).
     /// A small Rust lexer (line and nested block comments, char literals versus lifetimes, byte/C strings, raw strings with
     /// any number of <c>#</c>, raw identifiers) keeps <c>query!(</c> inside a comment or a string from counting.

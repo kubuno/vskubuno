@@ -2,12 +2,12 @@
 
 > Scope: a WinForms/XAML-designer-class visual editor for `.kbview` files inside
 > Visual Studio 2026, building on `docs/XML_VIEWS.md` (the format, the
-> `kubuno-views` crate) and `docs/ARCHITECTURE.md` phase 4 ("preview ⇄ XML
+> `kubuno-desktop-views` crate) and `docs/ARCHITECTURE.md` phase 4 ("preview ⇄ XML
 > selection sync, property grid, toolbox"). Nothing here is built: `src/Kubuno.
 > VisualStudio.Views` today only hosts `kubuno-views-ls` as a plain LSP text
 > editor (`LanguageService/KubunoViewsLanguageClient.cs`); there is no editor
 > factory, no toolbox, no embedded renderer. This note is the plan, grounded in
-> that library, in `kubuno-views`/`kubuno-views-ls` as they exist today, and in
+> that library, in `kubuno-desktop-views`/`kubuno-views-ls` as they exist today, and in
 > what is known and unknown about VS's own WinForms/XAML designers.
 
 ## 1. Goal and UX
@@ -35,7 +35,7 @@ Both panes stay in sync in both directions:
   surface — the same behavior VS's XAML designer and the WinForms designer's
   "View Code"/"View Designer" pairing both give, just continuously rather than
   only on view-switch, because here both views are visible at once.
-- **Toolbox.** One entry per `ComponentMeta` from the registry (`kubuno-views/
+- **Toolbox.** One entry per `ComponentMeta` from the registry (`kubuno-desktop-views/
   src/registry/mod.rs`), grouped by family — the module grouping already used
   in the crate (`registry::families::{choice, containers, data, display,
   text}`, plus the five components declared directly in `registry/components.
@@ -44,7 +44,7 @@ Both panes stay in sync in both directions:
   inserts the same element as text at the drop position — one insertion
   command, two possible target panes.
 - **Design surface — the real rendering.** Not a schematic/mock: the surface
-  is `kubuno-views`' own interpreter (`compile`/`runtime`/`node`) painting the
+  is `kubuno-desktop-views`' own interpreter (`compile`/`runtime`/`node`) painting the
   same pixels the app would, exactly as `examples/view_preview.rs` already
   proves end to end for a standalone window. §3 covers how that gets embedded.
 - **Selection adorners.** Resize handles at the 8 compass points on a
@@ -62,7 +62,7 @@ Both panes stay in sync in both directions:
   already offers as completion, `completion.rs`), `F32` → a numeric editor,
   `String` → a text box; any property's value can instead be typed as a
   `{Binding Path[, Mode=TwoWay]}` expression (a small popup editor, mirroring
-  `kubuno_views::binding`'s grammar) which the grid renders distinctly (a
+  `kubuno_desktop_views::binding`'s grammar) which the grid renders distinctly (a
   small binding glyph, as XAML's own property grid marks a bound value). The
   **Events** tab lists `ComponentMeta.events`; each row shows the current
   `On*="handler_name"` attribute if present, with a dropdown of handler names
@@ -72,7 +72,7 @@ Both panes stay in sync in both directions:
   surface — or the empty cell of its default event in the Events tab — is a
   **surgical** two-part edit, never a regeneration: (1) set the `On*="…"`
   attribute (a synthesized name, `<x:Name or ordinal>_<EventName>`) via
-  `kubuno_views::edit::set_attribute`, and (2) insert a new handler `fn` stub
+  `kubuno_desktop_views::edit::set_attribute`, and (2) insert a new handler `fn` stub
   into the code-behind `.rs` file, in the `handlers!` table shape `XML_VIEWS.
   md` §7 already shows (`"button1_click" => |state, _v| { }`). `kubuno-views-
   ls/src/definition.rs` already does the read half of this exact link
@@ -97,8 +97,8 @@ assisting after those edits") all correct for free: the designer is just
 another writer of the same buffer, not a second document model that has to be
 reconciled with it.
 
-Concretely: `kubuno_views::edit`'s functions (`set_attribute`, `insert_child`,
-`remove_child`, `move_child`, `remove_attribute` — `kubuno-views/src/edit.rs`)
+Concretely: `kubuno_desktop_views::edit`'s functions (`set_attribute`, `insert_child`,
+`remove_child`, `move_child`, `remove_attribute` — `kubuno-desktop-views/src/edit.rs`)
 already compute a precise `TextRange` on the *original* source and splice it,
 returning the whole document's new text (see the module's own doc: "computes
 one precise byte range … and splices it"). For the designer, that return
@@ -149,18 +149,18 @@ keystroke.
   `req.method` as a plain string match with a `MethodNotFound` fallback — 
   adding `kubuno/registry`, `kubuno/applyEdit`, `kubuno/elementAtOffset` is a
   few new match arms, not a protocol redesign. `kubuno-views-ls` already links
-  `kubuno_views`' `syntax`/`ast`/`validate`/`registry` (its own module doc is
+  `kubuno_desktop_views`' `syntax`/`ast`/`validate`/`registry` (its own module doc is
   explicit it deliberately does **not** link `node`/`compile`/`runtime`/
   `binding` — "another agent is actively building" those); adding `edit` to
   that same allowed set is the natural next addition, not a boundary change.
 - **The design surface is a separate, new process** (proposed crate
   `kubuno-views-designer`, promoting `examples/view_preview.rs`'s logic out of
   `examples/` into a real, shipped binary), because rendering needs a live
-  Win32 message pump and Direct2D swap chain (`kubuno_controls::host::
+  Win32 message pump and Direct2D swap chain (`kubuno_desktop_controls::host::
   run_with_options`), which is structurally incompatible with `lsp-server`'s
   blocking `for msg in &connection.receiver` loop (`server.rs::main_loop`):
   mixing a GUI pump into that loop would stall diagnostics/completion whenever
-  the surface repaints, and vice versa. This process links `kubuno_views`'
+  the surface repaints, and vice versa. This process links `kubuno_desktop_views`'
   `compile`/`runtime`/`node`/`registry` — the *other* half of the crate
   `kubuno-views-ls` deliberately stays out of, keeping that existing boundary
   intact rather than merging the two roles into one process.
@@ -173,7 +173,7 @@ source of truth. Within Rust, the split is: **the designer process turns a
 gesture into a structured, semantic edit request** (`SetAttribute`,
 `InsertChild`, `MoveChild`, a `Move/Resize` batched into `X/Y/Width/Height`+
 `Anchor`) using the bounds/hit-testing only it has (the real layout engines,
-via `kubuno_controls`); **`kubuno-views-ls` performs the actual textual
+via `kubuno_desktop_controls`); **`kubuno-views-ls` performs the actual textual
 splice**, because it — not the designer process — holds the buffer-synced
 `rowan` tree at the exact moment VS asks (`documents.rs`'s full-text sync on
 every `didChange`). If the designer process instead returned raw new-document
@@ -223,8 +223,8 @@ below):
 VisualStudio.Views.csproj` already references `PresentationCore`/
 `PresentationFramework`/`WindowsBase` (WPF's `HwndHost` lives in
 `PresentationFramework`) — the interop path was anticipated, though not yet
-used. Today, `kubuno_controls::host::run_with_options`
-(`kubuno-controls/src/host/mod.rs`) only ever creates a **top-level**
+used. Today, `kubuno_desktop_controls::host::run_with_options`
+(`kubuno-desktop-controls/src/host/mod.rs`) only ever creates a **top-level**
 `CreateWindowExW` window and blocks its thread in its own message loop
 ("Blocks until the window is closed" — `run`'s own doc); `HostOptions` has no
 parent-HWND field. Embedding needs additive work: a `WS_CHILD` creation mode
@@ -241,7 +241,7 @@ over the tool window's client rect — simpler, but z-order/clipping-fragile).
 ## 4. Layout model and per-container drop behavior
 
 `XML_VIEWS.md` §1 and the validator's `COMMON_ATTRIBUTES`
-(`kubuno-views/src/validate.rs`, duplicated for the language server in
+(`kubuno-desktop-views/src/validate.rs`, duplicated for the language server in
 `kubuno-views-ls/src/common_attrs.rs`) already give the WinForms-shaped
 vocabulary: `Dock` (`Top|Bottom|Left|Right|Fill`), `Anchor` (a comma-combination
 of edges), and `X`/`Y`/`Width`/`Height`, all *attached* properties read by the
@@ -273,7 +273,7 @@ designer's drag/drop behavior branches on the parent's layout engine:
   both in an implicit `<Stack>`. Flagged for the phase-4 owner to confirm
   before DSG-9 (§6) implements either.
 - **Split (`<Splitter>`/`<Pane>`).** Not yet a registered component (`XML_
-  VIEWS.md` names it among `kubuno-ui`'s four engines, but only `Card`/`Stack`/
+  VIEWS.md` names it among `kubuno-desktop-ui`'s four engines, but only `Card`/`Stack`/
   `Button`/`Switch`/`TextField` are in `registry/components.rs` today) —
   dragging the splitter itself, once registered, changes a ratio/size
   attribute; a `<Pane>` behaves like `SingleWidget` for drops.
@@ -291,7 +291,7 @@ pick the right cue. This is a small, additive registry field (§6, DSG-1).
 [{name, kind, default, doc}], events: [{name, doc}], children: "None"|
 "SingleWidget"|"List", family}`, where `kind` serializes `PropKind` as
 `"Bool"`/`"F32"`/`"String"`/`{"Enum": ["A", "B", …]}` — a direct mirror of
-`kubuno-views/src/registry/mod.rs`'s Rust types, nothing invented. Two
+`kubuno-desktop-views/src/registry/mod.rs`'s Rust types, nothing invented. Two
 additive fields are needed beyond what `ComponentMeta` carries today: an
 **icon** glyph name (none exists yet; `node.rs`'s `static_icon` table is the
 right precedent for a short curated name list, reused for the toolbox) and
@@ -310,7 +310,7 @@ md`'s "mode de dev choisi = publié" may be a locally-rebuilt, ahead-of-VSIX
 `kubuno-views-ls`. A VSIX-baked JSON snapshot would silently drift from that
 the moment either side changes — exactly the failure mode `XML_VIEWS.md`
 keeps naming and mitigating elsewhere (the registry's own `smoke`-tested link
-to `kubuno-ui`, `common_attrs.rs`'s own note about its hand-copied table).
+to `kubuno-desktop-ui`, `common_attrs.rs`'s own note about its hand-copied table).
 Cached for the language client's session only; the registry cannot change
 without restarting the process that computed it.
 
@@ -326,13 +326,13 @@ a contract that is not just a JSON shape.
 
 | # | Package | Owns | Depends on | Effort | Test strategy |
 |---|---|---|---|---|---|
-| DSG-1 | Registry JSON export + `kubuno/registry`, plus the additive `icon`/`LayoutKind` fields on `ComponentMeta` | `kubuno-views/src/registry/*` (additive fields), new `kubuno-views-ls/src/registry_export.rs` + `server.rs` wiring | none | S | Rust unit/golden-file tests on the JSON shape; no visual check |
-| DSG-2 | `kubuno/applyEdit`, `kubuno/elementAtOffset`, `kubuno/rangeOfElement`; `edit.rs` returning `{range, text}` instead of whole-file text; the element-id scheme | `kubuno-views/src/edit.rs` (additive), new `kubuno-views-ls/src/edit_bridge.rs` + `server.rs` | none (defines the id scheme DSG-6 must match) | M | Rust unit tests, purely textual — CLI-testable, no visual check |
+| DSG-1 | Registry JSON export + `kubuno/registry`, plus the additive `icon`/`LayoutKind` fields on `ComponentMeta` | `kubuno-desktop-views/src/registry/*` (additive fields), new `kubuno-views-ls/src/registry_export.rs` + `server.rs` wiring | none | S | Rust unit/golden-file tests on the JSON shape; no visual check |
+| DSG-2 | `kubuno/applyEdit`, `kubuno/elementAtOffset`, `kubuno/rangeOfElement`; `edit.rs` returning `{range, text}` instead of whole-file text; the element-id scheme | `kubuno-desktop-views/src/edit.rs` (additive), new `kubuno-views-ls/src/edit_bridge.rs` + `server.rs` | none (defines the id scheme DSG-6 must match) | M | Rust unit tests, purely textual — CLI-testable, no visual check |
 | DSG-3 | `IVsEditorFactory` for `.kbview`, split Design\|XML `WindowPane`, XML pane reusing the existing text-editor view | new `src/Desktop/Kubuno.Desktop/Views.Designer/EditorFactory.cs`, `DesignerWindowPane.*` | none (design surface can be a placeholder pane until DSG-7) | M | Manual, experimental instance — **visual check**: opening a `.kbview` shows the split |
 | DSG-4 | Toolbox + Properties/Events WPF tool windows, bound to DSG-1's JSON (a fixture JSON is enough to start) | new WPF views/viewmodels under the Designer project | DSG-1 (schema; can stub) | M | Viewmodel unit tests (PropKind → editor kind); **visual check** for grid rendering |
 | DSG-5 | Buffer-diff/apply plumbing: `{range,newText}` → one `ITextEdit`, compound-action batching for drags | new `Infrastructure/BufferEditApplier.cs`, `DesignerUndoScope.cs` | DSG-2's response shape | S–M | Unit test against a fake/real `ITextBuffer`; manual Ctrl+Z check |
 | DSG-6 | `kubuno-views-designer` crate: promote `view_preview.rs`'s runtime loop out of `examples/`, add `kubuno/setBuffer`, `kubuno/elementAt` hit-testing (needs an id on *every* node, not just `x:Name`'d ones), adorner paint pass | new crate `kubuno-views-designer` | DSG-2 (id scheme) | L | Hit-test math is unit-testable headless (layout is already exercised without a `Canvas` in `node.rs`'s own tests); adorner rendering needs a **visual check** (standalone run + screenshot) |
-| DSG-7 | HwndHost embedding: `WS_CHILD`/parent-HWND mode + parent-driven DPI in `kubuno_controls::host`; C# `HwndHost` subclass doing the spawn/handshake/`SetParent`/focus forwarding | `kubuno-controls/src/host/mod.rs` (additive), new `DesignSurfaceHost.cs` | DSG-6 (can integrate against a placeholder colored window first) | L, **highest risk** | **Visual check mandatory** — this is exactly the class of change that cannot be verified by compiling alone |
+| DSG-7 | HwndHost embedding: `WS_CHILD`/parent-HWND mode + parent-driven DPI in `kubuno_desktop_controls::host`; C# `HwndHost` subclass doing the spawn/handshake/`SetParent`/focus forwarding | `kubuno-desktop-controls/src/host/mod.rs` (additive), new `DesignSurfaceHost.cs` | DSG-6 (can integrate against a placeholder colored window first) | L, **highest risk** | **Visual check mandatory** — this is exactly the class of change that cannot be verified by compiling alone |
 | DSG-8 | Bidirectional selection/caret sync + Document Outline (reusing `symbols.rs` as-is) | `DesignerSelectionSync.cs` | DSG-3, DSG-6, DSG-2 | M | Manual, **visual check** (inherently a UI behavior) |
 | DSG-9 | Drag/drop, snaplines, insertion markers per §4's container kinds; toolbox-drop into the foreign child HWND (likely a Win32 `IDropTarget` on the child window, not WPF's own `DragDrop`, since OLE drag-drop across an `HwndHost` boundary into another process's HWND is untested here) | split across `kubuno-views-designer` (snap/insertion-index math) and `DesignerDragDropSource.cs` | DSG-6, DSG-7 | L | **Visual check mandatory** |
 | DSG-10 | Double-click → handler generation: `kubuno/insertHandler` extending `definition.rs`'s existing handler-location logic with an insert mode; Events-tab double-click wiring | `kubuno-views-ls/src/definition.rs` (extended), `HandlerInsertionCommand.cs` | DSG-2 | M | Rust unit tests for the locate/insert logic; manual check for the VS-side open/insert/caret-jump |
@@ -377,7 +377,7 @@ accelerators** and **Tab-out** (see below).
 
 ### What was built
 
-- **Rust**: `kubuno_controls::host::HostOptions::parent: Option<isize>`
+- **Rust**: `kubuno_desktop_controls::host::HostOptions::parent: Option<isize>`
   (additive; every existing caller builds `HostOptions` through `new()`, which
   defaults it to `None`; the whole workspace still compiles). With a parent the
   host creates `WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE` at
@@ -386,7 +386,7 @@ accelerators** and **Tab-out** (see below).
   "blur" (`Frame::dismiss`; a child never gets `WM_ACTIVATE`), handles
   `WM_DPICHANGED_AFTERPARENT`, and runs a **thread** timer (500 ms) that ends
   the loop when the parent is gone. Example:
-  `kubuno-views/examples/view_embed.rs` (`--parent <hwnd> <file.kbview>`),
+  `kubuno-desktop-views/examples/view_embed.rs` (`--parent <hwnd> <file.kbview>`),
   which also paints a probe line and a "Menu" popup that deliberately
   overflows the child, and traces focus/key/size/DPI messages on stderr.
 - **C#**: `vskubuno/spikes/HwndHostSpike/` (net48 WPF, PMv2 manifest, not in
@@ -410,9 +410,9 @@ accelerators** and **Tab-out** (see below).
 | Tab from WPF into the surface | **Works** with `TabIntoCore` -> `SetFocus(child)`. |
 | Tab out of the surface | **Not possible today**: 6 Tabs inside the child kept the focus there (the view's own focus ring cycles). Needs a `kubuno/tabOut {backward}` notification from the surface -> `MoveFocus(new TraversalRequest(...))` on the WPF side. |
 | Mouse capture | **Works**: press in the child, drag 200 px outside the whole window -> `GUITHREADINFO.hwndCapture` = the child. |
-| Popups (`kubuno_ui` menus/dropdowns) | **Work as owned top-levels, positioned right.** `acquire_popup` passes the child as owner; Windows resolves a child owner to its top-level ancestor, so the popup's owner is **the WPF window in the other process** (z-order follows the host window, hidden/destroyed with it). It is placed via `ClientToScreen(child)` and overflows the child as intended; a click on the part lying outside the child reached the page with correct client-DIP coordinates, and the focus stayed in the child (`WS_EX_NOACTIVATE`). Clicking a WPF element moves the focus out -> `WM_KILLFOCUS` -> menu dismissed. |
+| Popups (`kubuno_desktop_ui` menus/dropdowns) | **Work as owned top-levels, positioned right.** `acquire_popup` passes the child as owner; Windows resolves a child owner to its top-level ancestor, so the popup's owner is **the WPF window in the other process** (z-order follows the host window, hidden/destroyed with it). It is placed via `ClientToScreen(child)` and overflows the child as intended; a click on the part lying outside the child reached the page with correct client-DIP coordinates, and the focus stayed in the child (`WS_EX_NOACTIVATE`). Clicking a WPF element moves the focus out -> `WM_KILLFOCUS` -> menu dismissed. |
 | Resize | **Follows**: container `WM_SIZE` -> `MoveWindow(child)` -> Rust `WM_SIZE` -> swap-chain resize; sizes matched exactly at 3 window sizes. A cross-process `MoveWindow` is a synchronous cross-thread send, so the WPF thread waits for the Rust thread at each step (fine while the surface is responsive; a hung surface would stall WPF layout, so consider `SWP_ASYNCWINDOWPOS`). Visual check: after 4 rapid `SetWindowPos` in a row the final frame is correct (surface fills the container, no grey/black band); flicker *during* a live drag could not be judged from stills. |
-| Visual check (orchestrator, 2026-09-25) | View rendered inside the WPF frame with the probe line (`dpi=168`, `focused=true` after a click). The "Menu" popup opens right under its button, overflows right and bottom out of the window and stays on top; **moving the host window with the popup open, the popup follows** (it stays attached under the button). Its panel is taller than its 8 rows: spike code (`view_embed` sizes the menu to the child's height on purpose, to force an overflow), not `kubuno_ui` popup sizing. Closing the window: both processes gone within 1.5 s. |
+| Visual check (orchestrator, 2026-09-25) | View rendered inside the WPF frame with the probe line (`dpi=168`, `focused=true` after a click). The "Menu" popup opens right under its button, overflows right and bottom out of the window and stays on top; **moving the host window with the popup open, the popup follows** (it stays attached under the button). Its panel is taller than its 8 rows: spike code (`view_embed` sizes the menu to the child's height on purpose, to force an overflow), not `kubuno_desktop_ui` popup sizing. Closing the window: both processes gone within 1.5 s. |
 | Per-monitor DPI v2 | Both processes PMv2 (`GetAwarenessFromDpiAwarenessContext` = 2 for both windows); child DPI = parent DPI = 168. `WM_DPICHANGED_AFTERPARENT` was **not exercised**: all three monitors of the test machine run at the same scale. The host re-reads `GetDpiForWindow` every frame, so a missed notification still converges on the next paint. To verify on a mixed-DPI setup. A parent that is *not* PMv2 (VS 2026 is) would need separate testing. |
 | Child crash | **Host survives** (hard kill of the Rust process: container alive, WPF fine); `StartSurface()` relaunches into the same container. The VSIX should restart it with backoff and show a placeholder while it is down. |
 | Host closes normally | Container destroyed -> child gets `WM_DESTROY` -> Rust exits with code 0 within ~60-90 ms. |
@@ -449,10 +449,10 @@ accelerators** and **Tab-out** (see below).
 ## 8. DSG-2 protocol
 
 Work package DSG-2 (§6) is implemented: `kubuno-views-ls` now also links
-[`kubuno_views::edit`], and answers `kubuno/applyEdit`,
+[`kubuno_desktop_views::edit`], and answers `kubuno/applyEdit`,
 `kubuno/elementAtOffset` and `kubuno/rangeOfElement` alongside its existing
 `textDocument/*` methods, in `src/kubuno-views-ls/src/edit_bridge.rs` (+
-wiring in `server.rs`). `kubuno-views/src/edit.rs` and `src/ast/mod.rs` grew
+wiring in `server.rs`). `kubuno-desktop-views/src/edit.rs` and `src/ast/mod.rs` grew
 the additive surface this bridge is built on. This section documents the
 actual wire shapes, which refine §3's sketch table in a few places — each
 refinement is called out below with why.
@@ -464,12 +464,12 @@ An element's id is the dot-separated path of **child-ordinal indices**
 document root, exactly as §6's cross-cutting note asked for: **independent of
 `x:Name`**. The document's root element is the empty string `""`; its first
 child is `"0"`; that child's second child is `"0.1"`; and so on.
-[`kubuno_views::ast::Element::stable_id`] computes it, and
-[`kubuno_views::ast::Document::resolve_id`] is its exact inverse (`None` for a
+[`kubuno_desktop_views::ast::Element::stable_id`] computes it, and
+[`kubuno_desktop_views::ast::Document::resolve_id`] is its exact inverse (`None` for a
 malformed id, an out-of-range index at any level, or a document with no root
-element — never a panic). Both live in `kubuno_views::ast` rather than in
+element — never a panic). Both live in `kubuno_desktop_views::ast` rather than in
 `kubuno-views-ls` specifically *because* DSG-6 (`kubuno-views-designer`, a
-separate process that also links `kubuno_views` but not `kubuno-views-ls`)
+separate process that also links `kubuno_desktop_views` but not `kubuno-views-ls`)
 needs to compute the identical id from its own copy of the document text and
 agree with the language server on "which element" — the one place, per §6,
 the two packages share a contract that is not just a JSON shape.
@@ -489,7 +489,7 @@ removed/moved/renamed as a designer gesture, a `.kbview` file always having
 exactly one). `kubuno-views-ls`'s `edit_bridge::split_parent` is this one-line
 string operation, not a tree walk.
 
-### `kubuno_views::edit`'s new public surface
+### `kubuno_desktop_views::edit`'s new public surface
 
 Every function in `edit.rs` now returns `Vec<Edit>` (`struct Edit { range:
 TextRange, new_text: String }`) instead of a whole new document string — one
@@ -555,7 +555,7 @@ VS side applies every entry in the list as its own minimal `ITextEdit
 .Replace` (§2), inside the one compound/undo transaction DSG-5 owns for the
 whole gesture. An id that does not resolve (stale, or simply invalid) yields
 `{"edits": []}`, never an error — the same "degrade to no-op" rule
-`kubuno_views::edit` itself uses for an out-of-range index, so a client
+`kubuno_desktop_views::edit` itself uses for an out-of-range index, so a client
 racing its own debounced re-parse against a fresh keystroke never gets a hard
 failure for it. A `uri` with no open document behaves the same way.
 
@@ -590,20 +590,20 @@ or `null` for an id that does not resolve.
 
 ### Testing
 
-`kubuno-views/src/edit.rs` and `src/ast/mod.rs` cover the new functions with
+`kubuno-desktop-views/src/edit.rs` and `src/ast/mod.rs` cover the new functions with
 unit tests (composition of disjoint edits, cross-parent moves, the
 subtree-cycle guard, id ⇄ stable-id round trips, out-of-range/malformed ids).
 `kubuno-views-ls/src/edit_bridge.rs` unit-tests the bridge itself (id
 resolution, no-op degradation, root-element guard). `kubuno-views-ls/tests
 /roundtrip.rs` exercises all three methods over a real in-memory
 `lsp-server` `Connection`, the same harness the crate's existing
-`textDocument/*` round-trip tests use — `cargo test -p kubuno-views-ls`.
+`textDocument/*` round-trip tests use — `cargo test -p kubuno-desktop-views-ls`.
 
 ## 9. DSG-6 protocol
 
 Work package DSG-6 (§6) is implemented, scoped exactly as the orchestrating
-task narrowed it: **inside the existing `kubuno-views` crate** (a new
-`kubuno_views::design` module, plus the additive `PaintCx::design`/
+task narrowed it: **inside the existing `kubuno-desktop-views` crate** (a new
+`kubuno_desktop_views::design` module, plus the additive `PaintCx::design`/
 `Runtime::frame_with_design` wiring `crate::compile::build_node` needs to
 record it) and **`examples/view_embed.rs`**, the same exe DSG-7's spike
 already proved out as the embedded surface `vskubuno`'s `RustDesignSurfaceHost`
@@ -619,7 +619,7 @@ no new `kubuno-views-designer` binary was needed for it to happen).
 
 ### The layout map and hit-testing
 
-`kubuno_views::design::LayoutMap` is a frame-local `Vec<LayoutEntry>` —
+`kubuno_desktop_views::design::LayoutMap` is a frame-local `Vec<LayoutEntry>` —
 `{id, parent_id, bounds, layout}` — rebuilt every frame design mode records
 into. **Every** compiled element is wrapped in a `design::DesignSlot`
 (`crate::compile::build_node`, the single choke point every element — this
@@ -650,13 +650,13 @@ items", §6's own phrasing).
 ### Design mode: input, selection, adorners
 
 `design::DesignController` owns `enabled`/`selected`/`hover` and is
-deliberately **host-agnostic**: it never reads `kubuno_controls::host`'s
+deliberately **host-agnostic**: it never reads `kubuno_desktop_controls::host`'s
 global input state itself (`click_select`/`update_hover` take a plain `x, y`;
 `handle_keys` takes a plain `DesignKeyInput` struct) — `view_embed.rs` is the
 only place that bridges the real host globals (`host::take_key`, one call per
 tracked key) into these host-agnostic shapes, which is what makes every
 selection/nudge/delete code path unit-testable with no live window (see
-`kubuno-views/src/design.rs`'s own tests).
+`kubuno-desktop-views/src/design.rs`'s own tests).
 
 - **User input does not reach widgets.** While design mode is on,
   `view_embed`'s frame closure paints the compiled view through
@@ -668,7 +668,7 @@ selection/nudge/delete code path unit-testable with no live window (see
   "hot" and a button that is never "down" can never start a press, complete a
   click, or take keyboard focus — a `TextField` only starts reading typed
   characters once it has focus, which only a real click ever grants. This
-  needed no change to `kubuno_controls::host` itself (out of DSG-6's scope;
+  needed no change to `kubuno_desktop_controls::host` itself (out of DSG-6's scope;
   concurrent work owns that crate's keyboard-forwarding code) — the REAL
   `Frame` still drives design mode's own click/hover/keyboard handling,
   computed separately in the same frame closure.
@@ -709,7 +709,7 @@ selection/nudge/delete code path unit-testable with no live window (see
 ### Wire protocol
 
 Line-delimited JSON on the surface's own stdin (host → surface) and stdout
-(surface → host) — `kubuno_views::protocol` implements both directions;
+(surface → host) — `kubuno_desktop_views::protocol` implements both directions;
 `vskubuno`'s `RustDesignSurfaceHost.Protocol.cs` (a `partial class` split out
 of `RustDesignSurfaceHost.cs` so it would not collide with concurrent
 keyboard-forwarding work on that file) speaks the C# side, byte-for-byte the
@@ -719,7 +719,7 @@ the plain `[embed] …` trace/log channel `RustDesignSurfaceHost` already
 captured before DSG-6 (`ErrorDataReceived`); the protocol lives on stdin/
 stdout exclusively, never mixed into the trace text.
 
-Host → surface (`kubuno_views::protocol::HostMessage`):
+Host → surface (`kubuno_desktop_views::protocol::HostMessage`):
 
 | `type` | Fields | Meaning |
 |---|---|---|
@@ -728,14 +728,14 @@ Host → surface (`kubuno_views::protocol::HostMessage`):
 | `select` | `id: string \| null` | Host-driven selection (XML pane → Design surface sync, §1); `null` clears it. |
 | `setDesignOptions` | `containerOutlines: bool` (default `true`) | The designer options that change what the surface draws, sent first to every started surface. `containerOutlines` (*Show design outlines*): a faint dashed outline, in the theme's divider colour, around a container that paints nothing of its own (a `Panel` or `Stack` with no `Surface`, `BorderStyle` or background) — like Windows Forms' dotted border around a borderless `Panel`. Controls are never outlined: they look exactly as at run time. |
 
-Surface → host (`kubuno_views::protocol::SurfaceMessage`):
+Surface → host (`kubuno_desktop_views::protocol::SurfaceMessage`):
 
 | `type` | Fields | Meaning |
 |---|---|---|
 | `selectionChanged` | `id: string \| null`, `bounds: {left,top,right,bottom} \| null` | The selection changed (a click, or Esc-to-parent). `bounds` is the newly selected element's painted rect, `null` when nothing is selected or the id has no current layout-map entry. |
 | `editRequest` | `op: EditOp` | Delete or a nudging arrow — `op` is EXACTLY DSG-2's `kubuno/applyEdit` op shape (below), for the host to forward as-is. |
 
-`EditOp` (`kubuno_views::design::EditOp`, tagged on `"kind"`, every field
+`EditOp` (`kubuno_desktop_views::design::EditOp`, tagged on `"kind"`, every field
 `camelCase` on the wire — the identical convention DSG-2's own `kubuno/
 applyEdit` op already uses, §8):
 
@@ -753,9 +753,9 @@ surface → host: {"type":"editRequest","op":{"kind":"removeElement","elementId"
 ```
 
 A malformed or unrecognised line is **never an error** on either side —
-`kubuno_views::protocol::parse_host_message` returns `None`,
+`kubuno_desktop_views::protocol::parse_host_message` returns `None`,
 `DesignSurfaceProtocol.TryParseSelectionChanged`/`TryParseEditRequest` return
-`false` — the same "stale/bogus input, no-op" rule `kubuno_views::edit`
+`false` — the same "stale/bogus input, no-op" rule `kubuno_desktop_views::edit`
 itself already uses (§8): a client racing its own debounced re-parse against
 a fresh keystroke never gets a hard failure for it, and one bad line never
 tears down a whole design surface process.
@@ -783,7 +783,7 @@ tears down a whole design surface process.
   subscriber may touch WPF/VS objects that require it). A line matching
   neither shape is logged and dropped, never thrown.
 - `DesignSurfaceEditOp`/`DesignSurfaceEditOpKind`/
-  `DesignSurfaceEditRequestedEventArgs` — the C# mirror of `kubuno_views::
+  `DesignSurfaceEditRequestedEventArgs` — the C# mirror of `kubuno_desktop_views::
   design::EditOp`, carried by the new `EditRequested` event
   (`EventHandler<DesignSurfaceEditRequestedEventArgs>`).
 
@@ -795,17 +795,17 @@ wiring left for whichever package actually connects the two ends end-to-end
 
 ### Testing
 
-`kubuno-views/src/design.rs` unit-tests the layout map (`hit_test` depth/
+`kubuno-desktop-views/src/design.rs` unit-tests the layout map (`hit_test` depth/
 z-order/degenerate-entry skipping, `parent_id_of`'s three documented cases),
 the adorner geometry (`resize_handles`'s eight compass points, `dashed_outline`'s
 four-edge coverage) with no `Canvas` at all, and `DesignController`'s full
 request-generation surface (click/hover, Esc-to-parent, Delete, arrow nudge
 incl. the `LayoutKind::DockAnchor`-only gate and the Shift step) against
 hand-built `LayoutMap`s and parsed `ast::Document`s — no live window, no
-`kubuno_controls::host` global state. `kubuno-views/src/compile.rs` gained a
+`kubuno_desktop_controls::host` global state. `kubuno-desktop-views/src/compile.rs` gained a
 regression test compiling a `<Panel>` with Anchor/Dock children end to end
 (the one `build_node` call site that does not go through a `Props` helper).
-`kubuno-views/src/protocol.rs` unit-tests every wire shape byte-for-byte
+`kubuno-desktop-views/src/protocol.rs` unit-tests every wire shape byte-for-byte
 (`serde` round trips plus exact-string assertions, so a silent field-name
 drift — confirmed live during this package's own development: `rename_all`
 on an enum does not, on its own, camelCase a struct variant's fields, only
@@ -815,7 +815,7 @@ the identical strings on the C# side (`DesignSurfaceProtocol`, no live
 process/WPF `Dispatcher` needed), so the two sides cannot silently drift from
 each other. `DesignSlot`'s own wrapping — the mechanism, not the geometry —
 is exercised the way `crate::node`'s own tests already establish nothing in
-this crate can avoid: a live paint pass needs a real `kubuno_controls::
+this crate can avoid: a live paint pass needs a real `kubuno_desktop_controls::
 ControlCanvas` (Direct2D/DirectWrite), which no unit test in this crate
 constructs (§6's own "without a Canvas where possible" carve-out) — covered
 instead by the visual check below.
@@ -832,7 +832,7 @@ not possible in this environment.
 ## 10. DSG-9 protocol
 
 Work package DSG-9 (§6) is implemented, scoped exactly as the table asks:
-**split across `kubuno-views`** (`src/design.rs`'s own snap/insertion-index/
+**split across `kubuno-desktop-views`** (`src/design.rs`'s own snap/insertion-index/
 drop-validation math, `src/protocol.rs`'s wire extensions, `examples/
 view_embed.rs`'s wiring) **and a NEW C# file**,
 `Kubuno.Desktop.Designer/DesignSurface/RustDesignSurfaceHost.DragDrop.cs`
@@ -847,7 +847,7 @@ them needed to change for DSG-9's own scope.
 
 `design::DesignController` gained a `drag: Option<DragSession>` state machine,
 driven entirely by the same host-agnostic pattern DSG-6 established
-(`click_select`/`update_hover`/`handle_keys` never read `kubuno_controls::
+(`click_select`/`update_hover`/`handle_keys` never read `kubuno_desktop_controls::
 host` directly — `examples/view_embed.rs` is the only bridge):
 
 - **`DesignController::press(layout, x, y) -> bool`** — a completed press. If
@@ -968,7 +968,7 @@ messages:
 
 ### Wire protocol (extends §9's DSG-6 protocol)
 
-Host → surface (`kubuno_views::protocol::HostMessage`, new variants):
+Host → surface (`kubuno_desktop_views::protocol::HostMessage`, new variants):
 
 | `type` | Fields | Meaning |
 |---|---|---|
@@ -977,7 +977,7 @@ Host → surface (`kubuno_views::protocol::HostMessage`, new variants):
 | `drop` | `x: number, y: number` | The toolbox drag was released at `(x, y)`. |
 | `dragLeave` | *(none)* | The toolbox drag left the surface's window. |
 
-Surface → host (`kubuno_views::protocol::SurfaceMessage`, new variants):
+Surface → host (`kubuno_desktop_views::protocol::SurfaceMessage`, new variants):
 
 | `type` | Fields | Meaning |
 |---|---|---|
@@ -1058,7 +1058,7 @@ two ends end-to-end (the same carve-out DSG-6's own doc already states for
 
 ### Testing
 
-`kubuno-views/src/design.rs` unit-tests the pure geometry (`handle_at`'s
+`kubuno-desktop-views/src/design.rs` unit-tests the pure geometry (`handle_at`'s
 eight compass points, `move_rect`/`resize_rect` incl. the
 `MIN_ELEMENT_SIZE` clamp, `snap_bounds`'s per-axis matching and its own
 threshold cutoff, `flow_axis`/`flow_insertion_index`/`flow_insertion_marker`'s
@@ -1073,11 +1073,11 @@ no-op) against hand-built `LayoutMap`s and parsed `ast::Document`s; and
 skeleton, a leaf hit routing to its own parent, a gated child rejected
 outside its required parent, an already-full `SingleWidget` rejected, an
 unknown component rejected, `dragLeave` clearing the drag) — 50 tests total
-in this file, all passing, no live window anywhere. `kubuno-views/src/protocol
+in this file, all passing, no live window anywhere. `kubuno-desktop-views/src/protocol
 .rs` unit-tests every new wire shape byte-for-byte (the batched
 `editRequests`, the `moveElement`/`insertChild` single `editRequest`,
 `dropTargetChanged` with and without a target) the same way §9's own tests
-already do. `cargo clippy -p kubuno-views --all-targets -- -D warnings`
+already do. `cargo clippy -p kubuno-desktop-views --all-targets -- -D warnings`
 passes clean; zero `unwrap()`/`expect()` outside `#[cfg(test)]` anywhere
 in the new code.
 
@@ -1131,7 +1131,7 @@ this specific bug (both otherwise off-limits to this package):
   `Process.StandardInput.BaseStream` instead of calling `StreamWriter
   .WriteLine` — bypassing the auto-created writer's preamble logic entirely,
   on the first write and every other one.
-- **Defence in depth, on the Rust side.** `kubuno_views::protocol
+- **Defence in depth, on the Rust side.** `kubuno_desktop_views::protocol
   ::parse_host_message` now strips a leading `\u{feff}` before parsing, so a
   BOM arriving from ANY host (not just this one, and not just on the first
   line) is silently tolerated rather than silently dropped as an
@@ -1142,7 +1142,7 @@ this specific bug (both otherwise off-limits to this package):
 exact `UTF8Encoding(encoderShouldEmitUTF8Identifier: false)` construction
 used at the write site (the encoding CONFIGURATION, not a live process) so a
 future edit that drops the `false` fails a test instead of silently
-reintroducing the bug; `kubuno-views/src/protocol.rs` gained two tests for
+reintroducing the bug; `kubuno-desktop-views/src/protocol.rs` gained two tests for
 the BOM-stripping itself (with and without surrounding whitespace). Re-run
 after the fix, the SAME live trace (this time through the real
 `HwndHostSpike.exe` → `RustDesignSurfaceHost` → `view_embed.exe` path, not a
@@ -1311,7 +1311,7 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   `ToolboxController` resolves the drop and emits `insertChild`, which the pane applies (one undo unit)
   and selects. The drop effect follows the validity the surface computed for the previous position.
   The host no longer needs to relay a toolbox drag at all (`NotifyDrag*` stay for other hosts).
-- **Layout of an inserted element** - `kubuno_views::edit::insert_child` inserts verbatim;
+- **Layout of an inserted element** - `kubuno_desktop_views::edit::insert_child` inserts verbatim;
   `Editing/InsertChildFormatter` gives the new element its own, properly indented line when the
   insertion point starts a blank-prefixed line (the usual one-element-per-line layout).
 
@@ -1378,7 +1378,7 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   (`RustDesignSurfaceHost.UnhandledSurfaceKey`). (The filter-keys service is now taken from the global
   provider - the package's own `QueryService` did not hand it out, so no key ever reached VS before.)
 
-- **Selection on the surface** (kubuno-views `design::paint_adorners`): the selected element gets a frame
+- **Selection on the surface** (kubuno-desktop-views `design::paint_adorners`): the selected element gets a frame
   3 DIP outside its bounds (visible on an accent-coloured Button) with WinForms-style grab handles - filled
   when it can be resized there (an Anchor child), hollow otherwise.
 
@@ -1424,7 +1424,7 @@ mouse buttons are otherwise dropped).
 Product-owner requests (2026-09-28): a resizable design canvas like the Windows Forms designer's form,
 native right-click menus on the design surface, and Dock/Anchor that really behave like WinForms.
 
-### Design canvas (`kubuno_views::design`, `examples/view_embed.rs`)
+### Design canvas (`kubuno_desktop_views::design`, `examples/view_embed.rs`)
 
 - The view is painted inside a Kubuno window frame (`FrameLayout`: title bar `FRAME_TITLE_HEIGHT` with the
   root's literal `Title`, inert caption buttons) at its **design size**, `CANVAS_MARGIN` from the top-left
@@ -1450,7 +1450,7 @@ native right-click menus on the design surface, and Dock/Anchor that really beha
 
 ### Context menus and keyboard commands
 
-Surface → host (new, `kubuno_views::protocol::SurfaceMessage`):
+Surface → host (new, `kubuno_desktop_views::protocol::SurfaceMessage`):
 
 | `type` | Fields | Meaning |
 |---|---|---|
@@ -1473,7 +1473,7 @@ target but through the ordinary command chain - the active pane - so `DesignerWi
 in its container (painted on top), "Send to Back" first. Every action is one `kubuno/applyEdit` (or one
 batch) = one undo unit; a refused gesture writes a status-bar message.
 
-New `kubuno/applyEdit` ops (`kubuno-views-ls`, `kubuno_views::edit`): `insertFragment {parentId, index,
+New `kubuno/applyEdit` ops (`kubuno-views-ls`, `kubuno_desktop_views::edit`): `insertFragment {parentId, index,
 xml}` (own indented line, fragment re-indented, colliding `x:Name`s renamed `name2`...), `wrapElement
 {elementId, wrapper}`, `unwrapElement {elementId}`. `move_child` now carries the moved element's leading
 whitespace, so a reorder keeps one element per line. The clipboard carries the element's XML
@@ -1512,7 +1512,7 @@ Product-owner request (2026-09-28): "a selection rectangle (which also allows mu
 Windows Forms with the mouse" - plus WinForms' click modifiers, group operations, the Layout toolbar /
 Format menu, and the Properties window on several objects.
 
-### Selection model (`kubuno_views::design`)
+### Selection model (`kubuno_desktop_views::design`)
 
 - `Selection`: the selected stable ids in selection order plus the **primary** selection (the last
   clicked; the reference of Align / Make Same Size, the element the XML view, the Outline and the
@@ -1633,7 +1633,7 @@ inserted in order, each on its own line, names made unique across the whole frag
 
 ### Testing
 
-Rust (`kubuno-views`, 394 tests): the selection model (toggle/add/primary/root exclusivity,
+Rust (`kubuno-desktop-views`, 394 tests): the selection model (toggle/add/primary/root exclusivity,
 `top_level_ids`), `marquee_hits`, marquee press/drag/release incl. Ctrl/Shift and Esc, a nested
 container marqueed until selected then dragged, group move (with snapping on the group bounds), group
 resize (incl. Shift on a handle), whole-DIP rounding, Ctrl+A, multi nudge/delete, every `format_rects`
@@ -1665,10 +1665,10 @@ nothing, whereas a new WinForms `Form` is an absolute surface where Anchor works
   have a `<Panel DesignWidth="800" DesignHeight="450">` root (WinForms' new-form size); each child has
   `X`/`Y`/`Width`/`Height` and an `Anchor` (the Status field `Top, Left, Right`, the button `Top, Right`).
   Users' existing views are never rewritten.
-- **Runtime window** - `kubuno_views::design::declared_design_size` (the root's literal `Width`/`Height`
+- **Runtime window** - `kubuno_desktop_views::design::declared_design_size` (the root's literal `Width`/`Height`
   or `DesignWidth`/`DesignHeight`, `None` when neither axis is declared) is kept by `compile` and read
   with `Runtime::design_size`. The template's `main.rs` opens the window with it through
-  `kubuno_controls::host::HostOptions::client_size` (new: `width`×`height` is the page area below the
+  `kubuno_desktop_controls::host::HostOptions::client_size` (new: `width`×`height` is the page area below the
   host's caption; the window is grown by the resize frame `WM_NCCALCSIZE` keeps plus the 34-DIP Kubuno
   caption, or by `AdjustWindowRectExForDpi` under the system chrome) and paints the view over the whole
   page area, so the root Panel's anchors (reference = the design size, §12) follow every window resize.
@@ -1685,22 +1685,22 @@ nothing, whereas a new WinForms `Form` is an absolute surface where Anchor works
   SameAnchor`, so `Left, Top` is not bold); a typed value is normalized like WinForms' enum converter
   (`LayoutAttributeText.NormalizeAnchor`: `right,bottom` → `Bottom, Right`, anything else refused).
 
-## 15. The design surface uses the project's own `kubuno_ui` build
+## 15. The design surface uses the project's own `kubuno_desktop_ui` build
 
-Product-owner decision (2026-09-29): the designer must render with exactly the same `kubuno_ui` build as the
+Product-owner decision (2026-09-29): the designer must render with exactly the same `kubuno_desktop_ui` build as the
 project it edits - the project's Kubuno controls and styles visible immediately (prerequisite for EVENTS.md
 EVT-7, custom controls in the designer). Implemented as below; the surface bundled in the VSIX
 (`tools\surface\view_embed.exe`) is only the fallback. Since 2026-10-03 everything is linked statically
 (section 16): the design build produces ONE self-contained exe that statically links the project's own
-`kubuno_ui`/`kubuno_views`/`kubuno_controls` rlibs and the project's crate.
+`kubuno_desktop_ui`/`kubuno_desktop_views`/`kubuno_desktop_controls` rlibs and the project's crate.
 
 ### Why not `cargo build --example` or a surface crate
 
 Anything cargo builds into the project's target directory with a different feature set or lock file builds
-other variants of the crates than the ones the project's application links (and, while `kubuno-ui` was a
+other variants of the crates than the ones the project's application links (and, while `kubuno-desktop-ui` was a
 dylib, overwrote its unhashed `deps\kubuno_ui.dll` - the E0463 lesson of docs/RSPROJ.md). Both obvious designs
 do exactly that:
-- `cargo build -p kubuno-views --example view_embed` against the project's manifest: the dev-dependencies
+- `cargo build -p kubuno-desktop-views --example view_embed` against the project's manifest: the dev-dependencies
   of a non-member package are not even resolved, and building an example of it activates other features;
 - a `kubuno-design-surface` crate added to the project's graph (or a shadow workspace next to it): its
   dependencies unify features differently, and a user's own `[dependencies]` would have to be mirrored
@@ -1714,12 +1714,12 @@ do exactly that:
    `CARGO_TARGET_DIR` and message format, read from the `.rsproj`'s evaluated properties through
    `IVsBuildPropertyStorage` for the active configuration). Right after a Visual Studio build it is a
    no-op (0.5 s); it never builds anything differently. Its `compiler-artifact` messages give the exact
-   artifacts of the graph (`DesignSurfaceInputs`): the `kubuno_ui`, `kubuno_views` and `kubuno_controls`
-   rlibs (the right hash: a `deps` folder can hold several), and `kubuno-views/examples/view_embed.rs` of
-   that very `kubuno-views` (`target.src_path`) - the surface source always matches the `kubuno_views` API it
+   artifacts of the graph (`DesignSurfaceInputs`): the `kubuno_desktop_ui`, `kubuno_desktop_views` and `kubuno_desktop_controls`
+   rlibs (the right hash: a `deps` folder can hold several), and `kubuno-desktop-views/examples/view_embed.rs` of
+   that very `kubuno-desktop-views` (`target.src_path`) - the surface source always matches the `kubuno_desktop_views` API it
    is compiled against. Its `build-script-executed` messages give the native library search paths of the
    graph (`cargo:rustc-link-search`), which the surface's link needs too. A failed build is tolerated when
-   those inputs were built (e.g. the application's exe locked by a running instance). A `kubuno_ui` still
+   those inputs were built (e.g. the application's exe locked by a running instance). A `kubuno_desktop_ui` still
    built as a dylib (a desktop checkout older than 2026-10-03) makes the project *NotApplicable*, with a
    message asking to update the checkout.
 2. **`rustc` directly** (`RustcArgumentsFor`): `view_embed.rs` as a bin, `--extern` the three `kubuno_*`
@@ -1730,7 +1730,7 @@ do exactly that:
    in the project's target directory is built or overwritten. ~1 s plus the link. The surface uses **no
    crate and no `windows` feature the project graph lacks**: `view_embed.rs` declares its few Win32/OLE calls
    itself (`mod win32`) and implements `IDropTarget` over a hand-written vtable (`mod ole_drop`), and
-   `kubuno-views` has no dev-dependencies.
+   `kubuno-desktop-views` has no dev-dependencies.
 3. **Its own folder**: `<target dir>\kubuno-design\<profile>\<key>\` holds the exe (with its PDB and the
    exported `registry.json`) and nothing else - no DLL to copy. A folder of its own, outside
    `<target dir>\<profile>`, so a running surface never holds a file the project's next build or the SDK's
@@ -1744,8 +1744,8 @@ do exactly that:
 - `KbviewEditorFactory` passes the document's hierarchy/item id down to `IDesignSurfaceHostFactory.Create
   (DesignSurfaceDocument)`. The VSIX's `ProjectDesignSurfaceRuntimeProvider` gives every pane of one
   `.rsproj` a shared `IDesignSurfaceRuntimeSource` (a lease, released with the pane): *Project* (the design
-  build's exe), or the bundled exe with *NotBuilt* (no `kubuno_ui` rlib in the profile's `deps` folder yet),
-  *Building*, *Failed* or *NotApplicable* (no `.rsproj`, e.g. Open Folder, or no `kubuno-views` in it).
+  build's exe), or the bundled exe with *NotBuilt* (no `kubuno_desktop_ui` rlib in the profile's `deps` folder yet),
+  *Building*, *Failed* or *NotApplicable* (no `.rsproj`, e.g. Open Folder, or no `kubuno-desktop-views` in it).
 - Triggers: opening a designer (reuse at once, else a design build when the project is built); every
   `IVsUpdateSolutionEvents2.UpdateProjectCfg_Done` of that project (build, rebuild, clean - a clean makes it
   *NotBuilt*); `OnActiveProjectCfgChange` (Debug/Release switch re-reads the properties). One design build
@@ -1755,7 +1755,7 @@ do exactly that:
   `selectionChanged`/`select`/`selectMany`, as `selectMany` for a multi-selection). Late stdout lines and
   the `Exited` event of the replaced process are ignored (`sender != _surface`).
 - **Info bar** (`DesignerSplitView`, VS info colours): shown in Design/Split mode unless the state is
-  *Project* - "Aperçu : runtime intégré — générez le projet pour utiliser sa propre kubuno_ui." + **Générer**
+  *Project* - "Aperçu : runtime intégré — générez le projet pour utiliser sa propre kubuno_desktop_ui." + **Générer**
   (`IVsSolutionBuildManager.StartSimpleUpdateProjectConfiguration`, a normal build whose completion runs the
   design build), "Aperçu : compilation de l'aperçu…" + **Annuler**, failure (+ detail) + **Générer**, or the
   not-applicable text. Progress and errors (cargo stderr, rustc output) go to the *Kubuno* output pane.
@@ -1775,17 +1775,17 @@ there is no DLL left to mismatch.
 
 A new *Kubuno Desktop Application* (`DsurfApp`, never built): the designer opened on the bundled runtime
 with the bar; **Générer** built the project (53 s) and 2 s later the preview restarted on the design build's
-`kubuno-design-surface.exe`, bar gone. With `kubuno_ui::buttons::RADIUS` changed to 18 and the project
+`kubuno-design-surface.exe`, bar gone. With `kubuno_desktop_ui::buttons::RADIUS` changed to 18 and the project
 rebuilt, the preview swapped to a new folder with the selected button still selected (`select Some("1")`
 re-sent). The static design build was verified again on 2026-10-03 (CHANGELOG).
 
 **Known limitation**: the SDK's `CoreCompile` incremental gate only lists the project's own sources, so after
-editing a path dependency's sources (e.g. `kubuno_ui` in the desktop checkout) a plain *Build* is considered
+editing a path dependency's sources (e.g. `kubuno_desktop_ui` in the desktop checkout) a plain *Build* is considered
 up to date - use *Rebuild* (or `cargo build`, then any build) to pick the change up.
 
 ## 16. Static linking: no shared Rust DLL
 
-Product-owner decision (2026-10-03): `kubuno-ui` is an ordinary Rust library (rlib) and **every Kubuno
+Product-owner decision (2026-10-03): `kubuno-desktop-ui` is an ordinary Rust library (rlib) and **every Kubuno
 desktop program links it, and Rust's `std`, statically** - the apps, the tools the VSIX ships
 (`kubuno-views-ls.exe`, `kubuno-data-tool.exe`, `kubuno-resources-tool.exe`, `view_embed.exe`) and the
 designer's surface. An exe runs from a folder that holds only itself.
@@ -1795,10 +1795,10 @@ dylib has no stable ABI, so a shared `kubuno_ui` DLL would tie every app to one 
 be shared between them. Kubuno Desktop (the shell) stays mandatory on every PC, but as a **service**
 dependency - the account/token broker over its named pipe, the sync, the launcher - never as a binary one.
 
-What it replaced (2026-09-30 to 2026-10-02): `kubuno-ui` was `crate-type = ["dylib"]`, the desktop workspace
+What it replaced (2026-09-30 to 2026-10-02): `kubuno-desktop-ui` was `crate-type = ["dylib"]`, the desktop workspace
 was linked with `-C prefer-dynamic`, and every build of the DLL was named after itself
-(`kubuno_ui-<hash>.dll`, through a link shim in `kubuno-ui`'s `build.rs`) so that a program never loaded
-another build. The shim, `kubuno_ui::library`, `tools/stage-runtime.ps1`, the DLL shipping of the MSIX
+(`kubuno_ui-<hash>.dll`, through a link shim in `kubuno-desktop-ui`'s `build.rs`) so that a program never loaded
+another build. The shim, `kubuno_desktop_ui::library`, `tools/stage-runtime.ps1`, the DLL shipping of the MSIX
 script and of the VSIX, `KubunoUiLibrary` (import-table reader), the DLL copy and SHA-256 handshake of the
 design build and the DLL folders on the designer's PATH are all gone.
 
@@ -1812,7 +1812,7 @@ Consequences:
   still prepend (profile folder, `deps`, the toolchain's library folder - `RustDebugEnvironment`) are the
   ones `cargo run`/`cargo test` add, kept for any Rust program built with `-C prefer-dynamic`.
 - **Debugging**: the framework's code is in the program's own PDB; Just My Code treats it as external code by
-  function name (`Kubuno.Framework.natjmc`: `kubuno_ui::*`, `kubuno_views::*`, ...), no longer by module.
+  function name (`Kubuno.Framework.natjmc`: `kubuno_desktop_ui::*`, `kubuno_desktop_views::*`, ...), no longer by module.
 - **Guards**: the VSIX build refuses a tool exe that still imports a `kubuno_ui`/`std-*.dll`
   (`KubunoRustDllImport` in `Kubuno.VisualStudio.csproj`), and so does the desktop repo's
   `packaging/package-msix.ps1` and the templates test (`tools/test-templates.ps1`).
@@ -1836,7 +1836,7 @@ surface does now:
 | The surface process restarting (crash, hot swap) | blank container | the last preview (a snapshot) with a band « Redémarrage de l'aperçu… » |
 | Nothing at all to show (no element) | blank page | the empty frame at the view's design size, a sentence, and the error list |
 
-### Tolerant compilation (`kubuno_views::tolerant`)
+### Tolerant compilation (`kubuno_desktop_views::tolerant`)
 
 `compile::compile` stays a gate (an application must not run a broken view). The designer calls
 `Runtime::reload_for_design`, which runs `tolerant::compile_tolerant`:
@@ -1888,7 +1888,7 @@ registry knows but the preview's runtime does not. A click on a warning marker s
   « L'aperçu s'est arrêté de façon inattendue à plusieurs reprises » with « Relancer »
   (`IDesignSurfaceStatusAware.Restart`).
 - **Language**: Visual Studio passes its UI language to the language server and the surface
-  (`KUBUNO_UI_LANG=fr|en`); `kubuno_views::messages::localize` translates the parser's, validator's,
+  (`KUBUNO_UI_LANG=fr|en`); `kubuno_desktop_views::messages::localize` translates the parser's, validator's,
   builders' and value grammars' messages (a template table, identifiers kept), for the Error List and the banner.
 - **Suggestions**: an unknown element or attribute close to a known one (edit distance ≤ a third of the name)
   gets « vouliez-vous écrire `X` ? »; a XAML-style `Binding="Name"` suggests `Text="{Binding …}"`. The language
@@ -1908,11 +1908,11 @@ code-behind with a scanner (no build; unsaved editors win through `openFiles`):
 
 | Level | Where it comes from | Members |
 |---|---|---|
-| `context` (the view's data context) | the code-behind is the sibling `.rs` that names the view (`#[kubuno::view("x.kbview")]`, `#[user_control(view = "x.kbcontrol")]`), else the one named like the view | a form class's `#[bind]` fields (PascalCase, or `#[bind("Path")]`) and its `#[data_context]` type's `impl ViewModel` arms (anywhere in the package); a user control's `#[property]` fields (bindable ones first); a hand-written `impl ViewModel`'s `fn get` arms, with the shape of the `Value::…` each arm builds |
+| `context` (the view's data context) | the code-behind is the sibling `.rs` that names the view (`#[kubuno_desktop::view("x.kbview")]`, `#[user_control(view = "x.kbcontrol")]`), else the one named like the view | a form class's `#[bind]` fields (PascalCase, or `#[bind("Path")]`) and its `#[data_context]` type's `impl ViewModel` arms (anywhere in the package); a user control's `#[property]` fields (bindable ones first); a hand-written `impl ViewModel`'s `fn get` arms, with the shape of the `Value::…` each arm builds |
 | `item` (the row of a template) | the element whose `ItemsSource` holds the element (a `Repeater`'s item, a `DataTable`'s `Column`) | the keys of its `d:ItemsSource` sample file, the columns of a binding source it names, the code-behind's `Row::new().with("Key", Value::…)` chain that best matches what the template binds |
 | `components` | the view's named `BindingSource` (columns from its `TableAdapter`'s `SelectCommand`, plus `Position`, `Count`, `PositionText`, `HasChanges`, `IsEditing`, `CanMovePrevious`, `CanMoveNext`), `ErrorProvider` (`HasErrors`, `Summary`), `DbConnection` (`State`) | written `{Binding Source=name, Path=member}` |
 | `resources` | the package's `.kbres` keys | written `{Res key}` |
-| `converters` | `kubuno_views::binding::BUILTIN_CONVERTERS` and the package's `#[value_converter]` / `register_converter("…")` | |
+| `converters` | `kubuno_desktop_views::binding::BUILTIN_CONVERTERS` and the package's `#[value_converter]` / `register_converter("…")` | |
 
 Each member carries its name, path, the expression that binds it, its Rust type, its shape (`Bool`, `Number`, `Text`,
 `List`, `Object`, `Any`), whether it can be written (a two-way binding of `Count` writes nothing), its documentation
@@ -1924,7 +1924,7 @@ checked.
 ### Diagnostics, completion, hover, F12, rename (`binding_lsp.rs`)
 
 - Warnings (source `kubuno-bindings`): an unknown key (« did you mean `Mode` ») or `Mode` / `UpdateSourceTrigger`
-  value (`kubuno_views::binding::parse_binding_report`), an unknown converter, an unknown path or data component, a
+  value (`kubuno_desktop_views::binding::parse_binding_report`), an unknown converter, an unknown path or data component, a
   member whose shape does not fit the property (`Items` in a `Text`: « Converter=Count gives its size »; text into a
   boolean or a number is information only: it shows when it parses), a two-way binding of a read-only member.
 - **Rename**: after a member was renamed in Rust (rust-analyzer's F2 renames the field, not the XML), the unknown path
@@ -1938,7 +1938,7 @@ checked.
 - Hover on a path: the member's type, `read-only`, its documentation. F12 on a path, `Source=` or `Converter=`: the
   Rust field / property / arm, the sample file's or the row chain's key, the component's `x:Name`, the converter.
 - `kubuno/bindingPreview { expression, value, shape, want }` → `{ text, note }`: a sample value through the binding's
-  converter and format, computed by `kubuno_views` itself (a project converter is not linked in the server: the note says
+  converter and format, computed by `kubuno_desktop_views` itself (a project converter is not linked in the server: the note says
   the sample is unconverted). `kubuno/bindingDefinition { uri, elementId, attribute }`: F12 from the Properties window.
 
 ### Properties window (`Designer/Bindings`)
@@ -2001,7 +2001,7 @@ empty space it adds a label and a bound control (`BindingDropPlanner`).
 
 ### Tests
 
-Rust: `kubuno-views` `binding::tests` (grammar, report, converters, fallback, modes, triggers), `kubuno-views-ls`
+Rust: `kubuno-desktop-views` `binding::tests` (grammar, report, converters, fallback, modes, triggers), `kubuno-views-ls`
 `binding_sources::tests` and `binding_lsp::tests` (a package on disk: schema, diagnostics, quick fix, completion,
 definition, hover, preview). C#: `Designer/Bindings/BindingModelTests` (markup, picker, dialog edits and their undo
 unit, rows, « (DataBindings) », drops, the server's answer) and `BindingLanguageServerTests` (a pick and the dialog's
@@ -2042,7 +2042,7 @@ remaining suspect is therefore the Visual Studio side of the gesture; a live che
 
 ## 20. The title bar's regions and standard items (as built 2026-10-02)
 
-Described in [SHELL-CONTROLS.md](SHELL-CONTROLS.md) §5. On the surface (`kubuno_views::design`, `view_embed.rs`):
+Described in [SHELL-CONTROLS.md](SHELL-CONTROLS.md) §5. On the surface (`kubuno_desktop_views::design`, `view_embed.rs`):
 
 - **Drop zones**: while a Toolbox control is dragged, `ToolboxController::band_zones` gives the band's three zones
   (`band_drop_zones`: the band between the icon and the caption buttons in thirds, mirrored for `RightToLeftLayout`),

@@ -41,7 +41,7 @@ namespace Kubuno.Views.Designer.PropertyBrowser
             ("Height", PropKind.F32),
         };
 
-        /// <summary><c>kubuno_views::registry::DESIGN_TIME_ATTRIBUTES</c>: the view's canvas size, root element only, ignored at runtime.</summary>
+        /// <summary><c>kubuno_desktop_views::registry::DESIGN_TIME_ATTRIBUTES</c>: the view's canvas size, root element only, ignored at runtime.</summary>
         private static readonly string[] DesignTimeAttributes = { "DesignWidth", "DesignHeight" };
 
         private readonly IKbviewElementHost _host;

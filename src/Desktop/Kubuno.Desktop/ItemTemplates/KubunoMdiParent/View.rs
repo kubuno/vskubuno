@@ -1,9 +1,9 @@
 //! The code of `$fileinputname$.kbview`, an MDI parent form: `new_document_click` opens a document
 //! inside it (replace the plain `Form` with your own MDI child view, "Add > Kubuno MDI Child Form").
 
-use kubuno::prelude::*;
+use kubuno_desktop::prelude::*;
 
-#[kubuno::view("$fileinputname$.kbview")]
+#[kubuno_desktop::view("$fileinputname$.kbview")]
 #[derive(Default)]
 pub struct $classname$ {}
 
@@ -34,6 +34,6 @@ impl $classname$ {
     }
 
     fn $modulename$_mdi_child_activate(&mut self, _sender: &Form, _e: &EventArgs) {
-        kubuno::tracing::info!("active document: {:?}", self.form().active_mdi_child().map(|f| f.get_text()));
+        kubuno_desktop::tracing::info!("active document: {:?}", self.form().active_mdi_child().map(|f| f.get_text()));
     }
 }

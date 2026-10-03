@@ -29,7 +29,7 @@ namespace Kubuno.Views.Tests.Designer.Bindings
 
         private const string View = "<!-- The main window. -->\n<Form x:Class=\"MainForm\" Text=\"{Binding Title}\" Width=\"400\" Height=\"300\">\n  <Label x:Name=\"status\" Text=\"{Binding Statut}\" X=\"8\" Y=\"8\" Width=\"200\" Height=\"24\"/>\n</Form>\n";
 
-        private const string Code = "use kubuno::prelude::*;\n\n#[kubuno::view(\"main_form.kbview\")]\npub struct MainForm {\n    /// The window's title.\n    #[bind]\n    title: String,\n    #[bind]\n    status_text: String,\n    #[bind]\n    total: f64,\n}\n";
+        private const string Code = "use kubuno_desktop::prelude::*;\n\n#[kubuno_desktop::view(\"main_form.kbview\")]\npub struct MainForm {\n    /// The window's title.\n    #[bind]\n    title: String,\n    #[bind]\n    status_text: String,\n    #[bind]\n    total: f64,\n}\n";
 
         [DllImport("kernel32.dll")]
         private static extern uint SetErrorMode(uint mode);

@@ -8,7 +8,7 @@ namespace Kubuno.Views.Logic.Resources
 {
     /// <summary>
     /// Culture names of satellite files, generated Rust names and the <c>{Res …}</c> markup - the same rules as the
-    /// Rust crates (<c>kubuno_resources_model::{culture, names}</c>, <c>kubuno_views::resources</c>).
+    /// Rust crates (<c>kubuno_desktop_resources_model::{culture, names}</c>, <c>kubuno_desktop_views::resources</c>).
     /// </summary>
     public static class ResourceNames
     {

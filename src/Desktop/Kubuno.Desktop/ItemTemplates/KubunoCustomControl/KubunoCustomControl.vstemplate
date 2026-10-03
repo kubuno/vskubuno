@@ -4,14 +4,14 @@
      (PascalCase) after the entered name (the file keeps it) and declares its module in the crate root. -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Custom Control (Kubuno Core Desktop)</Name>
+    <Name>Kubuno Custom Control (Kubuno Desktop)</Name>
     <Description>A control drawn by its own on_paint (WinForms: a class deriving from Control that overrides OnPaint), usable as an element of the project's views and listed in the Toolbox after a build.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoCustomControl</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
-    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>11</SortOrder>
     <DefaultName>CustomControl.rs</DefaultName>

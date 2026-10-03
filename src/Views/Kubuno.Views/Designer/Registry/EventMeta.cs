@@ -5,8 +5,8 @@ using System.Linq;
 namespace Kubuno.Views.Designer.Registry
 {
     /// <summary>
-    /// Mirrors one entry of <c>kubuno_views::registry::ComponentMeta.events</c> as exported
-    /// (<c>kubuno-views/src/registry/export.rs</c>'s <c>EventJson</c>; docs/EVENTS.md §5.1, EVT-3).
+    /// Mirrors one entry of <c>kubuno_desktop_views::registry::ComponentMeta.events</c> as exported
+    /// (<c>kubuno-desktop-views/src/registry/export.rs</c>'s <c>EventJson</c>; docs/EVENTS.md §5.1, EVT-3).
     /// <see cref="Name"/> is the FULL <c>.kbview</c> attribute name - <c>"OnClick"</c>, not a bare
     /// <c>"Click"</c> (that is <see cref="DisplayName"/>) - and every consumer reads it as-is: do not
     /// re-prepend <c>"On"</c> anywhere. An element may still carry an older attribute name for the same

@@ -97,7 +97,7 @@ namespace Kubuno.Web.Commands
                 preselected.Add(start.Name);
             }
 
-            var dialog = new RepositoryPickerDialog(parent, repositories.Select(repository => (repository.Name, repository.Kind == WebRepositoryKind.Core ? "Kubuno Core Web (the server)" : "module " + repository.Id, preselected.Contains(repository.Name))).ToList());
+            var dialog = new RepositoryPickerDialog(parent, repositories.Select(repository => (repository.Name, repository.Kind == WebRepositoryKind.Core ? "Kubuno Core (the server)" : "module " + repository.Id, preselected.Contains(repository.Name))).ToList());
             if (dialog.ShowModal() != true)
             {
                 return;

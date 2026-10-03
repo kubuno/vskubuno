@@ -31,7 +31,7 @@ namespace Kubuno.Views.Logic.Resources
 
     /// <summary>
     /// One entry of a <c>.kbres</c> file. Immutable; the editor model replaces entries. Mirrors
-    /// <c>kubuno_resources_model::format::Entry</c> (desktop: src/crates/kubuno-resources-model).
+    /// <c>kubuno_desktop_resources_model::format::Entry</c> (desktop: src/crates/kubuno-desktop-resources-model).
     /// </summary>
     public sealed class ResourceEntry
     {
@@ -113,7 +113,7 @@ namespace Kubuno.Views.Logic.Resources
 
     /// <summary>
     /// A <c>.kbres</c> resource file (docs/RESOURCES.md): reading (lenient, with diagnostics) and the canonical writing,
-    /// byte-for-byte the same as the Rust writer (<c>kubuno_resources_model::ResourceFile::to_text</c>) so that a file
+    /// byte-for-byte the same as the Rust writer (<c>kubuno_desktop_resources_model::ResourceFile::to_text</c>) so that a file
     /// saved by Visual Studio and one written by the conversion tool never differ in form.
     /// </summary>
     public sealed class KbresFile

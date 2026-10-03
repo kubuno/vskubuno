@@ -25,9 +25,9 @@ namespace Kubuno.Desktop.Tests.DesignSurface
 
         private static CargoArtifact[] Artifacts() => new[]
         {
-            Artifact("ui", "kubuno_ui", "lib", Deps + @"\libkubuno_ui-1b.rlib", Deps + @"\libkubuno_ui-1b.rmeta"),
-            Artifact("views", "kubuno_views", "lib", Deps + @"\libkubuno_views-8c.rlib", Deps + @"\libkubuno_views-8c.rmeta"),
-            Artifact("controls", "kubuno_controls", "lib", Deps + @"\libkubuno_controls-6d.rlib"),
+            Artifact("ui", "kubuno_desktop_ui", "lib", Deps + @"\libkubuno_ui-1b.rlib", Deps + @"\libkubuno_ui-1b.rmeta"),
+            Artifact("views", "kubuno_desktop_views", "lib", Deps + @"\libkubuno_views-8c.rlib", Deps + @"\libkubuno_views-8c.rmeta"),
+            Artifact("controls", "kubuno_desktop_controls", "lib", Deps + @"\libkubuno_controls-6d.rlib"),
             Artifact("tracing", "tracing", "lib", Deps + @"\libtracing-a3.rlib"),
             Artifact("gauges", "gauges", "lib", Deps + @"\libgauges-11.rlib"),
             Artifact("derive", "my_derive", "proc-macro", Deps + @"\my_derive-22.dll"),
@@ -53,9 +53,9 @@ namespace Kubuno.Desktop.Tests.DesignSurface
                         Features = new[] { "fancy" },
                         Deps = new[]
                         {
-                            Dep("kubuno_ui", "ui"),
-                            Dep("kubuno_views", "views"),
-                            Dep("kubuno_controls", "controls"),
+                            Dep("kubuno_desktop_ui", "ui"),
+                            Dep("kubuno_desktop_views", "views"),
+                            Dep("kubuno_desktop_controls", "controls"),
                             Dep("tracing", "tracing"),
                             Dep("gauges", "gauges"),
                             Dep("my_derive", "derive"),
@@ -78,7 +78,7 @@ namespace Kubuno.Desktop.Tests.DesignSurface
             Assert.AreEqual("app", crate!.CrateName);
             Assert.AreEqual(@"C:\p\app\src\main.rs", crate.SourcePath);
             Assert.AreEqual(Profile + @"\app.exe", crate.StampFile);
-            CollectionAssert.AreEqual(new[] { "kubuno_ui", "kubuno_views", "kubuno_controls", "tracing", "gauges", "my_derive" }, crate.Externs.Select(e => e.Key).ToArray());
+            CollectionAssert.AreEqual(new[] { "kubuno_desktop_ui", "kubuno_desktop_views", "kubuno_desktop_controls", "tracing", "gauges", "my_derive" }, crate.Externs.Select(e => e.Key).ToArray());
             Assert.AreEqual(Deps + @"\libkubuno_ui-1b.rlib", crate.Externs[0].Value);
 
             var inputs = DesignSurfaceInputs.From(Artifacts(), _ => true, out _) ?? throw new System.InvalidOperationException("inputs");

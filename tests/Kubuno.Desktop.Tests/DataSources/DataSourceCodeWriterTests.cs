@@ -15,8 +15,8 @@ namespace Kubuno.Desktop.Tests.DataSources
             "\n" +
             "mod main_view;\n" +
             "\n" +
-            "fn main() -> kubuno::Result {\n" +
-            "    kubuno::Application::run(main_view::MainView::new())\n" +
+            "fn main() -> kubuno_desktop::Result {\n" +
+            "    kubuno_desktop::Application::run(main_view::MainView::new())\n" +
             "}\n";
 
         /// <summary>The current desktop application template's Cargo.toml (its comments shortened).</summary>
@@ -28,7 +28,7 @@ namespace Kubuno.Desktop.Tests.DataSources
             "\n" +
             "[dependencies]\n" +
             "# Kubuno, the one dependency of a Kubuno desktop application.\n" +
-            "kubuno = { path = \"Z:/src/desktop/windows/src/crates/kubuno\" }\n";
+            "kubuno = { path = \"Z:/src/desktop/windows/src/crates/kubuno-desktop\" }\n";
 
         [TestMethod]
         public void ModDataIsAddedAfterTheLastModLineOnce()
@@ -55,17 +55,17 @@ namespace Kubuno.Desktop.Tests.DataSources
         {
             string once = DataSourceCodeWriter.EnsureUserSecretsRegistration(DataSourceCodeWriter.EnsureDataModule(TemplateMain));
             StringAssert.Contains(once,
-                "fn main() -> kubuno::Result {\n" +
+                "fn main() -> kubuno_desktop::Result {\n" +
                 "    // The data sources find their connection strings in the environment, the Windows Credential Manager\n" +
                 "    // and the user secrets of this application (Cargo.toml [package.metadata.kubuno] user-secrets-id).\n" +
-                "    kubuno::data::set_user_secrets_id(kubuno::data::user_secrets_id!().as_deref());\n" +
-                "    kubuno::Application::run(main_view::MainView::new())\n" +
+                "    kubuno_desktop::data::set_user_secrets_id(kubuno_desktop::data::user_secrets_id!().as_deref());\n" +
+                "    kubuno_desktop::Application::run(main_view::MainView::new())\n" +
                 "}\n");
             StringAssert.StartsWith(once, TemplateMain.Substring(0, TemplateMain.IndexOf("fn main", System.StringComparison.Ordinal)).Replace("mod main_view;\n", "mod main_view;\nmod data;\n"));
             Assert.AreEqual(once, DataSourceCodeWriter.EnsureUserSecretsRegistration(once), "idempotent");
 
-            string direct = DataSourceCodeWriter.EnsureUserSecretsRegistration("fn main() {\n\trun();\n}\n", "kubuno_data");
-            Assert.AreEqual("fn main() {\n\t// The data sources find their connection strings in the environment, the Windows Credential Manager\n\t// and the user secrets of this application (Cargo.toml [package.metadata.kubuno] user-secrets-id).\n\tkubuno_data::set_user_secrets_id(kubuno_data::user_secrets_id!().as_deref());\n\trun();\n}\n", direct, "the body's indentation");
+            string direct = DataSourceCodeWriter.EnsureUserSecretsRegistration("fn main() {\n\trun();\n}\n", "kubuno_desktop_data");
+            Assert.AreEqual("fn main() {\n\t// The data sources find their connection strings in the environment, the Windows Credential Manager\n\t// and the user secrets of this application (Cargo.toml [package.metadata.kubuno] user-secrets-id).\n\tkubuno_desktop_data::set_user_secrets_id(kubuno_desktop_data::user_secrets_id!().as_deref());\n\trun();\n}\n", direct, "the body's indentation");
             string library = "pub fn helper() {}\n";
             Assert.AreSame(library, DataSourceCodeWriter.EnsureUserSecretsRegistration(library), "no fn main: nothing to do");
         }
@@ -105,7 +105,7 @@ namespace Kubuno.Desktop.Tests.DataSources
                 new KeyValuePair<string, string>("orders", "Order"),
             });
             StringAssert.StartsWith(text, "//! The `shop` data source");
-            StringAssert.Contains(text, "\nkubuno::data::data_source!(\"shop.kbdata\");\n");
+            StringAssert.Contains(text, "\nkubuno_desktop::data::data_source!(\"shop.kbdata\");\n");
             StringAssert.Contains(text, "impl Customer {\n    // Your code: methods of the `customers` rows");
             StringAssert.Contains(text, "impl Order {\n");
             StringAssert.Contains(text, "never rewritten");
@@ -130,7 +130,7 @@ namespace Kubuno.Desktop.Tests.DataSources
             Assert.IsTrue(update.Changed && update.HasKubunoDependency && update.AddedDataFeature && update.AddedUserSecretsId);
             Assert.AreEqual("11111111-2222-3333-4444-555555555555", update.UserSecretsId);
             StringAssert.Contains(update.Text, "# Kubuno, the one dependency of a Kubuno desktop application.\n", "comments kept");
-            StringAssert.Contains(update.Text, "kubuno = { path = \"Z:/src/desktop/windows/src/crates/kubuno\", features = [\"data\"] }");
+            StringAssert.Contains(update.Text, "kubuno = { path = \"Z:/src/desktop/windows/src/crates/kubuno-desktop\", features = [\"data\"] }");
             StringAssert.Contains(update.Text, "user-secrets-id = \"11111111-2222-3333-4444-555555555555\"");
             var reparsed = Kubuno.Rust.Cargo.Toml.TomlDocument.Parse(update.Text);
             Assert.AreEqual("11111111-2222-3333-4444-555555555555", reparsed.GetValue("package", "metadata", "kubuno", "user-secrets-id")!.AsString());
@@ -145,24 +145,30 @@ namespace Kubuno.Desktop.Tests.DataSources
         [TestMethod]
         public void ExistingFeaturesAreMergedAndOtherShapesHandled()
         {
-            string withFeatures = "[package]\nname = \"a\"\n\n[package.metadata.kubuno]\nuser-secrets-id = \"keep\"\n\n[dependencies]\nkubuno = { path = \"../kubuno\", features = [\"tray\"] }\n";
+            string withFeatures = "[package]\nname = \"a\"\n\n[package.metadata.kubuno]\nuser-secrets-id = \"keep\"\n\n[dependencies]\nkubuno-desktop = { path = \"../kubuno\", features = [\"tray\"] }\n";
             var merged = DataSourceCodeWriter.EnsureCargoManifest(withFeatures, () => "new");
             StringAssert.Contains(merged.Text, "features = [\"tray\", \"data\"]");
             Assert.IsFalse(merged.AddedUserSecretsId);
             Assert.AreEqual("keep", merged.UserSecretsId);
 
-            string version = "[package]\nname = \"a\"\n\n[dependencies]\nkubuno = \"0.1\"\n";
+            string version = "[package]\nname = \"a\"\n\n[dependencies]\nkubuno-desktop = \"0.1\"\n";
             var converted = DataSourceCodeWriter.EnsureCargoManifest(version, () => "id");
             var document = Kubuno.Rust.Cargo.Toml.TomlDocument.Parse(converted.Text);
-            Assert.AreEqual("0.1", document.GetValue("dependencies", "kubuno", "version")!.AsString());
-            Assert.AreEqual("data", document.GetValue("dependencies", "kubuno", "features")!.AsArray()![0].AsString());
+            Assert.AreEqual("0.1", document.GetValue("dependencies", "kubuno-desktop", "version")!.AsString());
+            Assert.AreEqual("data", document.GetValue("dependencies", "kubuno-desktop", "features")!.AsArray()![0].AsString());
 
-            string direct = "[package]\nname = \"a\"\n\n[dependencies]\nkubuno-data = { path = \"x\" }\n";
+            string direct = "[package]\nname = \"a\"\n\n[dependencies]\nkubuno-desktop-data = { path = \"x\" }\n";
             var directUpdate = DataSourceCodeWriter.EnsureCargoManifest(direct, () => "id");
             Assert.IsTrue(directUpdate.HasKubunoDependency && !directUpdate.AddedDataFeature);
-            Assert.AreEqual("kubuno_data", directUpdate.DataCrate);
-            Assert.AreEqual("kubuno::data", merged.DataCrate);
-            StringAssert.Contains(DataSourceCodeWriter.UserSourceFile("shop", "shop.kbdata", new KeyValuePair<string, string>[0], directUpdate.DataCrate), "\nkubuno_data::data_source!(\"shop.kbdata\");\n");
+            Assert.AreEqual("kubuno_desktop_data", directUpdate.DataCrate);
+            Assert.AreEqual("kubuno_desktop::data", merged.DataCrate);
+            StringAssert.Contains(DataSourceCodeWriter.UserSourceFile("shop", "shop.kbdata", new KeyValuePair<string, string>[0], directUpdate.DataCrate), "\nkubuno_desktop_data::data_source!(\"shop.kbdata\");\n");
+
+            // A project of a desktop checkout older than the 2026-10 rename: the facade is `kubuno`, kubuno-data `kubuno-data`.
+            var legacyFacade = DataSourceCodeWriter.EnsureCargoManifest("[package]\nname = \"a\"\n\n[dependencies]\nkubuno = { path = \"../kubuno\" }\n", () => "id");
+            Assert.IsTrue(legacyFacade.AddedDataFeature);
+            Assert.AreEqual("kubuno::data", legacyFacade.DataCrate);
+            Assert.AreEqual("kubuno_data", DataSourceCodeWriter.EnsureCargoManifest("[package]\nname = \"a\"\n\n[dependencies]\nkubuno-data = { path = \"x\" }\n", () => "id").DataCrate);
 
             var none = DataSourceCodeWriter.EnsureCargoManifest("[package]\nname = \"a\"\n", () => "id");
             Assert.IsFalse(none.HasKubunoDependency);

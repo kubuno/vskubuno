@@ -155,13 +155,13 @@ namespace Kubuno.Desktop.TemplateWizard
 
         /// <summary>
         /// The Rust type of a base view from its code-behind (the same-stem <c>.rs</c>): the struct under
-        /// <c>#[kubuno::view(…)]</c> (a form) or <c>#[derive(UserControl…)]</c>; null when there is none.
+        /// <c>#[kubuno_desktop::view(…)]</c> (<c>#[kubuno::view(…)]</c> before the 2026-10 rename; a form) or <c>#[derive(UserControl…)]</c>; null when there is none.
         /// </summary>
         public static string? BaseTypeName(string rsText, bool userControl)
         {
             var pattern = userControl
                 ? @"#\s*\[\s*derive\s*\([^)]*\bUserControl\b[^)]*\)\s*\][\s\S]*?\bstruct\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)"
-                : @"#\s*\[\s*kubuno\s*::\s*view\s*\([^\]]*\)\s*\][\s\S]*?\bstruct\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)";
+                : @"#\s*\[\s*kubuno(_desktop)?\s*::\s*view\s*\([^\]]*\)\s*\][\s\S]*?\bstruct\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)";
             var match = Regex.Match(rsText ?? string.Empty, pattern);
             return match.Success ? match.Groups["name"].Value : null;
         }

@@ -8,7 +8,7 @@
   window: the designer shows the result as it will appear.
 
   At start-up, $classname$::show_at_startup() shows it at once, on its own thread, from this design
-  (kubuno::splash::from_kbview); SplashDuration is then the shortest time it stays on screen.
+  (kubuno_desktop::splash::from_kbview); SplashDuration is then the shortest time it stays on screen.
 -->
 <Panel xmlns="https://kubuno.com/views" xmlns:x="https://kubuno.com/views/x" DesignWidth="800" DesignHeight="500" Title="$classname$" WindowKind="Splash" SplashDuration="1500" OnLoad="$modulename$_load">
   <SplashArtwork x:Name="artwork" Artwork="Kubuno" Product="" Tagline="" Version="Version 0.1.0" Status="Initialisation des modules…" Progress="0.35" Dock="Fill"/>

@@ -7,7 +7,7 @@ namespace Kubuno.Shared.DevAssistant.Logic.Credentials
 {
     /// <summary>
     /// Generic credentials of the Windows Credential Manager (docs/AI-ASSISTANT.md section 8.1), persisted with
-    /// <c>CRED_PERSIST_LOCAL_MACHINE</c> like <c>kubuno-secrets</c> so they do not roam with a roaming profile. The VSIX
+    /// <c>CRED_PERSIST_LOCAL_MACHINE</c> like <c>kubuno-desktop-secrets</c> so they do not roam with a roaming profile. The VSIX
     /// only writes, checks and deletes keys; the host process alone reads one, when it builds a provider: a key never
     /// crosses the stdio channel, an environment variable, a file or a log.
     /// </summary>

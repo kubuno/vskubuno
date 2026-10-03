@@ -2,13 +2,17 @@
 <!--
   Kubuno for Visual Studio - Step Into (F11) over the Kubuno framework (docs/DEBUGGING.md): like stepping over
   Windows Forms in C#, F11 on `runtime.frame_typed(...)` goes straight to the event handler a click runs,
-  F11 on `sender.text()` does not enter kubuno_views, and the dispatch glue #[kubuno_views::event_handlers]
+  F11 on `sender.text()` does not enter kubuno_desktop_views, and the dispatch glue #[kubuno_desktop_views::event_handlers]
   generates (`<ViewModel as EventSink>::handle_event`, whose lines map to the attribute) is never shown.
 
   Installed next to Kubuno.Rust.natstepfilter unless Tools > Options > Kubuno > Debugging > "Treat the Kubuno
   framework as external code" is off.
 -->
 <StepFilter xmlns="http://schemas.microsoft.com/vstudio/debugger/natstepfilter/2010">
+  <Function><Name>kubuno_desktop_views::.*</Name><Action>NoStepInto</Action></Function>
+  <Function><Name>kubuno_desktop_controls::.*</Name><Action>NoStepInto</Action></Function>
+  <Function><Name>kubuno_desktop_ui::.*</Name><Action>NoStepInto</Action></Function>
+  <!-- The same crates under their names before the 2026-10 rename (applications built from an older desktop checkout). -->
   <Function><Name>kubuno_views::.*</Name><Action>NoStepInto</Action></Function>
   <Function><Name>kubuno_controls::.*</Name><Action>NoStepInto</Action></Function>
   <Function><Name>kubuno_ui::.*</Name><Action>NoStepInto</Action></Function>

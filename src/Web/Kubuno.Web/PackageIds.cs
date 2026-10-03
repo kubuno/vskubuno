@@ -21,7 +21,7 @@ namespace Kubuno.Web
         /// <summary>Tools > "Kubuno: Package Module (.kbpkg)".</summary>
         public const int PackModuleCommand = 0x0705;
 
-        /// <summary>Tools > "Kubuno Core Web: Open Development Database Tunnel" (the SSH tunnel F5 opens, without the core).</summary>
+        /// <summary>Tools > "Kubuno Web: Open Development Database Tunnel" (the SSH tunnel F5 opens, without the core).</summary>
         public const int OpenDevDatabaseTunnelCommand = 0x0706;
     }
 }

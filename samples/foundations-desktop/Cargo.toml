@@ -17,6 +17,6 @@ publish = false
 [dependencies]
 # Kubuno, from a local checkout of github.com/kubuno/desktop (its `windows` workspace), like the
 # Kubuno Desktop Application template (change it here AND <KubunoDesktopSrc> in the .rsproj).
-kubuno = { path = "Z:/src/desktop/windows/src/crates/kubuno" }
+kubuno-desktop = { path = "Z:/src/desktop/windows/src/crates/kubuno-desktop" }
 # The custom controls of another crate of the application: usable in the views like its own.
 foundations-controls = { path = "controls" }

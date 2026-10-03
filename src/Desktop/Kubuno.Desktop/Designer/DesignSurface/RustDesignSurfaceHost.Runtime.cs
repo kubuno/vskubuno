@@ -46,7 +46,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
 
         /// <summary>
         /// Hot swap: when the source offers a different exe (the project was built, or rebuilt with a
-        /// changed <c>kubuno_ui</c>), the running surface is stopped and the new one started in its place;
+        /// changed <c>kubuno_desktop_ui</c>), the running surface is stopped and the new one started in its place;
         /// <see cref="BeginProtocolIo"/> hands it the document text, design mode and whole selection.
         /// </summary>
         private void ApplyRuntimeFromSource()
@@ -117,7 +117,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
             if (problem is null)
             {
                 _handshake = HandshakeState.Verified;
-                KubunoViewsLogHost.Current.WriteLine($"[designer] design surface {runtime.ExePath} ({(runtime.IsProjectRuntime ? "the project's runtime" : "the bundled runtime")}; handshake version {version}, kubuno_ui linked statically).");
+                KubunoViewsLogHost.Current.WriteLine($"[designer] design surface {runtime.ExePath} ({(runtime.IsProjectRuntime ? "the project's runtime" : "the bundled runtime")}; handshake version {version}, kubuno_desktop_ui linked statically).");
             }
             else
             {

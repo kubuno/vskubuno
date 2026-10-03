@@ -4,14 +4,14 @@
      Explorer), usable as an element of the project's other views. -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno User Control (Kubuno Core Desktop)</Name>
+    <Name>Kubuno User Control (Kubuno Desktop)</Name>
     <Description>A reusable control designed as a view of its own (.kbcontrol) with its code-behind: its properties and events are those of the element it becomes in the project's other views.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoUserControl</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
-    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>12</SortOrder>
     <DefaultName>UserControl.kbcontrol</DefaultName>

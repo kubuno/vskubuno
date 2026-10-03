@@ -10,8 +10,8 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
     /// DSG-9: <see cref="DesignSurfaceDragDropProtocol"/> is the pure encode/parse half of the design-
     /// surface's DSG-9 protocol additions (`vskubuno/docs/DESIGNER.md`'s "DSG-9 protocol" section) - no
     /// live process, no event, no WPF <c>Dispatcher</c>, so every wire shape is checked here directly
-    /// against the exact strings `kubuno-views/src/protocol.rs`'s own tests assert on the Rust side
-    /// (`kubuno-views/src/protocol.rs`'s `tests` module), so the two sides cannot silently drift - the
+    /// against the exact strings `kubuno-desktop-views/src/protocol.rs`'s own tests assert on the Rust side
+    /// (`kubuno-desktop-views/src/protocol.rs`'s `tests` module), so the two sides cannot silently drift - the
     /// same posture <see cref="RustDesignSurfaceHostProtocolTests"/> already established for DSG-6.
     /// </summary>
     [TestClass]
@@ -300,7 +300,7 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
         /// <c>RustDesignSurfaceHost.cs</c>, not this file) - this test pins the encoding CONFIGURATION
         /// itself (the exact constructor call used there), so a future edit that drops the `false` (or
         /// reverts to the platform default) fails a test instead of silently reintroducing the bug.
-        /// `kubuno_views::protocol::parse_host_message` also strips a leading BOM defensively (Rust-side
+        /// `kubuno_desktop_views::protocol::parse_host_message` also strips a leading BOM defensively (Rust-side
         /// test: `parse_host_message_strips_a_leading_byte_order_mark`), but this is the check that the
         /// BOM is not produced in the first place.
         /// </summary>

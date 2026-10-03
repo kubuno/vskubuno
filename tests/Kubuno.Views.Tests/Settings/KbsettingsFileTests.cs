@@ -6,7 +6,7 @@ namespace Kubuno.Views.Tests.Settings
 {
     /// <summary>
     /// The <c>.kbsettings</c> model of the settings editor (docs/STORAGE-COMPONENTS.md §5.3). <see cref="Sample"/> is
-    /// the SAME text as the Rust model's test (<c>kubuno-resources-model/src/settings.rs</c>, <c>SAMPLE</c>): both
+    /// the SAME text as the Rust model's test (<c>kubuno-desktop-resources-model/src/settings.rs</c>, <c>SAMPLE</c>): both
     /// writers must produce it byte for byte, so the editor and the macro never fight over the file.
     /// </summary>
     [TestClass]

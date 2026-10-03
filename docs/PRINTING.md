@@ -3,8 +3,8 @@
 > Scope: product-owner requirement of `docs/EVENTS.md` ("the WinForms printing stack", 2026-09-29): `PrintDocument`,
 > `PrinterSettings`/`PageSettings`, `PrintPreviewControl`, `PrintPreviewDialog`, `PrintDialog`, `PageSetupDialog`, with
 > their designer tooling. Status: **built** (2026-09-30). Code in `Z:\src\desktop\windows` (uncommitted there): the new
-> crate `src/crates/kubuno-print`, and small changes in `kubuno` (facade), `kubuno-views`, `kubuno-views-meta`,
-> `kubuno-views-macros`, `kubuno-views-ls`, `kubuno-data` (a test); in this repository the designer's Toolbox tab and
+> crate `src/crates/kubuno-desktop-print`, and small changes in `kubuno-desktop` (facade), `kubuno-desktop-views`, `kubuno-desktop-views-meta`,
+> `kubuno-desktop-views-macros`, `kubuno-views-ls`, `kubuno-desktop-data` (a test); in this repository the designer's Toolbox tab and
 > category, the icons, the sample `samples/printing-desktop` and this note.
 
 ## 1. What an application writes
@@ -51,12 +51,12 @@ doc.set_printer_settings(s);
 doc.print()?;                                    // the file is complete when it returns
 ```
 
-`kubuno::printing` has the handles (`PrintDocument`, `PrintPreviewDialog`, `PrintDialog`, `PageSetupDialog`,
-`PrintPreviewControl`) and re-exports the settings and args; `kubuno::prelude` includes the handles and the three args
-types; the component classes themselves are `kubuno::printing::components` (`kubuno_print`). The facade depends on
-`kubuno-print` unconditionally (printing is part of Windows Forms itself); it adds no `windows` feature (§3).
+`kubuno_desktop::printing` has the handles (`PrintDocument`, `PrintPreviewDialog`, `PrintDialog`, `PageSetupDialog`,
+`PrintPreviewControl`) and re-exports the settings and args; `kubuno_desktop::prelude` includes the handles and the three args
+types; the component classes themselves are `kubuno_desktop::printing::components` (`kubuno_desktop_print`). The facade depends on
+`kubuno-desktop-print` unconditionally (printing is part of Windows Forms itself); it adds no `windows` feature (§3).
 
-## 2. Components (`kubuno-print`)
+## 2. Components (`kubuno-desktop-print`)
 
 | Class | Kind | Properties (XML) | Events |
 |---|---|---|---|
@@ -89,7 +89,7 @@ graphics() }` — all `CancelEventArgs` in the args chain (the ⚡ tab offers `&
 
 - Every page is recorded into an **`ID2D1CommandList`** on a Direct2D device of the job's own (a detached `Renderer`,
   no window), through the EVT-8 `Graphics` over the host's `Painter` — so `draw_string`, paths, gradients, images, and
-  the canvas primitives the `kubuno_ui` widgets use (a control printed with `draw_to_bitmap`) all work on paper.
+  the canvas primitives the `kubuno_desktop_ui` widgets use (a control printed with `draw_to_bitmap`) all work on paper.
 - **`ID2D1PrintControl`** turns each command list into a page of an **XPS print job** of the Windows spooler
   (`IPrintDocumentPackageTargetFactory::CreateDocumentPackageTargetForPrintJob`). The job's **print ticket** comes from
   the driver's `DEVMODE` (`DocumentProperties` merges paper, orientation, copies, collation, duplex, colour, tray,
@@ -105,10 +105,10 @@ graphics() }` — all `CancelEventArgs` in the args chain (the ⚡ tab offers `&
   spooler's XPS-to-GDI conversion, and lets the same command lists feed the preview. `rasterDPI` (fallback for
   effects that cannot be vector) is the printer's resolution clamped to 150–600.
 - **No new `windows` feature**: `ID2D1Device::CreatePrintControl` and `IPrintDocumentPackageTargetFactory` sit behind
-  `Win32_Storage_Xps_Printing`, absent from `kubuno-ui`'s graph; adding it would rebuild `windows` and every crate built on it
+  `Win32_Storage_Xps_Printing`, absent from `kubuno-desktop-ui`'s graph; adding it would rebuild `windows` and every crate built on it
   for every application. `src/xps.rs` declares the two interfaces with `windows_core::interface` and calls `CreatePrintControl`
   through its vtable slot (documented). The flat APIs (winspool, gdi32 metrics, prntvpt, comdlg32) use `windows-sys`,
-  which is not in `kubuno-ui`'s graph (as `kubuno-data` does).
+  which is not in `kubuno-desktop-ui`'s graph (as `kubuno-desktop-data` does).
 - Printer drivers are not all thread-safe (two threads asking "Microsoft Print to PDF" for its settings crashed the test
   harness): every driver call takes a process-wide lock.
 
@@ -126,10 +126,10 @@ primitives stay in page coordinates).
 A `.kbview` handler is a method of the view (`&mut self`). While one of the view's handlers runs, the view model is
 borrowed, so a document of that view cannot raise its own XML handlers (that would be a second `&mut`). The rule:
 
-- A component raises to its Rust subscribers, then `kubuno_views::scope::raise_now(name, "OnPrintPage", args)`, which
+- A component raises to its Rust subscribers, then `kubuno_desktop_views::scope::raise_now(name, "OnPrintPage", args)`, which
   runs the XML handler synchronously when the runtime lent its sink.
 - `print()` (and `show_preview`, i.e. `PrintPreviewDialog.show_dialog()`) called while the view is busy
-  (`view_is_busy`: the component is sited in the running view and `scope::can_raise_now()` — new in `kubuno-views` — is
+  (`view_is_busy`: the component is sited in the running view and `scope::can_raise_now()` — new in `kubuno-desktop-views` — is
   false) records the request and asks for a frame; the document is a `BindingProvider` whose `binding_sync` (called by
   the runtime once per frame with the sink lent) runs it. **Net effect: the print or preview starts right after the
   handler that asked for it returns, before the next paint.** `print()` returns `Ok(0)` then; `last_error()` tells
@@ -151,7 +151,7 @@ borrowed, so a document of that view cannot raise its own XML handlers (that wou
   the card shadow on `surface_2`; "Génération de l'aperçu…", "Aucune page à afficher.", the error text; in the designer
   an empty Letter sheet.
 - `PrintPreviewDialog` window: a host window (`run_scoped`, modal to the application's window, Kubuno chrome, the
-  application's theme — `kubuno::Application::set_theme` forwards it through `kubuno_print::set_dialog_theme`) showing
+  application's theme — `kubuno_desktop::Application::set_theme` forwards it through `kubuno_desktop_print::set_dialog_theme`) showing
   an inline `.kbview`: **Print** (`IconButton` Printer), **Zoom** (`Dropdown`: Automatique, 500 %…10 %), five
   `PreviewPagesButton`s (1, 2, 3, 4, 6 pages; the current one highlighted), **Page** (`NumericField` bound to
   `preview.StartPage`) "sur N" (`preview.PageText`), **Fermer**. FR/EN texts follow the user's UI language; every tool
@@ -160,38 +160,38 @@ borrowed, so a document of that view cannot raise its own XML handlers (that wou
 ## 6. Tooling
 
 - **Registry and view macro**: the classes register through `#[derive(Component)]` (Toolbox category `Printing`,
-  icons `printer`, `printer-check`, `file-sliders`, `file-search`, `scan-eye`). `kubuno-views-meta` gained
-  `DATA_ELEMENTS`, `PRINT_ELEMENTS` (their union is `LIBRARY_ELEMENTS`, tested) and `PRINT_TYPED`: `#[kubuno::view]`
-  types a named `<PrintDocument>` field `kubuno::printing::PrintDocument` (likewise the dialogs and the preview control).
+  icons `printer`, `printer-check`, `file-sliders`, `file-search`, `scan-eye`). `kubuno-desktop-views-meta` gained
+  `DATA_ELEMENTS`, `PRINT_ELEMENTS` (their union is `LIBRARY_ELEMENTS`, tested) and `PRINT_TYPED`: `#[kubuno_desktop::view]`
+  types a named `<PrintDocument>` field `kubuno_desktop::printing::PrintDocument` (likewise the dialogs and the preview control).
 - **Language server**: `kubuno-views-ls` now follows `name = { workspace = true }` dependencies through the workspace
-  root's `[workspace.dependencies]` — how an application depending on `kubuno` reaches `kubuno-print` (and `kubuno-data`):
+  root's `[workspace.dependencies]` — how an application depending on `kubuno-desktop` reaches `kubuno-desktop-print` (and `kubuno-desktop-data`):
   the printing elements are known (no diagnostics), completed, documented, and their handlers get
   `fn print_document1_print_page(&mut self, _sender: &Control, _e: &mut PrintPageEventArgs)`.
-- **Designer**: components from the Kubuno library crates (`kubuno_print`, `kubuno_data`) get Toolbox tabs of their own
+- **Designer**: components from the Kubuno library crates (`kubuno_desktop_print`, `kubuno_desktop_data`) get Toolbox tabs of their own
   by `#[toolbox(category)]` — **"Impression"** (FR) / "Printing" — in every project, without "Choose Items…"
   (`NativeToolboxInstaller.LibraryItems`); they go to the component tray (non-visual); the Properties window shows the
   `Printing` category as "Impression"; `Document` is a drop-down of the view's `PrintDocument`s (the existing
   `reference:` editor); a double-click on a `PrintDocument` creates its `PrintPage` handler (its default event).
   Icons: 16 px hinted Lucide icons from `tools/generate-control-icons.ps1` (`PrintDocument`, `PrintPreviewControl`,
   `PrintPreviewDialog`, `PrintDialog`, `PageSetupDialog`).
-- **Design surface**: the VSIX's bundled `tools\surface\view_embed.exe` is now built from `kubuno-print`'s
-  `examples/view_embed.rs` (kubuno-views' surface with the data and printing components linked):
-  `cargo build --release -p kubuno-print --example view_embed`.
-- **Accessibility** (`kubuno-views`, `node/custom.rs`): UI Automation's Invoke now clicks custom controls (it only
+- **Design surface**: the VSIX's bundled `tools\surface\view_embed.exe` is now built from `kubuno-desktop-print`'s
+  `examples/view_embed.rs` (kubuno-desktop-views' surface with the data and printing components linked):
+  `cargo build --release -p kubuno-desktop-print --example view_embed`.
+- **Accessibility** (`kubuno-desktop-views`, `node/custom.rs`): UI Automation's Invoke now clicks custom controls (it only
   clicked built-in buttons) — found testing the preview dialog's page buttons.
 
 ## 7. As built: tests and live verification (2026-09-30)
 
-- `kubuno-print`: unit tests (dialog view compiles and owns its controls; tool-bar state), `tests/printing.rs` (margins
+- `kubuno-desktop-print`: unit tests (dialog view compiles and owns its controls; tool-bar state), `tests/printing.rs` (margins
   and papers; orientation; the event order over 3 pages with `QueryPageSettings` making page 2 landscape; cancel in
   `BeginPrint` and in `PrintPage`; `OriginAtMargins`; XML properties vs code settings; preview layout, start page,
   zoom, a rasterised blank page is white; layout glyphs; registry classes = `PRINT_ELEMENTS`, non-visual, category,
   events, reference editor; a real `Runtime` owning the view's components whose XML `PrintPage` handler draws the pages
-  through `with_dispatch`, and the view's preview control rendering in the same sync), 1 doctest. `kubuno`:
+  through `with_dispatch`, and the view's preview control rendering in the same sync), 1 doctest. `kubuno-desktop`:
   `tests/printing.rs` (typed fields; the view's own handler methods draw the pages through the composed view and the
   runtime; a document of code) and `tables.rs` adapted (built-ins exclude linked library classes). `kubuno-views-ls`:
-  workspace dependencies. `kubuno-views-meta`: the tables. C#: `PrintingToolboxTests` (3, on the real registry answer of
-  the language server). All suites green (`kubuno-views` 610 + integration, `kubuno-views-ls` 128 + 18, facade, macros;
+  workspace dependencies. `kubuno-desktop-views-meta`: the tables. C#: `PrintingToolboxTests` (3, on the real registry answer of
+  the language server). All suites green (`kubuno-desktop-views` 610 + integration, `kubuno-views-ls` 128 + 18, facade, macros;
   C#: Designer 346, VisualStudio 556, Views 18, TestAdapter 49, Launch 73, Cargo 411, Mcp 29, MSBuild tasks 28). `cargo
   clippy --all-targets -D warnings` clean on the touched crates; 0 C# warning.
 - **PDF**: `examples/print_to_pdf.rs` → 3 pages (page 2 landscape by `QueryPageSettings`: MediaBox 842×595), fonts

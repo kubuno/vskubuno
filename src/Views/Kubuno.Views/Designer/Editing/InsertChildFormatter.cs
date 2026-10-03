@@ -6,7 +6,7 @@ namespace Kubuno.Views.Designer.Editing
     /// <summary>
     /// Gives a new child element (a Toolbox drop or double-click, <c>kubuno/applyEdit</c>'s
     /// <c>insertChild</c>) its own, properly indented line - the way the WinForms/XAML designers lay out
-    /// what they add. <c>kubuno_views::edit::insert_child</c> deliberately inserts the fragment verbatim
+    /// what they add. <c>kubuno_desktop_views::edit::insert_child</c> deliberately inserts the fragment verbatim
     /// ("the caller controls formatting"): right before the next sibling, or right before the parent's
     /// end tag, which on its own gives <c>  &lt;Button/&gt;&lt;/Stack&gt;</c>. This only touches that one
     /// insertion's text, and only when the insertion point starts an otherwise blank-prefixed line (the

@@ -5,10 +5,10 @@
 > the Visual Studio visual designer (Toolbox, design surface, Properties, ⚡ events, code-behind); the design surface
 > renders with **WebView2** (WebKit is dropped); existing React/TSX code is migrated or transformed.
 >
-> Builds on: `XML_VIEWS.md` (format), `PROGRAMMING-MODEL.md` (`#[kubuno::view]`, the WinForms-like model),
+> Builds on: `XML_VIEWS.md` (format), `PROGRAMMING-MODEL.md` (`#[kubuno_desktop::view]`, the WinForms-like model),
 > `DESIGNER.md` (design surface protocol, Toolbox, Properties, element ids), `EVENTS.md` (events, custom controls,
 > metadata), `DATA.md` (data components, `{Binding Source=…}`), `RIBBON.md`, `ICONS.md`, `ARCHITECTURE.md` (layers,
-> `Kubuno.Web`), `kubuno-resources` (`.kbres`, `{Res}`; `docs/RESOURCES.md` is referenced by the code but not in the
+> `Kubuno.Web`), `kubuno-desktop-resources` (`.kbres`, `{Res}`; `docs/RESOURCES.md` is referenced by the code but not in the
 > repository yet), and `docs/WEB.md` (phases 1–2: core and modules opened, built and debugged in VS — being written in
 > parallel; this note assumes its `.esproj` + `.rsproj` solution shape).
 
@@ -87,10 +87,10 @@ What this says, and what it means for the design:
 ### 1.1 Goals
 
 1. **One view language for desktop and web.** Same file extension (`.kbview`), same grammar (the lossless rowan
-   tree of `kubuno-views`), same markup extensions (`{Binding}`, `{Res}`), same `x:Name`, same `On*` event attributes,
+   tree of `kubuno-desktop-views`), same markup extensions (`{Binding}`, `{Res}`), same `x:Name`, same `On*` event attributes,
    same element ids for the designer, and — wherever the control exists on both sides — **the same element and
    property names and the same enum values**. On the web an element maps to an `@kubuno/ui` (or `@kubuno/sdk`)
-   React component; on the desktop to a `kubuno-views` registry component. A view file belongs to **one target**
+   React component; on the desktop to a `kubuno-desktop-views` registry component. A view file belongs to **one target**
    (its code-behind is TypeScript or Rust); what is shared is the vocabulary, the tooling and the skills, not files.
 2. **WinForms-like authoring in Visual Studio**: Toolbox → design surface → Properties (F4) → ⚡ double-click creates
    a handler in the code-behind, F7/Shift+F7, the `.kbview` buffer as the single source of truth, edits surgical
@@ -102,7 +102,7 @@ What this says, and what it means for the design:
 
 | Constraint | Answer (details in the referenced section) |
 |---|---|
-| **Code-behind in TypeScript** | A class per view extending a generated base (`ViewBase`), the TS counterpart of `#[kubuno::view]`: a typed field per `x:Name`, handlers as plain methods, `@bind accessor` fields for bindings, an optional `use()` method where React hooks are allowed (§2.2). |
+| **Code-behind in TypeScript** | A class per view extending a generated base (`ViewBase`), the TS counterpart of `#[kubuno_desktop::view]`: a typed field per `x:Name`, handlers as plain methods, `@bind accessor` fields for bindings, an optional `use()` method where React hooks are allowed (§2.2). |
 | **Binding to stores and React Query** | `{Binding Path}` resolves against the view instance, then its data context. Hooks (`useQuery`, zustand selectors, `@kubuno/sdk` stores) run in `use()` and land in `@bind` fields; the common query/mutation cases are declarative non-visual components `<Query>`/`<Mutation>` (the web analogue of `DATA.md`'s `BindingSource`/`TableAdapter`) (§2.2). |
 | **Events** | `On*` attributes named by the registry (`OnClick`, `OnCheckedChanged`, `OnTextChanged`, `OnSelectionChanged`…), the same names as the desktop; the runtime adapts React props (`onClick`, `onChange(checked)`) into `(sender, e)` with typed args (`MouseEventArgs`, `CheckedChangedEventArgs`…), `e.handled`/`e.cancel` mapped to `stopPropagation`/`preventDefault` (§2.2). |
 | **i18n with `.kbres` / `{Res}`** | `.kbres` (neutral + satellites `name.fr.kbres`) becomes the source of module strings; the Vite plugin compiles it to i18next bundles passed to `registerModuleTranslations`, so the runtime stays i18next (language switch, RTL, the 13 languages). `{Res key}` resolves through i18next's `t(ns:key)`. Extension needed on both targets: arguments and plurals, `{Res notes_selected_count, Count={Binding SelectedCount}}` (§2.4, WV-6). |
@@ -141,7 +141,7 @@ canonical, the build step validates and adds typed sugar): **one renderer** used
 designer; the build step parses, validates against the web registry, generates types, precompiles accessors and
 plans, and emits source maps.
 
-**One grammar, compiled to WASM.** The parser is the Rust rowan parser of `kubuno-views` (lossless CST, `ast`,
+**One grammar, compiled to WASM.** The parser is the Rust rowan parser of `kubuno-desktop-views` (lossless CST, `ast`,
 `validate`, `edit`, element ids). It is factored out of the Windows-only crate (WV-1) and compiled to WebAssembly in
 an npm package `@kubuno/views-compiler` (Node for the Vite plugin, browser for the design surface). A TypeScript
 re-implementation would be a second grammar drifting from the first — exactly what `XML_VIEWS.md` §6 forbids. (This
@@ -165,7 +165,7 @@ runtime of the product. Open question Q5.)
 **Specifier constraints.** The generated module imports `@ui` (never `@kubuno/ui`; the existing `tsconfig.paths`
 mapping applies), `@kubuno/sdk`, `@kubuno/views` and `react/jsx-runtime` — all already in every module's `external`
 set except `@kubuno/views`, which joins `SHARED` in each module's `vite.config.ts` and `SPECIFIER_TO_CHUNK` in the
-host's import-map plugin (chunk `kubuno-views`). Inside the core build the same specifiers resolve by alias, as
+host's import-map plugin (chunk `kubuno-desktop-views`). Inside the core build the same specifiers resolve by alias, as
 today. No module ever bundles the renderer: one binding engine, one design-mode registry, one control-handle store.
 
 ### 2.2 The code-behind model in TypeScript
@@ -225,10 +225,10 @@ export default NotesSettingsPage.component()   // a React component: RouteRegist
 
 | WinForms / desktop (`PROGRAMMING-MODEL.md`) | Web |
 |---|---|
-| `#[kubuno::view("main_view.kbview")]` on the struct | `class X extends ViewBase` where `ViewBase` is imported from `./X.kbview` |
+| `#[kubuno_desktop::view("main_view.kbview")]` on the struct | `class X extends ViewBase` where `ViewBase` is imported from `./X.kbview` |
 | `Form1.Designer.cs` / the macro's in-memory expansion | the Vite plugin's generated module + `.kubuno/views/X.kbview.d.ts` |
 | `initialize_component()` | done by `X.component()` on mount: the instance is created once per mounted view (`useRef`), its control handles linked by `x:Name`, initial property values read from the plan (`this.save.text === "Enregistrer…"` before the first paint) |
-| a field per `x:Name` (`status: kubuno::forms::TextField`) | a typed handle per `x:Name` (`save: Button` from `@kubuno/views`): `text`, `enabled`, `visible`, `checked`, `value`, `focus()`, `click`… — setting one re-renders only that element (each handle is a slot in the view's store, the same idea as the desktop's composed `__kb.N.Text` bindings) |
+| a field per `x:Name` (`status: kubuno_desktop::forms::TextField`) | a typed handle per `x:Name` (`save: Button` from `@kubuno/views`): `text`, `enabled`, `visible`, `checked`, `value`, `focus()`, `click`… — setting one re-renders only that element (each handle is a slot in the view's store, the same idea as the desktop's composed `__kb.N.Text` bindings) |
 | `#[bind] user_name: String` | `@bind accessor userName = ''` (a standard TC39 accessor decorator — TS 6, no `experimentalDecorators`); assignments notify the bound nodes |
 | `#[data_context]` | `dataContext` property (any object, or a `<Query>` result) for paths not found on the instance |
 | handler = plain method, `match` generated by name | handler = plain method; the generated `ViewBase` declares each handler the view names as **abstract**, so a missing handler is a `tsc` error at the attribute (the counterpart of rustc E0599); a method with fewer parameters is accepted (TS assignability = the desktop's several handler shapes) |
@@ -325,7 +325,7 @@ generated getter (§6.2). This keeps views designable and diffs small.
 Canonical `.kbview` names = **the desktop names** (they are already in the grammar, the registry, the Toolbox and the
 docs); the web registry maps each to its React component (open question Q1). "—" = missing on that side.
 
-| `.kbview` element | Web (`@ui` / `@kubuno/sdk`) | Desktop (`kubuno-views`) | Notes / work to converge |
+| `.kbview` element | Web (`@ui` / `@kubuno/sdk`) | Desktop (`kubuno-desktop-views`) | Notes / work to converge |
 |---|---|---|---|
 | `Button` | `Button` | `Button` | Identical variants and sizes. `Text` → children, `Icon` → `icon`. |
 | `IconButton` | `Button` (icon only) | `IconButton` | Web: `AccessibleName` required (diagnostic). |
@@ -416,7 +416,7 @@ context menus, double-clicks, unhandled keys, `select`/`selectMany`, `projectCom
 culture) plus the optional `IDesignSurfaceStatusAware` / `IDesignSurfaceRuntimeAware`; the design-surface protocol
 helpers (`DesignSurfaceProtocol`, `…DragDropProtocol`, `…ContextMenuProtocol`, `…ResourcesProtocol`, `…ThemeProtocol`,
 `…ZoomProtocol`) moved with it, so `WebSurfaceProtocol` can reuse them. `Kubuno.Desktop` keeps `RustDesignSurfaceHost`
-(+ factory, Win32 helpers, the `kubuno_ui` runtime handshake), the per-project design runtime, the Data Sources binding
+(+ factory, Win32 helpers, the `kubuno_desktop_ui` runtime handshake), the per-project design runtime, the Data Sources binding
 drop and the Kubuno control icons (handed to the Toolbox through `NativeToolboxInstaller.IconName`/`IconAssembly`); it
 plugs its factory into `DesignSurfaceHostFactoryHost`. `Kubuno.Web` references `Kubuno.Views` (never `Kubuno.Desktop`,
 checked transitively by `tests/Kubuno.Architecture.Tests`). Left for WV-9b: a factory chosen per document instead of
@@ -477,7 +477,7 @@ Implemented in `@kubuno/views` (design build only, tree-shaken from production):
 
 ### 4.4 The C# ↔ JS protocol
 
-Exactly the desktop wire shapes (`kubuno_views::protocol` / `DesignSurfaceProtocol`), carried over
+Exactly the desktop wire shapes (`kubuno_desktop_views::protocol` / `DesignSurfaceProtocol`), carried over
 `CoreWebView2.PostWebMessageAsJson` (host → page) and `window.chrome.webview.postMessage` (page → host) instead of
 stdin/stdout lines, so `DesignSurfaceEditingCoordinator` is shared unchanged:
 
@@ -529,15 +529,15 @@ child window (as the desktop surface did when OLE skipped `devenv`'s target, `DE
 ## 5. Language server: one `kubuno-views-ls`, two target profiles
 
 **Recommendation: share `kubuno-views-ls`.** Same grammar, element ids, `applyEdit`/`elementAtOffset`/
-`rangeOfElement`, completion, hover, outline, `{Res}` support (`kubuno-resources-model`), diagnostics framework — a
+`rangeOfElement`, completion, hover, outline, `{Res}` support (`kubuno-desktop-resources-model`), diagnostics framework — a
 second server would duplicate 7 200 lines and drift.
 
-- **Profile selection** per document: walk up from the `.kbview` — `Cargo.toml` depending on `kubuno`/`kubuno-views`
+- **Profile selection** per document: walk up from the `.kbview` — `Cargo.toml` depending on `kubuno-desktop`/`kubuno-desktop-views`
   → `desktop`; `package.json` depending on `@kubuno/views-compiler` → `web`; an explicit `kubuno.views.json`
   (`{"target": "web"}`) wins.
 - **Registry provider**: `desktop` = the compiled-in registry (today); `web` = `node_modules/@kubuno/ui/
   kbview-registry.json` + `@kubuno/sdk`'s + `@kubuno/views`' + scanned project controls. Requires the registry *model*
-  (types + JSON loader) to be split from the Windows-only `kubuno-views` (WV-1).
+  (types + JSON loader) to be split from the Windows-only `kubuno-desktop-views` (WV-1).
 - **Code-behind provider**: `desktop` = `syn` (today: form classes, `#[bind]`, `impl` methods); `web` = an
   `oxc_parser`-based reader of the same-stem `.ts` (class extending `ViewBase`, its methods, `@bind accessor` fields,
   `defineControl` calls). Features ported to it: handler set, missing-handler and incompatible-signature warnings,
@@ -638,7 +638,7 @@ enough.
 | Lot | Content | Size | Depends on | Main risk | Verification |
 |---|---|---|---|---|---|
 | **WV-0** | Freeze the shared spec: canonical names (Q1), code-behind model (Q2), styling rule (Q3), layout/size classes (Q4); `kbview-registry.json` schema = `kubuno/registry` + `web` block | S | — | Decisions reopened later | Review of this note |
-| **WV-1** | Split platform-neutral crates out of `kubuno-views`: `kubuno-views-syntax` (lexer, rowan CST, `ast`, `edit`, element ids, validator core) and `kubuno-views-model` (registry types + JSON loader); `kubuno-views` re-exports, no behaviour change | M | WV-0 | Churn in a crate other agents edit daily (`git status` shows concurrent work) — do it in one short window, re-export everything | `cargo test` of `kubuno-views` and `kubuno-views-ls` unchanged; desktop designer smoke test |
+| **WV-1** | Split platform-neutral crates out of `kubuno-desktop-views`: `kubuno-desktop-views-syntax` (lexer, rowan CST, `ast`, `edit`, element ids, validator core) and `kubuno-desktop-views-model` (registry types + JSON loader); `kubuno-desktop-views` re-exports, no behaviour change | M | WV-0 | Churn in a crate other agents edit daily (`git status` shows concurrent work) — do it in one short window, re-export everything | `cargo test` of `kubuno-desktop-views` and `kubuno-views-ls` unchanged; desktop designer smoke test |
 | **WV-2** | `@kubuno/views-compiler`: WASM build (Node + browser), Vite plugin (plan + accessors + source maps + `.d.ts` + check files + HMR), `kbview-tsc` | L | WV-1, WV-4 (fixture registry is enough to start) | WASM toolchain in module CI (offline `.kbpkg` builds: the package ships the `.wasm`, no Rust needed downstream) | Golden tests (view → plan), `tsc` errors remapped to `.kbview` lines, HMR keeps state (vitest + browser) |
 | **WV-3** | `@kubuno/views` runtime in core: renderer, binding engine (one/two-way, `StringFormat`, `{Res}` via i18next), events → args, `ViewBase`/`component()`/`@bind`/handles, `Repeater`, `Query`/`Mutation`, `Timer`, `KbView`, `defineControl`, `ReactHost`, `MessageBox`/`Dialog`; import-map entry, `viewsAbi` handshake | L | WV-2 | Re-render granularity and React 19 semantics (StrictMode double mount, concurrent rendering) | Conformance suite (compiled vs interpreted DOM equal), React Profiler budget, bundle ≤ 15 KB gzip |
 | **WV-4** | Web registry: `*.meta.ts` per family for the existing `@ui`/sdk components, `build:registry`, conformance test vs desktop export + allowlist | M | WV-0 | Metadata drifting from props — mitigated by `satisfies Props` | Test in core CI; JSON diff report |
@@ -693,7 +693,7 @@ surface plan) in parallel with **WV-4**; WV-2/WV-3 next.
    **Recommended: yes** — they already exist in the grammar, Toolbox, docs and desktop views; React component names
    stay as they are.
 2. **Code-behind model** — a class extending the generated `ViewBase` (handlers as methods, `@bind accessor`, hooks
-   in `use()`), or hooks-only functions? **Recommended: the class**, for parity with `#[kubuno::view]`, reliable
+   in `use()`), or hooks-only functions? **Recommended: the class**, for parity with `#[kubuno_desktop::view]`, reliable
    handler insertion by the designer and typed `x:Name` fields.
 3. **Free styling on the web** — allow a web-only `Class="…"` (Tailwind) attribute during the migration, flagged and
    counted by the language server, or tokens only from day one? **Recommended: allow it with warnings and a per-repo
@@ -732,7 +732,7 @@ with its custom-control boundary defined explicitly.
 and alongside the codemods, mines the existing TSX (pattern frequency across the 24 repos: e.g. the local
 `SettingsRow` and `RadioGroup` copied in 20 repos, the 4 ribbon copies, list rows, cards, empty states, toolbars,
 editor chrome) and promotes each recurring bespoke pattern to a first-class component in `@kubuno/ui` **and** its
-desktop counterpart (`kubuno_ui` + `kubuno-views` element), same name and semantics on both sides, pixel-identical
+desktop counterpart (`kubuno_desktop_ui` + `kubuno-desktop-views` element), same name and semantics on both sides, pixel-identical
 to the current web rendering. Each new component lands with registry metadata (Toolbox, Properties, events,
 design-time rendering), docs, and a gallery entry on both targets; publishing `@kubuno/ui` stays a user action.
 
@@ -763,7 +763,7 @@ extension points (ExtensionRegistry, ModuleServiceRegistry, event bus, routes). 
    package reference between modules**; each module builds alone against the published `@kubuno/*` packages and the
    shared crates' git tags. The designer Toolbox for a module shows host elements + that module's own controls only
    (+ extension slots), never another module's controls.
-5. **Desktop parity**: the same rule holds for desktop modules/apps — reuse goes through `kubuno_ui`/`kubuno-views`
+5. **Desktop parity**: the same rule holds for desktop modules/apps — reuse goes through `kubuno_desktop_ui`/`kubuno-desktop-views`
    (the shared "host" layer) or through module services, never through one app's crate depending on another's.
 
 ## 11. WV-9a findings (2026-10-01) — WebView2 in a Visual Studio document pane
@@ -920,16 +920,16 @@ own controls and `ExtensionSlot` placeholders, never another module's controls. 
 
 ## 12. WV-1 as built (2026-10-02)
 
-Two platform-neutral crates were split out of `kubuno-views` (`desktop/windows/src/crates/`), both in the workspace
-and in `Kubuno.Core.Desktop.slnx` under `/Libraries/` (`.rsproj`, `Kubuno.Rust.Sdk/1.1.1`). Neither depends on
-`kubuno_ui`, `kubuno_controls`, `windows` or any C library.
+Two platform-neutral crates were split out of `kubuno-desktop-views` (`desktop/windows/src/crates/`), both in the workspace
+and in `Kubuno.Desktop.slnx` under `/Libraries/` (`.rsproj`, `Kubuno.Rust.Sdk/1.1.1`). Neither depends on
+`kubuno_desktop_ui`, `kubuno_desktop_controls`, `windows` or any C library.
 
 | Crate | Depends on | Holds |
 |---|---|---|
-| `kubuno-views-model` | `serde`, `serde_json` | `meta`: `PropKind`, `PropertyMeta`, `EventCategory`, `Routing`, `EventMeta`, `ArgsChain`, `LevelMeta`, `ChildrenModel`, `LayoutKind`, `DesignTimeAttribute`/`DESIGN_TIME_ATTRIBUTES`; `schema`: the export's wire types (`ComponentJson`, `PropertyJson`, `EventJson`, `PropKindJson`, `ChildrenModelJson`, `LayoutKindJson`, `RegistryExport`, `fnv1a_hex`); `json`: **new** loader `load_registry` → owned `RegistryDocument`/`ComponentEntry`/`PropertyEntry`/`EventEntry` (desktop export and web file, unknown fields ignored, `schema` > 1 rejected, `web`/`typography` kept raw); `editor`: **new** `EditorKind`; `binding_sources`: the binding source schema (`Shape`, `MemberKind`, `Member<L>`, `Context<L, U>`, `ConverterInfo<L>`, `Schema<L, U>`, `Resolution<'a, L>`), generic over the location types |
-| `kubuno-views-syntax` | `rowan`, `kubuno-views-model` | `syntax` (lexer, parser, rowan CST, `Diagnostic`, `LineIndex`), `ast` (typed layer, `stable_id`/`resolve_id`), `edit` (all surgical edits, `match_line_endings`); `binding`: the `{Binding}` grammar (`BindingMode`, `UpdateSourceTrigger`, `BindingFormat`, `BindingPart`, `BINDING_KEYS`, `BindingIssue`, `binding_parts`, `canonical_key`, `is_binding_expr`, **new** `BindingSyntax`/`parse_binding_syntax`/`binding_issues`); `res`: the `{Res}` grammar (`RES_PREFIX`, `parse_res_path`, `res_reference`, `is_res_expr`); `ids`: `parent_id_of`, `is_ancestor_id`, `top_level_ids`; `markup`: `x:`/`d:` attributes; `view_kind`: `.kbview`/`.kbcontrol` rules (from `kubuno-views-ls`); `validate`: the registry-independent validator core (`COMMON_ATTRIBUTES`, `check_value`, `is_binding_expression`, `is_root_element`, `distance`/`closest`/`with_suggestion`) |
+| `kubuno-desktop-views-model` | `serde`, `serde_json` | `meta`: `PropKind`, `PropertyMeta`, `EventCategory`, `Routing`, `EventMeta`, `ArgsChain`, `LevelMeta`, `ChildrenModel`, `LayoutKind`, `DesignTimeAttribute`/`DESIGN_TIME_ATTRIBUTES`; `schema`: the export's wire types (`ComponentJson`, `PropertyJson`, `EventJson`, `PropKindJson`, `ChildrenModelJson`, `LayoutKindJson`, `RegistryExport`, `fnv1a_hex`); `json`: **new** loader `load_registry` → owned `RegistryDocument`/`ComponentEntry`/`PropertyEntry`/`EventEntry` (desktop export and web file, unknown fields ignored, `schema` > 1 rejected, `web`/`typography` kept raw); `editor`: **new** `EditorKind`; `binding_sources`: the binding source schema (`Shape`, `MemberKind`, `Member<L>`, `Context<L, U>`, `ConverterInfo<L>`, `Schema<L, U>`, `Resolution<'a, L>`), generic over the location types |
+| `kubuno-desktop-views-syntax` | `rowan`, `kubuno-desktop-views-model` | `syntax` (lexer, parser, rowan CST, `Diagnostic`, `LineIndex`), `ast` (typed layer, `stable_id`/`resolve_id`), `edit` (all surgical edits, `match_line_endings`); `binding`: the `{Binding}` grammar (`BindingMode`, `UpdateSourceTrigger`, `BindingFormat`, `BindingPart`, `BINDING_KEYS`, `BindingIssue`, `binding_parts`, `canonical_key`, `is_binding_expr`, **new** `BindingSyntax`/`parse_binding_syntax`/`binding_issues`); `res`: the `{Res}` grammar (`RES_PREFIX`, `parse_res_path`, `res_reference`, `is_res_expr`); `ids`: `parent_id_of`, `is_ancestor_id`, `top_level_ids`; `markup`: `x:`/`d:` attributes; `view_kind`: `.kbview`/`.kbcontrol` rules (from `kubuno-views-ls`); `validate`: the registry-independent validator core (`COMMON_ATTRIBUTES`, `check_value`, `is_binding_expression`, `is_root_element`, `distance`/`closest`/`with_suggestion`) |
 
-**What stayed in `kubuno-views`, and why.** `ComponentMeta` (its `build` field is a runtime `fn` returning a
+**What stayed in `kubuno-desktop-views`, and why.** `ComponentMeta` (its `build` field is a runtime `fn` returning a
 `ViewNode`, and its methods read the runtime class chain `controls::class_of`), the registry *tables* (`COMMON_EVENTS`
 and `VIEW_EVENTS` name runtime args types, `LEVELS`, the families), `BindingSpec` (it carries a run-time
 `BindingState`; it is now built from `BindingSyntax`), the validator's registry walk (`validate`, `warnings`, `hints`,
@@ -937,14 +937,14 @@ and `VIEW_EVENTS` name runtime args types, `LEVELS`, the families), `BindingSpec
 runtime, rendering, Windows and design mode. A web consumer reads the registry through `json` (the export repeats
 every inherited and root-only member on each element, so `ComponentEntry` needs no class chain).
 
-**Paths kept.** `kubuno-views` re-exports `syntax`, `ast`, `edit` as modules and every moved item at its old path
+**Paths kept.** `kubuno-desktop-views` re-exports `syntax`, `ast`, `edit` as modules and every moved item at its old path
 (`registry::PropKind`, `events::ArgsChain`, `registry::export::ComponentJson`, `binding::BindingMode`,
 `resources::RES_PREFIX`, `design::parent_id_of`…); `kubuno-views-ls` re-exports `view_kind`'s items and aliases the
 binding source types to their LSP instantiation (`type Member = model::Member<lsp_types::Location>`…). No
-downstream source changed (the facade `kubuno`, the macros, chat, shell, documents, drive, the gallery,
+downstream source changed (the facade `kubuno-desktop`, the macros, chat, shell, documents, drive, the gallery,
 `view_embed`).
 
-**Verified.** Tests, before → after: `kubuno-views` lib 745 → 673 (the 73 tests of `syntax`, `ast` and `edit` moved with their modules, +1 new: the model loader reads the real export back), its integration tests 7/16/7/1 and 24 doc-tests unchanged; `kubuno-views-syntax` 83 (73 moved + 10 new), `kubuno-views-model` 8 + 1 doc-test (new); `kubuno-views-ls` 156 + 1 + 18 unchanged; `kubuno-views-macros` 25 + 28 doc, `kubuno-views-meta` 14, `kubuno` 25 + 15 doc, `kubuno-chat` 19 unchanged. `kubuno-desktop` (shell) was being edited by another agent during this lot (78 → 82 tests; its new `signout_dialog::the_dialog_says_how_many_changes_wait` fails identically with the original `kubuno-views`, checked on a copy of the tree): 81 pass. Cross-checks of the two new crates (`cargo check --all-targets`): `wasm32-unknown-unknown`,
+**Verified.** Tests, before → after: `kubuno-desktop-views` lib 745 → 673 (the 73 tests of `syntax`, `ast` and `edit` moved with their modules, +1 new: the model loader reads the real export back), its integration tests 7/16/7/1 and 24 doc-tests unchanged; `kubuno-desktop-views-syntax` 83 (73 moved + 10 new), `kubuno-desktop-views-model` 8 + 1 doc-test (new); `kubuno-views-ls` 156 + 1 + 18 unchanged; `kubuno-desktop-views-macros` 25 + 28 doc, `kubuno-desktop-views-meta` 14, `kubuno-desktop` 25 + 15 doc, `kubuno-chat` 19 unchanged. `kubuno-desktop` (shell) was being edited by another agent during this lot (78 → 82 tests; its new `signout_dialog::the_dialog_says_how_many_changes_wait` fails identically with the original `kubuno-desktop-views`, checked on a copy of the tree): 81 pass. Cross-checks of the two new crates (`cargo check --all-targets`): `wasm32-unknown-unknown`,
 `x86_64-unknown-linux-gnu`, `x86_64-apple-darwin`, `aarch64-apple-darwin` all clean; `clippy -D warnings` clean on
 Windows and on `wasm32-unknown-unknown`. Not done: the desktop designer smoke test in Visual Studio (no VS session in
 this lot; the export and `view_embed` compile unchanged, and the export is now also read back by the model loader in a
@@ -959,9 +959,9 @@ mode, tagged git dependencies, like `kubuno-seccomp` / `kubuno-storage`):
 
 | Piece | Repository / path | Consumed by |
 |---|---|---|
-| Grammar (unchanged) | desktop `windows/src/crates/kubuno-views-syntax`, `-model` | everything below |
-| **Web compiler** `kubuno-views-web` (new, platform-neutral: validation against a web registry, plan, `.d.ts`, check files, handle types) | desktop `windows/src/crates/kubuno-views-web` (workspace member, `.rsproj`, `Kubuno.Core.Desktop.slnx`) | the WASM shim (git tag); later the language server's web profile (path, WV-7) — §5's "one generator, shared Rust" |
-| WASM shim (C ABI, JSON in/out, no wasm-bindgen) | core `frontend/packages/views-compiler/wasm/` (own `[workspace]`, not a member of the core's Rust workspace) | `kubuno-views-web = { git = "https://github.com/kubuno/desktop", tag = "views-web-v0.1.0" }` |
+| Grammar (unchanged) | desktop `windows/src/crates/kubuno-desktop-views-syntax`, `-model` | everything below |
+| **Web compiler** `kubuno-web-views-compiler-core` (new, platform-neutral: validation against a web registry, plan, `.d.ts`, check files, handle types) | desktop `windows/src/crates/kubuno-web-views-compiler-core` (workspace member, `.rsproj`, `Kubuno.Desktop.slnx`) | the WASM shim (git tag); later the language server's web profile (path, WV-7) — §5's "one generator, shared Rust" |
+| WASM shim (C ABI, JSON in/out, no wasm-bindgen) | core `frontend/packages/views-compiler/wasm/` (own `[workspace]`, not a member of the core's Rust workspace) | `kubuno-web-views-compiler-core = { git = "https://github.com/kubuno/desktop", tag = "views-web-v0.1.0" }` |
 | Built `.wasm` (≈ 474 KB) + `BUILD-INFO.json` | committed in `frontend/packages/views-compiler/wasm/`, shipped in the npm package | module builds: **no Rust toolchain, offline-able** |
 | `@kubuno/views-compiler` (Vite plugin, `kbview-tsc`, browser entry) | core `frontend/packages/views-compiler/` (`dist/` committed, like `@kubuno/ui`'s) | modules (devDependency), the core host |
 
@@ -975,7 +975,7 @@ tag. Release flow: commit + tag `views-web-vX.Y.Z` on the desktop repository (us
 
 ### 13.2 What the compiler produces
 
-`kubuno_views_web::compile(text, registry, options)` (Rust; the same through WASM) returns: diagnostics
+`kubuno_web_views_compiler_core::compile(text, registry, options)` (Rust; the same through WASM) returns: diagnostics
 (1-based line / **UTF-16** column, the unit of TypeScript, source maps and editors; codes `syntax`,
 `unknown-element` with « did you mean », `unknown-attribute`, `value`, `children`, `item-placement`,
 `property-element`, `x-name`, `handler-name`, `binding`, `binding-path`, `root-only`, `not-on-web`,
@@ -1035,10 +1035,10 @@ transform, which leaves them as written (oxc does not lower TC39 decorators, and
 
 ### 13.3 Verified
 
-- Rust `kubuno-views-web`: 3 unit + 6 integration tests (4 golden views → plan, `.d.ts`, check file, span map,
+- Rust `kubuno-web-views-compiler-core`: 3 unit + 6 integration tests (4 golden views → plan, `.d.ts`, check file, span map,
   diagnostics; design builds; isolation; no shadowing; handle types); `clippy -D warnings` on Windows and on
   `wasm32-unknown-unknown`; `cargo check --all-targets` for `x86_64-unknown-linux-gnu` and
-  `aarch64-apple-darwin`. `kubuno-views-syntax` (83) and `-model` (8 + 1) untouched and green.
+  `aarch64-apple-darwin`. `kubuno-desktop-views-syntax` (83) and `-model` (8 + 1) untouched and green.
 - `@kubuno/views-compiler` (vitest, **12 tests, the same results on Linux .220 and on Windows**): golden plans,
   declarations, check files and modules with the real host registry; error positions; isolation; source map of
   accessors and dispatchers; compile time; `kbview-tsc` on a fixture project (5 errors at the exact `.kbview`
@@ -1057,7 +1057,7 @@ Sources: core `frontend/src/views/` (`plan.ts`, `view.ts`, `render.tsx`, `bindin
 `packages/build.sh`, a throwing `index.js` stub, like `@kubuno/sdk`).
 
 - **Host integration**: alias `@kubuno/views` (Vite + `tsconfig.app.json`), build entry and stable chunk
-  `kubuno-views`, import-map entry (`build/importmap-plugin.ts`); `src/core/viewsHost.ts` (imported by
+  `kubuno-desktop-views`, import-map entry (`build/importmap-plugin.ts`); `src/core/viewsHost.ts` (imported by
   `main.tsx`, in the shared chunk) registers `@ui` and the sdk workspace components for interpreted plans, the
   icon lookup (`ICON_MAP`) and `{Res}` through i18next (`languageChanged` re-renders every view). The runtime
   depends only on React, `react-dom/client` and React Query. `loadRemoteModules` refuses a module whose

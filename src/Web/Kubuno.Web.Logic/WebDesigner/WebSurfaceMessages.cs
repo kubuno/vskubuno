@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Kubuno.Web.Logic.WebDesigner
 {
     // SPIKE (docs/WEB-VIEWS.md, lot WV-9a): the surface -> host messages of the WebView2 design surface, as typed
-    // values. The wire shapes are the desktop design surface's (kubuno_views::protocol, DesignSurfaceProtocol in
+    // values. The wire shapes are the desktop design surface's (kubuno_desktop_views::protocol, DesignSurfaceProtocol in
     // Kubuno.Desktop) wherever a message exists there; the web additions are marked. WV-9b replaces this with the
     // shared protocol once the designer has moved down to Kubuno.Views (WV-8).
 
@@ -150,7 +150,7 @@ namespace Kubuno.Web.Logic.WebDesigner
         public SurfaceEditOp Op { get; }
     }
 
-    /// <summary>Where a Toolbox drop would land (<c>kubuno_views::design::DropTarget</c>): marker in page CSS pixels.</summary>
+    /// <summary>Where a Toolbox drop would land (<c>kubuno_desktop_views::design::DropTarget</c>): marker in page CSS pixels.</summary>
     public sealed class SurfaceDropTarget
     {
         public SurfaceDropTarget(bool valid, string parentId, int index, SurfaceBounds marker)

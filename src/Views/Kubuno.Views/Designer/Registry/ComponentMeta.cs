@@ -3,11 +3,11 @@ using System.Collections.Generic;
 namespace Kubuno.Views.Designer.Registry
 {
     /// <summary>
-    /// Mirrors one exported <c>kubuno_views::registry::ComponentMeta</c> entry - the whole shape
+    /// Mirrors one exported <c>kubuno_desktop_views::registry::ComponentMeta</c> entry - the whole shape
     /// docs/DESIGNER.md §5 specifies for the <c>kubuno/registry</c> response ("one JSON object per
     /// ComponentMeta: {name, doc, properties: [...], events: [...], children, family}", plus the
     /// additive fields <see cref="Icon"/>, <see cref="LayoutKind"/> and <see cref="AllowedChildren"/>
-    /// that section (and DSG-1's own implementation, <c>kubuno-views/src/registry/export.rs</c>) call
+    /// that section (and DSG-1's own implementation, <c>kubuno-desktop-views/src/registry/export.rs</c>) call
     /// for. Loaded from a JSON string (<see cref="ComponentRegistry.FromJson"/>) rather than
     /// referencing the Rust crate directly - see docs/ARCHITECTURE.md's "everything that knows
     /// Rust/Kubuno is in Rust; C# only integrates".

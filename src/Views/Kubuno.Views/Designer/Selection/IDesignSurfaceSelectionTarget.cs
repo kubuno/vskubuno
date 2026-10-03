@@ -14,7 +14,7 @@ namespace Kubuno.Views.Designer.Selection
     /// </summary>
     public interface IDesignSurfaceSelectionTarget
     {
-        /// <summary>Mirrors <c>kubuno_views::protocol::HostMessage::Select</c>'s own <c>id: string | null</c> field (docs/DESIGNER.md §9): <see langword="null"/> clears the surface's selection.</summary>
+        /// <summary>Mirrors <c>kubuno_desktop_views::protocol::HostMessage::Select</c>'s own <c>id: string | null</c> field (docs/DESIGNER.md §9): <see langword="null"/> clears the surface's selection.</summary>
         void Select(string? elementId);
     }
 }

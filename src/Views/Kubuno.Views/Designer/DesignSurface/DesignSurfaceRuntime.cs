@@ -4,7 +4,7 @@ namespace Kubuno.Views.Designer.DesignSurface
 {
     /// <summary>
     /// Which design surface exe a designer pane runs (docs/DESIGNER.md section 15): the one statically
-    /// linked against the project's own <c>kubuno_ui</c> build (<see cref="IsProjectRuntime"/>), or the
+    /// linked against the project's own <c>kubuno_desktop_ui</c> build (<see cref="IsProjectRuntime"/>), or the
     /// fallback bundled with the extension (<c>tools\surface\</c>) while the project has not been built.
     /// </summary>
     public sealed class DesignSurfaceRuntime
@@ -50,7 +50,7 @@ namespace Kubuno.Views.Designer.DesignSurface
         /// <summary>Bundled runtime: the design build failed ("Réessayer").</summary>
         Failed,
 
-        /// <summary>Bundled runtime: the document is not in a project that uses kubuno-views (no action).</summary>
+        /// <summary>Bundled runtime: the document is not in a project that uses kubuno-desktop-views (no action).</summary>
         NotApplicable,
 
         /// <summary>

@@ -75,7 +75,7 @@ namespace Kubuno.Views.Tests.Designer.Handlers
                 [KbviewUri] = new List<TextEditDto> { Edit(0, 7, " OnClick=\"on_button_click\"") },
                 [RsUri] = new List<TextEditDto>
                 {
-                    Edit(2, 0, "fn on_button_click(vm: &mut dyn kubuno_views::binding::ViewModel, value: kubuno_views::binding::Value) {\n    // TODO\n}\n\n"),
+                    Edit(2, 0, "fn on_button_click(vm: &mut dyn kubuno_desktop_views::binding::ViewModel, value: kubuno_desktop_views::binding::Value) {\n    // TODO\n}\n\n"),
                     Edit(4, 4, "\"on_button_click\" => |vm, value| on_button_click(vm, value),\n"),
                 },
             };
@@ -102,7 +102,7 @@ namespace Kubuno.Views.Tests.Designer.Handlers
 
         /// <summary>
         /// EVT-4: a typed stub is an indented method after a blank line, inserted together with a
-        /// <c>use kubuno_views::prelude::*;</c> line higher in the file - the caret still lands on its <c>fn</c>.
+        /// <c>use kubuno_desktop_views::prelude::*;</c> line higher in the file - the caret still lands on its <c>fn</c>.
         /// </summary>
         [TestMethod]
         public async Task Created_TypedStub_NavigatesToTheMethodPastTheAddedImport()
@@ -113,7 +113,7 @@ namespace Kubuno.Views.Tests.Designer.Handlers
                 [RsUri] = new List<TextEditDto>
                 {
                     Edit(12, 0, "\n    fn on_ok_click(&mut self, sender: &Sender<Button>, e: &MouseEventArgs) {\n        // TODO: implement on_ok_click\n    }\n"),
-                    Edit(2, 0, "use kubuno_views::prelude::*;\n"),
+                    Edit(2, 0, "use kubuno_desktop_views::prelude::*;\n"),
                 },
             };
             var client = new FakeKubunoViewsLanguageServerClient

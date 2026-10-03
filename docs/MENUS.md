@@ -10,12 +10,12 @@
 
 ## 1. What existed before
 
-- `<ContextMenu>` + `<MenuItem>` (foundation F1, `kubuno-views/src/window.rs`): sub-menus, icons, separators
+- `<ContextMenu>` + `<MenuItem>` (foundation F1, `kubuno-desktop-views/src/window.rs`): sub-menus, icons, separators
   (`Text="-"`, `Kind="Separator"`), headers (`Kind="Header"`), `Checked`/`CheckOnClick`/`RadioGroup`, bindings on
   `Text`/`Enabled`/`Checked`/`Visible`, `ItemsSource` (rows with fixed fields), `OnDropDownOpening`, owner draw, a
   `ContextMenu` property on every control, `DropDownMenu` on `Button`/`IconButton`, `show_context_menu` from code. The
   `ShortcutKeys` were displayed only: nothing ran them.
-- `kubuno_ui::workspace::MenuBar` (the web docking port), a Rust widget with no `.kbview` element.
+- `kubuno_desktop_ui::workspace::MenuBar` (the web docking port), a Rust widget with no `.kbview` element.
 - The ribbon family and its `<Command>` (RIBBON.md §4), whose shortcuts only the ribbon ran.
 
 ## 2. Elements
@@ -69,7 +69,7 @@ button is a button and an arrow part: `OnClick` on the main part (else its `Defa
 items, runs), the menu on the arrow. Keyboard: Down, Alt+Down, F4 open the menu; Space/Enter open it (drop-down) or
 click (split). Events `OnDropDownOpening`, `OnDropDownClosed`.
 
-## 3. Run time (`kubuno-views`)
+## 3. Run time (`kubuno-desktop-views`)
 
 - **One menu engine.** Every menu of a view — a context menu, each top-level menu of a bar (`#bar:<item id>`), the
   items of a drop-down button (`#dd:<button id>`) — is a `MenuSpec` (`window::read_menus`) opened by the runtime as an
@@ -95,11 +95,11 @@ click (split). Events `OnDropDownOpening`, `OnDropDownClosed`.
 - **Accessibility (UI Automation).** The bar is a `MenuBar` whose labels are `MenuItem`s with `ExpandCollapse` (state =
   their menu is open) and their access key; an open menu publishes a `Menu` per level and a `MenuItem` per row:
   `Invoke`, `Toggle` for a check or radio row, `ExpandCollapse` for a sub-menu, `Separator`; the hot row holds the
-  focus. Invoke / Expand / Collapse act on the menu. (`AccessNode::expanded` was added to `kubuno-controls` for this.)
-- **Themes and DPI.** The rows are `kubuno_ui::lists::Menu` (the `MenuDropdown` port), light and dark; everything is
+  focus. Invoke / Expand / Collapse act on the menu. (`AccessNode::expanded` was added to `kubuno-desktop-controls` for this.)
+- **Themes and DPI.** The rows are `kubuno_desktop_ui::lists::Menu` (the `MenuDropdown` port), light and dark; everything is
   DIP-based (verified at 100 % and 175 %).
 
-## 4. The shortcut grammar (`kubuno-views-syntax::shortcut`, platform-neutral)
+## 4. The shortcut grammar (`kubuno-desktop-views-syntax::shortcut`, platform-neutral)
 
 Modifiers (`Ctrl`/`Control`, `Shift`/`Maj`, `Alt`, any case) then one key: a letter, a digit (`0`…`9`, `D0`…`D9`),
 `F1`…`F24`, `Delete`/`Del`, `Insert`/`Ins`, `Home`, `End`, `PageUp`/`PgUp`, `PageDown`/`PgDn`, arrows, `Enter`,
@@ -153,17 +153,17 @@ Completion of the new elements and properties comes from the registry (reference
 
 | Piece | Where |
 |---|---|
-| Model, reading, open menus, keyboard, mnemonics, UIA, tooltips | `kubuno-views/src/window.rs` |
-| Commands, accelerators, bar state, `MenuBarNode`, `DropDownButtonNode`, `ContextMenuNode`, design overlay, « Tapez ici » slots, menu rows and drop targets, lints | `kubuno-views/src/menus.rs` |
-| Registry (`MenuBar`, `MenuSeparator`, `MenuHeader`, `DropDownButton`, `SplitButton`, French docs) | `kubuno-views/src/registry/families/menus.rs`; `ContextMenu`/`MenuItem` in `families/components.rs` |
-| Runtime: accelerators, bar keyboard, Shift+F10, `OnClosed`, `OnMenuActivate`, menu access tree | `kubuno-views/src/runtime.rs` |
-| Cross-level drag | `kubuno-views/src/design.rs` (`DragSession::menu_target`) |
-| In-place editor, F2 | `kubuno-views/examples/view_embed.rs` (`TypeEdit`) |
-| Shortcut grammar | `kubuno-views-syntax/src/shortcut.rs` |
-| Mnemonic underline in menus | `kubuno-ui/src/lists.rs` (`Menu::mnemonics`) |
-| `AccessNode::expanded`, Expand/Collapse actions | `kubuno-controls/src/host/access.rs` |
+| Model, reading, open menus, keyboard, mnemonics, UIA, tooltips | `kubuno-desktop-views/src/window.rs` |
+| Commands, accelerators, bar state, `MenuBarNode`, `DropDownButtonNode`, `ContextMenuNode`, design overlay, « Tapez ici » slots, menu rows and drop targets, lints | `kubuno-desktop-views/src/menus.rs` |
+| Registry (`MenuBar`, `MenuSeparator`, `MenuHeader`, `DropDownButton`, `SplitButton`, French docs) | `kubuno-desktop-views/src/registry/families/menus.rs`; `ContextMenu`/`MenuItem` in `families/components.rs` |
+| Runtime: accelerators, bar keyboard, Shift+F10, `OnClosed`, `OnMenuActivate`, menu access tree | `kubuno-desktop-views/src/runtime.rs` |
+| Cross-level drag | `kubuno-desktop-views/src/design.rs` (`DragSession::menu_target`) |
+| In-place editor, F2 | `kubuno-desktop-views/examples/view_embed.rs` (`TypeEdit`) |
+| Shortcut grammar | `kubuno-desktop-views-syntax/src/shortcut.rs` |
+| Mnemonic underline in menus | `kubuno-desktop-ui/src/lists.rs` (`Menu::mnemonics`) |
+| `AccessNode::expanded`, Expand/Collapse actions | `kubuno-desktop-controls/src/host/access.rs` |
 | Designer verbs, standard items, shortcut editor | vskubuno `src/Views/Kubuno.Views/Designer/Menus/` |
-| Demo of every feature | `kubuno-views/examples/views/menus.kbview` + `examples/menus_demo.rs` |
+| Demo of every feature | `kubuno-desktop-views/examples/views/menus.kbview` + `examples/menus_demo.rs` |
 
 **Verified**: unit tests (shortcut grammar, reading, commands, item templates, accelerators, bar keyboard and
 mnemonics, Escape back to the bar, menu keyboard capture, UIA nodes, lints, the demo view compiles with no warning, LS
@@ -181,5 +181,5 @@ system not initialised). To do next, in a prepared hive.
 
 **Not done yet**: MDI menu merging (`AllowMerge`/`MergeAction`), ComboBox / TextBox items inside menus, scrolling of a
 menu taller than the screen, RTL mirroring of menus, a `CommandParameter`, typed `x:Name` handles for `MenuBar` /
-`DropDownButton` / `SplitButton` in the `kubuno` crate (they are `kubuno::Control`), the web target (these elements
+`DropDownButton` / `SplitButton` in the `kubuno-desktop` crate (they are `kubuno_desktop::Control`), the web target (these elements
 are desktop-only in the web registry), shortcuts of menus inside user controls (their context menus still open).

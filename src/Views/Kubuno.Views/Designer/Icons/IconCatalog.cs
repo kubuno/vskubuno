@@ -64,7 +64,7 @@ namespace Kubuno.Views.Designer.Icons
     }
 
     /// <summary>
-    /// The Kubuno icon set as the views language server exports it (<c>kubuno/icons</c>, <c>kubuno_views::icon::catalog_json</c>):
+    /// The Kubuno icon set as the views language server exports it (<c>kubuno/icons</c>, <c>kubuno_desktop_views::icon::catalog_json</c>):
     /// every glyph with its paths, the short aliases and the named sizes - the one source of truth the runtime also draws from.
     /// </summary>
     public sealed class IconCatalog

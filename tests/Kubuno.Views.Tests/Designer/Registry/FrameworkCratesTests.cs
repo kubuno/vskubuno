@@ -11,17 +11,17 @@ namespace Kubuno.Views.Tests.Designer.Registry
     [TestClass]
     public class FrameworkCratesTests
     {
-        private const string RustListPath = @"desktop\windows\src\crates\kubuno-views-meta\src\framework.rs";
+        private const string RustListPath = @"desktop\windows\src\crates\kubuno-desktop-views-meta\src\framework.rs";
 
         [TestMethod]
         public void The_framework_is_a_list_not_a_prefix()
         {
-            foreach (var name in new[] { "kubuno", "kubuno-views", "kubuno_views", "kubuno_ui", "kubuno-print", "\"kubuno-data\"", "kubuno_app_storage_components" })
+            foreach (var name in new[] { "kubuno", "kubuno-desktop-views", "kubuno_desktop_views", "kubuno_desktop_ui", "kubuno-desktop-print", "\"kubuno-desktop-data\"", "kubuno_desktop_app_storage_components" })
             {
                 Assert.IsTrue(FrameworkCrates.Contains(name), name);
             }
 
-            foreach (var name in new[] { "kubuno-shell-controls", "kubuno_shell_controls", "kubuno-acme-widgets", "kubuno-sync", "kubuno-app-storage", "kubunoish", "shell-controls", "", null })
+            foreach (var name in new[] { "kubuno-desktop-shell-controls", "kubuno_desktop_shell_controls", "kubuno-acme-widgets", "kubuno-desktop-sync", "kubuno-desktop-app-storage", "kubunoish", "shell-controls", "", null })
             {
                 Assert.IsFalse(FrameworkCrates.Contains(name), name ?? "null");
             }

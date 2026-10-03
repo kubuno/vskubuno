@@ -3,7 +3,7 @@
 //! `#[property]` fields are its attributes, its `#[event]` fields its events (`self.raise_<field>(args)` raises
 //! one to the handler the view names).
 
-use kubuno_views::prelude::*;
+use kubuno_desktop_views::prelude::*;
 
 /// A non-visual component. Describe it here: this text is its description in the Toolbox.
 #[derive(Component, Default)]

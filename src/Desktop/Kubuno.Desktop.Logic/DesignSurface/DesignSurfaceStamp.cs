@@ -15,7 +15,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
     {
         public const string FileName = "surface.json";
         // 2: surfaces built with debug info (debug profile); 3: the DLL is copied under the name the surface
-        // imports; 4: kubuno_ui is linked statically, the folder holds the exe alone (no DLL, no hash).
+        // imports; 4: kubuno_desktop_ui is linked statically, the folder holds the exe alone (no DLL, no hash).
         public const int CurrentVersion = 4;
 
         public int Version { get; set; } = CurrentVersion;

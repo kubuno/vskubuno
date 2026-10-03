@@ -86,7 +86,7 @@ namespace Kubuno.Desktop.Logic.Data
             string? exe = _exePath();
             if (exe is null || !File.Exists(exe))
             {
-                throw new DataToolException(DataToolErrorKinds.Unavailable, $"{DataToolLocator.ExeName} was not found (reinstall the Kubuno extension, or build it: cargo build --release -p kubuno-data-tool).");
+                throw new DataToolException(DataToolErrorKinds.Unavailable, $"{DataToolLocator.ExeName} was not found (reinstall the Kubuno extension, or build it: cargo build --release -p kubuno-desktop-data-tool).");
             }
 
             var info = new ProcessStartInfo(exe, "--stdio")

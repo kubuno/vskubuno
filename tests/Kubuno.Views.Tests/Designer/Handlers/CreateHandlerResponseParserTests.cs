@@ -70,7 +70,7 @@ namespace Kubuno.Views.Tests.Designer.Handlers
                       "file:///view.rs": [
                         {
                           "range": { "start": { "line": 2, "character": 0 }, "end": { "line": 2, "character": 0 } },
-                          "newText": "fn on_button_click(vm: &mut dyn kubuno_views::binding::ViewModel, value: kubuno_views::binding::Value) {\n}\n\n"
+                          "newText": "fn on_button_click(vm: &mut dyn kubuno_desktop_views::binding::ViewModel, value: kubuno_desktop_views::binding::Value) {\n}\n\n"
                         },
                         {
                           "range": { "start": { "line": 4, "character": 4 }, "end": { "line": 4, "character": 4 } },

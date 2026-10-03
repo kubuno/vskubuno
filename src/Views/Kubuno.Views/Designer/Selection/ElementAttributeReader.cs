@@ -14,8 +14,8 @@ namespace Kubuno.Views.Designer.Selection
     /// own report for the LS-addition alternative, left for a follow-up if a future need (e.g. a
     /// property EDIT wants server-validated current values) outgrows this reader's best-effort nature.
     ///
-    /// A deliberately independent, SIMPLIFIED re-implementation of <c>kubuno_views::syntax</c>'s grammar
-    /// (`kubuno-views/src/syntax/lexer.rs`'s own doc: element/attribute names are ASCII
+    /// A deliberately independent, SIMPLIFIED re-implementation of <c>kubuno_desktop_views::syntax</c>'s grammar
+    /// (`kubuno-desktop-views/src/syntax/lexer.rs`'s own doc: element/attribute names are ASCII
     /// `[A-Za-z_][A-Za-z0-9_.:-]*` tokens - not real XML namespaces, so <c>x:Name</c> is one flat
     /// identifier, never resolved against a `xmlns:x` declaration; `System.Xml.Linq.XDocument` would
     /// reject exactly this real-world shape, e.g. <c>tests/corpus/settings_view.kbview</c>'s own
@@ -29,7 +29,7 @@ namespace Kubuno.Views.Designer.Selection
     ///
     /// Mirrors the real parser's own error-tolerant shape closely enough for well-formed and mildly
     /// malformed input (a stray/mismatched closing tag closes whatever element is currently open,
-    /// regardless of its name - `kubuno-views/src/syntax/parser.rs`'s own `parse_end_tag` never checks
+    /// regardless of its name - `kubuno-desktop-views/src/syntax/parser.rs`'s own `parse_end_tag` never checks
     /// name equality either, see that method's doc), without reproducing its full diagnostic machinery -
     /// this reader only needs "which element is this", not "is this file valid".
     /// </summary>
@@ -289,7 +289,7 @@ namespace Kubuno.Views.Designer.Selection
             /// Reads a <c>"value"</c>/<c>'value'</c> token at the current position (quotes stripped, character
             /// references decoded like the runtime reads them); <see langword="null"/> (with <see cref="_pos"/>
             /// advanced to end of input) for an unterminated string, mirroring
-            /// <c>kubuno_views::ast::Attribute::value</c>'s own "None when malformed" contract.
+            /// <c>kubuno_desktop_views::ast::Attribute::value</c>'s own "None when malformed" contract.
             /// </summary>
             private string? ReadQuotedStringOrNull()
             {
@@ -323,7 +323,7 @@ namespace Kubuno.Views.Designer.Selection
                 return i < _text.Length ? _text[i] : '\0';
             }
 
-            /// <summary>Ascii alphabetic or <c>_</c> - mirrors <c>kubuno-views/src/syntax/lexer.rs</c>'s own <c>is_ident_start</c>.</summary>
+            /// <summary>Ascii alphabetic or <c>_</c> - mirrors <c>kubuno-desktop-views/src/syntax/lexer.rs</c>'s own <c>is_ident_start</c>.</summary>
             private static bool IsIdentStart(char c) => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 
             /// <summary>Ascii alphanumeric, <c>_</c>, <c>-</c>, <c>.</c> or <c>:</c> - mirrors <c>lexer.rs</c>'s own <c>is_ident_continue</c> ("enough for Panel, x:Name, data-foo, Header.Icon-style names").</summary>

@@ -1,7 +1,7 @@
 # Kubuno XML views — design note (Phase 2)
 
-> Scope: the declarative view format for `kubuno_ui`
-> (`Z:\src\desktop\windows\src\crates\kubuno-ui`), its runtime, its
+> Scope: the declarative view format for `kubuno_desktop_ui`
+> (`Z:\src\desktop\windows\src\crates\kubuno-desktop-ui`), its runtime, its
 > metadata registry, and how it is edited surgically by the VS designer and by
 > Claude. This is the design that Phase 2 of `docs/ARCHITECTURE.md` (component
 > metadata registry, XML loader, hot reload) should implement. Nothing here has
@@ -10,12 +10,12 @@
 
 ## 0. What the runtime actually looks like today
 
-Everything in `kubuno_ui` is **immediate-mode**: a page is a plain function
-that is re-run every frame. `kubuno_controls::host::run_with_options`
-(`kubuno-controls/src/host/mod.rs`) calls a boxed `PaintFn` once per paint with
+Everything in `kubuno_desktop_ui` is **immediate-mode**: a page is a plain function
+that is re-run every frame. `kubuno_desktop_controls::host::run_with_options`
+(`kubuno-desktop-controls/src/host/mod.rs`) calls a boxed `PaintFn` once per paint with
 a `&dyn Canvas` and a `Frame` (mouse, wheel, modifiers, click count, DPI
-scale…); there is no retained scene graph. A widget (`kubuno_ui::Widget`,
-`kubuno-ui/src/widget.rs`) is a `measure`/`paint`/`hit_test` triple, built
+scale…); there is no retained scene graph. A widget (`kubuno_desktop_ui::Widget`,
+`kubuno-desktop-ui/src/widget.rs`) is a `measure`/`paint`/`hit_test` triple, built
 fresh from application state and thrown away at the end of the frame — see
 `shell/src/admin_users.rs::table()`, whose own comment says the `DataTable` is
 "rebuilt from the state on every frame … so the pixels, the hit tests and the
@@ -30,11 +30,11 @@ every frame against live state, plus a handful of long-lived controller
 objects addressed by stable ids.
 
 Controllers already return **events keyed by string id** rather than mutating
-anything themselves: `Ribbon::frame` (`kubuno-ui/src/ribbon.rs:1366`) returns
+anything themselves: `Ribbon::frame` (`kubuno-desktop-ui/src/ribbon.rs:1366`) returns
 a `RibbonRun { events: Vec<RibbonEvent>, .. }` where
 `RibbonEvent::Clicked(String)` / `Changed { item, value }` carry the id the
 `RibbonItem` was declared with (`ribbon.rs:1196`). `FocusRing::register`
-(`kubuno-ui/src/focus.rs`) keys every focusable control by a `FocusId`, a
+(`kubuno-desktop-ui/src/focus.rs`) keys every focusable control by a `FocusId`, a
 `const fn` FNV-1a hash of a `&str`. Both are exactly the shape an XML `x:Name`
 / event-handler system wants, and neither needs to be invented — they are
 reused, not replaced.
@@ -42,14 +42,14 @@ reused, not replaced.
 ## 1. The file format
 
 An element is a component; the tag name is the Rust builder's name as it
-already appears in `kubuno_ui` (`Panel`, `Card`, `Stack`, `Switch`,
+already appears in `kubuno_desktop_ui` (`Panel`, `Card`, `Stack`, `Switch`,
 `RadioButton`, `NumericField`, `TextField`, `DataTable`, `RibbonTab`…), and
 attributes are the builder's fluent setters (`Dense="true"` →
 `Card::dense()`, `Padding="XL"` → `Panel::with_padding`). This keeps one
 source of truth for "what a component can do" — the builder API itself — and
 avoids a parallel vocabulary that drifts from it.
 
-**Layout.** `kubuno-ui/src/containers.rs` gives four engines, and its own
+**Layout.** `kubuno-desktop-ui/src/containers.rs` gives four engines, and its own
 doc comment is explicit that this is deliberate: *"Not one line of Dock,
 Anchor, Flow or Split arithmetic is written here: the four engines are
 called, never copied."* XML views get exactly those four, no more:
@@ -65,19 +65,19 @@ called, never copied."* XML views get exactly those four, no more:
   `Panel::fixed(bounds)` (`containers.rs:620-630`) — the WinForms
   design-time-coordinates model, for absolute placement and edge-stretching.
 - **Flow** — `<Stack Direction="Horizontal|Vertical" Gap="MD">` over
-  `kubuno_controls::layout_panels::flow_layout`, for the common "row of
+  `kubuno_desktop_controls::layout_panels::flow_layout`, for the common "row of
   controls" and "column of fields" case that today is hand-rolled in every
   shell page (see `settings_view.rs::row()`, which recomputes `ROW_H`-tall
   bands by hand for six settings rows).
 - **Split** — `<Splitter Orientation="Vertical"><Pane .../><Pane .../></Splitter>`
-  over `kubuno_controls::layout_panels::SplitContainer`.
+  over `kubuno_desktop_controls::layout_panels::SplitContainer`.
 
-There is **no `<Grid>`**. `kubuno_controls` has no table/grid layout engine,
-and rule 1 of `kubuno-ui/src/lib.rs` ("own a replica, never restate it") means
+There is **no `<Grid>`**. `kubuno_desktop_controls` has no table/grid layout engine,
+and rule 1 of `kubuno-desktop-ui/src/lib.rs` ("own a replica, never restate it") means
 one is not manufactured just for XML. Every shell screen inspected
 (`settings_view.rs`, `admin_users.rs`, `admin_groups.rs`) is built from
 Dock/Anchor/Flow/Split already; if a real screen later needs a true grid, that
-is a fifth `kubuno_controls::layout_panels` engine first, and an XML element
+is a fifth `kubuno_desktop_controls::layout_panels` engine first, and an XML element
 second — never the other way around.
 
 **Containers as surfaces.** `<Card Title="…" Dense="true" Flush="true">`,
@@ -184,7 +184,7 @@ column that needs custom painting the way `admin_users.rs` colours a status
 pill — a `CellRenderer` attribute that names a handler installed on
 `DataTable::cell_painter`, the same escape hatch the Rust code uses today.
 Inventing a richer per-cell XAML `DataTemplate` would model something
-`kubuno_ui::tables::DataTable` does not have.
+`kubuno_desktop_ui::tables::DataTable` does not have.
 
 **As built (lot F1, 2026-09-30):** a list of *views* is `<Repeater ItemsSource="{Binding Messages}"
 ItemTemplate="MessageRow" ItemKey="Id"/>` (or the item's element written inside the `<Repeater>`): one user control
@@ -194,7 +194,7 @@ every list element rebuilds its items only when the stamp (or, for a list conver
 changed.
 
 Conditionals reuse a field the layout engine already carries:
-`kubuno_controls::layout::Item::visible` (`containers.rs:430`) is read by
+`kubuno_desktop_controls::layout::Item::visible` (`containers.rs:430`) is read by
 `Panel::paint_children_unclipped` to skip a child outright. So
 `Visible="{Binding ShowAdvanced}"` is not new machinery — it sets `item.visible`
 before layout, exactly like `Child::item.visible` already gates painting and
@@ -202,20 +202,20 @@ hit-testing.
 
 ## 4. The component metadata registry
 
-Given `kubuno-ui/Cargo.toml` deliberately keeps its dependency list
-to `kubuno-controls`, `drive-app-controls`, `windows-numerics` and `windows`
+Given `kubuno-desktop-ui/Cargo.toml` deliberately keeps its dependency list
+to `kubuno-desktop-controls`, `kubuno-drive-desktop-app-controls`, `windows-numerics` and `windows`
 (it is linked into every app), the registry must
-**not** live inside `kubuno_ui` itself and must not pull `syn`/`quote` into
-that crate. It belongs in a new sibling crate (e.g. `kubuno-views`) that
-depends on `kubuno-ui`, never the reverse — the same layering
+**not** live inside `kubuno_desktop_ui` itself and must not pull `syn`/`quote` into
+that crate. It belongs in a new sibling crate (e.g. `kubuno-desktop-views`) that
+depends on `kubuno-desktop-ui`, never the reverse — the same layering
 `docs/ARCHITECTURE.md` already uses for the VS extension ("everything that
 knows Rust/Kubuno is in Rust; C# only integrates").
 
-For "minimal boilerplate" without touching any existing `kubuno-ui` file (this
-note owns only this document — nothing in `kubuno-ui` should need editing to
+For "minimal boilerplate" without touching any existing `kubuno-desktop-ui` file (this
+note owns only this document — nothing in `kubuno-desktop-ui` should need editing to
 adopt XML views), a proc-macro derive on every builder is the wrong shape: it
 would require annotating `containers.rs`, `buttons.rs`, `ribbon.rs`,
-`tables.rs`… one at a time. `kubuno-ui` itself already leans on
+`tables.rs`… one at a time. `kubuno-desktop-ui` itself already leans on
 `macro_rules!` to remove this kind of boilerplate (`containers.rs`'s
 `panel_builders!`, forwarding `Panel`'s builder surface onto `Card` and
 `GroupBox` without repeating twelve methods) — the registry should follow the
@@ -396,14 +396,14 @@ struct SettingsState {
 }
 
 pub struct SettingsView {
-    view: kubuno_views::CompiledView,   // §5's "plan", rebuilt on file change
+    view: kubuno_desktop_views::CompiledView,   // §5's "plan", rebuilt on file change
     state: SettingsState,
     focus: FocusRing,
 }
 
 impl SettingsView {
-    fn handlers(&self) -> kubuno_views::Handlers<SettingsState> {
-        kubuno_views::handlers! {
+    fn handlers(&self) -> kubuno_desktop_views::Handlers<SettingsState> {
+        kubuno_desktop_views::handlers! {
             "offline_toggled" => |s: &mut SettingsState, on: bool| {
                 s.offline = on; // actual engine call lives one level up
             },
@@ -427,7 +427,7 @@ hand-written Rust, which is exactly where hand-written Rust belongs.
 
 | Step | What | Effort | Risk |
 |---|---|---|---|
-| 2a | `kubuno-views` crate skeleton + `macro_rules!` metadata table for `containers`, `buttons`, `text`, `range` (enough for §7) | S | Registry silently drifting from `kubuno-ui` as builders change — no compiler-enforced link between the two; mitigate with a checklist rule (new public builder setter → registry entry) and a small `cargo test` that at least calls every registered `ctor`/setter once. |
+| 2a | `kubuno-desktop-views` crate skeleton + `macro_rules!` metadata table for `containers`, `buttons`, `text`, `range` (enough for §7) | S | Registry silently drifting from `kubuno-desktop-ui` as builders change — no compiler-enforced link between the two; mitigate with a checklist rule (new public builder setter → registry entry) and a small `cargo test` that at least calls every registered `ctor`/setter once. |
 | 2b | Hand-written lossless XML tokenizer + `rowan` green/red tree + typed `ast` layer, scoped to the subset in §1/§6 (no namespaces beyond `x:`, no DTD/PI/CDATA) | L | The single biggest net-new investment in this plan; no ready-made crate fits exactly (§6). Contain scope by deferring anything beyond what real shell screens need — do not build general XML. |
 | 2c | Interpreter: `ast` → registry lookups → widget tree, split into parse+compile (per file change) / bind+paint (per frame, §5) | M | Per-frame binding evaluation cost at 60–120 Hz; mitigate with the two-phase split already designed in, and benchmark against a hand-written page (`settings_view.rs` itself) before adopting further. |
 | 2d | Two-way binding + named handler table (`Bindable`, `handlers!`) | S–M | Mostly plumbing; the risky part (event identity) is already solved by `FocusId`/`RibbonEvent`'s string-keyed precedent. |

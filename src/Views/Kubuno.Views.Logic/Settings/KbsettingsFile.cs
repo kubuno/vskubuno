@@ -55,9 +55,9 @@ namespace Kubuno.Views.Logic.Settings
 
     /// <summary>
     /// The <c>.kbsettings</c> format (Windows Forms' <c>Settings.settings</c>): the settings an app declares, read by the
-    /// <c>kubuno::settings!</c> macro (the typed class), the <c>.kbview</c> language server and this extension's settings
+    /// <c>kubuno_desktop::settings!</c> macro (the typed class), the <c>.kbview</c> language server and this extension's settings
     /// editor. <see cref="ToText"/> writes the canonical form, byte for byte the one of the Rust model
-    /// (<c>kubuno_resources_model::settings::SettingsFile::to_text</c>, tested on the same sample): the XML declaration,
+    /// (<c>kubuno_desktop_resources_model::settings::SettingsFile::to_text</c>, tested on the same sample): the XML declaration,
     /// <c>&lt;Settings Version="N"[ App="…"]&gt;</c>, one setting per line with its attributes in the order Name, Type,
     /// Scope, Roaming, Default, Values, PreviousNames, Description (the defaults of Scope and Roaming omitted), a list's
     /// default as <c>&lt;Item&gt;</c> lines, two-space indentation, LF line ends and a final newline.

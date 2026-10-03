@@ -32,17 +32,17 @@ namespace Kubuno.Views.Designer
         public static string RuntimeBarMessage(DesignSurface.DesignSurfaceRuntimeState state) => state switch
         {
             DesignSurface.DesignSurfaceRuntimeState.NotBuilt => T(
-                "Preview: bundled runtime - build the project to use its own kubuno_ui.",
-                "Aperçu : runtime intégré — générez le projet pour utiliser sa propre kubuno_ui."),
+                "Preview: bundled runtime - build the project to use its own kubuno_desktop_ui.",
+                "Aperçu : runtime intégré — générez le projet pour utiliser sa propre kubuno_desktop_ui."),
             DesignSurface.DesignSurfaceRuntimeState.Building => T(
-                "Preview: building the preview with the project's kubuno_ui...",
-                "Aperçu : compilation de l'aperçu avec la kubuno_ui du projet…"),
+                "Preview: building the preview with the project's kubuno_desktop_ui...",
+                "Aperçu : compilation de l'aperçu avec la kubuno_desktop_ui du projet…"),
             DesignSurface.DesignSurfaceRuntimeState.Failed => T(
-                "Preview: bundled runtime - the preview could not be built with the project's kubuno_ui (see Output > Kubuno).",
-                "Aperçu : runtime intégré — l'aperçu n'a pas pu être compilé avec la kubuno_ui du projet (voir Sortie > Kubuno)."),
+                "Preview: bundled runtime - the preview could not be built with the project's kubuno_desktop_ui (see Output > Kubuno).",
+                "Aperçu : runtime intégré — l'aperçu n'a pas pu être compilé avec la kubuno_desktop_ui du projet (voir Sortie > Kubuno)."),
             DesignSurface.DesignSurfaceRuntimeState.NotApplicable => T(
-                "Preview: bundled runtime - this view is not part of a project that uses kubuno-views.",
-                "Aperçu : runtime intégré — cette vue n'appartient pas à un projet qui utilise kubuno-views."),
+                "Preview: bundled runtime - this view is not part of a project that uses kubuno-desktop-views.",
+                "Aperçu : runtime intégré — cette vue n'appartient pas à un projet qui utilise kubuno-desktop-views."),
             DesignSurface.DesignSurfaceRuntimeState.OutOfDate => T(
                 "The project's controls changed since the last build: the designer shows their previous version. Build the project to see the changes.",
                 "Les contrôles du projet ont changé depuis la dernière génération : le concepteur montre leur version précédente. Générez le projet pour voir les modifications."),
@@ -330,7 +330,7 @@ namespace Kubuno.Views.Designer
         public static string BindingsAdvancedTitle => T("Advanced Binding", "Liaison avancée");
 
         /// <summary>
-        /// An event category of the registry export (English, <c>kubuno_views::registry::EventCategory::name</c>) in
+        /// An event category of the registry export (English, <c>kubuno_desktop_views::registry::EventCategory::name</c>) in
         /// Visual Studio's UI language - the Windows Forms designer's own names (Action, Comportement, Focus,
         /// Touche, Souris, Glisser-déplacer, Disposition, Propriété modifiée...). Unknown or missing = Action.
         /// </summary>

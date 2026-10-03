@@ -191,7 +191,7 @@ namespace Kubuno.Desktop.Logic.DataSources
 
         public static string SummaryEditMain => T("add mod data; and the registration of the user secrets to src/main.rs", "ajouter mod data; et l'enregistrement des secrets utilisateur à src/main.rs");
 
-        public static string SummaryCargoFeature => T("enable the \"data\" feature of kubuno in Cargo.toml", "activer la fonctionnalité « data » de kubuno dans Cargo.toml");
+        public static string SummaryCargoFeature => T("enable the \"data\" feature of kubuno-desktop in Cargo.toml", "activer la fonctionnalité « data » de kubuno-desktop dans Cargo.toml");
 
         public static string SummaryCargoSecretsId => T("add [package.metadata.kubuno] user-secrets-id to Cargo.toml", "ajouter [package.metadata.kubuno] user-secrets-id à Cargo.toml");
 
@@ -214,8 +214,8 @@ namespace Kubuno.Desktop.Logic.DataSources
             file + " a des modifications non enregistrées dans l'éditeur. Enregistrez-le ou fermez-le, puis cliquez à nouveau sur Terminer.");
 
         public static string NoKubunoDependency => T(
-            "Cargo.toml has no kubuno dependency: add kubuno (with its \"data\" feature) or kubuno-data yourself.",
-            "Cargo.toml n'a pas de dépendance kubuno : ajoutez kubuno (avec sa fonctionnalité « data ») ou kubuno-data vous-même.");
+            "Cargo.toml has no Kubuno dependency: add kubuno-desktop (with its \"data\" feature) or kubuno-desktop-data yourself.",
+            "Cargo.toml n'a pas de dépendance Kubuno : ajoutez kubuno-desktop (avec sa fonctionnalité « data ») ou kubuno-desktop-data vous-même.");
 
         public static string SqlxStarted(string package) => T("Refreshing the offline query cache (.sqlx) of " + package + "...", "Actualisation du cache de requêtes hors ligne (.sqlx) de " + package + "...");
 

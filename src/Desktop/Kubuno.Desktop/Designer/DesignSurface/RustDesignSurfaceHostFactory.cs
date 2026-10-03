@@ -7,7 +7,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// <summary>
     /// The production <see cref="IDesignSurfaceHostFactory"/>: one <see cref="RustDesignSurfaceHost"/>
     /// per open designer pane. Each pane runs the design surface built against its project's own
-    /// <c>kubuno_ui</c> build when the <see cref="IDesignSurfaceRuntimeProvider"/> has one (docs/DESIGNER.md
+    /// <c>kubuno_desktop_ui</c> build when the <see cref="IDesignSurfaceRuntimeProvider"/> has one (docs/DESIGNER.md
     /// section 15), else the surface bundled with the extension (<c>tools\surface\</c>).
     /// </summary>
     public sealed class RustDesignSurfaceHostFactory : IDesignSurfaceHostFactory

@@ -1,7 +1,7 @@
 # `.kbview` views — shared specification (desktop and web)
 
 > Status: **normative, version 1** (lot WV-0, frozen 2026-10-01). It applies to both targets: the desktop
-> (`kubuno-views`, Rust code-behind) and the web (`@kubuno/views`, TypeScript code-behind), and to the mobile renderer
+> (`kubuno-desktop-views`, Rust code-behind) and the web (`@kubuno/views`, TypeScript code-behind), and to the mobile renderer
 > when it comes. Decisions behind it: `WEB-VIEWS.md` §10 (recommendations 1–5 accepted, everything migrates, new
 > components lot, migration order core → drive). Design notes it builds on: `XML_VIEWS.md`, `PROGRAMMING-MODEL.md`,
 > `EVENTS.md`, `DESIGNER.md`, `DATA.md`, `RESOURCES.md`.
@@ -9,7 +9,7 @@
 > "MUST", "SHOULD" and "MAY" are used in their RFC 2119 sense. Where this document and an older design note disagree,
 > this document wins; §14 lists the corrections it makes to `WEB-VIEWS.md`.
 >
-> Reference implementations: the desktop registry export (`desktop/windows/src/crates/kubuno-views/src/registry/
+> Reference implementations: the desktop registry export (`desktop/windows/src/crates/kubuno-desktop-views/src/registry/
 > export.rs`, served as `kubuno/registry`), the web registry (`core/frontend/src/ui/kbview/*.meta.ts`,
 > `core/frontend/src/sdk/kbview/*.meta.ts`, built by `npm run build:registry` into
 > `core/frontend/packages/ui/kbview-registry.web.json`) and the conformance test between them
@@ -22,9 +22,9 @@
   not files.
 - The target of a view is decided by the language server, walking up from the file: an explicit
   `kubuno.views.json` (`{"target": "web" | "desktop"}`) wins; else a `package.json` depending on
-  `@kubuno/views-compiler` → `web`; else a `Cargo.toml` depending on `kubuno` / `kubuno-views` → `desktop`.
+  `@kubuno/views-compiler` → `web`; else a `Cargo.toml` depending on `kubuno-desktop` / `kubuno-desktop-views` → `desktop`.
 - The code-behind is the same-stem file next to the view: `NotesSettingsPage.kbview` + `NotesSettingsPage.ts` (web),
-  `main_view.kbview` + the Rust type carrying `#[kubuno::view("main_view.kbview")]` (desktop).
+  `main_view.kbview` + the Rust type carrying `#[kubuno_desktop::view("main_view.kbview")]` (desktop).
 - The `.kbview` text is the **only source of truth**. Tools edit it surgically (comments, attribute order, formatting
   preserved); nothing generated from it is ever committed (web: `.kubuno/views/` is gitignored; desktop: `OUT_DIR`).
 
@@ -36,14 +36,14 @@ module kind).
 
 | Extension | Holds | Root element | Desktop code-behind | Web code-behind |
 |---|---|---|---|---|
-| `.kbview` | a form: a window, a dialog, a tool window, an MDI parent or child, a splash screen, a flyout, a page | any container but `UserControl` (`Panel`, …) | `#[kubuno::view("main_view.kbview")]` | a class extending the generated `ViewBase`, imported from `./NotesSettingsPage.kbview` |
+| `.kbview` | a form: a window, a dialog, a tool window, an MDI parent or child, a splash screen, a flyout, a page | any container but `UserControl` (`Panel`, …) | `#[kubuno_desktop::view("main_view.kbview")]` | a class extending the generated `ViewBase`, imported from `./NotesSettingsPage.kbview` |
 | `.kbcontrol` | a user control: a composite control designed as a view, used as an element of other views (`<MessageRow/>`) | `UserControl` | `#[derive(UserControl)]` + `#[user_control(view = "message_row.kbcontrol")]` | a class extending the generated `ViewBase`, imported from `./MessageRow.kbcontrol` |
 
 - A view is a user control when its root is `<UserControl>` **or** its code-behind declares it as one
   (`#[derive(UserControl)]` naming it). Such a file **MUST** be a `.kbcontrol`; every other view **MUST** be a `.kbview`.
 - The language server warns (`view-file-kind`) when the extension disagrees with the kind, and offers the quick fix
   « Renommer en .kbcontrol » / « Renommer en .kbview »: it renames the file and updates every path naming it — the
-  code-behind's `#[kubuno::view(…)]` / `#[user_control(view = …)]` and the `x:Inherits` of the views deriving from it.
+  code-behind's `#[kubuno_desktop::view(…)]` / `#[user_control(view = …)]` and the `x:Inherits` of the views deriving from it.
 - Inheritance keeps the kind: an inherited user control (`<UserControl x:Inherits="address_editor.kbcontrol">`) is a
   `.kbcontrol`, an inherited form a `.kbview`.
 - Unaffected: custom controls (code only, `#[derive(Component)]`, no view file) and inherited controls (code only).
@@ -239,7 +239,7 @@ is not a window, and the web `FloatingWindow` keeps the web's square corners (`-
 
 ## 6. Bindings and resources
 
-### 6.1 `{Binding}` — the desktop grammar (`kubuno-views` `binding.rs`), on both targets
+### 6.1 `{Binding}` — the desktop grammar (`kubuno-desktop-views` `binding.rs`), on both targets
 
 ```
 {Binding Path[, Mode=OneWay|TwoWay|OneTime|OneWayToSource][, UpdateSourceTrigger=PropertyChanged|LostFocus|Explicit]
@@ -254,7 +254,7 @@ is not a window, and the web `FloatingWindow` keeps the web's square corners (`-
   registry (web: `prop_map[P].change`, e.g. `Checked` ↔ `OnCheckedChanged`).
 - `UpdateSourceTrigger`: when a write-back reaches the source — `PropertyChanged` (default; `Default` is accepted),
   `LostFocus` (when the focus leaves the element, or the window), `Explicit` (when the code asks:
-  `kubuno_views::binding::update_sources(vm, path)` on the desktop). The property shows the pending value meanwhile.
+  `kubuno_desktop_views::binding::update_sources(vm, path)` on the desktop). The property shows the pending value meanwhile.
   Inside an item template a write is always immediate (the row only exists while the item is built).
 - `Source=name`: a named data component (`<Query x:Name>` on the web, `BindingSource` on the desktop); `Source=a,
   Path=b` ≡ path `a.b`.
@@ -262,7 +262,7 @@ is not a window, and the web `FloatingWindow` keeps the web's square corners (`-
   write-back (a converter that does not convert back drops the write). Built-in on both targets: `Not`, `IsEmpty`,
   `IsNotEmpty`, `ToUpper`, `ToLower`, `Trim`, `Equals` / `NotEquals` (compare with the parameter; `Equals` writes the
   parameter back when it becomes true: a radio button per choice), `BoolToText` (parameter `'yes|no'`), `Count`
-  (rows of a list, characters of a text). Application converters: desktop `#[kubuno_views::value_converter]` on an
+  (rows of a list, characters of a text). Application converters: desktop `#[kubuno_desktop_views::value_converter]` on an
   `impl ValueConverter for T` (`T: Default`), or `binding::register_converter(name, value)`; a project converter may
   replace a built-in one. An unknown converter shows the value unconverted.
 - `FallbackValue`: what the property shows while the path does not resolve (an unset key, a value of the wrong
@@ -311,10 +311,10 @@ holding the attribute — a user control nested by a view of another folder read
 Both targets publish the **same typographic roles** under the same names **and the same sizes**; only the face
 differs (§7.2). A web CSS px is one desktop DIP, so a role renders at the same physical size on both targets at any
 scale (at 175 %, 13.5 px = 13.5 DIP = 23.6 device pixels). The desktop sizes live in
-`drive_app_controls::themes::shape::text` (re-exported as `kubuno_ui::metrics::text`), each role with its own
+`kubuno_drive_desktop_app_controls::themes::shape::text` (re-exported as `kubuno_desktop_ui::metrics::text`), each role with its own
 DirectWrite format in `TextFormats`; the web sizes in `theme.css`.
 
-| Role (`Label Role`, `kubuno_ui::display::Role`) | Web token | Web (`theme.css`) | Desktop (`metrics::text`, DIP) | Desktop format | Desktop line box |
+| Role (`Label Role`, `kubuno_desktop_ui::display::Role`) | Web token | Web (`theme.css`) | Desktop (`metrics::text`, DIP) | Desktop format | Desktop line box |
 |---|---|---|---|---|---|
 | `Micro` — badges, counters | `--kb-text-micro` | 10.5 px | 10.5 (`MICRO`) | `micro` | 16 |
 | `Meta` — metadata, captions | `--kb-text-meta` (= host `text-xs`) | 11.5 px | 11.5 (`META`) | `caption` | 16 |
@@ -432,7 +432,7 @@ export default NotesSettingsPage.component()                 // a React componen
 
 ### 9.2 Desktop (unchanged, `PROGRAMMING-MODEL.md`)
 
-`#[kubuno::view("x.kbview")]` on the struct, `#[bind]` fields, `#[data_context]`, handlers as methods of an `impl`
+`#[kubuno_desktop::view("x.kbview")]` on the struct, `#[bind]` fields, `#[data_context]`, handlers as methods of an `impl`
 block with the several shapes `EVENTS.md` §5.4 lists. The two models correspond member for member
 (WEB-VIEWS §2.2 table).
 
@@ -585,7 +585,7 @@ plus `design_defaults`/`web`.
 
 | What | Desktop | Web |
 |---|---|---|
-| Registry tables | `kubuno-views/src/registry/` (`components.rs`, `families/*`, `common.rs`, `docs_fr.rs`) | `core/frontend/src/ui/kbview/*.meta.ts`, `src/sdk/kbview/*.meta.ts`, `levels.ts`, `typography.ts` |
+| Registry tables | `kubuno-desktop-views/src/registry/` (`components.rs`, `families/*`, `common.rs`, `docs_fr.rs`) | `core/frontend/src/ui/kbview/*.meta.ts`, `src/sdk/kbview/*.meta.ts`, `levels.ts`, `typography.ts` |
 | Export | `registry/export.rs` → `kubuno/registry`, `--export-registry` | `src/kbview/export.ts` → `packages/ui/kbview-registry.web.json` |
 | Conformance | (WV-1: desktop CI) | `src/kbview/conformance.ts`, `allowlist.ts`, `kbview-registry.spec.ts`, `scripts/kbview-conformance.mjs` |
 | Consumer | `kubuno-views-ls`, vskubuno `ComponentRegistry.FromJson` | WV-2 compiler, WV-3 runtime, WV-7 language-server web profile |
@@ -630,5 +630,5 @@ extension points (ExtensionRegistry, ModuleServiceRegistry, event bus, routes). 
    package reference between modules**; each module builds alone against the published `@kubuno/*` packages and the
    shared crates' git tags. The designer Toolbox for a module shows host elements + that module's own controls only
    (+ extension slots), never another module's controls.
-5. **Desktop parity**: the same rule holds for desktop modules/apps — reuse goes through `kubuno_ui`/`kubuno-views`
+5. **Desktop parity**: the same rule holds for desktop modules/apps — reuse goes through `kubuno_desktop_ui`/`kubuno-desktop-views`
    (the shared "host" layer) or through module services, never through one app's crate depending on another's.

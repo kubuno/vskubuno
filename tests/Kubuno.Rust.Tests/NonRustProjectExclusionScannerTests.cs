@@ -71,15 +71,15 @@ namespace Kubuno.Rust.Tests
             {
                 @"Z:\ws\Cargo.toml",
                 @"Z:\ws\ws.sln",
-                @"Z:\ws\drive-app\Cargo.toml",
-                @"Z:\ws\drive-app\drive-app.rsproj",
+                @"Z:\ws\kubuno-drive-desktop\Cargo.toml",
+                @"Z:\ws\kubuno-drive-desktop\kubuno-drive-desktop.rsproj",
                 @"Z:\ws\kubuno-chat\Cargo.toml",
                 @"Z:\ws\kubuno-chat\kubuno-chat.rsproj",
             };
             var manifests = new[]
             {
                 @"Z:\ws\Cargo.toml",
-                @"Z:\ws\drive-app\Cargo.toml",
+                @"Z:\ws\kubuno-drive-desktop\Cargo.toml",
                 @"Z:\ws\kubuno-chat\Cargo.toml",
             };
 

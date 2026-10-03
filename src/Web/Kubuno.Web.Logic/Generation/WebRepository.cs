@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Kubuno.Rust.Cargo.Naming;
 using Kubuno.Rust.Cargo.Toml;
 using Kubuno.Web.Logic.Modules;
 
@@ -12,7 +13,7 @@ namespace Kubuno.Web.Logic.Generation
     /// <summary>What a Kubuno repository is, for the solution generator.</summary>
     public enum WebRepositoryKind
     {
-        /// <summary>Kubuno Core Web: <c>crates/kubuno-core</c> + the host frontend + the <c>@kubuno/*</c> packages.</summary>
+        /// <summary>Kubuno Core (the web server): <c>crates/kubuno-core</c> + the host frontend + the <c>@kubuno/*</c> packages.</summary>
         Core,
 
         /// <summary>A module: <c>module.toml</c> at the root.</summary>
@@ -165,7 +166,7 @@ namespace Kubuno.Web.Logic.Generation
                 return new WebRepository(root, WebRepositoryKind.Module, name, members, run?.PackageName, bin, ReadFrontends(root, manifest.Id, isCore: false), manifest, submodules);
             }
 
-            reason = "'" + root + "' is neither Kubuno Core Web (crates/kubuno-core) nor a module (module.toml).";
+            reason = "'" + root + "' is neither Kubuno Core (crates/kubuno-core) nor a module (module.toml).";
             return null;
         }
 
@@ -234,11 +235,11 @@ namespace Kubuno.Web.Logic.Generation
             var frontend = Path.Combine(root, "frontend");
             if (File.Exists(Path.Combine(frontend, "package.json")))
             {
-                result.Add(new FrontendProject(FrontendKind.App, frontend, id + "-frontend", NpmName(frontend), null, Array.Empty<string>(), null));
+                result.Add(new FrontendProject(FrontendKind.App, frontend, isCore ? ProjectNaming.CoreFrontend : ProjectNaming.ForModuleFrontend(id), NpmName(frontend), null, Array.Empty<string>(), null));
             }
             else if (File.Exists(Path.Combine(root, "package.json")))
             {
-                result.Add(new FrontendProject(FrontendKind.App, root, id + "-frontend", NpmName(root), null, Array.Empty<string>(), null));
+                result.Add(new FrontendProject(FrontendKind.App, root, isCore ? ProjectNaming.CoreFrontend : ProjectNaming.ForModuleFrontend(id), NpmName(root), null, Array.Empty<string>(), null));
             }
 
             foreach (var packages in new[] { Path.Combine(frontend, "packages"), Path.Combine(root, "packages") })
@@ -271,9 +272,8 @@ namespace Kubuno.Web.Logic.Generation
                         linked.AddRange(folders.Select(folder => Path.Combine(frontend, "src", folder)).Where(System.IO.Directory.Exists));
                     }
 
-                    var projectName = npmName is not null && npmName.StartsWith("@", StringComparison.Ordinal)
-                        ? npmName.Substring(1).Replace('/', '-')
-                        : (isCore ? "kubuno-" : id + "-") + shortName;
+                    // Kubuno.Web.UI for @kubuno/ui in the core, Kubuno.<Module>.Web.<Name> in a module (ProjectNaming).
+                    var projectName = ProjectNaming.ForNpmPackage(npmName, shortName, isCore ? null : id);
                     result.Add(new FrontendProject(FrontendKind.Package, package, projectName, npmName, packageId, linked, nodeModules));
                 }
             }

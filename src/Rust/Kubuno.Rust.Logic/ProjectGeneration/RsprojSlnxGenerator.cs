@@ -51,6 +51,135 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
             return MergeIntoExisting(existingContent, entries);
         }
 
+        /// <summary>
+        /// The solution of a repository whose projects go to named solution folders (the desktop repository: Applications,
+        /// Framework, ... - <see cref="DesktopRepositoryLayout"/>): a fresh <c>.slnx</c> lists the folders in
+        /// <paramref name="folderOrder"/> (each folder's projects by name); an existing one only gets its missing projects,
+        /// each in its folder (created at the end when absent). <paramref name="folderOf"/> returns a folder name such as
+        /// <c>/Framework/</c>, or null for the solution root.
+        /// </summary>
+        public static RsprojSolutionPlan PlanWithFolders(
+            string solutionDirectory,
+            string? existingContent,
+            IReadOnlyList<RsprojProjectPlanItem> members,
+            Func<RsprojProjectPlanItem, string?> folderOf,
+            IReadOnlyList<string> folderOrder)
+        {
+            if (solutionDirectory is null)
+            {
+                throw new ArgumentNullException(nameof(solutionDirectory));
+            }
+
+            if (members is null)
+            {
+                throw new ArgumentNullException(nameof(members));
+            }
+
+            var entries = members
+                .Select(member => (Name: member.ProjectName, Path: MakeRelativePath(solutionDirectory, member.ProjectPath), Folder: folderOf(member)))
+                .OrderBy(entry => entry.Folder is null ? -1 : IndexOf(folderOrder, entry.Folder))
+                .ThenBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (existingContent is null)
+            {
+                var builder = new StringBuilder();
+                builder.Append("<Solution>\n");
+                builder.Append("  <Configurations>\n");
+                builder.Append("    <Platform Name=\"x64\" />\n");
+                builder.Append("  </Configurations>\n");
+                foreach (var entry in entries.Where(entry => entry.Folder is null))
+                {
+                    builder.Append("  ").Append(ProjectElementText(entry.Path)).Append('\n');
+                }
+
+                foreach (var group in entries.Where(entry => entry.Folder is not null).GroupBy(entry => entry.Folder!))
+                {
+                    builder.Append("  <Folder Name=\"").Append(System.Security.SecurityElement.Escape(group.Key)).Append("\">\n");
+                    foreach (var entry in group)
+                    {
+                        builder.Append("    ").Append(ProjectElementText(entry.Path)).Append('\n');
+                    }
+
+                    builder.Append("  </Folder>\n");
+                }
+
+                builder.Append("</Solution>\n");
+                return new RsprojSolutionPlan(builder.ToString(), changed: true, entries.Select(entry => entry.Name).ToList());
+            }
+
+            XDocument document;
+            try
+            {
+                document = XDocument.Parse(existingContent, LoadOptions.PreserveWhitespace);
+            }
+            catch (XmlException)
+            {
+                return new RsprojSolutionPlan(existingContent, changed: false, Array.Empty<string>());
+            }
+
+            var root = document.Root;
+            if (root is null || root.Name.LocalName != "Solution")
+            {
+                return new RsprojSolutionPlan(existingContent, changed: false, Array.Empty<string>());
+            }
+
+            var existingPaths = new HashSet<string>(
+                root.Descendants("Project").Select(project => Normalize((string?)project.Attribute("Path") ?? string.Empty)),
+                StringComparer.OrdinalIgnoreCase);
+            var missing = entries.Where(entry => !existingPaths.Contains(Normalize(entry.Path))).ToList();
+            if (missing.Count == 0)
+            {
+                return new RsprojSolutionPlan(existingContent, changed: false, Array.Empty<string>());
+            }
+
+            var newline = existingContent.Contains("\r\n") ? "\r\n" : "\n";
+            EnsureX64Platform(root, newline, hasOtherProjectTypes: root.Descendants("Project").Any(project => !((string?)project.Attribute("Path") ?? string.Empty).EndsWith(".rsproj", StringComparison.OrdinalIgnoreCase)));
+            foreach (var entry in missing)
+            {
+                if (entry.Folder is null)
+                {
+                    var anchor = root.Elements("Project").LastOrDefault() ?? (XElement?)root.Element("Configurations");
+                    AddChild(root, anchor, NewProjectElement(entry.Path), newline, "  ");
+                    continue;
+                }
+
+                var folder = root.Elements("Folder").FirstOrDefault(element => string.Equals((string?)element.Attribute("Name"), entry.Folder, StringComparison.OrdinalIgnoreCase));
+                if (folder is null)
+                {
+                    folder = new XElement("Folder", new XAttribute("Name", entry.Folder));
+                    AddChild(root, root.Elements().LastOrDefault(), folder, newline, "  ");
+                    folder.Add(new XText(newline + "  "));
+                }
+
+                AddChild(folder, folder.Elements("Project").LastOrDefault(), NewProjectElement(entry.Path), newline, "    ");
+            }
+
+            if (root.LastNode is XElement)
+            {
+                root.Add(new XText(newline));
+            }
+
+            var merged = document.Declaration is null
+                ? root.ToString(SaveOptions.DisableFormatting)
+                : document.Declaration + newline + root.ToString(SaveOptions.DisableFormatting);
+            var trailing = existingContent.EndsWith("\n", StringComparison.Ordinal) ? newline : string.Empty;
+            return new RsprojSolutionPlan(merged + trailing, changed: true, missing.Select(entry => entry.Name).ToList());
+        }
+
+        private static int IndexOf(IReadOnlyList<string> order, string folder)
+        {
+            for (var index = 0; index < order.Count; index++)
+            {
+                if (string.Equals(order[index], folder, StringComparison.OrdinalIgnoreCase))
+                {
+                    return index;
+                }
+            }
+
+            return order.Count;
+        }
+
         private static string BuildFresh(List<(string Name, string Path, bool IsLibraryOnly)> entries)
         {
             var builder = new StringBuilder();

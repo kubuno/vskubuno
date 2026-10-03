@@ -9,7 +9,7 @@ namespace Kubuno.Views.Designer.Editing
     /// <summary>
     /// The Windows Forms designer's Layout toolbar / Format menu commands (docs/DESIGNER.md §13). The first
     /// nineteen are computed by the design surface from its painted layout (<c>format {command}</c> →
-    /// <c>kubuno_views::design::format_ops</c>); Bring to Front / Send to Back reorder the XML
+    /// <c>kubuno_desktop_views::design::format_ops</c>); Bring to Front / Send to Back reorder the XML
     /// (<c>reorderChildren</c>). Each is one undo unit.
     /// </summary>
     public enum DesignerLayoutCommand
@@ -92,7 +92,7 @@ namespace Kubuno.Views.Designer.Editing
         /// <summary>The <c>guidVSStd97</c> id of <paramref name="command"/>.</summary>
         public static uint StandardCommandId(DesignerLayoutCommand command) => Standard.First(s => s.Command == command).Id;
 
-        /// <summary>The surface's <c>format</c> command name (<c>kubuno_views::design::FormatCommand</c>, camelCase), null for the z-order commands.</summary>
+        /// <summary>The surface's <c>format</c> command name (<c>kubuno_desktop_views::design::FormatCommand</c>, camelCase), null for the z-order commands.</summary>
         public static string? FormatName(DesignerLayoutCommand command)
         {
             if (IsZOrder(command))

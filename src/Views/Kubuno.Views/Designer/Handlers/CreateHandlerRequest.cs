@@ -6,7 +6,7 @@ namespace Kubuno.Views.Designer.Handlers
     /// <summary>
     /// The <c>kubuno/createHandler</c> request (docs/DESIGNER.md §6/§8, DSG-10 - "double-click on a
     /// control/event -&gt; create the handler"). <see cref="EventName"/> is the registry's own event name
-    /// exactly as <c>kubuno_views::registry::EventMeta.name</c> carries it (e.g. <c>"OnClick"</c> -
+    /// exactly as <c>kubuno_desktop_views::registry::EventMeta.name</c> carries it (e.g. <c>"OnClick"</c> -
     /// already the <c>.kbview</c> attribute name, not a bare <c>"Click"</c>).
     /// </summary>
     public sealed class CreateHandlerRequest

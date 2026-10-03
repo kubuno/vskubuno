@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.Threading;
 namespace Kubuno.Web.Commands
 {
     /// <summary>
-    /// Tools > "Kubuno Core Web: Open Development Database Tunnel" (docs/WEB.md, "The development database"): opens (or
+    /// Tools > "Kubuno Web: Open Development Database Tunnel" (docs/WEB.md, "The development database"): opens (or
     /// reuses) the SSH tunnel F5 opens, without starting the core - for the Data Explorer, psql or sqlx on
     /// <c>localhost:55432</c>. Same settings, same info bars; the tunnel ends with Visual Studio.
     /// </summary>

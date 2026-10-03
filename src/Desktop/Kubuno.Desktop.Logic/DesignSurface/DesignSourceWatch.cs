@@ -23,7 +23,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         /// <summary>
         /// The folders whose sources the project's design build compiles: the package's own, and those of its path
         /// dependencies that are not the framework's own crates (<see cref="FrameworkCrates"/>, an explicit list: a
-        /// control library of the solution may be named <c>kubuno-shell-controls</c>).
+        /// control library of the solution may be named <c>kubuno-desktop-shell-controls</c>).
         /// </summary>
         public static IReadOnlyList<string> WatchedDirectories(string manifestPath, string? manifestText)
         {

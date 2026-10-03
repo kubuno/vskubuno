@@ -79,7 +79,7 @@ namespace Kubuno.Views.Designer.EditorFactory
 
                 if (nCmdID == ViewCode && CodeFileOf(active.Path, System.IO.File.Exists) is { } code)
                 {
-                    // F7: the view's code (`main_view.rs`, a `#[kubuno::view]` form class or a code-behind), like
+                    // F7: the view's code (`main_view.rs`, a `#[kubuno_desktop::view]` form class or a code-behind), like
                     // Windows Forms opening Form1.cs; the XML stays one click away (the designer's XML tab).
                     // Its own editor (the Rust editor), in its primary view: a .rs file has no "code" view of its own.
                     VsShellUtilities.OpenDocument(_serviceProvider, code, VSConstants.LOGVIEWID_Primary, out _, out _, out var codeFrame);

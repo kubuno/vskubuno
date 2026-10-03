@@ -1,6 +1,6 @@
 
 ```rust
-kubuno_views::binding
+kubuno_desktop_views::binding
 ```
 
 ```rust

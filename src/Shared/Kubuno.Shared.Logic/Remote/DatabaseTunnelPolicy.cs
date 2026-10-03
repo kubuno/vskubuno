@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace Kubuno.Shared.Logic.Remote
 {
-    /// <summary>When the Kubuno Core Web launch profiles open the development database tunnel (setting <c>kubuno.remote.devDatabase.tunnel</c>).</summary>
+    /// <summary>When the Kubuno Core launch profiles open the development database tunnel (setting <c>kubuno.remote.devDatabase.tunnel</c>).</summary>
     public enum DatabaseTunnelMode
     {
         /// <summary>When <c>KUBUNO_DEV_DATABASE_URL</c> points at the tunnel's local end (<c>localhost:55432</c>).</summary>

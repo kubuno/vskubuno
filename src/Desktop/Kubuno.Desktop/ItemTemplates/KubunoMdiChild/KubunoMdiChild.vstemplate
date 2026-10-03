@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  "Add New Item > Kubuno MDI Child Form": An MDI child form. A .kbview (its design) and its code, a #[kubuno::view] struct,
+  "Add New Item > Kubuno MDI Child Form": An MDI child form. A .kbview (its design) and its code, a #[kubuno_desktop::view] struct,
   SAME STEM so Solution Explorer nests the code under the view (docs/PROGRAMMING-MODEL.md).
   ControlItemWizard names the struct ($classname$) and the load handler ($modulename$) and declares the module.
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno MDI Child Form (Kubuno Core Desktop)</Name>
+    <Name>Kubuno MDI Child Form (Kubuno Desktop)</Name>
     <Description>An MDI document: a form drawn inside its MDI parent window, with its own title band, minimize, maximize and close buttons.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoMdiChild</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
-    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>16</SortOrder>
     <DefaultName>Document.kbview</DefaultName>

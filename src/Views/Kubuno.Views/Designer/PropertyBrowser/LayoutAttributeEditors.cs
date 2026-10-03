@@ -9,7 +9,7 @@ namespace Kubuno.Views.Designer.PropertyBrowser
     /// <summary>
     /// The text of the <c>Dock</c>/<c>Anchor</c> attributes ⇄ the WinForms enums the pickers edit. Pure.
     /// <c>Dock</c> is one of <c>None, Top, Bottom, Left, Right, Fill</c>; <c>Anchor</c> is a comma-separated
-    /// set of <c>Top, Bottom, Left, Right</c> (<c>None</c> for no edge), exactly as <c>kubuno-views</c> reads them.
+    /// set of <c>Top, Bottom, Left, Right</c> (<c>None</c> for no edge), exactly as <c>kubuno-desktop-views</c> reads them.
     /// </summary>
     public static class LayoutAttributeText
     {
@@ -23,7 +23,7 @@ namespace Kubuno.Views.Designer.PropertyBrowser
 
         /// <summary>
         /// The Anchor value of <paramref name="text"/>. An absent/empty attribute is WinForms' (and
-        /// <c>kubuno-views</c>') default, <c>Top, Left</c>.
+        /// <c>kubuno-desktop-views</c>') default, <c>Top, Left</c>.
         /// </summary>
         public static WinForms.AnchorStyles ParseAnchor(string? text)
         {

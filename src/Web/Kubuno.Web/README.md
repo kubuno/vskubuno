@@ -5,7 +5,7 @@ Kubuno core host loads (docs/ARCHITECTURE.md, "Roadmap - Kubuno web modules in t
 
 ## Status
 
-Phases 1 and 2 are built (docs/WEB.md): web solution generation (single and multi-repository), the `.esproj`\nfrontends on top of Visual Studio's JavaScript project system, Kubuno.Web.Sdk, F5 of the core and of a module (dev core,\ndevelopment database guard, deployment, attach to the module process, browser), the `.kbpkg` command, the version\ntools and the "Kubuno Core Web Module" template. Assemblies of the layer: `Kubuno.Web` (this one: commands, template),\n`Kubuno.Web.Logic`, `Kubuno.Web.MSBuild.Tasks`, `Kubuno.Web.ProjectSystem`, `Kubuno.Web.TemplateWizard`.
+Phases 1 and 2 are built (docs/WEB.md): web solution generation (single and multi-repository), the `.esproj`\nfrontends on top of Visual Studio's JavaScript project system, Kubuno.Web.Sdk, F5 of the core and of a module (dev core,\ndevelopment database guard, deployment, attach to the module process, browser), the `.kbpkg` command, the version\ntools and the "Kubuno Web Module" template. Assemblies of the layer: `Kubuno.Web` (this one: commands, template),\n`Kubuno.Web.Logic`, `Kubuno.Web.MSBuild.Tasks`, `Kubuno.Web.ProjectSystem`, `Kubuno.Web.TemplateWizard`.
 
 ## Rules
 

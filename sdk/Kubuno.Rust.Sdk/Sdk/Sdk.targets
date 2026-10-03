@@ -277,7 +277,7 @@
     <!-- Gate CoreCompile's own Inputs/Outputs check â€” cargo still does the fine-grained
          incremental work; this only decides whether to shell out to it at all. -->
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.rs" Condition="Exists('$(_KubunoManifestDir)\src')" />
-    <!-- The views `#[kubuno::view]` and `#[derive(UserControl)]` embed (include_str!), and a control added next to
+    <!-- The views `#[kubuno_desktop::view]` and `#[derive(UserControl)]` embed (include_str!), and a control added next to
          Cargo.toml (Add New Item on the project node, declared with #[path]) with its view and Toolbox bitmap. -->
     <_KubunoCargoSourceFiles Include="$(_KubunoManifestDir)\src\**\*.kbview" Condition="Exists('$(_KubunoManifestDir)\src')" />
     <!-- User control views (docs/VIEWS-SPEC.md "File kinds"), embedded the same way. -->

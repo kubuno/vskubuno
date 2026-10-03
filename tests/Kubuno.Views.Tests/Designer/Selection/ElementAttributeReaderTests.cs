@@ -44,9 +44,9 @@ namespace Kubuno.Views.Tests.Designer.Selection
         [TestMethod]
         public void Read_XNamePrefixedAttribute_IsKeptAsOneLiteralAttributeName()
         {
-            // The real kubuno-views grammar treats "x:Name"/"x:Class" as one flat IDENT token (colons
+            // The real kubuno-desktop-views grammar treats "x:Name"/"x:Class" as one flat IDENT token (colons
             // allowed mid-identifier), never a real XML namespace resolved against a declared `xmlns:x`
-            // - `tests/corpus/settings_view.kbview` (kubuno-views' own corpus) declares `xmlns="kubuno/ui/2026"`
+            // - `tests/corpus/settings_view.kbview` (kubuno-desktop-views' own corpus) declares `xmlns="kubuno/ui/2026"`
             // but never `xmlns:x`, and still uses `x:Class`/`x:Name` throughout.
             var attributes = ElementAttributeReader.Read(@"<View xmlns=""kubuno/ui/2026"" x:Class=""shell::x""/>", "");
 
@@ -82,7 +82,7 @@ namespace Kubuno.Views.Tests.Designer.Selection
         [TestMethod]
         public void Read_MismatchedEndTag_ClosesTheNearestOpenElementAndSiblingParsingContinues()
         {
-            // Mirrors kubuno-views' own parser tolerance: `parse_end_tag` closes whatever element is
+            // Mirrors kubuno-desktop-views' own parser tolerance: `parse_end_tag` closes whatever element is
             // currently open regardless of the closing tag's own name (never checked during parsing) -
             // here, the mismatched `</BadName>` closes <Card> (not <Stack>, its grandparent), and parsing
             // correctly resumes one level up: <Switch> is still Stack's second child.

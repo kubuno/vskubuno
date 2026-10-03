@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 
 namespace Kubuno.Desktop.Logic.Data
 {
-    /// <summary>The database providers of kubuno-data (the tool's <c>provider</c> strings).</summary>
+    /// <summary>The database providers of kubuno-desktop-data (the tool's <c>provider</c> strings).</summary>
     public enum DataProviderKind
     {
         Postgres,

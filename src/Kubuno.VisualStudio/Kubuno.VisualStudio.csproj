@@ -210,10 +210,10 @@
     <!--
       kubuno-views-ls.exe (Rust LSP server, Kubuno.Views' INTEGRATION.md #6) - built
       out-of-band from the separate `desktop` repo
-      (Z:\src\desktop\windows, crate kubuno-views-ls):
+      (Z:\src\desktop\windows, crate kubuno-desktop-views-ls):
         cd Z:\src\desktop\windows
         $env:CARGO_TARGET_DIR = "C:\kubuno-build\desktop-target"   # this workspace's documented default (vskubuno/CLAUDE.md #5)
-        cargo build -p kubuno-views-ls -r        (-r is cargo's short form of the "release" flag)
+        cargo build -p kubuno-desktop-views-ls -r        (-r is cargo's short form of the "release" flag)
       Default matches that convention; override with /p:KubunoViewsLsExePath=<path> for a
       differently-configured CARGO_TARGET_DIR, or in CI (see .github/workflows/build.yml, which
       checks out kubuno/desktop and builds this crate before invoking MSBuild).
@@ -221,7 +221,7 @@
     <KubunoViewsLsExePath Condition="'$(KubunoViewsLsExePath)' == ''">C:\kubuno-build\desktop-target\release\kubuno-views-ls.exe</KubunoViewsLsExePath>
     <!--
       kubuno-views-ls.exe, kubuno-data-tool.exe, kubuno-resources-tool.exe and view_embed.exe are
-      self-contained: the desktop workspace links kubuno-ui and Rust's std statically (product decision
+      self-contained: the desktop workspace links kubuno-desktop-ui and Rust's std statically (product decision
       of 2026-10-03, docs/DESIGNER.md section 16), so each exe ships ALONE - no kubuno_ui DLL, no
       std-*.dll. KubunoRustDllImport is the pattern of an import of either (a build of a desktop checkout
       older than that change): KubunoCheckToolExes refuses such an exe instead of shipping one that
@@ -232,18 +232,18 @@
     <KubunoViewsLsRustDll Condition="Exists('$(KubunoViewsLsExePath)')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(KubunoViewsLsExePath)')), '$(KubunoRustDllImport)').Value)</KubunoViewsLsRustDll>
     <!--
       kubuno-data-tool.exe (docs/DATA.md DATA-5: the Data Explorer's helper, JSON lines over stdio; crate
-      kubuno-data-tool of the desktop repo). Shipped in tools\ beside kubuno-views-ls.exe:
+      kubuno-desktop-data-tool of the desktop repo). Shipped in tools\ beside kubuno-views-ls.exe:
         cd Z:\src\desktop\windows
         $env:CARGO_TARGET_DIR = "C:\kubuno-build\desktop-target"
-        cargo build -r -p kubuno-views-ls -p kubuno-data-tool
+        cargo build -r -p kubuno-desktop-views-ls -p kubuno-desktop-data-tool
       Override with /p:KubunoDataToolExePath=<path>.
     -->
     <KubunoDataToolExePath Condition="'$(KubunoDataToolExePath)' == ''">C:\kubuno-build\desktop-target\release\kubuno-data-tool.exe</KubunoDataToolExePath>
     <KubunoDataToolRustDll Condition="Exists('$(KubunoDataToolExePath)')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(KubunoDataToolExePath)')), '$(KubunoRustDllImport)').Value)</KubunoDataToolRustDll>
     <!--
-      kubuno-resources-tool.exe (docs/RESOURCES.md: import-locales, import-resx, check; crate kubuno-resources-tool of the desktop repo).
+      kubuno-resources-tool.exe (docs/RESOURCES.md: import-locales, import-resx, check; crate kubuno-desktop-resources-tool of the desktop repo).
       Shipped in tools\ so a developer can run it from a terminal:
-        cd Z:\src\desktop\windows ; cargo build -r -p kubuno-resources-tool
+        cd Z:\src\desktop\windows ; cargo build -r -p kubuno-desktop-resources-tool
       Override with /p:KubunoResourcesToolExePath=<path>.
     -->
     <KubunoResourcesToolExePath Condition="'$(KubunoResourcesToolExePath)' == ''">$(KubunoViewsLsDir)kubuno-resources-tool.exe</KubunoResourcesToolExePath>
@@ -261,7 +261,7 @@
       is a separate one so that it does not share desktop-target's in-flight build):
         cd Z:\src\desktop\windows
         $env:CARGO_TARGET_DIR = "C:\kubuno-build\agent-dsgint"
-        cargo build -r -p kubuno-print -j 1 (the wrapper of kubuno-views' surface with the library components linked - kubuno-data's and kubuno-print's - so views holding data or printing components render before a design build - docs/DATA.md, docs/PRINTING.md; plus the cargo "example" flag, spelled with two dashes,
+        cargo build -r -p kubuno-desktop-print -j 1 (the wrapper of kubuno-desktop-views' surface with the library components linked - kubuno-desktop-data's and kubuno-desktop-print's - so views holding data or printing components render before a design build - docs/DATA.md, docs/PRINTING.md; plus the cargo "example" flag, spelled with two dashes,
         naming view_embed - omitted above only because a doubled dash is not valid inside an XML
         comment; see src/Views/Kubuno.Views/Designer/INTEGRATION.md §6 for the literal command)
       Shipped under its own tools\surface\ subfolder (see the Content items below). Self-contained:
@@ -273,7 +273,7 @@
 
   <Target Name="KubunoCheckSurfaceExe" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoViewsSurfaceExePath)')"
-           Text="kubuno-views-surface.exe (view_embed.exe) not found at '$(KubunoViewsSurfaceExePath)'. Build it: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-print -j 1 (kubuno-print wraps kubuno-views' surface with the data and printing components linked) -- or pass /p:KubunoViewsSurfaceExePath=&lt;path&gt;." />
+           Text="kubuno-views-surface.exe (view_embed.exe) not found at '$(KubunoViewsSurfaceExePath)'. Build it: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\agent-dsgint' ; cargo build --release --example view_embed -p kubuno-desktop-print -j 1 (kubuno-desktop-print wraps kubuno-desktop-views' surface with the data and printing components linked) -- or pass /p:KubunoViewsSurfaceExePath=&lt;path&gt;." />
     <Error Condition="'$(KubunoViewsSurfaceRustDll)' != ''"
            Text="view_embed.exe imports $(KubunoViewsSurfaceRustDll): it was built from a desktop checkout that still links kubuno-ui as a DLL. Update the desktop checkout (kubuno-ui is linked statically since 2026-10-03) and rebuild it." />
   </Target>
@@ -294,15 +294,15 @@
 
   <Target Name="KubunoCheckToolExes" BeforeTargets="Build">
     <Error Condition="!Exists('$(KubunoViewsLsExePath)')"
-           Text="kubuno-views-ls.exe not found at '$(KubunoViewsLsExePath)'. Build it from the desktop repo: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -- or pass /p:KubunoViewsLsExePath=&lt;path to kubuno-views-ls.exe&gt;." />
+           Text="kubuno-views-ls.exe not found at '$(KubunoViewsLsExePath)'. Build it from the desktop repo: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-desktop-views-ls -- or pass /p:KubunoViewsLsExePath=&lt;path to kubuno-views-ls.exe&gt;." />
     <Error Condition="'$(KubunoViewsLsRustDll)' != ''"
            Text="kubuno-views-ls.exe imports $(KubunoViewsLsRustDll): it was built from a desktop checkout that still links kubuno-ui as a DLL. Update the desktop checkout (kubuno-ui is linked statically since 2026-10-03) and rebuild it." />
     <Error Condition="'$(KubunoDataToolRustDll)' != ''"
            Text="kubuno-data-tool.exe imports $(KubunoDataToolRustDll): it was built from a desktop checkout that still links kubuno-ui as a DLL. Update the desktop checkout and rebuild it." />
     <Error Condition="!Exists('$(KubunoResourcesToolExePath)')"
-           Text="kubuno-resources-tool.exe not found at '$(KubunoResourcesToolExePath)'. Build it from the desktop repo: cd Z:\src\desktop\windows ; cargo build --release -p kubuno-resources-tool -- or pass /p:KubunoResourcesToolExePath=&lt;path to kubuno-resources-tool.exe&gt;." />
+           Text="kubuno-resources-tool.exe not found at '$(KubunoResourcesToolExePath)'. Build it from the desktop repo: cd Z:\src\desktop\windows ; cargo build --release -p kubuno-desktop-resources-tool -- or pass /p:KubunoResourcesToolExePath=&lt;path to kubuno-resources-tool.exe&gt;." />
     <Error Condition="!Exists('$(KubunoDataToolExePath)')"
-           Text="kubuno-data-tool.exe not found at '$(KubunoDataToolExePath)'. Build it from the desktop repo: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-views-ls -p kubuno-data-tool -- or pass /p:KubunoDataToolExePath=&lt;path to kubuno-data-tool.exe&gt;." />
+           Text="kubuno-data-tool.exe not found at '$(KubunoDataToolExePath)'. Build it from the desktop repo: cd Z:\src\desktop\windows ; $env:CARGO_TARGET_DIR='C:\kubuno-build\desktop-target' ; cargo build --release -p kubuno-desktop-views-ls -p kubuno-desktop-data-tool -- or pass /p:KubunoDataToolExePath=&lt;path to kubuno-data-tool.exe&gt;." />
   </Target>
 
   <ItemGroup>

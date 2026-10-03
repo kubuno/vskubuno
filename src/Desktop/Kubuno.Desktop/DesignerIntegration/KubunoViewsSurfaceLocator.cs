@@ -5,7 +5,7 @@ namespace Kubuno.Desktop.DesignerIntegration
 {
     /// <summary>
     /// Finds <c>kubuno-views-surface.exe</c> (DSG-6/DSG-7's design surface, built from
-    /// <c>kubuno-views/examples/view_embed.rs</c> - see <c>Kubuno.Views.Designer</c>'s own
+    /// <c>kubuno-desktop-views/examples/view_embed.rs</c> - see <c>Kubuno.Views.Designer</c>'s own
     /// INTEGRATION.md §6): the extension's own <c>tools\surface\</c> folder first (where this VSIX
     /// ships it once packaged - a dedicated subfolder, see the csproj's own comment on the shipping
     /// <c>Content</c> items), then a local dev build folder -
@@ -14,7 +14,7 @@ namespace Kubuno.Desktop.DesignerIntegration
     /// Never throws; a caller must treat <see langword="null"/> as "not found" (log it, leave the
     /// placeholder design surface in place) rather than fail package load over it. Since docs/DESIGNER.md
     /// section 15 this bundled surface is only the FALLBACK runtime: a designer whose project has been
-    /// built renders with a surface statically linked against that project's own kubuno_ui build
+    /// built renders with a surface statically linked against that project's own kubuno_desktop_ui build
     /// (<see cref="ProjectDesignSurfaceRuntimeProvider"/>).
     /// </summary>
     internal static class KubunoViewsSurfaceLocator

@@ -2,7 +2,7 @@
 //! It keeps every property and event of `<$baseclass$>`: use it in a view as `<$classname$ .../>` with the same
 //! attributes. Override more members with Ctrl+. > "Substituer des membres...".
 
-use kubuno_views::prelude::*;
+use kubuno_desktop_views::prelude::*;
 
 /// A `$baseclass$` with its own behaviour. Describe it here: this text is its description in the Toolbox.
 #[derive(Component, Default)]

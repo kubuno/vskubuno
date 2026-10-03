@@ -71,7 +71,7 @@ namespace Kubuno.Web.ProjectSystem
             }
             catch (Exception exception) when (!(exception is LaunchCancelledException) && !exception.Data.Contains(AlreadyLoggedKey))
             {
-                // A launch among several startup projects (the "<Module> (Kubuno Core Web + navigateur)" profile) reports a
+                // A launch among several startup projects (the "<Module> (Kubuno Core + browser)" profile) reports a
                 // provider's exception only as a generic "an extension threw" info bar: say what failed, with its stack.
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 KubunoLog.WriteLine("Kubuno web: F5 failed - " + exception);
@@ -186,7 +186,7 @@ namespace Kubuno.Web.ProjectSystem
                 var cargoTargetDirectory = await Read("CargoTargetDir").ConfigureAwait(false);
                 coreExecutable = DevCoreLocator.FindCoreExecutable(moduleDirectory, explicitCore, string.IsNullOrEmpty(cargoTargetDirectory) ? Environment.GetEnvironmentVariable("CARGO_TARGET_DIR") : cargoTargetDirectory)
                     ?? throw new FileNotFoundException(
-                        "No Kubuno core to start the module in. Build the core (open core\\Kubuno.Core.Web.slnx, or the multi-repository solution, and build it), "
+                        "No Kubuno core to start the module in. Build the core (open core\\Kubuno.Core.slnx, or the multi-repository solution, and build it), "
                         + "install Kubuno on this machine, or set \"Core executable\" on this project's Debug page. Looked at: "
                         + string.Join(", ", DevCoreLocator.Candidates(moduleDirectory, explicitCore, cargoTargetDirectory)));
                 // The core repository next to the module, else the one of the last core F5 (a module checked out elsewhere).

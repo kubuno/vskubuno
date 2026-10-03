@@ -7,7 +7,7 @@ namespace Kubuno.Views.Designer.Editing
 {
     /// <summary>
     /// Pure helpers over a multi-selection of stable element ids (docs/DESIGNER.md §13) - the C# mirror of
-    /// <c>kubuno_views::design::top_level_ids</c>/<c>is_ancestor_id</c>, used by every group gesture the
+    /// <c>kubuno_desktop_views::design::top_level_ids</c>/<c>is_ancestor_id</c>, used by every group gesture the
     /// host carries out itself (Delete, Cut/Copy/Paste, Duplicate, Bring to Front/Send to Back, the Layout
     /// commands' enabling).
     /// </summary>

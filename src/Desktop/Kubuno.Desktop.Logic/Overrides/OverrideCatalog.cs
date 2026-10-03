@@ -52,7 +52,7 @@ namespace Kubuno.Desktop.Logic.Overrides
 
     /// <summary>
     /// The catalogue of overridable members and the class chains of the built-in classes and levels, generated from
-    /// <c>kubuno_views::component::overrides</c> (the Rust test <c>write_overrides_fixture</c> writes
+    /// <c>kubuno_desktop_views::component::overrides</c> (the Rust test <c>write_overrides_fixture</c> writes
     /// <c>OverridableMembers.json</c>, embedded here), so the table always matches the real traits.
     /// </summary>
     public sealed class OverrideCatalog
@@ -112,7 +112,7 @@ namespace Kubuno.Desktop.Logic.Overrides
             return new OverrideCatalog(chains, members);
         }
 
-        /// <summary>The level traits of the hierarchy (<c>kubuno_views_meta::LEVELS</c>).</summary>
+        /// <summary>The level traits of the hierarchy (<c>kubuno_desktop_views_meta::LEVELS</c>).</summary>
         public static readonly IReadOnlyList<string> LevelNames = new[]
         {
             "Component", "Control", "ScrollableControl", "ContainerControl", "UserControl", "View",

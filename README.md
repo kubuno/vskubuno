@@ -1,7 +1,7 @@
 # Kubuno for Visual Studio
 
 Rust language support for Visual Studio, so Kubuno modules (backend Rust/Axum, desktop apps in
-Rust + `kubuno_ui`) can be developed inside Visual Studio. See `docs/ARCHITECTURE.md` for the
+Rust + `kubuno_desktop_ui`) can be developed inside Visual Studio. See `docs/ARCHITECTURE.md` for the
 full roadmap; this repository currently implements phase 1a: rust-analyzer over LSP, TextMate
 syntax coloring, and rustfmt (via Format Document / format-on-save).
 
@@ -20,7 +20,7 @@ rules (enforced by `tests/Kubuno.Architecture.Tests`).
 src/
   Kubuno.VisualStudio/        The one VSIX: KubunoPackage (every registration, lists the layers), KubunoCommands.vsct,
                               the VSIX manifest, the unified settings manifest; ships every layer below
-  Shared/                     Shared Visual Studio infrastructure (not to be confused with Kubuno Core Web/Desktop)
+  Shared/                     Shared Visual Studio infrastructure (not to be confused with Kubuno Core/Desktop)
     Kubuno.Shared/            Layer contracts, themed dialogs, settings plumbing, Output pane, dialog gallery, MCP start
     Kubuno.Shared.Logic/      Pure helpers (LSP, QuickInfo model, UI language) - no VS SDK
     Kubuno.Shared.Mcp(.Bridge)/ The MCP server for Claude and its in-proc bridge (docs/MCP.md)
@@ -38,7 +38,7 @@ src/
   Views/                      What every target with .kbview views shares
     Kubuno.Views/             .kbview language client, view designer (Toolbox, Properties, events, pickers), .kbres editor
     Kubuno.Views.Logic/       Pure logic of the above (view files, .kbres model) - no VS SDK
-  Desktop/                    Kubuno desktop applications (kubuno_ui, .kbview)
+  Desktop/                    Kubuno desktop applications (kubuno_desktop_ui, .kbview)
     Kubuno.Desktop/           The designer's Rust design surface, data tooling, printing, desktop templates
     Kubuno.Desktop.Logic/     Pure logic of the above - no VS SDK
     Kubuno.Desktop.ProjectSystem/ .kbview default editor and icon in a .rsproj, Kubuno control icons
@@ -362,7 +362,7 @@ JavaScript project system uses (checked by reflection against the installed CPS 
 - **Environment**: PATH is prepended with the profile directory, its `deps` folder and the Rust
   standard library directory (`Kubuno.Rust.Launch.RustDebugEnvironment`, the same logic Open Folder's
   `launch.vs.json` uses, the directories `cargo run` adds), which is what `-C prefer-dynamic` builds need
-  (Kubuno programs link `kubuno_ui` and `std` statically and need none of it); `RUST_BACKTRACE=1` is set; the Just My Code/step-filter files and the Rust panic exception
+  (Kubuno programs link `kubuno_desktop_ui` and `std` statically and need none of it); `RUST_BACKTRACE=1` is set; the Just My Code/step-filter files and the Rust panic exception
   setting are applied as for Open Folder (`docs/DEBUGGING.md`).
 - **Debug settings**: the Project Properties editor's Debug page (`Sdk/Rules/rust_debug.xaml`) and its
   "Open debug launch profile UI" dialog edit the selected debugger rule's properties
@@ -415,8 +415,8 @@ cache with *only* the bundled feed configured restores `Kubuno.Rust.Sdk` and bui
 
 File > New > Project, filtered by Language = **Rust**, offers four project templates - **Rust
 Console Application**, **Rust Library**, **Kubuno Desktop Application** (a Windows Forms-like
-project in three files - `main.rs`, `main_view.kbview` and its `#[kubuno::view]` form class `main_view.rs`,
-`docs/PROGRAMMING-MODEL.md` - with one dependency, `kubuno`, path-dependent on your own
+project in three files - `main.rs`, `main_view.kbview` and its `#[kubuno_desktop::view]` form class `main_view.rs`,
+`docs/PROGRAMMING-MODEL.md` - with one dependency, `kubuno-desktop`, path-dependent on your own
 `desktop/windows` checkout found at creation through `KUBUNO_DESKTOP_SRC`, default
 `Z:\src\desktop\windows`, and built into a cargo target directory of its own - see
 `docs/GETTING-STARTED.md`),
@@ -531,7 +531,7 @@ change made to the vendored copy.
   `NonRustProjectExclusionScanner`'s own remarks) got a directory wrong.
 - The debugger's expression evaluator speaks C++, not Rust (see `docs/ARCHITECTURE.md`'s "Known
   limits" and `docs/DEBUGGING.md`): natvis views of `std` types work - rustc embeds the toolchain's own
-  `.natvis` files in every PDB it links, `kubuno_views` embeds the Kubuno types' natvis the same way, and the
+  `.natvis` files in every PDB it links, `kubuno_desktop_views` embeds the Kubuno types' natvis the same way, and the
   VSIX registers a copy (`Kubuno.natvis`) - but Rust expressions (method calls, trait dispatch) in the
   Watch window do not, and `self.field` must be written `self->field`.
 - Visual Studio's built-in LSP client does not let an `ILanguageClient` override the `initialize`

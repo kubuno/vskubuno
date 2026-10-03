@@ -245,7 +245,7 @@
       <NameValuePair Name="VisibilityCondition">
         <NameValuePair.Value>(not (has-evaluated-value "RustApplication" "KubunoDesktopSrc" ""))</NameValuePair.Value>
       </NameValuePair>
-      <NameValuePair Name="SearchTerms" Value="KUBUNO_DESKTOP_SRC;kubuno_ui;desktop" />
+      <NameValuePair Name="SearchTerms" Value="KUBUNO_DESKTOP_SRC;kubuno_desktop_ui;desktop" />
     </StringProperty.Metadata>
   </StringProperty>
 

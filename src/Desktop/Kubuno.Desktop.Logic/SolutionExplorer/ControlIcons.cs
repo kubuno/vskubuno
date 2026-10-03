@@ -9,7 +9,7 @@ namespace Kubuno.Desktop.Logic.SolutionExplorer
 {
     /// <summary>
     /// The Kubuno control icons of <c>KubunoControls.imagemanifest</c> (docs/DESIGNER.md section 11): one
-    /// Lucide-based icon per kubuno-views component, used by the .kbview designer's Toolbox AND the
+    /// Lucide-based icon per kubuno-desktop-views component, used by the .kbview designer's Toolbox AND the
     /// .kbview element nodes of Solution Explorer. Rust code symbols keep Visual Studio's own
     /// <c>KnownMonikers</c> (<see cref="SymbolMonikerNames"/>) so they look like the rest of the IDE.
     /// </summary>

@@ -90,7 +90,9 @@ namespace Kubuno.Rust.TemplateWizard
         }
 
         private static bool IsDesktopWorkspace(string root, Func<string, bool> fileExists)
-            => fileExists(Path.Combine(root, "src", "crates", "kubuno-ui", "Cargo.toml"));
+            => fileExists(Path.Combine(root, "src", "crates", "kubuno-desktop-ui", "Cargo.toml"))
+                // A checkout older than the 2026-10 rename.
+                || fileExists(Path.Combine(root, "src", "crates", "kubuno-ui", "Cargo.toml"));
 
         /// <summary>
         /// Lower-cases, replaces every character outside [a-z0-9_-] with '-', collapses

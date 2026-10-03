@@ -11,7 +11,7 @@ namespace Kubuno.Views.Tests.Designer.Toolbox
     /// docs/PRINTING.md: the printing components in the designer - their Toolbox tab ("Printing" / "Impression"), the
     /// component tray, the Properties window (the Document reference drop-down) and the default event. The fixture is
     /// the real <c>kubuno/registry</c> answer of <c>kubuno-views-ls</c> for the printing sample (its scan of
-    /// <c>kubuno-print</c>, reached through the <c>kubuno</c> crate's workspace dependencies).
+    /// <c>kubuno-desktop-print</c>, reached through the <c>kubuno-desktop</c> crate's workspace dependencies).
     /// </summary>
     [TestClass]
     public class PrintingToolboxTests
@@ -42,7 +42,7 @@ namespace Kubuno.Views.Tests.Designer.Toolbox
             var registry = Registry();
             var document = registry.Find("PrintDocument")!;
             Assert.IsTrue(document.NonVisual);
-            Assert.AreEqual("kubuno_print", document.CrateName);
+            Assert.AreEqual("kubuno_desktop_print", document.CrateName);
             Assert.AreEqual("OnPrintPage", document.DefaultEventFor(false)?.Name);
             CollectionAssert.IsSubsetOf(new[] { "OnBeginPrint", "OnQueryPageSettings", "OnPrintPage", "OnEndPrint" }, document.Events.Select(e => e.Name).ToArray());
             Assert.AreEqual("PrintPageEventArgs", document.FindEvent("OnPrintPage")!.ArgsType);

@@ -9,7 +9,7 @@ namespace Kubuno.Rust.Launch
     /// Computes the environment a Rust debuggee needs to start correctly under the native
     /// debugger, in particular the extra PATH entries a `-C prefer-dynamic` build needs to
     /// find its dylibs and `std-*.dll` - the same directories `cargo run` puts on PATH. (Kubuno
-    /// desktop applications link `kubuno_ui` and `std` statically and need none of them.)
+    /// desktop applications link `kubuno_desktop_ui` and `std` statically and need none of them.)
     /// </summary>
     public static class RustDebugEnvironment
     {

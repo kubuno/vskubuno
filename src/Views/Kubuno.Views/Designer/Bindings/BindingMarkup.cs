@@ -8,7 +8,7 @@ namespace Kubuno.Views.Designer.Bindings
     /// <summary>
     /// A <c>{Binding …}</c> attribute value read part by part, without loss (docs/DESIGNER.md, "Data bindings"): every
     /// part keeps its text, its position and its key - known or not - so an editor can change one option (the path,
-    /// the mode, the converter…) and write the rest back exactly as it was. The grammar is <c>kubuno_views::binding</c>'s
+    /// the mode, the converter…) and write the rest back exactly as it was. The grammar is <c>kubuno_desktop_views::binding</c>'s
     /// (docs/VIEWS-SPEC.md §6.1): the first bare part is the path, the others are <c>Key=Value</c>, values with commas
     /// or quotes are quoted <c>'…'</c> (<c>''</c> is one quote). The language server stays the authority on what the
     /// runtime accepts; this class only reads and writes the text.

@@ -34,7 +34,7 @@ which is only a README today), `api-spec`.
   module backends with SQLite running in wasmtime on the desktop) was abandoned on 2026-08-16 and stays abandoned.
   A shared core is a small pure library, never a backend, never run in wasmtime, never owning storage or sync
   transport (§4.2).
-- **First lots**: (0) the conformance-vector format and runners; (1) **`kubuno-docs-core`** (pilot, already being
+- **First lots**: (0) the conformance-vector format and runners; (1) **`kubuno-office-docs-core`** (pilot, already being
   extracted from Documents desktop); (2) **`kubuno-calendar-core`** (recurrence with time zones, fixes the DST bug);
   (3) **drive name/path rules and conflict naming** (fixes the illegal-name class of sync failures). Sizes and order
   in §7.
@@ -76,16 +76,16 @@ graded ★ (low) to ★★★ (high). "—" = no implementation.
 | Heading sizes, spacing, line-height ratio 1.15 | `canvas-engine.ts:233-261, 844` | — | `convert.rs:26, 132-135` | `DocsDesign.kt:321, 366-392` | agree today (H6 = 11 pt, bold ≤ level 4) but copied by hand three times; the comment in `parity.rs` is already stale | ★★ (codegen/constants) |
 | DOCX / ODT / DOC / XLSX / ODS / ODP import-export | — | `office/src/converters/*` (server only) | through the server | through the server | single implementation | ★ (already shared by the API) |
 | Spreadsheet formulas, recalc, fill series, pivot, number formats | `formula-engine.ts` 1611, `formula-refs.ts` 250, `formula-fns/*` (12 files), `fill-series.ts` 383, `pivot-engine.ts`, `data/format.ts` | — (`services/data_engine.rs` is a separate BI evaluator) | — | — | one implementation today | ★★ now, ★★★ the day a second platform needs sheets |
-| Autosave, etag, `If-Match`, 412 arbitration | `api.ts` has no `If-Match` (collab websocket) | `handlers/documents.rs:11, 328` | `api/client.rs` defines the header but cannot send it (`kubuno-sync` has no generic PATCH/headers) | `DocsDelta.kt` 223 etag cache, 412 arbitration | three behaviours; shared documents get no etag on Android | ★★ (protocol, see §3.6) |
+| Autosave, etag, `If-Match`, 412 arbitration | `api.ts` has no `If-Match` (collab websocket) | `handlers/documents.rs:11, 328` | `api/client.rs` defines the header but cannot send it (`kubuno-desktop-sync` has no generic PATCH/headers) | `DocsDelta.kt` 223 etag cache, 412 arbitration | three behaviours; shared documents get no etag on Android | ★★ (protocol, see §3.6) |
 | Notes body | plain text, no markdown library found | `content: String` | — | — | nothing to share yet | ★ |
 
 ### 3.2 Drive and file sync
 
 | Algorithm | W | B | D | A | Agree? | Value |
 |---|---|---|---|---|---|---|
-| **File/folder name rules** | `maxLength=255` characters only (`RenameModal.tsx:108`, `NewFolderModal.tsx:49`) | folders: empty, > 255 **bytes**, `/ \ \0`, `.`, `..` (`drive/src/services/folders.rs:907-918`, verified); file rename: > **1000** bytes, same chars (`files.rs:390-395, 718`, verified); uploads: `sanitize_filename` (deletes illegal chars) | `kubuno-sync/engine.rs:268-302`: maps illegal chars to `-`, strips trailing dots/spaces, prefixes `_` to reserved names, **Windows only** (`#[cfg(windows)]`) | no check; `File(dir, name)` + `name.part` (`OfflineFiles.kt:96-97`) | **no**: the server accepts `:`, `<>"|?*`, `CON`, trailing dots via rename/create-folder; the desktop maps `a:b` and `a-b` to the same local path; limits differ (255 chars / 255 bytes / 1000 bytes) | ★★★ |
+| **File/folder name rules** | `maxLength=255` characters only (`RenameModal.tsx:108`, `NewFolderModal.tsx:49`) | folders: empty, > 255 **bytes**, `/ \ \0`, `.`, `..` (`drive/src/services/folders.rs:907-918`, verified); file rename: > **1000** bytes, same chars (`files.rs:390-395, 718`, verified); uploads: `sanitize_filename` (deletes illegal chars) | `kubuno-desktop-sync/engine.rs:268-302`: maps illegal chars to `-`, strips trailing dots/spaces, prefixes `_` to reserved names, **Windows only** (`#[cfg(windows)]`) | no check; `File(dir, name)` + `name.part` (`OfflineFiles.kt:96-97`) | **no**: the server accepts `:`, `<>"|?*`, `CON`, trailing dots via rename/create-folder; the desktop maps `a:b` and `a-b` to the same local path; limits differ (255 chars / 255 bytes / 1000 bytes) | ★★★ |
 | Case and Unicode normalisation | — | case-sensitive uniqueness (`files.rs:140`, `folders.rs:476`, `kubuno-storage/src/naming.rs` "Linux behaviour"), no NFC | none | none | `A.txt` and `a.txt` coexist on the server and collide on NTFS/APFS; NFD names from macOS never compared | ★★★ |
-| Auto-rename and conflict-copy naming | — | `name (2)` (`kubuno-storage/src/naming.rs`) | legacy `{stem} (conflit {HOSTNAME} {epoch}){ext}` (`push.rs:395`, `HOSTNAME` unset on Windows → "desktop"); engine `<title> (conflit {machine} {YYYY-MM-DD HH-MM})` (`kubuno-sync-engine` `adapter.rs:355`) | none (never edits content in place) | four rules | ★★ |
+| Auto-rename and conflict-copy naming | — | `name (2)` (`kubuno-storage/src/naming.rs`) | legacy `{stem} (conflit {HOSTNAME} {epoch}){ext}` (`push.rs:395`, `HOSTNAME` unset on Windows → "desktop"); engine `<title> (conflit {machine} {YYYY-MM-DD HH-MM})` (`kubuno-desktop-sync-engine` `adapter.rs:355`) | none (never edits content in place) | four rules | ★★ |
 | Content hash | — | SHA-256 (`files.rs:1064`, etag = `content_hash`) | SHA-256 (`push.rs:17, 379`) | SHA-256 (`Entities.kt:117`) | yes | ★ (trivial, constant) |
 | Chunked upload | no chunking | 10 MiB default, client may override (`config/settings.rs:90`, `uploads.rs:29`) | legacy: one multipart POST, no chunks; engine: none | 8 MiB, session + next chunk persisted (`Transfers.kt:17`) | three behaviours | ★★ |
 | Mass-delete and reorg guards | — | protected folders | `MASS_DELETE_RATIO` 0.2 floor 50, same-etag-survives = reorg, `subtree_really_gone` (`push.rs:44-47, 135-140`) | none found | guards that prevented real data loss exist on one platform only | ★★★ |
@@ -137,11 +137,11 @@ graded ★ (low) to ★★★ (high). "—" = no implementation.
 
 | Algorithm | D (`desktop/common`) | A (`mobile/android`) | Agree? | Value |
 |---|---|---|---|---|
-| Token refresh state machine | `kubuno-account` `owner.rs:53-55`: 300 s fresh window, 45 s cooldown, 60 s margin, single-flight, persist the rotated pair before use, only 401/403 = session ended | `core-api/TokenManager.kt` 208, `:45-49`: same numbers and rules | **yes**, by careful copying (Android was ported from desktop `api.rs`) | ★★ (small, but a mistake revokes the token family) |
-| Idempotency keys, 412 = conflict, 404 on trash = done | `kubuno-sync/api.rs:861-980`, `kubuno-sync-engine` | `Entities.kt:30`, `OutboxDrain.kt:81` | yes | ★★ |
-| Pull loop (page + cursor in one transaction, stop if the cursor does not move, unknown kind skipped) | `kubuno-sync-engine` (`engine.rs` 1298) | `core-sync/SyncEngine.kt` 88 | yes in intent; page sizes differ | ★★ |
+| Token refresh state machine | `kubuno-desktop-account` `owner.rs:53-55`: 300 s fresh window, 45 s cooldown, 60 s margin, single-flight, persist the rotated pair before use, only 401/403 = session ended | `core-api/TokenManager.kt` 208, `:45-49`: same numbers and rules | **yes**, by careful copying (Android was ported from desktop `api.rs`) | ★★ (small, but a mistake revokes the token family) |
+| Idempotency keys, 412 = conflict, 404 on trash = done | `kubuno-desktop-sync/api.rs:861-980`, `kubuno-desktop-sync-engine` | `Entities.kt:30`, `OutboxDrain.kt:81` | yes | ★★ |
+| Pull loop (page + cursor in one transaction, stop if the cursor does not move, unknown kind skipped) | `kubuno-desktop-sync-engine` (`engine.rs` 1298) | `core-sync/SyncEngine.kt` 88 | yes in intent; page sizes differ | ★★ |
 | Outbox classification, coalescing, rollback, backoff | `outbox.rs` 519: `min(2^n × 2 s, 15 min)` ± 20 %, `Retry-After`, no give-up, explicit rollback | `OutboxDrain.kt` 145: WorkManager `retry()`, 3–5 attempts then the intent is lost (a mistake already listed in DESKTOP-OFFLINE-SYNC §4.1) | **no** | ★★★ |
-| HTTP retry | `kubuno-api-client` `client.rs:37`: 4 attempts, 500 ms base, 30 s cap, ± 20 % | none explicit; websocket reconnect flat 5 s | no | ★ |
+| HTTP retry | `kubuno-desktop-api-client` `client.rs:37`: 4 attempts, 500 ms base, 30 s cap, ± 20 % | none explicit; websocket reconnect flat 5 s | no | ★ |
 | Field-level three-way merge (DESKTOP-OFFLINE-SYNC §7.4) | `conflict.rs` 127 | — | one side | ★★★ when PIM apps go offline on mobile |
 | Generated API types | hand-written | hand-written (the generated `api-spec/clients/kotlin` is **not used** by the Android apps) | — | codegen candidate (§5.3) |
 
@@ -149,7 +149,7 @@ graded ★ (low) to ★★★ (high). "—" = no implementation.
 
 | Rank | Candidate | Why |
 |---|---|---|
-| 1 | Document model + layout (`kubuno-docs-core`) | largest (≈ 6–7 k lines per copy), changes weekly, a divergence is visible to every user (pagination), a second copy already exists and a third is coming (web via WASM, Android) |
+| 1 | Document model + layout (`kubuno-office-docs-core`) | largest (≈ 6–7 k lines per copy), changes weekly, a divergence is visible to every user (pagination), a second copy already exists and a third is coming (web via WASM, Android) |
 | 2 | Calendar recurrence + time zones (`kubuno-calendar-core`) | small (≈ 300 lines + crate), **current user-visible bug**, needed offline on every native client, the backend has six callers |
 | 3 | Drive name/path/case rules + conflict naming | small, causes sync failures and data-loss classes, needed by server, desktop, Android, web validation |
 | 3b | Forms conditional logic | tiny (135 lines), but its absence on the server is a **validation bypass**; the server must run the same evaluator as the client |
@@ -164,7 +164,7 @@ graded ★ (low) to ★★★ (high). "—" = no implementation.
 
 ### 4.1 `@kubuno/views-compiler` (WEB-VIEWS §12–14): the model to copy
 
-- The grammar (`kubuno-views-syntax`, `-model`) was split out of a desktop crate into **platform-neutral crates**
+- The grammar (`kubuno-desktop-views-syntax`, `-model`) was split out of a desktop crate into **platform-neutral crates**
   that depend on no UI, no `windows`, no C library, and are checked on `wasm32-unknown-unknown`, Linux and both
   macOS targets in addition to Windows.
 - The WASM shim is tiny (116 lines), **C ABI, JSON in / JSON out, no wasm-bindgen**, in its own `[workspace]`, and
@@ -225,7 +225,7 @@ Measured sizes (`wasm32-unknown-unknown`, release profile of the views compiler,
 |---|---|---|---|
 | `tiny` (probe) | name validation + NFC (`unicode-normalization`) + `serde_json`, C ABI | 183 KB | 86 KB |
 | `rr` (probe) | `rrule` 0.12 expansion + `serde_json` (pulls `chrono-tz` 0.8 **and `regex`**) | 2 087 KB | 478 KB |
-| `kubuno-views-web` (shipping) | `.kbview` parser, validator, plan and `.d.ts` generator | 474 KB | — |
+| `kubuno-web-views-compiler-core` (shipping) | `.kbview` parser, validator, plan and `.d.ts` generator | 474 KB | — |
 | `calendar-core.wasm` (2026-07, removed) | `rrule` + `chrono` + SQLite, WASI | 2.9 MB | — |
 
 Reading:
@@ -364,13 +364,13 @@ iOS GRDB/Core Data) and HTTP stay in each platform.
 
 | Kind | Home | Examples | Tag |
 |---|---|---|---|
-| Owned by one module (its formats, its rules) | the **module repository**, as a workspace member `crates/kubuno-<domain>-core` next to the backend, which uses it by path | `kubuno-docs-core` (office), `kubuno-calendar-core` (calendar; tasks uses it as a client of the format), mail rules (mail), sheet engine (office) | `<domain>-core-vX.Y.Z` on that repo |
+| Owned by one module (its formats, its rules) | the **module repository**, as a workspace member `crates/kubuno-<domain>-core` next to the backend, which uses it by path | `kubuno-office-docs-core` (office), `kubuno-calendar-core` (calendar; tasks uses it as a client of the format), mail rules (mail), sheet engine (office) | `<domain>-core-vX.Y.Z` on that repo |
 | Drive naming, path and conflict rules | the **drive** repository, in the existing `kubuno-drive` client crate (`default-features = false` already keeps it light) or a sibling `kubuno-drive-core` | name verdicts, case/NFC keys, conflict names | `drive-core-vX.Y.Z` |
 | Used by several modules or by the core itself | the **core** repository (`core/crates/`) | text normalisation for search, plural/format helpers if any, the KDP client protocol (`kubuno-sync-core`, the server half already lives in `kubuno-db::journal`) | `<crate>-vX.Y.Z` like `db-v0.9.0` |
-| Client-only infrastructure (secrets, accounts, sockets) | `desktop/common` (stays) | `kubuno-account`, `kubuno-secrets` | — |
+| Client-only infrastructure (secrets, accounts, sockets) | `desktop/common` (stays) | `kubuno-desktop-account`, `kubuno-desktop-secrets` | — |
 
-**Pilot exception for `kubuno-docs-core`**: it is being extracted inside the desktop workspace, where the code and
-the parity harness are. Keep it there until the web adopts it (like `kubuno-views-web`, which lives next to its
+**Pilot exception for `kubuno-office-docs-core`**: it is being extracted inside the desktop workspace, where the code and
+the parity harness are. Keep it there until the web adopts it (like `kubuno-web-views-compiler-core`, which lives next to its
 grammar in the desktop repo), with the neutrality rules of §6.1 enforced by CI (`cargo check --target
 wasm32-unknown-unknown`). Move it to the office repository when the office backend or a second client needs it
 (open question Q1).
@@ -439,12 +439,12 @@ Sizes: **S** ≤ 3 days, **M** 1–2 weeks, **L** 3–6 weeks of agent work, tes
 | Lot | Content | Size | Depends on |
 |---|---|---|---|
 | **SC-0** Vectors | JSON format (`{suite, version, cases:[{id, input, expected, note}]}`), runners for Rust (`kubuno-vectors` dev-dependency), TS (vitest helper) and Kotlin (JUnit helper); vendoring script with checksums; `check_versions.py` entries | S | — |
-| **SC-1** `kubuno-docs-core` (pilot 1) | Extract `model/`, `doc/convert`, `para`, `lists`, `tables`, `images` (layout decisions only), the constants, and the history/edit operations that do not touch the UI into a neutral crate; text measurement behind a trait; turn the Chrome parity recordings into committed vectors (generated, reviewed, with the font set named); CI wasm32 check. Then SC-1b: WASM shim + office frontend running the Rust layout behind a flag, compared with `canvas-engine.ts` on the vectors and the 18-document corpus, before any switch | M (1) + L (1b) | SC-0 |
+| **SC-1** `kubuno-office-docs-core` (pilot 1) | Extract `model/`, `doc/convert`, `para`, `lists`, `tables`, `images` (layout decisions only), the constants, and the history/edit operations that do not touch the UI into a neutral crate; text measurement behind a trait; turn the Chrome parity recordings into committed vectors (generated, reviewed, with the font set named); CI wasm32 check. Then SC-1b: WASM shim + office frontend running the Rust layout behind a flag, compared with `canvas-engine.ts` on the vectors and the 18-document corpus, before any switch | M (1) + L (1b) | SC-0 |
 | **SC-2** Recurrence and time zones (pilot 2) | `kubuno-recurrence` (core repo) or `kubuno-calendar-core`: expansion in the event's zone (fixes the DST/weekday bug), `UNTIL` in the event's zone, EXDATE/RECURRENCE-ID semantics, rule builder/describer used by the web (replaces `rrule.ts` logic, keeps its UI), iCalendar escape/fold (replaces the three copies); the backend's six callers switch; tasks validates its rules with it; vectors first (DST transitions, midnight-crossing, monthly last-weekday, leap years, count/until) | M | SC-0 |
 | **SC-3** Drive names (pilot 3) | One verdict function (`valid`, `invalid(reason)`, `portable-warning`) with server, Windows, macOS, Linux profiles, a case/NFC comparison key and the conflict-copy name; the server applies it to rename and create-folder (choose: reject or sanitise, Q4), desktop and Android use it before writing to disk; the web validates in the dialog through WASM (or the TS port held by vectors, the logic is small) | S–M | SC-0 |
 | **SC-3b** Forms logic | `kubuno-forms-core` (forms repo): the 12 operators, `computeHidden`, `resolveJump`, required-question check over the visible set; the server validates every submission with it (closes the bypass); the web keeps `logic.ts` held by the vectors or switches to the WASM build (≈ 100 KB gzip: keep TS) | S | SC-0 |
 | **SC-4** Mail text rules | subject normalisation (one function, used by both server paths and the web), reply prefix, address list parsing, quote-attribution detection, sanitiser allow-list as generated data + XSS vector corpus; fix the two bare `ammonia::clean` calls | S–M | SC-0 |
-| **SC-5** Sync protocol core | `kubuno-sync-core` sans-IO: outbox classification, coalescing, backoff schedule, rollback decisions, three-way field merge, conflict names; desktop `kubuno-sync-engine` uses it; Android adopts it through UniFFI **when** the first offline PIM app or iOS starts | L | SC-0, SC-3, Q5 |
+| **SC-5** Sync protocol core | `kubuno-sync-core` sans-IO: outbox classification, coalescing, backoff schedule, rollback decisions, three-way field merge, conflict names; desktop `kubuno-desktop-sync-engine` uses it; Android adopts it through UniFFI **when** the first offline PIM app or iOS starts | L | SC-0, SC-3, Q5 |
 | **SC-5b** Small helpers by vectors | one byte-size, duration and distance formatter per platform (`@kubuno/sdk`, `core-ui`), search fold in a core-repo `kubuno-text` crate + TS port, all held by shared vectors; delete the ≈ 30 copies; fix base 1000 in `PhotoViewer.kt` | S–M | SC-0 |
 | **SC-6** Spreadsheet engine | port `formula-engine.ts` + functions to `kubuno-sheets-core` only when a second platform needs sheets; until then, export the existing web results as vectors so the port has an oracle | L (deferred) | SC-0 |
 | **SC-7** Mobile FFI channel | first AAR with UniFFI (probably SC-3 or SC-2), CI job, Gradle consumption of a prebuilt artefact, size budget per app | M | Q2 |
@@ -456,7 +456,7 @@ Bugs found by this inventory that should be fixed **now**, independently of any 
 its future suite): the forms required-field bypass; recurrence in UTC; drive rename/create-folder accepting
 non-portable names and the 255/1000-byte limit mismatch; the two bare `ammonia::clean` calls in mail; photo
 thumbnails ignoring EXIF orientation; Android's outbox giving up after 5 attempts (`OutboxDrain.kt:32, 51`); base
-1000 in `PhotoViewer.kt`; the stale memory note `sync-illegal-filenames` (the fix is in `kubuno-sync/engine.rs`).
+1000 in `PhotoViewer.kt`; the stale memory note `sync-illegal-filenames` (the fix is in `kubuno-desktop-sync/engine.rs`).
 
 ### 7.1 Rules for new code (proposed for CLAUDE.md §7)
 
@@ -493,7 +493,7 @@ thumbnails ignoring EXIF orientation; Android's outbox giving up after 5 attempt
 
 | # | Question | Recommended answer |
 |---|---|---|
-| Q1 | Where does `kubuno-docs-core` live? | In the desktop workspace during extraction (the code, the parity harness and the agent are there; tags are a user action and would slow iteration), **moved to the office repository** when the office frontend adopts it (SC-1b), so the format's owner owns its core. |
+| Q1 | Where does `kubuno-office-docs-core` live? | In the desktop workspace during extraction (the code, the parity harness and the agent are there; tags are a user action and would slow iteration), **moved to the office repository** when the office frontend adopts it (SC-1b), so the format's owner owns its core. |
 | Q2 | Accept native code (NDK, JNA, UniFFI) in the Android apps? | Yes, but only through prebuilt AARs, only for offline-critical logic, with a per-app size budget (≈ +2 MB per ABI); Compose rendering stays Kotlin. |
 | Q3 | Recurrence: a calendar-owned core or a core-repo crate? | Core repo (`kubuno-recurrence`), because tasks needs it too and modules may not depend on each other. |
 | Q4 | Drive names the server accepts but some OS cannot store: reject, sanitise, or accept and map locally? | Accept portable names only for new names (reject `\ / : * ? " < > |`, control chars, trailing dot/space, reserved device names, > 255 UTF-8 bytes) with a clear message; existing illegal names are mapped locally by the shared rule with a reversible, collision-free scheme; case-only and NFC/NFD clashes produce a server-side `(2)` on create. |
@@ -510,7 +510,7 @@ On 2026-10-02 the user approved every recommendation of this study. Q1–Q10 are
 
 | # | Decision |
 |---|---|
-| Q1 | `kubuno-docs-core` is extracted in the desktop workspace and moves to the office repository when the office frontend adopts it (SC-1b). |
+| Q1 | `kubuno-office-docs-core` is extracted in the desktop workspace and moves to the office repository when the office frontend adopts it (SC-1b). |
 | Q2 | Native code is accepted in the Android apps, only as prebuilt AARs, only for offline-critical logic, with a per-app size budget (≈ +2 MB per ABI); Compose rendering stays Kotlin. |
 | Q3 | Recurrence lives in the core repository (`kubuno-recurrence`), usable by calendar and tasks. |
 | Q4 | Drive accepts only portable names for new names (rejects `\ / : * ? " < > \|`, control characters, trailing dot/space, reserved device names, > 255 UTF-8 bytes) with a clear message; existing illegal names are mapped locally by the shared reversible, collision-free rule; case-only and NFC/NFD clashes get a server-side `(2)` on create. |
@@ -561,7 +561,7 @@ then SC-2 and SC-3.
 | Domain | Folder | Reference |
 |---|---|---|
 | forms | `forms/crates/kubuno-forms-core/vectors/` (`operators`, `hidden`, `jump`, `reached`, `answer`, `submission`) | `kubuno-forms-core` |
-| sync client | `core/vectors/sync/` (`outbox-backoff`, `http-classify`) | desktop `kubuno-sync-engine` today, the future `kubuno-sync-core` |
+| sync client | `core/vectors/sync/` (`outbox-backoff`, `http-classify`) | desktop `kubuno-desktop-sync-engine` today, the future `kubuno-sync-core` |
 | next: recurrence, drive names | `core/vectors/recurrence/` (or the `kubuno-recurrence` crate), `drive/crates/kubuno-drive-core/vectors/` | SC-2, SC-3 |
 
 A consumer in another repository **vendors** a suite folder at a pinned tag with a `VENDOR.json`

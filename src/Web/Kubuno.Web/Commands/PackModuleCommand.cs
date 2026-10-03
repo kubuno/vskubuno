@@ -38,12 +38,19 @@ namespace Kubuno.Web.Commands
                 }
 
                 var project = repository.Kind == WebRepositoryKind.Module && repository.RunPackage is not null
-                    ? repository.Members.Where(member => member.PackageName == repository.RunPackage).Select(member => Path.Combine(member.Directory, member.PackageName + ".rsproj")).FirstOrDefault(File.Exists)
+                    ? repository.Members.Where(member => member.PackageName == repository.RunPackage)
+                        .SelectMany(member => new[]
+                        {
+                            Path.Combine(member.Directory, WebSolutionGenerator.RsprojName(repository, member) + ".rsproj"),
+                            // A project generated before the 2026-10 naming (named after the package).
+                            Path.Combine(member.Directory, member.PackageName + ".rsproj"),
+                        })
+                        .FirstOrDefault(File.Exists)
                     : null;
                 if (project is null)
                 {
                     WebUi.ShowMessage(package, repository.Kind == WebRepositoryKind.Module
-                        ? "The module has no generated .rsproj yet: run \"Kubuno: Generate Web Solution\" first."
+                        ? "The module has no generated .rsproj yet: run \"Kubuno Web: Generate Solution\" first."
                         : "\"Package Module\" packages a module; '" + repository.Name + "' is the core.", error: true);
                     return;
                 }

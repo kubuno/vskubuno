@@ -20,7 +20,7 @@
   <!-- Stops early, with a message that says what to do, when the desktop sources are missing
        (instead of cargo's "failed to read ...\Cargo.toml"). -->
   <Target Name="KubunoCheckDesktopSources" BeforeTargets="CargoRestore;CoreCompile">
-    <Error Condition="!Exists('$(KubunoDesktopSrc)/src/crates/kubuno-ui/Cargo.toml')"
+    <Error Condition="!Exists('$(KubunoDesktopSrc)/src/crates/kubuno-desktop-ui/Cargo.toml')"
            Code="KUBUNO0001"
            Text="The Kubuno desktop sources were not found at '$(KubunoDesktopSrc)'. This project builds against a local checkout of github.com/kubuno/desktop (its 'windows' folder). Clone it, then either set the KUBUNO_DESKTOP_SRC environment variable to that folder before creating a project, or point &lt;KubunoDesktopSrc&gt; in this .rsproj and the three kubuno-* paths in Cargo.toml at it." />
   </Target>

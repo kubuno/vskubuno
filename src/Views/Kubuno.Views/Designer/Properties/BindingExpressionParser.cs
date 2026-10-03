@@ -6,7 +6,7 @@ namespace Kubuno.Views.Designer.Properties
     /// Recognizes the <c>{Binding …}</c> values of the Properties grid (docs/DESIGNER.md §1, "Data bindings"): any value
     /// the runtime reads as a binding - the whole desktop grammar (docs/VIEWS-SPEC.md §6.1: <c>Path</c>, <c>Source</c>,
     /// <c>Mode</c>, <c>Converter</c>, formats…), read without loss by <see cref="BindingMarkup"/>. This is a display/edit
-    /// helper, not the authority: the language server (<c>kubuno_views::binding</c>) decides what the runtime accepts and
+    /// helper, not the authority: the language server (<c>kubuno_desktop_views::binding</c>) decides what the runtime accepts and
     /// reports the rest as diagnostics.
     /// </summary>
     public static class BindingExpressionParser

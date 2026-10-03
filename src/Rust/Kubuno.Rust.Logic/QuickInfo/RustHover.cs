@@ -28,7 +28,7 @@ namespace Kubuno.Rust.Logic.QuickInfo
             Documentation = documentation;
         }
 
-        /// <summary>The containing path (<c>kubuno_views::events</c>), or null (locals, parameters, keywords).</summary>
+        /// <summary>The containing path (<c>kubuno_desktop_views::events</c>), or null (locals, parameters, keywords).</summary>
         public string? Container { get; }
 
         /// <summary>The declaration on one line (<c>pub fn new(x: f64, y: f64) -&gt; Self</c>).</summary>

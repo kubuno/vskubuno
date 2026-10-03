@@ -222,7 +222,7 @@ integration step needs to do:
    `KubunoViewsLanguageServerLocator` for `kubuno-views-ls.exe` -
    `Kubuno.Views/Locating/KubunoViewsLanguageServerLocator.cs`), because the exe itself
    does not exist as a shipped artifact yet: DSG-6 (`docs/DESIGNER.md` §6) is still examples-only
-   (`kubuno-views/examples/view_embed.rs`, promoted out of `examples/` into a real
+   (`kubuno-desktop-views/examples/view_embed.rs`, promoted out of `examples/` into a real
    `kubuno-views-designer` crate is that package's own scope). Until DSG-6 ships a real binary, either
    point `RustDesignSurfaceHostFactory` at a dev build of `view_embed.exe` (mirroring
    `KubunoViewsLsExePath`'s own MSBuild-property convention in `Kubuno.VisualStudio.csproj` - e.g. a
@@ -251,7 +251,7 @@ integration step needs to do:
    before relying on it over the fallback.
 4. **Still to verify live** (docs/DESIGNER.md §7's own list, not exercised by the standalone spike):
    the same `HwndHost` inside a real `WindowPane`/tool window, docking/undocking (popup ownership must
-   be re-checked after a re-dock - the surface's `kubuno_ui` popups are owned top-levels resolved
+   be re-checked after a re-dock - the surface's `kubuno_desktop_ui` popups are owned top-levels resolved
    through the container's ancestor chain), VS theme switches, and whether
    `ComponentDispatcher.RaiseThreadMessage` alone is enough for VS's OWN accelerator table (Ctrl+S,
    F5, Ctrl+Shift+B...) the way it is for the spike's plain WPF `KeyBinding`, or whether point 3's
@@ -617,7 +617,7 @@ docs/DESIGNER.md section 11 has the design and the live findings; what the VSIX/
   (DSG-10, `Handlers/HandlerCreationService`). `KubunoViewsLanguageClient.IsInitialized`/`ReadyRpc`:
   custom requests now wait for the server's `initialize` (a request sent before it made kubuno-views-ls
   exit - found live with a designer restored at startup).
-- **Surface (`kubuno-views`' `view_embed`, desktop repository)**: registers its own OLE drop target
+- **Surface (`kubuno-desktop-views`' `view_embed`, desktop repository)**: registers its own OLE drop target
   (`mod ole_drop`) for Toolbox drags; DSG-9 lines are now dispatched by the one stdout listener
   (`TryDispatchDragDropLine`) - the lazily attached second listener missed a drop live.
 

@@ -59,7 +59,7 @@ namespace Kubuno.Shared.Remote
 
         [Category("Development database")]
         [DisplayName("SSH tunnel")]
-        [Description("When the Kubuno Core Web launch profiles open the tunnel to the host's PostgreSQL.")]
+        [Description("When the Kubuno Core launch profiles open the tunnel to the host's PostgreSQL.")]
         [DefaultValue(DatabaseTunnelMode.Auto)]
         [UnifiedSetting("kubuno.remote.devDatabase.tunnel")]
         public DatabaseTunnelMode DevDatabaseTunnel { get; set; } = DatabaseTunnelMode.Auto;

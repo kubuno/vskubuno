@@ -2,13 +2,13 @@
 //! depends on this crate names them in its views (`<ChipBar Items="{Binding Tags}"/>`), types them
 //! in its code (`#[control] chips: Custom<ChipBar>`) and finds them in the designer's Toolbox.
 
-use kubuno::prelude::*;
-use kubuno::views::component::{Control, ControlCore, PaintEventCx};
-use kubuno::ui::{Canvas, Rect, Size};
+use kubuno_desktop::prelude::*;
+use kubuno_desktop::views::component::{Control, ControlCore, PaintEventCx};
+use kubuno_desktop::ui::{Canvas, Rect, Size};
 
 /// A row of chips, one per row of `Items` (its `Text` field). Written from the `Control` level: it
 /// paints itself.
-#[derive(kubuno::views::component::Component, Default)]
+#[derive(kubuno_desktop::views::component::Component, Default)]
 #[kubuno(extends = Control, overrides(Control))]
 #[category("Foundations")]
 #[toolbox(icon = "tags")]

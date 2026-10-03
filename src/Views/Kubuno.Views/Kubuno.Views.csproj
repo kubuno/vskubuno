@@ -2,7 +2,7 @@
 
   <!--
     Views layer, Visual Studio side (docs/ARCHITECTURE.md, "Layers (as built)"; docs/WEB-VIEWS.md WV-8): what every
-    Kubuno target with .kbview views shares, whatever renders them (the desktop's kubuno_ui, the web's React):
+    Kubuno target with .kbview views shares, whatever renders them (the desktop's kubuno_desktop_ui, the web's React):
       - the .kbview language client (kubuno-views-ls), its content type, grammar, options and locator (LanguageService\,
         Locating\, Logging\, Options\, Infrastructure\, Grammars\, kbview-languages.pkgdef);
       - Designer\   the WinForms-like view designer: editor factory (Design | XML | Split), the design surface seam

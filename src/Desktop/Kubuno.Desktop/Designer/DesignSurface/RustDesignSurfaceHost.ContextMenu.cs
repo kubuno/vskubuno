@@ -10,7 +10,7 @@ namespace Kubuno.Desktop.Designer.DesignSurface
     /// (docs/DESIGNER.md §12): <c>contextMenu</c> (a right-click, Shift+F10 or the context-menu key - the
     /// surface has already selected the element and sent <c>selectionChanged</c>) and <c>command</c>
     /// (Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+D while the surface has the focus). Both mirror
-    /// <c>kubuno_views::protocol::SurfaceMessage</c> field for field.
+    /// <c>kubuno_desktop_views::protocol::SurfaceMessage</c> field for field.
     /// </summary>
     public sealed partial class RustDesignSurfaceHost
     {

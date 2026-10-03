@@ -6,8 +6,8 @@ using Kubuno.Rust.TestAdapter.Discovery;
 namespace Kubuno.Rust.TestAdapter.Tests.Discovery
 {
     /// <summary>
-    /// The Kubuno desktop workspace's former shape (before kubuno-ui became an rlib on 2026-10-03): kubuno-views-macros (a proc-macro) has kubuno-views as a dev-dependency, which uses
-    /// the kubuno-ui dylib; `cargo test --workspace` then builds kubuno_ui.dll twice into the same file.
+    /// The Kubuno desktop workspace's former shape (before kubuno-desktop-ui became an rlib on 2026-10-03): kubuno-desktop-views-macros (a proc-macro) has kubuno-desktop-views as a dev-dependency, which uses
+    /// the kubuno-desktop-ui dylib; `cargo test --workspace` then builds kubuno_ui.dll twice into the same file.
     /// </summary>
     public class TestBuildIsolationTests
     {
@@ -31,15 +31,15 @@ namespace Kubuno.Rust.TestAdapter.Tests.Discovery
         public void A_proc_macro_whose_tests_reach_the_dylib_is_isolated()
         {
             var metadata = Metadata(
-                Package("kubuno-ui", "dylib"),
-                Package("kubuno-views", "lib", ("kubuno-ui", null), ("kubuno-views-macros", null)),
-                Package("kubuno-views-macros", "proc-macro", ("kubuno-views-meta", null), ("kubuno-views", "dev")),
-                Package("kubuno-views-meta", "lib"),
-                Package("kubuno-data-macros", "proc-macro", ("kubuno-data-model", null)),
-                Package("kubuno-data-model", "lib"),
-                Package("app", "bin", ("kubuno-views", null)));
+                Package("kubuno-desktop-ui", "dylib"),
+                Package("kubuno-desktop-views", "lib", ("kubuno-desktop-ui", null), ("kubuno-desktop-views-macros", null)),
+                Package("kubuno-desktop-views-macros", "proc-macro", ("kubuno-desktop-views-meta", null), ("kubuno-desktop-views", "dev")),
+                Package("kubuno-desktop-views-meta", "lib"),
+                Package("kubuno-desktop-data-macros", "proc-macro", ("kubuno-desktop-data-model", null)),
+                Package("kubuno-desktop-data-model", "lib"),
+                Package("app", "bin", ("kubuno-desktop-views", null)));
 
-            Assert.Equal(new[] { "kubuno-views-macros" }, TestBuildIsolation.PackagesToIsolate(metadata));
+            Assert.Equal(new[] { "kubuno-desktop-views-macros" }, TestBuildIsolation.PackagesToIsolate(metadata));
         }
 
         [Fact]

@@ -114,6 +114,8 @@ function New-FromTemplate([string]$vstemplatePath, [string]$projectName, [string
         $crate = "kubuno-$id"
         $tokens['$moduleid$'] = $id
         $tokens['$cratename$'] = $crate
+        $tokens['$serverprojectname$'] = 'Kubuno.' + $id.Substring(0, 1).ToUpperInvariant() + $id.Substring(1) + '.Server'
+        $tokens['$webprojectname$'] = 'Kubuno.' + $id.Substring(0, 1).ToUpperInvariant() + $id.Substring(1) + '.Web'
         $tokens['$moduletitle$'] = $projectName
         $tokens['$kubunouiversion$'] = '0.1.12'
         $tokens['$kubunosdkversion$'] = '0.1.10'
@@ -128,6 +130,8 @@ function New-FromTemplate([string]$vstemplatePath, [string]$projectName, [string
         $crate = "kubuno-$id"
         $tokens['$moduleid$'] = $id
         $tokens['$cratename$'] = $crate
+        $tokens['$serverprojectname$'] = 'Kubuno.' + $id.Substring(0, 1).ToUpperInvariant() + $id.Substring(1) + '.Server'
+        $tokens['$webprojectname$'] = 'Kubuno.' + $id.Substring(0, 1).ToUpperInvariant() + $id.Substring(1) + '.Web'
         $tokens['$moduletitle$'] = $projectName
         $tokens['$kubunouiversion$'] = '0.1.12'
         $tokens['$kubunosdkversion$'] = '0.1.10'

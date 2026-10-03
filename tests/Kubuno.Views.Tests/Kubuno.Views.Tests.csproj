@@ -5,7 +5,7 @@
     designer (Designer\: view models, editing pipeline, Properties, Toolbox, bindings, the design-surface protocol), the
     .kbview language client's locators (Locating\) and the .kbres resource model and editor logic (Resources\). Moved
     from tests/Kubuno.Desktop.Tests with the code; what stays desktop-only (the Data Sources binding drop, the Kubuno
-    control icons, the design build of a project's kubuno_ui) is tested there.
+    control icons, the design build of a project's kubuno_desktop_ui) is tested there.
   -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>

@@ -33,7 +33,7 @@ namespace Kubuno.Views.Designer.Toolbox
     /// A double-click on a Toolbox item (<c>IVsToolboxUser.ItemPicked</c>) inserts the component "into the
     /// selected container", like WinForms: the selected element itself when it can take the component as
     /// a child, otherwise its nearest ancestor that can, appended at the end. The acceptance rule is a port
-    /// of <c>kubuno_views::design::can_drop_component</c> (the rule a drag-and-drop on the surface already
+    /// of <c>kubuno_desktop_views::design::can_drop_component</c> (the rule a drag-and-drop on the surface already
     /// uses, DSG-9) and the skeleton mirrors its <c>skeleton_xml</c> (<c>X/Y/Width/Height/Anchor</c> only inside a
     /// <c>DockAnchor</c> container). Pure: reads the current text with <see cref="ElementAttributeReader"/>.
     /// </summary>
@@ -104,7 +104,7 @@ namespace Kubuno.Views.Designer.Toolbox
 
         /// <summary>
         /// The size a new element gets in a <c>DockAnchor</c> container, DIP - the port of
-        /// <c>kubuno_views::design::default_drop_size</c> (a drag-and-drop on the surface), like a WinForms
+        /// <c>kubuno_desktop_views::design::default_drop_size</c> (a drag-and-drop on the surface), like a WinForms
         /// control's <c>DefaultSize</c>.
         /// </summary>
         public static (int Width, int Height) DefaultSize(string component, ComponentRegistry? registry = null)

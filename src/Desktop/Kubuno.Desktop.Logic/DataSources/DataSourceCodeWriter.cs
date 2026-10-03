@@ -10,7 +10,7 @@ namespace Kubuno.Desktop.Logic.DataSources
     /// <summary>The result of <see cref="DataSourceCodeWriter.EnsureCargoManifest"/>.</summary>
     public sealed class CargoManifestUpdate
     {
-        public CargoManifestUpdate(string text, string userSecretsId, bool changed, bool hasKubunoDependency, bool addedDataFeature, bool addedUserSecretsId, string dataCrate = "kubuno::data")
+        public CargoManifestUpdate(string text, string userSecretsId, bool changed, bool hasKubunoDependency, bool addedDataFeature, bool addedUserSecretsId, string dataCrate = "kubuno_desktop::data")
         {
             DataCrate = dataCrate;
             Text = text;
@@ -75,10 +75,10 @@ namespace Kubuno.Desktop.Logic.DataSources
         /// <c>main.rs</c> with, as the first statement of <c>fn main</c>, the registration of the application's user secrets id
         /// (<c>[package.metadata.kubuno] user-secrets-id</c>, embedded at compile time by <c>user_secrets_id!</c>): without it the data
         /// components only look for <c>ConnectionStrings:&lt;name&gt;</c> in the environment. <paramref name="dataCrate"/> is the path of
-        /// kubuno-data in the crate (<c>kubuno::data</c> through the facade, or <c>kubuno_data</c>). Unchanged when the file already
+        /// kubuno-data in the crate (<c>kubuno_desktop::data</c> through the facade, or <c>kubuno_desktop_data</c>; <c>kubuno::data</c> and <c>kubuno_data</c> in a checkout older than the 2026-10 rename). Unchanged when the file already
         /// registers an id or has no <c>fn main</c>.
         /// </summary>
-        public static string EnsureUserSecretsRegistration(string mainText, string dataCrate = "kubuno::data")
+        public static string EnsureUserSecretsRegistration(string mainText, string dataCrate = "kubuno_desktop::data")
         {
             if (mainText.Contains("set_user_secrets_id"))
             {
@@ -112,10 +112,10 @@ namespace Kubuno.Desktop.Logic.DataSources
             Regex.IsMatch(text ?? string.Empty, @"^[ \t]*(#\[[^\]]*\][ \t]*)*(pub(\([^)]*\))?[ \t]+)?mod[ \t]+(r#)?" + Regex.Escape(module) + @"[ \t]*(;|\{)", RegexOptions.Multiline);
 
         /// <summary>
-        /// The developer-owned <c>src/data/&lt;name&gt;.rs</c>: a header, <c>kubuno::data::data_source!("&lt;name&gt;.kbdata");</c> and an empty
+        /// The developer-owned <c>src/data/&lt;name&gt;.rs</c>: a header, <c>kubuno_desktop::data::data_source!("&lt;name&gt;.kbdata");</c> and an empty
         /// <c>impl</c> block per row struct for their own code.
         /// </summary>
-        public static string UserSourceFile(string module, string kbdataFileName, IEnumerable<KeyValuePair<string, string>> tablesAndRows, string dataCrate = "kubuno::data", string newLine = "\n")
+        public static string UserSourceFile(string module, string kbdataFileName, IEnumerable<KeyValuePair<string, string>> tablesAndRows, string dataCrate = "kubuno_desktop::data", string newLine = "\n")
         {
             var builder = new StringBuilder();
             builder.Append("//! The `").Append(module).Append("` data source: `").Append(kbdataFileName).Append("` describes its tables, and").Append(newLine);
@@ -201,7 +201,10 @@ namespace Kubuno.Desktop.Logic.DataSources
             var document = TomlDocument.Parse(manifestText);
             bool addedFeature = false;
             bool hasDependency = false;
-            var kubuno = document.GetValue("dependencies", "kubuno");
+            // The facade is `kubuno-desktop` since the 2026-10 rename (`kubuno` before it), and kubuno-data is `kubuno-desktop-data`.
+            var facadeKey = document.GetValue("dependencies", "kubuno-desktop") != null ? "kubuno-desktop" : "kubuno";
+            var dataKey = document.GetValue("dependencies", "kubuno-desktop-data") != null ? "kubuno-desktop-data" : "kubuno-data";
+            var kubuno = document.GetValue("dependencies", facadeKey);
             if (kubuno != null)
             {
                 hasDependency = true;
@@ -212,23 +215,23 @@ namespace Kubuno.Desktop.Logic.DataSources
                     {
                         new KeyValuePair<string, TomlValue>("version", kubuno),
                         new KeyValuePair<string, TomlValue>("features", TomlValue.Array(new[] { TomlValue.String("data") })),
-                    }), "dependencies", "kubuno");
+                    }), "dependencies", facadeKey);
                     addedFeature = true;
                 }
                 else if (kubuno.Kind == TomlValueKind.Table)
                 {
-                    var features = document.GetValue("dependencies", "kubuno", "features")?.AsArray();
+                    var features = document.GetValue("dependencies", facadeKey, "features")?.AsArray();
                     var names = features?.Select(f => f.AsString()).Where(f => f != null).Cast<string>().ToList() ?? new List<string>();
                     if (!names.Contains("data"))
                     {
                         var items = (features ?? Array.Empty<TomlValue>()).ToList();
                         items.Add(TomlValue.String("data"));
-                        document.SetValue(TomlValue.Array(items), "dependencies", "kubuno", "features");
+                        document.SetValue(TomlValue.Array(items), "dependencies", facadeKey, "features");
                         addedFeature = true;
                     }
                 }
             }
-            else if (document.GetValue("dependencies", "kubuno-data") != null)
+            else if (document.GetValue("dependencies", dataKey) != null)
             {
                 hasDependency = true;
             }
@@ -242,7 +245,13 @@ namespace Kubuno.Desktop.Logic.DataSources
                 addedId = true;
             }
 
-            return new CargoManifestUpdate(document.Text, id!, !string.Equals(document.Text, manifestText, StringComparison.Ordinal), hasDependency, addedFeature, addedId, kubuno is null && hasDependency ? "kubuno_data" : "kubuno::data");
+            return new CargoManifestUpdate(document.Text, id!, !string.Equals(document.Text, manifestText, StringComparison.Ordinal), hasDependency, addedFeature, addedId, DataCratePath(facadeKey, dataKey, kubuno is null && hasDependency));
+        }
+
+        /// <summary>The Rust path of kubuno-data in a crate: through the facade, or the direct dependency (the old names in a checkout older than the 2026-10 rename).</summary>
+        private static string DataCratePath(string facadeKey, string dataKey, bool direct)
+        {
+            return direct ? dataKey.Replace('-', '_') : facadeKey.Replace('-', '_') + "::data";
         }
 
         /// <summary>The <c>[package] name</c> of a manifest, or null (a virtual workspace manifest).</summary>

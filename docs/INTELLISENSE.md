@@ -111,7 +111,7 @@ Studio 2022 has no unified settings: the same pages stay classic property grids.
 | "New event handler" item | yes | yes: « <Nouveau gestionnaire d'événements> » first in the list of an `On…="…"` attribute; it names the handler after the element and the event, writes the attribute, adds the stub to the code-behind and shows it (verified live) | Kubuno `KbviewNewHandlerCommitManager` (`kubuno/createHandler`, the designer's double-click path) |
 | QuickInfo | yes | yes, C#-style | Kubuno |
 | F12 from a handler attribute to the Rust method | yes | yes | kubuno-views-ls |
-| F12 from a control's tag to its Rust type | yes (metadata) | yes: the project's own type (user control) first, else kubuno_ui's | Kubuno `KbviewDefinitionFallback` (rust-analyzer's workspace symbols) |
+| F12 from a control's tag to its Rust type | yes (metadata) | yes: the project's own type (user control) first, else kubuno_desktop_ui's | Kubuno `KbviewDefinitionFallback` (rust-analyzer's workspace symbols) |
 | F12 from a binding path to the view model | partial | yes: the `"Path" =>` arm of `fn get` | Kubuno |
 | Find All References of a handler including the views | yes | yes (from the Rust side) | Kubuno middle layer (`kubuno/renameHandler` probe) |
 | Rename a handler everywhere | yes | yes | kubuno-views-ls + Kubuno (EVT-5) |

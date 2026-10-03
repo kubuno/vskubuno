@@ -17,7 +17,7 @@ namespace Kubuno.Rust.ProjectSystem
         private const string FrameworkIsExternalCodeProperty = "FrameworkIsExternalCode";
 
         /// <summary>
-        /// Treat the Kubuno framework (kubuno_views, kubuno_controls, kubuno_ui...) as external code: Just My
+        /// Treat the Kubuno framework (kubuno_desktop_views, kubuno_desktop_controls, kubuno_desktop_ui...) as external code: Just My
         /// Code collapses it in the Call Stack and Step Into goes over it. On by default, like Windows Forms for a C#
         /// application; off for people who work on Kubuno itself.
         /// </summary>

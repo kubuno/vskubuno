@@ -30,11 +30,11 @@ namespace Kubuno.Desktop.Tests.DataSources
                 Assert.Inconclusive("kubuno-views-ls.exe not found at " + exe);
             }
 
-            // A crate that links kubuno-data, so the server knows the data components (its scan of path dependencies).
+            // A crate that links kubuno-desktop-data, so the server knows the data components (its scan of path dependencies).
             string root = Path.Combine(Path.GetTempPath(), "kubuno-ds-ls-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(Path.Combine(root, "src"));
-            string dataCrate = Path.Combine(DesktopCrates, "kubuno-data");
-            File.WriteAllText(Path.Combine(root, "Cargo.toml"), "[package]\nname = \"ds_ls\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\nkubuno-data = { path = \"" + dataCrate.Replace('\\', '/') + "\" }\n");
+            string dataCrate = Path.Combine(DesktopCrates, "kubuno-desktop-data");
+            File.WriteAllText(Path.Combine(root, "Cargo.toml"), "[package]\nname = \"ds_ls\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\nkubuno-desktop-data = { path = \"" + dataCrate.Replace('\\', '/') + "\" }\n");
             string viewPath = Path.Combine(root, "src", "main_view.kbview");
             File.WriteAllText(viewPath, DataSourceFixtures.TemplateView);
             try

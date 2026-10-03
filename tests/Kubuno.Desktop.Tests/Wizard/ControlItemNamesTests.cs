@@ -23,13 +23,13 @@ namespace Kubuno.Desktop.Tests.Wizard
             Assert.AreEqual("CustomControl", ControlItemNames.ClassName(".rs"));
         }
 
-        private const string MainRs = "//! My app.\r\n#![windows_subsystem = \"windows\"]\r\n\r\nmod main_view;\r\n\r\nuse kubuno_ui::Rect;\r\n\r\nfn main() {}\r\n";
+        private const string MainRs = "//! My app.\r\n#![windows_subsystem = \"windows\"]\r\n\r\nmod main_view;\r\n\r\nuse kubuno_desktop_ui::Rect;\r\n\r\nfn main() {}\r\n";
 
         [TestMethod]
         public void The_module_is_declared_after_the_last_one()
         {
             var updated = ControlItemNames.DeclareModule(MainRs, "round_button");
-            Assert.AreEqual("//! My app.\r\n#![windows_subsystem = \"windows\"]\r\n\r\nmod main_view;\r\nmod round_button;\r\n\r\nuse kubuno_ui::Rect;\r\n\r\nfn main() {}\r\n", updated);
+            Assert.AreEqual("//! My app.\r\n#![windows_subsystem = \"windows\"]\r\n\r\nmod main_view;\r\nmod round_button;\r\n\r\nuse kubuno_desktop_ui::Rect;\r\n\r\nfn main() {}\r\n", updated);
             Assert.IsNull(ControlItemNames.DeclareModule(updated!, "round_button"), "declared once");
             Assert.IsNull(ControlItemNames.DeclareModule("pub mod round_button;\n", "round_button"));
         }
@@ -52,10 +52,10 @@ namespace Kubuno.Desktop.Tests.Wizard
         [TestMethod]
         public void Dependencies_are_read_from_every_dependency_table()
         {
-            const string toml = "[package]\nname = \"app\"\n\n[dependencies]\nkubuno = { path = \"x\" }\n\n[dev-dependencies.kubuno-views]\npath = \"y\"\n";
-            Assert.IsTrue(ControlItemNames.DependsOn(toml, "kubuno"));
-            Assert.IsTrue(ControlItemNames.DependsOn(toml, "kubuno-views"));
-            Assert.IsFalse(ControlItemNames.DependsOn(toml, "kubuno-ui"));
+            const string toml = "[package]\nname = \"app\"\n\n[dependencies]\nkubuno-desktop = { path = \"x\" }\n\n[dev-dependencies.kubuno-desktop-views]\npath = \"y\"\n";
+            Assert.IsTrue(ControlItemNames.DependsOn(toml, "kubuno-desktop"));
+            Assert.IsTrue(ControlItemNames.DependsOn(toml, "kubuno-desktop-views"));
+            Assert.IsFalse(ControlItemNames.DependsOn(toml, "kubuno-desktop-ui"));
             Assert.IsFalse(ControlItemNames.DependsOn("[package]\nname = \"kubuno\"\n", "kubuno"), "the package's own name is no dependency");
         }
 
@@ -63,19 +63,27 @@ namespace Kubuno.Desktop.Tests.Wizard
         public void A_facade_project_names_kubuno_views_through_kubuno()
         {
             Assert.AreEqual(
-                "use kubuno::views::prelude::*;\n#[kubuno::views::event_handlers]\nimpl X {}\nfn f() { crate::kubuno_views::g(); }\n",
-                ControlItemNames.RetargetToFacade("use kubuno_views::prelude::*;\n#[kubuno_views::event_handlers]\nimpl X {}\nfn f() { crate::kubuno_views::g(); }\n"));
+                "use kubuno_desktop::views::prelude::*;\n#[kubuno_desktop::views::event_handlers]\nimpl X {}\nfn f() { crate::kubuno_desktop_views::g(); }\n",
+                ControlItemNames.RetargetToFacade("use kubuno_desktop_views::prelude::*;\n#[kubuno_desktop_views::event_handlers]\nimpl X {}\nfn f() { crate::kubuno_desktop_views::g(); }\n"));
         }
 
         [TestMethod]
         public void A_form_added_to_an_older_project_brings_the_facade_next_to_kubuno_views()
         {
-            const string toml = "[dependencies]\r\nkubuno-ui       = { path = \"Z:/src/desktop/windows/src/crates/kubuno-ui\" }\r\nkubuno-views    = { path = \"Z:/src/desktop/windows/src/crates/kubuno-views\" }\r\n";
+            const string toml = "[dependencies]\r\nkubuno-desktop-ui       = { path = \"Z:/src/desktop/windows/src/crates/kubuno-desktop-ui\" }\r\nkubuno-desktop-views    = { path = \"Z:/src/desktop/windows/src/crates/kubuno-desktop-views\" }\r\n";
             Assert.AreEqual(
-                toml + "kubuno          = { path = \"Z:/src/desktop/windows/src/crates/kubuno\" }\r\n",
+                toml + "kubuno-desktop          = { path = \"Z:/src/desktop/windows/src/crates/kubuno-desktop\" }\r\n",
                 ControlItemNames.AddFacadeDependency(toml));
-            Assert.IsNull(ControlItemNames.AddFacadeDependency(toml + "kubuno = { path = \"k\" }\r\n"), "already there");
-            Assert.IsNull(ControlItemNames.AddFacadeDependency("[dependencies]\nserde = \"1\"\n"), "no kubuno-views path to derive it from");
+            Assert.IsNull(ControlItemNames.AddFacadeDependency(toml + "kubuno-desktop = { path = \"k\" }\r\n"), "already there");
+
+            // A project of a desktop checkout older than the 2026-10 rename keeps the former names.
+            const string legacy = "[dependencies]\r\nkubuno-ui       = { path = \"Z:/src/desktop/windows/src/crates/kubuno-ui\" }\r\nkubuno-views    = { path = \"Z:/src/desktop/windows/src/crates/kubuno-views\" }\r\n";
+            Assert.AreEqual(
+                legacy + "kubuno          = { path = \"Z:/src/desktop/windows/src/crates/kubuno\" }\r\n",
+                ControlItemNames.AddFacadeDependency(legacy));
+            Assert.IsTrue(ControlItemNames.UsesLegacyNames(legacy));
+            Assert.AreEqual("use kubuno_views::prelude::*;\n#[kubuno::view]\n", ControlItemNames.RetargetToLegacyNames("use kubuno_desktop_views::prelude::*;\n#[kubuno_desktop::view]\n"));
+            Assert.IsNull(ControlItemNames.AddFacadeDependency("[dependencies]\nserde = \"1\"\n"), "no kubuno-desktop-views path to derive it from");
         }
 
         [TestMethod]

@@ -202,7 +202,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
         public IEnumerable<string> LinkedDependencies =>
             Externs.Select(e => e.Key)
                 .Where(n => !_procMacros.Contains(n))
-                .Where(n => n != DesignSurfaceInputs.UiCrate && n != DesignSurfaceInputs.ViewsCrate && n != DesignSurfaceInputs.ControlsCrate);
+                .Where(n => !DesignSurfaceInputs.IsSurfaceCrate(n));
 
         /// <summary>
         /// The Rust file the surface includes (<c>KUBUNO_DESIGN_PROJECT_RS</c>): <c>extern crate</c> of the project

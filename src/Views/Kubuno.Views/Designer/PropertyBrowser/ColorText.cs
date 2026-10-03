@@ -59,7 +59,7 @@ namespace Kubuno.Views.Designer.PropertyBrowser
     }
 
     /// <summary>
-    /// The colour attribute grammar, shared with the runtime (<c>kubuno-views</c>): empty (ambient), a theme token, <c>#RGB</c>
+    /// The colour attribute grammar, shared with the runtime (<c>kubuno-desktop-views</c>): empty (ambient), a theme token, <c>#RGB</c>
     /// / <c>#RRGGBB</c> / <c>#RRGGBBAA</c> (alpha last), a web colour name or a Windows system colour name - plus the WCAG
     /// contrast math the colour editor and the designer's warning use. Pure.
     /// </summary>

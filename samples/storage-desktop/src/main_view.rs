@@ -2,9 +2,9 @@
 //! through the typed class `crate::Settings`, a secret kept by `secrets`, a Registry value shown by `explorer`, small
 //! values kept by `state` (a key-value store) and a file cache `thumbs`.
 
-use kubuno::prelude::*;
-use kubuno::storage::{Layer, SecretBackend};
-use kubuno::ui::Theme;
+use kubuno_desktop::prelude::*;
+use kubuno_desktop::storage::{Layer, SecretBackend};
+use kubuno_desktop::ui::Theme;
 
 use crate::Settings;
 
@@ -23,7 +23,7 @@ fn self_test_argument() -> Option<String> {
     args.iter().position(|a| a == "--self-test").and_then(|i| args.get(i + 1)).cloned()
 }
 
-#[kubuno::view("main_view.kbview")]
+#[kubuno_desktop::view("main_view.kbview")]
 #[derive(Default)]
 pub struct MainView {}
 
@@ -43,7 +43,7 @@ impl MainView {
         if let Some(report) = self_test_argument() {
             let text = self.self_test();
             if let Err(e) = std::fs::write(&report, text) {
-                kubuno::tracing::warn!("cannot write the self-test report: {e}");
+                kubuno_desktop::tracing::warn!("cannot write the self-test report: {e}");
             }
             self.close();
         }
@@ -52,7 +52,7 @@ impl MainView {
     /// Another instance (or this window's bindings) changed a setting.
     fn settings_setting_changed(&mut self, _sender: &Control, e: &SettingChangedEventArgs) {
         if e.setting_name == "Theme" {
-            kubuno::Application::set_theme(theme_of(&Settings::theme()));
+            kubuno_desktop::Application::set_theme(theme_of(&Settings::theme()));
         }
         let origin = if e.external { "in another window" } else { "here" };
         self.status.set_text(format!("{} changed {origin}.", e.setting_name));

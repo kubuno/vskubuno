@@ -32,7 +32,7 @@ namespace Kubuno.Views.Designer.DesignSurface
         public bool IsRedo => Control && !Alt && ((VirtualKey == 0x59 && !Shift) || (VirtualKey == 0x5A && Shift));
     }
 
-    /// <summary>Which kind of gesture a batched <c>editRequests</c> carries - mirrors `kubuno_views::design::Gesture` field-for-field.</summary>
+    /// <summary>Which kind of gesture a batched <c>editRequests</c> carries - mirrors `kubuno_desktop_views::design::Gesture` field-for-field.</summary>
     public enum DesignSurfaceGesture
     {
         Move,
@@ -110,7 +110,7 @@ namespace Kubuno.Views.Designer.DesignSurface
     }
 
     /// <summary>
-    /// The wire shape of `kubuno_views::design::DropTarget` (a NON-<see langword="null"/>
+    /// The wire shape of `kubuno_desktop_views::design::DropTarget` (a NON-<see langword="null"/>
     /// <c>target</c> in a `dropTargetChanged` line) - where a toolbox drop would land right now, and
     /// whether it is currently allowed (`DESIGNER.md` DSG-9 item 3's "not allowed" marker/cursor).
     /// </summary>
@@ -135,7 +135,7 @@ namespace Kubuno.Views.Designer.DesignSurface
 
         public int Index { get; }
 
-        /// <summary>The new element's placement X, parent-local DIP - <see langword="null"/> for a Flow/other parent (see `kubuno_views::design::DropTarget::xy`'s own doc).</summary>
+        /// <summary>The new element's placement X, parent-local DIP - <see langword="null"/> for a Flow/other parent (see `kubuno_desktop_views::design::DropTarget::xy`'s own doc).</summary>
         public double? X { get; }
 
         /// <summary>See <see cref="X"/>.</summary>

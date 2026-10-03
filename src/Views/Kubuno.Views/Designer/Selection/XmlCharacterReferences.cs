@@ -4,7 +4,7 @@ using System.Text;
 namespace Kubuno.Views.Designer.Selection
 {
     /// <summary>
-    /// Decodes the XML character references of an attribute value as <c>kubuno_views::ast::decode_entities</c> does
+    /// Decodes the XML character references of an attribute value as <c>kubuno_desktop_views::ast::decode_entities</c> does
     /// (the runtime reads <c>Text="&amp;amp;Save"</c> as <c>&amp;Save</c>, and the designer writes a typed <c>&amp;</c>
     /// as <c>&amp;amp;</c>): the five predefined entities and numeric references. Anything else starting with
     /// <c>&amp;</c> (a bare ampersand, an unknown name) is kept as written.

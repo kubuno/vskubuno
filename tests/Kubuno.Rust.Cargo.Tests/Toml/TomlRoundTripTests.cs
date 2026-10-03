@@ -10,7 +10,7 @@ namespace Kubuno.Rust.Cargo.Tests.Toml
             [workspace]
             resolver = "2"
             members = [
-                "kubuno_ui",      # shared UI
+                "kubuno_desktop_ui",      # shared UI
                 "drive/*",
                 # "disabled",
                 "apps/app-one",
@@ -31,7 +31,7 @@ namespace Kubuno.Rust.Cargo.Tests.Toml
                 "macros", # needed by main
             ] }
             anyhow = "1"
-            kubuno_ui = { path = "kubuno_ui", version = "0.4.2" }
+            kubuno_desktop_ui = { path = "kubuno_desktop_ui", version = "0.4.2" }
 
             [workspace.lints.clippy]
             pedantic = { level = "warn", priority = -1 }
@@ -76,7 +76,7 @@ namespace Kubuno.Rust.Cargo.Tests.Toml
             [dependencies]
             serde.workspace = true
             clap = { version = "4", optional = true }
-            kubuno_ui = { workspace = true }
+            kubuno_desktop_ui = { workspace = true }
 
             [target.'cfg(windows)'.dependencies]
             windows = { version = "0.62", features = ["Win32_Foundation"] }
@@ -148,7 +148,7 @@ namespace Kubuno.Rust.Cargo.Tests.Toml
             var d = TomlDocument.Parse(F(WorkspaceRoot));
             Assert.Equal("2", d.GetValue("workspace", "resolver")!.AsString());
             var members = d.GetValue("workspace", "members")!.AsArray()!;
-            Assert.Equal(new[] { "kubuno_ui", "drive/*", "apps/app-one" }, members.Select(m => m.AsString()).ToArray());
+            Assert.Equal(new[] { "kubuno_desktop_ui", "drive/*", "apps/app-one" }, members.Select(m => m.AsString()).ToArray());
             Assert.Equal("0.4.2", d.GetValue("workspace", "package", "version")!.AsString());
             Assert.Equal("thin", d.GetValue("profile", "release", "lto")!.AsString());
             Assert.Equal(-1, d.GetValue("workspace", "lints", "clippy", "pedantic", "priority")!.AsInteger());

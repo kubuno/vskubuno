@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security;
 using System.Text;
 using System.Xml.Linq;
+using Kubuno.Rust.Cargo.Naming;
 
 namespace Kubuno.Web.Logic.Generation
 {
@@ -67,7 +68,8 @@ namespace Kubuno.Web.Logic.Generation
 
         public const string FrontendFolder = "Frontend";
 
-        public const string PackagesFolder = "Packages";
+        /// <summary>The core's publishable npm packages (<c>@kubuno/ui</c>, sdk, drive...).</summary>
+        public const string PackagesFolder = "npm packages";
 
         /// <summary>The single-repository libraries folder (kept for callers of the first version).</summary>
         public const string LibrariesFolder = "/Libraries/";
@@ -75,16 +77,29 @@ namespace Kubuno.Web.Logic.Generation
         /// <summary>The Vite dev server of the core's frontend (vite.config.ts: default port, proxy to :8080).</summary>
         public const string ViteDevServerUrl = "http://localhost:5173";
 
-        /// <summary>The main app project's file name: <c>kubuno-frontend.esproj</c> for the core, <c>&lt;id&gt;-frontend.esproj</c> for a module.</summary>
+        /// <summary>The main app project's name: <c>Kubuno.Core.Frontend</c> for the core, <c>Kubuno.&lt;Module&gt;.Web</c> for a module (<see cref="ProjectNaming"/>).</summary>
         public static string FrontendProjectName(WebRepository repository) => repository.App?.ProjectName
-            ?? (repository.Kind == WebRepositoryKind.Core ? "kubuno" : repository.Id) + "-frontend";
+            ?? (repository.Kind == WebRepositoryKind.Core ? ProjectNaming.CoreFrontend : ProjectNaming.ForModuleFrontend(repository.Id));
 
         /// <summary>
-        /// The solution of one repository: <c>Kubuno.Core.Web.slnx</c> for the core - "Kubuno Core Web", the web server, as
-        /// opposed to the desktop workspace's <c>Kubuno.Core.Desktop.slnx</c> - and <c>Kubuno.Calendar.slnx</c> for a module.
+        /// The project name (and <c>.rsproj</c> file name) of a Cargo package (<see cref="ProjectNaming"/>): in the core,
+        /// <c>Kubuno.Core.Server</c> for <c>kubuno-core</c> and <c>Kubuno.Core.&lt;X&gt;</c> for <c>kubuno-x</c>; in a module,
+        /// <c>Kubuno.&lt;Module&gt;.Server</c> for the package F5 starts and <c>Kubuno.&lt;Module&gt;.&lt;X&gt;</c> for the others.
+        /// </summary>
+        public static string RsprojName(WebRepository repository, CargoMember member)
+        {
+            var isRun = member.PackageName == repository.RunPackage;
+            return repository.Kind == WebRepositoryKind.Core
+                ? ProjectNaming.ForCoreCrate(member.PackageName, isRun)
+                : ProjectNaming.ForModuleCrate(repository.Id, member.PackageName, isRun);
+        }
+
+        /// <summary>
+        /// The solution of one repository - a solution is its repository: <c>Kubuno.Core.slnx</c> for the core and
+        /// <c>Kubuno.Calendar.slnx</c> for a module (the desktop repository's is <c>Kubuno.Desktop.slnx</c>).
         /// </summary>
         public static string DefaultSolutionPath(WebRepository repository) =>
-            System.IO.Path.Combine(repository.Root, repository.Kind == WebRepositoryKind.Core ? "Kubuno.Core.Web.slnx" : "Kubuno." + Pascal(repository.Id) + ".slnx");
+            System.IO.Path.Combine(repository.Root, repository.Kind == WebRepositoryKind.Core ? ProjectNaming.CoreSolutionFileName : ProjectNaming.ModuleSolutionFileName(repository.Id));
 
         /// <summary>
         /// The project the solution starts (its startup project, set by the command once the solution is open - Visual
@@ -100,7 +115,15 @@ namespace Kubuno.Web.Logic.Generation
                 var run = repository.Members.FirstOrDefault(member => member.PackageName == repository.RunPackage && !member.IsLibraryOnly);
                 if (run is not null)
                 {
-                    return Relative(solutionDirectory, System.IO.Path.Combine(run.Directory, run.PackageName + ".rsproj")).Replace('/', '\\');
+                    // A checkout whose projects were generated before the 2026-10 naming keeps its package-named project.
+                    var project = System.IO.Path.Combine(run.Directory, RsprojName(repository, run) + ".rsproj");
+                    var legacy = System.IO.Path.Combine(run.Directory, run.PackageName + ".rsproj");
+                    if (!File.Exists(project) && File.Exists(legacy))
+                    {
+                        project = legacy;
+                    }
+
+                    return Relative(solutionDirectory, project).Replace('/', '\\');
                 }
             }
 
@@ -110,7 +133,7 @@ namespace Kubuno.Web.Logic.Generation
         /// <summary>
         /// Every file for <paramref name="repositories"/> in one solution at <paramref name="solutionPath"/> (a single
         /// repository, or the multi-repository solution: core + chosen modules). Each repository's projects go to its
-        /// Server / Libraries / Frontend / Packages folders (under <c>/&lt;repository&gt;/</c> in a multi-repository solution).
+        /// Server / Libraries / Frontend / npm packages folders (under <c>/&lt;repository&gt;/</c> in a multi-repository solution).
         /// Build dependencies only ever join projects of the same repository (<see cref="ModuleIsolation"/>): a module's
         /// backend after its frontend, the core's host app after the <c>@kubuno/*</c> packages.
         /// </summary>
@@ -137,7 +160,7 @@ namespace Kubuno.Web.Logic.Generation
                 string? runProject = null;
                 foreach (var member in repository.Members)
                 {
-                    var projectPath = System.IO.Path.Combine(member.Directory, member.PackageName + ".rsproj");
+                    var projectPath = System.IO.Path.Combine(member.Directory, RsprojName(repository, member) + ".rsproj");
                     var isRun = member.PackageName == repository.RunPackage;
                     files.Add(new GeneratedFile(projectPath, Rsproj(member, repository, isRun, workspaceScope, versions), mergeable: false));
                     var folder = isRun ? ServerFolder : (member.IsLibraryOnly ? LibrariesFolderName : ServerFolder);
@@ -194,10 +217,10 @@ namespace Kubuno.Web.Logic.Generation
                     var app = appProjects.Count > 0 ? Relative(solutionDirectory, appProjects[0]) : null;
                     if (repository.Kind == WebRepositoryKind.Core)
                     {
-                        launchProjects.Add(("Kubuno Core Web (serveur)", new List<string> { server }));
+                        launchProjects.Add(("Kubuno Core (server)", new List<string> { server }));
                         if (app is not null)
                         {
-                            launchProjects.Add(("Kubuno Core Web (serveur + Vite)", new List<string> { server, app }));
+                            launchProjects.Add(("Kubuno Core (server + Vite)", new List<string> { server, app }));
                         }
                     }
                     else
@@ -208,7 +231,7 @@ namespace Kubuno.Web.Logic.Generation
                             paths.Add(app);
                         }
 
-                        launchProjects.Add((Pascal(repository.Id) + " (Kubuno Core Web + navigateur)", paths));
+                        launchProjects.Add((ProjectNaming.Product(repository.Id) + " (Kubuno Core + browser)", paths));
                     }
                 }
             }
@@ -237,7 +260,7 @@ namespace Kubuno.Web.Logic.Generation
             foreach (var member in repository.Members)
             {
                 var role = member.PackageName == repository.RunPackage ? "server" : member.IsLibraryOnly ? "library" : "program";
-                lines.Add((role == "library" ? LibrariesFolderName : ServerFolder) + ": " + member.PackageName + ".rsproj (" + role + ")");
+                lines.Add((role == "library" ? LibrariesFolderName : ServerFolder) + ": " + RsprojName(repository, member) + ".rsproj (" + member.PackageName + ", " + role + ")");
             }
 
             foreach (var frontend in repository.Frontends)
@@ -268,7 +291,7 @@ namespace Kubuno.Web.Logic.Generation
             }
 
             builder.Append('\n');
-            builder.Append("  <!-- Generated by \"Kubuno Core Web: Generate Solution\" (docs/WEB.md). This file is yours: it is never overwritten\n");
+            builder.Append("  <!-- Generated by \"Kubuno Web: Generate Solution\" (docs/WEB.md). This file is yours: it is never overwritten\n");
             builder.Append("       by a later run - edit it freely, or delete it and run the command again for a fresh default. -->\n");
             builder.Append("  <PropertyGroup>\n");
             builder.Append("    <CargoPackage>").Append(Escape(member.PackageName)).Append("</CargoPackage>\n");
@@ -315,7 +338,7 @@ namespace Kubuno.Web.Logic.Generation
             builder.Append("  <!-- npm/Vite through the Kubuno tooling (docs/WEB.md, \"Frontends\"): Windows native packages when node_modules\n");
             builder.Append("       was installed by Linux, Node.js from Visual Studio when none is on PATH, no npm install over a foreign tree. -->\n");
             builder.Append("  <Sdk Name=\"Kubuno.Web.Sdk\" Version=\"").Append(versions.WebSdk).Append("\" />\n\n");
-            builder.Append("  <!-- Generated by \"Kubuno Core Web: Generate Solution\" (docs/WEB.md). This file is yours: never overwritten by a later run. -->\n");
+            builder.Append("  <!-- Generated by \"Kubuno Web: Generate Solution\" (docs/WEB.md). This file is yours: never overwritten by a later run. -->\n");
             builder.Append("  <PropertyGroup>\n");
             if (frontend.Kind == FrontendKind.Package)
             {
@@ -356,7 +379,7 @@ namespace Kubuno.Web.Logic.Generation
                     .ToList();
                 if (packageFolders.Count > 0)
                 {
-                    builder.Append("    <!-- Shown by their own projects (Packages). -->\n");
+                    builder.Append("    <!-- Shown by their own projects (npm packages). -->\n");
                     builder.Append("    <DefaultItemExcludes>$(DefaultItemExcludes);").Append(Escape(string.Join(";", packageFolders))).Append("</DefaultItemExcludes>\n");
                 }
 
@@ -545,7 +568,7 @@ namespace Kubuno.Web.Logic.Generation
             return parts.Length > 1 ? parts[0] : string.Empty;
         }
 
-        /// <summary>Server, Libraries, Frontend, Packages: the program first (Visual Studio's default startup project).</summary>
+        /// <summary>Server, Libraries, Frontend, npm packages: the program first (Visual Studio's default startup project).</summary>
         private static int FolderRank(string? folder)
         {
             var name = (folder ?? string.Empty).Trim('/').Split('/').Last();
@@ -581,9 +604,6 @@ namespace Kubuno.Web.Logic.Generation
         private static string Normalize(string path) => path.Replace('\\', '/');
 
         private static string Escape(string value) => SecurityElement.Escape(value) ?? value;
-
-        private static string Pascal(string id) =>
-            string.Concat(id.Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0]) + part.Substring(1)));
 
         private sealed class SolutionEntry
         {

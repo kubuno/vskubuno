@@ -2,7 +2,7 @@
 //! `<$classname$ .../>` in the other views, and the bindings of its own view), its events, and the handlers of
 //! its view. Like a Windows Forms UserControl, it is its own view model.
 
-use kubuno_views::prelude::*;
+use kubuno_desktop_views::prelude::*;
 
 /// A user control. Describe it here: this text is its description in the Toolbox and the Properties window.
 #[derive(UserControl, Default)]
@@ -22,7 +22,7 @@ pub struct $classname$ {
 }
 
 /// The handlers the `On*` attributes of `$fileinputname$.kbcontrol` name.
-#[kubuno_views::event_handlers]
+#[kubuno_desktop_views::event_handlers]
 impl $classname$ {
     /// `Load`: runs before the user control is first shown - in the designer of the views using it too, where
     /// `design_mode()` is true (show sample data there, never touch files, the network or a database).

@@ -6,10 +6,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use kubuno::prelude::*;
-use kubuno::printing::PrintAction;
-use kubuno::ui::graphics::{Color, Font, FontStyle, Pen, PointF, RectExt, StringAlignment, StringFormat};
-use kubuno::ui::Rect;
+use kubuno_desktop::prelude::*;
+use kubuno_desktop::printing::PrintAction;
+use kubuno_desktop::ui::graphics::{Color, Font, FontStyle, Pen, PointF, RectExt, StringAlignment, StringFormat};
+use kubuno_desktop::ui::Rect;
 
 /// Lays a text out on pages: one paragraph per line of the text, as many as fit between the margins.
 #[derive(Default)]
@@ -67,7 +67,7 @@ fn print_to_argument() -> Option<String> {
     args.iter().position(|a| a == "--print-to").and_then(|i| args.get(i + 1)).cloned()
 }
 
-#[kubuno::view("main_view.kbview")]
+#[kubuno_desktop::view("main_view.kbview")]
 #[derive(Default)]
 pub struct MainView {
     pager: Pager,
@@ -112,7 +112,7 @@ impl MainView {
     fn print_document1_end_print(&mut self, _sender: &Control, e: &mut PrintEventArgs) {
         if e.print_action != PrintAction::PrintToPreview {
             self.status.set_text(format!("{} page(s) sent to the printer.", self.pager.page));
-            kubuno::tracing::info!("printed {} page(s) ({:?})", self.pager.page, e.print_action);
+            kubuno_desktop::tracing::info!("printed {} page(s) ({:?})", self.pager.page, e.print_action);
             if self.close_when_printed {
                 self.close();
             }

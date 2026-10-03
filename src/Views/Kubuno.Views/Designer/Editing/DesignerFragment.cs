@@ -105,7 +105,7 @@ namespace Kubuno.Views.Designer.Editing
 
     /// <summary>
     /// The view's design size as the designer reads and writes it (the C# mirror of
-    /// <c>kubuno_views::design::design_size</c>): per axis, the root element's literal numeric
+    /// <c>kubuno_desktop_views::design::design_size</c>): per axis, the root element's literal numeric
     /// <c>Width</c>/<c>Height</c>, else the design-time <c>DesignWidth</c>/<c>DesignHeight</c>, else 800×600.
     /// </summary>
     public sealed class DesignSizeInfo

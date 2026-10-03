@@ -11,7 +11,7 @@ path = "src/main.rs"
 
 [dependencies]
 # Shared crates come from the core repository by git TAG (never a path, never vendored): a module never links
-# the core itself. `bash _tools/bump_shared_crates.sh` (or Tools > Kubuno Core Web: Prepare Shared Crate Tags) moves them.
+# the core itself. `bash _tools/bump_shared_crates.sh` (or Tools > Kubuno Web: Prepare Shared Crate Tags) moves them.
 kubuno-seccomp = { git = "https://github.com/kubuno/core", tag = "$seccomptag$", package = "kubuno-seccomp" }
 
 axum               = { version = "0.7", features = ["macros"] }

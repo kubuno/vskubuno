@@ -105,8 +105,11 @@ namespace Kubuno.Desktop.Logic.Overrides
 
         public List<RustImplItem> Impls { get; } = new List<RustImplItem>();
 
-        /// <summary>Whether the file imports the Kubuno prelude.</summary>
-        public bool HasPrelude => Regex.IsMatch(Masked, @"use\s+kubuno_views\s*::\s*prelude\s*::\s*\*");
+        /// <summary>
+        /// Whether the file imports the Kubuno prelude: <c>kubuno_desktop_views::prelude</c> or the facade's
+        /// (<c>kubuno_desktop::prelude</c>), or their names before the 2026-10 rename (<c>kubuno_views</c>, <c>kubuno</c>).
+        /// </summary>
+        public bool HasPrelude => Regex.IsMatch(Masked, @"use\s+(kubuno_desktop_views|kubuno_views|kubuno_desktop|kubuno)\s*::\s*prelude\s*::\s*\*");
 
         public static RustItemScanner Scan(string text)
         {

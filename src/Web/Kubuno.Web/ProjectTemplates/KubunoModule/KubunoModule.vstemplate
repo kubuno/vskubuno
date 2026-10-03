@@ -4,7 +4,8 @@
   today - the Rust/Axum backend (.rsproj, Kubuno.Rust.Sdk + Kubuno.Web.Sdk, shared crates by git tag), the frontend
   (.esproj: Vite 8, React 19, TypeScript 6, Tailwind v4 in the kubuno-module layer, @kubuno/* from npm at the
   published versions), module.toml, migrations, build_kbpkg.sh, English README and CHANGELOG.
-  Kubuno.Web.TemplateWizard computes the tokens ($moduleid$, $cratename$ = kubuno-<id>, the @kubuno/* versions read
+  Kubuno.Web.TemplateWizard computes the tokens ($moduleid$, $cratename$ = kubuno-<id>, the project names
+  $serverprojectname$ = Kubuno.<Id>.Server and $webprojectname$ = Kubuno.<Id>.Web, the @kubuno/* versions read
   from a core checkout next to the new module when there is one) and, once the project is created, adds the
   frontend project to the solution (the backend depends on it: F5 deploys its bundle) with a shared launch profile.
   Same TemplateID as before the web layer existed (it was the Rust layer's backend-only "Kubuno Module").
@@ -32,7 +33,7 @@
     <CreateInPlace>true</CreateInPlace>
   </TemplateData>
   <TemplateContent>
-    <Project TargetFileName="$cratename$.rsproj" File="ProjectTemplate.rsproj" ReplaceParameters="true">
+    <Project TargetFileName="$serverprojectname$.rsproj" File="ProjectTemplate.rsproj" ReplaceParameters="true">
       <ProjectItem ReplaceParameters="true" TargetFileName="Cargo.toml">Cargo.toml</ProjectItem>
       <ProjectItem ReplaceParameters="true" TargetFileName="module.toml">module.toml</ProjectItem>
       <ProjectItem ReplaceParameters="true" TargetFileName="config.toml.example">config.toml.example</ProjectItem>
@@ -49,7 +50,7 @@
         <ProjectItem ReplaceParameters="true" TargetFileName="000001_init.down.sql">000001_init.down.sql</ProjectItem>
       </Folder>
       <Folder Name="frontend" TargetFolderName="frontend">
-        <ProjectItem ReplaceParameters="true" TargetFileName="$moduleid$-frontend.esproj">frontend.esproj</ProjectItem>
+        <ProjectItem ReplaceParameters="true" TargetFileName="$webprojectname$.esproj">frontend.esproj</ProjectItem>
         <ProjectItem ReplaceParameters="true" TargetFileName="package.json">package.json</ProjectItem>
         <ProjectItem ReplaceParameters="false" TargetFileName="vite.config.ts">vite.config.ts</ProjectItem>
         <ProjectItem ReplaceParameters="false" TargetFileName="tsconfig.json">tsconfig.json</ProjectItem>

@@ -56,7 +56,7 @@ namespace Kubuno.Web.TemplateWizard
                 }
 
                 var projectDirectory = Path.GetDirectoryName(project.FullName)!;
-                var esproj = Path.Combine(projectDirectory, "frontend", _moduleId + "-frontend.esproj");
+                var esproj = Path.Combine(projectDirectory, "frontend", "Kubuno." + ModuleTemplateTokens.Product(_moduleId) + ".Web.esproj");
                 if (!File.Exists(esproj))
                 {
                     return;
@@ -108,7 +108,7 @@ namespace Kubuno.Web.TemplateWizard
         {
         }
 
-        /// <summary>A shared launch profile "&lt;id&gt; (Kubuno Core Web + navigateur)" (Visual Studio's own .slnLaunch format), unless one exists.</summary>
+        /// <summary>A shared launch profile "&lt;Id&gt; (Kubuno Core + browser)" (Visual Studio's own .slnLaunch format), unless one exists.</summary>
         private void WriteLaunchProfile(string path, string solutionDirectory, string backend, string frontend)
         {
             if (File.Exists(path))
@@ -121,7 +121,7 @@ namespace Kubuno.Web.TemplateWizard
                 : file.Replace("\\", "\\\\");
 
             var json = new StringBuilder()
-                .Append("[\n  {\n    \"Name\": \"").Append(_moduleId).Append(" (Kubuno Core Web + navigateur)\",\n    \"Projects\": [\n")
+                .Append("[\n  {\n    \"Name\": \"").Append(ModuleTemplateTokens.Product(_moduleId!)).Append(" (Kubuno Core + browser)\",\n    \"Projects\": [\n")
                 .Append("      {\n        \"Path\": \"").Append(Relative(backend)).Append("\",\n        \"Action\": \"Start\"\n      },\n")
                 .Append("      {\n        \"Path\": \"").Append(Relative(frontend)).Append("\",\n        \"Action\": \"Start\"\n      }\n")
                 .Append("    ]\n  }\n]\n");

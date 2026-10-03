@@ -1,7 +1,7 @@
 //! Code-behind of the user control `MessageRow` (`message_row.kbcontrol`), the item template of the
 //! messages Repeater: each item of the list gets its own instance (its `likes` is per message).
 
-use kubuno::views::prelude::*;
+use kubuno_desktop::views::prelude::*;
 
 /// A message: its author's avatar, the text and the time, and a like button.
 #[derive(UserControl, Default)]
@@ -21,7 +21,7 @@ pub struct MessageRow {
     pub liked: Event<EmptyEventArgs>,
 }
 
-#[kubuno::views::event_handlers]
+#[kubuno_desktop::views::event_handlers]
 impl MessageRow {
     fn like_click(&mut self) {
         self.likes += 1;

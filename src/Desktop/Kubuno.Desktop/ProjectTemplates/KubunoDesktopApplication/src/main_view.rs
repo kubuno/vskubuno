@@ -1,9 +1,9 @@
 //! The main window's code: `main_view.kbview` is its design (like `Form1.Designer.cs`, generated at
-//! compile time by `#[kubuno::view]` - no file to maintain), this struct is `Form1`.
+//! compile time by `#[kubuno_desktop::view]` - no file to maintain), this struct is `Form1`.
 
-use kubuno::prelude::*;
+use kubuno_desktop::prelude::*;
 
-#[kubuno::view("main_view.kbview")]
+#[kubuno_desktop::view("main_view.kbview")]
 #[derive(Default)]
 pub struct MainView {}
 

@@ -5,14 +5,14 @@
      user control extending the base one (its properties, events and handlers are inherited). -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name>Kubuno Inherited User Control (Kubuno Core Desktop)</Name>
+    <Name>Kubuno Inherited User Control (Kubuno Desktop)</Name>
     <Description>A user control that inherits another user control of the project: it shows the base's controls, can change those the base makes Protected or Public, adds its own, and keeps the base's properties, events and handlers - like a Windows Forms Inherited User Control.</Description>
     <ProjectType>Rust</ProjectType>
     <TemplateID>Kubuno.Rust.KubunoInheritedUserControl</TemplateID>
     <LanguageTag>Rust</LanguageTag>
     <PlatformTag>Windows</PlatformTag>
     <ProjectTypeTag>Kubuno</ProjectTypeTag>
-    <ProjectTypeTag>Kubuno Core Desktop</ProjectTypeTag>
+    <ProjectTypeTag>Kubuno Desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <SortOrder>14</SortOrder>
     <DefaultName>InheritedUserControl.kbcontrol</DefaultName>

@@ -21,7 +21,7 @@ handlers, a panicking button, a worker thread and an `async` handler, driven thr
 | Just My Code call stack (`[External Code]`) | std panic machinery, the standard library and the Kubuno framework collapse into `[External Code]` | verified |
 | Threads window names | `Kubuno UI thread`, `kubuno-stdout`, `kubuno-delay`, and every thread you name with `std::thread::Builder::name` | verified |
 | Debug > Attach to Process | Works on a Kubuno app started outside the debugger; breakpoints bind | verified |
-| `Debugger.Break()` / `Debugger.IsAttached` | `kubuno_views::debug_break()`, `kubuno_views::debug::is_debugger_attached()`, `result.break_on_err()?` | built, unit-tested |
+| `Debugger.Break()` / `Debugger.IsAttached` | `kubuno_desktop_views::debug_break()`, `kubuno_desktop_views::debug::is_debugger_attached()`, `result.break_on_err()?` | built, unit-tested |
 | Break when an exception is *returned* (no C# equivalent either) | Not possible generically for `Result` (§3.4) | by design |
 | Async call stacks / Tasks window | Async handlers show as `...::async_fn$0` frames polled by the executor (collapsed); no Tasks window for Rust futures | limitation |
 | Immediate window / QuickWatch evaluate C# | C++ expression evaluator on Rust debug info: fields, pointers, arithmetic, casts, indexing a `Vec`; **no Rust method calls, no `.` on a reference** (§4) | limitation |
@@ -32,8 +32,8 @@ handlers, a panicking button, a worker thread and an `async` handler, driven thr
 | Piece | Where it lives | Why there |
 |---|---|---|
 | Toolchain natvis (`liballoc`, `libcore`, `libstd`, `intrinsic`) | **Nothing to install**: rustc links every MSVC binary with `/NATVIS:` for `lib\rustlib\etc\*.natvis`, so each PDB embeds them (checked in the PDB of an ordinary crate) | Always matches the toolchain that built the binary; highest-priority natvis source |
-| Kubuno natvis | `kubuno-views/natvis/kubuno_views.natvis` in the desktop repository, embedded in every application's PDB by `#![debugger_visualizer]` in `kubuno_views` | Travels with the crate version whose layouts it describes. Being in the PDB is also what lets its `Option`/`Result`/`Value` entries win over the toolchain's generic `enum2$<*>` view (checked: the same entries loaded from the VSIX are ignored) |
-| `Kubuno.natvis` (copy of the above) | VSIX `NativeVisualizer` asset (`Debugging\Visualizers\`) | Every module of every session: apps built on an older `kubuno_views`, `Mutex`/`PathBuf`/`Box<dyn>` for any Rust program. Keep both copies in sync |
+| Kubuno natvis | `kubuno-desktop-views/natvis/kubuno_desktop_views.natvis` in the desktop repository, embedded in every application's PDB by `#![debugger_visualizer]` in `kubuno_desktop_views` | Travels with the crate version whose layouts it describes. Being in the PDB is also what lets its `Option`/`Result`/`Value` entries win over the toolchain's generic `enum2$<*>` view (checked: the same entries loaded from the VSIX are ignored) |
+| `Kubuno.natvis` (copy of the above) | VSIX `NativeVisualizer` asset (`Debugging\Visualizers\`) | Every module of every session: apps built on an older `kubuno_desktop_views`, `Mutex`/`PathBuf`/`Box<dyn>` for any Rust program. Keep both copies in sync |
 | `Kubuno.Rust.natjmc`, `Kubuno.Rust.natstepfilter` | `%USERPROFILE%\Documents\Visual Studio 18\Visualizers` and `...\Visual Studio 2022\Visualizers`, copied from the VSIX before every Rust debug launch | Visual Studio reads `.natjmc`/`.natstepfilter` only from its installation folder or this per-user folder, near the start of each session |
 | `Kubuno.Framework.natjmc`, `Kubuno.Framework.natstepfilter` | Same folder, unless Tools > Options > Kubuno > **Debugging** > "Treat the Kubuno framework as external code" is off (then removed) | For people who debug Kubuno itself |
 | ` ?? ::st_panic` exception entry | `debugging.pkgdef` (default: checked), re-applied before each launch through `Debugger3.ExceptionGroups` | A registry default that was never touched was found not to reach the engine |
@@ -77,7 +77,7 @@ the editor already sits on that line.
 
 ### 3.2 Continuing, and the Kubuno crash window
 
-Kubuno's panic hook (`kubuno_controls::host::diagnostics`) checks `IsDebuggerPresent` at the time of the panic:
+Kubuno's panic hook (`kubuno_desktop_controls::host::diagnostics`) checks `IsDebuggerPresent` at the time of the panic:
 
 - **no debugger**: unchanged - log line, crash window, exit code 101;
 - **debugger attached, panic inside the application's frame** (event handlers, async handlers, the view): the hook only
@@ -101,12 +101,12 @@ debugger can offer "break when an error is returned" generically (C# has no such
 Instead, for the places you care about:
 
 ```rust
-use kubuno_views::prelude::*;            // brings BreakOnError
+use kubuno_desktop_views::prelude::*;            // brings BreakOnError
 
 let text = std::fs::read_to_string(path).break_on_err()?;   // stops here when the read fails
-let n = kubuno_views::debug_break_on_error(parse(text))?;    // same, as a function
-kubuno_views::debug_break();                                 // Debugger.Break()
-if kubuno_views::debug::is_debugger_attached() { /* ... */ } // Debugger.IsAttached
+let n = kubuno_desktop_views::debug_break_on_error(parse(text))?;    // same, as a function
+kubuno_desktop_views::debug_break();                                 // Debugger.Break()
+if kubuno_desktop_views::debug::is_debugger_attached() { /* ... */ } // Debugger.IsAttached
 ```
 
 All of them do nothing without a debugger, so they can stay in shipped code. `break_on_err` also works on `Option`
@@ -129,13 +129,13 @@ Locals, Autos, Watch, QuickWatch and DataTips use the same natvis. Verified disp
 | `Rc<RefCell<Vec<i32>>>` | `{ len=4 }` |
 | `Arc<Mutex<u32>>` | `7` (`(poisoned)` when it is) |
 | `Box<dyn Any>` | `dyn dbgapp.exe!impl$<u8, core::any::Any>::vtable$` (the concrete type, here `u8`) |
-| `kubuno_views::binding::Value` | `Bool(true)`, `F32(36)`, `Str("Ada")`, `List(1 rows)` |
+| `kubuno_desktop_views::binding::Value` | `Bool(true)`, `F32(36)`, `Str("Ada")`, `List(1 rows)` |
 | `Row` | `{ fields=2 }`, expands to `Name = Str("Ada")`, `Age = F32(36)` |
 | `&Sender<Button>` | `Button "hello"`, expands to Name/Element/Id/Bounds/..., `[Properties]` |
 | `ElementProps` | `{ "hello" properties=5 }`, expands to `Text = Str("Hello")`, `X = Str("24")`... |
 | `&MouseEventArgs` | `{ Button=Left X=80 Y=19.71 Clicks=1 }` |
-| `kubuno_ui::graphics::Color` | `Color [A=255, R=51, G=102, B=255]` |
-| `kubuno_ui::Rect` | `{X=10 Y=20 Width=100 Height=32}` |
+| `kubuno_desktop_ui::graphics::Color` | `Color [A=255, R=51, G=102, B=255]` |
+| `kubuno_desktop_ui::Rect` | `{X=10 Y=20 Width=100 Height=32}` |
 | `HandlerTable`, `Event<A>`, `HandlerInfo`, `UiHandle<V>`, `PathBuf`, `RwLock<T>` | handler counts, subscriber count, `name -> method`, view open/closed, the path, the value |
 
 ### 4.2 Writing expressions (Watch, Immediate, conditions, tracepoints)
@@ -157,7 +157,7 @@ The native debugger evaluates **C++ expressions over Rust's debug information**:
 
 | Kind | How | Verified |
 |---|---|---|
-| Line | F9 in a `.rs` file, including handler bodies of `#[kubuno_views::event_handlers]` impl blocks and `async fn` handlers (after an `.await` too) | yes |
+| Line | F9 in a `.rs` file, including handler bodies of `#[kubuno_desktop_views::event_handlers]` impl blocks and `async fn` handlers (after an `.await` too) | yes |
 | Conditional | *Conditions > Conditional expression*: `self->count == 1`, `index >= 3`, `self->status.vec.len == 0` - C++ syntax (§4.2) | yes (`self->count == 1` skipped the first click, stopped on the second) |
 | Hit count | *Conditions > Hit Count*: `=`, `>=`, "is a multiple of" | yes (multiple of 2: stopped on clicks 2 and 4) |
 | Tracepoint | *Actions > Show a message*: `worker tick: counter={counter} thread=$TNAME fn=$FUNCTION`; `{expr}` uses natvis | yes (`worker tick: counter=8 thread=dbgapp-worker fn=...on_thread_click::closure$0`) |
@@ -169,7 +169,7 @@ The native debugger evaluates **C++ expressions over Rust's debug information**:
 several non-contiguous code ranges; a breakpoint on it binds several locations (6 on a `format!` line) and F5 may stop
 on the same line 2-6 times. Put the breakpoint on the next line, or use F10 to leave the line.
 
-**Handlers and the macro.** `#[kubuno_views::event_handlers]` re-emits your methods with their own spans, so their
+**Handlers and the macro.** `#[kubuno_desktop_views::event_handlers]` re-emits your methods with their own spans, so their
 lines map normally. The dispatch glue it generates (`<ViewModel as EventSink>::handle_event`, whose code maps to the
 attribute line) is never stepped into (step filter) and collapses into `[External Code]`.
 
@@ -189,7 +189,7 @@ library occasionally, set a breakpoint inside it (its source is available with t
 ## 6. Call stack, threads, async
 
 - Frames show the PDB names: `dbgapp::main_view::MainViewModel::on_hello_click`, closures as `...::closure$0`,
-  impl blocks as `impl$3`, generics in full (`kubuno_views::events::typed::with_args<MouseEventArgs, ...>`). Visual
+  impl blocks as `impl$3`, generics in full (`kubuno_desktop_views::events::typed::with_args<MouseEventArgs, ...>`). Visual
   Studio cannot trim generics; with Just My Code on, the long framework and std frames are collapsed into
   `[External Code]` instead (right-click > Show External Code to see them).
 - The parameter list in a frame's label can be shifted when a parameter is a fat pointer (`element_at(ref$<slice2$<i32>>
@@ -202,15 +202,15 @@ library occasionally, set a breakpoint inside it (its source is available with t
   Windows thread-pool/Direct2D workers stay unnamed.
 - **Async handlers** run as tasks polled on the UI thread by the views executor: a breakpoint after an `.await` shows
   `...::on_async_click::async_fn$0` (and its `closure$1` for `ui.update(|vm| ...)`) above
-  `kubuno_views::events::executor::...::poll` and `run_ready` (collapsed as external). There is no "async call stack"
+  `kubuno_desktop_views::events::executor::...::poll` and `run_ready` (collapsed as external). There is no "async call stack"
   (who awaited whom) and no Tasks window for Rust futures: Visual Studio's async tooling is .NET-specific.
 
 ## 7. Kubuno designer and the debugger
 
 - **Handlers under the debugger**: press F5, click in the running application, the breakpoint in the handler is hit
   (verified), including when the click comes from UI Automation.
-- **Breakpoints in the Kubuno framework**: `kubuno_ui` is linked statically into the program (docs/DESIGNER.md
-  section 16), so its code and symbols are in the program's own exe and PDB; a breakpoint in `kubuno_ui::buttons`'
+- **Breakpoints in the Kubuno framework**: `kubuno_desktop_ui` is linked statically into the program (docs/DESIGNER.md
+  section 16), so its code and symbols are in the program's own exe and PDB; a breakpoint in `kubuno_desktop_ui::buttons`'
   `Button::paint` binds like one in the application's code (frame module: the application's exe).
 - **Attach to Process** (Debug > Attach to Process, *Native* code): works for a Kubuno application started with Ctrl+F5
   or from Explorer (verified: attached by PID, then a click hit a handler breakpoint). The panic behaviour follows
@@ -220,7 +220,7 @@ library occasionally, set a breakpoint inside it (its source is available with t
   controls' code (`on_paint`, `get_preferred_size`...) runs with `design_mode()` true. Debug > Attach to Process >
   `kubuno-design-surface.exe` (Native), then set breakpoints in the control's code. Design surfaces are now built with
   full debug information in the debug profile (they were built without, so there was nothing to bind to), and each
-  surface keeps its own PDB next to it, which holds the framework's symbols too (kubuno_ui is linked statically,
+  surface keeps its own PDB next to it, which holds the framework's symbols too (kubuno_desktop_ui is linked statically,
   docs/DESIGNER.md section 16).
   While the surface is stopped the designer pane is frozen; detach
   (Debug > Detach All) rather than stopping, or the designer restarts the surface. *Not verified live in this pass*
@@ -252,4 +252,4 @@ Automation (Kubuno exposes AccessKit); breakpoints, stepping, evaluation, except
 through DTE (`Debugger`, `Debugger3.ExceptionGroups`, `Breakpoint2.Message`); the exception helper and Call Stack text
 through UI Automation. Unit tests: `RustPanicPayloadTests` (payload decoding on a fake debuggee memory, both field
 orders, `&str`/`String`/UTF-8/non-text/taken payloads, truncation, name matching), `RustDebuggerFilesTests`
-(installation, idempotence, option off, legacy natvis clean-up), `kubuno_views::debug` tests.
+(installation, idempotence, option off, legacy natvis clean-up), `kubuno_desktop_views::debug` tests.

@@ -798,12 +798,17 @@ namespace Kubuno.Views.Designer.Toolbox
 
         /// <summary>
         /// The crates of the Kubuno libraries whose components get Toolbox tabs of their own, by their
-        /// <c>#[toolbox(category = …)]</c>: <c>kubuno-print</c>'s "Impression" (docs/PRINTING.md) and <c>kubuno-data</c>'s
+        /// <c>#[toolbox(category = …)]</c>: <c>kubuno-desktop-print</c>'s "Impression" (docs/PRINTING.md) and <c>kubuno-desktop-data</c>'s
         /// "Données" - like the WinForms Toolbox's "Printing" and "Data" tabs, present in every project that links
-        /// them (through the <c>kubuno</c> crate), without "Choose Items…". <c>kubuno-app-storage-components</c>'s
-        /// "Stockage" / "Storage" (Settings, SecretStore, RegistryKey: docs/STORAGE-COMPONENTS.md) likewise.
+        /// them (through the <c>kubuno-desktop</c> crate), without "Choose Items…". <c>kubuno-desktop-app-storage-components</c>'s
+        /// "Stockage" / "Storage" (Settings, SecretStore, RegistryKey: docs/STORAGE-COMPONENTS.md) likewise. Their names before
+        /// the 2026-10 rename (<c>kubuno_print</c>, ...) are kept for older desktop checkouts.
         /// </summary>
-        private static readonly string[] LibraryCrates = { "kubuno_print", "kubuno_data", "kubuno_app_storage_components" };
+        private static readonly string[] LibraryCrates =
+        {
+            "kubuno_desktop_print", "kubuno_desktop_data", "kubuno_desktop_app_storage_components",
+            "kubuno_print", "kubuno_data", "kubuno_app_storage_components",
+        };
 
         private static readonly HashSet<string> s_libraryItems = new HashSet<string>(StringComparer.Ordinal);
         private static string s_librarySignature = string.Empty;

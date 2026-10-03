@@ -4,6 +4,6 @@
 
 mod main_view;
 
-fn main() -> kubuno::Result {
-    kubuno::Application::run(main_view::MainView::new())
+fn main() -> kubuno_desktop::Result {
+    kubuno_desktop::Application::run(main_view::MainView::new())
 }

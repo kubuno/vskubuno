@@ -112,7 +112,9 @@ namespace Kubuno.Desktop.Logic.DesignSurface
             var deps = Path.Combine(project.EffectiveExpectedTargetDirectory, project.EffectiveProfileDirectoryName, "deps");
             try
             {
-                return Directory.Exists(deps) && Directory.EnumerateFiles(deps, "lib" + DesignSurfaceInputs.UiCrate + "-*.rlib").Any();
+                return Directory.Exists(deps)
+                    && (Directory.EnumerateFiles(deps, "lib" + DesignSurfaceInputs.UiCrate + "-*.rlib").Any()
+                        || Directory.EnumerateFiles(deps, "lib" + DesignSurfaceInputs.LegacyUiCrate + "-*.rlib").Any());
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -381,7 +383,7 @@ namespace Kubuno.Desktop.Logic.DesignSurface
 
             if (!cargoResult.Succeeded)
             {
-                log?.Report("[design build] the project's cargo build failed, but kubuno-ui/kubuno-views were built: using them.");
+                log?.Report("[design build] the project's cargo build failed, but kubuno-desktop-ui/kubuno-desktop-views were built: using them.");
             }
 
             cancellationToken.ThrowIfCancellationRequested();

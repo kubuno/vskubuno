@@ -244,7 +244,7 @@ namespace Kubuno.Desktop.Logic.Overrides
             }
         }
 
-        /// <summary><c>use kubuno_views::prelude::*;</c> after the file's last <c>use</c> (else at the top, after the inner doc).</summary>
+        /// <summary><c>use kubuno_desktop_views::prelude::*;</c> after the file's last <c>use</c> (else at the top, after the inner doc).</summary>
         private static RustTextEdit PreludeImport(RustItemScanner scan, string newline)
         {
             var uses = Regex.Matches(scan.Masked, @"(?m)^\s*(pub\s+)?use\s+[^;]*;");
@@ -253,7 +253,7 @@ namespace Kubuno.Desktop.Logic.Overrides
                 var last = uses[uses.Count - 1];
                 var lineEnd = scan.Text.IndexOf('\n', last.Index + last.Length);
                 var at = lineEnd < 0 ? scan.Text.Length : lineEnd + 1;
-                return new RustTextEdit(at, 0, "use kubuno_views::prelude::*;" + newline);
+                return new RustTextEdit(at, 0, "use kubuno_desktop_views::prelude::*;" + newline);
             }
 
             // After the leading `//!` lines.
@@ -268,7 +268,7 @@ namespace Kubuno.Desktop.Logic.Overrides
                 offset += line.Length + 1;
             }
 
-            return new RustTextEdit(Math.Min(offset, scan.Text.Length), 0, "use kubuno_views::prelude::*;" + newline + newline);
+            return new RustTextEdit(Math.Min(offset, scan.Text.Length), 0, "use kubuno_desktop_views::prelude::*;" + newline + newline);
         }
 
         /// <summary>

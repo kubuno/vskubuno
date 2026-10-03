@@ -39,7 +39,7 @@
 
   <ItemGroup Condition="'$(_KubunoWebBackend)' == 'true'">
     <ProjectCapability Include="KubunoWebBackend" />
-    <!-- Kubuno Core Web's server project or a module's backend (their Solution Explorer icons, Kubuno.Web.ProjectSystem). -->
+    <!-- Kubuno Core's server project or a module's backend (their Solution Explorer icons, Kubuno.Web.ProjectSystem). -->
     <ProjectCapability Include="KubunoWebCore" Condition="'$(KubunoWebRole)' == 'Core'" />
     <ProjectCapability Include="KubunoWebModule" Condition="'$(KubunoWebRole)' == 'Module'" />
     <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Rules\kubuno_web_debugger.xaml">

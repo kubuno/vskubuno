@@ -1,8 +1,8 @@
 //! The code of `$fileinputname$.kbview`, an MDI document.
 
-use kubuno::prelude::*;
+use kubuno_desktop::prelude::*;
 
-#[kubuno::view("$fileinputname$.kbview")]
+#[kubuno_desktop::view("$fileinputname$.kbview")]
 #[derive(Default)]
 pub struct $classname$ {}
 

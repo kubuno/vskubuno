@@ -57,20 +57,20 @@ TypeScript in the language dropdown) or just search "rust". Four project templat
   Visual Studio.
 - **Rust Library** - a plain `cargo new --lib` equivalent.
 - **Kubuno Desktop Application** - a native Kubuno window written like a Windows Forms project, in
-  three short files (`docs/PROGRAMMING-MODEL.md`): `main.rs` (`kubuno::Application::run(MainView::new())`,
+  three short files (`docs/PROGRAMMING-MODEL.md`): `main.rs` (`kubuno_desktop::Application::run(MainView::new())`,
   the `Program.cs`), `main_view.kbview` (the window's design) and `main_view.rs` (`MainView`, the `Form1`:
-  `#[kubuno::view("main_view.kbview")]` gives it a field per control - `self.status`, `self.hello` - and
+  `#[kubuno_desktop::view("main_view.kbview")]` gives it a field per control - `self.status`, `self.hello` - and
   its event handlers are plain methods, `fn main_view_load(&mut self, …)`). Its generated `Cargo.toml` has
-  one dependency, `kubuno`, a **path dependency pointing at a `desktop/windows` checkout on your own
+  one dependency, `kubuno-desktop`, a **path dependency pointing at a `desktop/windows` checkout on your own
   machine**. **Single prerequisite**: a checkout of `github.com/kubuno/desktop`, and - unless it
   is at the default `Z:\src\desktop\windows` - the `KUBUNO_DESKTOP_SRC` environment variable set
   to its `windows` folder (or to the repository root) **before** you create the project, e.g.
   `setx KUBUNO_DESKTOP_SRC D:\src\desktop\windows`, then restart Visual Studio. The path is written
-  into the new project once, at creation (`Cargo.toml`'s `kubuno` path and the `.rsproj`'s
+  into the new project once, at creation (`Cargo.toml`'s `kubuno-desktop` path and the `.rsproj`'s
   `<KubunoDesktopSrc>`, to be changed together if you move the checkout later); a build with that
   folder missing stops with error `KUBUNO0001` saying exactly this. The project then builds and
   runs with F5 as created, with no other step: its `.rsproj` gives it its own cargo target
-  directory, and the program links `kubuno_ui` and Rust's `std` statically (docs/DESIGNER.md
+  directory, and the program links `kubuno_desktop_ui` and Rust's `std` statically (docs/DESIGNER.md
   section 16): the exe runs on its own, with no DLL beside it.
 - **Kubuno Module** - an Axum/Tokio backend module skeleton (`/health` + `/internal/*` guarded by
   `X-Internal-Secret`, a `sqlx::migrate!`-driven Postgres schema, `module.toml`,
@@ -82,7 +82,7 @@ for a Kubuno Module, a matching `module.toml` id (`my_app_2`) is derived the sam
 need to sanitize the project name yourself.
 
 *Add New Item* on a created project adds three more templates: **Kubuno View** (another form: a new
-`.kbview` plus its same-stem `.rs`, a `#[kubuno::view]` struct you open with `SettingsView::new().show()` or
+`.kbview` plus its same-stem `.rs`, a `#[kubuno_desktop::view]` struct you open with `SettingsView::new().show()` or
 `.show_dialog(self)` from a handler), **Rust Module**, and **Rust Integration Test**.
 
 **Forms and controls in code.** A window can also be built entirely in code, the Windows Forms way, and
@@ -93,7 +93,7 @@ let form = Form::new().text("Hello").client_size(800.0, 450.0);
 let ok = Button::new().text("OK").location(10.0, 10.0).size(75.0, 23.0).anchor(Anchor::TOP | Anchor::RIGHT);
 ok.click().subscribe(|_sender, _e| { MessageBox::show("Clicked"); });
 form.controls().add(&ok);
-kubuno::Application::run(form)
+kubuno_desktop::Application::run(form)
 ```
 
 `docs/PROGRAMMING-MODEL.md` describes the whole model (dialogs and `DialogResult`, `MessageBox`, several
@@ -162,24 +162,27 @@ executables at its root and the library-only members under a `Libraries` folder.
 
 ### Working on the Kubuno desktop apps
 
-The desktop applications (`desktop/windows`: the shell, Chat, Documents, Drive and the shared crates -
-`kubuno-ui`, `kubuno-controls`, `kubuno-views`, `kubuno-data`, `kubuno-print`, `kubuno`...) form one Cargo
-workspace. To work on them in Visual Studio:
+The desktop repository (`desktop`) holds two Cargo workspaces: `windows/` (the shell, Chat, Documents, Drive, the
+framework - `kubuno-desktop`, `kubuno-desktop-ui`, `kubuno-desktop-controls`, `kubuno-desktop-views`,
+`kubuno-desktop-data`, `kubuno-desktop-print`... - and the drive engine) and `common/` (the multi-OS crates:
+`kubuno-desktop-account`, `kubuno-desktop-sync`...). Its ONE solution, `Kubuno.Desktop.slnx`, is versioned at the
+repository root (project names: docs/RSPROJ.md section 4.1). To work on them in Visual Studio:
 
 1. **Once per machine**: when the checkout is on a network share (`Z:`), give cargo a local target
    directory - `setx CARGO_TARGET_DIR C:\kubuno-build\desktop-target` - and start Visual Studio *after*
    that (it passes its own environment to every build and to F5). Keep `%USERPROFILE%\.cargo\bin` on
    PATH.
-2. **Once per checkout**: open `desktop\windows\Cargo.toml` (File > Open > File, or open the folder),
-   then run **Tools > Kubuno: Generate Visual Studio Projects**. It writes one `.rsproj` next to each
-   crate's `Cargo.toml`, a `windows.slnx` at the workspace root (rename it, e.g. `Kubuno.Desktop.slnx`),
-   and the solution's SDK feed (`NuGet.Config`, `.kubuno\sdk-feed`). A later run only adds what is
-   missing.
-3. **Open the `.slnx`**. Solution Explorer shows the six programs at the top - `kubuno-desktop` (the
-   shell), `kubuno-chat`, `kubuno-documents`, `drive-app` (its executable is `drive.exe`),
-   `kubuno-views-ls`, `kubuno-data-tool` - and the libraries and procedural macros under **Libraries**,
-   each project showing exactly its own crate's files.
-4. **Build** (Ctrl+Shift+B). Every program links `kubuno-ui` (an ordinary rlib) and Rust's `std`
+2. **Open `desktop\Kubuno.Desktop.slnx`** (it is committed). To add a new crate's project, open any file of
+   the repository and run **Tools > Kubuno: Generate Visual Studio Projects**: it reads both workspaces, writes
+   the missing `Kubuno.<Product>.<Component>.rsproj` files (an existing one is never rewritten), adds them to
+   `Kubuno.Desktop.slnx` at the repository root, and keeps the solution's SDK feed (`NuGet.Config`,
+   `.kubuno\sdk-feed`) next to it.
+3. Solution Explorer shows the folders **Applications** (`Kubuno.Desktop.Shell` - the "Kubuno Desktop" app,
+   `kubuno-desktop.exe` -, `Kubuno.Chat.Desktop`, `Kubuno.Office.Desktop` - Documents -, `Kubuno.Drive.Desktop` -
+   `drive.exe`), **Framework**, **Shared controls**, **Common (multi-OS)**, **Drive engine**, **Tools** (the views
+   language server, the data and resources tools) and **Web** (the web views compiler), each project showing
+   exactly its own crate's files.
+4. **Build** (Ctrl+Shift+B). Every program links `kubuno-desktop-ui` (an ordinary rlib) and Rust's `std`
    statically (docs/DESIGNER.md section 16). The programs share most of their crates, so every project of
    this workspace builds **the whole workspace** (`<CargoBuildScope>Workspace</CargoBuildScope>`, kept in
    the generated `.rsproj` files): one `cargo build --workspace --keep-going` per solution build or F5,
@@ -205,7 +208,7 @@ Good to know:
   package on its own: regenerate its `.rsproj` files (delete them and run the command again) to get the
   workspace build.
 
-### Working on Kubuno Core Web (the web server) and its modules
+### Working on Kubuno Core (the web server) and its modules
 
 The core (`core`) and the web modules (`drive`, `calendar`, `mail`...) are Cargo packages plus a React/TypeScript
 frontend. `docs/WEB.md` has the details; in short:
@@ -217,9 +220,12 @@ frontend. `docs/WEB.md` has the details; in short:
    the host): `setx KUBUNO_DEV_DATABASE_URL "postgres://kubuno:<password>@localhost:55432/kubuno_dev"`. Restart
    Visual Studio afterwards. A database whose name has no `dev`/`test`/`local`... word is refused. The host, user
    and key are in **Tools > Options > Kubuno > Remote Linux host**.
-2. **Once per checkout**: open a file of the repository (or its folder) and run **Tools > Kubuno: Generate Web
-   Solution**. It writes the `.rsproj` files, `frontend\<name>.esproj`, `Kubuno.Core.Web.slnx` (or `Kubuno.<Module>.slnx`)
-   and its launch profiles. **Tools > Kubuno Core Web: Generate Multi-Repository Solution...** puts the core and the
+2. **Once per checkout**: open the repository's committed solution (`Kubuno.Core.slnx`, `Kubuno.<Module>.slnx`).
+   For a repository without one, open a file of it and run **Tools > Kubuno Web: Generate Solution**: it writes the
+   `.rsproj` files (`Kubuno.Core.Server.rsproj`, `Kubuno.<Module>.Server.rsproj`...), the `.esproj` files
+   (`Kubuno.Core.Frontend`, `Kubuno.Web.UI`..., `Kubuno.<Module>.Web`), the solution and its launch profiles
+   (docs/WEB.md section 12). The local master solution `Z:\src\Kubuno.slnx` (every repository) is generated by a
+   `_tools` script of the polyrepo. **Tools > Kubuno Web: Generate Multi-Repository Solution...** puts the core and the
    modules you choose in one `Kubuno.Web.slnx` next to them.
 3. **Build** (Ctrl+Shift+B): cargo for the Rust projects, `npm run build` for the frontends. A frontend whose
    `node_modules` was installed by the Linux server builds as is: the extension never reinstalls it and brings the
@@ -228,7 +234,7 @@ frontend. `docs/WEB.md` has the details; in short:
    `%LOCALAPPDATA%\Kubuno\dev-core`); the "Core + Vite dev server" launch profile adds Vite and Edge with the script
    debugger. On a module, the module is deployed into that dev core, the core starts, the debugger attaches to the
    module process and the browser opens on the module.
-5. **New module**: Create a new project > **Kubuno Core Web Module**.
+5. **New module**: Create a new project > **Kubuno Web Module**.
 
 ### Building, F5, Ctrl+F5
 
@@ -267,7 +273,7 @@ DataTips and Attach to Process work as for C#, with Rust-aware additions the ext
   the Call Stack collapses them into `[External Code]` (Tools > Options > Kubuno > Debugging to keep the framework
   visible);
 - in Watch/conditions, `self` is a pointer: write **`self->count`**, not `self.count`;
-- `kubuno_views::debug_break()` and `result.break_on_err()?` are the `Debugger.Break()` of Rust.
+- `kubuno_desktop_views::debug_break()` and `result.break_on_err()?` are the `Debugger.Break()` of Rust.
 
 ### Console window
 
@@ -287,9 +293,9 @@ Its diagnostics go where a .NET developer expects them:
   shows a Kubuno crash window (its name, the error, *Show details* with the backtrace, *Open log*, *Copy*,
   *Close*) before closing - never a silent exit. A panic on a background thread is only logged.
 
-The Kubuno host installs this when its window opens (`kubuno_controls::host::diagnostics`; opt out with
+The Kubuno host installs this when its window opens (`kubuno_desktop_controls::host::diagnostics`; opt out with
 `HostOptions::diagnostics = false`, or call `diagnostics::disable()` first). An application with its own
-window loop calls `kubuno_ui::diagnostics::install(&kubuno_ui::diagnostics::exe_name(), true)` at the start
+window loop calls `kubuno_desktop_ui::diagnostics::install(&kubuno_desktop_ui::diagnostics::exe_name(), true)` at the start
 of `main`.
 
 **Want a console anyway** (a tool that prints, or while porting old code)? Change the first line of
@@ -335,7 +341,7 @@ Visual Studio's own tool windows, the same way the WinForms designer works:
   attribute and a matching Rust function stub in the code-behind, then opens the code-behind at
   that new function); double-click an already-bound event to jump straight to its existing handler;
   or type a name into an unbound row to create a handler with that specific name. In a form class
-  (`#[kubuno::view]`, the templates' `main_view.rs`) the handler is a method of the struct named the
+  (`#[kubuno_desktop::view]`, the templates' `main_view.rs`) the handler is a method of the struct named the
   Windows Forms way - double-clicking the `hello` button writes `OnClick="hello_click"` and
   `fn hello_click(&mut self, _sender: &Button, _e: &MouseEventArgs)`.
 - **F7** ("View Code") opens the view's code, its same-stem `.rs` file (`main_view.rs`), like Windows
@@ -525,7 +531,7 @@ full tool list and the transport/discovery mechanism.
   time Visual Studio *starts* after a template-shipping VSIX is installed or updated, not at
   install time itself. Close Visual Studio and start it once more; the templates then appear.
 - **A "the program can't start because ... .dll is missing" dialog** when running a Rust binary built
-  with `-C prefer-dynamic` (Kubuno programs link `kubuno_ui` and `std` statically and never need a DLL
+  with `-C prefer-dynamic` (Kubuno programs link `kubuno_desktop_ui` and `std` statically and never need a DLL
   beside them): the executable's own directory does not have its dylibs/the matching Rust `std-*.dll` next
   to it, and something outside the extension's own PATH-prepending logic (a manual launch outside VS, a
   custom launch profile with `PATH` overridden rather than extended) short-circuited it. Inside a
@@ -536,13 +542,13 @@ full tool list and the transport/discovery mechanism.
   value rather than adding to it).
 - **A Kubuno program asks for `kubuno_ui-<hash>.dll`, `kubuno_ui.dll` or `std-*.dll`**
   (`0xC0000135`, or "entry point not found", `0xC0000139`): it was built from a desktop checkout older
-  than 2026-10-03, when `kubuno-ui` was a shared Rust DLL. Update the checkout and rebuild the program:
+  than 2026-10-03, when `kubuno-desktop-ui` was a shared Rust DLL. Update the checkout and rebuild the program:
   it then links everything statically (docs/DESIGNER.md section 16).
-- **`error[E0463]: can't find crate for 'kubuno_ui'`** (reported in `kubuno-views`' own sources)
+- **`error[E0463]: can't find crate for 'kubuno_desktop_ui'`** (reported in `kubuno-desktop-views`' own sources)
   when building against a desktop checkout older than 2026-10-03 with a Kubuno Desktop Application
-  created before this was fixed. `kubuno-ui` was then a Rust dylib, and cargo names a dylib without a hash
+  created before this was fixed. `kubuno-desktop-ui` was then a Rust dylib, and cargo names a dylib without a hash
   (`deps\kubuno_ui.dll`): two cargo workspaces building into the SAME target directory overwrote each
-  other's `kubuno_ui.dll`. Update the checkout (`kubuno-ui` is now a hashed rlib, which cannot collide).
+  other's `kubuno_ui.dll`. Update the checkout (`kubuno-desktop-ui` is now a hashed rlib, which cannot collide).
   Projects created from the current template build into a directory of their own anyway
   (`$(CARGO_TARGET_DIR)\rsproj\<crate>`, or `<project>\target` when `CARGO_TARGET_DIR` is not set).
 - **A one-time "would you like to create a browse database" / IntelliSense database prompt**

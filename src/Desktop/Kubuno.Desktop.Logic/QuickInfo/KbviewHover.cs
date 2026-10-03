@@ -19,7 +19,7 @@ namespace Kubuno.Desktop.Logic.QuickInfo
     }
 
     /// <summary>
-    /// A kubuno-views-ls <c>textDocument/hover</c> markdown (crates/kubuno-views-ls/src/hover.rs), taken
+    /// A kubuno-views-ls <c>textDocument/hover</c> markdown (crates/kubuno-desktop-views-ls/src/hover.rs), taken
     /// apart so the tooltip can be rebuilt like a C# one - with the registry's localized documentation
     /// when the caller has it (<see cref="KbviewSymbolDetails"/>).
     /// </summary>

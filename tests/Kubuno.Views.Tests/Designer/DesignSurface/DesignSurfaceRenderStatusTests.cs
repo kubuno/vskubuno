@@ -7,7 +7,7 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
 {
     /// <summary>
     /// docs/DESIGNER.md section 16: the <c>renderStatus</c> line (checked against the exact string
-    /// <c>kubuno-views/src/protocol.rs</c>'s <c>render_status_carries_the_state_and_utf16_positions</c> asserts)
+    /// <c>kubuno-desktop-views/src/protocol.rs</c>'s <c>render_status_carries_the_state_and_utf16_positions</c> asserts)
     /// and the error banner built from it.
     /// </summary>
     [TestClass]

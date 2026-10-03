@@ -11,8 +11,8 @@ namespace Kubuno.Views.Designer.Registry
     /// component, and for any <see cref="ChildrenModel.List"/> container the registry hasn't
     /// classified yet.
     /// <para>
-    /// Members mirror <c>kubuno_views::registry::LayoutKind</c> exactly (DSG-1,
-    /// <c>kubuno-views/src/registry/mod.rs</c>) rather than §4's own narrative, which this type was
+    /// Members mirror <c>kubuno_desktop_views::registry::LayoutKind</c> exactly (DSG-1,
+    /// <c>kubuno-desktop-views/src/registry/mod.rs</c>) rather than §4's own narrative, which this type was
     /// first written against, before that Rust enum existed: §4 describes an "Anchor (absolute
     /// canvas)" engine and a "Dock" engine as if a container picks one or the other, but the real
     /// engine that landed (<c>Panel</c>'s) handles both per *child* (a child's own <c>Dock</c> or

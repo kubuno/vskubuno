@@ -15,7 +15,7 @@ namespace Kubuno.Views.Designer.Registry.Infrastructure
     /// <c>Handlers.Infrastructure.JsonRpcKubunoViewsLanguageServerClient</c> (see that class's own doc
     /// comment for why the result is read as a weakly-typed <see cref="JToken"/> rather than a
     /// strongly-typed System.Text.Json DTO). The wire result is <c>{ "version": "...", "components":
-    /// [...] }</c> (`kubuno_views::registry::export::RegistryExport`) - NOT the bare array
+    /// [...] }</c> (`kubuno_desktop_views::registry::export::RegistryExport`) - NOT the bare array
     /// <see cref="ComponentRegistry.FromJson"/> itself deserializes (that method's own doc: "the bare
     /// JSON array"), so this class is the one place that unwraps the <c>components</c> field before
     /// handing the array text to it. <see cref="ComponentRegistry.Empty"/> on any failure (server

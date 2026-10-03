@@ -16,10 +16,10 @@ namespace Kubuno.Views.Tests.Resources
         [TestMethod]
         public void Navigation_ParsesMacroCalls()
         {
-            var call = ResourceNavigation.ParseCall("kubuno::resources!(\"resources.kbres\");")!;
+            var call = ResourceNavigation.ParseCall("kubuno_desktop::resources!(\"resources.kbres\");")!;
             Assert.AreEqual("resources.kbres", call.Path);
             Assert.AreEqual("Resources", call.TypeName);
-            call = ResourceNavigation.ParseCall("    kubuno::resources!(pub(crate) Strings, \"i18n/strings.kbres\");")!;
+            call = ResourceNavigation.ParseCall("    kubuno_desktop::resources!(pub(crate) Strings, \"i18n/strings.kbres\");")!;
             Assert.AreEqual("Strings", call.TypeName);
             Assert.AreEqual("i18n/strings.kbres", call.Path);
             Assert.AreEqual("MainView", ResourceNavigation.ParseCall("resources!(\"main_view.kbres\")")!.TypeName);
