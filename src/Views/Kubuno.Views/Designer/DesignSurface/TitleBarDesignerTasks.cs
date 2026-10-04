@@ -60,17 +60,52 @@ namespace Kubuno.Views.Designer.DesignSurface
         };
 
         /// <summary>
-        /// The button a « Ajouter un bouton » task inserts in <paramref name="region"/>: an <c>IconButton</c> of the caption
-        /// buttons' size (30 DIP, 36 in the tall 64 DIP header), the web header's look.
+        /// The button a « Ajouter un bouton » task inserts in <paramref name="region"/>: an <c>IconButton</c> sized for the
+        /// view's title bar (<see cref="BandHeight"/>): 36 DIP in the tall 64 DIP header, the caption buttons' 30 in a band
+        /// of 40 DIP or more, 24 in the standard 32 DIP one — the web header's look.
         /// </summary>
         public static string ButtonXml(string text, string region)
         {
-            var root = ElementAttributeReader.Read(text, StableElementId.Root);
-            var tall = root is not null && root.Attributes.TryGetValue("TitleBarHeight", out var h) &&
-                double.TryParse(h, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var height) && height >= 56;
-            var side = tall ? "36" : "30";
-            var glyph = tall ? "18" : "16";
+            var height = BandHeight(text);
+            var side = height >= 56 ? "36" : height >= 40 ? "30" : "24";
+            var glyph = height >= 56 ? "18" : height >= 40 ? "16" : "14";
             return "<IconButton TitleBar.Region=\"" + region + "\" Icon=\"Star\" Diameter=\"" + side + "\" Glyph=\"" + glyph + "\" Width=\"" + side + "\" Height=\"" + side + "\"/>";
+        }
+
+        /// <summary>
+        /// The height of the view's title bar, as the runtime resolves it (kubuno-desktop-views <c>window::title_bar_style</c>):
+        /// <c>TitleBarHeight</c> when set, else <c>TitleBarStyle</c> (<c>Standard</c> 32, <c>Tall</c> 64), else 64 for a view
+        /// hosting the header's menus (a <c>Show…</c> header item, or a <c>HeaderActions</c> / <c>WaffleButton</c> /
+        /// <c>AccountButton</c> element) and 32 for any other.
+        /// </summary>
+        public static double BandHeight(string text)
+        {
+            var root = ElementAttributeReader.Read(text, StableElementId.Root);
+            if (root is null)
+            {
+                return 32;
+            }
+
+            if (root.Attributes.TryGetValue("TitleBarHeight", out var h) &&
+                double.TryParse(h, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var height) && height > 0)
+            {
+                return height;
+            }
+
+            if (root.Attributes.TryGetValue("TitleBarStyle", out var style) && style is not null)
+            {
+                switch (style.Trim())
+                {
+                    case "Tall":
+                        return 64;
+                    case "Standard":
+                        return 32;
+                }
+            }
+
+            var hostsMenus = HeaderItems.Any(item => IsShown(text, item)) ||
+                new[] { "<HeaderActions", "<WaffleButton", "<AccountButton" }.Any(tag => text.IndexOf(tag, StringComparison.Ordinal) >= 0);
+            return hostsMenus ? 64 : 32;
         }
 
         /// <summary>Whether the view shows <paramref name="property"/>'s item now (its switch turns it off).</summary>

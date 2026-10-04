@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Title bar heights in the designer** (`docs/EVENTS.md` section 20). The Properties window lists the view's new
+  `TitleBarStyle` (`Standard`, 32 pixels as in Windows 11, or `Tall`, the web's 64-pixel header), and the design
+  surface draws the window with it: a view showing the header's menus (`ShowWaffle`, `ShowAccount`…, or a
+  `HeaderActions`, `WaffleButton` or `AccountButton` in its title bar) is `Tall` by default, any other `Standard`
+  (the default title bar used to be 50 pixels). Caption buttons and title-bar controls are drawn centred in both. The
+  title bar's « Add a button » task sizes the new button for the bar's height (24, 30 or 36 pixels).
+
 - **Project and solution names follow the Kubuno repositories** (`docs/RSPROJ.md` section 4.1, `docs/WEB.md`
   section 12). A Visual Studio project is now `Kubuno.<Product>.<Component>` for the crate
   `kubuno-<product>-<component>` (`Kubuno.Desktop.UI` builds `kubuno-desktop-ui`), its file is named after it, and a

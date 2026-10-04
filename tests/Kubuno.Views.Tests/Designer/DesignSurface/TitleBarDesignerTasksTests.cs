@@ -30,8 +30,21 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
         [TestMethod]
         public void ButtonXml_TakesTheCaptionButtonsSize_Or36InTheTallHeader()
         {
-            Assert.AreEqual("<IconButton TitleBar.Region=\"Right\" Icon=\"Star\" Diameter=\"30\" Glyph=\"16\" Width=\"30\" Height=\"30\"/>", TitleBarDesignerTasks.ButtonXml("<Panel/>", "Right"));
+            Assert.AreEqual("<IconButton TitleBar.Region=\"Right\" Icon=\"Star\" Diameter=\"24\" Glyph=\"14\" Width=\"24\" Height=\"24\"/>", TitleBarDesignerTasks.ButtonXml("<Panel/>", "Right"));
+            Assert.AreEqual("<IconButton TitleBar.Region=\"Right\" Icon=\"Star\" Diameter=\"30\" Glyph=\"16\" Width=\"30\" Height=\"30\"/>", TitleBarDesignerTasks.ButtonXml("<Panel TitleBarHeight=\"50\"/>", "Right"));
             Assert.AreEqual("<IconButton TitleBar.Region=\"Center\" Icon=\"Star\" Diameter=\"36\" Glyph=\"18\" Width=\"36\" Height=\"36\"/>", TitleBarDesignerTasks.ButtonXml("<Panel TitleBarHeight=\"64\"/>", "Center"));
+            Assert.AreEqual("<IconButton TitleBar.Region=\"Center\" Icon=\"Star\" Diameter=\"36\" Glyph=\"18\" Width=\"36\" Height=\"36\"/>", TitleBarDesignerTasks.ButtonXml("<Panel TitleBarStyle=\"Tall\"/>", "Center"));
+        }
+
+        [TestMethod]
+        public void BandHeight_FollowsTheStyle_TheHeaderMenus_AndAnExplicitHeight()
+        {
+            Assert.AreEqual(32, TitleBarDesignerTasks.BandHeight("<Panel/>"));
+            Assert.AreEqual(64, TitleBarDesignerTasks.BandHeight("<Panel TitleBarStyle=\"Tall\"/>"));
+            Assert.AreEqual(64, TitleBarDesignerTasks.BandHeight("<Panel ShowWaffle=\"true\"/>"));
+            Assert.AreEqual(32, TitleBarDesignerTasks.BandHeight("<Panel TitleBarStyle=\"Standard\" ShowAccount=\"true\"/>"));
+            Assert.AreEqual(64, TitleBarDesignerTasks.BandHeight("<Panel><Panel TitleBar.Region=\"Right\"><WaffleButton/></Panel></Panel>"));
+            Assert.AreEqual(50, TitleBarDesignerTasks.BandHeight("<Panel TitleBarStyle=\"Tall\" TitleBarHeight=\"50\"/>"));
         }
 
         [TestMethod]

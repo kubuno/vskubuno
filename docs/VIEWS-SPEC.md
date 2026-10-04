@@ -186,6 +186,13 @@ window with a title bar, square for a borderless one, always square while maximi
 `EVENTS.md` §19); on `FloatingWindow` the in-view window's (8 by default). Both are desktop properties: a web page
 is not a window, and the web `FloatingWindow` keeps the web's square corners (`--kb-window-radius: 0px`).
 
+Title bar height (desktop, view root): `TitleBarStyle` = `Standard` (32 DIP, Windows 11's caption height — dialogs, tool
+windows, secondary windows) or `Tall` (64 DIP, the web module header — a main window showing the header's menus).
+Unset, it is `Tall` for a view with a header item (`ShowSearch`, `ShowWaffle`, `ShowAccount`…) or a `HeaderActions` /
+`WaffleButton` / `AccountButton` in a `TitleBar.Region`, `Standard` otherwise. `TitleBarHeight` (F32, DIP), when
+written, wins over the style. Caption buttons and title-bar items are centred vertically in every height (see
+`EVENTS.md` §20).
+
 ### 4.1 Styling rule (decision 3)
 
 - Colours, surfaces, typography and spacing come from **theme tokens** only: `ForeColor="TextSecondary"`,

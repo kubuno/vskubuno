@@ -2037,3 +2037,39 @@ squared radius, the curve's resize band, the grip inset), `host::form` (`corner_
 (build 22000, 175 %): captures of the gallery at the default radius, 0, 16 and 24, light and dark, the forced host
 path, maximised and snapped (`WM_NCHITTEST` and `WindowFromPoint` checked at the corners, in the margin, on the close
 button and the grip).
+
+## 20. Title bar heights (product owner, 2026-10-04; built 2026-10-05)
+
+**Decision.** Two heights for the Kubuno-drawn title bar, replacing the single 50-DIP band copied from the web's
+`FloatingWindow`:
+
+| `TitleBarStyle` | Height | For | Why |
+|---|---|---|---|
+| `Standard` (default) | **32 DIP** | dialogs, tool windows, secondary forms, MDI documents and in-window dialogs, the in-page `FloatingWindow` (`ConfirmDialog`…) | Windows 11's caption height; the design system's `h-8`. |
+| `Tall` | **64 DIP** | a main window showing the header's menus left of the caption buttons (shell, chat, documents) | The web module header's `h-16` (the office editor's `topbarHeight={64}`). |
+
+**Defaults.** `TitleBarStyle` unset resolves to `Tall` when the view hosts the header's menus — one of the header's
+standard items on its root (`ShowSearch`, `ShowNotifications`, `ShowSettings`, `ShowHelp`, `ShowWaffle`, `ShowAccount`),
+or a `HeaderActions` / `WaffleButton` / `AccountButton` inside a child placed in a `TitleBar.Region` — and to `Standard`
+otherwise (`kubuno_desktop_views::window::title_bar_style`). A tool window keeps the standard band whatever its style.
+`TitleBarHeight`, when written, still wins over the style (the web band is `TitleBarHeight="50"`). Code:
+`window_chrome::TitleBarStyle`, `ChromeStyle::size`, `Form::set_title_bar_style`; the VS Properties window lists
+`TitleBarStyle` (category *Title Bar*, French doc) and the language server validates and completes it.
+
+**Metrics.** A band lower than 40 DIP (`window_chrome::COMPACT_BELOW`: the standard one, a tool window's) takes the
+compact metrics: 24-DIP Kubuno caption buttons (radius 4, glyph 13), 8-DIP side insets (`TitleBarPadding`), the body
+font for the title; a taller band keeps the web's (30-DIP buttons, radius 5, glyph 15, 16-DIP insets, heading font).
+
+**Centring.** Everything in the band is centred vertically on it, in every height: Kubuno-style caption buttons, the
+icon, the title, the page's `TitleBar.Region` items (the header's 36-DIP buttons in the tall band), and Windows-style
+caption buttons, which now fill the band's height (46 DIP wide, their glyph on the band's middle; they used to stay
+32 DIP tall at the top of a taller band — chat's 50-DIP bar showed it). Their hit-test rectangles are the drawn ones:
+the whole column answers `HTMINBUTTON` / `HTMAXBUTTON` / `HTCLOSE`, so the snap layouts flyout opens from the full
+height of the maximise button; the caption hit test, the drag areas and the popups opening under title-bar buttons
+read the same layout. With a host-drawn rounded frame (`KUBUNO_CORNER_RADIUS=16`) the close column is clipped by the
+corner's curve like the band; maximised or snapped, the band keeps its height and the frame squares as before (§19).
+
+**Verified.** Unit tests (`window_chrome::tests::caption_buttons_are_centred_in_every_height`, `title_bar_style`
+resolution in `kubuno-desktop-views`, the designer task's band height in `Kubuno.Views.Tests`); captures of the shell,
+chat, documents, a dialog and the gallery's *titlebars* page, light and dark, at 100 % and 175 %; the designer
+rendering both styles.

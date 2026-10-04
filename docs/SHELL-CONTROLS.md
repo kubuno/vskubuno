@@ -250,10 +250,15 @@ and three free regions take any control. Everything sits in the title bar's own 
   slots come before the bell), immediately before the caption buttons (the chrome's 10 DIP `gap-2.5` plus the
   cluster's own 8 DIP trailing gap). Search and cluster are joined (no gap, the web's `gap-0`); the regions' own
   controls are `gap-1` (4) apart.
-- Sizes follow the band: in a title bar of the usual height (50 by default, 32 for a tool window) the buttons take the
-  caption buttons' size, **30** (`HeaderActions Compact="true"`, glyph 16); in the tall header (`TitleBarHeight` ≥ 56,
-  the web's `h-16` = 64) they are the web's **36** circles (`w-9 h-9`, glyph 18), the avatar 2 further (`ml-0.5`). The
-  cluster is as tall as the band and centres its buttons; widths: 160 / 190 for all five.
+- **Height (2026-10-04)**: a view showing any of these items, or holding a `HeaderActions` / `WaffleButton` /
+  `AccountButton` in a `TitleBar.Region`, gets the tall header by default (`TitleBarStyle="Tall"`, 64 DIP, the web's
+  `h-16`); every other window gets the standard 32-DIP band (`EVENTS.md` §20). `TitleBarStyle="Standard"` or an
+  explicit `TitleBarHeight` overrides it.
+- Sizes follow the band: in the tall header (64, or any `TitleBarHeight` ≥ 56) the buttons are the web's **36** circles
+  (`w-9 h-9`, glyph 18), the avatar 2 further (`ml-0.5`); in a lower band (`TitleBarStyle="Standard"`, a tool window)
+  they take the compact size, **30** (`HeaderActions Compact="true"`, glyph 16). The cluster is as tall as the band and
+  centres its buttons, as the caption buttons are centred (Windows-style ones fill the band's height); widths: 160 /
+  190 for all five.
 - **Look**: a band carrying the items and coloured by nobody takes the web header's ground (`Background`, the
   `var(--body-bg)` token) and the text colour for the title and caption buttons, light and dark. On a coloured band
   (`TitleBarBackground`, `AccentColor`, or a ribbon whose tab strip it continues — Documents) the items take the band's
@@ -284,8 +289,8 @@ and three free regions take any control. Everything sits in the title bar's own 
   live (the cluster, or its placeholder when the project does not link the shell controls).
 - Dragging a Toolbox control over the window shows the band's three **drop zones** (dashed; the one under the pointer
   washed with the accent; mirrored right to left); a drop inserts the control as the root's last child with
-  `TitleBar.Region` (an `IconButton` gets the band's button size: `Diameter`/`Width`/`Height` 30, 36 in the tall
-  header).
+  `TitleBar.Region` (an `IconButton` gets the band's button size: `Diameter`/`Width`/`Height` 24 in the standard
+  32-DIP band, 30 in a band of 40 or more, 36 in the tall header).
 - With the view selected, a **smart tag** at the window's top-right corner opens the title bar's tasks: « Ajouter un
   bouton à la barre de titre » (à gauche, au centre, à droite: an `IconButton`, then selected) and one switch per
   standard item (checked when shown; switching off removes the attribute). Each task is one undo unit
