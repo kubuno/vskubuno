@@ -75,7 +75,11 @@ adapter (§10.5), not rendered on its own.
 | `.kbview` element | Desktop family | Web component | Notes |
 |---|---|---|---|
 | `Button` | core | `@ui` `Button` | `Text` → `children`, `Icon` → `icon` |
-| `IconButton` | choice | `@ui` `Button` (no text) | `Variant`/`Size` web-only; `AccessibleName` required |
+| `IconButton` | choice | `@ui` `IconButton` (round) | `Diameter`, `Glyph`, `Filled` as on the desktop (2026-10-02; was `Button` without text); `AccessibleName` required |
+| `Label`, `LinkLabel` | display | `@ui` `Label`, `LinkLabel` | `Role` = the shared typographic roles (§7.1); web `Href` on `LinkLabel` |
+| `Avatar`, `Icon` | display | `@ui` `Avatar`, `IconGlyph` | `Icon` `Disc` = the glyph on a disc twice its size |
+| `Stack`, `Panel`, `UserControl`, `ScrollArea` | core / containers | `@kubuno/views` (the runtime's own layout elements) | §5; web `Justify` (Stack), `Layout` (Panel, UserControl), `Href` (Stack, Panel), `ScrollbarGutter` / `ScrollBars` (ScrollArea) |
+| `Repeater` | data | the runtime's item template | the items are laid out by the Repeater's container on the web |
 | `Switch` | core | `@ui` `Toggle` | `On` ↔ `checked` |
 | `CheckBox` | choice | `@ui` `Checkbox` | `CheckState=Indeterminate` → `indeterminate` |
 | `RadioButton` | choice | `@ui` `Radio` | `SelectedValue`/`Value` → `checked` (`equals-value`) |
@@ -105,9 +109,10 @@ adapter (§10.5), not rendered on its own.
 ### 2.2 Planned (no web element yet)
 
 Desktop elements without a web element today, to add in WV-5a/5b or the new-components lot, **keeping the desktop
-name**: `Label`, `LinkLabel`, `Icon`, `Stack`, `Panel`, `TableLayoutPanel`, `ScrollArea`, `GroupBox`, `Splitter`,
-`UserControl`, `PictureBox`, `Avatar`, `PaintBox`, `SearchField`, `MaskedField`, `MonthCalendar`, `ListBox`,
-`CheckedListBox`, `ListView`, `TreeView`, `Item`, `Repeater`, `Timer`, `Toolbar`/`ToolbarItem`,
+name** (`Label`, `LinkLabel`, `Icon`, `Avatar`, `Stack`, `Panel`, `UserControl`, `ScrollArea` and `Repeater` have
+been added on 2026-10-02, §2.1): `TableLayoutPanel`, `GroupBox`, `Splitter`,
+`PictureBox`, `PaintBox`, `SearchField`, `MaskedField`, `MonthCalendar`, `ListBox`,
+`CheckedListBox`, `ListView`, `TreeView`, `Item`, `Timer`, `Toolbar`/`ToolbarItem`,
 `Sidebar`/`SidebarSection`/`SidebarItem`, `StatusBar`/`StatusLabel`, `SplashArtwork`, the `Ribbon*` family and
 `Command`. New shared elements (`RadioGroup`, `SettingsRow`, …) are added to **both** registries in the same lot.
 Web-only elements (`ReactHost`, `Query`, `Mutation`) carry `target: web-only` in the allowlist (§11).

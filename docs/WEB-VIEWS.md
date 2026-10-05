@@ -1,6 +1,6 @@
 # Kubuno web views — `.kbview` for the web UI, designed in Visual Studio — design note
 
-> Status: **design study, partly built** (2026-10-01; built so far: WV-0, WV-1, WV-2, WV-3, WV-4, WV-8, WV-9a — see §12–§14). Product-owner decision (2026-10-01): the Kubuno **web** UI
+> Status: **design study, partly built** (2026-10-01; built so far: WV-0, WV-1, WV-2, WV-3, WV-4, WV-8, WV-9a — see §12–§14; WV-5a in part and the first core pilot, the header's WaffleMenu & AccountMenu — see §15). Product-owner decision (2026-10-01): the Kubuno **web** UI
 > (core host + module frontends) moves toward a declarative view format similar to the desktop `.kbview`, editable in
 > the Visual Studio visual designer (Toolbox, design surface, Properties, ⚡ events, code-behind); the design surface
 > renders with **WebView2** (WebKit is dropped); existing React/TSX code is migrated or transformed.
@@ -1107,6 +1107,108 @@ measured (no pilot screen yet); the `module.toml [frontend] views_abi` install c
 untyped until WV-7 reads their code-behind; the core-level runtime tests run on Linux only (the host's Vite
 config needs native Tailwind bindings).
 
+## 15. Core pilot: WaffleMenu & AccountMenu (2026-10-02)
+
+User requirement (2026-10-02): « AccountMenu et WaffleMenu doivent être des usercontrol dans les versions web et
+desktop », then « ils ne doivent pas rester enfermés dans le conteneur qui les contient ». The first real core screen
+on views: the header's app launcher and account panel are user controls (`.kbcontrol` + TypeScript code-behind),
+compiled by `@kubuno/views-compiler` inside the core build and rendered by `@kubuno/views`; the running web uses them.
+Shared contract with the desktop: `SHELL-CONTROLS.md` (names, properties, events, data shapes; §7 = the web as built).
+
+### 15.1 What was built
+
+| Piece | Where (core/frontend) | Notes |
+|---|---|---|
+| `WaffleMenu` user control | `src/core/shell/menus/WaffleMenu.kbcontrol` + `.ts` | `UserControl` › `ScrollArea` (`ScrollbarGutter="StableBothEdges"`) › `Panel` › `AppTileGrid` (its header band — « Vos favoris » + pencil, or « Annuler » / « OK » + help line — is the `<AppTileGrid.Header>` property element) + `MenuLink` « Plus de modules ». Code-behind: `Apps`, `Favorites`, `Editing` (controlled when the host passes it), the draft, the contract's events. |
+| `AccountMenu` user control | `src/core/shell/menus/AccountMenu.kbcontrol` + `.ts` | `UserControl` › header `Stack` (`Dock="Top"`) + `ScrollArea` (`Dock="Fill"`): hero (`Avatar` 96 + camera `IconButton`, greeting `Label`, « Gérer votre compte » `LinkLabel`), the folding accounts card (a `Repeater` over the rows, three row shapes chosen by `Visible`), the actions card (four clickable `Stack`s: two native buttons, two links). |
+| Irreducible part | `AppTileGrid.tsx` (custom control, `defineControl`) | The tile grid with drag-and-drop reorder/add/remove, the auto-scroll near the edges and the scroll bar's gutter measure — the same name and events as the desktop's `AppTileGrid`. |
+| Menu semantics | `menuItemHost.tsx`, `MenuLink.tsx` | The host decides that the content is a menu: `WaffleButton` provides `DropdownMenu.Item asChild` through `MenuItemHostContext`; the tiles and « Plus de modules » become menu items (roles, arrow keys, close on select); anywhere else they stay links. |
+| Hosts (platform chrome) | `WaffleButton.tsx`, `AccountButton.tsx` | Custom controls with the contract's names. The popover is not part of the user control: a Radix menu in a `<body>` portal for the launcher; for the account panel a `<body>` portal placed by `placePanel` (under the button, end edges aligned — start in RTL —, flipped above when the room below is shorter, clamped 8 px into the viewport); Escape and a click outside close, the focus goes back to the button. They own the data and act on the events. `HeaderActions` and `MobileFab` place them; the former `WaffleMenu.tsx` and `UserPanel.tsx` are removed. |
+| Project registry | `controls.meta.ts` → `kbview-controls.json` (`npm run build:registry` writes it next to the host registry; `kubuno.views.json` lists it) | `AppTileGrid`, `MenuLink`, `WaffleButton`, `AccountButton`: the core project's own controls (module isolation rule 2). |
+| Core build | `vite.config.ts` (`kbview()` before React), `tsconfig.app.json` (`rootDirs` + `.kubuno/views`), `kubuno.views.json` | `tsc -b` type-checks the bindings and handlers of the two controls (generated check files). |
+
+### 15.2 WV-5a elements added (host registry; conformance with the desktop export: 0 failures)
+
+| Element | Renders | Members (desktop names; web-only ones allowlisted with their reason) |
+|---|---|---|
+| `UserControl` | `@kubuno/views` `UserControl` | dock container filling its host (`flex: 1 1 auto; min-height: 0`), `Surface`, web `Layout` |
+| `Panel` | `@kubuno/views` `Panel` | `Dock` bands on one CSS grid (document order, logical columns: `Left` = inline start), `Layout="Absolute"` (X/Y, logical), `Surface`, web `Href` |
+| `Stack` | `@kubuno/views` `Stack` | `Direction`, `Gap` (default 8), `CrossAlign`, `WrapContents`, `Surface`, `Stack.Fill`; web `Justify`, `Href` |
+| `ScrollArea` | `@kubuno/views` `ScrollArea` | `Corner`; web `ScrollBars`, `ScrollbarGutter` |
+| `Repeater` | the runtime's template | `ItemsSource`, `ItemKey`, `DesignItemCount` (web block `template: true`) |
+| `Label` | `@ui` `Label` (new) | `Text`, `Role` (Micro / Meta / Body / Heading / Title), `TextAlign`, `Overflow` (Ellipsis / Clip / Wrap) |
+| `LinkLabel` | `@ui` `LinkLabel` (new) | `Text`, `Role`, `OnClick`; web `Href` |
+| `Avatar` | `@ui` `Avatar` (new, Radix avatar) | `DisplayName`, `Initials`, `Image`, `Tint`, `Shape`, `AvatarSize` |
+| `Icon` | `@ui` `IconGlyph` (new) | `Name`, `Size`, `Disc` |
+| `IconButton` | `@ui` `IconButton` (new: round) | `Icon`, `Diameter`, `Glyph`, `Filled` — the desktop's members, replacing WV-4's mapping onto `Button` with web-only `Variant` / `Size` |
+
+Web rendering rules added to the runtime: a container with `AccessibleRole="PushButton"` renders a native `<button>`,
+one with `Href` an `<a>` (a plain click stays in the app and raises `OnClick`, a modified click opens the address);
+on the new elements `Class` is given as the element's own `className` (kept by React, merged with the element's
+classes; a size utility written there wins over the `Role`'s step).
+
+### 15.3 Runtime and compiler changes this pilot needed
+
+- Runtime: an event raised inside a `Repeater` template carries its row (`e.row`, `e.rowIndex`); new props from the
+  host reach the elements that read them through `this.props` or a getter (the root defers a notification to the
+  commit); the layout containers above.
+- Compiler (`@kubuno/views-compiler`): compiled plans read their components through getters (`get c()`), so a view
+  that sits in an import cycle — any core view: `@ui` (DatePicker) → the core's stores → `@kubuno/sdk` → the shell →
+  the view — finds its components at render time. Before, the components were `undefined` there and the host's
+  registry fallback (`viewsHost`) hid it.
+- Compiler (`kubuno-web-views-compiler-core`, desktop repository; the WASM rebuilt from the local checkout): a bound property whose
+  registry `editor` is `list` / `object` is type-checked as an array / any value (a custom control's `Apps`,
+  `Favorites`), not as a string.
+- The compiler package's test fixtures use the host's `Stack` / `Repeater` (their project stand-ins were removed: a
+  project element may not shadow a host one).
+
+### 15.4 Parity (§7 method)
+
+Before = the core frontend of the same working tree with the former TSX components; after = the same tree with this
+lot. Both served by a dev core built from the core's HEAD on Windows (`kubuno-core.exe`, its own folder, port 18090)
+on the **local MySQL development database** (`KUBUNO_DEV_DATABASE_URL`, `kubuno_dev`); headless Chrome (own profile,
+`--disable-gpu`, one tab), signed in through the API with two dev accounts (the active one and one other), never on
+the login page; module apps and favourites injected identically in both builds (no module process runs on that dev
+core); transitions off, reduced motion, fonts loaded. 60 states per build: light (`kubuno-reference`) / dark
+(`kubuno-dark`) × fr / en / ar × 1440×900 / 390×844 × {launcher open, edit mode, dragging (the first favourite over the
+third), account panel expanded, collapsed}; at 390 the launcher is the mobile FAB's.
+
+| Measure | Result |
+|---|---|
+| Pixel diff of the panels alone (tolerance 24/255 per channel) | **≤ 0.162 %** on all 60 (0.000 % on 52; the highest are the RTL account panels, whose anti-aliasing changes because the panel moved, see below) |
+| Pixel diff of the whole page, LTR | **≤ 0.273 %** (the differing pixels are the home dashboard's live clock) |
+| Accessibility tree of the panels (roles, names, focusable / disabled / expanded) | **equal on 60/60** |
+| Keyboard smoke (Enter opens, ArrowDown walks the tiles, Escape closes; Tab through the account panel) | the same sequence, with two intended differences: Escape now gives the focus back to the avatar button, and the camera button's name comes from `aria-label` instead of `title` (same accessible name) |
+| Not clipped (« pas enfermés »): the launcher's wrapper shrunk to 36 px and the header cluster made `overflow: hidden` + `transform` + `contain: paint` | both panels portalled to `<body>`, wholly in the viewport, 5/5 probe points hit the panel, at 1440 and 390 |
+| Flip and clamp | the header moved to the bottom-left of a 1440×600 viewport: the launcher and the account panel open above their buttons, clamped 8 px from the left edge |
+
+Intended differences: in RTL the account panel now opens under the avatar (the start side), where the former panel
+stayed at the right edge of the screen, away from its button (whole-page diffs 4–23 % in `ar`, the panel's content
+≤ 0.16 %); Escape returns the focus to the button; an « OK » keeps the favourites the launcher does not know (the
+contract's rule; the former web dropped them).
+
+Captures: `C:\kubuno-build\agent-webmenus\captures\{before,after,diff}\` (`<state>-<theme>-<lang>-<width>.{full,panel}.png`),
+`parity.json`, `popup-after\` (clipping, flip). Tests: core `src/views/layout.test.tsx` (5),
+`src/core/shell/menus/menus.test.tsx` (4), `src/views/runtime.test.tsx` (10), `src/kbview/kbview-registry.spec.ts`
+(106); `@kubuno/views-compiler` vitest 12 + conformance 2; `kubuno-web-views-compiler-core` cargo tests 9; `tsc -b`, `kbview-tsc -b`,
+the Vite build and the registry checks (`build:registry --check`, conformance 0 failures, `build:views-handles
+--check`) pass (Linux, .220, in a copy under /tmp).
+
+### 15.5 Left to do
+
+- `Class` budget of the two controls: **35** attributes (5 in `WaffleMenu`, 30 in `AccountMenu`) — hover states,
+  off-scale sizes (`text-base`, `text-2xl`), the white cards' radius, the absolute corners of the close and camera
+  buttons, the hero's ring. To reach zero: hover / pressed states on containers, a `CornerRadius` on `Panel`, `Label`
+  weights, end-anchored absolute placement.
+- The rest of WV-5a: `TableLayoutPanel`, `GroupBox`, `SettingsRow`, `RadioGroup`, `PictureBox`, the missing
+  children → props adapters; `Panel` absolute `Anchor` (right / bottom) and responsive dock values.
+- `@kubuno/ui` gains `Label`, `LinkLabel`, `Avatar`, `IconGlyph`, `IconButton`: its `types/` are regenerated and the
+  package published at the next core release (user); `@kubuno/views` and `@kubuno/views-compiler` likewise.
+- The desktop repository's `kubuno-web-views-compiler-core` crate (still untracked there) carries the `editor` rule: commit and tag
+  it with the WV-2 work, then rebuild the `.wasm` from the tag.
+- Design-time data for the two controls (WV-10), `HeaderActions` as a view, the desktop's `Popup…` properties on the
+  web buttons.
+
 ## 16. WV-7 as built (2026-10-05) — the language server's web profile
 
 `kubuno-views-ls` (desktop repository, crate `kubuno-desktop-views-ls`, module `src/web/`) answers web views with the
@@ -1163,6 +1265,118 @@ the method; « Nouveau gestionnaire » created `button_click(_sender: Button, _e
 `.ts`. Not done: the caret is not moved to the new method by the HandlerCreationService of HEAD (it looks for a Rust
 `fn`; the web designer's pending change handles TS stubs); creating a missing `.ts` code-behind; completion of a user
 control's own properties (from its `x:Props`).
+
+## 17. WV-5a / WV-5b as built (2026-10-05)
+
+Core `frontend/`, commits on `main` (GitLab): the WV-5a remainder, the pilot's `Class` attributes, the WV-5b elements,
+an element gallery. Every element has its `*.meta.ts` table (`satisfies ElementMeta<ComponentProps<typeof X>>`), the
+desktop's canonical name and members, a gallery page (light / dark, LTR / RTL, 390 / 1280 px) and passes the desktop
+conformance (`build:registry --check`, `kbview-conformance`: **0 failures, 0 unused allowlist entries**); a web-only or
+missing member is allowlisted with its reason (`allowlist.ts`, `allowlist.nav.ts`, `allowlist.lists.ts`).
+
+### 17.1 WV-5a: interaction states, outlines, text, anchoring (runtime `@kubuno/views`)
+
+| What | Members | Web rendering |
+|---|---|---|
+| States and outline of **any** element (`Control`, web-only, proposed for the desktop) | `HoverBackColor`, `PressedBackColor`, `CornerRadius`, `BorderBrush`, `BorderThickness` (1), `Elevation` (`None/Sm/Md/Lg`) | runtime targets `hover-color` / `pressed-color` (a class + `--kb-v-hover-bg`, one unlayered rule injected once by `views/style.ts`, Tailwind's 150 ms colour transition), `corner-radius`, `border-brush`, `border-thickness`, `elevation` (the host's `shadow-sm/md/lg`). `BorderColor` was not usable: it is the `View`'s window border on the desktop (root-only). |
+| Colours | theme tokens (desktop `THEME_TOKENS` names) | `views/style.ts` `tokenColor`: token → the host variable (`Surface1` → `--color-surface-1`, `OnPrimary` → `--color-white`, `Divider` → `--color-border`…; before, a token with a digit resolved to a missing variable); web extension `Token/NN` = NN % opacity (`color-mix(in oklab …)`, Tailwind's `border-primary/40`); `#RRGGBB[AA]` and CSS colour names pass through. |
+| Containers (`Panel`, `Stack`, `UserControl`, `ScrollArea`) | `CornerRadius` (clips the children), web `DividerColor` (`divide-y`, `divide-x` across a row), `ScrollArea` web `ScrollBarStyle="Inset"` | `AccessibleRole="PushButton"` containers fill their line like the `<div>` they replace (`width: 100%`, except along a row or under a non-stretching `CrossAlign`), keep the button's centred text, are drawn at 60 % when disabled; `Stack.Fill` also sets `min-width: 0`. |
+| `Label`, `LinkLabel` | web `FontWeight` (`Default/Regular/Medium/SemiBold/Bold` → `font-normal/medium/semibold/bold`, the host renders `Medium` at 600), web `FontStyle` (`Italic`) | an explicit `TextAlign` Left is now `text-start` (unset inherits, e.g. a button's centring). |
+| `Panel Layout="Absolute"` | `X`, `Y`, `Width`, `Height`, `Anchor`, `Dock` | docked children keep their bands (dock grid, in flow); the others are absolutely placed with the desktop's `panel_child_rects` rules: an anchored edge keeps its distance, both edges stretch (the child fills its wrapper), neither edge recentres. Reference size = the panel's literal `Width` × `Height`, else its **first layout** (the padding box; `DesignWidth/DesignHeight` reach only design-build plans). `X` counts from the inline start: `Right` is the end edge, mirrored in RTL. |
+| Item events through the parent's adapter | `AccordionSection Open` (two-way) / `OnToggled`; `MenuItem CheckOnClick`, `RadioGroup`, `Checked` (two-way) / `OnCheckedChanged`; `ContextMenu ItemsSource` / `OnItemClicked` (key) | `render.tsx` `wireOpenItems`, `renderMenu` (check marks kept per view); an item with `Visible="false"` is left out of the parent's list; an empty children adapter no longer hides an `ItemsSource` list. |
+
+New elements: **`TableLayoutPanel`** (runtime: CSS grid, `ColumnStyles`/`RowStyles` `Absolute N` → px, `Percent N` →
+`minmax(0, Nfr)`, `AutoSize` → `auto`, missing column = `Percent 1`, missing row = `AutoSize`; children in reading order or at
+`TableLayoutPanel.Row/Column`, `RowSpan/ColumnSpan`; aligned in their cell by `Anchor`/`Dock Fill`; `GrowStyle`, `CellBorderStyle
+Single`, `CellSpacing`), **`GroupBox`** (`@ui`: the modules' `Section`; web `Description`), **`SettingsRow`** (`@ui`, new on both
+targets — web first: 240 px label column beside the control, stacked ≤ 640 px; `Label`, `Description`, `Orientation`,
+`ShowDivider`), **`RadioGroup`** (`@ui`, new on both targets: `Option` children or `ItemsSource`, two-way `SelectedValue`,
+`Orientation`; one native radio group — `Radio` gained `name` — so Tab enters once and the arrow keys move the choice;
+`role="radiogroup"`), **`PictureBox`** (`@ui`: `SizeMode` → `object-fit`, `CornerRadius`, `BorderStyle`, `AccessibleName` = alt text).
+Also two desktop members the web lacked: `Badge MaxWidth`, `FloatingWindow ShowClose`.
+
+### 17.2 The pilot's `Class` attributes (§15.5)
+
+35 → **8** (`WaffleMenu` 5 → 1, `AccountMenu` 30 → 7). Replaced: hover backgrounds (`HoverBackColor`), the white cards
+(`Margin` + `CornerRadius="20"` + `BackColor="Surface"`), lines between rows (`DividerColor="Border/50"`), outlines and the
+camera button's shadow (`BorderBrush`, `Elevation`), weights (`FontWeight`), the buttons' paddings (`Padding`), the inset scroll
+bar (`ScrollBarStyle`), the close and camera buttons' corners (`Panel Layout="Absolute"` + `Anchor`), `min-w-0` / `w-full` (now the
+runtime's defaults); the « Plus de modules » look moved into `MenuLink` (the launcher's footer link, inset by the grid's
+`--kb-waffle-inset`). Left, by design or waiting for a decision: off-scale text sizes (`text-base`, `text-2xl`, `text-[10px]`,
+`text-[11px]` — VIEWS-SPEC §7.1: a role, never a size), the hero avatar's ring (outline + shadow), the overlapping preview
+avatars (`-space-x-1`), the chips' / badge's `flex items-center justify-center shrink-0`.
+
+Parity (§7 / §15.4 method, bench `C:\kubuno-build\agent-webelements`: `run-cap.ps1`, `cap.mjs` — cards now found by their
+computed 20 px radius —, `compare.mjs`; before = core `cbe1e58`, after = this lot; 60 states): launcher **0.000–0.001 %** on all
+60; account panel **0.000 %** in `fr` and `en` (all themes, widths, states); accessibility trees **60/60 equal**; keyboard logs
+equal. Intended differences, Arabic only (panel 0.78–1.93 %): the close and camera buttons sit on the end side (logical
+anchoring; the former classes were physical `right-*`), the other accounts' names are start-aligned (the former `text-left`).
+Whole page ≤ 0.594 % LTR (the dashboard's live clock).
+
+### 17.3 WV-5b: navigation and misc (`@ui`, `navigation.meta.ts`)
+
+`Toolbar`/`ToolbarItem` (`role="toolbar"`, one tab stop, arrow keys mirrored in RTL, Home/End; web `ToolTip`, `Enabled` on
+items), `Sidebar`/`SidebarSection`/`SidebarItem` (the shell's `SidebarNavItem` look; `<nav>` of links with `aria-current`, folding
+sections with `aria-expanded`, compact rail, `ItemsSource`, two-way `SelectedItem`, `OnItemInvoked`/`OnSelectionChanged`),
+`StatusBar`/`StatusLabel` (`role="status"`, separators, spring and clickable cells, `OnItemClicked`), `Splitter` (focusable
+`role="separator"` with `aria-valuenow`, arrows ±10 / Shift ±50 px, Home/End, pointer drag, two-way `Distance`), `SearchField` (the
+shell's search pill; Escape clears; web `OnSearch` on Enter), `MaskedField` (WinForms mask characters, `Invalid` →
+`aria-invalid`, values shown LTR in RTL), `PaintBox` (a `<canvas>`; `OnPaint(sender, e: PaintEventArgs { ctx, width, height,
+dpr, data })` in CSS px, repainted on resize, pixel-ratio change and when the web `PaintData` changes), `Popover` alignment
+(`Placement`, `Alignment Center`, `PopupWidth/Height`, `LightDismiss`, `OnOpened`; Escape closes and returns the focus — in
+`AnchoredPopover`, so for every user of it), `Avatar Presence`. Runtime: converter `items-source-icons`, args adapter `paint`.
+`scripts/verify-nav.mjs`: 50/50 (LTR and RTL). Known limit: `SearchField`'s clear-button label is English only (`@ui` has no
+i18next). **Ribbon: not promoted** (next lot) — the copies are office, app, flow `ribbon/Ribbon.tsx` (≈ 980 lines, 13–18
+lines apart) and build (573 lines, an older fork, ≈ 494 lines apart), each tied to `react-i18next`, `WorkspaceTheme`, a local
+`officeThemes` and `types.ts`: move `Ribbon`/`RibbonTabStrip`/types to `@ui` (i18next → `uiT`, theme → tokens), map onto
+RIBBON.md's classes (`Command`, adaptive sizing), ≈ 30 ribbon metas against the desktop ribbon family, publish `@kubuno/ui`,
+migrate the four modules (rebase build first) — several days over five repositories.
+
+### 17.4 WV-5b: lists and trees (`@ui`, `lists.meta.ts`)
+
+| Element | Desktop members | Web only (allowlisted) |
+|---|---|---|
+| `ListBox` | `SelectionMode`, `SelectedIndex` (two-way), `ItemsSource`, `ItemHeight`, `OnSelectionChanged` | `DisplayMember`, `ValueMember`, `SelectedValue` (two-way), `OnSelectedValueChanged`, `OnItemActivate` |
+| `CheckedListBox` | `SelectedIndex`, `CheckOnClick`, `ItemsSource`, `OnSelectionChanged`, `OnCheckedChanged` (`ItemCheckEventArgs`) | `DisplayMember`, `ValueMember`, `ItemHeight` |
+| `ListView` | `SelectedIndex`, `MultiSelect`, `ItemsSource`, `OnSelectionChanged`, `OnItemActivate` | `View` (`Details`/`List`/`LargeIcon`), `ItemHeight` |
+| `TreeView` | `SelectedPath` (two-way, dot-separated indexes `0.2.1`), `MultiSelect`, `ItemsSource` (children in `Items`), `ItemHeight`, `OnSelectionChanged`, `OnItemActivate` | — |
+| `Item` | `Text` | `Value`, `Icon`, `Checked` (two-way), `Expanded`, `OnCheckedChanged` |
+| `DataTable` (alignment) | `SelectedIndex` (two-way, in `ItemsSource` order whatever the sort), `OnSelectionChanged` (default event), `OnRowActivated` (double-click / Enter), `Density`, `EmptyTitle`, `EmptyText` | — |
+
+`@ui` `ListBox.tsx`, `ListView.tsx`, `TreeView.tsx` over `listCore.ts` (keyboard model) and `useVirtualList.ts` (fixed rows,
+32 px by default; without a `Height` a list grows to 320 px, then scrolls): WAI-ARIA listbox / grid / tree keyboard
+(arrows, Home/End, Page Up/Down, type-ahead, Space, Left/Right fold, Enter, Shift/Ctrl), mirrored in RTL,
+`aria-activedescendant`, `aria-selected/checked/expanded/level/setsize/posinset`. `Item` children nest as sub-trees in a
+`TreeView`; in a `ListView` an `Item`'s children fill the next columns, and a child with a header, binding, width or alignment
+is a `Column`. Rows from `ItemsSource` are read by `Text`/`text`/`label` or `DisplayMember`. Runtime: `wireCheckedItems`
+(two-way `Item Checked`), nested item properties read at any depth. `DataTable` `rowKey` is optional (row position).
+Caveat for code-behinds: a getter must return the same value until it changes (a new `[]` on every read loops React, error
+185). `scripts/verify-lists.mjs`: 39/39 (10 000-row virtualisation included). Not done: cell editing, `Sorted`, owner-draw, the
+selection highlight of the DataTable's card layout (< 700 px), `SmallIcon`/`Tile` views, an NVDA pass.
+
+### 17.5 Gallery and checks
+
+`gallery.html` + `vite.gallery.config.ts` (dev and verification only, never in the product build): one view per element under
+`src/gallery/pages/` (`X.kbview` + code-behind `X.ts`, class named after the file), rendered with the host's CSS, i18n and
+icon resolver; `?el=X&theme=light|dark&dir=ltr|rtl`. `scripts/capture-gallery.mjs` captures every page in 8 states (own Chrome
+profile and port, one tab; the viewport grows to the content's height — Chrome's `captureBeyondViewport` shifts RTL pages);
+it also captures the element marked `AccessibleDescription="gallery-hover"` hovered and `gallery-click` opened.
+`scripts/verify-wv5a.mjs` (28 checks), `verify-nav.mjs` (50), `verify-lists.mjs` (39): keyboard, ARIA tree, events,
+two-way bindings, anchoring, in LTR and RTL.
+
+### 17.6 Left
+
+- Desktop side of WV-5a: `SettingsRow` and `RadioGroup` elements in `kubuno-desktop-views` (allowlisted `element-web-only`
+  until then); the web-only members proposed for the desktop (states, `CornerRadius` on containers, `BorderBrush`,
+  `Elevation`, `DividerColor`, `FontWeight`/`FontStyle`, `Panel.Layout`).
+- The plan carries `design_size` in design builds only: a root `Panel Layout="Absolute"` anchors against its first layout in
+  production (the WASM compiler would have to emit it — desktop repository).
+- The other `NOT_YET('WV-5a')` members (TextBoxBase `PasswordChar`/`CharacterCasing`…, `Invalid`, `Card Surface`, `CheckBox
+  ThreeState/AutoCheck`, `RadioButton AutoCheck`, `Slider LargeChange`, `NumericField DecimalPlaces/ThousandsSeparator`,
+  `TextArea MinLines/MaxLines`, `Breadcrumb RootChevron`).
+- Ribbon promotion to `@ui` (next lot: see 16.3).
+- The runtime alone is now 16.8 KB gzip (was 12.7 KB at the pilot, budget 15 KB, §14): the anchoring, table and menu logic.
+- Publishing `@kubuno/ui` 0.1.14 and `@kubuno/views` 0.1.1 (user).
 
 ## 18. WV-9b / WV-10 as built (2026-10-05) — the web views in the Visual Studio designer
 
