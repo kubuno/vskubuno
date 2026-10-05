@@ -1253,3 +1253,131 @@ is the desktop protocol.
 - Found, not fixed: `generatedPaths` (`project.ts`) writes generated files outside `.kubuno/views` for a view outside
   the project root; the launcher's and account panel's chrome are hard-coded light (`#E9EEF6` in `WaffleButton` /
   `AccountButton`), unreadable in the dark theme — the designer shows it faithfully.
+
+## 19. WV-6 as built (2026-10-05) — `.kbres` resources on the web
+
+### 19.1 What was built (core `frontend/packages/views-compiler`, `frontend/src/views`)
+
+- **`.kbres` → i18next bundles in the Vite plugin.** `import strings from './strings.kbres'` loads the neutral file and
+  its satellites (`strings.fr.kbres`, …) through the desktop's own reader/writer (`kubuno-resources-model`, compiled
+  into the compiler's WASM: ops `kbres_parse` / `kbres_write`, errors with line and column) and returns
+  `{ en: {…}, fr: {…} }`, ready for `registerModuleTranslations`. The neutral file names its language
+  (`Culture="en"`, else the plugin's `neutralCulture` option); dotted names nest (`a.b.c`), a dot inside a segment is
+  escaped (`errors\.token\.invalid`, needed by the setup dictionary). A satellite added or edited reloads its set
+  (HMR). `client.d.ts` declares `*.kbres`.
+- **`{Res}` with arguments and plurals, both targets.** The plan's `res` carries `args: [{n, b?, v?}]` (a bound
+  argument is an ordinary one-way binding); the runtime's resolver receives them
+  (`setResourceResolver((key, set, args) => …)`), `interpolationOptions(args)` turns them into i18next options (each
+  name as written and with a lower-case first letter, `Count` → `count` as a number). Plural forms follow i18next
+  (`key_zero` for 0, then `key_<CLDR category>`, then `key`) — the desktop's `plural::candidates` does the same, so
+  one `.kbres` gives the same string on both targets. `View.t(key, set, args)` takes the same arguments; a view
+  re-reads its strings when a bound argument changes and when a bundle is added.
+- **Converter `kbres-convert`** (`src/i18n-convert.ts`, `bin/kbres-convert.js`): JSON locale folders and TS modules
+  calling `registerModuleTranslations` (read by a static evaluator: literals, constants, imports — anything else is
+  an error with its position) → one `.kbres` set; `--verify` reads it back and compares every key and value.
+- **The core's navigation labels are converted** (`src/core/i18n/nav.kbres` + 12 satellites; `nav.ts` imports the set).
+
+### 19.2 Verified
+
+- Round trip, 13 languages, every key and value identical (key order included): `core.json` (≈ 50 000 strings),
+  the setup dictionary (dotted keys), the navigation set; plural forms, `{{placeholders}}`, `<0>Trans</0>` tags and
+  leading/trailing spaces kept; XML-hostile values (`<`, `&`, quotes, newlines) round-trip
+  (`test/i18n-convert.test.ts`).
+- Runtime: plural choice for `fr` (0 and 1 singular), `ar` (zero, one, two, few, many, other), `en`
+  (`runtime.test.tsx`).
+- RTL capture: the gallery page `Resources` (`src/gallery/pages/Resources.kbview` + `.kbres` in en / fr / ar) shows
+  the six Arabic plural forms right-to-left — `C:\kubuno-build\agent-webmig\captures\wv6\Resources-{light,dark}-rtl-{390,1280}.png`.
+
+### 19.3 The two designer defects of §18.4, fixed
+
+- Panel chrome: `WaffleButton` / `AccountButton` read the theme token `PanelBackground` (`--color-panel-bg`, defaulting
+  to `--color-search-bg`; Numix keeps `#e9eef6`) through `shell/menus/panelChrome.ts`; the `*.design.json` frames and
+  the design surface use the token too; a test checks no literal colour is left and the text contrast is ≥ 4.5:1 in
+  every theme. Desktop: `PanelBackground` theme field and token; designer: `ThemeTokens.cs` + fixture.
+- `generatedPaths`: a view outside the root goes under `.kubuno/views/_external/<absolute path segments>` (drive colon
+  removed, `..` → `_up`), the same rule as the language server; stale generated files of deleted views are removed.
+  A project opened through a link (`C:\kubuno-build` → `E:\…` junction: Vite hands out real paths) keeps its project
+  paths — found while checking the migrated screens in the designer (the views' imports of project controls pointed
+  to `../../../…`).
+
+## 20. WV-11 as built (measured, 2026-10-05) — `@kubuno/views-migrate`
+
+### 20.1 What it does
+
+`kbview-migrate [--project dir] [--write | --out dir] [--report file] [--component Name] files…` (ts-morph over the
+project's `tsconfig.app.json`, the registries of `kubuno.views.json`, the English bundle for `t()` keys). One TSX screen
+→ `X.kbview` + `X.ts` (or `X.tsx` when React code stays in the class) + `X.parts.tsx`, and a per-file report
+(converted / partial with reasons / skipped):
+
+- §6.2 conversions: `@ui` components by reverse registry lookup; HTML kept as `Panel`/`Stack`/`Label` with `HtmlTag`
+  (headings, lists, forms, `<label>`); Tailwind classes turned into properties only where the result is
+  pixel-identical (roles, weights, theme colours, flex rows/columns with exact gaps), the rest kept in `Class`;
+  `t()` → `{Res}` (arguments, `count`); state → `@bind accessor`; hooks split into `useStores()` (reading nothing of
+  the class) and `useHooks()`, their results published as fields with `View.publish` (shallow comparison — a hook
+  returning a fresh equal object does not loop); derived constants → getters (`View.memo` when they build objects,
+  deps = what the body **and its guard** read); inline handlers → methods; setter calls → assignments; two-way
+  `value`/`onChange` → `Mode=TwoWay`; `cond && <X/>` and early returns → `Visible` with guarded getters; `.map` →
+  `Repeater` over memoized rows; `<button>` → `Panel AccessibleRole="PushButton" AutoSize`; `title` → `ToolTip`;
+  `<Link>` → `LinkLabel`; Lucide icons → `Icon Name`; the file's other statements kept when used, top-level side
+  effects (`Registry.register(…)`) always, after the class; importers switched to the default export (batch pre-pass).
+- ReactHost extraction: a component that is no element (a local helper, another screen's component) without children
+  → `<ReactHost Component Props>` on that very component (local ones exported from `X.parts.tsx`); anything else that
+  does not convert (children, spreads, an object value for a text property, a nested list, an unmapped prop) → a part
+  function in `X.parts.tsx` with typed props (`X['member']`), a TODO comment in the view. A part shown under a
+  condition has its component getter guarded like its props.
+- Runtime support added for it: `HtmlTag`, `OnSubmit`, `AccessibleModal`, `AccessibleHidden`, `InputType`,
+  `AutoComplete`, `ButtonType`, `AutoSize`, `InheritFontSize`, `ReactHost`, `ToolTip` as the element's `title`,
+  `View.memo`, `View.publish`, `component()` typed.
+
+### 20.2 Measured on 10 core screens (before any bulk use)
+
+Settings page + six tabs (profile, notifications, themes, clients, security, sessions), appearance dialog,
+administration home and « coming soon »:
+
+| Measure | Result |
+|---|---|
+| Status | 1 converted, 9 partial, 0 skipped |
+| Elements mapped to `.kbview` elements | 112 / 158 (71 %) — 40 parts left in React, 80 `Class` attributes |
+| `npm run typecheck` (`tsc -b`, generated view types included) on the output | 0 errors, 10 / 10 |
+| Renders (headless Chrome, own profile) | 10 / 10 |
+| §7 parity, unedited codemod output (≤ 0.5 % root pixels, same AX tree, same text, same Tab order; light/dark × fr/en/ar × 1440/390 = 12 captures each) | **10 / 10 PASS**, max root diff 0.000 %, AX / text / keyboard identical in all 120 captures |
+| Opens in the Visual Studio designer (project dev server) | 10 / 10 |
+
+Per file (elements mapped / total, parts): SettingsPage 5/15, 10 · SecurityTab 9/11, 1 · ThemesTab 9/11, 1 ·
+ClientsTab 25/30, 4 · NotificationsTab 26/31, 4 · SessionsTab 6/11, 4 · ProfileTab 4/8, 4 · AppearanceDialog 17/21, 3
+· ComingSoon 6/6, 0 · HomeSection 5/14, 9. Partial reasons: another screen's or a local component (TwoFactorSection,
+SessionList, DeviceCard, HomeCard, AlertsCard, GettingStartedCard, ThemePreview, ModeMock, NotifCheck, StoreBadge,
+`Section`, the settings tabs, `Slot`), `Dropdown` `width` / `height` / `options` objects, spread props, nested lists, an
+`EmptyState` action object. No screen was hand-edited after the codemod.
+
+Getting there took six measured rounds (7/10 → 5/10 → 10/10, regressions caught, 10/10). What parity caught that
+type-checking did not: a native button's width (→ `AutoSize`), a tooltip wrapper changing row sizing (→ `ToolTip` as
+`title`), hooks re-rendering without end (→ `View.publish`), stale first-render values, a class used as a component by
+an importer, a dropped top-level registration (the « Account and security » notification group vanished). What only
+the designer caught: a memoized part's props computed while its guard failed (the sessions tab's error state).
+
+### 20.3 Limits
+
+- Pixel parity is only as good as the bench's states: the error and empty branches of screens are not captured (the
+  designer caught one); captures run against a dev core with fixtures for live counts.
+- 40 parts remain React; a local helper component becomes a `.kbcontrol` only by hand (not automated).
+- `Class` attributes stay where no property is exact (spacing utilities, grids, responsive variants).
+
+## 21. Core migration status (2026-10-05)
+
+| Screen | View | Parity (§7) | VS designer | Commit (core) |
+|---|---|---|---|---|
+| `shell/menus/WaffleMenu`, `AccountMenu` | `.kbcontrol` (§15) | §15.4 | §18.3 | earlier |
+| `settings/sections/SecurityTab`, `ClientsTab`, `NotificationsTab` | `.kbview` + `.ts` (+ parts) | PASS 12/12 each | opens | `72a7791` |
+| `settings/sections/SessionsTab`, `ProfileTab`, `ThemesTab` | `.kbview` + `.ts` / `.tsx` (+ parts) | PASS 12/12 each | opens | `a7d78b4` |
+| `settings/SettingsPage`, `shell/AppearanceDialog` | `.kbview` + `.ts` (+ parts) | PASS 12/12 each | opens | `e778f8a` |
+| `admin/sections/HomeSection`, `ComingSoon` | `.kbview` + `.ts` (+ parts) | PASS 12/12 each | opens | `0ed2b2e` |
+
+Bench: `C:\kubuno-build\agent-webmig\bench` (`run.ps1`, `compare.mjs`; report
+`captures\diff-before-after4\parity.json`). Designer captures (hive `KubunoWebMig`, project dev server):
+`C:\kubuno-build\agent-webmig\vs\out\vs-*.png`, `security-6.png`. Known designer limit: the first open of a view
+right after the dev server starts can miss its code-behind while Vite optimises dependencies (« code-behind not
+loaded »); reopening the view loads it.
+
+Next: the parts (NotifCheck, DeviceCard, HomeCard… as `.kbcontrol`), then the remaining settings and admin screens
+with the same bench.
