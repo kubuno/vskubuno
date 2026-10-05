@@ -224,6 +224,14 @@
     "name": "TitleBarBackground"
   },
   {
+    "dark": "#303134",
+    "doc": "The ground of the header's panels (the apps launcher, the account panel).",
+    "doc_fr": "Fond des panneaux de l'en-tête (lanceur d'applications, panneau du compte).",
+    "high_contrast": "Window",
+    "light": "#E9EEF6",
+    "name": "PanelBackground"
+  },
+  {
     "dark": "#3C4043F2",
     "doc": "The background of tooltips.",
     "doc_fr": "Fond des info-bulles.",

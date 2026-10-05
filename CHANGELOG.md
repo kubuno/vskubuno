@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **`PanelBackground` theme colour** in the colour editor: the ground of the header's panels (the apps launcher, the
+  account panel), `#E9EEF6` light / `#303134` dark, as on the web (`--color-panel-bg`) and the desktop runtime. The
+  panels' frame no longer carries a fixed colour, so it follows the dark theme in the designer too.
+
 - **IntelliSense for web views** (`docs/WEB-VIEWS.md` WV-7, `docs/INTELLISENSE.md`). A `.kbview` / `.kbcontrol` of a
   web project gets the views language server's web profile: element, attribute and value completion from the web
   registry, diagnostics of the web compiler (module isolation included), QuickInfo, Go To Definition into the
