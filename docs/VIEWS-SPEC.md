@@ -328,7 +328,18 @@ DirectWrite format in `TextFormats`; the web sizes in `theme.css`.
 | `Body` — labels, fields, menus, tabs (default) | `--kb-text-body` (= host `text-sm`) | 13.5 px | 13.5 (`BODY`) | `body` | 20 |
 | `Heading` — section headers, card titles | `--kb-text-heading` | 15.5 px | 15.5 (`HEADING`) | `heading` | 24 |
 | `Title` — object name heading a panel | `--kb-text-title` | 21.5 px | 21.5 (`TITLE`) | `title` | 30 |
+| `Badge` — initials and counts in small avatar and count pills | `--kb-text-badge` | 10 px | 10 (`BADGE`) | `role_badge` | 16 |
+| `Caption` — small pills and chips | `--kb-text-caption` | 11 px | 11 (`CAPTION`) | `role_caption` | 16 |
+| `Subtitle` — a group title one step above a heading | `--kb-text-subtitle` (= Tailwind `text-base`, line 24) | 16 px | 16 (`SUBTITLE`) | `role_subtitle` | 24 |
+| `Display` — a large greeting or display line | `--kb-text-display` (= Tailwind `text-2xl`, line 32) | 24 px | 24 (`DISPLAY`) | `role_display` | 32 |
 | page title (not a Label role) | `--kb-text-page` | 22.5 px (27.5 in `.kb-admin`) | 22.5 (`PAGE`; `PAGE_ADMIN` 27.5) | `page` | — |
+
+The last four roles (2026-10-05) give a name to the free sizes the web screens used before they were views
+(`text-[10px]`, `text-[11px]`, `text-base`, `text-2xl`): a view names a role, never a size (`Class="text-…"` is not
+needed for text size any more). On the web, `Badge` and `Caption` set the size only (the line stays the running
+text's, as the literal sizes did); `Subtitle` and `Display` are Tailwind's pairs. The registry lists them after the
+existing values (`Label` / `LinkLabel` `Role`: `Micro`, `Meta`, `Body`, `Heading`, `Title`, [desktop: `Page`,
+`PageAdmin`,] `Badge`, `Caption`, `Subtitle`, `Display`).
 
 Until 2026-10 the desktop followed the older web scale (11 / 12 / 16 / 22, body at the OS form size 12); it is now
 aligned role by role. A few web components set a literal size outside the scale (`@ui/Tooltip` 12 px,
@@ -536,7 +547,7 @@ own mapping). **Args adapters** (`args`): `none`, `value`, `target-value`, `targ
 ### 10.6 `typography` (web)
 
 `faces: [{family, style, weight, file, license, license_file}]`, `families: {sans: [...], mono: [...]}`, `roles:
-{Micro|Meta|Body|Heading|Title: {token, size}}`, `page_title: {token, size, admin_size}`, `weights: {body, medium,
+{Micro|Meta|Body|Heading|Title|Badge|Caption|Subtitle|Display: {token, size}}`, `page_title: {token, size, admin_size}`, `weights: {body, medium,
 button}` (§7).
 
 ### 10.7 Authoring (web)
@@ -601,7 +612,7 @@ plus `design_defaults`/`web`.
 
 Found while freezing the spec against the real desktop registry:
 
-- `Label`'s text style property is **`Role`** (`Micro`, `Meta`, `Body`, `Heading`, `Title`), not `TextStyle`
+- `Label`'s text style property is **`Role`** (`Micro`, `Meta`, `Body`, `Heading`, `Title`, `Badge`, `Caption`, `Subtitle`, `Display`), not `TextStyle`
   (`Body|Caption|Title|Heading|Overline`).
 - `TableLayoutPanel` uses **`ColumnCount`/`RowCount`/`ColumnStyles`/`RowStyles`**, not `Columns`; responsive form:
   `ColumnCount.Compact="1"`.
