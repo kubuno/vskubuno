@@ -117,6 +117,27 @@ Studio 2022 has no unified settings: the same pages stay classic property grids.
 | Rename a handler everywhere | yes | yes | kubuno-views-ls + Kubuno (EVT-5) |
 | Colorization | XAML colors | XML colors for elements/attributes/values, handler names as methods, `{Binding Path}` as a XAML markup extension | Kubuno TextMate theme (`kbview.tmLanguage.tmTheme`) + grammar rules. Fixed 2026-10-02 (no `.kbview` had any color): the vendored XML grammar had two begin rules without an end (in its comments), which makes Visual Studio's TextMate engine drop the whole grammar; the theme named classification types that are not registered (the XML editor's "XML Name"..., the XAML editor's "XAML Markup Extension ..."); and the handler rule never won against the generic attribute rule. The theme now uses `markup node`, `markup attribute`, `markup attribute value`, `comment`, `method name` (handlers), `type` (`{Binding`, `{Res`) and `identifier`; `{Res key}` is colored like `{Binding}`. Pinned by `KbviewColorizationTests`. |
 
+## Web views (`.kbview` / `.kbcontrol` of a web project) and the TypeScript code-behind
+
+One language server, two profiles (`WEB-VIEWS.md` section 5, WV-7). A view is a web view when, walking up from its
+folder, the first marker is a `kubuno.views.json` (its `target`, web without one), a `package.json` using
+`@kubuno/views-compiler` or a `.esproj`; a `Cargo.toml` naming `kubuno-desktop` is desktop, and nothing found is
+desktop. kubuno-views-ls decides per request (`crate::web`); Visual Studio applies the same rule
+(`Kubuno.Views.Logic.ViewTargets`, cached by `ViewTargetCache`) to keep each target's editor parts on its own views.
+The content type is the same `kbview` (same TextMate colors, same language client).
+
+| Feature | `.kbview` web view | How |
+|---|---|---|
+| Element, attribute and value completion (`<`, space, `="`) | the web registry: `@kubuno/ui`'s `kbview-registry.web.json` + the project registries of `kubuno.views.json` + its `.kbcontrol` user controls, re-read when a file changes; items only under their parent, children models, properties and events available on the web only, enum values with their React value, Lucide icons, references to `x:Name`s | kubuno-views-ls (web profile) |
+| Handler names in `On…="…"` | the code-behind class's methods whose parameters fit the event (sender: the element's handle type or `ElementHandle`, args: the event's `args_chain`), headed by « <Nouveau gestionnaire d'événements> » (inserts `avatar_click(_sender: Avatar, _e: MouseEventArgs): void { … }` before the class's closing brace and adds the missing types to the `@kubuno/views` import; `_` prefixes under `noUnusedParameters`) | Kubuno.Web `WebKbviewCodeBehindCompletion` / `WebKbviewNewHandlerCommitManager` (`kubuno/compatibleHandlers`, `kubuno/createHandler`, the `.ts` editors sent as `openFiles`) |
+| `{Binding ` path completion | the class's `@bind accessor` fields, fields and getters | Kubuno.Web (`kubuno/bindingPaths`) |
+| `{Res ` key completion | the project's i18n bundles (`…/locales/<lang>/<namespace>.json`, dotted keys, other namespaces with `Source=`) and `.kbres` files | kubuno-views-ls |
+| Diagnostics | the web compiler's (`kubuno-web-views-compiler-core`, the same as `@kubuno/views-compiler`), module isolation at the element and in the code-behind's imports, missing / incompatible handler, unknown binding member, unknown resource, `Class`, colour literals, positive `TabIndex`, `X`/`Y`/`Anchor` outside an absolute container, `IconButton` without `AccessibleName`, `Query` without `Key`, undeclared `x:`/`d:` | kubuno-views-ls; type errors stay with `kbview-tsc` |
+| QuickInfo | element / property / event docs (French with `KUBUNO_UI_LANG=fr`), a handler's TypeScript signature, a binding member's declaration, a resource's translations | kubuno-views-ls |
+| F12 | handler → TS method, `{Binding a.b}` → member `a` (else the `x:Name`), `x:Props` → its interface, `{Res}` → the key in the locale JSON, a project control / user control → its `defineControl` export / class | kubuno-views-ls (the Rust fallback steps aside) |
+| Rename / clear a handler | F2 on `OnClick="…"`, `kubuno/renameHandler` (attribute, method name, `this.x` references), `kubuno/removeHandler` (attribute, and the method when it is an untouched stub) | kubuno-views-ls |
+| Generated `.d.ts` | `.kubuno/views/<path>.kbview.d.ts`, `.check.ts`, `.check.json`, rewritten 400 ms after the last edit (only when they change), so `this.<x:Name>` completes in the `.ts` without a dev server | kubuno-views-ls |
+
 ## Diagnostics and troubleshooting
 
 - The "Kubuno" Output pane logs the handshake ("completion snippets on, semantic tokens mapped onto N C#

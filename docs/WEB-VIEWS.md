@@ -1106,3 +1106,60 @@ measured (no pilot screen yet); the `module.toml [frontend] views_abi` install c
 `SHARED` externals when they adopt views; `x:Props` needs a code-behind; user-control attributes pass through
 untyped until WV-7 reads their code-behind; the core-level runtime tests run on Linux only (the host's Vite
 config needs native Tailwind bindings).
+
+## 16. WV-7 as built (2026-10-05) — the language server's web profile
+
+`kubuno-views-ls` (desktop repository, crate `kubuno-desktop-views-ls`, module `src/web/`) answers web views with the
+same LSP methods and payloads as desktop views; nothing changed for desktop views (their 166 + 1 + 18 tests unchanged).
+
+- **Profile detection** (`web/mod.rs`, mirrored in Visual Studio by `Kubuno.Views.Logic.ViewTargets`): walking up from the
+  view's folder, the first marker decides — `kubuno.views.json` (its `target`; without one it is the web compiler's
+  configuration, so web), a `package.json` depending on `@kubuno/views-compiler` or a `*.esproj` → web, a `Cargo.toml`
+  naming `kubuno-desktop` → desktop; nothing → desktop. The web project root is the marker's folder (`core/frontend`).
+- **Registry** (`web/project.rs`): read from JSON exactly as `ViewProject` does — `hostRegistry` of `kubuno.views.json`
+  (else `node_modules/@kubuno/ui/kbview-registry.web.json` upwards), the project registries with their `./x` modules
+  rewritten to `/dir/x`, and one user control per `.kbcontrol` of the `sources`. The files are re-read when they change
+  (stamps, checked every 1.5 s): elements added by WV-5a/5b appear without restarting.
+- **Diagnostics**: `kubuno_web_views_compiler_core::compile` itself (same codes and messages as the Vite plugin and
+  `kbview-tsc`), plus module isolation at each element and in the code-behind's imports, handlers, binding members,
+  `{Res}` keys and the editor rules of §5 (`Class`, colour literals, positive `TabIndex`, `X`/`Y`/`Anchor`,
+  `IconButton` without `AccessibleName`, `Query` without `Key`) and the `xmlns` information (`docs/INTELLISENSE.md`).
+- **Code-behind** (`web/ts.rs`, `oxc_parser` 0.153): imports, classes (the one extending `ViewBase`), members (methods,
+  `@bind accessor` fields, fields, getters, their parameter types), exported names (`defineControl`), interfaces. Spans only:
+  every TS edit is an insertion or an identifier replacement.
+- **`.d.ts`**: the compiler's `dts` / `check` / span map written to `.kubuno/views/<path>.kbview.{d.ts,check.ts,check.json}`
+  (byte-identical to `writeGenerated`), on open and 400 ms after the last edit, only when the content changed.
+
+**Handler protocol for the web designer (WV-9b / WV-10)** — the desktop's methods, called with a web view's URI:
+
+| Method | Params | Result |
+|---|---|---|
+| `kubuno/compatibleHandlers` | `{ uri, elementId, event, openFiles? }` (`event` = `OnClick`…, `elementId` = stable id, `""` = root) | `{ handlers: string[] }` — the class's methods whose parameters fit, in declaration order |
+| `kubuno/createHandler` | `{ uri, elementId, event, suggestedName?, openFiles? }` | `{ handlerName, location?, edit? }` — `location` (no edit) when the event is already wired; else `edit` (`WorkspaceEdit.changes`: the attribute in the view, the method + missing `@kubuno/views` type imports in the `.ts`); a `suggestedName` naming an existing method only binds it |
+| `kubuno/renameHandler` | `{ uri, old?, new, position?, rustRenamed?, openFiles? }` (`uri` may be the `.ts`, with `position` on the method; `rustRenamed: true` = the TS side was already renamed) | `{ edit?, oldName?, reason? }` |
+| `kubuno/removeHandler` | `{ uri, elementId, event, openFiles? }` | `{ edit?, handlerName?, removedStub }` |
+| `kubuno/bindingPaths` | `{ uri, openFiles? }` | `{ paths: string[] }` |
+| `kubuno/registry` / `kubuno/registryVersion` | `{ uri }` (without `uri`: the desktop registry, as before) | the web registry in the `kubuno/registry` shape (`schema`, `target: "web"`, `version`, `components` with their `web` block) / `{ version }` |
+
+`openFiles` maps `file://` URIs of the open `.ts` / `.tsx` buffers to their text, so offsets match unsaved editors. The
+default name is `<x:Name>_<event>` in snake_case (the element's name without `x:Name`, the file stem for the root's own
+events: `account_menu_load`); the stub is `name(sender: Handle, e: Args): void { // TODO: implement name }` with `_sender`
+/ `_e` when the project's tsconfig sets `noUnusedParameters`.
+
+**Visual Studio**: the same `kbview` content type and language client; `Kubuno.Web/LanguageService` adds the TypeScript
+cross-language completion (`WebKbviewCodeBehindCompletion`, `WebKbviewNewHandlerCommitManager`); the desktop's Rust
+completion and Rust Go To Definition fallback step aside for web views. `KbviewValueContext` moved to
+`Kubuno.Views.Logic.IntelliSense` (shared).
+
+**Verified**: LS tests 178 + 1 + 18 + 4 (new: profile detection, oxc reader, import/method insertion, naming, stubs,
+JSON resources, project registries, and four round trips through the server — a fixture project, the desktop profile
+unchanged, and the core's pilot `AccountMenu` / `WaffleMenu` copied with their registries: no error, completion,
+`{Res}` keys, compatible handlers, F12 to the exact TS line, `createHandler` inserting `avatar_click(_sender: Avatar, _e:
+MouseEventArgs)` and `, type Avatar` only); `clippy -D warnings`; vskubuno tests (Views 458, Desktop 232 against this
+server, Architecture 9, Web 66). Live in Visual Studio 2026 (hive `KubunoWebLs`, VSIX built from HEAD + this lot) on a
+copy of the core's `AccountMenu.kbcontrol`: completion on `<`, space, `Variant="`, `OnClick="` (the class's methods and «
+Nouveau gestionnaire d'événements »), `{Binding `; warnings and errors in the editor; F12 from `camera_button_click` to
+the method; « Nouveau gestionnaire » created `button_click(_sender: Button, _e: MouseEventArgs)` and `type Button` in the
+`.ts`. Not done: the caret is not moved to the new method by the HandlerCreationService of HEAD (it looks for a Rust
+`fn`; the web designer's pending change handles TS stubs); creating a missing `.ts` code-behind; completion of a user
+control's own properties (from its `x:Props`).

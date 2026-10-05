@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Kubuno.Desktop.Logic.IntelliSense;
+using Kubuno.Views.Logic.IntelliSense;
 using Kubuno.Views.Designer;
 using Kubuno.Views.Designer.Handlers.Infrastructure;
 using Kubuno.Shared.Logging;
@@ -77,7 +77,8 @@ namespace Kubuno.Desktop.LanguageService.IntelliSense
 
             var context = ContextAt(triggerLocation);
             RustCompletionTrace.WriteLine($"Views init reason={trigger.Reason} context={context?.Kind.ToString() ?? "none"} ready={KubunoViewsLanguageClient.Current?.ReadyRpc != null}");
-            if (context is null || KubunoViewsLanguageClient.Current?.ReadyRpc is null)
+            // A view of a web project has a TypeScript code-behind: the web layer's completion answers there (WEB-VIEWS.md WV-7).
+            if (context is null || KubunoViewsLanguageClient.Current?.ReadyRpc is null || IsWebView(triggerLocation.Snapshot.TextBuffer))
             {
                 return CompletionStartData.DoesNotParticipateInCompletion;
             }
@@ -189,6 +190,9 @@ namespace Kubuno.Desktop.LanguageService.IntelliSense
             var context = KbviewValueContext.At(text, point.Position - line.Start.Position);
             return context?.Shift(line.Start.Position);
         }
+
+        private bool IsWebView(ITextBuffer buffer) =>
+            _provider.TextDocumentFactory.TryGetTextDocument(buffer, out var document) && ViewTargetCache.IsWeb(document.FilePath);
 
         private static IReadOnlyList<string> Strings(JToken? array) =>
             array is JArray values ? values.Select(v => (string?)v).Where(v => !string.IsNullOrEmpty(v)).Select(v => v!).ToList() : (IReadOnlyList<string>)Array.Empty<string>();

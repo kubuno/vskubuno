@@ -1,4 +1,5 @@
 using Kubuno.Desktop.Logic.IntelliSense;
+using Kubuno.Views.Logic.IntelliSense;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Kubuno.Desktop.Tests.IntelliSense

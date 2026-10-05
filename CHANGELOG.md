@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **IntelliSense for web views** (`docs/WEB-VIEWS.md` WV-7, `docs/INTELLISENSE.md`). A `.kbview` / `.kbcontrol` of a
+  web project gets the views language server's web profile: element, attribute and value completion from the web
+  registry, diagnostics of the web compiler (module isolation included), QuickInfo, Go To Definition into the
+  TypeScript code-behind. In `On…="` the list offers the class's compatible methods headed by « <Nouveau gestionnaire
+  d'événements> », which inserts the method and its type imports into the `.ts`; `{Binding ` lists the class's
+  bindable members (`@bind accessor` fields, fields, getters). The Rust completions and Go To Definition into Rust
+  stay out of web views.
+
 ### Changed
 
 - **Title bar heights in the designer** (`docs/EVENTS.md` section 20). The Properties window lists the view's new

@@ -52,6 +52,12 @@ namespace Kubuno.Desktop.LanguageService.IntelliSense
                 }
 
                 var path = new Uri(Uri.UnescapeDataString(uri)).LocalPath;
+                // A web view's definitions are TypeScript ones, answered by kubuno-views-ls itself (WEB-VIEWS.md WV-7).
+                if (ViewTargetCache.IsWeb(path))
+                {
+                    return null;
+                }
+
                 var folder = Path.GetDirectoryName(path) ?? string.Empty;
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var fileHost = new VsWorkspaceFileHost(ServiceProvider.GlobalProvider);
