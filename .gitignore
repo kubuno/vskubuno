@@ -24,3 +24,6 @@ Cargo.lock
 # dependency closure), not source — build it with the command in README.md's "Building Rust
 # with MSBuild (.rsproj)" section before using the SDK from a path/local feed.
 sdk/Kubuno.Rust.Sdk/tasks/
+
+# Local assistant instructions (not published)
+CLAUDE.md
