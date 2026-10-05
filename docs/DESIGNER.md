@@ -2058,3 +2058,31 @@ Described in [SHELL-CONTROLS.md](SHELL-CONTROLS.md) §5. On the surface (`kubuno
   `DesignerMenuModel.BuildTitleBarTasks` (`TitleBarDesignerTasks.Verbs`: « Ajouter un bouton à la barre de titre » ×
   Left/Center/Right, one switch per standard item, verb kinds `AddTitleBarButton` / `ToggleHeaderItem`) and shows it as
   the flat dynamic list of `RibbonAddContextMenu` (no `.vsct` change). Protocol additions: none.
+
+## 21. Another target's surface: the web views (as built 2026-10-05)
+
+The designer of this note is shared by the desktop and the web (`docs/WEB-VIEWS.md` §4.1, WV-8); WV-9b plugs the web's
+WebView2 surface into it (as built: `docs/WEB-VIEWS.md` §18). What the shared layer (`Kubuno.Views`) gained for it, all
+target-neutral:
+
+- **A surface per document.** `DesignSurfaceHostFactoryHost.For(document)` asks the target factories added with
+  `AddTargetFactory` (`ITargetDesignSurfaceHostFactory.Handles(document)`) before the default `Current` (the desktop's
+  Rust surface). The web layer adds `WebDesignSurfaceHostFactory`, which claims the views of web projects (the profile
+  rule of `kubuno-views-ls`: walking up, `kubuno.views.json` unless `"target": "desktop"`, a `package.json` depending
+  on `@kubuno/views-compiler`, or a `*.esproj`; a `Cargo.toml` naming `kubuno-desktop` first = desktop).
+- **Language answers from the host** (`IDesignSurfaceLanguageServices`, optional on a host): the registry of the
+  document's target (`FetchRegistryAsync`; the coordinator's three `kubuno/registry` calls and the registry poll go
+  through it first), the creation of event handlers (`HandlerClient`, used by the double-click and the ⚡ Events tab
+  instead of `kubuno/createHandler`) and the code-behind file (`CodeBehindPath`, where an existing handler is shown).
+  Each returns null to fall back on the language server - the step-aside path for when `kubuno-views-ls` serves the
+  target itself.
+- **The runtime bar's own text** (`IDesignSurfaceRuntimeText`, optional on an `IDesignSurfaceRuntimeSource`): the web
+  says « dev server not running / starting / failed » with its own actions instead of the desktop's « Générer ».
+- **The Toolbox follows the active designer's target.** `ComponentRegistry.Target` (`null` = desktop, `"web"`): when
+  the installed items come from another target, `NativeToolboxInstaller.EnsureInstalled` uninstalls them first; the
+  pane calls it again when its design surface becomes the active one (`DesignSurfaceManager.ActiveDesignSurfaceChanged`
+  → `OnDesignerActivated`). A web Toolbox item also carries `CF_UNICODETEXT` = its markup (`<Button />`): Chromium
+  only sees a drag that carries text (`docs/WEB-VIEWS.md` §11), and a drop into the XML pane inserts the element.
+- **TypeScript code-behinds.** `ViewFiles.CodeBehindOf` / `ViewOf` know `.rs`, `.ts`, `.tsx` and `X.kbcontrol.ts`
+  (F7 / Shift+F7, `.d.ts` excluded); the `openFiles` of handler requests include open `.ts` / `.tsx` editors; the caret
+  goes to a TypeScript stub (`name(`) as it goes to a Rust `fn name(`.

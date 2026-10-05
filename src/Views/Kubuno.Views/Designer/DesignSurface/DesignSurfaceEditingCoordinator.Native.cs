@@ -92,6 +92,19 @@ namespace Kubuno.Views.Designer.DesignSurface
         // ---- Properties window ----
 
         /// <summary>Called once selection sync exists (the registry and the language server are live).</summary>
+        /// <summary>
+        /// This pane became Visual Studio's active designer: the Toolbox must list its target's elements (another open
+        /// designer may be of the other target - a web view next to a desktop one).
+        /// </summary>
+        internal void OnDesignerActivated()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (!_disposed && _registry is { Components.Count: > 0 } registry)
+            {
+                NativeToolboxInstaller.EnsureInstalled(registry);
+            }
+        }
+
         private void AttachNativeWindows(SelectionSyncService selectionSync, ComponentRegistry registry)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -449,7 +462,7 @@ namespace Kubuno.Views.Designer.DesignSurface
             // the buffer, and so must the surface when it later selects the element.
             FlushPendingPush();
             var documentHost = new PaneHandlerDocumentHost(uri, new BufferEditApplier(_buffer), new VsHandlerDocumentHost(new ServiceProvider(_oleServiceProvider)));
-            var service = new HandlerCreationService(new JsonRpcKubunoViewsLanguageServerClient(rpc), documentHost);
+            var service = new HandlerCreationService((_host as IDesignSurfaceLanguageServices)?.HandlerClient ?? new JsonRpcKubunoViewsLanguageServerClient(rpc), documentHost);
             try
             {
                 var result = await service.CreateAsync(new CreateHandlerRequest(uri, elementId, eventName, suggestedName, OpenCodeBehindTexts(uri)), CancellationToken.None);
@@ -459,7 +472,7 @@ namespace Kubuno.Views.Designer.DesignSurface
                     // An already-bound event whose handler the server's `fn` search did not find - e.g. a
                     // closure registered directly in the `handlers!` table. Still show the code, like
                     // WinForms: the handler's first mention in the code-behind file.
-                    NavigateToHandlerMention(uri, ElementAttributeReader.Read(GetCurrentText(), elementId)?.Attributes.TryGetValue(eventName, out var bound) == true ? bound : null, documentHost);
+                    NavigateToHandlerMention(uri, (_host as IDesignSurfaceLanguageServices)?.CodeBehindPath, ElementAttributeReader.Read(GetCurrentText(), elementId)?.Attributes.TryGetValue(eventName, out var bound) == true ? bound : null, documentHost);
                 }
             }
             catch (Exception ex)
@@ -468,8 +481,11 @@ namespace Kubuno.Views.Designer.DesignSurface
             }
         }
 
-        /// <summary>Opens the code-behind <c>.rs</c> (same folder, same stem) at <c>fn name</c>, else at the name's first mention.</summary>
-        private static void NavigateToHandlerMention(string kbviewUri, string? handlerName, IHandlerDocumentHost documentHost)
+        /// <summary>
+        /// Opens the code-behind (<paramref name="codeBehindPath"/>, else the <c>.rs</c> of the same folder and stem) at the handler's
+        /// definition (<c>fn name(</c> in Rust, a <c>name(</c> method in TypeScript), else at the name's first mention.
+        /// </summary>
+        private static void NavigateToHandlerMention(string kbviewUri, string? codeBehindPath, string? handlerName, IHandlerDocumentHost documentHost)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (string.IsNullOrEmpty(handlerName))
@@ -477,7 +493,7 @@ namespace Kubuno.Views.Designer.DesignSurface
                 return;
             }
 
-            var codeBehind = System.IO.Path.ChangeExtension(new Uri(kbviewUri).LocalPath, ".rs");
+            var codeBehind = codeBehindPath ?? System.IO.Path.ChangeExtension(new Uri(kbviewUri).LocalPath, ".rs");
             if (!System.IO.File.Exists(codeBehind))
             {
                 return;
@@ -486,6 +502,12 @@ namespace Kubuno.Views.Designer.DesignSurface
             var lines = System.IO.File.ReadAllLines(codeBehind);
             int Find(string needle) => Array.FindIndex(lines, l => l.IndexOf(needle, StringComparison.Ordinal) >= 0);
             var line = Find("fn " + handlerName + "(");
+            if (line < 0 && !codeBehind.EndsWith(".rs", StringComparison.OrdinalIgnoreCase))
+            {
+                // A TypeScript method: `  name(` at the start of a line (async or not).
+                line = Array.FindIndex(lines, l => l.TrimStart().StartsWith(handlerName + "(", StringComparison.Ordinal) || l.TrimStart().StartsWith("async " + handlerName + "(", StringComparison.Ordinal));
+            }
+
             if (line < 0)
             {
                 line = Find("\"" + handlerName + "\"");

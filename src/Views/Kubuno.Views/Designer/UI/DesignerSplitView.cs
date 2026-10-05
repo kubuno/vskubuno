@@ -67,7 +67,7 @@ namespace Kubuno.Views.Designer.UI
         // ever reaching here (see that method's own doc comment).
 #pragma warning disable VSTHRD010
         public DesignerSplitView(IVsTextLines textBuffer, OleInterop.IServiceProvider oleServiceProvider, Func<Microsoft.VisualStudio.Shell.Interop.ITrackSelection?>? trackSelection = null, DesignerViewMode initialMode = DesignerViewMode.Design, Action? ensureActiveDesigner = null, DesignSurfaceDocument? document = null)
-            : this(textBuffer, oleServiceProvider, DesignSurfaceHostFactoryHost.Current, trackSelection, initialMode, ensureActiveDesigner, document)
+            : this(textBuffer, oleServiceProvider, DesignSurfaceHostFactoryHost.For(document), trackSelection, initialMode, ensureActiveDesigner, document)
         {
         }
 #pragma warning restore VSTHRD010
@@ -365,8 +365,11 @@ namespace Kubuno.Views.Designer.UI
 
             var source = _runtimeAware?.RuntimeSource;
             var state = source?.State ?? DesignSurfaceRuntimeState.Project;
-            var message = _runtimeRejectedMessage ?? DesignerText.RuntimeBarMessage(state);
-            var action = _runtimeRejectedMessage is not null ? DesignerText.RuntimeBarAction(DesignSurfaceRuntimeState.NotBuilt) : DesignerText.RuntimeBarAction(state);
+            var custom = source as IDesignSurfaceRuntimeText;
+            var message = _runtimeRejectedMessage ?? (custom is not null ? custom.BarMessage : DesignerText.RuntimeBarMessage(state));
+            var action = custom is not null
+                ? custom.BarAction ?? string.Empty
+                : _runtimeRejectedMessage is not null ? DesignerText.RuntimeBarAction(DesignSurfaceRuntimeState.NotBuilt) : DesignerText.RuntimeBarAction(state);
             _runtimeBarText.Inlines.Clear();
             if (string.IsNullOrEmpty(message) || !_viewModel.IsDesignPaneVisible)
             {

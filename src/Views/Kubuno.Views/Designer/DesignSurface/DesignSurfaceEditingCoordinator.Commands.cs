@@ -390,7 +390,7 @@ namespace Kubuno.Views.Designer.DesignSurface
                 return;
             }
 
-            var registry = await JsonRpcRegistryClient.FetchAsync(rpc, CancellationToken.None);
+            var registry = await FetchRegistryAsync(rpc);
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             _registry ??= registry;
         }

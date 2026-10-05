@@ -48,6 +48,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The web UI in the Kubuno View Designer** (`docs/WEB-VIEWS.md` section 18, lots WV-9b and WV-10). A `.kbview` or
+  `.kbcontrol` of a web project (the core's `WaffleMenu.kbcontrol` and `AccountMenu.kbcontrol`, a module's views)
+  opens in the same Design | XML | Split designer as a desktop view, its surface drawn by WebView2 with the project's
+  own components: the page is served by the project's dev server (`npm run dev`, the `/__kubuno_design__/` page of
+  `@kubuno/views-compiler`), or, while it is not running, by a design host shipped with the extension (built-in
+  elements, the project's controls as placeholders), with a bar offering to start the dev server. Selection follows
+  between the surface, the XML and the Document Outline; the Properties window (F4) edits the markup with undo and
+  redo; the Toolbox lists the web elements and the project's own controls, by drag-and-drop or double-click; a
+  double-click on an element or the ⚡ Events tab creates a TypeScript handler in the code-behind and opens it; F7 /
+  Shift+F7 switch between the view and its `.ts`. The page has a viewport toolbar (390, 768, 1280, 1440 pixels or fit,
+  light or dark Kubuno theme, French, English or Arabic), design data (`d:` attributes and `<view>.design.json`) and
+  a run mode.
+
 - **More storage components and tools** (lot ST-2, `docs/STORAGE-COMPONENTS.md` §12). The « Stockage » tab gains
   `KeyValueStore` (small values of the app) and `FileStore` (its files, a cache with eviction or temporary files), and
   the data tab `LocalDatabase` (a SQLite file of the app). A `RegistryKey`'s `Path` has a Registry key picker (read-only
@@ -1113,6 +1126,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   IntelliSense for Rust looks wrong. The open `.rs` files are sent to the new server again.
 
 ### Removed
+
+- The WebView2 design surface spike (`.kbwebspike` files, WV-9a): replaced by the web views designer above.
 
 - `KubunoUiLibrary` (the PE import reader that found a program's `kubuno_ui-<hash>.dll`), the design surface's DLL
   and `std-*.dll` copies, the `UiDll*` fields of `surface.json` (now version 4: older design folders are rebuilt),

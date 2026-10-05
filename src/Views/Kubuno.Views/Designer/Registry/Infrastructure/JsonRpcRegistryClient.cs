@@ -28,7 +28,8 @@ namespace Kubuno.Views.Designer.Registry.Infrastructure
         private const string MethodName = "kubuno/registry";
 
         /// <summary><c>kubuno/registryVersion</c> (EVT-7b): the registry's version only, polled to notice the project's controls changing; null on failure.</summary>
-        public static async Task<string?> FetchVersionAsync(JsonRpc? rpc, CancellationToken cancellationToken)
+        /// <remarks><paramref name="documentUri"/>: the view the registry is for - the language server answers with its target's registry (desktop, or the web registry of a web project, WV-7); null: the desktop registry.</remarks>
+        public static async Task<string?> FetchVersionAsync(JsonRpc? rpc, CancellationToken cancellationToken, string? documentUri = null)
         {
             if (rpc is null)
             {
@@ -37,7 +38,7 @@ namespace Kubuno.Views.Designer.Registry.Infrastructure
 
             try
             {
-                var result = await rpc.InvokeWithParameterObjectAsync<JToken?>("kubuno/registryVersion", new { }, cancellationToken).ConfigureAwait(false);
+                var result = await rpc.InvokeWithParameterObjectAsync<JToken?>("kubuno/registryVersion", Params(documentUri), cancellationToken).ConfigureAwait(false);
                 return result?["version"]?.ToString();
             }
             catch (Exception ex) when (ex is RemoteInvocationException or ConnectionLostException or OperationCanceledException or ObjectDisposedException)
@@ -46,7 +47,10 @@ namespace Kubuno.Views.Designer.Registry.Infrastructure
             }
         }
 
-        public static async Task<ComponentRegistry> FetchAsync(JsonRpc? rpc, CancellationToken cancellationToken)
+        private static object Params(string? documentUri) => documentUri is null ? new { } : new { uri = documentUri };
+
+        /// <remarks><paramref name="documentUri"/>: see <see cref="FetchVersionAsync"/>; the result's <see cref="ComponentRegistry.Target"/> says which registry came back.</remarks>
+        public static async Task<ComponentRegistry> FetchAsync(JsonRpc? rpc, CancellationToken cancellationToken, string? documentUri = null)
         {
             if (rpc is null)
             {
@@ -55,7 +59,7 @@ namespace Kubuno.Views.Designer.Registry.Infrastructure
 
             try
             {
-                var result = await rpc.InvokeWithParameterObjectAsync<JToken?>(MethodName, new { }, cancellationToken).ConfigureAwait(false);
+                var result = await rpc.InvokeWithParameterObjectAsync<JToken?>(MethodName, Params(documentUri), cancellationToken).ConfigureAwait(false);
                 var componentsToken = result?["components"];
                 if (componentsToken is null)
                 {
@@ -64,6 +68,7 @@ namespace Kubuno.Views.Designer.Registry.Infrastructure
 
                 var registry = ComponentRegistry.FromJson(componentsToken.ToString(Newtonsoft.Json.Formatting.None));
                 registry.Version = result?["version"]?.ToString();
+                registry.Target = result?["target"]?.Type == JTokenType.String ? (string?)result["target"] : null;
                 // EVT-7b: the project's own controls, as exported - what the design surface registers as placeholders.
                 registry.ProjectComponentsJson = new JArray(componentsToken.Where(c => (string?)c["origin"] == "project")).ToString(Newtonsoft.Json.Formatting.None);
                 return registry;

@@ -5,10 +5,10 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using OleInterop = Microsoft.VisualStudio.OLE.Interop;
 
-namespace Kubuno.Web.WebDesigner.Spike
+namespace Kubuno.Web.WebDesigner
 {
     /// <summary>
-    /// SPIKE (docs/WEB-VIEWS.md, WV-9a, question 1): runs Visual Studio's key bindings for a key the WebView2 reported
+    /// The web design surface's key routing (docs/WEB-VIEWS.md, WV-9a question 1): runs Visual Studio's key bindings for a key the WebView2 reported
     /// (<c>AcceleratorKeyPressed</c>) - the key itself never entered Visual Studio's message loop. Two steps, so that the
     /// browser (blocked while the accelerator handler runs) is released at once:
     /// <list type="number">

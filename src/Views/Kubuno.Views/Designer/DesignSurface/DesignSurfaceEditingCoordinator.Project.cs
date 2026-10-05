@@ -135,13 +135,27 @@ namespace Kubuno.Views.Designer.DesignSurface
             _registryRefreshing = true;
             try
             {
-                var version = await JsonRpcRegistryClient.FetchVersionAsync(rpc, CancellationToken.None);
-                if (version is null || string.Equals(version, _registry?.Version, StringComparison.Ordinal))
+                ComponentRegistry registry;
+                if (_host is IDesignSurfaceLanguageServices)
                 {
-                    return;
+                    // The host reads its target's registry itself (cheap: files it caches by their stamps).
+                    registry = await FetchRegistryAsync(rpc);
+                    if (string.Equals(registry.Version, _registry?.Version, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    var version = await JsonRpcRegistryClient.FetchVersionAsync(rpc, CancellationToken.None, TryGetDocumentUri());
+                    if (version is null || string.Equals(version, _registry?.Version, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    registry = await JsonRpcRegistryClient.FetchAsync(rpc, CancellationToken.None, TryGetDocumentUri());
                 }
 
-                var registry = await JsonRpcRegistryClient.FetchAsync(rpc, CancellationToken.None);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 if (_disposed || registry.Components.Count == 0)
                 {

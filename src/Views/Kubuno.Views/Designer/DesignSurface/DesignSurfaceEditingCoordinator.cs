@@ -287,7 +287,7 @@ namespace Kubuno.Views.Designer.DesignSurface
                     return;
                 }
 
-                var registry = await JsonRpcRegistryClient.FetchAsync(rpc, CancellationToken.None);
+                var registry = await FetchRegistryAsync(rpc);
                 var lsClient = new JsonRpcViewsSelectionLanguageServerClient(rpc);
                 var textView = new VsTextViewSelectionAdapter(primaryView);
                 // FlushBeforeSelectTarget (below), not DesignSurfaceSelectionTarget directly: a `select`
@@ -387,6 +387,37 @@ namespace Kubuno.Views.Designer.DesignSurface
             }
 
             return _codeWindowHost.PrimaryView;
+        }
+
+        /// <summary>
+        /// The registry of this document's target: <c>kubuno/registry {uri}</c> (the language server picks the document's
+        /// profile, WV-7); when the server only knows the desktop registry and the host is another target's
+        /// (<see cref="IDesignSurfaceLanguageServices"/>, the web surface), the host's own registry.
+        /// </summary>
+        private async Task<ComponentRegistry> FetchRegistryAsync(JsonRpc? rpc)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            var served = await JsonRpcRegistryClient.FetchAsync(rpc, CancellationToken.None, TryGetDocumentUri());
+            if (_host is not IDesignSurfaceLanguageServices services || (served.Components.Count > 0 && served.Target == "web"))
+            {
+                return served;
+            }
+
+            {
+                try
+                {
+                    if (await services.FetchRegistryAsync(CancellationToken.None) is { } own)
+                    {
+                        return own;
+                    }
+                }
+                catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidOperationException)
+                {
+                    KubunoViewsLogHost.Current.WriteException("[designer] the design surface's own registry could not be read", ex);
+                }
+            }
+
+            return served;
         }
 
         private void OnEditRequested(object? sender, DesignSurfaceEditRequestedEventArgs e)

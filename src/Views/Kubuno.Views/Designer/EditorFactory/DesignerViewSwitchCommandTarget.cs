@@ -25,6 +25,20 @@ namespace Kubuno.Views.Designer.EditorFactory
         private const uint ViewForm = (uint)VSConstants.VSStd97CmdID.ViewForm;
         private const uint ViewCode = (uint)VSConstants.VSStd97CmdID.ViewCode;
 
+        /// <summary>
+        /// <c>View.ToggleDesigner</c> (cmdidToggleDesigner): F7 in Visual Studio 2026's default keyboard scheme, where F7 is
+        /// no longer View.ViewCode and Shift+F7 is bound in the HTML editor only (found live with a web view, WV-9b): from a
+        /// view's designer it is "View Code", from a view's code "View Designer".
+        /// </summary>
+        private const uint ToggleDesigner = 347;
+
+        /// <summary>The command <paramref name="id"/> stands for here (<see cref="ToggleDesigner"/> becomes View Code or View Designer).</summary>
+        private uint Effective(uint id)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return id == ToggleDesigner ? (ActiveKbviewDocument() is not null ? ViewCode : ViewForm) : id;
+        }
+
         private readonly IServiceProvider _serviceProvider;
 
         public DesignerViewSwitchCommandTarget(IServiceProvider serviceProvider)
@@ -35,9 +49,10 @@ namespace Kubuno.Views.Designer.EditorFactory
         public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OleInterop.OLECMD[] prgCmds, IntPtr pCmdText)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            var queried = prgCmds is { Length: > 0 } && pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97 ? Effective(prgCmds[0].cmdID) : 0;
             if (pguidCmdGroup != VSConstants.GUID_VSStandardCommandSet97 || prgCmds is null || prgCmds.Length == 0 ||
-                (prgCmds[0].cmdID != ViewForm && prgCmds[0].cmdID != ViewCode) ||
-                (ActiveKbviewDocument() is null && (prgCmds[0].cmdID != ViewForm || ActiveCodeBehindView() is null)))
+                (queried != ViewForm && queried != ViewCode) ||
+                (ActiveKbviewDocument() is null && (queried != ViewForm || ActiveCodeBehindView() is null)))
             {
                 return (int)OleInterop.Constants.OLECMDERR_E_NOTSUPPORTED;
             }
@@ -49,6 +64,11 @@ namespace Kubuno.Views.Designer.EditorFactory
         public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            if (pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97)
+            {
+                nCmdID = Effective(nCmdID);
+            }
+
             if (pguidCmdGroup != VSConstants.GUID_VSStandardCommandSet97 || (nCmdID != ViewForm && nCmdID != ViewCode))
             {
                 return (int)OleInterop.Constants.OLECMDERR_E_NOTSUPPORTED;
@@ -100,21 +120,14 @@ namespace Kubuno.Views.Designer.EditorFactory
         }
 
         /// <summary>
-        /// The code of a view: the same-stem <c>.rs</c> file next to it (<c>main_view.kbview</c> → <c>main_view.rs</c>),
+        /// The code of a view: the same-stem <c>.rs</c> file next to it (<c>main_view.kbview</c> → <c>main_view.rs</c>), or a
+        /// web view's TypeScript code-behind (<c>WaffleMenu.kbcontrol</c> → <c>WaffleMenu.ts</c>, or <c>WaffleMenu.kbcontrol.ts</c>),
         /// when it exists; null otherwise (F7 then shows the XML).
         /// </summary>
-        public static string? CodeFileOf(string kbviewPath, Func<string, bool> fileExists)
-        {
-            if (string.IsNullOrEmpty(kbviewPath))
-            {
-                return null;
-            }
+        public static string? CodeFileOf(string kbviewPath, Func<string, bool> fileExists) =>
+            Kubuno.Views.Logic.ViewFiles.CodeBehindOf(kbviewPath, fileExists);
 
-            var code = System.IO.Path.ChangeExtension(kbviewPath, ".rs");
-            return fileExists(code) ? code : null;
-        }
-
-        /// <summary>The view of a code file: the same-stem <c>.kbview</c> or <c>.kbcontrol</c> next to a <c>.rs</c> file, when it exists.</summary>
+        /// <summary>The view of a code file: the same-stem <c>.kbview</c> or <c>.kbcontrol</c> next to a <c>.rs</c> / <c>.ts</c> / <c>.tsx</c> file, when it exists.</summary>
         public static string? ViewFileOf(string rsPath, Func<string, bool> fileExists) =>
             Kubuno.Views.Logic.ViewFiles.ViewOf(rsPath, fileExists);
 

@@ -84,6 +84,20 @@ namespace Kubuno.Views.Designer.DesignSurface
     }
 
     /// <summary>
+    /// Optional on an <see cref="IDesignSurfaceRuntimeSource"/> whose runtime is not a desktop build (the web surface's dev
+    /// server, docs/WEB-VIEWS.md section 4.2): the runtime bar's own text and action instead of the desktop wording of
+    /// <see cref="DesignSurfaceRuntimeState"/>.
+    /// </summary>
+    public interface IDesignSurfaceRuntimeText
+    {
+        /// <summary>The bar's message, or null/empty for no bar.</summary>
+        string? BarMessage { get; }
+
+        /// <summary>The bar's action link (runs <see cref="IDesignSurfaceRuntimeSource.RunAction"/>), or null/empty for none.</summary>
+        string? BarAction { get; }
+    }
+
+    /// <summary>
     /// The document a designer pane edits, handed to <see cref="IDesignSurfaceHostFactory.Create(DesignSurfaceDocument)"/>
     /// so the factory can find the project (and hence the runtime) it belongs to.
     /// </summary>

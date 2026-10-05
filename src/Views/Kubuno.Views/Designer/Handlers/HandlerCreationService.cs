@@ -107,13 +107,16 @@ namespace Kubuno.Views.Designer.Handlers
             IReadOnlyDictionary<string, IReadOnlyList<TextEditDto>> changes,
             string handlerName)
         {
-            var needle = $"fn {handlerName}(";
-            foreach (var pair in changes)
+            // A Rust `fn` first; else a TypeScript method stub (`name(_sender: …`, docs/WEB-VIEWS.md section 5).
+            foreach (var needle in new[] { $"fn {handlerName}(", $"{handlerName}(" })
             {
-                var stub = pair.Value.FirstOrDefault(e => e.NewText.Contains(needle));
-                if (stub is not null)
+                foreach (var pair in changes)
                 {
-                    return (pair.Key, PositionAfterApply(pair.Value, stub, needle));
+                    var stub = pair.Value.FirstOrDefault(e => e.NewText.Contains(needle));
+                    if (stub is not null)
+                    {
+                        return (pair.Key, PositionAfterApply(pair.Value, stub, needle));
+                    }
                 }
             }
 

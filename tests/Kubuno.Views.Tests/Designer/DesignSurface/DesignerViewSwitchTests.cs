@@ -38,5 +38,24 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
             Assert.AreEqual(control, DesignerViewSwitchCommandTarget.ViewFileOf(code, p => p == control));
             Assert.AreEqual(Path.Combine(Src, "message_row.rs"), DesignerViewSwitchCommandTarget.CodeFileOf(control, p => p == code), "F7 from the user control");
         }
+
+        [TestMethod]
+        public void A_web_views_typescript_code_behind_is_its_code()
+        {
+            // docs/WEB-VIEWS.md section 2.2: WaffleMenu.kbcontrol + WaffleMenu.ts (or WaffleMenu.kbcontrol.ts).
+            var control = Path.Combine(Src, "WaffleMenu.kbcontrol");
+            var ts = Path.Combine(Src, "WaffleMenu.ts");
+            var tsx = Path.Combine(Src, "WaffleMenu.tsx");
+            var inner = control + ".ts";
+            Assert.AreEqual(ts, DesignerViewSwitchCommandTarget.CodeFileOf(control, p => p == ts));
+            Assert.AreEqual(tsx, DesignerViewSwitchCommandTarget.CodeFileOf(control, p => p == tsx));
+            Assert.AreEqual(inner, DesignerViewSwitchCommandTarget.CodeFileOf(control, p => p == inner));
+            Assert.AreEqual(Path.Combine(Src, "WaffleMenu.rs"), DesignerViewSwitchCommandTarget.CodeFileOf(control, _ => true), "Rust first (desktop)");
+
+            Assert.AreEqual(control, DesignerViewSwitchCommandTarget.ViewFileOf(ts, p => p == control), "Shift+F7 from the .ts");
+            Assert.AreEqual(control, DesignerViewSwitchCommandTarget.ViewFileOf(inner, p => p == control), "Shift+F7 from the .kbcontrol.ts");
+            Assert.IsNull(DesignerViewSwitchCommandTarget.ViewFileOf(Path.Combine(Src, "WaffleMenu.kbcontrol.d.ts"), _ => true), "a declaration file is no code-behind");
+            Assert.IsNull(DesignerViewSwitchCommandTarget.ViewFileOf(Path.Combine(Src, "model.ts"), p => p == control));
+        }
     }
 }

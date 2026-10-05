@@ -29,22 +29,68 @@ namespace Kubuno.Views.Logic
         public static bool IsControl(string? path) => HasExtension(path, ControlExtension);
 
         /// <summary>
-        /// The view of a code-behind file: the same-stem <c>.kbview</c> or <c>.kbcontrol</c> next to it, when one exists
-        /// (the <c>.kbview</c> first); null otherwise.
+        /// The code-behind languages, in the order a view's code-behind is looked for: Rust (desktop), TypeScript (web,
+        /// docs/WEB-VIEWS.md section 2.2).
         /// </summary>
-        public static string? ViewOf(string? rsPath, Func<string, bool> fileExists)
+        public static readonly string[] CodeBehindExtensions = { ".rs", ".ts", ".tsx" };
+
+        /// <summary>
+        /// The view of a code-behind file: the same-stem <c>.kbview</c> or <c>.kbcontrol</c> next to it, when one exists
+        /// (the <c>.kbview</c> first); for a web view's <c>X.kbcontrol.ts</c>, the <c>X.kbcontrol</c> itself. Null otherwise
+        /// (a <c>.d.ts</c> declaration file is never a code-behind).
+        /// </summary>
+        public static string? ViewOf(string? codePath, Func<string, bool> fileExists)
         {
-            if (string.IsNullOrEmpty(rsPath) || !rsPath!.EndsWith(".rs", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrEmpty(codePath) || codePath!.EndsWith(".d.ts", StringComparison.OrdinalIgnoreCase) ||
+                !Array.Exists(CodeBehindExtensions, e => codePath.EndsWith(e, StringComparison.OrdinalIgnoreCase)))
             {
                 return null;
             }
 
+            // `Menu.kbcontrol.ts`: the view is the file name without its last extension.
+            var inner = codePath.Substring(0, codePath.Length - Path.GetExtension(codePath).Length);
+            if (IsViewFile(inner) && fileExists(inner))
+            {
+                return inner;
+            }
+
             foreach (var extension in Extensions)
             {
-                var view = Path.ChangeExtension(rsPath, extension);
+                var view = Path.ChangeExtension(codePath, extension);
                 if (fileExists(view))
                 {
                     return view;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// The code-behind of a view, when one exists: the same-stem <c>.rs</c> (desktop), else <c>.ts</c> / <c>.tsx</c> (web),
+        /// else the view's name followed by <c>.ts</c> / <c>.tsx</c> (<c>Menu.kbcontrol.ts</c>); null otherwise.
+        /// </summary>
+        public static string? CodeBehindOf(string? viewPath, Func<string, bool> fileExists)
+        {
+            if (string.IsNullOrEmpty(viewPath))
+            {
+                return null;
+            }
+
+            foreach (var extension in CodeBehindExtensions)
+            {
+                var code = Path.ChangeExtension(viewPath, extension);
+                if (fileExists(code))
+                {
+                    return code;
+                }
+            }
+
+            foreach (var extension in new[] { ".ts", ".tsx" })
+            {
+                if (fileExists(viewPath + extension))
+                {
+                    return viewPath + extension;
                 }
             }
 

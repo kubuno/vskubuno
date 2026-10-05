@@ -11,7 +11,7 @@ namespace Kubuno.Web.Logic.WebDesigner
     }
 
     /// <summary>
-    /// SPIKE (docs/WEB-VIEWS.md, WV-9a, question 1): which keys of the WebView2 design surface go to Visual Studio. A
+    /// The web design surface (docs/WEB-VIEWS.md, WV-9a question 1, WV-9b): which keys of the WebView2 design surface go to Visual Studio. A
     /// key typed in the WebView2 is read by the browser process's input thread and never enters Visual Studio's message
     /// loop, so Visual Studio's key bindings (Ctrl+S, F4, F7, Ctrl+Shift+B, Edit.Undo on Ctrl+Z...) would be dead while
     /// the page has the focus. WebView2 reports every accelerator key (a chord with Ctrl or Alt, or a key that types no
@@ -78,6 +78,44 @@ namespace Kubuno.Web.Logic.WebDesigner
                     return KeyRoute.Page;
                 default:
                     return KeyRoute.VisualStudio;
+            }
+        }
+
+        /// <summary>
+        /// The route of a key-down on the web design surface (WV-9b/WV-10): like <see cref="Route"/>, except that the page
+        /// owns the designer's own editing keys, as the desktop surface does - Del and Backspace (remove the selection),
+        /// the arrows (nudge or move the selection), Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+D (the designer's clipboard and
+        /// duplicate, sent back as <c>command</c> messages). Ctrl+Z / Ctrl+Y, Ctrl+S, F4, F7, Shift+F7 and every other
+        /// binding stay Visual Studio's (the document's undo, Save, Properties, View Code / Designer).
+        /// </summary>
+        public static KeyRoute RouteDesignSurface(int virtualKey, bool control, bool shift, bool alt, bool pageEditingText)
+        {
+            if (alt || pageEditingText)
+            {
+                return Route(virtualKey, control, shift, alt, pageEditingText);
+            }
+
+            if (control)
+            {
+                switch (virtualKey)
+                {
+                    case 'C':
+                    case 'X':
+                    case 'V':
+                    case 'D':
+                        return shift ? KeyRoute.VisualStudio : KeyRoute.Page;
+                    default:
+                        return KeyRoute.VisualStudio;
+                }
+            }
+
+            switch (virtualKey)
+            {
+                case VkDelete:
+                case VkBack:
+                    return KeyRoute.Page;
+                default:
+                    return Route(virtualKey, control, shift, alt, pageEditingText);
             }
         }
 

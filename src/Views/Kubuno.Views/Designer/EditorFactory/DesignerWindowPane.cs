@@ -64,6 +64,14 @@ namespace Kubuno.Views.Designer.EditorFactory
                 if (GetService(typeof(DesignSurfaceManager)) is DesignSurfaceManager manager)
                 {
                     _designSurface = manager.CreateDesignSurface(new ServiceProviderAdapter(this));
+                    // The Toolbox shows the elements of the active designer's target (a desktop or a web view).
+                    manager.ActiveDesignSurfaceChanged += (_, e) =>
+                    {
+                        if (_designSurface is not null && ReferenceEquals(e.NewSurface, _designSurface))
+                        {
+                            _view.EditingCoordinator?.OnDesignerActivated();
+                        }
+                    };
                     if (_designSurface?.GetService(typeof(IServiceContainer)) is IServiceContainer services)
                     {
                         services.AddService(typeof(IEventBindingService), PropertyBrowser.KbviewEventBindingService.Instance);

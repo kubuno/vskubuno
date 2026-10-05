@@ -186,7 +186,18 @@ namespace Kubuno.Views.Designer.DesignSurface
             }
 
             var folder = Path.GetDirectoryName(new Uri(kbviewUri).LocalPath) ?? string.Empty;
-            return new VsWorkspaceFileHost(new ServiceProvider(_oleServiceProvider)).OpenTexts(folder, ".rs");
+            // Every code-behind language (Rust for the desktop, TypeScript for the web - docs/WEB-VIEWS.md section 5).
+            var host = new VsWorkspaceFileHost(new ServiceProvider(_oleServiceProvider));
+            var texts = new Dictionary<string, string>();
+            foreach (var extension in Kubuno.Views.Logic.ViewFiles.CodeBehindExtensions)
+            {
+                foreach (var pair in host.OpenTexts(folder, extension))
+                {
+                    texts[pair.Key] = pair.Value;
+                }
+            }
+
+            return texts;
         }
     }
 }

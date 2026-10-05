@@ -7,10 +7,10 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Web.WebView2.Core;
 
-namespace Kubuno.Web.WebDesigner.Spike
+namespace Kubuno.Web.WebDesigner
 {
     /// <summary>
-    /// SPIKE (docs/WEB-VIEWS.md, WV-9a, question 6): the WebView2 runtime and the one <see cref="CoreWebView2Environment"/>
+    /// The web design surface's (docs/WEB-VIEWS.md, WV-9a question 6, WV-9b) WebView2 runtime and the one <see cref="CoreWebView2Environment"/>
     /// every design surface of this Visual Studio process shares (one browser process, one profile in
     /// <c>%LOCALAPPDATA%\Kubuno\webview2\&lt;hive&gt;</c> - never Visual Studio's own WebView2 folder). The WebView2
     /// assemblies are Visual Studio's own (<c>PrivateAssemblies</c>, not shipped in the VSIX); the browser is the Evergreen
@@ -18,11 +18,14 @@ namespace Kubuno.Web.WebDesigner.Spike
     /// </summary>
     internal static class WebView2Runtime
     {
+        /// <summary>Forces a WebView2 runtime folder (tests: an empty folder simulates a missing runtime).</summary>
+        public const string BrowserFolderVariable = "KUBUNO_WEBVIEW2_BROWSER_FOLDER";
+
         private static Task<CoreWebView2Environment>? s_environment;
 
-        /// <summary>The runtime folder forced by <see cref="WebDesignSpikeConstants.BrowserFolderVariable"/> (tests), else null (the installed Evergreen runtime).</summary>
+        /// <summary>The runtime folder forced by <see cref="BrowserFolderVariable"/> (tests), else null (the installed Evergreen runtime).</summary>
         private static string? BrowserFolder =>
-            Environment.GetEnvironmentVariable(WebDesignSpikeConstants.BrowserFolderVariable) is { Length: > 0 } folder ? folder : null;
+            Environment.GetEnvironmentVariable(BrowserFolderVariable) is { Length: > 0 } folder ? folder : null;
 
         /// <summary>The installed runtime's version, or null with <paramref name="error"/> saying why WebView2 cannot run.</summary>
         public static string? AvailableVersion(out string? error)
@@ -53,7 +56,7 @@ namespace Kubuno.Web.WebDesigner.Spike
             {
                 var folder = UserDataFolder();
                 Directory.CreateDirectory(folder);
-                KubunoLog.WriteLine($"[web-spike] WebView2 environment: user data folder {folder}" + (BrowserFolder is { } b ? ", runtime folder " + b : string.Empty));
+                KubunoLog.WriteLine($"[web-designer] WebView2 environment: user data folder {folder}" + (BrowserFolder is { } b ? ", runtime folder " + b : string.Empty));
                 s_environment = CoreWebView2Environment.CreateAsync(BrowserFolder, folder, new CoreWebView2EnvironmentOptions());
             }
 

@@ -17,6 +17,9 @@ namespace Kubuno.Views.Designer.Toolbox
         /// <summary>Registered clipboard format name (<c>RegisterClipboardFormat</c>).</summary>
         public const string FormatName = "Kubuno.Views.ToolboxItem";
 
+        /// <summary>The markup of a new element (<c>&lt;Button /&gt;</c>): the text a web Toolbox item also carries (docs/WEB-VIEWS.md section 11).</summary>
+        public static string Markup(string componentName) => "<" + componentName + " />";
+
         public static byte[] Encode(string componentName)
         {
             if (string.IsNullOrEmpty(componentName))

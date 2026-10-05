@@ -1163,3 +1163,93 @@ the method; « Nouveau gestionnaire » created `button_click(_sender: Button, _e
 `.ts`. Not done: the caret is not moved to the new method by the HandlerCreationService of HEAD (it looks for a Rust
 `fn`; the web designer's pending change handles TS stubs); creating a missing `.ts` code-behind; completion of a user
 control's own properties (from its `x:Props`).
+
+## 18. WV-9b / WV-10 as built (2026-10-05) — the web views in the Visual Studio designer
+
+A `.kbview` / `.kbcontrol` of a web project opens in the shared Kubuno View Designer (Design | XML | Split, Toolbox,
+Properties, ⚡ events, Document Outline, component tray — all of `Kubuno.Views`, §4.1) with its Design pane rendered by
+WebView2. Checked live on `Kubuno.Core.slnx` with the core pilot's `WaffleMenu.kbcontrol` and `AccountMenu.kbcontrol`.
+The WV-9a spike (`.kbwebspike`, `WebDesigner/Spike/`, `SpikeViewDocument`, `WebSurfaceProtocol`) is removed; its
+mechanisms live on in the classes below. Shared-layer seams: `DESIGNER.md` §21.
+
+### 18.1 Visual Studio side (`src/Web/Kubuno.Web/WebDesigner`, `src/Web/Kubuno.Web.Logic/WebDesigner`)
+
+| Piece | What |
+|---|---|
+| `WebDesignSurfaceHostFactory` | An `ITargetDesignSurfaceHostFactory` added by `WebLayer`: claims the views of web projects (`WebViewProject.Find`, the profile rule of `kubuno-views-ls`, §5), every other view keeps the desktop's Rust surface. |
+| `WebDesignSurfaceHost` (+ `.Protocol`, `.Input`, `.Language`) | `IProtocolDesignSurfaceHost`, `IDesignSurfaceStatusAware`, `IDesignSurfaceRuntimeAware`, `IDesignSurfaceLanguageServices`. A WPF `WebView2` (Visual Studio's own WebView2 assemblies, one environment per process, profile `%LOCALAPPDATA%\Kubuno\webview2\<hive>`). The page speaks the desktop wire shapes (parsed by the shared `DesignSurfaceProtocol`, `…DragDropProtocol`, `…ContextMenuProtocol`), so the shared `DesignSurfaceEditingCoordinator` drives it unchanged. The state the designer pushes (text, design mode, selection, zoom, language, project controls, theme, document info) is kept and replayed whole on every `ready` of a (re)loaded page. |
+| `DesignServer` + `DesignServerDiscovery` | The project's dev server: found through `<root>/.kubuno/design-server.json` (written by the Vite plugin while it listens: `{version, urls, designPath, pid, root}`), probed at `project.json`, local addresses first. « Démarrer le serveur de développement » runs `npm run dev` hidden (through `obj\kubuno-npm.cmd` when `Kubuno.Web.Sdk` prepared the node overlay, Visual Studio's Node.js appended to the `PATH`), with `CHOKIDAR_USEPOLLING` on a network drive (Node's `fs.watch` fails on `Z:` with `UNKNOWN -4094`, measured) and in a kill-on-close job object: the server ends with Visual Studio. Output in Output > Kubuno. |
+| `WebDesignRuntimeSource` | The runtime bar (`IDesignSurfaceRuntimeText`): nothing on the project's dev server; « Aperçu : runtime intégré — le serveur de développement du projet ne tourne pas… » + « Démarrer le serveur de développement », « …démarrage… » + « Annuler », « …n'a pas démarré » + « Réessayer ». A 4 s monitor switches to the dev server when one answers and back to the bundled host after two failed probes. |
+| Bundled design host | `tools\web-design-host\` in the VSIX = the static build of `@kubuno/host-runtime` (core `npm run build:design-host`), served from the virtual host `https://kubuno-design.invalid/` (`SetVirtualHostNameToFolderMapping`): built-in elements, the production fonts and themes, project controls as labelled placeholders, no code-behind. VSIX property `KubunoWebDesignHostDir` (default: the sibling core checkout's `packages/host-runtime/dist`, a build warning when absent). |
+| Keys (`AcceleratorRouting.RouteDesignSurface`, `VsKeyBindings`) | In design mode the page keeps Del, Backspace, arrows, Tab, Enter, Esc, F2, Ctrl+C/X/V/D; Visual Studio gets Ctrl+Z/Y (the buffer's undo), Ctrl+S, F4, F7 and every other binding (`IVsFilterKeys2.TranslateAcceleratorEx` + `PostExecCommand`, §11). Every page gesture activates the document frame. |
+| Toolbox drops | The §11 hybrid channel: the page reports `toolboxDragDetected`, a layered child window over the browser takes the OLE drag with `WebToolboxDropTarget` (the Toolbox item through `ToolboxDataObjectReader`) and drives the page with `dragEnter/dragOver/drop/dragLeave`; the page answers `dropTargetChanged` and posts `insertChild`. Web Toolbox items also carry `CF_UNICODETEXT` = `<Name />`. |
+| Registry, handlers | `kubuno/registry {uri}` (the language server's web profile, §16) — the host's own `WebRegistry` (host registry + project registries with rewritten modules, `origin: "project"`) only when the server answers with the desktop registry. Handlers: the server's `kubuno/createHandler` (§16; the interim C# TypeScript stub writer is gone), the caret put in the new TypeScript method. F7 / Shift+F7 know `.ts` / `.tsx` / `X.kbcontrol.ts`, and `View.ToggleDesigner` (F7 in Visual Studio 2026's default scheme). |
+
+Protocol additions (host → page): `setDocumentInfo {file, codeBehind, className, userControls, designData}`,
+`setVsTheme {mode, colors}`, `setZoom {zoom}`, `setLanguage {lang}`; (page → host) `surfaceInfo {version: 1, target:
+"web", views: "1", ui, hostRuntime, mode: "project" | "bundled"}` (refused on another version, target or plan ABI),
+`ready`, `focusState`, `unhandledKey`, `toolboxDragDetected`, `log`, `surfaceError`, `viewportChanged`. Everything else
+is the desktop protocol.
+
+### 18.2 The design page (core `frontend/src/views/design/`, `src/views/designApi.ts`)
+
+- **Two entries, one page**: `entry.tsx` (project mode, served by the dev server at `/__kubuno_design__/`: registries
+  and user controls from `/__kubuno_design__/project.json`, the project's controls and the view's code-behind imported
+  through Vite, HMR kept) and `entry.bundled.tsx` (the `@kubuno/host-runtime` build). The buffer is compiled in the
+  page with the WASM compiler (`design: true`), the last good plan kept (dimmed) when it does not compile;
+  `renderStatus` after every compile.
+- **Code-behind**: a *design class*, a subclass of the code-behind with a cell of its own (`designClass`,
+  `setDesignPlan`, `setDesignDataContext`): getters and `use()` run, handlers never; the live class and its HMR cell
+  are never touched. Runtime changes: switching design mode re-renders in place (state kept); a `Repeater` without
+  data in design mode shows `DesignItemCount` sample rows (`name 1`, `name 2`…).
+- **Sample data**: `d:` attributes and `<view>.design.json` (`props`, `dataContext`, `frame {background,
+  cornerRadius, border}` for the host's popover chrome); written for the two pilot controls.
+- **Overlay**: input neutralised in design mode; layout map of every `[data-kb-id]` of the document (portals
+  included); hit-test = deepest element, reverse paint order; hover stroke, selection frame and 8 handles (filled when
+  resizable), parent outline, container outlines, Ctrl/Shift multi-selection; insertion markers per layout kind
+  (`Stack` line ⟂ `Direction`, dock containers in document order, `Panel Layout="Absolute"` free XY with `X`/`Y`
+  logical in RTL, `ScrollArea` delegating to its child container, leaves before/after); move / resize →
+  `editRequests`, reorder / reparent → `moveElement`, keyboard (Del, arrows ±1/±8, Esc = parent, Ctrl+C/X/V/D),
+  double-click, context menu.
+- **Viewport toolbar** (platform-neutral HTML in Visual Studio's colours): width design / 390 / 768 / 1280 / 1440 /
+  fit, Kubuno light / dark (the core's real `themeStore`), FR / EN / AR (`dir=rtl`), Conception / Exécution (run mode:
+  real input, handlers run in project mode), « Données d'exemple ». Choices kept in `localStorage`.
+- **Portals and popovers**: a popover's content is a user control designed on its own surface (WaffleMenu,
+  AccountMenu); `ContextMenu`, `ToolTip`, `DropDownMenu` are tray components and never open in design mode; something
+  opened in run mode stays selectable after switching back (the layout map covers the whole document).
+- **Dev-server route** (`@kubuno/views-compiler`, `src/design-server.ts`): `/__kubuno_design__/` (through
+  `transformIndexHtml`), `project.json`, `themes/<id>/` (`design.themes`), the discovery file; `kubuno.views.json`
+  `"design": {"entry", "themes"}`; `kbview({ designServer: false })` turns it off.
+
+### 18.3 Verified
+
+- **Live, Visual Studio 18 hive `KubunoWebDesigner`, 175 % DPI, Visual Studio dark theme** (captures in
+  `C:\kubuno-build\agent-webdesigner\out\`): WaffleMenu and AccountMenu open in the designer; with no dev server, the
+  bundled host and the bar (`vs3-bundled.png`); « Démarrer le serveur de développement » starts Vite from Visual Studio
+  and the surface switches to the project's page with the real `AppTileGrid` and sample data (`vs4-project.png`);
+  a click selects and the XML follows (`vs8-select-label.png`), Esc selects the parent `Stack`, F4 shows it in the
+  Properties window, `Gap` set there writes `Gap="24"` in the buffer and Ctrl+Z on the surface undoes it; a `Label`
+  dragged from the Toolbox lands in the header `Stack` (`vs13-drop.png`), its `Text` set in the Properties window
+  renders at once (`vs14-label-text.png`); a double-click creates `label_click(_sender: Label, _e: MouseEventArgs)`
+  in `WaffleMenu.ts` with `OnClick="label_click"` and opens it at the method (`vs15-handler.png`); F7 toggles view ⇄
+  `.ts`; light / dark, 390 / 1440, FR / AR (`waffle-*-175dpi.png`, `account-*-175dpi.png`); killing the dev server
+  brings the bundled host and the bar back within 8 s (`account-fallback-after-stop.png`); closing Visual Studio ends
+  the dev server it started. Nothing was saved (the core files are unchanged).
+- **Tests**: C# — `Kubuno.Web.Tests` 63 (web project detection, registry merge, discovery, messages, key routing),
+  `Kubuno.Views.Tests` 460 (+ per-document factory selection, TypeScript F7 / Shift+F7), every other suite green;
+  frontend — 57 tests in `src/views` + `src/core/shell/menus` (jsdom: hit-test, layout map, drop targets per layout
+  kind, move / resize ops, keyboard, protocol), 14 in `@kubuno/views-compiler` (+ the design-server route), the
+  conformance suite; `tsc -p tsconfig.app.json` clean.
+
+### 18.4 Not done / limits
+
+- Not captured at 100 % DPI (this machine's only monitor is at 175 %; changing the system scale would disturb the
+  user's session). Marquee selection, snaplines, `format` commands (logged), table cells; moving an element into an
+  absolute panel writes no `X`/`Y`; live data (`setDataMode`) is not wired.
+- Bundled mode runs no code-behind (getters empty: both `Visible` branches show); module projects through
+  `@kubuno/host-runtime/entry` in their own dev server are not exercised; `packages/host-runtime` has no `.esproj`.
+- The Toolbox flyout is hidden behind the surface when auto-hidden (airspace, §11): pin it. Toolbox items are
+  re-installed when the active designer's target changes (desktop ⇄ web).
+- Found, not fixed: `generatedPaths` (`project.ts`) writes generated files outside `.kubuno/views` for a view outside
+  the project root; the launcher's and account panel's chrome are hard-coded light (`#E9EEF6` in `WaffleButton` /
+  `AccountButton`), unreadable in the dark theme — the designer shows it faithfully.

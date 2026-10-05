@@ -61,6 +61,12 @@ namespace Kubuno.Views.Designer.Registry
         /// <summary>The export's <c>version</c> (a hash of its content), when known.</summary>
         public string? Version { get; set; }
 
+        /// <summary>
+        /// The target the registry describes: null for the desktop (<c>kubuno/registry</c>), <c>"web"</c> for the web
+        /// registry of a web project (docs/WEB-VIEWS.md section 4.5). The Toolbox is rebuilt when the active designer's target changes.
+        /// </summary>
+        public string? Target { get; set; }
+
         /// <summary>The export entries of the project's own controls (EVT-7b) as a JSON array, sent to the design surface (<c>projectComponents</c>).</summary>
         public string ProjectComponentsJson { get; set; } = "[]";
 

@@ -38,6 +38,9 @@ namespace Kubuno.Views.Designer.Toolbox
     {
         private const uint TransparentMagenta = 0x00FF00FF;
         private static bool s_installed;
+
+        /// <summary>The target of the registry the installed items come from (<see cref="ComponentRegistry.Target"/>, "" for the desktop).</summary>
+        private static string? s_installedTarget;
         private static int s_iconFailures;
         // Items typed as object: a VS type in a static field initialiser would load the Shell assembly in unit tests (Layout).
         private static readonly List<(object Data, string Component, string Icon, bool Project)> s_items = new List<(object, string, string, bool)>();
@@ -211,6 +214,13 @@ namespace Kubuno.Views.Designer.Toolbox
             if (registry is null || registry.Components.Count == 0)
             {
                 return;
+            }
+
+            var target = registry.Target ?? string.Empty;
+            if (s_installed && !string.Equals(target, s_installedTarget, StringComparison.Ordinal))
+            {
+                // Another target's designer became active (a web view after a desktop one): its elements, not these.
+                Uninstall();
             }
 
             s_registry = registry;
@@ -403,6 +413,7 @@ namespace Kubuno.Views.Designer.Toolbox
             }
 
             s_installed = true;
+            s_installedTarget = registry.Target ?? string.Empty;
             SetTabsMayBePersisted(true);
             s_iconFailures = 0;
             var added = 0;
@@ -477,6 +488,12 @@ namespace Kubuno.Views.Designer.Toolbox
             ThreadHelper.ThrowIfNotOnUIThread();
             var data = new OleDataObject();
             data.SetData(ToolboxItemFormat.FormatName, new MemoryStream(ToolboxItemFormat.Encode(component.Name)));
+            if (string.Equals(s_installedTarget, "web", StringComparison.Ordinal))
+            {
+                // The web surface (WebView2) only sees a drag that carries text (docs/WEB-VIEWS.md section 11, "Hybrid"): the
+                // element's markup, which is also what a drop into the XML pane inserts.
+                data.SetData(System.Windows.Forms.DataFormats.UnicodeText, ToolboxItemFormat.Markup(component.Name));
+            }
 
             var icon = iconKey ?? component.Name;
             var bitmap = CreateBitmap(icon);
