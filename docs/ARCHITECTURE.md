@@ -191,8 +191,9 @@ the desktop repository's folders and its two-workspace solution are `Kubuno.Rust
 
 Per-module repositories (status 2026-10-06, docs/DESKTOP-MIGRATION.md): a module repository holds its desktop apps under
 `desktop/<os>/` (one Cargo workspace per OS, framework crates by the git tag `desktop-v<version>` of kubuno/desktop), and
-its solution lists them in a **Desktop** folder (`WebRepository.DesktopMembers`). Done: chat (pilot) and drive; next:
-documents (office), then the Android apps.
+its solution lists them in a **Desktop** folder (`WebRepository.DesktopMembers`). Done: chat (pilot), drive and
+documents (office, 2026-10-06: `office/desktop/{common,windows,linux,macos}`, its engine `kubuno-office-docs-core` in
+`office/common/core`, the framework by the core repository's tag `desktop-v0.1.1-alpha`); next: the Android apps.
 
 ## Themed dialogs
 

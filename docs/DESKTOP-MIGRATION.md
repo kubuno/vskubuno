@@ -41,7 +41,7 @@ controls and the common crates. Apps link the framework statically and need Kubu
 | Painting surface | `kubuno-drive-desktop-app-controls` and `kubuno-drive-desktop-shared` (ported from Files, MIT) stay in the framework, moved to `desktop/windows/src/crates/` (every control draws through them); `DesktopRepositoryLayout` files them under Framework. Renaming them (`kubuno-canvas`, F5) is still to do |
 | **chat** (pilot) | **done 2026-10-06**: `chat/desktop/windows/` (history kept: `git subtree split` + merge under the prefix), own workspace and `Cargo.lock`, CI `.github/workflows/desktop.yml` (Windows), `Kubuno.Chat.Desktop` in `Kubuno.Chat.slnx` folder **Desktop** |
 | **drive** | **done 2026-10-06**: `drive/desktop/windows/` (history kept) with `kubuno-drive-desktop`, `-app-storage`, `-core-storage`, `-localization`, `LICENSE-MIT` for the Files port, CI `desktop.yml`, `Kubuno.Drive.slnx` folder **Desktop** |
-| documents → office | next: `kubuno-office-desktop` (+ `common/kubuno-office-docs-core`, the shared engine, to decide: tag it from desktop or move it to office) |
+| **documents → office** | **done 2026-10-06**: `office/desktop/` (history kept: `git filter-repo` of core main on the app's and the engine's current and former paths, merged into office) with the platform layout — `desktop/common/kubuno-office-desktop-common` (the complete portable app: launch options, view state, server session, extension points `LaunchRules` / `UiHost`, `TextUi`), `desktop/windows/kubuno-office-desktop` (the Win32 window and `kubuno-documents.exe`), thin `desktop/linux`, `desktop/macos` entry points; the engine `kubuno-office-docs-core` moved too, to `office/common/core` (only office used it). Framework from `kubuno/core` tag `desktop-v0.1.1-alpha`; CI `desktop.yml`; `Kubuno.Office.slnx` folders Common / Server / Web / Desktop / Mobile |
 | Android apps → modules | after the shared Android libraries are published (Maven) |
 | Linux / macOS desktop apps | `desktop/linux`, `desktop/macos` hold a README until written; CI jobs join then |
 
@@ -77,8 +77,8 @@ project `Kubuno.<Product>.<Component>`, renamed together. The framework is `kubu
 `kubuno-desktop-controls`, `kubuno-desktop-views*`, `kubuno-desktop-data*`, `kubuno-desktop-print`,
 `kubuno-desktop-resources*`, `kubuno-desktop-app-storage-components`, `kubuno-desktop-shell-controls`,
 `kubuno-desktop-header-data`; the multi-OS crates `kubuno-desktop-account`, `-secrets`, `-sync`, `-sync-engine`,
-`-api-client`, `-app-storage` and `kubuno-office-docs-core` (the word processor's engine, destined for the office
-module); the apps `kubuno-desktop-shell` (Kubuno Desktop), `kubuno-chat-desktop`, `kubuno-office-desktop` (Documents),
+`-api-client`, `-app-storage` and `kubuno-office-docs-core` (the word processor's engine, in the office
+repository's `common/core` since 2026-10-06); the apps `kubuno-desktop-shell` (Kubuno Desktop), `kubuno-chat-desktop`, `kubuno-office-desktop` (Documents),
 `kubuno-drive-desktop` and its engine `kubuno-drive-desktop-*` (named as drive's: they move to the drive repository
 with the per-module reorganisation). The web views compiler is `kubuno-web-views-compiler-core`. The executables keep
 their names (`kubuno-desktop.exe`, `kubuno-chat.exe`, `kubuno-documents.exe`, `drive.exe`), and so do the identifiers
