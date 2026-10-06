@@ -13,7 +13,11 @@ namespace Kubuno.Web.Logic.Generation
     /// <summary>What a Kubuno repository is, for the solution generator.</summary>
     public enum WebRepositoryKind
     {
-        /// <summary>Kubuno Core (the web server): <c>crates/kubuno-core</c> + the host frontend + the <c>@kubuno/*</c> packages.</summary>
+        /// <summary>
+        /// Kubuno Core: the server (<c>server/</c>, or <c>crates/kubuno-core</c> before the platform layout) + the shared crates
+        /// (<c>common/</c>) + the host frontend and the <c>@kubuno/*</c> packages (<c>web/</c>, or <c>frontend/</c>) + Kubuno
+        /// Desktop (<c>desktop/</c>).
+        /// </summary>
         Core,
 
         /// <summary>A module: <c>module.toml</c> at the root.</summary>
@@ -133,7 +137,8 @@ namespace Kubuno.Web.Logic.Generation
         /// <summary>
         /// The packages of the module's desktop apps: the members of the Cargo workspaces under <c>desktop/windows</c>,
         /// <c>desktop/linux</c> and <c>desktop/macos</c> (a module repository holds all its clients - docs/WEB.md,
-        /// "Solutions"). Each is a workspace of its own, apart from the server's. Empty for the core.
+        /// "Solutions"). Each is a workspace of its own, apart from the server's. For the core in the platform layout, the
+        /// members of Kubuno Desktop's workspace (<c>desktop/</c>); empty for the core in the former layout.
         /// </summary>
         public IReadOnlyList<CargoMember> DesktopMembers { get; }
 
@@ -167,9 +172,15 @@ namespace Kubuno.Web.Logic.Generation
             reason = null;
             var root = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar);
             var moduleToml = Path.Combine(root, "module.toml");
-            if (File.Exists(moduleToml) && !File.Exists(Path.Combine(root, "crates", "kubuno-core", "Cargo.toml")) && PlatformLayout.IsPlatformLayout(root))
+            if (File.Exists(moduleToml) && !CoreRepository.IsCore(root) && PlatformLayout.IsPlatformLayout(root))
             {
-                return DetectPlatformModule(root, moduleToml);
+                return DetectPlatform(root, ModuleManifest.Load(moduleToml));
+            }
+
+            // The core in the platform layout (server/, common/, web/, desktop/, mobile/): no root Cargo.toml any more.
+            if (CoreRepository.IsPlatformLayout(root))
+            {
+                return DetectPlatform(root, null);
             }
 
             if (!File.Exists(Path.Combine(root, "Cargo.toml")))
@@ -182,7 +193,7 @@ namespace Kubuno.Web.Logic.Generation
             var members = ReadMembers(root, submodules);
             var name = Path.GetFileName(root);
 
-            if (File.Exists(Path.Combine(root, "crates", "kubuno-core", "Cargo.toml")))
+            if (CoreRepository.IsCore(root))
             {
                 var core = members.FirstOrDefault(member => member.PackageName == "kubuno-core");
                 var bin = core is not null && core.Bins.Contains("kubuno-core") && core.Bins.Count > 1 ? "kubuno-core" : null;
@@ -204,18 +215,19 @@ namespace Kubuno.Web.Logic.Generation
                 return new WebRepository(root, WebRepositoryKind.Module, name, members, run?.PackageName, bin, ReadFrontends(root, manifest.Id, isCore: false), manifest, submodules, ReadDesktopMembers(root));
             }
 
-            reason = "'" + root + "' is neither Kubuno Core (crates/kubuno-core) nor a module (module.toml).";
+            reason = "'" + root + "' is neither Kubuno Core (server/ or crates/kubuno-core) nor a module (module.toml).";
             return null;
         }
 
         /// <summary>
-        /// A module in the platform layout (<see cref="PlatformLayout"/>): its server packages (<c>server/</c>, or the root
-        /// package not moved yet) and <c>common/</c> crates are <see cref="Members"/>, the members of <c>desktop/</c> (one
-        /// workspace, or one per <c>desktop/&lt;os&gt;</c>) <see cref="DesktopMembers"/>, those of <c>mobile/</c>
-        /// <see cref="MobileMembers"/>; the frontend is <c>web/</c> (or <c>frontend/</c> not moved yet). Nothing outside the
-        /// repository, nothing in a build output or a vendored folder.
+        /// A module (<paramref name="manifest"/>) or the core (null) in the platform layout (<see cref="PlatformLayout"/>): its
+        /// server packages (<c>server/</c>, or the root package not moved yet) and <c>common/</c> crates are
+        /// <see cref="Members"/>, the members of <c>desktop/</c> (one workspace, or one per <c>desktop/&lt;os&gt;</c>)
+        /// <see cref="DesktopMembers"/>, those of <c>mobile/</c> <see cref="MobileMembers"/>; the frontend is <c>web/</c> (or
+        /// <c>frontend/</c> not moved yet). Nothing outside the repository, nothing in a build output or a vendored folder.
+        /// The core runs <c>kubuno-core</c> (its <c>kubuno-core</c> bin; the package also builds the <c>kubuno</c> CLI).
         /// </summary>
-        private static WebRepository DetectPlatformModule(string root, string moduleToml)
+        private static WebRepository DetectPlatform(string root, ModuleManifest? manifest)
         {
             var submodules = ReadSubmodules(root);
             var sizes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -285,7 +297,14 @@ namespace Kubuno.Web.Logic.Generation
             var readme = Path.Combine(mobile, "README.md");
             var mobileReadme = mobileMembers.Count == 0 && File.Exists(readme) ? readme : null;
 
-            var manifest = ModuleManifest.Load(moduleToml);
+            var parts = new PlatformParts(mobileMembers, mobileReadme, sizes);
+            if (manifest is null)
+            {
+                var core = members.FirstOrDefault(member => member.PackageName == ProjectNaming.CoreRunPackage);
+                var coreBin = core is not null && core.Bins.Contains(ProjectNaming.CoreRunPackage) && core.Bins.Count > 1 ? ProjectNaming.CoreRunPackage : null;
+                return new WebRepository(root, WebRepositoryKind.Core, Path.GetFileName(root), members, core?.PackageName, coreBin, ReadFrontends(root, "kubuno", isCore: true), null, submodules, desktopMembers, parts);
+            }
+
             var run = members.FirstOrDefault(member => member.Bins.Contains(manifest.Entrypoint, StringComparer.OrdinalIgnoreCase))
                 ?? (serverRoot is null ? null : members.FirstOrDefault(member => string.Equals(member.Directory, serverRoot, StringComparison.OrdinalIgnoreCase)));
             var bin = run is not null && run.Bins.Count > 1 ? manifest.Entrypoint : null;
@@ -294,7 +313,6 @@ namespace Kubuno.Web.Logic.Generation
                 bin = run.Bins[0];
             }
 
-            var parts = new PlatformParts(mobileMembers, mobileReadme, sizes);
             return new WebRepository(root, WebRepositoryKind.Module, Path.GetFileName(root), members, run?.PackageName, bin, ReadFrontends(root, manifest.Id, isCore: false), manifest, submodules, desktopMembers, parts);
         }
 

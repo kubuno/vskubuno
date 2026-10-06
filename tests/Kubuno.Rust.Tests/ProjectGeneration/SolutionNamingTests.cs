@@ -27,6 +27,15 @@ namespace Kubuno.Rust.Tests.ProjectGeneration
                 Assert.AreEqual("Kubuno.P2pNas.slnx", SolutionNaming.DefaultSolutionFileName(Path.Combine(root, "p2p-nas")));
                 Assert.AreEqual("other.slnx", SolutionNaming.DefaultSolutionFileName(Path.Combine(root, "other")));
                 Assert.IsTrue(File.Exists(core) && File.Exists(desktop) && File.Exists(module));
+
+                // The core in the platform layout (server/ is kubuno-core and its own workspace; desktop/ holds Kubuno Desktop):
+                // the core's solution, from the repository root or from one of its workspaces.
+                Write(Path.Combine(root, "core2", "server", "Cargo.toml"), "[package]\nname = \"kubuno-core\"\n\n[workspace]\n");
+                Write(Path.Combine(root, "core2", "desktop", "Cargo.toml"), "[workspace]\nmembers = [\"windows/kubuno-desktop-ui\"]\n");
+                Write(Path.Combine(root, "core2", "desktop", "windows", "kubuno-desktop-ui", "Cargo.toml"), "[package]\nname = \"kubuno-desktop-ui\"\n");
+                Assert.AreEqual("Kubuno.Core.slnx", SolutionNaming.DefaultSolutionFileName(Path.Combine(root, "core2")));
+                Assert.AreEqual("Kubuno.Core.slnx", SolutionNaming.DefaultSolutionFileName(Path.Combine(root, "core2", "server")));
+                Assert.AreEqual("Kubuno.Core.slnx", SolutionNaming.DefaultSolutionFileName(Path.Combine(root, "core2", "desktop")));
             }
             finally
             {

@@ -170,8 +170,10 @@ namespace Kubuno.Rust.Cargo.Naming
         public static string ModuleSolutionFileName(string moduleId) => "Kubuno." + Product(moduleId) + ".slnx";
 
         /// <summary>
-        /// Whether <paramref name="repositoryRoot"/> is the desktop repository: its framework under
-        /// <c>windows/src/crates</c> (<c>kubuno-desktop-ui</c>, or <c>kubuno-ui</c> in a checkout older than the 2026-10 rename).
+        /// Whether <paramref name="repositoryRoot"/> is the former desktop repository (kubuno/desktop, merged into the core's
+        /// <c>desktop/</c> on 2026-10-06): its framework under <c>windows/src/crates</c> (<c>kubuno-desktop-ui</c>, or
+        /// <c>kubuno-ui</c> in a checkout older than the 2026-10 rename). The core's <c>desktop/</c> is not one: the core's
+        /// solution lists it (<see cref="CoreRepository"/>).
         /// </summary>
         public static bool IsDesktopRepository(string repositoryRoot, Func<string, bool>? fileExists = null)
         {

@@ -17,7 +17,7 @@ namespace Kubuno.Web.Logic.Generation
 #endif
     static class ModuleTemplateTokens
     {
-        /// <summary>The published <c>@kubuno/*</c> versions when this extension was built (core/frontend/packages).</summary>
+        /// <summary>The published <c>@kubuno/*</c> versions when this extension was built (core/web/packages, core/frontend/packages before).</summary>
         public const string UiVersion = "0.1.12";
 
         public const string SdkVersion = "0.1.10";
@@ -85,7 +85,7 @@ namespace Kubuno.Web.Logic.Generation
             for (var current = directory; !string.IsNullOrEmpty(current); current = Path.GetDirectoryName(current))
             {
                 var core = Path.Combine(current!, "core");
-                if (File.Exists(Path.Combine(core, "frontend", "packages", "sdk", "package.json")))
+                if (File.Exists(Path.Combine(PackagesDirectory(core), "sdk", "package.json")))
                 {
                     return core;
                 }
@@ -93,6 +93,14 @@ namespace Kubuno.Web.Logic.Generation
 
             return null;
         }
+
+        /// <summary>
+        /// The core's <c>@kubuno/*</c> packages: <c>web/packages</c> (platform layout), else <c>frontend/packages</c>. Same rule as
+        /// <c>Kubuno.Rust.Cargo.Naming.CoreRepository.PackagesDirectory</c>, written out here: this file is also compiled
+        /// into the template wizard, which does not reference that assembly.
+        /// </summary>
+        private static string PackagesDirectory(string coreRepository) =>
+            Path.Combine(File.Exists(Path.Combine(coreRepository, "web", "package.json")) ? Path.Combine(coreRepository, "web") : Path.Combine(coreRepository, "frontend"), "packages");
 
         private static string? PackageVersion(string? coreRepository, string library)
         {
@@ -103,7 +111,7 @@ namespace Kubuno.Web.Logic.Generation
 
             try
             {
-                var path = Path.Combine(coreRepository!, "frontend", "packages", library, "package.json");
+                var path = Path.Combine(PackagesDirectory(coreRepository!), library, "package.json");
                 if (!File.Exists(path))
                 {
                     return null;

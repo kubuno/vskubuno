@@ -336,6 +336,15 @@ partly moved (any of `server/Cargo.toml`, `web/package.json`, `desktop/Cargo.tom
 platform folders, a part not moved yet filed where it will go (the root package in Server, `frontend/` in Web).
 `vendor`, `suppa`, `target`, `node_modules`, `obj`, `dist` are never scanned, and no path outside the repository is listed.
 
+**The core** follows the same layout since 2026-10-06 (docs/WEB.md, "Platform layout of the core"): `Kubuno.Core.slnx`
+has `/Common/` (`common/kubuno-db/Kubuno.Core.Db.rsproj`...), `/Server/` (`server/Kubuno.Core.Server.rsproj`),
+`/Web/` (`web/Kubuno.Core.Frontend.esproj` and the npm packages `web/packages/*/Kubuno.Web.*.esproj`), the
+`/Desktop/<OS>/` folders of Kubuno Desktop - the former kubuno/desktop repository, merged into `core/desktop/` (one
+workspace; `desktop/windows/kubuno-desktop-ui/Kubuno.Desktop.UI.rsproj`, the startup program
+`desktop/windows/kubuno-desktop-shell/Kubuno.Desktop.Shell.rsproj`) - and `/Mobile/`. Its workspaces (`server/`,
+`common/`, `desktop/`) are never given a solution of their own by "Generate Visual Studio Projects"; the former desktop
+repository's `Kubuno.Desktop.slnx` (Applications, Framework, ... folders) only applies to a checkout of that repository.
+
 ## 5. Coexistence with Open Folder and rust-analyzer
 
 Both modes stay: Open Folder is the zero-setup entry point (`devenv folder`, no generation step);

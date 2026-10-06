@@ -202,15 +202,18 @@ namespace Kubuno.Web.ProjectSystem
                     coreRepository = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(await Read("CargoManifestPath").ConfigureAwait(false))!, "..", ".."));
                 }
 
+                // The workspace of the platform layout's server is server/: the repository is its parent.
+                coreRepository = Kubuno.Rust.Cargo.Naming.CoreRepository.RepositoryOf(coreRepository) ?? coreRepository;
+
                 layout.RememberCoreRepository(coreRepository);
             }
 
             // 3. The dev core's environment: KV__ settings, generated secrets, the accepted database URL.
-            layout.SeedThemes(coreRepository is null ? null : Path.Combine(coreRepository, "themes"));
+            layout.SeedThemes(coreRepository is null ? null : Kubuno.Rust.Cargo.Naming.CoreRepository.ThemesDirectory(coreRepository));
             var frontendDist = DevCoreLocator.FindFrontendDist(coreRepository, coreExecutable);
             if (frontendDist is null)
             {
-                log.Add("Kubuno web: no built host frontend (core\\frontend\\dist) - the core serves its API only. Build the kubuno-frontend project, or use the Vite dev server.");
+                log.Add("Kubuno web: no built host frontend (core\\web\\dist, or core\\frontend\\dist) - the core serves its API only. Build the kubuno-frontend project, or use the Vite dev server.");
             }
 
             var environment = DevCoreEnvironment.Build(layout, check.Url!.Original, layout.LoadOrCreateSecrets(), frontendDist, port).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);

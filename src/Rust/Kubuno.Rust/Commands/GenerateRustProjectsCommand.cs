@@ -112,6 +112,18 @@ namespace Kubuno.Rust.Commands
             // The desktop repository has ONE solution at its root, over its two workspaces (windows/ and common/), with
             // Kubuno.<Product>.<Component> project names and solution folders (DesktopRepositoryLayout).
             var repositoryRoot = Kubuno.Rust.Cargo.Naming.ProjectNaming.RepositoryRoot(workspaceRoot);
+
+            // The core in the platform layout (server/, common/, web/, desktop/): its workspaces share ONE solution at the
+            // repository root, Kubuno.Core.slnx, which "Kubuno Web: Generate Solution" writes (docs/WEB.md, "Solutions").
+            if (repositoryRoot is not null && Kubuno.Rust.Cargo.Naming.CoreRepository.IsPlatformLayout(repositoryRoot))
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                ShowMessage(package, "This workspace belongs to Kubuno Core (" + repositoryRoot + "), whose server, shared crates, web host and "
+                    + "Kubuno Desktop share one solution, Kubuno.Core.slnx.\n\nUse \"Kubuno Web: Generate Solution\" instead: it writes the "
+                    + "missing projects of every part (Common, Server, Web, Desktop, Mobile) and the solution at the repository root.");
+                return;
+            }
+
             if (repositoryRoot is not null && Kubuno.Rust.Cargo.Naming.ProjectNaming.IsDesktopRepository(repositoryRoot))
             {
                 await GenerateDesktopRepositoryAsync(package, repositoryRoot);

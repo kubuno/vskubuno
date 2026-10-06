@@ -14,7 +14,8 @@ namespace Kubuno.Views.Logic
     /// </summary>
     /// <remarks>
     /// The same list is <c>FRAMEWORK_CRATES</c> of the Rust crate <c>kubuno-desktop-views-meta</c>
-    /// (<c>desktop/windows/src/crates/kubuno-desktop-views-meta/src/framework.rs</c>), used by the <c>#[kubuno_desktop::view]</c>
+    /// (<c>core/desktop/common/kubuno-desktop-views-meta/src/framework.rs</c>; <c>desktop/windows/src/crates/…</c> in the former
+    /// kubuno/desktop repository), used by the <c>#[kubuno_desktop::view]</c>
     /// macro and the language server; <c>FrameworkCratesTests</c> reads that file and fails when the two differ.
     /// desktop/common's service crates (<c>kubuno-desktop-sync*</c>, <c>kubuno-desktop-account</c>, <c>kubuno-desktop-api-client</c>,
     /// <c>kubuno-desktop-secrets</c>, <c>kubuno-desktop-app-storage</c>, <c>kubuno-office-docs-core</c>) are not listed: they declare no

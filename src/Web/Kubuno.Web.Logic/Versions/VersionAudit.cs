@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Kubuno.Rust.Cargo.Toml;
+using Kubuno.Rust.Cargo.Naming;
 
 namespace Kubuno.Web.Logic.Versions
 {
@@ -68,7 +69,7 @@ namespace Kubuno.Web.Logic.Versions
     /// </summary>
     public static class VersionAudit
     {
-        /// <summary>The npm libraries published from <c>core/frontend/packages</c>.</summary>
+        /// <summary>The npm libraries published from <c>core/web/packages</c> (<c>core/frontend/packages</c> before the platform layout).</summary>
         public static readonly IReadOnlyList<string> NpmLibraries = new[] { "ui", "sdk", "drive" };
 
         /// <summary>The shared crates consumed by tag: crate name to tag prefix.</summary>
@@ -90,7 +91,7 @@ namespace Kubuno.Web.Logic.Versions
             var result = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var library in NpmLibraries)
             {
-                var version = ReadJsonString(Path.Combine(coreDirectory, "frontend", "packages", library, "package.json"), "version");
+                var version = ReadJsonString(Path.Combine(CoreRepository.PackagesDirectory(coreDirectory), library, "package.json"), "version");
                 if (version is not null)
                 {
                     result["@kubuno/" + library] = version;
@@ -105,14 +106,16 @@ namespace Kubuno.Web.Logic.Versions
         {
             var name = Path.GetFileName(repositoryDirectory.TrimEnd(Path.DirectorySeparatorChar));
             var versions = new List<(string Source, string Version)>();
-            var cargo = Path.Combine(repositoryDirectory, "Cargo.toml");
+            // The server's manifest: server/Cargo.toml (platform layout), else the root's.
+            var serverCargo = File.Exists(Path.Combine(repositoryDirectory, "server", "Cargo.toml"));
+            var cargo = serverCargo ? Path.Combine(repositoryDirectory, "server", "Cargo.toml") : Path.Combine(repositoryDirectory, "Cargo.toml");
             if (File.Exists(cargo))
             {
                 var document = TomlDocument.Parse(File.ReadAllText(cargo));
                 var version = document.GetValue("package", "version")?.AsString() ?? document.GetValue("workspace", "package", "version")?.AsString();
                 if (version is not null)
                 {
-                    versions.Add(("Cargo.toml", version));
+                    versions.Add((serverCargo ? "server/Cargo.toml" : "Cargo.toml", version));
                 }
             }
 
@@ -126,10 +129,11 @@ namespace Kubuno.Web.Logic.Versions
                 }
             }
 
-            var packageVersion = ReadJsonString(Path.Combine(repositoryDirectory, "frontend", "package.json"), "version");
+            var web = CoreRepository.WebDirectory(repositoryDirectory);
+            var packageVersion = ReadJsonString(Path.Combine(web, "package.json"), "version");
             if (packageVersion is not null)
             {
-                versions.Add(("frontend/package.json", packageVersion));
+                versions.Add((Path.GetFileName(web) + "/package.json", packageVersion));
             }
 
             if (versions.Count == 0)
@@ -223,7 +227,7 @@ namespace Kubuno.Web.Logic.Versions
         public static IReadOnlyList<VersionEdit> PlanNpmFloors(string repositoryDirectory, IReadOnlyDictionary<string, string> published)
         {
             var edits = new List<VersionEdit>();
-            var file = Path.Combine(repositoryDirectory, "frontend", "package.json");
+            var file = Path.Combine(CoreRepository.WebDirectory(repositoryDirectory), "package.json");
             foreach (var dependency in NpmDependencies(repositoryDirectory))
             {
                 if (published.TryGetValue(dependency.Package, out var version) && dependency.Range != "^" + version && CompareVersions(Floor(dependency.Range), version) < 0)
@@ -326,7 +330,7 @@ namespace Kubuno.Web.Logic.Versions
 
         private static IEnumerable<(string Section, string Package, string Range)> NpmDependencies(string repositoryDirectory)
         {
-            var path = Path.Combine(repositoryDirectory, "frontend", "package.json");
+            var path = Path.Combine(CoreRepository.WebDirectory(repositoryDirectory), "package.json");
             if (!File.Exists(path))
             {
                 yield break;

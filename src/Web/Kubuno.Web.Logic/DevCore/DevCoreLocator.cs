@@ -9,7 +9,7 @@ namespace Kubuno.Web.Logic.DevCore
     /// Which core a module's F5 starts (docs/WEB.md, "F5 on a module"): an explicit <c>KubunoDevCoreExecutable</c>; else
     /// the core built from the core repository next to the module (<c>..\core</c>, the polyrepo layout - built in the
     /// multi-repository solution or its own <c>Kubuno.Core.slnx</c>), in the shared <c>CARGO_TARGET_DIR</c> or in the
-    /// core's own <c>target</c>; else a Windows installation (<c>C:\Program Files\Kubuno</c>).
+    /// core's own <c>target</c> (<c>server\target</c> in the platform layout); else a Windows installation (<c>C:\Program Files\Kubuno</c>).
     /// </summary>
     public static class DevCoreLocator
     {
@@ -25,7 +25,7 @@ namespace Kubuno.Web.Logic.DevCore
             }
 
             var core = Path.Combine(parent, "core");
-            return File.Exists(Path.Combine(core, "crates", "kubuno-core", "Cargo.toml")) ? core : null;
+            return Kubuno.Rust.Cargo.Naming.CoreRepository.IsCore(core) ? core : null;
         }
 
         /// <summary>The candidates, in order (the first existing one wins).</summary>
@@ -47,7 +47,8 @@ namespace Kubuno.Web.Logic.DevCore
 
             if (core is not null)
             {
-                targetDirectories.Add(Path.Combine(core, "target"));
+                // The server's own workspace (server/target, platform layout), else the repository's (target).
+                targetDirectories.Add(Path.Combine(Kubuno.Rust.Cargo.Naming.CoreRepository.ServerWorkspace(core) ?? core, "target"));
             }
 
             foreach (var target in targetDirectories)

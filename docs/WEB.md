@@ -97,6 +97,38 @@ hidden folders are never scanned; no path outside the repository is listed. **Tr
 gets the platform folders, a part not moved yet filed where it goes (the root package in Server, `frontend/` in Web,
 `desktop/windows/crates/*` in Desktop/Windows); a repository with none of the markers keeps the folders above.
 
+**Platform layout of the core** (2026-10-06; the former kubuno/desktop repository merged into the core's `desktop/`
+with its history). The same rule, with Kubuno Desktop as the core's desktop part:
+
+```
+core/
+  common/Cargo.toml     the shared server crates' workspace: kubuno-db, -storage, -seccomp, -modauth, -paths, -mcp,
+                        -vectors (Kubuno.Core.Db...), common/vectors/ (JSON, no project)
+  server/               kubuno-core: Cargo.toml is its [package] AND its own [workspace] (src/, migrations/, .sqlx,
+                        config.toml.example) + Kubuno.Core.Server.rsproj (Kubuno.Web.Sdk, role Core, bin kubuno-core)
+  web/                  the host app (Kubuno.Core.Frontend.esproj) and web/packages/* (@kubuno/ui, sdk, drive, views,
+                        views-compiler, vectors, host-runtime, views-migrate: Kubuno.Web.UI...); frontend/ until it moves
+  desktop/Cargo.toml    Kubuno Desktop, ONE workspace: desktop/common/<crate> (the portable app kubuno-desktop-shell-common,
+                        sync, accounts, the portable framework layers), desktop/windows/<crate> (the Win32 framework
+                        kubuno-desktop, -ui, -controls, -views..., kubuno-desktop-shell = kubuno-desktop.exe, the startup
+                        program), desktop/linux/<crate>, desktop/macos/<crate> (entry points)
+  mobile/               README.md today
+  README.md, CHANGELOG.md, build_*.sh, Kubuno.Core.slnx
+```
+
+`CoreRepository` (Kubuno.Rust.Cargo) recognizes the core in either layout: `server/Cargo.toml` whose package is
+`kubuno-core`, else `crates/kubuno-core/Cargo.toml`; every core check of the tooling goes through it (the generator, the
+dev core locator, the remembered core repository, the version audit, the module template's `@kubuno/*` versions:
+`web/packages`, else `frontend/packages`). The core's solution gets Common / Server / Web / Desktop (Common, Windows,
+Linux, macOS) / Mobile like a module's; the desktop crates are named by `ProjectNaming.ForCrate`
+(`Kubuno.Desktop.UI`, `Kubuno.Desktop.Shell`, `Kubuno.Office.Desktop`), the shared server crates by `ForCoreCrate`
+(`Kubuno.Core.Db`); the `.slnLaunch` gets "Kubuno Core (server)", "Kubuno Core (server + Vite)" and
+"Kubuno Desktop (Windows)" (`desktop/windows/kubuno-desktop-shell`). "Generate Visual Studio Projects" (Rust layer)
+refuses a workspace of the core in this layout and points to "Kubuno Web: Generate Solution": the core has one solution.
+The former desktop repository's `Kubuno.Desktop.slnx` (`DesktopRepositoryLayout`) is only generated for a checkout of
+that repository. `_tools/gen_master_solution.ps1` lists the core's Desktop folders in `Kubuno-Desktop.slnf` and skips a
+`desktop` repository once `core/desktop/Cargo.toml` exists.
+
 Headless (no Visual Studio), e.g. on a repository just moved:
 
 ```powershell
@@ -222,7 +254,8 @@ reaches it through an SSH tunnel, `localhost:55432` → `localhost:5432` on the 
    "Copy the public key" link puts the `.pub` line on the clipboard.
 4. **Set the variable** to the tunnel's local end, then restart Visual Studio:
    `setx KUBUNO_DEV_DATABASE_URL "postgres://kubuno:<password>@localhost:55432/kubuno_dev"`.
-   `msbuild crates\kubuno-core\kubuno-core.rsproj -t:KubunoCheckDevDatabase` says what the guard would say.
+   `msbuild server\Kubuno.Core.Server.rsproj -t:KubunoCheckDevDatabase` (`crates\kubuno-core\...` before the platform
+   layout) says what the guard would say.
 5. **First connection**: the host's key is not known to Kubuno yet. An info bar shows its fingerprint
    (`SHA256:...`, ED25519 preferred); compare it with the server's (`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`
    on the host) and click **Accept**: the key is added to `%USERPROFILE%\.ssh\known_hosts_kubuno`, then F5 again.
@@ -281,10 +314,10 @@ folders of `%LOCALAPPDATA%\Kubuno\dev-core` (`KUBUNO_DEV_CORE_ROOT` or the `Kubu
 |---|---|
 | `database.url` | the accepted `KUBUNO_DEV_DATABASE_URL` |
 | `server.host` / `server.port` | `127.0.0.1` / 8080 (`KubunoDevCorePort`) |
-| `server.frontend_dist` | the core repository's `frontend\dist` (else an installed core's `frontend`) |
+| `server.frontend_dist` | the core repository's `web\dist` (`frontend\dist` before the platform layout; else an installed core's `frontend`) |
 | `server.modules_dir` / `modules_install_dir` | `modules\` (F5 deployments) / `modules-store\` (`.kbpkg` installs) |
 | `server.modules_config_dir` / `modules_data_dir` | `modules-config\` / `modules-data\` |
-| `server.themes_dir` | `themes\` (seeded once from the core repository's `themes`) |
+| `server.themes_dir` | `themes\` (seeded once from the core repository's `web\themes`, else `themes`) |
 | `server.internal_secret`, `auth.jwt_secret` | generated once, kept in `dev-secrets.json` (local development secrets) |
 | `storage.local_path`, `logging.log_dir`, `database.path` | `files\`, `logs\`, `db\` |
 | data key, first administrator password | `data.key`, `initial-admin-password` (`KUBUNO_DATA_KEY_FILE`, `KUBUNO_INITIAL_PASSWORD_FILE`) |
@@ -325,7 +358,8 @@ the core does not open a second browser.
    not the module it started; the running executable would be locked and its port taken) - only processes whose
    image lies in that folder are touched;
 3. start a core: `KubunoDevCoreExecutable` (Debug page), else the newest `kubuno-core.exe` built from the core
-   repository next to the module (`..\core`, in `CARGO_TARGET_DIR` or `core\target`, debug or release), else an
+   repository next to the module (`..\core`, in `CARGO_TARGET_DIR` or the server's workspace - `core\server\target` in the
+   platform layout, `core\target` before - debug or release), else an
    installed `C:\Program Files\Kubuno\kubuno-core.exe`; under the native debugger, with the dev core environment;
 4. the core starts the module (its supervisor, `KUBUNO_*` environment, port of `module.toml`); the launch provider
    **attaches the native debugger to every module process** whose image is the deployed executable, as soon as it

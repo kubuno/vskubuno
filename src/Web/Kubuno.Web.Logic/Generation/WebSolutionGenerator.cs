@@ -143,9 +143,10 @@ namespace Kubuno.Web.Logic.Generation
         }
 
         /// <summary>
-        /// The desktop startup project of a platform-layout module (docs/WEB.md, "Solutions"): the program under
-        /// <c>desktop/windows/</c> - <c>kubuno-&lt;id&gt;-desktop</c> when there are several, else the first by name. Its
-        /// <c>.rsproj</c> path, or null when the module has no Windows desktop program.
+        /// The desktop startup project of a platform-layout repository (docs/WEB.md, "Solutions"): the program under
+        /// <c>desktop/windows/</c> - <c>kubuno-&lt;id&gt;-desktop</c> for a module, Kubuno Desktop (<c>kubuno-desktop-shell</c>)
+        /// for the core, when there are several, else the first by name. Its <c>.rsproj</c> path, or null when the repository
+        /// has no Windows desktop program.
         /// </summary>
         public static string? DesktopStartupProject(WebRepository repository)
         {
@@ -157,11 +158,15 @@ namespace Kubuno.Web.Logic.Generation
             var windows = System.IO.Path.Combine(repository.Root, "desktop", "windows") + System.IO.Path.DirectorySeparatorChar;
             var programs = repository.DesktopMembers
                 .Where(member => !member.IsLibraryOnly && (member.Directory + System.IO.Path.DirectorySeparatorChar).StartsWith(windows, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(member => member.PackageName == "kubuno-" + repository.Id + "-desktop" ? 0 : 1)
+                .OrderBy(member => member.PackageName == DesktopProgramPackage(repository) ? 0 : 1)
                 .ThenBy(member => member.PackageName, StringComparer.Ordinal)
                 .ToList();
             return programs.Count == 0 ? null : System.IO.Path.Combine(programs[0].Directory, ProjectNaming.ForCrate(programs[0].PackageName) + ".rsproj");
         }
+
+        /// <summary>The package of a repository's main desktop program: Kubuno Desktop for the core, <c>kubuno-&lt;id&gt;-desktop</c> for a module.</summary>
+        public static string DesktopProgramPackage(WebRepository repository) =>
+            repository.Kind == WebRepositoryKind.Core ? "kubuno-desktop-shell" : "kubuno-" + repository.Id + "-desktop";
 
         /// <summary>
         /// Every file for <paramref name="repositories"/> in one solution at <paramref name="solutionPath"/> (a single
@@ -243,7 +248,8 @@ namespace Kubuno.Web.Logic.Generation
                 foreach (var member in repository.DesktopMembers)
                 {
                     var projectPath = System.IO.Path.Combine(member.Directory, ProjectNaming.ForCrate(member.PackageName) + ".rsproj");
-                    files.Add(new GeneratedFile(projectPath, DesktopRsproj(member, InWorkspace(member, repository.DesktopMembers.Count), versions), mergeable: false));
+                    var what = repository.Kind == WebRepositoryKind.Core ? "Kubuno Desktop (the core's desktop workspace)" : "a desktop app of the module";
+                    files.Add(new GeneratedFile(projectPath, ClientRsproj(member, InWorkspace(member, repository.DesktopMembers.Count), versions, what), mergeable: false));
                     entries.Add(Entry(projectPath, RsprojTypeGuid, DesktopFolder, isAnyCpu: false));
                 }
 
@@ -313,7 +319,8 @@ namespace Kubuno.Web.Logic.Generation
                 // Platform layout: the desktop app too (its Windows program, the desktop startup project).
                 if (platform && desktopStartup is not null)
                 {
-                    launchProjects.Add((ProjectNaming.Product(repository.Id) + " desktop (Windows)", new List<string> { Relative(solutionDirectory, desktopStartup) }));
+                    var desktopProfile = repository.Kind == WebRepositoryKind.Core ? "Kubuno Desktop (Windows)" : ProjectNaming.Product(repository.Id) + " desktop (Windows)";
+                    launchProjects.Add((desktopProfile, new List<string> { Relative(solutionDirectory, desktopStartup) }));
                 }
             }
 
@@ -502,8 +509,9 @@ namespace Kubuno.Web.Logic.Generation
                 builder.Append("    <KubunoWebRole>Package</KubunoWebRole>\n");
                 if (frontend.PackageId is not null)
                 {
-                    builder.Append("    <!-- ").Append(Escape(frontend.NpmName ?? frontend.PackageId)).Append(" is built from the host app's sources (core/frontend/packages/build.sh):\n");
-                    builder.Append("         the declarations of frontend/src, then ").Append(frontend.PackageId == "ui" ? "its type tree and the ESM library" : "its type tree")
+                    var host = System.IO.Path.GetFileName(frontend.NodeModulesDirectory ?? "frontend");
+                    builder.Append("    <!-- ").Append(Escape(frontend.NpmName ?? frontend.PackageId)).Append(" is built from the host app's sources (core/").Append(host).Append("/packages/build.sh):\n");
+                    builder.Append("         the declarations of ").Append(host).Append("/src, then ").Append(frontend.PackageId == "ui" ? "its type tree and the ESM library" : "its type tree")
                         .Append(", in obj\\package. The committed types/ and dist/ are regenerated by build.sh; publishing stays a user action. -->\n");
                     builder.Append("    <KubunoPackageId>").Append(Escape(frontend.PackageId)).Append("</KubunoPackageId>\n");
                 }

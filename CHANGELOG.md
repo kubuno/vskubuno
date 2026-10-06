@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Platform layout of the core** ("Kubuno Web: Generate Solution", `docs/WEB.md` "Platform layout of the core"). The
+  core moved to `common/` (the shared server crates' workspace), `server/` (`kubuno-core`, its own workspace), `web/` (the
+  host app and the npm packages; `frontend/` until it moves), `desktop/` (Kubuno Desktop, the former kubuno/desktop
+  repository: one workspace over `desktop/common`, `windows`, `linux`, `macos`) and `mobile/`. `Kubuno.Core.slnx` gets
+  Common / Server / Web / Desktop (Common, Windows, Linux, macOS) / Mobile like a module's, with the `kubuno-core`
+  server project on Kubuno.Web.Sdk 1.0.2, the desktop crates named `Kubuno.Desktop.*`, and a "Kubuno Desktop (Windows)"
+  launch profile on `kubuno-desktop-shell`. One helper, `CoreRepository`, now tells a core checkout apart in either
+  layout everywhere: the generator, the dev core (a module's F5 finds `kubuno-core.exe` in `core\server\target`, the
+  host app in `web\dist`, the themes in `web\themes`), the remembered core repository, the version audit and the module
+  template's `@kubuno/*` versions (`web/packages`, else `frontend/packages`). The version audit also reads a platform
+  module's `server/Cargo.toml` and `web/package.json`.
+- **Kubuno Desktop inside the core.** The Kubuno Desktop Application template finds the framework in a core checkout
+  (`core/desktop/windows`, new token `$kubunodesktopcrates$`; `KUBUNO_DESKTOP_SRC` may name the core, its `desktop`
+  folder or a former kubuno/desktop checkout), the framework crate list test reads
+  `core/desktop/common/kubuno-desktop-views-meta/src/framework.rs`, and Go To Definition ranks the framework crates of
+  `desktop/windows` and `desktop/common` like the former `src/crates`. "Generate Visual Studio Projects" on a workspace
+  of the core points to "Kubuno Web: Generate Solution" (the core has one solution).
+
 - **Platform layout of a module repository** ("Kubuno Web: Generate Solution", `docs/WEB.md` "Solutions"). A module
   moved to `common/`, `server/`, `web/`, `desktop/` (one Cargo workspace over `desktop/common`, `windows`, `linux`,
   `macos`) and `mobile/` gets `Kubuno.<Module>.slnx` with one folder per part, in order: **Common**, **Server**, **Web**,
@@ -785,7 +803,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   body calling the base behaviour. Snippets `onpaint`, `event`, `handler` and `prop` in Rust files.
 - **Item templates** *Contrôle personnalisé Kubuno*, *Contrôle utilisateur Kubuno*, *Contrôle hérité Kubuno* (the base
   control is picked in a small dialog) and *Composant Kubuno*, in Add New Item and in the project's "Ajouter" menu: the
-  file is named after the Rust module (`RoundButton` → `srcound_button.rs`) and the module is declared in
+  file is named after the Rust module (`RoundButton` → `src
+ound_button.rs`) and the module is declared in
   `main.rs`/`lib.rs` for you.
 
 - **The Events tab (⚡) works like Windows Forms' for existing handlers**: the value cell of an event is now a

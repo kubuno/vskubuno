@@ -21,9 +21,13 @@ namespace Kubuno.Rust.TemplateWizard
     /// - <c>$moduleid$</c>: $cratename$ with every '-' turned into '_' - a valid
     ///   Postgres schema identifier / module.toml `id`, for the Kubuno Module template
     ///   (CLAUDE.md section 7: "Schéma &lt;module&gt; uniquement").
-    /// - <c>$kubunodesktopsrc$</c>: the Kubuno desktop Cargo workspace (the <c>windows</c> folder of
-    ///   a github.com/kubuno/desktop checkout) the Kubuno Desktop Application template's path
-    ///   dependencies point at - see <see cref="ResolveDesktopSource"/>.
+    /// - <c>$kubunodesktopsrc$</c>: the Kubuno desktop Cargo workspace (<c>desktop</c> of a
+    ///   github.com/kubuno/core checkout; the <c>windows</c> folder of the former kubuno/desktop
+    ///   repository) - see <see cref="ResolveDesktopSource"/>.
+    /// - <c>$kubunodesktopcrates$</c>: the folder holding the framework's Windows crates
+    ///   (<c>kubuno-desktop</c>, <c>kubuno-desktop-ui</c>…) the Kubuno Desktop Application template's path
+    ///   dependencies point at: <c>core/desktop/windows</c>, or <c>windows/src/crates</c> of the former
+    ///   desktop repository - see <see cref="ResolveDesktopCrates"/>.
     ///
     /// Deliberately minimal: no file generation, no Cargo invocation (cargo
     /// generate-lockfile was tried in the same lot 7 pass and reverted together with
@@ -55,16 +59,66 @@ namespace Kubuno.Rust.TemplateWizard
             string crateName = SanitizeCrateName(safeProjectName);
             replacementsDictionary["$cratename$"] = crateName;
             replacementsDictionary["$moduleid$"] = crateName.Replace('-', '_');
-            replacementsDictionary["$kubunodesktopsrc$"] = ResolveDesktopSource(
-                Environment.GetEnvironmentVariable(DesktopSourceVariable),
-                File.Exists);
+            var configuredDesktop = Environment.GetEnvironmentVariable(DesktopSourceVariable);
+            replacementsDictionary["$kubunodesktopsrc$"] = ResolveDesktopSource(configuredDesktop, File.Exists);
+            replacementsDictionary["$kubunodesktopcrates$"] = ResolveDesktopCrates(configuredDesktop, File.Exists);
         }
 
         /// <summary>The environment variable naming the Kubuno desktop checkout (docs/GETTING-STARTED.md).</summary>
         internal const string DesktopSourceVariable = "KUBUNO_DESKTOP_SRC";
 
-        /// <summary>Where the desktop checkout lives when <see cref="DesktopSourceVariable"/> is not set.</summary>
-        internal const string DefaultDesktopSource = @"Z:\src\desktop\windows";
+        /// <summary>
+        /// Where Kubuno Desktop lives when <see cref="DesktopSourceVariable"/> is not set: the core repository's
+        /// <c>desktop</c> workspace (the kubuno/desktop repository was merged into the core on 2026-10-06), else a former
+        /// kubuno/desktop checkout.
+        /// </summary>
+        internal const string DefaultDesktopSource = @"Z:\src\core\desktop";
+
+        /// <summary>The former kubuno/desktop checkout's workspace, tried when <see cref="DefaultDesktopSource"/> has no framework.</summary>
+        internal const string FormerDesktopSource = @"Z:\src\desktop\windows";
+
+        /// <summary>
+        /// The folder holding the framework's Windows crates (<c>kubuno-desktop</c>, <c>kubuno-desktop-ui</c>…) under
+        /// <paramref name="configured"/> (<c>KUBUNO_DESKTOP_SRC</c>: a core checkout, its <c>desktop</c> or
+        /// <c>desktop\windows</c> folder, or a former kubuno/desktop checkout or its <c>windows</c> folder), else under the
+        /// defaults: <c>core/desktop/windows</c>, or the former <c>windows/src/crates</c>. When nothing is found, the core
+        /// layout's folder of the configured (or default) path, so the generated project's build names it in its error.
+        /// Forward slashes, no trailing separator.
+        /// </summary>
+        internal static string ResolveDesktopCrates(string? configured, Func<string, bool> fileExists)
+        {
+            var roots = string.IsNullOrWhiteSpace(configured)
+                ? new[] { @"Z:\src\core", @"Z:\src\desktop" }
+                : new[] { configured!.Trim().Trim('"').TrimEnd('\\', '/') };
+            foreach (var root in roots)
+            {
+                foreach (var crates in new[]
+                {
+                    root,
+                    Path.Combine(root, "windows"),
+                    Path.Combine(root, "desktop", "windows"),
+                    Path.Combine(root, "src", "crates"),
+                    Path.Combine(root, "windows", "src", "crates"),
+                })
+                {
+                    if (fileExists(Path.Combine(crates, "kubuno-desktop-ui", "Cargo.toml")) || fileExists(Path.Combine(crates, "kubuno-ui", "Cargo.toml")))
+                    {
+                        return crates.Replace('\\', '/');
+                    }
+                }
+            }
+
+            var fallback = roots[0];
+            var name = Path.GetFileName(fallback);
+            if (string.Equals(name, "windows", StringComparison.OrdinalIgnoreCase))
+            {
+                return fallback.Replace('\\', '/');
+            }
+
+            return (string.Equals(name, "desktop", StringComparison.OrdinalIgnoreCase)
+                ? Path.Combine(fallback, "windows")
+                : Path.Combine(fallback, "desktop", "windows")).Replace('\\', '/');
+        }
 
         /// <summary>
         /// The desktop Cargo workspace a new Kubuno Desktop Application depends on, resolved once, at
@@ -78,8 +132,14 @@ namespace Kubuno.Rust.TemplateWizard
         internal static string ResolveDesktopSource(string? configured, Func<string, bool> fileExists)
         {
             string root = string.IsNullOrWhiteSpace(configured)
-                ? DefaultDesktopSource
+                ? (IsDesktopWorkspace(DefaultDesktopSource, fileExists) || !IsDesktopWorkspace(FormerDesktopSource, fileExists) ? DefaultDesktopSource : FormerDesktopSource)
                 : configured!.Trim().Trim('"').TrimEnd('\\', '/');
+
+            // A core checkout: its desktop workspace.
+            if (!IsDesktopWorkspace(root, fileExists) && IsDesktopWorkspace(Path.Combine(root, "desktop"), fileExists))
+            {
+                root = Path.Combine(root, "desktop");
+            }
 
             if (!IsDesktopWorkspace(root, fileExists) && IsDesktopWorkspace(Path.Combine(root, "windows"), fileExists))
             {
@@ -90,7 +150,10 @@ namespace Kubuno.Rust.TemplateWizard
         }
 
         private static bool IsDesktopWorkspace(string root, Func<string, bool> fileExists)
-            => fileExists(Path.Combine(root, "src", "crates", "kubuno-desktop-ui", "Cargo.toml"))
+            // The core's desktop workspace (desktop/windows/<crate>).
+            => fileExists(Path.Combine(root, "windows", "kubuno-desktop-ui", "Cargo.toml"))
+                // The former desktop repository's windows workspace (src/crates/<crate>).
+                || fileExists(Path.Combine(root, "src", "crates", "kubuno-desktop-ui", "Cargo.toml"))
                 // A checkout older than the 2026-10 rename.
                 || fileExists(Path.Combine(root, "src", "crates", "kubuno-ui", "Cargo.toml"));
 

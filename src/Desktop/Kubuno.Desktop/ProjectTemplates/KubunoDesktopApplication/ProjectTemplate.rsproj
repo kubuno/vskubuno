@@ -5,9 +5,11 @@
   <PropertyGroup>
     <CargoPackage>$cratename$</CargoPackage>
 
-    <!-- The Kubuno desktop Cargo workspace this project's Cargo.toml path dependencies point at
-         (keep both in sync). Resolved at project creation from KUBUNO_DESKTOP_SRC. -->
+    <!-- The Kubuno desktop Cargo workspace, and the folder of the framework's Windows crates this project's
+         Cargo.toml path dependencies point at (keep both in sync). Resolved at project creation from
+         KUBUNO_DESKTOP_SRC (a kubuno/core checkout: desktop/windows). -->
     <KubunoDesktopSrc Condition="'$(KubunoDesktopSrc)' == ''">$kubunodesktopsrc$</KubunoDesktopSrc>
+    <KubunoDesktopCrates Condition="'$(KubunoDesktopCrates)' == ''">$kubunodesktopcrates$</KubunoDesktopCrates>
 
     <!-- This project's OWN cargo target directory, so that its builds never wait on, or clean, the
          desktop workspace's (e.g. a machine-wide CARGO_TARGET_DIR that the desktop workspace also
@@ -20,9 +22,9 @@
   <!-- Stops early, with a message that says what to do, when the desktop sources are missing
        (instead of cargo's "failed to read ...\Cargo.toml"). -->
   <Target Name="KubunoCheckDesktopSources" BeforeTargets="CargoRestore;CoreCompile">
-    <Error Condition="!Exists('$(KubunoDesktopSrc)/src/crates/kubuno-desktop-ui/Cargo.toml')"
+    <Error Condition="!Exists('$(KubunoDesktopCrates)/kubuno-desktop-ui/Cargo.toml')"
            Code="KUBUNO0001"
-           Text="The Kubuno desktop sources were not found at '$(KubunoDesktopSrc)'. This project builds against a local checkout of github.com/kubuno/desktop (its 'windows' folder). Clone it, then either set the KUBUNO_DESKTOP_SRC environment variable to that folder before creating a project, or point &lt;KubunoDesktopSrc&gt; in this .rsproj and the three kubuno-* paths in Cargo.toml at it." />
+           Text="The Kubuno desktop sources were not found at '$(KubunoDesktopCrates)'. This project builds against a local checkout of github.com/kubuno/core (its 'desktop/windows' folder holds the framework). Clone it, then either set the KUBUNO_DESKTOP_SRC environment variable to that checkout before creating a project, or point &lt;KubunoDesktopCrates&gt; in this .rsproj and the kubuno-desktop path in Cargo.toml at its desktop/windows folder." />
   </Target>
 
 </Project>

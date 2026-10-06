@@ -99,7 +99,7 @@ namespace Kubuno.Web.Logic.DevCore
                 }
 
                 var path = File.ReadAllText(CoreRepositoryFile).Trim();
-                return path.Length > 0 && File.Exists(Path.Combine(path, "crates", "kubuno-core", "Cargo.toml")) ? path : null;
+                return path.Length > 0 && Kubuno.Rust.Cargo.Naming.CoreRepository.IsCore(path) ? path : null;
             }
             catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException)
             {

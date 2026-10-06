@@ -11,7 +11,12 @@ namespace Kubuno.Views.Tests.Designer.Registry
     [TestClass]
     public class FrameworkCratesTests
     {
-        private const string RustListPath = @"desktop\windows\src\crates\kubuno-desktop-views-meta\src\framework.rs";
+        /// <summary>Where the Rust list lives: the core's desktop workspace (since 2026-10-06), else a former kubuno/desktop checkout.</summary>
+        private static readonly string[] RustListPaths =
+        {
+            @"core\desktop\common\kubuno-desktop-views-meta\src\framework.rs",
+            @"desktop\windows\src\crates\kubuno-desktop-views-meta\src\framework.rs",
+        };
 
         [TestMethod]
         public void The_framework_is_a_list_not_a_prefix()
@@ -33,7 +38,7 @@ namespace Kubuno.Views.Tests.Designer.Registry
             var file = FindRustList();
             if (file is null)
             {
-                Assert.Inconclusive("the desktop sources (" + RustListPath + ") are not next to vskubuno");
+                Assert.Inconclusive("the desktop sources (" + string.Join(" or ", RustListPaths) + ") are not next to vskubuno");
                 return;
             }
 
@@ -44,16 +49,19 @@ namespace Kubuno.Views.Tests.Designer.Registry
             CollectionAssert.AreEqual(rust, FrameworkCrates.Names.ToArray(), "FrameworkCrates.Names and " + file + " differ: keep them identical, in the same order");
         }
 
-        /// <summary>The Rust list in the desktop checkout next to vskubuno (found from this source file's folder upwards).</summary>
+        /// <summary>The Rust list in the core (or former desktop) checkout next to vskubuno (found from this source file's folder upwards).</summary>
         private static string? FindRustList([CallerFilePath] string source = "")
         {
             var dir = string.IsNullOrEmpty(source) ? null : Path.GetDirectoryName(source);
             while (!string.IsNullOrEmpty(dir))
             {
-                var candidate = Path.Combine(dir, RustListPath);
-                if (File.Exists(candidate))
+                foreach (var path in RustListPaths)
                 {
-                    return candidate;
+                    var candidate = Path.Combine(dir, path);
+                    if (File.Exists(candidate))
+                    {
+                        return candidate;
+                    }
                 }
 
                 dir = Path.GetDirectoryName(dir);

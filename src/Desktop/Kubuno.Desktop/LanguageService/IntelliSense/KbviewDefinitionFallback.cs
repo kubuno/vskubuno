@@ -157,7 +157,11 @@ namespace Kubuno.Desktop.LanguageService.IntelliSense
                 return 2;
             }
 
-            return path.IndexOf("/crates/kubuno-", StringComparison.OrdinalIgnoreCase) >= 0 ? 3 : 4;
+            // Another framework crate: under the former desktop repository's windows/src/crates, or the core's
+            // desktop/windows and desktop/common (one folder per crate).
+            return path.IndexOf("/crates/kubuno-", StringComparison.OrdinalIgnoreCase) >= 0
+                || path.IndexOf("/desktop/windows/kubuno-", StringComparison.OrdinalIgnoreCase) >= 0
+                || path.IndexOf("/desktop/common/kubuno-", StringComparison.OrdinalIgnoreCase) >= 0 ? 3 : 4;
         }
 
         /// <summary>The folder of the Cargo package the view belongs to (its nearest Cargo.toml), or null.</summary>
