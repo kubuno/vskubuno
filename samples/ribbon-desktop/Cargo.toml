@@ -11,6 +11,6 @@ publish = false
 #   ribbon-desktop.exe --dark      the dark theme
 
 [dependencies]
-# Kubuno, from a local checkout of github.com/kubuno/desktop (its `windows` workspace), like the
-# Kubuno Desktop Application template (change it here AND <KubunoDesktopSrc> in the .rsproj).
-kubuno-desktop = { path = "Z:/src/desktop/windows/src/crates/kubuno-desktop" }
+# Kubuno, from a local checkout of github.com/kubuno/core (the framework's Windows crates in `desktop/windows`), like the
+# Kubuno Desktop Application template (change it here AND <KubunoDesktopCrates> in the .rsproj).
+kubuno-desktop = { path = "Z:/src/core/desktop/windows/kubuno-desktop" }

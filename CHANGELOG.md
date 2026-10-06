@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `core/desktop/common/kubuno-desktop-views-meta/src/framework.rs`, and Go To Definition ranks the framework crates of
   `desktop/windows` and `desktop/common` like the former `src/crates`. "Generate Visual Studio Projects" on a workspace
   of the core points to "Kubuno Web: Generate Solution" (the core has one solution).
+  The desktop samples (`samples/*-desktop`) build against a core checkout (`Z:\src\core\desktop\windows`,
+  `<KubunoDesktopCrates>` in their `.rsproj`).
 
 - **Platform layout of a module repository** ("Kubuno Web: Generate Solution", `docs/WEB.md` "Solutions"). A module
   moved to `common/`, `server/`, `web/`, `desktop/` (one Cargo workspace over `desktop/common`, `windows`, `linux`,

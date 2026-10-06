@@ -15,8 +15,8 @@ publish = false
 #   foundations-desktop.exe --page <n>     opens on page n (0 lists, 1 cards, 2 people, 3 form)
 
 [dependencies]
-# Kubuno, from a local checkout of github.com/kubuno/desktop (its `windows` workspace), like the
-# Kubuno Desktop Application template (change it here AND <KubunoDesktopSrc> in the .rsproj).
-kubuno-desktop = { path = "Z:/src/desktop/windows/src/crates/kubuno-desktop" }
+# Kubuno, from a local checkout of github.com/kubuno/core (the framework's Windows crates in `desktop/windows`), like the
+# Kubuno Desktop Application template (change it here AND <KubunoDesktopCrates> in the .rsproj).
+kubuno-desktop = { path = "Z:/src/core/desktop/windows/kubuno-desktop" }
 # The custom controls of another crate of the application: usable in the views like its own.
 foundations-controls = { path = "controls" }

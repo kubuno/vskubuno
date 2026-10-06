@@ -435,32 +435,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "drive-app-controls"
-version = "0.1.0"
-dependencies = [
- "drive-shared",
- "tracing",
- "windows",
- "windows-numerics",
-]
-
-[[package]]
-name = "drive-shared"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "crc32fast",
- "hex",
- "md-5",
- "serde",
- "sha1",
- "sha2",
- "thiserror",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "endi"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -759,27 +733,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "kubuno"
-version = "0.1.0-alpha"
+name = "kubuno-desktop"
+version = "0.1.1-alpha"
 dependencies = [
- "kubuno-app-storage-components",
- "kubuno-controls",
- "kubuno-print",
- "kubuno-resources",
- "kubuno-resources-macros",
- "kubuno-ui",
- "kubuno-views",
- "kubuno-views-macros",
+ "kubuno-desktop-app-storage-components",
+ "kubuno-desktop-controls",
+ "kubuno-desktop-print",
+ "kubuno-desktop-resources",
+ "kubuno-desktop-resources-macros",
+ "kubuno-desktop-ui",
+ "kubuno-desktop-views",
+ "kubuno-desktop-views-macros",
  "serde_json",
  "tracing",
 ]
 
 [[package]]
-name = "kubuno-app-storage"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-app-storage"
+version = "0.1.1-alpha"
 dependencies = [
  "hex",
- "kubuno-secrets",
+ "kubuno-desktop-secrets",
  "serde",
  "serde_json",
  "sha2",
@@ -789,23 +763,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "kubuno-app-storage-components"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-app-storage-components"
+version = "0.1.1-alpha"
 dependencies = [
- "kubuno-app-storage",
- "kubuno-resources-model",
- "kubuno-views",
+ "kubuno-desktop-app-storage",
+ "kubuno-desktop-resources-model",
+ "kubuno-desktop-views",
  "serde_json",
  "tracing",
 ]
 
 [[package]]
-name = "kubuno-controls"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-controls"
+version = "0.1.1-alpha"
 dependencies = [
  "accesskit",
  "accesskit_windows",
- "drive-app-controls",
+ "kubuno-drive-desktop-app-controls",
  "log",
  "tracing",
  "windows",
@@ -814,13 +788,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "kubuno-print"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-print"
+version = "0.1.1-alpha"
 dependencies = [
- "drive-app-controls",
- "kubuno-controls",
- "kubuno-ui",
- "kubuno-views",
+ "kubuno-desktop-controls",
+ "kubuno-desktop-ui",
+ "kubuno-desktop-views",
+ "kubuno-drive-desktop-app-controls",
  "thiserror",
  "tracing",
  "windows",
@@ -830,35 +804,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "kubuno-resources"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-resources"
+version = "0.1.1-alpha"
 dependencies = [
- "kubuno-resources-macros",
- "kubuno-resources-model",
+ "kubuno-desktop-resources-macros",
+ "kubuno-desktop-resources-model",
  "tracing",
  "windows",
 ]
 
 [[package]]
-name = "kubuno-resources-macros"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-resources-macros"
+version = "0.1.1-alpha"
 dependencies = [
- "kubuno-resources-model",
+ "kubuno-desktop-resources-model",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
 ]
 
 [[package]]
-name = "kubuno-resources-model"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-resources-model"
+version = "0.1.1-alpha"
 dependencies = [
  "base64",
 ]
 
 [[package]]
-name = "kubuno-secrets"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-secrets"
+version = "0.1.1-alpha"
 dependencies = [
  "getrandom 0.2.17",
  "hex",
@@ -872,14 +846,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "kubuno-ui"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-ui"
+version = "0.1.1-alpha"
 dependencies = [
  "accesskit",
  "accesskit_windows",
- "drive-app-controls",
- "find-msvc-tools",
- "kubuno-controls",
+ "kubuno-desktop-controls",
+ "kubuno-drive-desktop-app-controls",
  "serde",
  "serde_json",
  "tracing",
@@ -888,17 +861,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "kubuno-views"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-views"
+version = "0.1.1-alpha"
 dependencies = [
- "drive-app-controls",
- "kubuno-controls",
- "kubuno-resources",
- "kubuno-ui",
- "kubuno-views-macros",
- "kubuno-views-meta",
- "kubuno-views-model",
- "kubuno-views-syntax",
+ "kubuno-desktop-controls",
+ "kubuno-desktop-resources",
+ "kubuno-desktop-ui",
+ "kubuno-desktop-views-macros",
+ "kubuno-desktop-views-meta",
+ "kubuno-desktop-views-model",
+ "kubuno-desktop-views-syntax",
+ "kubuno-drive-desktop-app-controls",
  "rowan",
  "serde",
  "serde_json",
@@ -907,18 +880,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "kubuno-views-macros"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-views-macros"
+version = "0.1.1-alpha"
 dependencies = [
- "kubuno-views-meta",
+ "kubuno-desktop-views-meta",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
 ]
 
 [[package]]
-name = "kubuno-views-meta"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-views-meta"
+version = "0.1.1-alpha"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -926,19 +899,45 @@ dependencies = [
 ]
 
 [[package]]
-name = "kubuno-views-model"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-views-model"
+version = "0.1.1-alpha"
 dependencies = [
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "kubuno-views-syntax"
-version = "0.1.0-alpha"
+name = "kubuno-desktop-views-syntax"
+version = "0.1.1-alpha"
 dependencies = [
- "kubuno-views-model",
+ "kubuno-desktop-views-model",
  "rowan",
+]
+
+[[package]]
+name = "kubuno-drive-desktop-app-controls"
+version = "0.1.0"
+dependencies = [
+ "kubuno-drive-desktop-shared",
+ "tracing",
+ "windows",
+ "windows-numerics",
+]
+
+[[package]]
+name = "kubuno-drive-desktop-shared"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "crc32fast",
+ "hex",
+ "md-5",
+ "serde",
+ "sha1",
+ "sha2",
+ "thiserror",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1436,7 +1435,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 name = "storage-desktop"
 version = "0.1.0"
 dependencies = [
- "kubuno",
+ "kubuno-desktop",
 ]
 
 [[package]]
