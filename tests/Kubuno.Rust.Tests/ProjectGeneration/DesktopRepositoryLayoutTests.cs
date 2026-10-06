@@ -56,6 +56,16 @@ namespace Kubuno.Rust.Tests.ProjectGeneration
         }
 
         [TestMethod]
+        public void The_painting_surface_under_the_framework_crates_is_framework()
+        {
+            // Since the Drive app moved to the drive repository (2026-10), the crates ported from Files that every control
+            // draws through live in windows/src/crates: they are the framework's, not a Drive engine.
+            Assert.AreEqual(DesktopRepositoryLayout.Framework, DesktopRepositoryLayout.FolderOf(Item("kubuno-drive-desktop-app-controls", "windows/src/crates/kubuno-drive-desktop-app-controls", program: false), Repo));
+            Assert.AreEqual(DesktopRepositoryLayout.Framework, DesktopRepositoryLayout.FolderOf(Item("kubuno-drive-desktop-shared", "windows/src/crates/kubuno-drive-desktop-shared", program: false), Repo));
+            Assert.AreEqual(DesktopRepositoryLayout.DriveEngine, DesktopRepositoryLayout.FolderOf(Item("kubuno-drive-desktop-shared", "windows/src/drive/crates/kubuno-drive-desktop-shared", program: false), Repo), "an older checkout keeps its Drive engine folder");
+        }
+
+        [TestMethod]
         public void A_fresh_solution_lists_the_folders_in_order_with_project_named_files()
         {
             var plan = RsprojSlnxGenerator.PlanWithFolders(Repo, null, Members, m => DesktopRepositoryLayout.FolderOf(m, Repo), DesktopRepositoryLayout.FolderOrder);

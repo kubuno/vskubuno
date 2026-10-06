@@ -189,6 +189,11 @@ Every Kubuno repository has one versioned solution named after it (`Kubuno.Core.
 both generators: `Kubuno.Rust.Cargo.Naming.ProjectNaming` (netstandard2.0, so the web layer's pure logic shares it);
 the desktop repository's folders and its two-workspace solution are `Kubuno.Rust.Logic.ProjectGeneration.DesktopRepositoryLayout`.
 
+Per-module repositories (status 2026-10-06, docs/DESKTOP-MIGRATION.md): a module repository holds its desktop apps under
+`desktop/<os>/` (one Cargo workspace per OS, framework crates by the git tag `desktop-v<version>` of kubuno/desktop), and
+its solution lists them in a **Desktop** folder (`WebRepository.DesktopMembers`). Done: chat (pilot) and drive; next:
+documents (office), then the Android apps.
+
 ## Themed dialogs
 
 Every dialog and WPF surface the extension shows must look like Visual Studio's own in the dark, light, blue and

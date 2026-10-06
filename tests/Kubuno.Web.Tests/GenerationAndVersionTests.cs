@@ -150,6 +150,42 @@ namespace Kubuno.Web.Tests
         }
 
         [TestMethod]
+        public void A_module_desktop_app_goes_to_the_desktop_folder_with_its_engine_crates()
+        {
+            // The per-module reorganisation (2026-10): a module repository holds its desktop apps under desktop/<os>, each
+            // OS a Cargo workspace of its own (drive: the app + its engine crates; chat: one package).
+            var drive = WriteModule("drive", "^0.1.1", "seccomp-v0.1.0");
+            var windows = Path.Combine(drive, "desktop", "windows");
+            Write(Path.Combine(windows, "Cargo.toml"), "[workspace]\nmembers = [\"crates/kubuno-drive-desktop\", \"crates/kubuno-drive-desktop-shared-engine\"]\n");
+            Write(Path.Combine(windows, "crates", "kubuno-drive-desktop", "Cargo.toml"), "[package]\nname = \"kubuno-drive-desktop\"\n\n[[bin]]\nname = \"drive\"\npath = \"src/main.rs\"\n");
+            Write(Path.Combine(windows, "crates", "kubuno-drive-desktop-shared-engine", "Cargo.toml"), "[package]\nname = \"kubuno-drive-desktop-shared-engine\"\n");
+
+            var module = WebRepository.Detect(drive, out _)!;
+            CollectionAssert.AreEqual(new[] { "kubuno-drive-desktop", "kubuno-drive-desktop-shared-engine" }, module.DesktopMembers.Select(member => member.PackageName).ToArray());
+            Assert.IsFalse(module.Members.Any(member => member.PackageName.StartsWith("kubuno-drive-desktop", StringComparison.Ordinal)), "the desktop workspace is not the server's");
+
+            var files = WebSolutionGenerator.Plan(new[] { module }, WebSolutionGenerator.DefaultSolutionPath(module), WebSdkVersions.Current, null);
+            var root = XDocument.Parse(files.Single(file => file.Mergeable).Content).Root!;
+            CollectionAssert.AreEqual(new[] { "/Server/", "/Frontend/", "/Desktop/" }, root.Elements("Folder").Select(folder => (string)folder.Attribute("Name")!).ToArray());
+            var desktop = root.Elements("Folder").Single(folder => (string)folder.Attribute("Name")! == "/Desktop/");
+            CollectionAssert.AreEquivalent(
+                new[] { "desktop/windows/crates/kubuno-drive-desktop/Kubuno.Drive.Desktop.rsproj", "desktop/windows/crates/kubuno-drive-desktop-shared-engine/Kubuno.Drive.Desktop.Shared.Engine.rsproj" },
+                desktop.Elements("Project").Select(project => (string)project.Attribute("Path")!).ToArray());
+            Assert.IsFalse(desktop.Descendants("BuildDependency").Any(), "a desktop app does not wait for the server or the frontend");
+
+            var app = files.Single(file => file.Path.EndsWith("Kubuno.Drive.Desktop.rsproj", StringComparison.Ordinal)).Content;
+            XDocument.Parse(app);
+            StringAssert.Contains(app, "<CargoPackage>kubuno-drive-desktop</CargoPackage>");
+            StringAssert.Contains(app, "<CargoBin>drive</CargoBin>");
+            StringAssert.Contains(app, "<CargoBuildScope>Workspace</CargoBuildScope>");
+            Assert.IsFalse(app.Contains("Kubuno.Web.Sdk"), "a desktop app is not started as a web module");
+            CollectionAssert.Contains(WebSolutionGenerator.Describe(module).ToList(), "Desktop: Kubuno.Drive.Desktop.rsproj (kubuno-drive-desktop, program)");
+
+            // A module without a desktop app has no Desktop folder.
+            Assert.AreEqual(0, WebRepository.Detect(Path.Combine(_root, "calendar"), out _)!.DesktopMembers.Count);
+        }
+
+        [TestMethod]
         public void A_web_solution_opened_without_user_options_starts_its_program_not_its_frontend()
         {
             // Found live (drive, fresh .vs): Visual Studio picked frontend\drive-frontend.esproj although the backend

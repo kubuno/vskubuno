@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Desktop folder in a module's solution** ("Kubuno Web: Generate Solution"). A module repository now holds its desktop
+  apps under `desktop/windows` (later `desktop/linux`, `desktop/macos`), each a Cargo workspace of its own; the
+  generator lists their packages in a **Desktop** folder after Server, Libraries and Frontend (`Kubuno.Chat.Desktop`,
+  `Kubuno.Drive.Desktop` and its engine crates), with a plain Rust project (no web role, whole-workspace build when the
+  workspace has several packages) and no build dependency on the server or the frontend.
+
 - **`PanelBackground` theme colour** in the colour editor: the ground of the header's panels (the apps launcher, the
   account panel), `#E9EEF6` light / `#303134` dark, as on the web (`--color-panel-bg`) and the desktop runtime. The
   panels' frame no longer carries a fixed colour, so it follows the dark theme in the designer too.

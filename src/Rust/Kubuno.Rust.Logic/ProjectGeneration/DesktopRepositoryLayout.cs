@@ -49,7 +49,8 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
 
         /// <summary>
         /// The folder of a member: <c>common/</c> → Common (multi-OS); <c>kubuno-web-*</c> → Web; the shell controls → Shared
-        /// controls; a <c>kubuno-drive-desktop-*</c> library → Drive engine; a program under <c>windows/src/crates</c> → Tools;
+        /// controls; a <c>kubuno-drive-desktop-*</c> library outside <c>windows/src/crates</c> → Drive engine; a program under
+        /// <c>windows/src/crates</c> → Tools;
         /// any other program → Applications; any other library → Framework.
         /// </summary>
         public static string FolderOf(RsprojProjectPlanItem member, string repositoryRoot)
@@ -82,7 +83,10 @@ namespace Kubuno.Rust.Logic.ProjectGeneration
                 return manifest.StartsWith(root + "windows/src/crates/", StringComparison.OrdinalIgnoreCase) ? Tools : Applications;
             }
 
-            if (name.StartsWith("kubuno-drive-desktop", StringComparison.Ordinal) || name.StartsWith("drive-", StringComparison.Ordinal))
+            // The painting surface ported from Files (kubuno-drive-desktop-app-controls, -shared) is framework since the
+            // Drive app moved to the drive repository (2026-10): it lives under windows/src/crates with the other layers.
+            if ((name.StartsWith("kubuno-drive-desktop", StringComparison.Ordinal) || name.StartsWith("drive-", StringComparison.Ordinal))
+                && !manifest.StartsWith(root + "windows/src/crates/", StringComparison.OrdinalIgnoreCase))
             {
                 return DriveEngine;
             }

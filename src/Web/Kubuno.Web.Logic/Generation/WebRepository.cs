@@ -83,7 +83,7 @@ namespace Kubuno.Web.Logic.Generation
             ["drive"] = new[] { "drive" },
         };
 
-        private WebRepository(string root, WebRepositoryKind kind, string name, IReadOnlyList<CargoMember> members, string? runPackage, string? runBin, IReadOnlyList<FrontendProject> frontends, ModuleManifest? module, IReadOnlyList<string> submodules)
+        private WebRepository(string root, WebRepositoryKind kind, string name, IReadOnlyList<CargoMember> members, string? runPackage, string? runBin, IReadOnlyList<FrontendProject> frontends, ModuleManifest? module, IReadOnlyList<string> submodules, IReadOnlyList<CargoMember> desktopMembers)
         {
             Root = root;
             Kind = kind;
@@ -94,6 +94,7 @@ namespace Kubuno.Web.Logic.Generation
             Frontends = frontends;
             Module = module;
             Submodules = submodules;
+            DesktopMembers = desktopMembers;
         }
 
         public string Root { get; }
@@ -125,6 +126,16 @@ namespace Kubuno.Web.Logic.Generation
         /// <summary>The git submodules' paths (relative, from <c>.gitmodules</c>).</summary>
         public IReadOnlyList<string> Submodules { get; }
 
+        /// <summary>
+        /// The packages of the module's desktop apps: the members of the Cargo workspaces under <c>desktop/windows</c>,
+        /// <c>desktop/linux</c> and <c>desktop/macos</c> (a module repository holds all its clients - docs/WEB.md,
+        /// "Solutions"). Each is a workspace of its own, apart from the server's. Empty for the core.
+        /// </summary>
+        public IReadOnlyList<CargoMember> DesktopMembers { get; }
+
+        /// <summary>The folders of a module repository that may hold a desktop app's Cargo workspace, one per OS.</summary>
+        public static IReadOnlyList<string> DesktopWorkspaceFolders { get; } = new[] { "windows", "linux", "macos" };
+
         /// <summary>The module id, or <c>core</c>.</summary>
         public string Id => Module?.Id ?? "core";
 
@@ -147,7 +158,7 @@ namespace Kubuno.Web.Logic.Generation
             {
                 var core = members.FirstOrDefault(member => member.PackageName == "kubuno-core");
                 var bin = core is not null && core.Bins.Contains("kubuno-core") && core.Bins.Count > 1 ? "kubuno-core" : null;
-                return new WebRepository(root, WebRepositoryKind.Core, name, members, core?.PackageName, bin, ReadFrontends(root, "kubuno", isCore: true), null, submodules);
+                return new WebRepository(root, WebRepositoryKind.Core, name, members, core?.PackageName, bin, ReadFrontends(root, "kubuno", isCore: true), null, submodules, Array.Empty<CargoMember>());
             }
 
             var moduleToml = Path.Combine(root, "module.toml");
@@ -163,7 +174,7 @@ namespace Kubuno.Web.Logic.Generation
                     bin = run.Bins[0];
                 }
 
-                return new WebRepository(root, WebRepositoryKind.Module, name, members, run?.PackageName, bin, ReadFrontends(root, manifest.Id, isCore: false), manifest, submodules);
+                return new WebRepository(root, WebRepositoryKind.Module, name, members, run?.PackageName, bin, ReadFrontends(root, manifest.Id, isCore: false), manifest, submodules, ReadDesktopMembers(root));
             }
 
             reason = "'" + root + "' is neither Kubuno Core (crates/kubuno-core) nor a module (module.toml).";
@@ -205,6 +216,25 @@ namespace Kubuno.Web.Logic.Generation
             foreach (var submodule in submodules ?? Array.Empty<string>())
             {
                 Add(CargoMember.TryRead(Path.GetFullPath(Path.Combine(root, submodule.Replace('/', Path.DirectorySeparatorChar)))));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// The members of every desktop workspace of a module repository (<c>desktop/&lt;os&gt;/Cargo.toml</c>, see
+        /// <see cref="DesktopMembers"/>), in OS order.
+        /// </summary>
+        public static IReadOnlyList<CargoMember> ReadDesktopMembers(string root)
+        {
+            var result = new List<CargoMember>();
+            foreach (var os in DesktopWorkspaceFolders)
+            {
+                var workspace = Path.Combine(root, "desktop", os);
+                if (File.Exists(Path.Combine(workspace, "Cargo.toml")))
+                {
+                    result.AddRange(ReadMembers(workspace).Where(member => result.All(existing => !string.Equals(existing.Directory, member.Directory, StringComparison.OrdinalIgnoreCase))));
+                }
             }
 
             return result;

@@ -29,6 +29,27 @@ Decisions: the desktop keeps the system font (Plus Jakarta Sans stays web-only);
 (`<RibbonTab.ScalingPolicy>`) is adopted in `.kbview`; drive code ported from Files stays MIT-noticed when it moves
 into AGPL crates.
 
+## Per-module repositories (2026-10)
+
+User decision of 2026-10-03: each module repository holds all its clients (server, web frontend, `desktop/` per OS,
+later `mobile/`); `kubuno/desktop` keeps only the foundation — Kubuno Desktop (the shell), the framework, the shared
+controls and the common crates. Apps link the framework statically and need Kubuno Desktop only as a service.
+
+| Step | Status |
+|---|---|
+| Framework tag | **done 2026-10-06**: one annotated tag `desktop-v0.1.0-alpha` pins every framework and common crate (all at `0.1.0-alpha`), published to GitHub through GitLab's `sync-github` job; apps use `{ git = "https://github.com/kubuno/desktop", tag = "desktop-v0.1.0-alpha" }` in their `[workspace.dependencies]` (desktop README, "Versions and tags") |
+| Painting surface | `kubuno-drive-desktop-app-controls` and `kubuno-drive-desktop-shared` (ported from Files, MIT) stay in the framework, moved to `desktop/windows/src/crates/` (every control draws through them); `DesktopRepositoryLayout` files them under Framework. Renaming them (`kubuno-canvas`, F5) is still to do |
+| **chat** (pilot) | **done 2026-10-06**: `chat/desktop/windows/` (history kept: `git subtree split` + merge under the prefix), own workspace and `Cargo.lock`, CI `.github/workflows/desktop.yml` (Windows), `Kubuno.Chat.Desktop` in `Kubuno.Chat.slnx` folder **Desktop** |
+| **drive** | **done 2026-10-06**: `drive/desktop/windows/` (history kept) with `kubuno-drive-desktop`, `-app-storage`, `-core-storage`, `-localization`, `LICENSE-MIT` for the Files port, CI `desktop.yml`, `Kubuno.Drive.slnx` folder **Desktop** |
+| documents → office | next: `kubuno-office-desktop` (+ `common/kubuno-office-docs-core`, the shared engine, to decide: tag it from desktop or move it to office) |
+| Android apps → modules | after the shared Android libraries are published (Maven) |
+| Linux / macOS desktop apps | `desktop/linux`, `desktop/macos` hold a README until written; CI jobs join then |
+
+The web solution generator ("Kubuno Web: Generate Solution", `WebSolutionGenerator`) lists a module's desktop
+workspaces (`desktop/windows`, `desktop/linux`, `desktop/macos`: `WebRepository.DesktopMembers`) in a **Desktop**
+folder after Server / Libraries / Frontend, projects named by `ProjectNaming.ForCrate` (`Kubuno.Chat.Desktop`,
+`Kubuno.Drive.Desktop.App.Storage`), with no build dependency on the server or the frontend.
+
 ## Foundations (ordered)
 
 | Lot | Content | Needed by |
@@ -62,7 +83,7 @@ module); the apps `kubuno-desktop-shell` (Kubuno Desktop), `kubuno-chat-desktop`
 with the per-module reorganisation). The web views compiler is `kubuno-web-views-compiler-core`. The executables keep
 their names (`kubuno-desktop.exe`, `kubuno-chat.exe`, `kubuno-documents.exe`, `drive.exe`), and so do the identifiers
 the apps persist (settings folders, credentials, pipes, registry values, AppUserModelIDs). The solution is
-`desktop\Kubuno.Desktop.slnx` (folders Applications, Framework, Shared controls, Common (multi-OS), Drive engine,
+`desktop\Kubuno.Desktop.slnx` (folders Applications, Framework, Shared controls, Common (multi-OS),
 Tools, Web). The rule "a framework crate is listed, never matched by a `kubuno` prefix" holds: the list
 (`FRAMEWORK_CRATES` / `FrameworkCrates`) has the new names, then the former ones for an older checkout.
 
