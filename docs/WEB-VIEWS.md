@@ -1650,23 +1650,92 @@ module projects in the designer.
 
 ## 22. Module migration status: drive (2026-10-06)
 
-`drive/frontend` builds its views with the **published** packages (`@kubuno/views` ^0.1.2, `@kubuno/views-compiler`
-^0.1.1, registry of `@kubuno/ui` 0.1.15): `kubuno.views.json` (`target: web`, host registry from `node_modules`),
-`kbview()` first in `vite.config.ts` with `@kubuno/views` shared (import map), `rootDirs` + `.kubuno/views` in
-`tsconfig.json`, `typecheck` / `build` through `kbview-tsc -b`, and `viewsAbi = 1` exported by `entry.ts`. The views run
-on the host's `@kubuno/views` (no module bundles its own runtime); no import of the core or of another module.
+`drive/frontend` builds its views with the **published** packages (`@kubuno/views` ^0.1.3, `@kubuno/views-compiler`
+^0.1.2, registry of `@kubuno/ui` ^0.1.16, `@kubuno/host-runtime` ^0.1.0 for the designer): `kubuno.views.json`
+(`target: web`, host registry from `node_modules`, `design.setup: ["src/index.css", "src/i18n.ts"]`), `kbview()` first
+in `vite.config.ts` with `@kubuno/views` shared (import map), `rootDirs` + `.kubuno/views` in `tsconfig.json`,
+`typecheck` / `build` through `kbview-tsc -b`, and `viewsAbi = 1` exported by `entry.ts`. The views run on the host's
+`@kubuno/views` (no module bundles its own runtime); no import of the core or of another module.
+
+### 22.1 Converted and measured
+
+Every drive view was converted again from its original TSX with `kbview-migrate` 0.1.1 (`regen-drive.sh`, hand fixes
+for the codemod defects of §22.4 applied by `fixups.mjs`, both in `E:\kubuno-build\agent-webmig3\`).
 
 | Measure | Result |
 |---|---|
-| Files | 18 (the Drive page shell, `drive-app/*` and the dialogs): 5 converted, 13 partial; 7 more left as TSX (file and folder cards and rows, context menu, dialog and viewer layers: nothing maps) |
-| Elements mapped | 349 / 407 (86 %), 49 parts, 212 `Class` |
-| `kbview-tsc -b` / `vite build` | 0 errors / built |
-| §7 parity (drive installed in the bench's dev core from its Windows `.kbpkg`, seeded with three folders and three files) | **8 / 8** — my files, home, starred, shared, recent, trash, search results, « Import from a URL » dialog; one capture of `drive-home` lost to a shell timeout on both sides |
-| Commit (drive) | `8c55267`, `7fd3b73` |
+| Files | 37: 7 converted, 29 partial, 1 split (`TagUI` → `TagDots`, `TagDialog`, `TagInfoSection`) |
+| Elements mapped | 678 / 853 (79 %), 147 parts, 463 `Class` (codemod output; the checkbox-label fix moves 12 elements back to React) |
+| `kbview-tsc -b` / `vite build` / `.kbpkg` | 0 errors / built / built (Windows, `build_kbpkg.sh` PowerShell fallback fixed) |
+| §7 parity (drive installed in the bench's dev core from its Windows `.kbpkg`, seeded: duplicates, image, zip, video, STL, trashed file, label, lock) | **31 / 31**, worst root diff 0.124 % (open dialog, folder picker); accessibility tree, text and Tab order identical everywhere |
+| Commits (drive) | `8c55267`, `7fd3b73`, `affaee9` |
 
-Not benched yet: duplicates, storage overview, advanced share dialogs and the details panel (converted, typecheck
-clean; their triggers are outside the Drive page). Irreducible here: `StorageExplorer` (the file explorer of
-`@kubuno/drive`, core package), the virtualised grid cells, drag-and-drop and marquee selection (pointer capture,
-refs), viewers. Designer: the module project opens, but its design host needs `@kubuno/host-runtime` in the module's
-dev server (not published, §18.4) and the surface reports registry errors (`Label` has no `HtmlTag`…) where `kbview-tsc`
-with the same registry compiles clean — to investigate in the VSIX's project detection for modules.
+Screens: my files, home (`MobileHome` at 390), starred, shared, recent, trash (with its banner), search results,
+« Import from a URL »; duplicates, storage overview, advanced sharing, labels dialog, info panel (labels section), image
+edit, archive browser, video player (video masked), 3D viewer (canvas masked), image search, empty search, filter
+panel, settings (three tabs), storage page, side-panel mini view, open dialog, folder picker, image picker (Drive tab),
+fonts home / family / cart (cart at 1440 only: no button at 390). The details panel (`DetailsPanel`) is dead code
+(imported nowhere); the info panel shown is `@kubuno/drive`'s. Bench: `C:\kubuno-build\agent-webmig3\bench3`
+(`screens-d1.json`, `screens-d2.json`, `run3.ps1`), reports `C:\kubuno-build\agent-webmig2\bench\captures\diff-d1-before-d1-after\parity.json`
+and `…\diff-d2-before-d2-after\parity.json`.
+
+Per group (mapped / total): settings + WebDAV 32/44 (11 parts), storage page 50/63 (10), filter panel 32/32, sidebar
+tree 6/33 (23), image edit 43/62 (19), fonts pages 36/51 (14), labels 25/32, archive browser 26/28, 3D viewer 21/23,
+image picker source 27/37, dialog breadcrumb + tree 11/15, mini panel 4/6, mobile home 6/9, gauge 4/5, trash banner 6/6.
+
+Left as TSX: `FilesDashboardWidget` (renders nothing: it waits for a `files` module that never exists),
+`ModuleMountExplorer` (needs a module publishing a storage mount), and the screens nothing of which maps — `DriveHome`,
+file / folder cards and rows, the context menu, the viewers layer, the Files open / save / folder-picker / audio /
+paint / remote-storage windows, `FilePreviewOverlay` / `Shell`, `ImagePreviewOverlay`, `FontsExplorer`,
+`DualPaneExplorer` (unsupported statements, spreads, local components, `FloatingWindow` props). Irreducible islands:
+`StorageExplorer` (`@kubuno/drive`), the virtualised grid cells, drag-and-drop and marquee selection, the viewers.
+
+### 22.2 In the Visual Studio designer
+
+- **Module projects**: `@kubuno/host-runtime` 0.1.0 ships, besides the bundled page, a project-mode design page for a
+  module's own dev server and the host's shared modules (`dist/project/shared/*`, one build so each exists once,
+  `shared.json` = the import map's table). In `vite serve`, for a project with no `design.entry`, `@kubuno/views-compiler`
+  0.1.2 resolves the shared specifiers to those modules (kept external in dependency pre-bundling; production builds
+  unchanged); `design.setup` loads the module's CSS and translations first. Without `@kubuno/host-runtime` in
+  `node_modules`, the designer stays on the bundled host and its bar says `npm install -D @kubuno/host-runtime`
+  (« Réessayer »).
+- **The registry errors** (`Label` has no `HtmlTag`) came from the VSIX's bundled design host, whose compiled-in
+  registry predated `HtmlTag` — not from the language server nor the C# registry merge. The designer now sends the
+  project's own host registry (`setHostRegistry`, re-sent when the file changes) to the bundled page.
+- **Junctions**: Vite started from a link path (`C:\kubuno-build` → `E:\…`) answers module requests with
+  `index.html` (« code-behind not loaded »). `RealPaths` (`GetFinalPathNameByHandle`; mapped network drives keep
+  their letter) canonicalises paths; « Démarrer le serveur de développement » runs the server from the real path (one
+  server per real folder) and `design-server.json`'s `root` is compared by real path. vskubuno `f719cc4`, core
+  `428348b`.
+- **Verified live** (VS 2026, hive `KubunoWebMig3`, solutions opened through `C:\kubuno-build\…`, captures
+  `C:\kubuno-build\agent-webmig3\vs\out\`): WaffleMenu / SecurityTab load their code-behind on the project dev server
+  (`a2`, `a3`); drive's `DriveApp` and `DuplicatesDialog` open with their code-behind on drive's dev server, Error List
+  empty (`b2`, `b4`; bundled `b1`; missing package and retry `b5`, `b6`); `Variant` set in the Properties window
+  round-trips to the buffer and the surface (`c3`); a double-click creates `button_click` in `SecurityTab.ts` and opens
+  it (`c4`). Headless proof of the module page with HMR: `C:\kubuno-build\agent-webmig3\host-runtime\final-*.png`.
+
+### 22.3 Left
+
+- `ImportUrlModal` renders empty in design mode (shown only when the drive store says it is open): needs sample data.
+- A dev server started by hand from a link path is only warned about (Output > Kubuno); taking the real path for
+  Vite's root in the views-compiler plugin would fix it there.
+- `setHostRegistry` is in core after `@kubuno/host-runtime` 0.1.0 (the VSIX's bundled host has it; the npm package
+  gets it in its next version).
+
+### 22.4 Defects found (core), to fix
+
+1. **Regression (core `0b661a0`)**: the converted `Shell`'s `<Slot name="app-dialogs">` (a ReactHost with memoised
+   props) never renders again — `Slot` reads `SlotRegistry.getSlot` without subscribing, so dialogs a module registers
+   after the first render (Files open / save / folder picker, audio player, paint, remote storage) never appear.
+   Fix: `Slot` subscribes to the registry. (The bench works around it.)
+2. Codemod: `t(key, { defaultValue })` defaults go to `views-defaults.json`, which nothing loads (drive registers them
+   in `entry.ts`).
+3. Codemod: an inferred getter type `Folder` collides with the Lucide `Folder` import.
+4. Codemod: a helper used only inside a template literal is not copied into the parts file.
+5. Codemod: `style={…}` is dropped when the class name is computed.
+6. Codemod: `{a} / {b}` is merged into one string (changes the accessibility tree).
+7. Codemod: `<label><input/>text</label>` becomes span-wrapped text (LabelText + StaticText in Chrome).
+8. Runtime (`@kubuno/views`): a wrapper-root element without `Class` (e.g. `TextField`) sits in a `display: contents`
+   div, so the parent's `space-y-*` margin is lost.
+
+3–8 are hand-fixed in drive by `fixups.mjs`.
