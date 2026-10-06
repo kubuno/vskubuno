@@ -1469,6 +1469,24 @@ is the desktop protocol.
   the project root; the launcher's and account panel's chrome are hard-coded light (`#E9EEF6` in `WaffleButton` /
   `AccountButton`), unreadable in the dark theme — the designer shows it faithfully.
 
+### 18.5 Canvas of pages, and the shipped design host (2026-10-06)
+
+- **Pages on a white sheet.** The surface marks its canvas `data-document="page"` for a `.kbview` (page, window,
+  dialog) and `"control"` for a `.kbcontrol` (`designDocumentKind`, `design/model.ts`: the file's extension, else the
+  plan's `kind`; with neither, `control`). A page's canvas is white (`--kbd-page-canvas`) whatever Visual Studio's
+  theme and its boundary a 1px light-grey dashed outline (`--kbd-page-boundary: #c8c8c8`) on the unscaled zoom box,
+  so it stays 1px at every zoom and never covers the page; the frame's shadow is dropped. The page keeps its own
+  theme (the toolbar's light / dark switches the page, not the canvas). A user control keeps the themed canvas
+  (`setCanvasBackground` / `--vs-canvas`) and its shadow. Desktop designer unchanged. `@kubuno/host-runtime` 0.1.2.
+- **The VSIX checks the design host it ships.** `npm run build:design-host` writes `dist/design-host.json` last
+  (`{version: 1, hostRuntime, registrySha256, files}`); `KubunoCheckWebDesignHost` (inline task
+  `KubunoVerifyWebDesignHost`, before `PrepareForBuild`) fails the build when a listed file is missing, when the
+  files the VSIX would take differ from the list (the folder changed during the build), or when the registry hash
+  is not the one of `KubunoWebDesignHostRegistry` (default: the same core checkout's
+  `packages/ui/kbview-registry.web.json`). Cause found: a VSIX had shipped a pass-1-only `dist/` (21 files of 55:
+  no `project/`) built from an older registry, and the bundled page then reported « unknown property » errors
+  (`FontWeight`, `HtmlTag`, `AutoSize`). A missing folder stays a warning (the designer then needs the dev server).
+
 ## 19. WV-6 as built (2026-10-05) — `.kbres` resources on the web
 
 ### 19.1 What was built (core `frontend/packages/views-compiler`, `frontend/src/views`)

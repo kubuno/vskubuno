@@ -60,6 +60,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Web pages are designed on a white sheet** (`docs/WEB-VIEWS.md` section 18.5). In the designer of a web project, a
+  `.kbview` (page, window, dialog) now shows on a white canvas whatever Visual Studio's theme, its boundary drawn as a
+  light-grey dashed line at the chosen width; the Kubuno light / dark preview still switches the page itself. A
+  `.kbcontrol` keeps the canvas in Visual Studio's colours, and the desktop designer is unchanged. Ships the design
+  host of `@kubuno/host-runtime` 0.1.2.
+
 - **Views open in the Kubuno View Designer by default, everywhere** (`docs/DESIGNER.md` section 11, "Opening,
   captions"). A double-click on a `.kbview` or `.kbcontrol` now opens the designer (Design | XML | Split) in a desktop
   project (`.rsproj`), in a web project (`.esproj`: the core frontend, a module's frontend), in Open Folder and for a
@@ -931,6 +937,13 @@ ound_button.rs`) and the module is declared in
   `Anchor="Top, Left"`; a Toolbox double-click does the same.
 
 ### Fixed
+
+- **The VSIX can no longer ship a half-built or out-of-date web design host.** A VSIX built while the design host was
+  only half built (21 of its 55 files) and from an older element registry made the designer of web views report
+  « unknown property » errors (`FontWeight`, `HtmlTag`, `AutoSize`) on views the build accepts. The build now reads
+  the host's manifest (`design-host.json`) and fails when a listed file is missing, when the files it would package
+  differ from the manifest, or when the host was built from another `kbview-registry.web.json` than the core
+  checkout's (`/p:KubunoWebDesignHostRegistry`). The default host folder follows the core's move to `web/`.
 
 - **Web designer: no false registry errors on module projects.** A module's views (drive) opened in the designer while
   its dev server was not running showed errors such as « `Label` has no property `HtmlTag` » although `kbview-tsc`

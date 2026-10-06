@@ -295,24 +295,88 @@
   <!--
     The web design surface's bundled design host (docs/WEB-VIEWS.md WV-9b): the static build of @kubuno/host-runtime
     (the design page with React, @kubuno/ui, the views runtime and the .kbview compiler), shown while a web project's dev
-    server is not running. Built out-of-band in the core repository (frontend: npm run build:design-host, into
-    frontend/packages/host-runtime/dist); default = the sibling core checkout of the polyrepo. Optional: without it the
-    designer of web views needs the project's dev server, and says so.
+    server is not running. Built out-of-band in the core repository (web/: npm run build:design-host, into
+    web/packages/host-runtime/dist; frontend/ before the core's move to web/); default = the sibling core checkout of the
+    polyrepo. Optional: without it the designer of web views needs the project's dev server, and says so.
+
+    When the folder exists, KubunoCheckWebDesignHost refuses to ship it unless it is complete and current: the build
+    writes dist/design-host.json last (every file of the build + the SHA-256 of the host element registry the page
+    embeds); every listed file must be there, the VSIX must take exactly those files, and the hash must be the one of
+    KubunoWebDesignHostRegistry (default: the same core checkout's packages/ui/kbview-registry.web.json). Found live: a
+    VSIX shipped a pass-1-only dist/ (21 files of 55) built from an older registry, and the designer then reported
+    « unknown property » errors (FontWeight, HtmlTag, AutoSize) on views the build accepts.
   -->
   <PropertyGroup>
-    <KubunoWebDesignHostDir Condition="'$(KubunoWebDesignHostDir)' == ''">$(MSBuildThisFileDirectory)..\..\..\core\frontend\packages\host-runtime\dist\</KubunoWebDesignHostDir>
+    <KubunoWebDesignHostDir Condition="'$(KubunoWebDesignHostDir)' == '' And Exists('$(MSBuildThisFileDirectory)..\..\..\core\frontend\packages\host-runtime\dist\') And !Exists('$(MSBuildThisFileDirectory)..\..\..\core\web\')">$(MSBuildThisFileDirectory)..\..\..\core\frontend\packages\host-runtime\dist\</KubunoWebDesignHostDir>
+    <KubunoWebDesignHostDir Condition="'$(KubunoWebDesignHostDir)' == ''">$(MSBuildThisFileDirectory)..\..\..\core\web\packages\host-runtime\dist\</KubunoWebDesignHostDir>
+    <KubunoWebDesignHostDir Condition="!HasTrailingSlash('$(KubunoWebDesignHostDir)')">$(KubunoWebDesignHostDir)\</KubunoWebDesignHostDir>
+    <KubunoWebDesignHostRegistry Condition="'$(KubunoWebDesignHostRegistry)' == ''">$(KubunoWebDesignHostDir)..\..\ui\kbview-registry.web.json</KubunoWebDesignHostRegistry>
   </PropertyGroup>
-  <ItemGroup Condition="Exists('$(KubunoWebDesignHostDir)index.html')">
-    <KubunoWebDesignHostFile Include="$(KubunoWebDesignHostDir)**\*.*" />
+  <ItemGroup Condition="Exists('$(KubunoWebDesignHostDir)')">
+    <KubunoWebDesignHostFile Include="$(KubunoWebDesignHostDir)**\*" />
     <Content Include="@(KubunoWebDesignHostFile)">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>tools\web-design-host\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
-  <Target Name="KubunoCheckWebDesignHost" BeforeTargets="Build">
-    <Warning Condition="!Exists('$(KubunoWebDesignHostDir)index.html')"
-             Text="The web design host (@kubuno/host-runtime build) was not found at '$(KubunoWebDesignHostDir)': the VSIX ships without it, and the designer of web views then needs the project's dev server. Build it in the core repository (frontend: npm run build:design-host) or pass /p:KubunoWebDesignHostDir=&lt;folder&gt;." />
+  <UsingTask TaskName="KubunoVerifyWebDesignHost" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <HostDir ParameterType="System.String" Required="true" />
+      <RegistryPath ParameterType="System.String" />
+      <IncludedCount ParameterType="System.Int32" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Linq" />
+      <Using Namespace="System.Security.Cryptography" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        const string Rebuild = " Rebuild it in the core repository (web/: npm run build:design-host, both passes) and build again, or pass /p:KubunoWebDesignHostDir=<folder>.";
+        string manifestPath = Path.Combine(HostDir, "design-host.json");
+        if (!File.Exists(manifestPath))
+        {
+            Log.LogError("The web design host at '" + HostDir + "' is incomplete: design-host.json, written at the end of its build, is missing (an unfinished build, or one older than @kubuno/host-runtime 0.1.2)." + Rebuild);
+            return !Log.HasLoggedErrors;
+        }
+        string json = File.ReadAllText(manifestPath);
+        Match list = Regex.Match(json, "\"files\"\\s*:\\s*\\[(?<items>[^\\]]*)\\]");
+        Match hash = Regex.Match(json, "\"registrySha256\"\\s*:\\s*\"(?<v>[0-9a-fA-F]{64})\"");
+        if (!list.Success || !hash.Success)
+        {
+            Log.LogError("The web design host's manifest '" + manifestPath + "' is unreadable (no files list or registrySha256)." + Rebuild);
+            return !Log.HasLoggedErrors;
+        }
+        string[] files = Regex.Matches(list.Groups["items"].Value, "\"(?<f>[^\"]+)\"").Cast<Match>().Select(m => m.Groups["f"].Value).ToArray();
+        string[] missing = files.Where(f => !File.Exists(Path.Combine(HostDir, f.Replace('/', Path.DirectorySeparatorChar)))).ToArray();
+        if (files.Length == 0 || missing.Length > 0)
+            Log.LogError("The web design host at '" + HostDir + "' is incomplete: " + missing.Length + " of the " + files.Length + " files of its manifest are missing (" + string.Join(", ", missing.Take(8)) + (missing.Length > 8 ? ", ..." : "") + ")." + Rebuild);
+        else if (IncludedCount != files.Length + 1)
+            Log.LogError("The web design host at '" + HostDir + "' changed while this build ran: the VSIX would take " + IncludedCount + " files, its manifest lists " + (files.Length + 1) + " (with design-host.json). Build again once the host's build is done.");
+        if (string.IsNullOrEmpty(RegistryPath) || !File.Exists(RegistryPath))
+        {
+            Log.LogWarning("The host element registry was not found at '" + RegistryPath + "': the web design host's freshness is not checked. Pass /p:KubunoWebDesignHostRegistry=<core>\\web\\packages\\ui\\kbview-registry.web.json.");
+        }
+        else
+        {
+            string actual;
+            using (SHA256 sha = SHA256.Create())
+                actual = string.Concat(sha.ComputeHash(File.ReadAllBytes(RegistryPath)).Select(b => b.ToString("x2")));
+            if (!string.Equals(actual, hash.Groups["v"].Value, StringComparison.OrdinalIgnoreCase))
+                Log.LogError("The web design host at '" + HostDir + "' was built from another host element registry than '" + RegistryPath + "' (SHA-256 " + hash.Groups["v"].Value.ToLowerInvariant() + ", now " + actual + "): the designer would report the registry's newer properties as unknown." + Rebuild);
+        }
+        if (!Log.HasLoggedErrors)
+            Log.LogMessage(MessageImportance.High, "Web design host: " + (files.Length + 1) + " files, registry " + hash.Groups["v"].Value.Substring(0, 12) + " (" + HostDir + ")");
+      ]]></Code>
+    </Task>
+  </UsingTask>
+  <Target Name="KubunoCheckWebDesignHost" BeforeTargets="PrepareForBuild">
+    <Warning Condition="!Exists('$(KubunoWebDesignHostDir)')"
+             Text="The web design host (@kubuno/host-runtime build) was not found at '$(KubunoWebDesignHostDir)': the VSIX ships without it, and the designer of web views then needs the project's dev server. Build it in the core repository (web/: npm run build:design-host) or pass /p:KubunoWebDesignHostDir=&lt;folder&gt;." />
+    <KubunoVerifyWebDesignHost Condition="Exists('$(KubunoWebDesignHostDir)')"
+                               HostDir="$(KubunoWebDesignHostDir)"
+                               RegistryPath="$(KubunoWebDesignHostRegistry)"
+                               IncludedCount="@(KubunoWebDesignHostFile->Count())" />
   </Target>
 
   <Target Name="KubunoCheckToolExes" BeforeTargets="Build">
