@@ -26,18 +26,23 @@ namespace Kubuno.Web.WebDesigner
         private static readonly ConcurrentDictionary<string, Process> s_started = new ConcurrentDictionary<string, Process>(StringComparer.OrdinalIgnoreCase);
         private static IntPtr s_job;
 
+        /// <summary>The discovery files already reported as started from a link (once each, not at every probe).</summary>
+        private static readonly ConcurrentDictionary<string, bool> s_linkWarned = new ConcurrentDictionary<string, bool>(StringComparer.Ordinal);
+
         /// <summary>The design page of the project's running dev server, or null when none answers.</summary>
         public static async Task<Uri?> FindAsync(string projectRoot, CancellationToken cancellationToken)
         {
-            string? discovery;
-            try
+            var discovery = ReadDiscovery(projectRoot);
+            if (discovery is not null && !DesignServerDiscovery.ServesRoot(discovery, projectRoot))
             {
-                var file = DesignServerDiscovery.FilePath(projectRoot);
-                discovery = File.Exists(file) ? File.ReadAllText(file) : null;
+                KubunoLog.WriteLine($"[web-designer] {DesignServerDiscovery.FileRelativePath} of {projectRoot} names another folder ({DesignServerDiscovery.RootOf(discovery)}): ignored.");
+                return null;
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+
+            if (DesignServerDiscovery.RootOf(discovery) is { } served && DesignServerDiscovery.StartedFromLink(served, RealPaths.Canonical) &&
+                s_linkWarned.TryAdd(discovery!, true))
             {
-                discovery = null;
+                KubunoLog.WriteLine($"[web-designer] the dev server of {projectRoot} was started from {served}, a link to {RealPaths.Canonical(served)}: Vite cannot serve the views' code-behinds from there (stop it; « Démarrer le serveur de développement » runs it from the real path).");
             }
 
             foreach (var page in DesignServerDiscovery.CandidateUrls(discovery))
@@ -50,6 +55,28 @@ namespace Kubuno.Web.WebDesigner
 
             return null;
         }
+
+        /// <summary>The discovery file's text, or null.</summary>
+        public static string? ReadDiscovery(string projectRoot)
+        {
+            try
+            {
+                var file = DesignServerDiscovery.FilePath(projectRoot);
+                return File.Exists(file) ? File.ReadAllText(file) : null;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// The key and working folder of a project's dev server: the real path of its root (<see cref="RealPaths.Canonical"/>).
+        /// Vite serves the files it resolves by their real path (<c>/@fs/E:/…</c>) and checks them against its root: started
+        /// from a junction's spelling (<c>C:\kubuno-build\…</c> → <c>E:\kubuno-build\…</c>) it cannot serve the project's own
+        /// code-behinds (« code-behind not loaded », docs/WEB-VIEWS.md section 21.1). Both spellings share one server.
+        /// </summary>
+        internal static string ServerRoot(string projectRoot) => RealPaths.Canonical(projectRoot);
 
         /// <summary>Whether the dev server serving <paramref name="designPage"/> answers (its <c>project.json</c>).</summary>
         public static async Task<bool> IsAliveAsync(Uri designPage, CancellationToken cancellationToken)
@@ -67,7 +94,7 @@ namespace Kubuno.Web.WebDesigner
 
         /// <summary>Whether this Visual Studio started a dev server for the project that is still running.</summary>
         public static bool IsStarting(string projectRoot) =>
-            s_started.TryGetValue(projectRoot, out var process) && !HasExited(process);
+            s_started.TryGetValue(ServerRoot(projectRoot), out var process) && !HasExited(process);
 
         /// <summary>
         /// Starts <c>npm run dev</c> in the project root (hidden; its output goes to the Kubuno Output pane). Null when it
@@ -78,6 +105,13 @@ namespace Kubuno.Web.WebDesigner
             if (IsStarting(projectRoot))
             {
                 return null;
+            }
+
+            var linkedRoot = projectRoot;
+            projectRoot = ServerRoot(projectRoot);
+            if (!string.Equals(projectRoot, linkedRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                KubunoLog.WriteLine($"[web-designer] {linkedRoot} is {projectRoot} (a junction, link or subst drive): the dev server runs from the real path.");
             }
 
             var npm = Path.Combine(projectRoot, "obj", "kubuno-npm.cmd");
@@ -139,7 +173,7 @@ namespace Kubuno.Web.WebDesigner
         /// <summary>Stops the dev server this Visual Studio started for the project (the whole process tree).</summary>
         public static void Stop(string projectRoot)
         {
-            if (!s_started.TryRemove(projectRoot, out var process) || HasExited(process))
+            if (!s_started.TryRemove(ServerRoot(projectRoot), out var process) || HasExited(process))
             {
                 return;
             }

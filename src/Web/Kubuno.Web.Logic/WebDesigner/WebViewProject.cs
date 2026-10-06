@@ -112,6 +112,51 @@ namespace Kubuno.Web.Logic.WebDesigner
             return null;
         }
 
+        /// <summary>The package a project without its own design entry (a module) needs in its dev server for the design page.</summary>
+        public const string HostRuntimePackage = "@kubuno/host-runtime";
+
+        /// <summary>
+        /// Whether the project's dev server serves the design page from <see cref="HostRuntimePackage"/>: no <c>design.entry</c>
+        /// in <c>kubuno.views.json</c> (the <c>@kubuno/views-compiler</c> plugin then loads <c>@kubuno/host-runtime/entry</c>,
+        /// a module project), or an entry naming that package.
+        /// </summary>
+        public bool UsesHostRuntimeEntry =>
+            string.IsNullOrWhiteSpace(DesignEntry) || DesignEntry!.Replace('\\', '/').StartsWith(HostRuntimePackage + "/", StringComparison.Ordinal);
+
+        /// <summary>
+        /// <c>node_modules/@kubuno/host-runtime/package.json</c> as Node resolves it from <see cref="Root"/> (upwards), or null when
+        /// the package is not installed - the module's dev server would then answer the design page with a script that
+        /// cannot load.
+        /// </summary>
+        public string? HostRuntimePackageJson()
+        {
+            var dir = Root;
+            while (!string.IsNullOrEmpty(dir))
+            {
+                var candidate = Path.Combine(dir, "node_modules", "@kubuno", "host-runtime", "package.json");
+                if (_files.Exists(candidate))
+                {
+                    return candidate;
+                }
+
+                var parent = Path.GetDirectoryName(dir);
+                if (string.Equals(parent, dir, StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+
+                dir = parent!;
+            }
+
+            return null;
+        }
+
+        /// <summary>Whether the dev server can serve the design page as far as the files tell: false for a module without <see cref="HostRuntimePackage"/>.</summary>
+        public bool DesignPageAvailable => !UsesHostRuntimeEntry || HostRuntimePackageJson() is not null;
+
+        /// <summary>The text of the host element registry (<see cref="HostRegistryPath"/>), or null.</summary>
+        public string? HostRegistryText() => HostRegistryPath is { } path ? _files.ReadText(path) : null;
+
         /// <summary><paramref name="path"/> relative to <see cref="Root"/>, <c>/</c>-separated (<c>src/core/shell/menus/WaffleMenu.kbcontrol</c>).</summary>
         public string RelativePath(string path) => ToPosix(MakeRelative(Root, path));
 
@@ -314,11 +359,20 @@ namespace Kubuno.Web.Logic.WebDesigner
             return viewPath;
         }
 
+        /// <summary>
+        /// <paramref name="path"/> relative to <paramref name="root"/>; the two may be spelled differently (one through a
+        /// junction, a symbolic link or a <c>subst</c> drive, the other by its real path: <see cref="RealPaths"/>).
+        /// </summary>
         private static string MakeRelative(string root, string path)
         {
             var rootFull = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
             var full = Path.GetFullPath(path);
-            return full.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase) ? full.Substring(rootFull.Length) : full;
+            if (full.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase))
+            {
+                return full.Substring(rootFull.Length);
+            }
+
+            return RealPaths.RelativeTo(root, path) ?? full;
         }
 
         private static string ToPosix(string path) => path.Replace('\\', '/');

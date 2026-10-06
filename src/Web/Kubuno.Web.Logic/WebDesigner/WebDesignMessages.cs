@@ -58,6 +58,26 @@ namespace Kubuno.Web.Logic.WebDesigner
             return new JsonObject { ["type"] = "setVsTheme", ["mode"] = dark ? "dark" : "light", ["colors"] = ordered }.ToJsonString(Wire);
         }
 
+        /// <summary>
+        /// <c>setHostRegistry {text}</c>: the project's own host element registry (<c>@kubuno/ui</c>'s
+        /// <c>kbview-registry.web.json</c> in its <c>node_modules</c>, the one <c>kbview-tsc</c> compiles with). The bundled
+        /// design host compiles with it instead of the registry it was built with, which is older than the project's whenever
+        /// the project upgraded <c>@kubuno/ui</c> after the extension was built (the « <c>Label</c> has no property
+        /// <c>HtmlTag</c> » errors of drive, docs/WEB-VIEWS.md section 22). The project-mode page reads it from
+        /// <c>project.json</c> and ignores this message; a page that does not know it ignores it too.
+        /// </summary>
+        public static string EncodeSetHostRegistry(string registryJson)
+        {
+            return new JsonObject { ["type"] = "setHostRegistry", ["text"] = registryJson ?? string.Empty }.ToJsonString(Wire);
+        }
+
+        /// <summary>
+        /// Whether the design page must be given the project's host registry: it runs in <c>bundled</c> mode (the project-mode
+        /// page has the project's registry already) and the project has a readable one. Pure.
+        /// </summary>
+        public static bool ShouldSendHostRegistry(string? surfaceMode, string? projectRegistryJson) =>
+            string.Equals(surfaceMode, "bundled", StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(projectRegistryJson);
+
         /// <summary><c>setLanguage {lang}</c>: the design-time language (Visual Studio's language picker).</summary>
         public static string EncodeSetLanguage(string lang) => JsonSerializer.Serialize(new { type = "setLanguage", lang }, Wire);
 

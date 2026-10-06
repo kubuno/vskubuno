@@ -872,6 +872,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Web designer: no false registry errors on module projects.** A module's views (drive) opened in the designer while
+  its dev server was not running showed errors such as « `Label` has no property `HtmlTag` » although `kbview-tsc`
+  compiled them clean: the design host bundled with the extension compiled with the element registry it was built
+  with, older than the project's `@kubuno/ui`. The designer now hands the bundled host the project's own registry (the
+  one `kbview-tsc` reads, re-sent when an `npm install` changes it), so both report the same errors.
+- **Web designer: projects opened through a junction or link load their code-behind.** A solution opened through a
+  junction, a symbolic link or a `subst` drive (`C:\kubuno-build` → `E:\kubuno-build`) showed its views without their
+  code-behind (« code-behind not loaded »). « Démarrer le serveur de développement » now starts the dev server from the
+  folder's real path, and the designer recognises a running dev server whichever spelling it was started from (a
+  server started by hand from a link is reported in Output > Kubuno). Paths are compared by their real location and
+  case on disk.
+- **Web designer: module projects without `@kubuno/host-runtime`.** A module's dev server shows the design page from
+  the `@kubuno/host-runtime` package; when the package is not installed, the designer keeps the bundled host and the
+  bar says what to install (`npm install -D @kubuno/host-runtime`, then « Réessayer ») instead of showing a blank page.
+  A dev server page that never starts falls back to the bundled host after 90 seconds, with the reason in the bar.
+
 - **Control libraries named `kubuno-…` show in the Toolbox and the designer.** A project's path dependency whose name
   starts with `kubuno` (the shared `kubuno-shell-controls`, a third party's `kubuno-acme-widgets`) was taken for part
   of the framework: its controls were missing from the project's Toolbox tab and editing them did not mark the design

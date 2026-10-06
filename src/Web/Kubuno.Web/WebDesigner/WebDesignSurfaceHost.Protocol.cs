@@ -29,6 +29,8 @@ namespace Kubuno.Web.WebDesigner
         private string _designCulture = string.Empty;
         private DesignSurfaceRenderStatus? _renderStatus;
         private bool _pageEditingText;
+        private string? _surfaceMode;
+        private string? _sentHostRegistryStamp;
 
         public event EventHandler<DesignSurfaceSelectionChangedEventArgs>? SelectionChanged;
 
@@ -158,6 +160,7 @@ namespace Kubuno.Web.WebDesigner
                 Post(WebDesignMessages.EncodeSetLanguage(_designCulture));
             }
 
+            SendHostRegistry();
             SendDocumentInfo();
             if (_projectComponents is not null)
             {
@@ -177,6 +180,43 @@ namespace Kubuno.Web.WebDesigner
             else if (_selection is not null)
             {
                 Post(DesignSurfaceProtocol.EncodeSelect(_selection));
+            }
+        }
+
+        /// <summary>
+        /// <c>setHostRegistry</c> to a bundled page: the project's own host registry (the one <c>kbview-tsc</c> compiles with),
+        /// never the older one the bundled design host was built with (docs/WEB-VIEWS.md section 22).
+        /// </summary>
+        private void SendHostRegistry()
+        {
+            var text = Project.HostRegistryText();
+            _sentHostRegistryStamp = HostRegistryStamp();
+            if (WebDesignMessages.ShouldSendHostRegistry(_surfaceMode, text))
+            {
+                Post(WebDesignMessages.EncodeSetHostRegistry(text!));
+                KubunoLog.WriteLine($"[web-designer] {Path.GetFileName(DocumentPath)}: the bundled design host compiles with the project's registry ({Project.HostRegistryPath}).");
+            }
+        }
+
+        /// <summary>The project's host registry changed (an <c>npm install</c> of a newer <c>@kubuno/ui</c>): sent again to a bundled page.</summary>
+        private void CheckHostRegistryChanged()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (_pageReady && _sentHostRegistryStamp is not null && HostRegistryStamp() != _sentHostRegistryStamp)
+            {
+                SendHostRegistry();
+            }
+        }
+
+        private string HostRegistryStamp()
+        {
+            try
+            {
+                return Project.HostRegistryPath is { } path && File.Exists(path) ? File.GetLastWriteTimeUtc(path).Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture) : "none";
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+            {
+                return "error";
             }
         }
 
@@ -310,6 +350,8 @@ namespace Kubuno.Web.WebDesigner
             switch (WebDesignMessages.TypeOf(json))
             {
                 case "surfaceInfo":
+                    _surfaceInfoSeen = true;
+                    _surfaceMode = WebDesignMessages.SurfaceMode(json);
                     if (WebDesignMessages.CheckSurfaceInfo(json) is { } refused)
                     {
                         KubunoLog.WriteLine("[web-designer] surface refused: " + refused);

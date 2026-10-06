@@ -105,6 +105,64 @@ namespace Kubuno.Web.Logic.WebDesigner
             }
         }
 
+        /// <summary>The project root the file records (<c>root</c>: Vite's root, often the real path of a linked folder), or null.</summary>
+        public static string? RootOf(string? discoveryJson)
+        {
+            if (string.IsNullOrWhiteSpace(discoveryJson))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(discoveryJson!);
+                return document.RootElement.ValueKind == JsonValueKind.Object &&
+                       document.RootElement.TryGetProperty("root", out var root) && root.ValueKind == JsonValueKind.String
+                    ? root.GetString()
+                    : null;
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Whether the server a discovery file announces serves <paramref name="projectRoot"/>: true when the file records no
+        /// root, a root that is not a local Windows path (written on another machine: nothing to compare), or the same folder
+        /// whatever its spelling (<paramref name="same"/>: <see cref="RealPaths.Same"/> - <c>C:\kubuno-build\x</c> through a
+        /// junction and <c>E:\kubuno-build\x</c> are one folder). False for a file copied from another checkout.
+        /// </summary>
+        public static bool ServesRoot(string? discoveryJson, string projectRoot, Func<string, string, bool>? same = null)
+        {
+            var root = RootOf(discoveryJson);
+            if (string.IsNullOrWhiteSpace(root) || !IsWindowsAbsolute(root!))
+            {
+                return true;
+            }
+
+            return (same ?? RealPaths.Same)(root!, projectRoot);
+        }
+
+        /// <summary>
+        /// Whether a dev server's root is a link spelling (a junction, symbolic link or <c>subst</c> drive: its real path
+        /// differs beyond case): Vite then cannot resolve the project's extensionless module URLs (<c>/src/x/View</c> answers
+        /// the SPA's <c>index.html</c>, measured), so the design page loads no code-behind.
+        /// </summary>
+        public static bool StartedFromLink(string root, Func<string, string> canonical)
+        {
+            if (string.IsNullOrWhiteSpace(root) || !IsWindowsAbsolute(root))
+            {
+                return false;
+            }
+
+            var real = canonical(root);
+            return !string.Equals(real.TrimEnd('\\', '/'), root.Replace('/', '\\').TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsWindowsAbsolute(string path) =>
+            (path.Length >= 3 && char.IsLetter(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/')) || path.StartsWith(@"\\", StringComparison.Ordinal);
+
         /// <summary>Whether <paramref name="url"/> names this machine.</summary>
         public static bool IsLocal(Uri url) =>
             url.IsLoopback || string.Equals(url.Host, "localhost", StringComparison.OrdinalIgnoreCase);

@@ -34,6 +34,25 @@ namespace Kubuno.Web.WebDesigner
         /// <summary>The bundled design host is missing from the extension (and no dev server runs): nothing can render.</summary>
         public bool NoBundledHost { get; private set; }
 
+        private bool _hostRuntimeMissing;
+
+        /// <summary>
+        /// The project is a module whose dev server serves the design page from <c>@kubuno/host-runtime</c>, and that package is
+        /// not in its <c>node_modules</c>: the bar says what to install instead of showing a page that cannot load.
+        /// </summary>
+        public bool HostRuntimeMissing
+        {
+            get => _hostRuntimeMissing;
+            set
+            {
+                if (_hostRuntimeMissing != value)
+                {
+                    _hostRuntimeMissing = value;
+                    Changed?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
+
         public string? BarMessage
         {
             get
@@ -41,6 +60,17 @@ namespace Kubuno.Web.WebDesigner
                 if (Connecting)
                 {
                     return null;
+                }
+
+                if (HostRuntimeMissing && State != DesignSurfaceRuntimeState.Project)
+                {
+                    return NoBundledHost
+                        ? T(
+                            "Preview unavailable: this module's dev server needs @kubuno/host-runtime for the design page (npm install -D @kubuno/host-runtime in the frontend folder, then Retry), and the extension's bundled design host is missing.",
+                            "Aperçu indisponible : le serveur de développement de ce module a besoin de @kubuno/host-runtime pour la page de conception (npm install -D @kubuno/host-runtime dans le dossier frontend, puis Réessayer), et l'hôte de conception intégré à l'extension est absent.")
+                        : T(
+                            "Preview: bundled runtime - this module's dev server cannot show the design page: @kubuno/host-runtime is not installed (npm install -D @kubuno/host-runtime in the frontend folder, then Retry). The project's own controls show as placeholders.",
+                            "Aperçu : runtime intégré — le serveur de développement de ce module ne peut pas afficher la page de conception : @kubuno/host-runtime n'est pas installé (npm install -D @kubuno/host-runtime dans le dossier frontend, puis Réessayer). Les contrôles du projet sont des espaces réservés.");
                 }
 
                 if (NoBundledHost && State != DesignSurfaceRuntimeState.Project)
@@ -66,7 +96,7 @@ namespace Kubuno.Web.WebDesigner
             }
         }
 
-        public string? BarAction => Connecting ? null : State switch
+        public string? BarAction => Connecting ? null : HostRuntimeMissing && State != DesignSurfaceRuntimeState.Project ? T("Retry", "Réessayer") : State switch
         {
             DesignSurfaceRuntimeState.NotBuilt => T("Start the dev server", "Démarrer le serveur de développement"),
             DesignSurfaceRuntimeState.Building => T("Cancel", "Annuler"),

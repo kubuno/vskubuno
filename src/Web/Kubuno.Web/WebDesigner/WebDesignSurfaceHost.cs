@@ -58,6 +58,15 @@ namespace Kubuno.Web.WebDesigner
         private int _projectPageFailures;
         private bool _monitoring;
 
+        /// <summary>How long a dev server's design page may take to say <c>surfaceInfo</c> (Vite's first dependency optimisation included).</summary>
+        private static readonly TimeSpan ProjectPageTimeout = TimeSpan.FromSeconds(90);
+
+        private DateTime _projectPageShownAt;
+        private bool _surfaceInfoSeen;
+
+        /// <summary>A dev server page that never started (and the discovery file then): not shown again until it changes or « Réessayer ».</summary>
+        private (Uri Page, string? Discovery)? _brokenPage;
+
         public WebDesignSurfaceHost(DesignSurfaceDocument document, WebViewProject project, string bundledFolder)
         {
             DocumentPath = document.Path;
@@ -188,20 +197,51 @@ namespace Kubuno.Web.WebDesigner
                 return;
             }
 
-            if (page is not null)
+            if (page is not null && CanShow(page))
             {
                 ShowProjectPage(page);
             }
             else
             {
-                ShowBundledPage(DesignServer.IsStarting(Project.Root) ? DesignSurfaceRuntimeState.Building : DesignSurfaceRuntimeState.NotBuilt);
+                ShowBundledPage(DesignServer.IsStarting(Project.Root) && page is null ? DesignSurfaceRuntimeState.Building : DesignSurfaceRuntimeState.NotBuilt);
             }
+        }
+
+        /// <summary>
+        /// Whether a dev server's design page can be shown: not one that already failed to load, and - for a module, whose
+        /// dev server serves the page from <c>@kubuno/host-runtime</c> - the package is installed (else the page is a script
+        /// that cannot load: the bundled host stays, with the bar saying what to install).
+        /// </summary>
+        private bool CanShow(Uri page)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (!Project.DesignPageAvailable)
+            {
+                if (!_runtime.HostRuntimeMissing)
+                {
+                    KubunoLog.WriteLine($"[web-designer] the dev server of {Project.Root} runs ({page}) but {WebViewProject.HostRuntimePackage} is not installed in its node_modules: the design page cannot load there, bundled design host.");
+                }
+
+                _runtime.HostRuntimeMissing = true;
+                return false;
+            }
+
+            _runtime.HostRuntimeMissing = false;
+            if (_brokenPage is { } broken && broken.Page == page && broken.Discovery == DesignServer.ReadDiscovery(Project.Root))
+            {
+                return false;
+            }
+
+            _brokenPage = null;
+            return true;
         }
 
         private void ShowProjectPage(Uri page)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             _projectPage = page;
+            _projectPageShownAt = DateTime.UtcNow;
+            _surfaceInfoSeen = false;
             _projectPageFailures = 0;
             _runtime.SetProject(page);
             Navigate(page);
@@ -236,6 +276,7 @@ namespace Kubuno.Web.WebDesigner
             }
 
             _pageReady = false;
+            _surfaceMode = null;
             _pageOrigin = page.GetLeftPart(UriPartial.Authority);
             _failure.Visibility = Visibility.Collapsed;
             _webView.Visibility = Visibility.Visible;
@@ -302,10 +343,18 @@ namespace Kubuno.Web.WebDesigner
                     KubunoLog.WriteLine($"[web-designer] the dev server at {page} stopped answering: bundled design host.");
                     ShowBundledPage(DesignSurfaceRuntimeState.NotBuilt);
                 }
+                else if (alive && !_surfaceInfoSeen && DateTime.UtcNow - _projectPageShownAt > ProjectPageTimeout)
+                {
+                    // The server answers but its page never started (an entry that does not load): no blank pane.
+                    KubunoLog.WriteLine($"[web-designer] the design page at {page} did not start within {ProjectPageTimeout.TotalSeconds:0} s (see the dev server's output): bundled design host.");
+                    _brokenPage = (page, DesignServer.ReadDiscovery(Project.Root));
+                    ShowBundledPage(DesignSurfaceRuntimeState.Failed, T("the dev server's design page did not load", "la page de conception du serveur de développement ne s'est pas chargée"));
+                }
 
                 return;
             }
 
+            CheckHostRegistryChanged();
             var found = await DesignServer.FindAsync(Project.Root, CancellationToken.None).ConfigureAwait(true);
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             if (_disposed || _projectPage is not null)
@@ -313,9 +362,17 @@ namespace Kubuno.Web.WebDesigner
                 return;
             }
 
-            if (found is not null)
+            if (found is not null && CanShow(found))
             {
                 ShowProjectPage(found);
+            }
+            else if (found is not null)
+            {
+                // A dev server runs, but its design page cannot be shown (CanShow says why, in the bar).
+                if (_runtime.State == DesignSurfaceRuntimeState.Building)
+                {
+                    ShowBundledPage(DesignSurfaceRuntimeState.NotBuilt);
+                }
             }
             else if (_runtime.State == DesignSurfaceRuntimeState.Building && !DesignServer.IsStarting(Project.Root))
             {
@@ -327,24 +384,62 @@ namespace Kubuno.Web.WebDesigner
         private void OnRuntimeAction(DesignSurfaceRuntimeState state)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            if (_runtime.HostRuntimeMissing)
+            {
+                // « Réessayer » after installing @kubuno/host-runtime: the running server is looked at again.
+                state = DesignSurfaceRuntimeState.Failed;
+            }
+
             switch (state)
             {
                 case DesignSurfaceRuntimeState.NotBuilt:
                 case DesignSurfaceRuntimeState.Failed:
-                    if (DesignServer.Start(Project.Root) is { } error)
-                    {
-                        ShowBundledPage(DesignSurfaceRuntimeState.Failed, error);
-                    }
-                    else
-                    {
-                        ShowBundledPage(DesignSurfaceRuntimeState.Building);
-                    }
-
+                    _brokenPage = null;
+#pragma warning disable VSSDK007, VSTHRD110
+                    ThreadHelper.JoinableTaskFactory.RunAsync(StartOrRecheckAsync).FileAndForget("Kubuno/WebDesigner/Start");
+#pragma warning restore VSSDK007, VSTHRD110
                     break;
                 case DesignSurfaceRuntimeState.Building:
                     DesignServer.Stop(Project.Root);
                     ShowBundledPage(DesignSurfaceRuntimeState.NotBuilt);
                     break;
+            }
+        }
+
+        /// <summary>
+        /// The bar's « Démarrer le serveur de développement » / « Réessayer »: a dev server already running (started elsewhere,
+        /// or running without <c>@kubuno/host-runtime</c> until it was installed) is used again; else <c>npm run dev</c>.
+        /// </summary>
+        private async Task StartOrRecheckAsync()
+        {
+            var found = await DesignServer.FindAsync(Project.Root, CancellationToken.None).ConfigureAwait(true);
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (_disposed)
+            {
+                return;
+            }
+
+            if (found is not null)
+            {
+                if (CanShow(found))
+                {
+                    ShowProjectPage(found);
+                }
+                else
+                {
+                    ShowBundledPage(DesignSurfaceRuntimeState.NotBuilt);
+                }
+
+                return;
+            }
+
+            if (DesignServer.Start(Project.Root) is { } error)
+            {
+                ShowBundledPage(DesignSurfaceRuntimeState.Failed, error);
+            }
+            else
+            {
+                ShowBundledPage(DesignSurfaceRuntimeState.Building);
             }
         }
 
