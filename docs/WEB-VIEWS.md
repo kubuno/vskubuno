@@ -1577,21 +1577,96 @@ the designer caught: a memoized part's props computed while its guard failed (th
 - 40 parts remain React; a local helper component becomes a `.kbcontrol` only by hand (not automated).
 - `Class` attributes stay where no property is exact (spacing utilities, grids, responsive variants).
 
-## 21. Core migration status (2026-10-05)
+## 21. Core migration status (2026-10-06)
 
-| Screen | View | Parity (§7) | VS designer | Commit (core) |
-|---|---|---|---|---|
-| `shell/menus/WaffleMenu`, `AccountMenu` | `.kbcontrol` (§15) | §15.4 | §18.3 | earlier |
-| `settings/sections/SecurityTab`, `ClientsTab`, `NotificationsTab` | `.kbview` + `.ts` (+ parts) | PASS 12/12 each | opens | `72a7791` |
-| `settings/sections/SessionsTab`, `ProfileTab`, `ThemesTab` | `.kbview` + `.ts` / `.tsx` (+ parts) | PASS 12/12 each | opens | `a7d78b4` |
-| `settings/SettingsPage`, `shell/AppearanceDialog` | `.kbview` + `.ts` (+ parts) | PASS 12/12 each | opens | `e778f8a` |
-| `admin/sections/HomeSection`, `ComingSoon` | `.kbview` + `.ts` (+ parts) | PASS 12/12 each | opens | `0ed2b2e` |
+### 21.1 What is converted
 
-Bench: `C:\kubuno-build\agent-webmig\bench` (`run.ps1`, `compare.mjs`; report
-`captures\diff-before-after4\parity.json`). Designer captures (hive `KubunoWebMig`, project dev server):
-`C:\kubuno-build\agent-webmig\vs\out\vs-*.png`, `security-6.png`. Known designer limit: the first open of a view
-right after the dev server starts can miss its code-behind while Vite optimises dependencies (« code-behind not
-loaded »); reopening the view loads it.
+| Area | Screens (views: `.kbview` + code-behind + parts) | Parity (§7) | Commit (core) |
+|---|---|---|---|
+| Pilot | `shell/menus/WaffleMenu`, `AccountMenu` (`.kbcontrol`, §15); settings page and its six tabs, appearance dialog, administration home | 13 / 13 | earlier, `db214f0` (regenerated) |
+| Account settings | API tokens, two-step verification, backup codes, « Download my data », profile field helpers | 10 / 10 | `0f5073a`, `db214f0` |
+| Administration ▸ users, groups, modules | accounts list and sheet (identity, profile, security, activity), password reset dialog, groups, installed modules, a module's page and settings, marketplace | 16 / 16 | `0cd3271`, `5df397a`, `db214f0` |
+| Administration ▸ settings, security, storage | settings pages, rows, scope bar and tree; storage, security dashboard, instance health, SSO, LDAP, admin roles | 20 / 20 (health with fixtures) | `1322556`, `8a51593`, `db214f0` |
+| Administration ▸ directory, operations | organisational units, audiences, resources, directory settings, holidays, domains; dashboard, devices, alerts, audit and event logs, reports, rules, detectors | 26 / 26 (audit with fixtures) | `a8ae135`, `7d3bd70`, `db214f0` |
+| Administration ▸ the rest | navigation tree and page, mail, network, speech-to-text, backup, database, themes page and component gallery, data export and migration, subscription, inline-edit fields, search panel | 14 / 14 | `db214f0` |
+| Shell | header, sidebar, top bar, header actions, side rails, mobile navigation and button, right panel, maintenance banners, the about / labels / applications / home pages | 8 / 8 | `db214f0` |
+| Sign-in | login, registration, password reset, forced password change, re-authentication, OAuth callback | 5 / 5 | `db214f0` |
 
-Next: the parts (NotifCheck, DeviceCard, HomeCard… as `.kbcontrol`), then the remaining settings and admin screens
-with the same bench.
+Parity = screens passing (≤ 0.5 % root pixels, same accessibility tree, text and Tab order) over light/dark × fr/en/ar
+× 1440/390 (12 captures each, 6 for desktop-only states): **112 screens, all passing** on the last run (`all4`/`all6`,
+bench `C:\kubuno-build\agent-webmig2\bench`, sets `screens-*.json`, reports `captures\diff-*-all4\parity.json`). Two
+screens of the older sets read live data that drifts between runs (instance health counts, audit entry count); their
+fixture twins (`screens-sec-health.json`, `screens-ops2.json`) pass. Every screen converted before 2026-10-06 was
+**converted again from its original TSX with the final codemod** (`regen.sh`: originals of `ed9105e`, one pass over
+the 279 files of the batches) and benched again; only two code-behinds are hand-finished (below).
+
+Codemod over the whole core batch (279 files after `--split`): **21 converted, 200 partial, 58 left as TSX; 2404 / 3346
+elements mapped (72 %)**, 866 parts, 1578 `Class` attributes. Per batch: settings 84 %, users 66 %, modules 81 %,
+admin settings 73 %, security 70 %, directory 65 %, operations 73 %, the rest 74 %, shell and sign-in 66 %.
+
+Opens in the VS designer (hive `KubunoWebMig2`, solution opened from its real path — through the `C:\kubuno-build`
+junction Vite cannot serve the code-behind, « code-behind not loaded »): `ApiTokensTab`, `MyDataTab`,
+`TwoFactorSection`, `AppHeader`, `LoginPage`, `ThemesPanel` (the component gallery renders), `AdminNavTree`
+(captures `C:\kubuno-build\agent-webmig2\vs\out\vs-*.png`).
+
+### 21.2 Rules added while migrating (each with a test in `packages/views-migrate/test/rules.test.ts`)
+
+Object props field by field (dialog footers, `action={{…}}`), slots as property elements, `t={t}` → `HostStrings`,
+`className` of a field → `FieldClass`, spread props → `ReactHost`, `--split` (one file per exported screen, shared
+local components copied, importers switched), filled collections, nested early returns, aliased conditions, memo deps
+through methods, typed host props, hook results published in order, `data-*` → `DataAttributes`, hooks inside
+expressions (`useLocation().pathname`) kept in `use()`, store hooks called only to render again kept as memo
+dependencies, methods passed as values bound once (`ref={setNode}`), conditional handlers, React event types, narrowed
+components used as tags, template literals kept verbatim in parts, a screen nothing of which maps left as TSX, a
+module's generated catalogue (`src/i18n.data.json`) read as its bundle.
+
+Runtime and registry changes they needed (`@kubuno/views` 0.1.3, `@kubuno/ui` 0.1.16, `@kubuno/views-migrate` 0.1.1 —
+versions and changelogs prepared, **not published**): nested object fields, `HostStrings` / `setTranslator`, a view no
+longer rendering itself again from its own hooks (`notifyElements`), `Visible` bindings without a value hide, `@ui`
+elements whose `className` lands on their root get `Class` without a `display: contents` wrapper (`kbRootClass`),
+memos forgotten after a language or theme change, `DataAttributes` on `Panel` / `Stack`.
+
+Hand-finished (kept by `regen.sh`): `shell/AppearanceDialog.ts` (a pilot code-behind that called a store hook inside a
+memo) and `shell/BrandLink.ts` (`hit` read again on every render: the registry re-registers its apps after a language
+change; memoizing every registry read made the home page render without end).
+
+### 21.3 What stays React (ReactHost islands), and why
+
+- **Canvases and charts**: `AreaChart`, `BarChart`, `TrendChart`, `Sparkline`, `ReportSeriesChart`, the login
+  animation (`LoginAnimation*`) — drawn on `<canvas>` / `<svg>` with refs and pointer tracking.
+- **Editors and complex widgets**: `PreviewFrame` (a shadow root with its own React root), `GalleryBody` and the
+  theme preview stage (context providers), `EditableCard` and the cards built on it (inline editing with focus
+  management), the rules tree and condition editors (`leafKinds`, `detectorLeaf`), `DataTable` with column objects
+  (`CategoryBreakdown`), `WatermarkPanel` (popover anchored to a ref), `SettingControl` (a registry of control kinds).
+- **Shell plumbing**: `Shell`'s module area (`ModuleArea`, theme scope context), `SettingsMenu` and `LanguagePicker`
+  (Radix dropdowns), `SearchBar`, `SidebarNavItem`, `InstanceLogo` (`<img>` / `KubunoLogo`), the shell menus' hosts and
+  the workspace dock (`shell/workspace/*`), the setup wizard (`SetupWizard`, `LanguageMenu`, `SetupWordmark`).
+- **Elements without a view equivalent yet**: `<img>`, `<input>` outside a field, `<table>`, `<pre>`, `<label htmlFor>`,
+  `<a target>`, `autoFocus`, `ref` callbacks, computed `style` objects — 866 parts in all, each with a TODO comment in its
+  view naming the reason.
+
+Next: more elements for these (Image, Table, a `Ref` binding), the parts as `.kbcontrol`, `@kubuno/host-runtime` for
+module projects in the designer.
+
+## 22. Module migration status: drive (2026-10-06)
+
+`drive/frontend` builds its views with the **published** packages (`@kubuno/views` ^0.1.2, `@kubuno/views-compiler`
+^0.1.1, registry of `@kubuno/ui` 0.1.15): `kubuno.views.json` (`target: web`, host registry from `node_modules`),
+`kbview()` first in `vite.config.ts` with `@kubuno/views` shared (import map), `rootDirs` + `.kubuno/views` in
+`tsconfig.json`, `typecheck` / `build` through `kbview-tsc -b`, and `viewsAbi = 1` exported by `entry.ts`. The views run
+on the host's `@kubuno/views` (no module bundles its own runtime); no import of the core or of another module.
+
+| Measure | Result |
+|---|---|
+| Files | 18 (the Drive page shell, `drive-app/*` and the dialogs): 5 converted, 13 partial; 7 more left as TSX (file and folder cards and rows, context menu, dialog and viewer layers: nothing maps) |
+| Elements mapped | 349 / 407 (86 %), 49 parts, 212 `Class` |
+| `kbview-tsc -b` / `vite build` | 0 errors / built |
+| §7 parity (drive installed in the bench's dev core from its Windows `.kbpkg`, seeded with three folders and three files) | **8 / 8** — my files, home, starred, shared, recent, trash, search results, « Import from a URL » dialog; one capture of `drive-home` lost to a shell timeout on both sides |
+| Commit (drive) | `8c55267`, `7fd3b73` |
+
+Not benched yet: duplicates, storage overview, advanced share dialogs and the details panel (converted, typecheck
+clean; their triggers are outside the Drive page). Irreducible here: `StorageExplorer` (the file explorer of
+`@kubuno/drive`, core package), the virtualised grid cells, drag-and-drop and marquee selection (pointer capture,
+refs), viewers. Designer: the module project opens, but its design host needs `@kubuno/host-runtime` in the module's
+dev server (not published, §18.4) and the surface reports registry errors (`Label` has no `HtmlTag`…) where `kbview-tsc`
+with the same registry compiles clean — to investigate in the VSIX's project detection for modules.
