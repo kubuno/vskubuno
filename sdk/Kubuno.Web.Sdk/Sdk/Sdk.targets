@@ -28,11 +28,22 @@
     <DebuggerFlavor>KubunoWebDebugger</DebuggerFlavor>
     <KubunoLaunchBrowser Condition="'$(KubunoLaunchBrowser)' == ''">true</KubunoLaunchBrowser>
     <KubunoAttachToModule Condition="'$(KubunoAttachToModule)' == ''">true</KubunoAttachToModule>
-    <KubunoModuleDirectory Condition="'$(KubunoModuleDirectory)' == '' and '$(KubunoWebRole)' == 'Module'">$([System.IO.Path]::GetDirectoryName('$(CargoManifestPath)'))</KubunoModuleDirectory>
+    <_KubunoManifestDirectory>$([System.IO.Path]::GetDirectoryName('$(CargoManifestPath)'))</_KubunoManifestDirectory>
+    <!--
+      The module's folder is the one holding module.toml: the Cargo manifest's folder (former layout, everything at the
+      repository root), or its parent for the platform layout's server/ (docs/WEB.md, "Solutions"). Same rule as
+      Kubuno.Web.Logic's ModuleLayout.ModuleDirectory, which F5 uses.
+    -->
+    <KubunoModuleDirectory Condition="'$(KubunoModuleDirectory)' == '' and '$(KubunoWebRole)' == 'Module' and Exists('$(_KubunoManifestDirectory)\module.toml')">$(_KubunoManifestDirectory)</KubunoModuleDirectory>
+    <_KubunoManifestParentDirectory Condition="'$(_KubunoManifestDirectory)' != ''">$([System.IO.Path]::GetDirectoryName('$(_KubunoManifestDirectory)'))</_KubunoManifestParentDirectory>
+    <KubunoModuleDirectory Condition="'$(KubunoModuleDirectory)' == '' and '$(KubunoWebRole)' == 'Module' and '$(_KubunoManifestParentDirectory)' != '' and Exists('$(_KubunoManifestParentDirectory)\module.toml')">$(_KubunoManifestParentDirectory)</KubunoModuleDirectory>
+    <KubunoModuleDirectory Condition="'$(KubunoModuleDirectory)' == '' and '$(KubunoWebRole)' == 'Module'">$(_KubunoManifestDirectory)</KubunoModuleDirectory>
     <KubunoKbpkgOutputDirectory Condition="'$(KubunoKbpkgOutputDirectory)' == ''">$(KubunoModuleDirectory)\dist</KubunoKbpkgOutputDirectory>
     <!-- The frontend is its own .esproj (and node_modules is huge): keep it out of the backend project's tree. -->
-    <DefaultItemExcludes Condition="'$(KubunoWebRole)' == 'Module'">$(DefaultItemExcludes);frontend/**;dist/**;node_modules/**</DefaultItemExcludes>
-    <_KubunoManifestDirectory>$([System.IO.Path]::GetDirectoryName('$(CargoManifestPath)'))</_KubunoManifestDirectory>
+    <DefaultItemExcludes Condition="'$(KubunoWebRole)' == 'Module'">$(DefaultItemExcludes);frontend/**;web/**;dist/**;node_modules/**</DefaultItemExcludes>
+    <!-- The frontend's folder: web/ (platform layout) when it has a package.json, else frontend/. -->
+    <_KubunoFrontendDirectory Condition="'$(KubunoModuleDirectory)' != '' and Exists('$(KubunoModuleDirectory)\web\package.json')">$(KubunoModuleDirectory)\web</_KubunoFrontendDirectory>
+    <_KubunoFrontendDirectory Condition="'$(KubunoModuleDirectory)' != '' and '$(_KubunoFrontendDirectory)' == ''">$(KubunoModuleDirectory)\frontend</_KubunoFrontendDirectory>
     <_KubunoHasSqlxCache Condition="Exists('$(_KubunoManifestDirectory)\.sqlx')">true</_KubunoHasSqlxCache>
     <_KubunoHasSqlxCache Condition="'$(CargoWorkspaceRoot)' != '' and Exists('$(CargoWorkspaceRoot)\.sqlx')">true</_KubunoHasSqlxCache>
   </PropertyGroup>
@@ -45,7 +56,7 @@
     <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Rules\kubuno_web_debugger.xaml">
       <Context>Project</Context>
     </PropertyPageSchema>
-    <_KubunoFrontendProject Include="$(KubunoModuleDirectory)\frontend\*.esproj" Condition="'$(KubunoModuleDirectory)' != ''" />
+    <_KubunoFrontendProject Include="$(_KubunoFrontendDirectory)\*.esproj" Condition="'$(_KubunoFrontendDirectory)' != ''" />
   </ItemGroup>
 
   <!--

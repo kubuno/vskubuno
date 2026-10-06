@@ -27,7 +27,7 @@ picker) writes, for a Kubuno repository - recognized by its manifests, no `cargo
 - one `.rsproj` next to each Cargo package (`Kubuno.Rust.Sdk/1.1.1`), named after its project (section 12:
   `Kubuno.Core.Server.rsproj` for `kubuno-core`, `Kubuno.Core.Db.rsproj`, `Kubuno.Drive.Server.rsproj` for a module's
   backend, `Kubuno.P2pnas.Core.rsproj`...; `<CargoPackage>` keeps the crate name). The package F5 starts - `kubuno-core` for the
-  core, the module's package for a module - also names `<Sdk Name="Kubuno.Web.Sdk" Version="1.0.1" />` and its
+  core, the module's package for a module - also names `<Sdk Name="Kubuno.Web.Sdk" Version="1.0.2" />` and its
   `<KubunoWebRole>` (`Core` or `Module`). The core's projects build the workspace once
   (`<CargoBuildScope>Workspace</CargoBuildScope>`); `Kubuno.Core.Server.rsproj` picks `<CargoBin>kubuno-core</CargoBin>`
   (the crate also builds the `kubuno` CLI). Libraries go to a `/Libraries/` solution folder;
@@ -67,6 +67,46 @@ module's backend), **Libraries** (the other crates), **Frontend** (the app: the 
 in the core, **npm packages** (`@kubuno/ui`, sdk, drive, views, views-compiler, vectors: `Kubuno.Web.UI`,
 `Kubuno.Web.Sdk`, `Kubuno.Web.Drive`, `Kubuno.Web.Views`, `Kubuno.Web.Views.Compiler`, `Kubuno.Web.Vectors`). Visual Studio lists solution folders alphabetically; in the `.slnx` the program comes
 first. In a multi-repository solution they sit under `/<repository>/` (`/core/Server/`, `/drive/Frontend/`...).
+
+**Platform layout of a module** (product owner's decision, 2026-10-06; drive first, then the core and every module).
+A module repository shows at a glance its common, server, web, desktop and mobile code:
+
+```
+<module>/
+  common/core/          kubuno-<module>-core (sans-IO shared rules)     common/vectors/ (JSON, no project)
+  server/               the server crate (Cargo.toml, src/, migrations/, config.toml.example) + Kubuno.<Module>.Server.rsproj
+  web/                  the frontend + Kubuno.<Module>.Web.esproj
+  desktop/Cargo.toml    ONE Cargo workspace: desktop/common/<crate>, desktop/windows/<crate> (the startup program),
+                        desktop/linux/<crate>, desktop/macos/<crate>
+  mobile/               README.md today (later mobile/common, mobile/android, mobile/ios)
+  module.toml, build_kbpkg.sh, README.md, CHANGELOG.md, Kubuno.<Module>.slnx
+```
+
+The generator (`PlatformLayout`, `WebRepository.IsPlatformLayout`) recognizes it by any of `server/Cargo.toml`,
+`web/package.json`, `desktop/Cargo.toml` (else one workspace per `desktop/<os>/`), `common/Cargo.toml` or
+`common/<crate>/Cargo.toml`, and files every project by its path: **Common**, **Server**, **Web**, **Desktop** with
+**Desktop/Common**, **Desktop/Windows**, **Desktop/Linux**, **Desktop/macOS**, then **Mobile** (with Mobile/Common,
+Mobile/Android, Mobile/iOS once projects exist there; until then `mobile/README.md` is a `<File>` of `/Mobile/` so the
+folder shows). Empty folders are omitted. The desktop and mobile crates get plain `.rsproj` files named by
+`ProjectNaming.ForCrate` (`Kubuno.Drive.Desktop.Common`), one cargo run per workspace when it has several packages;
+`common/core` is `Kubuno.<Module>.Core`. The server's `BuildDependency` and the `.slnLaunch` name
+`server/Kubuno.<Module>.Server.rsproj` and `web/Kubuno.<Module>.Web.esproj`; the `.slnLaunch` also gets
+"<Module> desktop (Windows)", which starts the desktop startup project (the program under `desktop/windows/`,
+`kubuno-<module>-desktop` when there are several). `vendor`, `suppa`, `target`, `node_modules`, `obj`, `dist` and
+hidden folders are never scanned; no path outside the repository is listed. **Transition**: a repository partly moved
+gets the platform folders, a part not moved yet filed where it goes (the root package in Server, `frontend/` in Web,
+`desktop/windows/crates/*` in Desktop/Windows); a repository with none of the markers keeps the folders above.
+
+Headless (no Visual Studio), e.g. on a repository just moved:
+
+```powershell
+$env:KUBUNO_GEN_REPO = 'Z:\src\drive'   # dry run: prints the plan, the .slnx and the .slnLaunch
+$env:KUBUNO_GEN_WRITE = '1'             # write the files like the command (existing project files kept)
+$env:KUBUNO_GEN_FRESH = '1'             # plan the .slnx fresh and replace the .slnLaunch (layout changed)
+dotnet test tests\Kubuno.Web.Tests\Kubuno.Web.Tests.csproj --filter "FullyQualifiedName~Generate_the_repository_named_by_KUBUNO_GEN_REPO" --logger "console;verbosity=detailed"
+```
+
+(the report is also written to `%TEMP%\kubuno-gen-report.txt`).
 
 **Sub-modules.** The generator reads the shapes generically: the root package and every `[workspace] members` entry
 (`dir/*` globs included), the crates of git submodules (`.gitmodules`), the app of `frontend/` (or of the root), and
@@ -278,7 +318,8 @@ the core does not open a second browser.
 
 1. guard, then the development database tunnel (section 5);
 2. deploy - the Windows `deploy_local.sh`: the built executable (and its PDB), `module.toml` (the core reads the
-   installed manifest), the top-level `migrations/*.sql` and `frontend/dist` are copied into
+   installed manifest), the top-level `migrations/*.sql` and `frontend/dist` (platform layout: `server/migrations`,
+   `web/dist`; the module's folder is the one holding `module.toml`, the parent of `server/`) are copied into
    `dev-core\modules-store\<id>` when the module was installed from a `.kbpkg`, else `dev-core\modules\<id>`; copies
    of the module still running there from a previous session are stopped first (stopping the debugger ends the core,
    not the module it started; the running executable would be locked and its port taken) - only processes whose
@@ -334,7 +375,11 @@ Studio's MSBuild (`msbuild <module>.rsproj -t:KubunoPackModule -p:Configuration=
 the frontend, then `dist\<id>-<version>-windows-x86_64.kbpkg` - a ZIP whose root is the module folder (executable,
 `module.toml`, `frontend/`, `migrations/*.sql`, `config.toml.example`, `LICENSE`, `CHANGELOG.md`) and `SHA256SUMS`
 in `sha256sum`'s format, like `build_kbpkg.sh`. `msbuild <module>.rsproj -t:KubunoDeployModule` is the command-line
-deployment into the dev core.
+deployment into the dev core. Both layouts package the same module folder (`ModuleLayout`, Kubuno.Web.Sdk 1.0.2): in
+the platform layout the server project is `server\Kubuno.<Module>.Server.rsproj`, `KubunoModuleDirectory` defaults to
+its parent (the folder holding `module.toml`), the frontend built first is `web\*.esproj` (else `frontend\*.esproj`),
+the migrations and `config.toml.example` come from `server/` (else the root), the package still has `frontend/` and
+`migrations/` at its root.
 
 ## 10. Version tools
 
@@ -382,7 +427,8 @@ docs/RSPROJ.md, "Project and solution names", has the full table):
   `Kubuno.Web.Sdk`, `Kubuno.Web.Drive`, `Kubuno.Web.Views`, `Kubuno.Web.Views.Compiler`, `Kubuno.Web.Vectors` (the npm
   names themselves never change). A module: `Kubuno.<Module>.Server` (the package F5 starts), `Kubuno.<Module>.<X>`
   for its other crates (`p2pnas-core` is `Kubuno.P2pnas.Core`), `Kubuno.<Module>.Web` for its frontend.
-- Folders: core **Server / Libraries / Frontend / npm packages**; modules **Server / Libraries / Frontend**.
+- Folders: core **Server / Libraries / Frontend / npm packages**; modules **Server / Libraries / Frontend / Desktop**,
+  or, in the platform layout (section 2), **Common / Server / Web / Desktop (Common, Windows, Linux, macOS) / Mobile**.
 - The products are **Kubuno Core** (the web server) and **Kubuno Desktop** (the desktop shell and framework). In this
   tooling: the commands are "Kubuno Web: ..."; the debugger and the launch profiles are "Kubuno Core (server)",
   "Kubuno Core (server + Vite)" and "<Module> (Kubuno Core + browser)"; the module template is "Kubuno Web Module"

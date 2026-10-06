@@ -118,24 +118,9 @@ namespace Kubuno.Web.Commands
             var existing = File.Exists(solutionPath) ? File.ReadAllText(solutionPath) : null;
             var files = WebSolutionGenerator.Plan(repositories, solutionPath, WebSdkVersions.Current, existing);
             var report = new StringBuilder();
-            foreach (var file in files)
+            foreach (var line in WebSolutionGenerator.Apply(files))
             {
-                var exists = File.Exists(file.Path);
-                if (exists && !file.Mergeable)
-                {
-                    report.Append("  kept     ").Append(file.Path).Append('\n');
-                    continue;
-                }
-
-                if (exists && string.Equals(File.ReadAllText(file.Path), file.Content, StringComparison.Ordinal))
-                {
-                    report.Append("  current  ").Append(file.Path).Append('\n');
-                    continue;
-                }
-
-                Directory.CreateDirectory(Path.GetDirectoryName(file.Path)!);
-                File.WriteAllText(file.Path, file.Content, new UTF8Encoding(false));
-                report.Append(exists ? "  updated  " : "  created  ").Append(file.Path).Append('\n');
+                report.Append(line).Append('\n');
             }
 
             foreach (var repository in repositories)

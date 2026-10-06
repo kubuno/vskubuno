@@ -9,7 +9,7 @@ namespace Kubuno.Web.Logic.Modules
     /// <summary>
     /// The Windows port of <c>_tools/deploy_local.sh</c> for a module (docs/WEB.md, "F5 on a module"): the built
     /// executable, <c>module.toml</c> (the core reads the INSTALLED manifest), the top-level <c>migrations/*.sql</c>
-    /// and <c>frontend/dist</c> are copied into the module's folder of the dev core - its store folder when it was
+    /// and <c>frontend/dist</c> (<c>server/migrations</c> and <c>web/dist</c> in the platform layout, <see cref="ModuleLayout"/>) are copied into the module's folder of the dev core - its store folder when it was
     /// installed from a <c>.kbpkg</c>, else <c>modules\&lt;id&gt;</c>. Like the script, nothing is deleted from the
     /// target (stale hashed chunks are harmless).
     /// </summary>
@@ -43,8 +43,8 @@ namespace Kubuno.Web.Logic.Modules
                 copies.Add(new DeploymentCopy(pdb, Path.Combine(targetDirectory, Path.GetFileName(pdb))));
             }
 
-            var migrations = Path.Combine(moduleDirectory, "migrations");
-            if (Directory.Exists(migrations))
+            var migrations = ModuleLayout.MigrationsDirectory(moduleDirectory);
+            if (migrations is not null)
             {
                 foreach (var sql in Directory.GetFiles(migrations, "*.sql", SearchOption.TopDirectoryOnly).OrderBy(file => file, StringComparer.OrdinalIgnoreCase))
                 {
@@ -65,15 +65,18 @@ namespace Kubuno.Web.Logic.Modules
             return copies;
         }
 
-        /// <summary><c>frontend\dist</c> when the module has a frontend that was built; null for a backend-only module.</summary>
+        /// <summary>
+        /// <c>web\dist</c> (platform layout) or <c>frontend\dist</c> when the module has a frontend that was built; null for
+        /// a backend-only module (<see cref="ModuleLayout.FrontendDirectory"/>).
+        /// </summary>
         public static string? FrontendDist(string moduleDirectory)
         {
-            var dist = Path.Combine(moduleDirectory, "frontend", "dist");
+            var dist = Path.Combine(ModuleLayout.FrontendDirectory(moduleDirectory), "dist");
             return Directory.Exists(dist) ? dist : null;
         }
 
-        /// <summary>Whether the module has a frontend at all (frontend/package.json).</summary>
-        public static bool HasFrontend(string moduleDirectory) => File.Exists(Path.Combine(moduleDirectory, "frontend", "package.json"));
+        /// <summary>Whether the module has a frontend at all (web/package.json or frontend/package.json).</summary>
+        public static bool HasFrontend(string moduleDirectory) => File.Exists(Path.Combine(ModuleLayout.FrontendDirectory(moduleDirectory), "package.json"));
 
         /// <summary>Copies what <see cref="Plan"/> returned, skipping files whose size and time stamp are unchanged. Returns the number copied.</summary>
         public static int Execute(IEnumerable<DeploymentCopy> copies)

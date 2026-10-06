@@ -80,10 +80,14 @@ namespace Kubuno.Web.Logic.DevCore
         {
             if (coreRepository is not null)
             {
-                var dist = Path.Combine(coreRepository, "frontend", "dist");
-                if (File.Exists(Path.Combine(dist, "index.html")))
+                // web\dist once the core has moved to the platform layout (docs/WEB.md, "Solutions"), else frontend\dist.
+                foreach (var folder in new[] { "web", "frontend" })
                 {
-                    return dist;
+                    var dist = Path.Combine(coreRepository, folder, "dist");
+                    if (File.Exists(Path.Combine(dist, "index.html")))
+                    {
+                        return dist;
+                    }
                 }
             }
 

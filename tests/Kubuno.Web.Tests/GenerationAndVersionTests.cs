@@ -77,7 +77,7 @@ namespace Kubuno.Web.Tests
             Assert.AreEqual("Kubuno.Core.slnx", Path.GetFileName(solutionPath));
             var files = WebSolutionGenerator.Plan(new[] { core }, solutionPath, WebSdkVersions.Current, null).ToDictionary(file => Path.GetFileName(file.Path), file => file.Content);
 
-            StringAssert.Contains(files["Kubuno.Core.Server.rsproj"], "<Sdk Name=\"Kubuno.Web.Sdk\" Version=\"1.0.1\" />");
+            StringAssert.Contains(files["Kubuno.Core.Server.rsproj"], "<Sdk Name=\"Kubuno.Web.Sdk\" Version=\"1.0.2\" />");
             StringAssert.Contains(files["Kubuno.Core.Server.rsproj"], "<KubunoWebRole>Core</KubunoWebRole>");
             StringAssert.Contains(files["Kubuno.Core.Server.rsproj"], "<CargoBin>kubuno-core</CargoBin>");
             StringAssert.Contains(files["Kubuno.Core.Server.rsproj"], "<CargoBuildScope>Workspace</CargoBuildScope>");

@@ -20,7 +20,7 @@ namespace Kubuno.Web.Logic.Generation
         }
 
         /// <summary>The versions this extension ships (Kubuno.Rust.Sdk, Kubuno.Web.Sdk) and the JavaScript SDK it was verified with.</summary>
-        public static WebSdkVersions Current { get; } = new WebSdkVersions("1.1.1", "1.0.1", "1.0.6887863");
+        public static WebSdkVersions Current { get; } = new WebSdkVersions("1.1.1", "1.0.2", "1.0.6887863");
 
         public string RustSdk { get; }
 
@@ -130,7 +130,37 @@ namespace Kubuno.Web.Logic.Generation
                 }
             }
 
+            // A platform-layout module without a server to run: its desktop app's Windows program.
+            foreach (var repository in repositories.Where(repository => repository.IsPlatformLayout))
+            {
+                if (DesktopStartupProject(repository) is { } desktop)
+                {
+                    return Relative(solutionDirectory, desktop).Replace('/', '\\');
+                }
+            }
+
             return null;
+        }
+
+        /// <summary>
+        /// The desktop startup project of a platform-layout module (docs/WEB.md, "Solutions"): the program under
+        /// <c>desktop/windows/</c> - <c>kubuno-&lt;id&gt;-desktop</c> when there are several, else the first by name. Its
+        /// <c>.rsproj</c> path, or null when the module has no Windows desktop program.
+        /// </summary>
+        public static string? DesktopStartupProject(WebRepository repository)
+        {
+            if (repository is null || !repository.IsPlatformLayout)
+            {
+                return null;
+            }
+
+            var windows = System.IO.Path.Combine(repository.Root, "desktop", "windows") + System.IO.Path.DirectorySeparatorChar;
+            var programs = repository.DesktopMembers
+                .Where(member => !member.IsLibraryOnly && (member.Directory + System.IO.Path.DirectorySeparatorChar).StartsWith(windows, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(member => member.PackageName == "kubuno-" + repository.Id + "-desktop" ? 0 : 1)
+                .ThenBy(member => member.PackageName, StringComparer.Ordinal)
+                .ToList();
+            return programs.Count == 0 ? null : System.IO.Path.Combine(programs[0].Directory, ProjectNaming.ForCrate(programs[0].PackageName) + ".rsproj");
         }
 
         /// <summary>
@@ -157,7 +187,21 @@ namespace Kubuno.Web.Logic.Generation
 
             foreach (var repository in repositories)
             {
-                string Folder(string name) => (multi ? "/" + repository.Name : string.Empty) + "/" + name + "/";
+                var owner = multi ? repository.Name : string.Empty;
+                var platform = repository.IsPlatformLayout;
+
+                // The former layout: Server / Libraries / Frontend / Desktop / npm packages. The platform layout: a folder per
+                // part of the repository, by the project's path (PlatformLayout: Common, Server, Web, Desktop/<OS>, Mobile).
+                SolutionEntry Entry(string projectPath, string typeGuid, string legacyFolder, bool isAnyCpu)
+                {
+                    var name = platform ? PlatformLayout.FolderOf(repository.Root, System.IO.Path.GetDirectoryName(projectPath)!) : legacyFolder;
+                    return new SolutionEntry(Relative(solutionDirectory, projectPath), typeGuid, (multi ? "/" + repository.Name : string.Empty) + "/" + name + "/", isAnyCpu, owner, platform ? PlatformLayout.Rank(name) : FolderRank(name));
+                }
+
+                bool InWorkspace(CargoMember member, int legacyCount) => platform
+                    ? repository.WorkspaceSizes.TryGetValue(member.Directory, out var size) && size > 1
+                    : legacyCount > 1;
+
                 var workspaceScope = repository.Kind == WebRepositoryKind.Core || repository.Members.Count > 1;
 
                 string? runProject = null;
@@ -165,9 +209,9 @@ namespace Kubuno.Web.Logic.Generation
                 {
                     var projectPath = System.IO.Path.Combine(member.Directory, RsprojName(repository, member) + ".rsproj");
                     var isRun = member.PackageName == repository.RunPackage;
-                    files.Add(new GeneratedFile(projectPath, Rsproj(member, repository, isRun, workspaceScope, versions), mergeable: false));
+                    files.Add(new GeneratedFile(projectPath, Rsproj(member, repository, isRun, platform ? InWorkspace(member, 0) : workspaceScope, versions), mergeable: false));
                     var folder = isRun ? ServerFolder : (member.IsLibraryOnly ? LibrariesFolderName : ServerFolder);
-                    entries.Add(new SolutionEntry(Relative(solutionDirectory, projectPath), RsprojTypeGuid, Folder(folder), isAnyCpu: false));
+                    entries.Add(Entry(projectPath, RsprojTypeGuid, folder, isAnyCpu: false));
                     if (isRun)
                     {
                         runProject = projectPath;
@@ -190,19 +234,36 @@ namespace Kubuno.Web.Logic.Generation
                         packageProjects.Add((frontend, projectPath));
                     }
 
-                    entries.Add(new SolutionEntry(Relative(solutionDirectory, projectPath), EsprojTypeGuid, Folder(frontend.Kind == FrontendKind.App ? FrontendFolder : PackagesFolder), isAnyCpu: true));
+                    entries.Add(Entry(projectPath, EsprojTypeGuid, frontend.Kind == FrontendKind.App ? FrontendFolder : PackagesFolder, isAnyCpu: true));
                 }
 
-                // The module's desktop apps (desktop/<os>, one Cargo workspace per OS): Kubuno.<Module>.Desktop and its
-                // engine crates, named like the desktop repository's projects (ProjectNaming.ForCrate). No build
-                // dependency on the server or the frontend: they are separate programs.
-                var desktopWorkspaceScope = repository.DesktopMembers.Count > 1;
+                // The module's desktop apps (desktop/<os>, or the platform layout's desktop/ workspace with desktop/common,
+                // windows, linux, macos): Kubuno.<Module>.Desktop and its crates, named like the desktop repository's
+                // projects (ProjectNaming.ForCrate). No build dependency on the server or the frontend: separate programs.
                 foreach (var member in repository.DesktopMembers)
                 {
                     var projectPath = System.IO.Path.Combine(member.Directory, ProjectNaming.ForCrate(member.PackageName) + ".rsproj");
-                    files.Add(new GeneratedFile(projectPath, DesktopRsproj(member, desktopWorkspaceScope, versions), mergeable: false));
-                    entries.Add(new SolutionEntry(Relative(solutionDirectory, projectPath), RsprojTypeGuid, Folder(DesktopFolder), isAnyCpu: false));
+                    files.Add(new GeneratedFile(projectPath, DesktopRsproj(member, InWorkspace(member, repository.DesktopMembers.Count), versions), mergeable: false));
+                    entries.Add(Entry(projectPath, RsprojTypeGuid, DesktopFolder, isAnyCpu: false));
                 }
+
+                // Platform layout: the mobile apps' Rust packages (mobile/common, android, ios), else mobile/README.md, so
+                // the Mobile folder shows where they will go.
+                foreach (var member in repository.MobileMembers)
+                {
+                    var projectPath = System.IO.Path.Combine(member.Directory, ProjectNaming.ForCrate(member.PackageName) + ".rsproj");
+                    files.Add(new GeneratedFile(projectPath, ClientRsproj(member, InWorkspace(member, 0), versions, "a mobile app of the module"), mergeable: false));
+                    entries.Add(Entry(projectPath, RsprojTypeGuid, PlatformLayout.Mobile, isAnyCpu: false));
+                }
+
+                if (repository.MobileReadme is not null)
+                {
+                    var readme = Entry(repository.MobileReadme, string.Empty, PlatformLayout.Mobile, isAnyCpu: false);
+                    readme.IsFile = true;
+                    entries.Add(readme);
+                }
+
+                var desktopStartup = DesktopStartupProject(repository);
 
                 // F5 on the backend of a module deploys its frontend: build it first.
                 if (runProject is not null && repository.Kind == WebRepositoryKind.Module)
@@ -248,6 +309,12 @@ namespace Kubuno.Web.Logic.Generation
                         launchProjects.Add((ProjectNaming.Product(repository.Id) + " (Kubuno Core + browser)", paths));
                     }
                 }
+
+                // Platform layout: the desktop app too (its Windows program, the desktop startup project).
+                if (platform && desktopStartup is not null)
+                {
+                    launchProjects.Add((ProjectNaming.Product(repository.Id) + " desktop (Windows)", new List<string> { Relative(solutionDirectory, desktopStartup) }));
+                }
             }
 
             ModuleIsolation.EnsureIsolated(repositories, dependencies);
@@ -266,26 +333,65 @@ namespace Kubuno.Web.Logic.Generation
         }
 
         /// <summary>
+        /// Writes what <see cref="Plan"/> returned, the way "Kubuno Web: Generate Solution" does: a project file that exists
+        /// is kept, a solution is written when its (merged) content changed. <paramref name="replaceSolutionFiles"/> also
+        /// rewrites an existing <c>.slnLaunch</c> (with a solution planned fresh: a repository whose layout changed).
+        /// Returns one report line per file ("created", "updated", "current", "kept").
+        /// </summary>
+        public static IReadOnlyList<string> Apply(IEnumerable<GeneratedFile> files, bool replaceSolutionFiles = false)
+        {
+            var report = new List<string>();
+            foreach (var file in files)
+            {
+                var exists = File.Exists(file.Path);
+                var replace = file.Mergeable || (replaceSolutionFiles && file.Path.EndsWith(".slnLaunch", StringComparison.OrdinalIgnoreCase));
+                if (exists && !replace)
+                {
+                    report.Add("  kept     " + file.Path);
+                    continue;
+                }
+
+                if (exists && string.Equals(File.ReadAllText(file.Path), file.Content, StringComparison.Ordinal))
+                {
+                    report.Add("  current  " + file.Path);
+                    continue;
+                }
+
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file.Path)!);
+                File.WriteAllText(file.Path, file.Content, new UTF8Encoding(false));
+                report.Add((exists ? "  updated  " : "  created  ") + file.Path);
+            }
+
+            return report;
+        }
+
+        /// <summary>
         /// The projects of a repository as the report shows them: one line per project, "folder: project (kind)".
         /// </summary>
         public static IReadOnlyList<string> Describe(WebRepository repository)
         {
             var lines = new List<string>();
+            string FolderName(string directory, string legacyFolder) => repository.IsPlatformLayout ? PlatformLayout.FolderOf(repository.Root, directory) : legacyFolder;
             foreach (var member in repository.Members)
             {
                 var role = member.PackageName == repository.RunPackage ? "server" : member.IsLibraryOnly ? "library" : "program";
-                lines.Add((role == "library" ? LibrariesFolderName : ServerFolder) + ": " + RsprojName(repository, member) + ".rsproj (" + member.PackageName + ", " + role + ")");
+                lines.Add(FolderName(member.Directory, role == "library" ? LibrariesFolderName : ServerFolder) + ": " + RsprojName(repository, member) + ".rsproj (" + member.PackageName + ", " + role + ")");
             }
 
             foreach (var frontend in repository.Frontends)
             {
-                lines.Add((frontend.Kind == FrontendKind.App ? FrontendFolder : PackagesFolder) + ": " + frontend.ProjectName + ".esproj ("
+                lines.Add(FolderName(frontend.Directory, frontend.Kind == FrontendKind.App ? FrontendFolder : PackagesFolder) + ": " + frontend.ProjectName + ".esproj ("
                     + (frontend.NpmName ?? "app") + (frontend.LinkedSources.Count > 0 ? ", sources " + string.Join(", ", frontend.LinkedSources.Select(System.IO.Path.GetFileName).Select(name => "src/" + name)) : string.Empty) + ")");
             }
 
-            foreach (var member in repository.DesktopMembers)
+            foreach (var member in repository.DesktopMembers.Concat(repository.MobileMembers))
             {
-                lines.Add(DesktopFolder + ": " + ProjectNaming.ForCrate(member.PackageName) + ".rsproj (" + member.PackageName + ", " + (member.IsLibraryOnly ? "library" : "program") + ")");
+                lines.Add(FolderName(member.Directory, DesktopFolder) + ": " + ProjectNaming.ForCrate(member.PackageName) + ".rsproj (" + member.PackageName + ", " + (member.IsLibraryOnly ? "library" : "program") + ")");
+            }
+
+            if (repository.MobileReadme is not null)
+            {
+                lines.Add(PlatformLayout.Mobile + ": mobile/README.md (no mobile project yet)");
             }
 
             foreach (var submodule in repository.Submodules)
@@ -349,11 +455,15 @@ namespace Kubuno.Web.Logic.Generation
         /// its program for a binary, the whole desktop workspace in one cargo run when it has several packages - the same
         /// project as "Generate Visual Studio Projects" writes in the desktop repository.
         /// </summary>
-        public static string DesktopRsproj(CargoMember member, bool workspaceScope, WebSdkVersions versions)
+        public static string DesktopRsproj(CargoMember member, bool workspaceScope, WebSdkVersions versions) =>
+            ClientRsproj(member, workspaceScope, versions, "a desktop app of the module");
+
+        /// <summary>The <c>.rsproj</c> of a client app's package (desktop or mobile, <paramref name="what"/> says which).</summary>
+        public static string ClientRsproj(CargoMember member, bool workspaceScope, WebSdkVersions versions, string what)
         {
             var builder = new StringBuilder();
             builder.Append("<Project Sdk=\"Kubuno.Rust.Sdk/").Append(versions.RustSdk).Append("\">\n\n");
-            builder.Append("  <!-- Generated by \"Kubuno Web: Generate Solution\" (docs/WEB.md): a desktop app of the module. This file is\n");
+            builder.Append("  <!-- Generated by \"Kubuno Web: Generate Solution\" (docs/WEB.md): ").Append(what).Append(". This file is\n");
             builder.Append("       yours: it is never overwritten by a later run - edit it freely, or delete it and run the command again. -->\n");
             builder.Append("  <PropertyGroup>\n");
             builder.Append("    <CargoPackage>").Append(Escape(member.PackageName)).Append("</CargoPackage>\n");
@@ -364,7 +474,7 @@ namespace Kubuno.Web.Logic.Generation
 
             if (workspaceScope)
             {
-                builder.Append("    <!-- One `cargo build` of the desktop workspace for every project of it (docs/RSPROJ.md, \"Cargo workspaces\"). -->\n");
+                builder.Append("    <!-- One `cargo build` of the ").Append(what.Contains("mobile") ? "mobile" : "desktop").Append(" workspace for every project of it (docs/RSPROJ.md, \"Cargo workspaces\"). -->\n");
                 builder.Append("    <CargoBuildScope>Workspace</CargoBuildScope>\n");
             }
 
@@ -530,7 +640,7 @@ namespace Kubuno.Web.Logic.Generation
             var document = XDocument.Parse(existing, LoadOptions.PreserveWhitespace);
             var root = document.Root ?? throw new InvalidOperationException("The solution file has no root element.");
             var present = new HashSet<string>(
-                root.Descendants("Project").Select(project => Normalize((string?)project.Attribute("Path") ?? string.Empty)),
+                root.Descendants("Project").Concat(root.Descendants("File")).Select(project => Normalize((string?)project.Attribute("Path") ?? string.Empty)),
                 StringComparer.OrdinalIgnoreCase);
             var missing = entries.Where(entry => !present.Contains(Normalize(entry.Path))).ToList();
             if (missing.Count == 0)
@@ -546,10 +656,16 @@ namespace Kubuno.Web.Logic.Generation
         private static void AddEntries(XElement root, List<SolutionEntry> entries)
         {
             // Programs before frontends: the first project of a solution is Visual Studio's default startup project.
-            foreach (var entry in entries.OrderBy(entry => FolderOwner(entry.Folder), StringComparer.Ordinal).ThenBy(entry => FolderRank(entry.Folder)).ThenBy(entry => entry.IsAnyCpu).ThenBy(entry => entry.Path, StringComparer.OrdinalIgnoreCase))
+            // A repository's folders in their order (Rank: the former layout's Server first; the platform layout's Common,
+            // Server, Web, Desktop/<OS>, Mobile), a folder's projects before its files.
+            foreach (var entry in entries.OrderBy(entry => entry.Owner, StringComparer.Ordinal).ThenBy(entry => entry.Rank).ThenBy(entry => entry.IsFile).ThenBy(entry => entry.IsAnyCpu).ThenBy(entry => entry.Path, StringComparer.OrdinalIgnoreCase))
             {
-                var project = new XElement("Project", new XAttribute("Path", entry.Path));
-                if (entry.IsAnyCpu)
+                var project = new XElement(entry.IsFile ? "File" : "Project", new XAttribute("Path", entry.Path));
+                if (entry.IsFile)
+                {
+                    // A solution item (mobile/README.md): no type, no build.
+                }
+                else if (entry.IsAnyCpu)
                 {
                     // What Visual Studio itself writes for an .esproj in an x64 solution (its type comes from the
                     // extension): mapped to AnyCPU, and <Build /> - without it the mapped project is not built.
@@ -588,15 +704,15 @@ namespace Kubuno.Web.Logic.Generation
                 var folder = root.Elements("Folder").FirstOrDefault(element => (string?)element.Attribute("Name") == entry.Folder);
                 if (folder is null)
                 {
-                    // Nested solution folders (/core/Libraries/) need their parent declared too.
-                    var parent = entry.Folder.TrimEnd('/');
-                    var slash = parent.LastIndexOf('/');
-                    if (slash > 0)
+                    // Nested solution folders (/core/Libraries/, /Desktop/Windows/, /drive/Desktop/Windows/) need every
+                    // ancestor declared too, before them.
+                    var segments = entry.Folder.Trim('/').Split('/');
+                    for (var depth = 1; depth < segments.Length; depth++)
                     {
-                        var parentName = parent.Substring(0, slash + 1);
-                        if (!root.Elements("Folder").Any(element => (string?)element.Attribute("Name") == parentName))
+                        var ancestor = "/" + string.Join("/", segments.Take(depth)) + "/";
+                        if (!root.Elements("Folder").Any(element => (string?)element.Attribute("Name") == ancestor))
                         {
-                            root.Add(new XElement("Folder", new XAttribute("Name", parentName)));
+                            root.Add(new XElement("Folder", new XAttribute("Name", ancestor)));
                         }
                     }
 
@@ -608,14 +724,7 @@ namespace Kubuno.Web.Logic.Generation
             }
         }
 
-        /// <summary>The repository part of a folder (<c>/core/</c> of <c>/core/Server/</c>; empty in a single-repository solution).</summary>
-        private static string FolderOwner(string? folder)
-        {
-            var parts = (folder ?? string.Empty).Trim('/').Split('/');
-            return parts.Length > 1 ? parts[0] : string.Empty;
-        }
-
-        /// <summary>Server, Libraries, Frontend, npm packages: the program first (Visual Studio's default startup project).</summary>
+        /// <summary>Former layout - Server, Libraries, Frontend, Desktop, npm packages: the program first (Visual Studio's default startup project).</summary>
         private static int FolderRank(string? folder)
         {
             var name = (folder ?? string.Empty).Trim('/').Split('/').Last();
@@ -655,13 +764,24 @@ namespace Kubuno.Web.Logic.Generation
 
         private sealed class SolutionEntry
         {
-            public SolutionEntry(string path, string typeGuid, string? folder, bool isAnyCpu)
+            public SolutionEntry(string path, string typeGuid, string? folder, bool isAnyCpu, string owner, int rank)
             {
                 Path = path;
                 TypeGuid = typeGuid;
                 Folder = folder;
                 IsAnyCpu = isAnyCpu;
+                Owner = owner;
+                Rank = rank;
             }
+
+            /// <summary>The repository the entry belongs to in a multi-repository solution (empty in a single-repository one).</summary>
+            public string Owner { get; }
+
+            /// <summary>The position of its folder among the repository's folders.</summary>
+            public int Rank { get; }
+
+            /// <summary>A solution item (<c>&lt;File&gt;</c>) rather than a project.</summary>
+            public bool IsFile { get; set; }
 
             public string Path { get; }
 

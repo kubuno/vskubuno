@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Platform layout of a module repository** ("Kubuno Web: Generate Solution", `docs/WEB.md` "Solutions"). A module
+  moved to `common/`, `server/`, `web/`, `desktop/` (one Cargo workspace over `desktop/common`, `windows`, `linux`,
+  `macos`) and `mobile/` gets `Kubuno.<Module>.slnx` with one folder per part, in order: **Common**, **Server**, **Web**,
+  **Desktop** with **Desktop/Common**, **Desktop/Windows**, **Desktop/Linux**, **Desktop/macOS**, and **Mobile**
+  (`mobile/README.md` as a solution item while it holds no project). Empty folders are omitted, vendored crates and build
+  outputs are never listed, nothing outside the repository is referenced. The server builds after `web/`, the
+  `.slnLaunch` starts `server/` + `web/` and gets a "<Module> desktop (Windows)" profile on the desktop startup program
+  (`desktop/windows`). A repository partly moved gets the new folders, one still in the former layout keeps Server /
+  Libraries / Frontend / Desktop unchanged.
+- **Headless generation**: `KUBUNO_GEN_REPO=<repository>` runs the generator from `dotnet test` (dry run by default,
+  `KUBUNO_GEN_WRITE=1` writes, `KUBUNO_GEN_FRESH=1` replaces the solution and its launch profiles).
+
 - **Desktop folder in a module's solution** ("Kubuno Web: Generate Solution"). A module repository now holds its desktop
   apps under `desktop/windows` (later `desktop/linux`, `desktop/macos`), each a Cargo workspace of its own; the
   generator lists their packages in a **Desktop** folder after Server, Libraries and Frontend (`Kubuno.Chat.Desktop`,
@@ -42,6 +54,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   surface) and docked on the left, and the Properties window docked below Solution Explorer on the right; windows
   already in place are not moved. After that your own arrangement is kept: a designer only brings back a window you
   closed. **Tools > Kubuno: Reset Designer Window Layout** docks both again.
+
+- **Kubuno.Web.Sdk 1.0.2**: F5, "Package Module (.kbpkg)" and `KubunoDeployModule` work with both module layouts. The
+  module's folder is the one holding `module.toml` (the server crate's own, or its parent for `server/`), the frontend
+  built and deployed is `web/` (else `frontend/`), the migrations and `config.toml.example` come from `server/` (else
+  the root); the deployed and packed module keeps `frontend/` and `migrations/` at its root. Generated projects and the
+  module template name 1.0.2.
 
 - **Title bar heights in the designer** (`docs/EVENTS.md` section 20). The Properties window lists the view's new
   `TitleBarStyle` (`Standard`, 32 pixels as in Windows 11, or `Tall`, the web's 64-pixel header), and the design

@@ -83,8 +83,12 @@ namespace Kubuno.Web.Logic.Generation
             ["drive"] = new[] { "drive" },
         };
 
-        private WebRepository(string root, WebRepositoryKind kind, string name, IReadOnlyList<CargoMember> members, string? runPackage, string? runBin, IReadOnlyList<FrontendProject> frontends, ModuleManifest? module, IReadOnlyList<string> submodules, IReadOnlyList<CargoMember> desktopMembers)
+        private WebRepository(string root, WebRepositoryKind kind, string name, IReadOnlyList<CargoMember> members, string? runPackage, string? runBin, IReadOnlyList<FrontendProject> frontends, ModuleManifest? module, IReadOnlyList<string> submodules, IReadOnlyList<CargoMember> desktopMembers, PlatformParts? platform = null)
         {
+            IsPlatformLayout = platform is not null;
+            MobileMembers = platform?.MobileMembers ?? Array.Empty<CargoMember>();
+            MobileReadme = platform?.MobileReadme;
+            WorkspaceSizes = platform?.WorkspaceSizes ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             Root = root;
             Kind = kind;
             Name = name;
@@ -133,6 +137,24 @@ namespace Kubuno.Web.Logic.Generation
         /// </summary>
         public IReadOnlyList<CargoMember> DesktopMembers { get; }
 
+        /// <summary>
+        /// Whether the module uses the platform layout (<see cref="PlatformLayout"/>: <c>common/</c>, <c>server/</c>, <c>web/</c>,
+        /// <c>desktop/</c>, <c>mobile/</c>), wholly or partly during the transition. Its solution then gets one folder per part.
+        /// </summary>
+        public bool IsPlatformLayout { get; }
+
+        /// <summary>The Cargo packages under <c>mobile/</c> (platform layout only; none today, the folder holds a README).</summary>
+        public IReadOnlyList<CargoMember> MobileMembers { get; }
+
+        /// <summary><c>mobile/README.md</c> when <c>mobile/</c> holds no project yet (platform layout only), else null.</summary>
+        public string? MobileReadme { get; }
+
+        /// <summary>
+        /// Platform layout: the number of packages of the Cargo workspace each package (by folder) belongs to - a project of
+        /// a workspace of several packages builds the whole workspace in one cargo run. Empty for the former layout.
+        /// </summary>
+        public IReadOnlyDictionary<string, int> WorkspaceSizes { get; }
+
         /// <summary>The folders of a module repository that may hold a desktop app's Cargo workspace, one per OS.</summary>
         public static IReadOnlyList<string> DesktopWorkspaceFolders { get; } = new[] { "windows", "linux", "macos" };
 
@@ -144,6 +166,12 @@ namespace Kubuno.Web.Logic.Generation
         {
             reason = null;
             var root = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar);
+            var moduleToml = Path.Combine(root, "module.toml");
+            if (File.Exists(moduleToml) && !File.Exists(Path.Combine(root, "crates", "kubuno-core", "Cargo.toml")) && PlatformLayout.IsPlatformLayout(root))
+            {
+                return DetectPlatformModule(root, moduleToml);
+            }
+
             if (!File.Exists(Path.Combine(root, "Cargo.toml")))
             {
                 reason = "no Cargo.toml in '" + root + "'.";
@@ -161,7 +189,6 @@ namespace Kubuno.Web.Logic.Generation
                 return new WebRepository(root, WebRepositoryKind.Core, name, members, core?.PackageName, bin, ReadFrontends(root, "kubuno", isCore: true), null, submodules, Array.Empty<CargoMember>());
             }
 
-            var moduleToml = Path.Combine(root, "module.toml");
             if (File.Exists(moduleToml))
             {
                 var manifest = ModuleManifest.Load(moduleToml);
@@ -179,6 +206,123 @@ namespace Kubuno.Web.Logic.Generation
 
             reason = "'" + root + "' is neither Kubuno Core (crates/kubuno-core) nor a module (module.toml).";
             return null;
+        }
+
+        /// <summary>
+        /// A module in the platform layout (<see cref="PlatformLayout"/>): its server packages (<c>server/</c>, or the root
+        /// package not moved yet) and <c>common/</c> crates are <see cref="Members"/>, the members of <c>desktop/</c> (one
+        /// workspace, or one per <c>desktop/&lt;os&gt;</c>) <see cref="DesktopMembers"/>, those of <c>mobile/</c>
+        /// <see cref="MobileMembers"/>; the frontend is <c>web/</c> (or <c>frontend/</c> not moved yet). Nothing outside the
+        /// repository, nothing in a build output or a vendored folder.
+        /// </summary>
+        private static WebRepository DetectPlatformModule(string root, string moduleToml)
+        {
+            var submodules = ReadSubmodules(root);
+            var sizes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            void AddGroup(List<CargoMember> target, IEnumerable<CargoMember?> group)
+            {
+                var listed = group
+                    .Where(member => member is not null && PlatformLayout.IsListed(root, member.Directory))
+                    .Select(member => member!)
+                    .Where(member => !sizes.ContainsKey(member.Directory))
+                    .GroupBy(member => member.Directory, StringComparer.OrdinalIgnoreCase)
+                    .Select(same => same.First())
+                    .ToList();
+                foreach (var member in listed)
+                {
+                    target.Add(member);
+                    sizes[member.Directory] = listed.Count;
+                }
+            }
+
+            // The server: server/ (its workspace), else - during the transition - the package still at the root.
+            var members = new List<CargoMember>();
+            var server = Path.Combine(root, "server");
+            var serverRoot = File.Exists(Path.Combine(server, "Cargo.toml")) ? server : File.Exists(Path.Combine(root, "Cargo.toml")) ? root : null;
+            if (serverRoot is not null)
+            {
+                AddGroup(members, ReadMembers(serverRoot));
+            }
+
+            foreach (var submodule in submodules)
+            {
+                AddGroup(members, new[] { CargoMember.TryRead(Path.GetFullPath(Path.Combine(root, submodule.Replace('/', Path.DirectorySeparatorChar)))) });
+            }
+
+            // The shared rules: common/ as one workspace, else each common/<crate> (a workspace of its own or a package).
+            AddPlatformFolder(Path.Combine(root, "common"), group => AddGroup(members, group));
+
+            // The desktop app: desktop/Cargo.toml (one workspace for every OS), else a workspace per desktop/<os>.
+            var desktopMembers = new List<CargoMember>();
+            var desktop = Path.Combine(root, "desktop");
+            if (File.Exists(Path.Combine(desktop, "Cargo.toml")))
+            {
+                AddGroup(desktopMembers, ReadMembers(desktop));
+            }
+            else
+            {
+                foreach (var os in PlatformLayout.DesktopPlatforms)
+                {
+                    AddPlatformFolder(Path.Combine(desktop, os), group => AddGroup(desktopMembers, group));
+                }
+            }
+
+            // The mobile apps: mobile/Cargo.toml, else per mobile/<platform>; a README alone keeps the folder visible.
+            var mobileMembers = new List<CargoMember>();
+            var mobile = Path.Combine(root, "mobile");
+            if (File.Exists(Path.Combine(mobile, "Cargo.toml")))
+            {
+                AddGroup(mobileMembers, ReadMembers(mobile));
+            }
+            else
+            {
+                foreach (var platform in PlatformLayout.MobilePlatforms)
+                {
+                    AddPlatformFolder(Path.Combine(mobile, platform), group => AddGroup(mobileMembers, group));
+                }
+            }
+
+            var readme = Path.Combine(mobile, "README.md");
+            var mobileReadme = mobileMembers.Count == 0 && File.Exists(readme) ? readme : null;
+
+            var manifest = ModuleManifest.Load(moduleToml);
+            var run = members.FirstOrDefault(member => member.Bins.Contains(manifest.Entrypoint, StringComparer.OrdinalIgnoreCase))
+                ?? (serverRoot is null ? null : members.FirstOrDefault(member => string.Equals(member.Directory, serverRoot, StringComparison.OrdinalIgnoreCase)));
+            var bin = run is not null && run.Bins.Count > 1 ? manifest.Entrypoint : null;
+            if (run is not null && run.Bins.Count == 1 && !string.Equals(run.Bins[0], run.PackageName, StringComparison.Ordinal))
+            {
+                bin = run.Bins[0];
+            }
+
+            var parts = new PlatformParts(mobileMembers, mobileReadme, sizes);
+            return new WebRepository(root, WebRepositoryKind.Module, Path.GetFileName(root), members, run?.PackageName, bin, ReadFrontends(root, manifest.Id, isCore: false), manifest, submodules, desktopMembers, parts);
+        }
+
+        /// <summary>
+        /// The packages of a platform folder (<c>common/</c>, <c>desktop/&lt;os&gt;/</c>, <c>mobile/&lt;platform&gt;/</c>): its
+        /// workspace when its <c>Cargo.toml</c> is one, else its own package and each sub-folder's (a sub-folder workspace with
+        /// its members), one group per workspace.
+        /// </summary>
+        private static void AddPlatformFolder(string folder, Action<IEnumerable<CargoMember?>> addGroup)
+        {
+            if (File.Exists(Path.Combine(folder, "Cargo.toml")))
+            {
+                if (PlatformLayout.IsWorkspace(folder))
+                {
+                    addGroup(ReadMembers(folder));
+                    return;
+                }
+
+                addGroup(new[] { CargoMember.TryRead(folder) });
+            }
+
+            foreach (var child in PlatformLayout.ChildDirectories(folder))
+            {
+                if (File.Exists(Path.Combine(child, "Cargo.toml")))
+                {
+                    addGroup(PlatformLayout.IsWorkspace(child) ? (IEnumerable<CargoMember?>)ReadMembers(child) : new[] { CargoMember.TryRead(child) });
+                }
+            }
         }
 
         /// <summary>The root package (when <c>[package]</c> is there), every <c>[workspace] members</c> entry (globs included) and the crates of git submodules.</summary>
@@ -262,7 +406,8 @@ namespace Kubuno.Web.Logic.Generation
         private static IReadOnlyList<FrontendProject> ReadFrontends(string root, string id, bool isCore)
         {
             var result = new List<FrontendProject>();
-            var frontend = Path.Combine(root, "frontend");
+            // The platform layout's web/ (docs/WEB.md, "Solutions"), else the former frontend/.
+            var frontend = File.Exists(Path.Combine(root, "web", "package.json")) ? Path.Combine(root, "web") : Path.Combine(root, "frontend");
             if (File.Exists(Path.Combine(frontend, "package.json")))
             {
                 result.Add(new FrontendProject(FrontendKind.App, frontend, isCore ? ProjectNaming.CoreFrontend : ProjectNaming.ForModuleFrontend(id), NpmName(frontend), null, Array.Empty<string>(), null));
@@ -336,6 +481,23 @@ namespace Kubuno.Web.Logic.Generation
 
             return relative.IndexOfAny(new[] { '*', '?' }) >= 0 ? Enumerable.Empty<string>() : new[] { Path.GetFullPath(path) };
         }
+    }
+
+    /// <summary>What the platform layout adds to a <see cref="WebRepository"/>.</summary>
+    internal sealed class PlatformParts
+    {
+        public PlatformParts(IReadOnlyList<CargoMember> mobileMembers, string? mobileReadme, IReadOnlyDictionary<string, int> workspaceSizes)
+        {
+            MobileMembers = mobileMembers;
+            MobileReadme = mobileReadme;
+            WorkspaceSizes = workspaceSizes;
+        }
+
+        public IReadOnlyList<CargoMember> MobileMembers { get; }
+
+        public string? MobileReadme { get; }
+
+        public IReadOnlyDictionary<string, int> WorkspaceSizes { get; }
     }
 
     /// <summary>A Cargo package of the repository.</summary>

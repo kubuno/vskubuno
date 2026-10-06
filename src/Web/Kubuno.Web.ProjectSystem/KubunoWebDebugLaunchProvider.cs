@@ -171,7 +171,8 @@ namespace Kubuno.Web.ProjectSystem
                 var moduleDirectory = await Read("KubunoModuleDirectory").ConfigureAwait(false);
                 if (string.IsNullOrEmpty(moduleDirectory))
                 {
-                    moduleDirectory = Path.GetDirectoryName(await Read("CargoManifestPath").ConfigureAwait(false))!;
+                    // The folder holding module.toml: the crate's own, or its parent for a platform-layout server/.
+                    moduleDirectory = ModuleLayout.ModuleDirectory(Path.GetDirectoryName(await Read("CargoManifestPath").ConfigureAwait(false))!);
                 }
 
                 manifest = ModuleManifest.Load(Path.Combine(moduleDirectory, "module.toml"));

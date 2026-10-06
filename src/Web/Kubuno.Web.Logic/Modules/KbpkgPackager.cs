@@ -34,7 +34,7 @@ namespace Kubuno.Web.Logic.Modules
             var dist = ModuleDeployment.FrontendDist(moduleDirectory);
             if (ModuleDeployment.HasFrontend(moduleDirectory) && dist is null)
             {
-                throw new InvalidOperationException("frontend/dist not found: build the frontend first (the module has a frontend/package.json).");
+                throw new InvalidOperationException(Path.GetFileName(ModuleLayout.FrontendDirectory(moduleDirectory)) + "/dist not found: build the frontend first (the module has a " + Path.GetFileName(ModuleLayout.FrontendDirectory(moduleDirectory)) + "/package.json).");
             }
 
             if (dist is not null)
@@ -45,8 +45,8 @@ namespace Kubuno.Web.Logic.Modules
                 }
             }
 
-            var migrations = Path.Combine(moduleDirectory, "migrations");
-            if (Directory.Exists(migrations))
+            var migrations = ModuleLayout.MigrationsDirectory(moduleDirectory);
+            if (migrations is not null)
             {
                 foreach (var sql in Directory.GetFiles(migrations, "*.sql", SearchOption.TopDirectoryOnly))
                 {
@@ -56,8 +56,8 @@ namespace Kubuno.Web.Logic.Modules
 
             foreach (var name in new[] { "config.toml.example", "LICENSE", "CHANGELOG.md" })
             {
-                var path = Path.Combine(moduleDirectory, name);
-                if (File.Exists(path))
+                var path = ModuleLayout.RootFile(moduleDirectory, name);
+                if (path is not null)
                 {
                     entries.Add(new KeyValuePair<string, string>(name, path));
                 }

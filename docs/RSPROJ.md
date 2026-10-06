@@ -316,6 +316,26 @@ The executables keep their names (`kubuno-desktop.exe`, `kubuno-chat.exe`, `kubu
 the former crate names (an older desktop checkout): the framework crate list (`FrameworkCrates`), the design
 surface's `--extern` crates, the debugger visualizers and step filters, the code-behind and dependency detection.
 
+**A module repository** (`module.toml`) gets its `Kubuno.<Module>.slnx` from "Kubuno Web: Generate Solution"
+(docs/WEB.md, "Solutions"), with the same naming. Since 2026-10-06 a module moves to the **platform layout**, which shows
+at a glance its common, server, web, desktop and mobile code; its solution has one folder per part, in this order:
+
+| Folder | Holds | Example (drive) |
+|---|---|---|
+| `/Common/` | `common/<crate>` (the sans-IO rules every client shares) | `common/core/Kubuno.Drive.Core.rsproj` |
+| `/Server/` | `server/` (the module's server, F5 with Kubuno.Web.Sdk) | `server/Kubuno.Drive.Server.rsproj` |
+| `/Web/` | `web/` (the frontend `.esproj`) | `web/Kubuno.Drive.Web.esproj` |
+| `/Desktop/Common/`, `/Desktop/Windows/`, `/Desktop/Linux/`, `/Desktop/macOS/` | the members of `desktop/Cargo.toml` (ONE workspace) by their folder `desktop/<os>/` | `desktop/windows/kubuno-drive-desktop/Kubuno.Drive.Desktop.rsproj` |
+| `/Mobile/` (`/Mobile/Common/`, `/Android/`, `/iOS/`) | `mobile/<platform>` projects; `mobile/README.md` as a solution item while there is none | `mobile/README.md` |
+
+Empty folders are omitted (`/Mobile/` excepted while its README is there). The server builds after the web frontend
+(`BuildDependency`); the `.slnLaunch` starts `server/` + `web/`, plus a "<Module> desktop (Windows)" profile on the
+desktop startup project, the program under `desktop/windows/`. A repository still in the former layout (root
+`Cargo.toml`, `frontend/`, `desktop/windows/crates`) keeps its Server / Libraries / Frontend / Desktop folders; one
+partly moved (any of `server/Cargo.toml`, `web/package.json`, `desktop/Cargo.toml`, `common/*/Cargo.toml`) gets the
+platform folders, a part not moved yet filed where it will go (the root package in Server, `frontend/` in Web).
+`vendor`, `suppa`, `target`, `node_modules`, `obj`, `dist` are never scanned, and no path outside the repository is listed.
+
 ## 5. Coexistence with Open Folder and rust-analyzer
 
 Both modes stay: Open Folder is the zero-setup entry point (`devenv folder`, no generation step);
