@@ -59,7 +59,68 @@ module kind).
   resolves an element naming a user control or custom control declared in another folder of the package (the classes
   are scanned recursively), and every relative path written in a view (`d:ItemsSource`, image files) is relative to
   **that view's own folder**, also when another view in another folder nests it. The desktop apps' folder convention is
-  `DESKTOP-MIGRATION.md`, "Source layout".
+  `DESKTOP-MIGRATION.md`, "Source layout"; the web's is §1.2.
+
+**Which one (both targets, normative 2026-10-06).** The kind follows what the screen *is*, never how it was written:
+
+- a **view** (`.kbview`) stands on its own: a page a route or the router's tables show (`<Route element>`,
+  `RouteRegistry.register`, the administration's `ADMIN_SECTIONS`), a window (a floating window, a full-screen viewer
+  or player), a dialog, a wizard, a flyout — and on the desktop the main window, its tool windows and its splash;
+- a **user control** (`.kbcontrol`) is placed inside something else: a page's pane, section or tab, a sidebar, a
+  header and its menus, a panel given to a host slot or extension point, a card, a badge, a tree item, and every row
+  or item a list repeats. Its props are its properties and its callbacks its events (web: `x:Props="XProps"`, whose
+  `on…` members are the events; desktop: `#[user_control]` properties and events).
+
+On the desktop a window's content pages are user controls (the window hosts them); on the web a page the router shows
+is a view, because the router, not a window of the module, hosts it. A user control is an element of its project,
+named after its file (`<SearchResultRow/>` for `SearchResultRow.kbcontrol`): its name is unique in the project and is
+no host element's name (`EmptyState`, `Breadcrumb` and `Sidebar` are taken) — the compiler reports a clash as an error
+in every view. Module isolation is unchanged: a user control is placed only by its own module's views.
+
+**Web: a converted user control keeps its DOM.** A `.kbcontrol` whose `<UserControl>` root carries only the file's
+attributes (`x:Props`, `DesignWidth`, `DesignHeight`) and holds one element it does not lay out (no `Dock`, `Anchor`
+or position) renders that element as its DOM root (`@kubuno/views` `contentRoot`): the control is as large as its
+content, and its host's child selectors (`space-y-*`, `divide-y`, `> *`) reach it as they reached the React component
+it was converted from. Any other `<UserControl>` root (a property, a name, docked children) is the dock box of
+§5.1. The Visual Studio designer always shows the `UserControl` surface.
+
+### 1.2 Where views and user controls live (web, normative 2026-10-06)
+
+The web counterpart of `DESKTOP-MIGRATION.md`, "Source layout": a frontend groups its source by **role**, so that a
+human finds a screen by what it is. The **app root** is a module's `src/` (where `entry.ts` stays, with `i18n.ts`,
+`i18n.data.json`, `index.css`) and the core's `src/core/` (the core's other trees — `ui/`, `sdk/`, `views/`,
+`kbview/`, `gallery/` — are libraries and tools, not the app). A folder exists only when it holds something.
+
+| Folder (under the app root) | Holds | Drive / core examples |
+|---|---|---|
+| `views/` | the views of pages and windows (`.kbview`) | `views/DriveApp.kbview`, `views/FilesStoragePage.kbview`, `views/Files3DViewer.kbview`; core `views/HomePage.kbview` |
+| `dialogs/` | dialogs and wizards (`.kbview`) | `dialogs/TagDialog.kbview`, `dialogs/DuplicatesDialog.kbview` |
+| `pages/` | the user controls one component places — a page's panes, sections, tabs, the panels given to a host slot — **and the item controls their lists repeat**, next to them | `pages/FilesTreeSidebar.kbcontrol`, `pages/MobileHome.kbcontrol` |
+| `controls/` | the user controls several components place, and the small React building blocks they share | `controls/TagDots.kbcontrol`, `controls/DialogTree.kbcontrol` |
+| `<feature>/` | an area big enough for its own folder (an administration section, the fonts browser, the Drive explorer's parts): its views, dialogs and user controls **side by side**, with its own logic (`api.ts`, hooks, types); a sub-area gets a subfolder | core `admin/sections/holidays/`, drive `fonts/`, `drive-app/` |
+| `model/` | stores, state and types the views show (no UI) | drive `model/driveExtras.ts`; core `store/` |
+| `services/` | the work behind the views, no UI: API clients, preview and menu services, routing helpers | drive `services/remotesApi.ts`; core `api/` |
+
+Rules:
+
+1. **A view or user control and its code-behind share a folder and a stem**: `X.kbview` / `X.kbcontrol`, `X.ts` (or
+   `X.tsx`), `X.parts.tsx`, `X.kbcontrol.design.json`, `X.test.tsx`. Never split them. The frontend's
+   `.filenesting.json` nests the code-behind and the parts under the view in Solution Explorer (`.ts` / `.tsx` under
+   `.kbview` / `.kbcontrol` of the same stem, `.parts.tsx` likewise).
+2. **A folder holding more than a dozen views is split by role** like the app root (core `admin/`, `shell/`,
+   `settings/sections/`, `admin/settings/`: `views/`, `dialogs/`, `pages/`, `controls/` inside); below that, a feature
+   folder keeps its views and user controls side by side — the extension tells which is which.
+3. **An item control lives next to the list that repeats it** (`pages/` with its page, or the feature folder), not in a
+   separate `rows/` folder; a user control placed by several components goes to `controls/` of the area.
+4. **An existing folder keeps its name when it says more than the generic role** (core `api/` plays `services/`,
+   `store/` plays `model/`).
+5. **Imports name the file where it is** (`../controls/TagDots`), never a re-export faking an old path; the SDK's
+   re-exports (`src/sdk/index.ts`) follow the files.
+6. **Module isolation is unchanged**: folders never reach into another module.
+
+`@kubuno/views-migrate` applies §1.1–1.2: a conversion classifies each screen and, with `--layout`, writes it into its
+folder; `--relayout` classifies and moves the views a project already has (`git mv`, every importer rewritten;
+`WEB-VIEWS.md` §23).
 
 ## 2. Element names
 

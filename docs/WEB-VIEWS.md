@@ -569,7 +569,8 @@ second server would duplicate 7 200 lines and drift.
 
 ### 6.2 Codemod (`@kubuno/views-migrate`, ts-morph)
 
-Input: one `.tsx` file. Output: `X.kbview` + `X.ts` code-behind + `.kbres` entries + a report.
+Input: one `.tsx` file. Output: `X.kbview` (a view) or `X.kbcontrol` (a user control) + `X.ts` code-behind + `.kbres`
+entries + a report. Which of the two a screen becomes, and where its files go, is VIEWS-SPEC §1.1–1.2 (§23 below).
 
 Automated:
 - `@ui` elements → `.kbview` elements by reverse registry lookup (`propMap`, lower-case enums → PascalCase,
@@ -1755,3 +1756,93 @@ paint / remote-storage windows, `FilePreviewOverlay` / `Shell`, `ImagePreviewOve
 `@kubuno/views` 0.1.4. Drive was converted again from its original TSX with 0.1.2 and **no hand fixups** (`fixups.mjs`
 retired, `views-defaults.json` and its registration in `entry.ts` removed, drive `93e22a7`); §7 parity on the fixed host: **31 / 31** again (worst root diff 0.124 %, open
 dialog and folder picker as before; reports `captures/diff-sf1-before-sf1-after`, `…/diff-sf2-before-sf2-after`).
+
+## 23. Views and user controls on the web (2026-10-06)
+
+The bulk migrations of §21 and §22 wrote every screen as a `.kbview` in the folder of its TSX: pages, dialogs, panes,
+rows and badges alike (core 233 files outside the gallery, drive 39). The desktop already told views from user
+controls (VIEWS-SPEC §1.1) and grouped an app's source by role (`DESKTOP-MIGRATION.md`, "Source layout"); the web now
+does the same.
+
+### 23.1 The rule
+
+- **View** (`.kbview`): a page the router shows (`<Route element>`, `RouteRegistry.register`, a router table such as
+  `ADMIN_SECTIONS`, what the app's root component renders in place of its routes), a window (floating window,
+  full-screen viewer or player), a dialog, a wizard, a flyout.
+- **User control** (`.kbcontrol`, root `<UserControl x:Props="XProps">`): anything placed inside another screen — a
+  page's panes, sections and tabs, the header, sidebars and menus, the panels given to host slots and extension
+  points, cards, badges, tree items, and the rows and items lists repeat. `XProps` are its properties, its `on…`
+  callbacks its events. A user control is an element named after its file: unique in the project, never a host
+  element's name.
+- **Layout** (VIEWS-SPEC §1.2): under the app root (a module's `src/`, the core's `src/core/`) `views/`, `dialogs/`,
+  `pages/` (the user controls one component places, with the rows their lists repeat), `controls/` (the user controls
+  several components place), feature folders (`admin/sections/holidays/`, `fonts/`, `drive-app/`) holding their views
+  and user controls side by side, `model/`, `services/`; a folder past a dozen views is split by role like the app
+  root. A view or user control and its `.ts` / `.tsx` / `.parts.tsx` share a folder and a stem. Module isolation is
+  unchanged.
+- **Runtime** (`@kubuno/views`, core): a user control whose `<UserControl>` root only wraps one element it does not lay
+  out renders that element as its DOM root, so a converted control keeps exactly the DOM of the component it came
+  from (its host's `space-y-*`, `divide-y`, `> *` reach it). The designer keeps the `UserControl` surface.
+
+### 23.2 The codemod
+
+`@kubuno/views-migrate` (core `packages/views-migrate/src/layout.ts`, `relayout.ts`; tests `test/layout.test.ts`,
+fixture `test/fixtures/layout/`):
+
+- `classify`: each component's uses, read with the TypeScript parser — route (a `Route`'s `element` / `Component`, a
+  call whose callee names a route, a `{ path, element }` object, a `…routes` / `…sections` / `…screens` table, the app
+  component returning it alone), JSX placement (alone or among other elements: next to other elements it is a part),
+  a view's `ReactHost` getter, a value handed to a host (slot, extension point, registry), a re-export. Then: a root
+  `UserControl` stays a user control; a window or dialog (root `FloatingWindow` / `Dialog`…, or the first element of a
+  plain root, or a full-screen `fixed inset-0` overlay, or a `…Dialog` / `…Wizard` name) is a view; a routed component
+  is a view; a placed one is a user control (`shared` when several components place it); an unused one is a view only
+  when named `…Page` / `…Screen`.
+- Conversion (`--write`): a user control is written as `X.kbcontrol`, its markup inside `<UserControl>` (which takes
+  `x:Props`, `DesignWidth`, `DesignHeight`), the code-behind importing `./X.kbcontrol`. `--layout --app-root <dir>`
+  then moves it into its role folder.
+- `--relayout` for a converted project: classify again, change extension and root (`toControlText` / `toViewText`),
+  move with `git mv`, rewrite every relative specifier of the project (`import`, `export … from`, `import()`,
+  `vi.mock()`, `import("…")` types) and the code-behind / parts headers; `--components` places the React components the
+  same way, `--place`, `--move`, `--rename` (files and class, through ts-morph), `--exclude`, `--split`. It stops on a
+  user control name clash with the files named. It is idempotent (a second run moves nothing, tested).
+- Check of the markup change, outside the tests: every view becoming a user control (core 164, drive 27) compiled
+  before and after with the project's compiler — the plan under the new root equals the old root's, the diagnostics
+  are the same, no `view-file-kind` warning (`/kubuno/tmp/weblayout/verify-controls.mjs` on the Linux build host).
+
+### 23.3 Applied to core and drive
+
+| | Views | User controls | Moves | Renamed (name clashes) |
+|---|---|---|---|---|
+| core (`--app-root src/core --exclude src/gallery --components`) | 67 | 166 (of 233 view files; the gallery's 31 pages stay views) | 346 files: routed pages to `core/views/`; `admin/`, `shell/`, `settings/sections/`, `admin/settings/` split into `views/`, `dialogs/`, `pages/`, `controls/` (their React components with them) | `Field` ×3 → `InlineEditField`, `SubscriptionField`, `ProfileField`; the account sheet's `ProfileTab`, `SecurityTab` → `UserProfileTab`, `UserSecurityTab`; `Sidebar` (unused) → `ShellSidebar` |
+| drive (`--app-root src --components`, fonts placed in `fonts/`, stores and services moved) | 12 | 27 (of 39) | 129 files: `views/`, `dialogs/`, `pages/`, `controls/`, `model/`, `services/`, `fonts/`; `drive-app/` (the Drive page's parts) kept as a feature folder | `Breadcrumb`, `EmptyState` (host elements) → `DriveBreadcrumb`, `DriveEmptyState` |
+
+Dead code found, left as it was before the migration (not made dead by it): the converted `shell/pages/Topbar`,
+`ShellSidebar` (core) and `pages/DetailsPanel`, `pages/FilesToolbar` (drive) are imported nowhere, as their TSX were
+not; no TSX original was left beside its view.
+
+`kbview-tsc -b`: 0 errors (core and drive); core `vitest`: 290 / 290; `vite build`: core and drive built;
+`@kubuno/views-migrate` tests 49 / 49.
+
+§7 parity, before (core `b5d6427`'s screens, drive `3ddad51`) against after (core `acd586b`, drive `2244475`), both
+served by a Windows dev core, captured by node and headless Chrome on the Linux build host through an SSH tunnel:
+**149 / 149 screens pass** — core 118 (pilot 13, settings 10, users 8, modules 8, admin settings 7, security 13 + 2,
+directory 15 + 2, operations 11 + 2, misc 14, shell 8, sign-in 5), drive 31 (8 + 23); worst root difference 0.006 %,
+accessibility tree, text and Tab order identical everywhere (`/kubuno/tmp/weblayout/bench/captures/diff-*-after1`).
+
+### 23.4 In Visual Studio
+
+Hive `KubunoWebLayout` (the VSIX of `C:\kubuno-build\release`), solution with drive's and the core's frontend projects
+elease`), solution with drive's and the core's frontend projects
+opened from Windows clones, the dev servers running on the Linux build host (the discovery file of a server on
+another machine is taken without comparing roots, §22.2; the designer probes its LAN address). Solution Explorer shows
+the role folders, each `.kbview` / `.kbcontrol` holding its `.ts` / `.tsx` and `.parts.tsx` once the frontend has a
+`.filenesting.json` (added to core and drive: the web project system nests by these rules, nothing in the VSIX did).
+Pages open in the designer with their user controls rendered inside (drive `views/DriveApp.kbview` with its toolbar,
+core `settings/SettingsPage.kbview` with the profile tab), a user control opens on its own on its `UserControl`
+surface (`pages/FilesWebDavSettings.kbcontrol`, Properties on `UserControl`), Error List empty. Captures
+`E:\kubuno-build\agent-weblayout\vs\out\` (`se4.png` Solution Explorer, `core1.png`, `ctl1.png`, `se2.png`).
+
+Left: a page's `.kbview` still places its user controls through `<ReactHost>` parts (the codemod's output); writing
+them as elements (`<FilesWebDavSettings/>`, attributes for `XProps`, `On…` for its events) needs the compiler to read a
+user control's properties and events from its `x:Props` type (it passes every attribute through as a prop today).
+
