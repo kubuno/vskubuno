@@ -1722,20 +1722,36 @@ paint / remote-storage windows, `FilePreviewOverlay` / `Shell`, `ImagePreviewOve
 - `setHostRegistry` is in core after `@kubuno/host-runtime` 0.1.0 (the VSIX's bundled host has it; the npm package
   gets it in its next version).
 
-### 22.4 Defects found (core), to fix
+### 22.4 Defects found (core), fixed (2026-10-06)
 
-1. **Regression (core `0b661a0`)**: the converted `Shell`'s `<Slot name="app-dialogs">` (a ReactHost with memoised
-   props) never renders again — `Slot` reads `SlotRegistry.getSlot` without subscribing, so dialogs a module registers
-   after the first render (Files open / save / folder picker, audio player, paint, remote storage) never appear.
-   Fix: `Slot` subscribes to the registry. (The bench works around it.)
-2. Codemod: `t(key, { defaultValue })` defaults go to `views-defaults.json`, which nothing loads (drive registers them
-   in `entry.ts`).
-3. Codemod: an inferred getter type `Folder` collides with the Lucide `Folder` import.
-4. Codemod: a helper used only inside a template literal is not copied into the parts file.
-5. Codemod: `style={…}` is dropped when the class name is computed.
-6. Codemod: `{a} / {b}` is merged into one string (changes the accessibility tree).
-7. Codemod: `<label><input/>text</label>` becomes span-wrapped text (LabelText + StaticText in Chrome).
-8. Runtime (`@kubuno/views`): a wrapper-root element without `Class` (e.g. `TextField`) sits in a `display: contents`
-   div, so the parent's `space-y-*` margin is lost.
+1. **Regression (core `0b661a0`)**: the converted `Shell`'s `<Slot name="app-dialogs">` never rendered again, so the
+   dialogs a module registers after the first render (Files open / save / folder picker, audio player, paint, remote
+   storage) never appeared. **Root cause**: `Slot` read `SlotRegistry.getSlot` on render without subscribing — a
+   latent bug the TSX shell hid, because `App` renders again on `loadedVersion` and a TSX child renders with its
+   parent; the views runtime memoises its elements, so the `ReactHost` holding `Slot` (bound values unchanged) no
+   longer did. Not the codemod: its output (`slot_props` memoised, `Slot` as the component) is right. **Fixed at
+   both ends** (core `279de48`): the runtime renders a `ReactHost`'s component again whenever its view root renders
+   (a `RootRender` context only `ReactHost` nodes read), and the registry notifies (`useSlotRegistryVersion`, used by
+   `Slot`, `useHasSlot`, `useModuleAdminSections`; keys by module and rank — drive gives six entries). The same
+   pattern in the other converted screens — getters memoising a registry read on deps the registry is not part of
+   (home widgets, notification groups, the top bar's settings override) — is fixed by `invalidateViews()` once module
+   bundles have loaded (`modulesStore`). Tests: `src/core/slots/SlotRegistry.test.tsx` (register after mount; a hosted
+   component renders with its root), both failing before the fix. Proof: the bench's dev core on the MySQL dev
+   database with drive installed, headless Chrome — with `0b661a0`'s host none of open / save / folder picker appears,
+   with the fixed host all three do, from `/` and `/drive` (`E:/kubuno-build/agent-slotfix/proof.mjs`, captures
+   `after-drive-*.png`).
+2. Codemod: `defaultValue`s go into a module's catalogue (`src/i18n.data.json`, fallback language) and
+   `src/gen_i18n.mjs` runs again; `views-defaults.json` only for what has neither, with a warning that nothing loads it.
+3. Codemod: a printed type whose name the file gives to something else is written `import("<module>").Name`.
+4. Codemod: uses are found by TypeScript's parser (template expressions count; strings, comments, JSX text do not).
+5. Codemod: a static `style` next to a computed `className` joins the computed `Class`.
+6. Codemod: several text runs of a `Label` / `LinkLabel` give a list of runs (one text node each, as React rendered
+   them), typed `as unknown as string`.
+7. Codemod: a `<label>` holding an `<input>` / `<select>` / `<textarea>` stays whole in a part.
+8. Runtime: a `display: contents` wrapper hands the margins and borders its parent's child selectors give it to the
+   element it wraps, on the sides that element sets none of its own.
 
-3–8 are hand-fixed in drive by `fixups.mjs`.
+2–7: `@kubuno/views-migrate` 0.1.2 (core `1f6163c`, tests in `test/rules.test.ts`, fixture `Defects.tsx`); 8 and 1:
+`@kubuno/views` 0.1.4. Drive was converted again from its original TSX with 0.1.2 and **no hand fixups** (`fixups.mjs`
+retired, `views-defaults.json` and its registration in `entry.ts` removed, drive `93e22a7`); §7 parity on the fixed host: **31 / 31** again (worst root diff 0.124 %, open
+dialog and folder picker as before; reports `captures/diff-sf1-before-sf1-after`, `…/diff-sf2-before-sf2-after`).
