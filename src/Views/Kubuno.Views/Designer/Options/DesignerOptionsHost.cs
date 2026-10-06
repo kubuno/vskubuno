@@ -15,7 +15,7 @@ namespace Kubuno.Views.Designer.Options
         /// <summary>
         /// The active options source, or <see langword="null"/> before the VSIX has registered one.
         /// Callers must treat a null value the same as an unset/default option in that case (i.e.
-        /// <c>UseDesignerAsDefaultEditor == false</c>), exactly as <c>KubunoViewsOptionsHost</c> does.
+        /// <c>ShowDesignOutlines == true</c>), exactly as <c>KubunoViewsOptionsHost</c> does.
         /// </summary>
         public static IDesignerOptions? Current { get; set; }
     }

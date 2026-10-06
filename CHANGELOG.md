@@ -28,6 +28,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Views open in the Kubuno View Designer by default, everywhere** (`docs/DESIGNER.md` section 11, "Opening,
+  captions"). A double-click on a `.kbview` or `.kbcontrol` now opens the designer (Design | XML | Split) in a desktop
+  project (`.rsproj`), in a web project (`.esproj`: the core frontend, a module's frontend), in Open Folder and for a
+  file opened with File > Open - it used to open the plain text editor everywhere except a `.rsproj`. The text editor
+  is still one click away: the designer's XML tab, F7, or Open With > Source Code (Text) Editor (still with the views'
+  IntelliSense and colours). A per-user "Open With > Set as Default" is respected, with one exception made once: a
+  per-user default naming the Source Code (Text) Editor, left by an older version or by tests, is removed at the first
+  start of this version and reported in the Kubuno output pane. The "Use as default editor" designer option (off, and
+  never wired) is removed.
+- **The designer arranges the Toolbox and the Properties window like Windows Forms** (`docs/DESIGNER.md` section 11).
+  The first time a designer opens, the Toolbox is shown, pinned (an auto-hidden Toolbox slid under the design
+  surface) and docked on the left, and the Properties window docked below Solution Explorer on the right; windows
+  already in place are not moved. After that your own arrangement is kept: a designer only brings back a window you
+  closed. **Tools > Kubuno: Reset Designer Window Layout** docks both again.
+
 - **Title bar heights in the designer** (`docs/EVENTS.md` section 20). The Properties window lists the view's new
   `TitleBarStyle` (`Standard`, 32 pixels as in Windows 11, or `Tall`, the web's 64-pixel header), and the design
   surface draws the window with it: a view showing the header's menus (`ShowWaffle`, `ShowAccount`…, or a

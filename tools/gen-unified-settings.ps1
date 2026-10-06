@@ -22,7 +22,6 @@ $categories = @(
     @('kubuno.views', 'Views', 'Vues', 'The .kbview language server.', 'Le serveur de langage des fichiers .kbview.'),
     @('kubuno.views.languageServer', 'kubuno-views-ls', 'kubuno-views-ls', 'The .kbview language server.', 'Le serveur de langage des fichiers .kbview.'),
     @('kubuno.designer', 'Designer', 'Concepteur', 'The Kubuno View Designer.', 'Le concepteur de vues Kubuno.'),
-    @('kubuno.designer.editor', 'Editor', 'Editeur', 'How .kbview files are opened.', 'Comment les fichiers .kbview sont ouverts.'),
     @('kubuno.designer.surface', 'Design surface', 'Surface de conception', 'What the design surface draws.', 'Ce que la surface de conception dessine.'),
     @('kubuno.debugging', 'Debugging', 'Debogage', 'Debugging of Rust and Kubuno applications.', 'Debogage des applications Rust et Kubuno.'),
     @('kubuno.debugging.justMyCode', 'Just My Code', 'Uniquement mon code', 'Which frames the debugger shows.', 'Les cadres que le debogueur affiche.'),
@@ -111,10 +110,6 @@ $properties = @(
        en = 'Path override'; fr = 'Chemin personnalise'
        den = 'Full path to kubuno-views-ls.exe. When empty, Kubuno tries the extension''s own tools folder, then the PATH environment variable, then the local development build folders.'
        dfr = 'Chemin complet de kubuno-views-ls.exe. Vide, Kubuno essaie le dossier tools de l''extension, puis la variable d''environnement PATH, puis les dossiers de build de developpement locaux.' },
-    @{ m = 'kubuno.designer.editor.useAsDefault'; t = 'boolean'; d = $false
-       en = 'Use the View Designer as the default editor'; fr = 'Utiliser le concepteur de vues comme editeur par defaut'
-       den = 'A double-click on a .kbview file opens the Kubuno View Designer (Design | XML split view) instead of the plain XML editor. Either way the designer is reachable through Open With.'
-       dfr = 'Un double-clic sur un fichier .kbview ouvre le concepteur de vues Kubuno (vue fractionnee Design | XML) au lieu de l''editeur XML simple. Dans les deux cas, le concepteur reste accessible par Ouvrir avec.' },
     @{ m = 'kubuno.designer.surface.showDesignOutlines'; t = 'boolean'; d = $true
        en = 'Show design outlines'; fr = 'Afficher les contours de conception'
        den = 'Draws a faint dashed outline around the containers that are otherwise invisible (a Panel or Stack with no surface, border or background), so they can be found and dropped into, like the dotted border Windows Forms shows around a borderless Panel. Controls always look exactly as at run time. Applies to the designers opened afterwards.'

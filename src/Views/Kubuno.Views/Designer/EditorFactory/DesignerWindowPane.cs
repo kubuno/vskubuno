@@ -82,6 +82,10 @@ namespace Kubuno.Views.Designer.EditorFactory
             {
                 Kubuno.Views.Logging.KubunoViewsLogHost.Current.WriteException("[designer] could not create the pane's design surface (no Events tab in the Properties window)", ex);
             }
+
+            // The Toolbox on the left and the Properties window below Solution Explorer, like Windows Forms (docked once per
+            // user, then only brought back when closed).
+            ToolWindows.DesignerToolLayout.OnDesignerOpened();
         }
 
         /// <summary>

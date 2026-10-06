@@ -28,8 +28,6 @@
   <data name="S_kubuno_views_languageServer_Description" xml:space="preserve"><value>The .kbview language server.</value></data>
   <data name="S_kubuno_designer_Title" xml:space="preserve"><value>Designer</value></data>
   <data name="S_kubuno_designer_Description" xml:space="preserve"><value>The Kubuno View Designer.</value></data>
-  <data name="S_kubuno_designer_editor_Title" xml:space="preserve"><value>Editor</value></data>
-  <data name="S_kubuno_designer_editor_Description" xml:space="preserve"><value>How .kbview files are opened.</value></data>
   <data name="S_kubuno_designer_surface_Title" xml:space="preserve"><value>Design surface</value></data>
   <data name="S_kubuno_designer_surface_Description" xml:space="preserve"><value>What the design surface draws.</value></data>
   <data name="S_kubuno_debugging_Title" xml:space="preserve"><value>Debugging</value></data>
@@ -99,8 +97,6 @@
   <data name="S_kubuno_rust_inlayHints_other_closingBraces_Description" xml:space="preserve"><value>Show the name of the item after the closing brace of a long block (&quot;// fn main&quot;).</value></data>
   <data name="S_kubuno_views_languageServer_pathOverride_Title" xml:space="preserve"><value>Path override</value></data>
   <data name="S_kubuno_views_languageServer_pathOverride_Description" xml:space="preserve"><value>Full path to kubuno-views-ls.exe. When empty, Kubuno tries the extension&apos;s own tools folder, then the PATH environment variable, then the local development build folders.</value></data>
-  <data name="S_kubuno_designer_editor_useAsDefault_Title" xml:space="preserve"><value>Use the View Designer as the default editor</value></data>
-  <data name="S_kubuno_designer_editor_useAsDefault_Description" xml:space="preserve"><value>A double-click on a .kbview file opens the Kubuno View Designer (Design | XML split view) instead of the plain XML editor. Either way the designer is reachable through Open With.</value></data>
   <data name="S_kubuno_designer_surface_showDesignOutlines_Title" xml:space="preserve"><value>Show design outlines</value></data>
   <data name="S_kubuno_designer_surface_showDesignOutlines_Description" xml:space="preserve"><value>Draws a faint dashed outline around the containers that are otherwise invisible (a Panel or Stack with no surface, border or background), so they can be found and dropped into, like the dotted border Windows Forms shows around a borderless Panel. Controls always look exactly as at run time. Applies to the designers opened afterwards.</value></data>
   <data name="S_kubuno_debugging_justMyCode_frameworkIsExternalCode_Title" xml:space="preserve"><value>Treat the Kubuno framework as external code</value></data>

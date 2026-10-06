@@ -61,7 +61,7 @@
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Views" Path="|Kubuno.Views|" />
         <!-- Desktop layer: .kbview IntelliSense in Rust files, SQL in Rust strings, override members... -->
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Desktop" Path="|Kubuno.Desktop|" />
-        <!-- The desktop target's CPS exports in a .rsproj (the .kbview default editor and icon). -->
+        <!-- The desktop target's CPS exports in a .rsproj (the .kbres / .kbsettings default editors, the .kbview icon). -->
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Desktop.ProjectSystem" Path="|Kubuno.Desktop.ProjectSystem|" />
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Kubuno.Web" Path="|Kubuno.Web|" />
         <!-- docs/WEB.md: the web target's CPS exports (F5 of a Kubuno core or module .rsproj, KubunoWebDebugLaunchProvider). -->

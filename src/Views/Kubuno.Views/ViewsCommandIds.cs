@@ -9,6 +9,9 @@ namespace Kubuno.Views
         /// <summary>Shows <see cref="Designer.ToolWindows.OutlineToolWindow"/> (Designer\INTEGRATION.md section 9).</summary>
         public const int ShowKubunoOutlineCommand = 0x0103;
 
+        /// <summary>Docks the Toolbox and the Properties window again in the designer's default places (<see cref="Designer.ToolWindows.DesignerToolLayout"/>).</summary>
+        public const int ResetDesignerLayoutCommand = 0x0102;
+
         // docs/DESIGNER.md "Data bindings": the Properties window context menu of a bindable row (Designer/Bindings/BindingCommands.cs).
         public const int BindingCreateCommand = 0x0360;
         public const int BindingEditCommand = 0x0361;

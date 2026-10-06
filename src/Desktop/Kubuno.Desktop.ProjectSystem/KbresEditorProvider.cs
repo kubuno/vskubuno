@@ -9,8 +9,8 @@ namespace Kubuno.Desktop.ProjectSystem
 {
     /// <summary>
     /// Makes the Kubuno Resource Editor the DEFAULT editor of <c>.kbres</c> files inside a <c>.rsproj</c> (a double-click
-    /// in Solution Explorer opens the grid / thumbnails, like a .resx). Same CPS seam as
-    /// <see cref="KbviewDesignerEditorProvider"/>; the editor factory itself is registered for the extension
+    /// in Solution Explorer opens the grid / thumbnails, like a .resx), through CPS's
+    /// <see cref="IProjectSpecificEditorProvider"/>; the editor factory itself is registered for the extension
     /// everywhere (Open Folder, outside any project) by the attributes on KubunoPackage.
     /// </summary>
     [Export(typeof(IProjectSpecificEditorProvider))]
@@ -40,7 +40,7 @@ namespace Kubuno.Desktop.ProjectSystem
 
             public string DisplayName => "Kubuno Resource Editor";
 
-            public Guid DefaultView => KbviewDesignerEditorProvider.LogicalViewDesigner;
+            public Guid DefaultView => EditorLogicalViews.Designer;
         }
     }
 }

@@ -111,10 +111,11 @@ namespace Kubuno.VisualStudio
     // ---- Views layer (Kubuno.Views): the .kbview language client, the view designer, the .kbres editor ----
     [ProvideOptionPage(typeof(Kubuno.Views.Options.KbviewOptionsPage), KubunoConstants.OptionsCategoryName, "Views", 0, 0, supportsAutomation: true, IsInUnifiedSettings = true, UnifiedSettingsCategoryMoniker = "kubuno.views")]
     [ProvideProfile(typeof(Kubuno.Views.Options.KbviewOptionsPage), KubunoConstants.OptionsCategoryName, "Views", 0, 0, isToolsOptionPage: true)]
-    // Kubuno.Views' Designer\INTEGRATION.md section 3: the split Design|XML editor for .kbview
-    // files, registered alongside - never instead of - kbview-languages.pkgdef's plain core text editor
-    // (that pkgdef entry's own comment: "the HIGHEST value wins the double-click default", 0x64 there
-    // vs. DesignerConstants.EditorExtensionPriority's 0x60 here, so the plain editor stays default).
+    // Kubuno.Views' Designer\INTEGRATION.md section 3: the split Design|XML editor for .kbview / .kbcontrol files - THE
+    // default editor of views (the HIGHEST priority wins the double-click: DesignerConstants.EditorExtensionPriority, 0x70,
+    // above kbview-languages.pkgdef's Source Code (Text) Editor at 0x64, which stays in "Open With"). Global on purpose,
+    // with no CPS project-specific provider: one rule for a .rsproj, an .esproj, Open Folder and a loose file, and Visual
+    // Studio's per-user "Open With > Set as Default" still wins (DefaultEditorMigration clears, once, a leftover one).
     [ProvideEditorFactory(typeof(Kubuno.Views.Designer.EditorFactory.KbviewEditorFactory), 110)]
     // Fixed 2026-09-28 (docs/RSPROJ.md work package 6): these two GUIDs were swapped one slot too far
     // (7651a703/7651a704, actually LOGVIEWID_TextView/LOGVIEWID_UserChooseView) - VSConstants.LOGVIEWID_Designer

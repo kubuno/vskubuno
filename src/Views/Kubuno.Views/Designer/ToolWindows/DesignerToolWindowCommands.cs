@@ -27,6 +27,11 @@ namespace Kubuno.Views.Designer.ToolWindows
             ThreadHelper.ThrowIfNotOnUIThread();
 
             Add(commandService, package, ViewsCommandIds.ShowKubunoOutlineCommand, typeof(OutlineToolWindow));
+
+            // "Kubuno: Reset Designer Window Layout": the Toolbox on the left, the Properties window below Solution Explorer.
+#pragma warning disable VSTHRD010 // command handlers run on the UI thread (ResetCommand asserts it) - same precedent as Add below.
+            commandService.AddCommand(new OleMenuCommand((_, _) => DesignerToolLayout.ResetCommand(), new CommandID(KubunoGuids.CommandSet, ViewsCommandIds.ResetDesignerLayoutCommand)));
+#pragma warning restore VSTHRD010
         }
 
         private static void Add(OleMenuCommandService commandService, AsyncPackage package, int commandId, System.Type toolWindowType)

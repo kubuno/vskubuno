@@ -1359,11 +1359,35 @@ implementation (`ilspycmd`) - the decisive facts are quoted.
   designer pane, opened on its Design tab, caption `main_view.kbview [Design]` (`[Conception]` in a
   French VS) - and **Code** (Code/TextView logical views) - a plain VS code window on the same buffer
   (`main_view.kbview`). Both windows share one document. The Design/XML/Split tabs stay in the designer.
-- **Default editor inside a `.rsproj`** - `KbviewDesignerEditorProvider`
-  (`IProjectSpecificEditorProvider`, CPS): `IsDefaultEditor` + `DefaultView = LOGVIEWID_Designer` for
-  `.kbview`. Decompiled `FileDocumentManager` opens an item with that factory and view on a
-  double-click. Outside a project (Open Folder) the plain XML editor stays the double-click default
-  (languages.pkgdef priority).
+- **Default editor, everywhere (since 2026-10-06)** - a double-click on a `.kbview` / `.kbcontrol` opens the designer
+  in a `.rsproj` (CPS), an `.esproj` (the JavaScript project system: the core frontend, module frontends), Open
+  Folder and for a file opened with File > Open. One rule does it: the factory's `Editors\{factory}\Extensions`
+  priority (`DesignerConstants.EditorExtensionPriority`, 0x70) is above the Source Code (Text) Editor's
+  (`kbview-languages.pkgdef`, 0x64) - the highest value wins the double-click, and the Primary logical view maps to
+  the Design view. Verified live: every project system falls back to that global default when no project-specific
+  editor claims the item, so there is deliberately **no** CPS `IProjectSpecificEditorProvider` for views any more
+  (the former `KbviewDesignerEditorProvider` of `.rsproj` items was removed: as a default project-specific editor it
+  also beat the user's own "Set as Default", and nothing like it existed for `.esproj`). The text editor stays in
+  "Open With" (with the `kbview` content type, IntelliSense and colors), the designer keeps its XML/Split tabs and F7.
+  The former "Use as default editor" option (off, and never wired) was removed.
+- **Per-user "Open With > Set as Default"** wins over every priority: Visual Studio writes it under the user
+  registry root, `Default Editors\<ext>` (`Custom` = the editor GUID, `Type`) and `FileExtensionMapping\<ext>`
+  (default value = the editor GUID, `LogViewID`) - found live in the hive's `privateregistry.bin`. Such a choice is
+  kept, except once: `DefaultEditorMigration` (package load, before any view opens) removes a per-user default that
+  names the Source Code (Text) Editor - the editor the older versions opened anyway, so a leftover of them or of
+  tests - and logs it in the Kubuno pane; it records `Kubuno\Designer\DefaultEditorMigrationVersion` in the user
+  settings store and never runs again (a later "Set as Default" to the text editor stays). Any other per-user default
+  (the XML editor...) is logged and kept.
+- **Tool windows (since 2026-10-06)** - `DesignerToolLayout`: the first time a designer opens for a user, Visual
+  Studio's Toolbox is pinned (never auto-hidden: its flyout is drawn under the WebView2 / Rust surface windows) and
+  docked along the left edge of the main window, and the Properties window docked in the right column below
+  Solution Explorer's tab group - like Windows Forms. Already in place, nothing moves. Afterwards the user's own
+  arrangement is kept: a designer only shows a window again when it is closed (where it was last docked), and
+  "Tools > Kubuno: Reset Designer Window Layout" docks both again. `IVsWindowFrame.SetFramePos(SFP_fDock...)`
+  returns E_NOTIMPL in Visual Studio 2026 (found live), so docking goes through the shell's own window manager
+  (`Microsoft.VisualStudio.PlatformUI.Shell.DockOperations.DockOutside`/`Dock`, by reflection on the loaded
+  `Microsoft.VisualStudio.Shell.ViewManager` - if it ever changes, the windows are left where they are and the
+  pane says why). Flag: `Kubuno\Designer\DefaultToolLayoutVersion`.
 - **F7 / Shift+F7** - `DesignerViewSwitchCommandTarget`, a priority command target claiming
   `View.ViewCode`/`View.ViewDesigner` only when the active window is a `.kbview` document frame. In a
   `.rsproj`, `Kubuno.Rust.Sdk` also sets `SubType=Designer` on `.kbview` items, which is what CPS's
@@ -1392,8 +1416,8 @@ tool windows, MDI windows, splash screens and flyouts stay `.kbview`. Same XML, 
   `KbviewFile` (id 3) - a window with its title bar - for `.kbview`, and `KbcontrolFile` (id 5) - a dashed control
   outline holding the toolbox UserControl glyph's layout - for `.kbcontrol`. `KbviewTreePropertiesProvider` gives them
   to `.rsproj` items; `kbview-languages.pkgdef`'s `ShellFileAssociations` to Open Folder.
-- **Opening**: `KbviewEditorFactory` is registered for both extensions, `KbviewDesignerEditorProvider` makes it the
-  double-click default of both inside a `.rsproj`; the core text editor entry, the TextMate grammar and the element
+- **Opening**: `KbviewEditorFactory` is registered for both extensions, as the double-click default of both
+  everywhere (see "Opening, captions" above); the core text editor entry, the TextMate grammar and the element
   tree under the file (`KbcontrolSolutionSymbolProvider`) cover `.kbcontrol` too. F7 / Shift+F7 pair `row.rs` with
   `row.kbcontrol` like `main_view.rs` with `main_view.kbview`, and `Kubuno.Rust.Sdk` nests the code-behind (and a
   same-stem `.kbres`) under either.

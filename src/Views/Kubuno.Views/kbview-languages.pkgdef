@@ -21,9 +21,10 @@
 ; (verified live: DTE Document.Language = "XML"): the buffer then gets the XML language service and
 ; content type, and the kbview language client is never activated. .rs has no such issue - it opens
 ; in the core editor ("Plain Text" language service, "rust" content type) without any entry.
-; The HIGHEST value wins the double-click default, so 0x64 must stay above any other editor
-; registered for "kbview" that should stay opt-in (e.g. the Kubuno View Designer's 0x60, see
-; Designer\INTEGRATION.md).
+; The HIGHEST value wins the double-click default: the Kubuno View Designer is registered above this entry
+; (DesignerConstants.EditorExtensionPriority, 0x70), so a double-click opens the designer everywhere and this editor
+; stays the "Open With > Source Code (Text) Editor" choice (and the one a per-user "Set as Default" can pick).
+; DesignerConstants.TextEditorExtensionPriority mirrors 0x64 (checked by a test).
 [$RootKey$\Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions]
 "kbview"=dword:00000064
 ; User control views (.kbcontrol, docs/VIEWS-SPEC.md "File kinds"): the same format, the same editors and priorities.

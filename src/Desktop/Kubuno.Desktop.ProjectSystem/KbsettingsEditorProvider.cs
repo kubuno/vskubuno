@@ -40,7 +40,7 @@ namespace Kubuno.Desktop.ProjectSystem
 
             public string DisplayName => "Kubuno Settings Editor";
 
-            public Guid DefaultView => KbviewDesignerEditorProvider.LogicalViewDesigner;
+            public Guid DefaultView => EditorLogicalViews.Designer;
         }
     }
 }

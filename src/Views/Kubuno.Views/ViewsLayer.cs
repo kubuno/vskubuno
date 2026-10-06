@@ -55,6 +55,9 @@ namespace Kubuno.Views
             // .kbview document can open through "Open With... > Kubuno View Designer" (which itself loads the package
             // on demand, and waits for its initialization).
             context.RegisterEditorFactory(new Designer.EditorFactory.KbviewEditorFactory());
+            // The designer is the default editor of views (DesignerConstants.EditorExtensionPriority); once per user, drop a
+            // per-user "Set as Default" to the text editor left by an older version or a test (logged in the Kubuno pane).
+            Designer.EditorFactory.DefaultEditorMigration.RunOnce();
             // The .kbres resource editor (docs/RESOURCES.md).
             context.RegisterEditorFactory(new Resources.Editor.KbresEditorFactory());
             // The .kbsettings settings editor (docs/STORAGE-COMPONENTS.md).

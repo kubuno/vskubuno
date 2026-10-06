@@ -121,6 +121,9 @@ Notes:
   GUIDs, not invented here). `KbviewEditorFactory.MapLogicalView` already accepts both (and
   `LOGVIEWID_Primary`) and maps either to the one physical "Design" view - see that method's own
   remarks for why a single physical view is correct here.
+- **Superseded on 2026-10-06** (docs/DESIGNER.md section 11, "Opening, captions"): the designer is now the default
+  editor of views everywhere - `EditorExtensionPriority` is `0x70`, above the text editor's `0x64`, there is no CPS
+  provider for views, and the "Use as default editor" option of section 4 was removed. The original reasoning follows.
 - `Kubuno.Views.Designer.DesignerConstants.EditorExtensionPriority` (`0x60`) is deliberately
   higher (lower-precedence) than the `0x32` many VSSDK samples use for a *default* editor - see
   `DesignerConstants.cs`'s own doc comment. **This priority number is the one part of "Open With

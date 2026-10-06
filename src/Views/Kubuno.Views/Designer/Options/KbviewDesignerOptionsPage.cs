@@ -26,17 +26,6 @@ namespace Kubuno.Views.Designer.Options
         }
 
         [Category("Kubuno View Designer")]
-        [DisplayName("Use as default editor")]
-        [Description("When enabled, the Kubuno View Designer (Design | XML split view) becomes the " +
-            "editor a double-click opens for .kbview files, instead of the plain XML/text editor. " +
-            "Off by default: the design surface is a placeholder until DSG-6/DSG-7 land a real, " +
-            "embedded rendering surface. Either way, the designer is always reachable via " +
-            "Open With... > " + DesignerConstants.EditorName + ".")]
-        [DefaultValue(false)]
-        [UnifiedSetting("kubuno.designer.editor.useAsDefault")]
-        public bool UseDesignerAsDefaultEditor { get; set; } = false;
-
-        [Category("Kubuno View Designer")]
         [DisplayName("Show design outlines")]
         [Description("Draws a faint dashed outline around the containers that are otherwise invisible " +
             "(a Panel or Stack with no surface, border or background), so they can be found and dropped " +

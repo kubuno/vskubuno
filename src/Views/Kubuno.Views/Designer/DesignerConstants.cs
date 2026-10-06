@@ -31,14 +31,24 @@ namespace Kubuno.Views.Designer
         public const string EditorName = "Kubuno View Designer";
 
         /// <summary>
-        /// Registration priority this editor factory should be given for the "kbview" extension
-        /// (see INTEGRATION.md, "Open With / default editor registration", for the full reasoning and
-        /// the open question this value cannot fully resolve on its own). Deliberately higher
-        /// (lower-precedence) than the conventional 0x32 default-editor priority used by many VSSDK
-        /// samples, so this editor shows up in "Open With..." without preempting the plain XML/text
-        /// editor as the double-click default while the designer is a placeholder.
+        /// Registration priority of this editor factory for the <c>.kbview</c> and <c>.kbcontrol</c> extensions
+        /// (<c>Editors\{factory}\Extensions</c>). The HIGHEST value among the editors registered for an extension is the
+        /// double-click default (verified live), so this must stay above <see cref="TextEditorExtensionPriority"/>: the
+        /// designer is the default editor of views everywhere - in a <c>.rsproj</c>, an <c>.esproj</c>, Open Folder and a
+        /// loose file - like Windows Forms' designer for a form. The Source Code (Text) Editor stays registered below it
+        /// (Open With), and a per-user "Open With... &gt; Set as Default" still overrides both.
         /// </summary>
-        public const int EditorExtensionPriority = 0x60;
+        public const int EditorExtensionPriority = 0x70;
+
+        /// <summary>
+        /// Priority <c>kbview-languages.pkgdef</c> gives VS's own Source Code (Text) Editor for the same extensions (so that
+        /// "Open With &gt; Source Code (Text) Editor" gets the <c>kbview</c> content type rather than the XML editor's). Kept in
+        /// sync with that file by a test.
+        /// </summary>
+        public const int TextEditorExtensionPriority = 0x64;
+
+        /// <summary>The designer's own per-user flags in Visual Studio's user settings store (default editor clean-up, tool window layout).</summary>
+        public const string UserSettingsCollection = "Kubuno\\Designer";
 
         /// <summary>Tools &gt; Options page name for this library's own options (see <see cref="Options.KbviewDesignerOptionsPage"/>).</summary>
         public const string OptionsPageName = "Designer";
