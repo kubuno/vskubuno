@@ -375,9 +375,13 @@ Tests: `kubuno-office-docs-core` 282 + 5 web-fixture tests (also on Linux, .220)
 Not done, with the reason: IME (no Japanese/Chinese IME on this machine; installing one changes the user's system),
 UIA `TextPattern` (the framework's AccessKit nodes carry no text runs or selection), comments (they live in the web's
 Yjs map, see the question), header/footer inline editing, drop cap, shapes and text boxes, the table contextual tab,
-spelling — see §3 for every row. Open questions: (1) the web seeds a document from `content_json` only when its Yjs
-room is empty, so a desktop (or Android) REST save of a document already opened on the web is overwritten by the
-room — reseed when `content_etag` differs, make the desktop a Yjs peer, or have the core reset the room on a REST
-PATCH? (2) a fresh dev core fails its migrations (`uuid_generate_v4()`): the extensions are created in schema `core`.
+spelling — see §3 for every row. Open questions: (1) *resolved 2026-10-07* (office `5aa449b`, core `a2c595a`): a desktop (or
+Android) REST save of a document open on the web is no longer overwritten by the web's Yjs room. Each document,
+spreadsheet and presentation has a `collab_epoch` (office migration 000065) that names its room
+(`office-document:<id>~<epoch>`); a REST content write without `X-Collab-Epoch` bumps it in the same transaction
+as the content (row lock), the core closes the old room (`POST /internal/collab/rooms/close`) and the web reloads;
+a web save from an abandoned room gets 409 `COLLAB_EPOCH_STALE`. Nothing changes for the desktop's save session
+(If-Match, join/leave, 413); responses carry `collab_epoch`. Design: `office/server/src/services/collab_epoch.rs`.
+(2) a fresh dev core fails its migrations (`uuid_generate_v4()`): the extensions are created in schema `core`.
 (3) the web's watermark is invisible on screen (opaque page ground painted before the `destination-over` watermark,
 `DEP:7537`).
