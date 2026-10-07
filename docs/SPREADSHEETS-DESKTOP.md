@@ -417,3 +417,26 @@ Then: rebase and push the two worktrees, run the live two-peer collab test, the 
 goal seek, pivot, protection, encryption), and the equation dialog. Macros run JavaScript on the web: the
 desktop options (Boa, pure Rust; QuickJS, C) are for the user to choose. Parity captures and the coverage
 table (§7) need updating.
+
+**2026-10-07 (evening) — paused at the user's request: where I stopped, next steps.**
+- On main:
+  - objects, charts, shapes and pictures (bd04c77, 9130d7b, 0eff471, fcb4356);
+  - dialogs A: conditional formatting, validation, sort, filter (b2558ee, a89b2c6);
+  - dialogs B: names, goal seek, pivot, protection, encryption (f894183, dde19bd, 6cc0db0);
+  - equations: presets and edit dialog (b566f81);
+  - live collaboration fixes (eaf1b22);
+  - sheet protection removal saved via an explicit `null`, on the server and the desktop (19a97e1, server test).
+- On a branch: macros on Boa, branch `spreadsheets-macros-wip` (a72931d, does not compile). `install()` is mid-refactor
+  and `macros.rs` is not wired. Next: the window part, the interop tests against the web, then forms.
+- Not verified in the running app yet:
+  - Name Manager, goal seek, pivot dialog, protect/unprotect, encryption end to end (against the server);
+  - typing in the equation dialog;
+  - the protection fix on the web (server test only);
+  - 6cc0db0: the unlock gate, dropping the key after « Déchiffrer », and the deferred equation dialog.
+- Framework bugs reported to the coordinator:
+  - dialogs painted in a band (worked around with `later()`);
+  - a click on a ribbon gallery drop-down falls through to the grid;
+  - a gallery item cannot draw custom content (no equation previews);
+  - the sandbox shell stays offline after the core comes back.
+- Then: versions/sharing/collaborators dialogs, clipboard history, chart templates and fonts, picture crop mode,
+  in-place shape text, 100 % captures of objects, and the coverage table refresh.
