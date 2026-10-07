@@ -243,6 +243,8 @@ follows the theme.
 | Open local file / `--doc <id>` through the shell broker | — | ✔ both (sandbox profile, dev core) |
 | Save: digest-guarded session, join/leave, journal, conflict dialog, 413 | `SA:3141-3326` | ✔ edits saved (B3 = 15000 read back by the API); conflict/413/journal reuse Documents' tested session |
 | Title bar Tall + header menus (waffle, avatar) | — | ✔ captures |
+| Print dialog: area, orientation, paper, scaling, margins, repeated rows, gridlines, headings, centring, live preview, Windows print dialog | `PrintDialog.tsx`, `sheetPrint.ts`, `SA:3818-3931` | ◐ layout unit-tested (`print.rs`), preview renders the web's print table; the dialog paints partially until the framework fix lands; values print unformatted like the web (QUIRK) |
+| No selection when the workbook opens | `SA:686` | ✔ capture (empty Name Box and bar, keys ignored until the first click) |
 
 **Not done (✘), with the reason**
 
@@ -258,7 +260,6 @@ follows the theme.
 | Defined names persisted to the server | `SA:885` | the web writes them only to Yjs; no REST route (question) |
 | Real-time collaboration, presence | `SA:818` | Yjs room; needs a Rust Yjs client |
 | Protection, encryption | `SA:3936-4004` | protection: increment D; encryption needs AES/SHA in the core (Web Crypto on the web) |
-| Print | `SA:3818-3931` | increment D (print pipeline of Documents) |
 | Macros | — | JavaScript in the browser; no JS engine on the desktop |
 | Versions, sharing, collaborators | `api.ts:571-600` | server dialogs, increment D |
 | Clipboard history, full-screen as the browser's | `SA:2109` | history: increment D; full screen = maximize |
