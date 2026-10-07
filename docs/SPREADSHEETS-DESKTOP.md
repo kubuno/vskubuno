@@ -30,7 +30,7 @@ Paths are relative to the office repository (`office/`) unless stated. `SA` is `
 
 ### 1.2 Feature inventory
 
-The inventory (116 user-visible features, each with its web file:line) is the coverage table of section 7; the
+The inventory (the user-visible features grouped by area, each with its web file:line) is the coverage table of section 7; the
 notes below are the facts that drive the port.
 
 - **Evaluation is on demand** (`FE:387-410`): a reference to a formula cell re-parses and re-evaluates it (no
@@ -190,9 +190,78 @@ follows the theme.
 
 ## 7. Coverage
 
-✔ done and verified · ◐ partial · ✘ not done (reason) · ⧗ planned in a later increment. Filled as increments land.
+✔ done and verified in the window (capture, posted or real input, or a server round trip) · ◐ implemented
+(the core command is unit-tested, the window wires it) but not exercised end to end in the window, or partial ·
+✘ not done (reason) · ⧗ planned in a later increment. Web references: `SA` = `web/src/SpreadsheetApp.tsx`,
+`FE` = `web/src/formulaEngine.ts`. State of 2026-10-07 (increments 0, 1, A, B in part, C).
 
-(The table is written in the log of each increment; the first version lands with increment A.)
+**Engine (common/sheets-core)**
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Formula grammar, quirks included | `FE:76-260` | ✔ golden vectors (≈6 000 formulas, web engine run on the Linux host) |
+| Function set (all categories, LAMBDA family, dynamic arrays, spills) | `FE` + `functions/*` | ✔ golden (formulas + 4 774 direct calls) |
+| On-demand evaluation, circular = `#REF!` | `FE:387-410` | ✔ golden; memo per paint + depth guard (desktop addition, same results) |
+| Number formats (Intl fr/en, currency, percent, scientific, codes, dates) | `SA:2620`, `format.ts` | ✔ golden + captures |
+| Conditional formats (rules, scales, data bars, icon sets) | `cf.ts`, `SA:4820` | ✔ captures (bars, icons) |
+| Data validation (criteria, lists, checkboxes) | `SA:2958-2983`, `SA:3364` | ◐ engine + widgets painted; no list popup, no DV dialog |
+| References: colours, F4, auto-pair, autoBalance, normalize | `formulaRefs.ts` | ✔ unit tests + capture (coloured refs while editing) |
+| Fill series | `SA:4289-4342` | ◐ engine tested; fill-handle drag wired, not exercised in the window |
+| Pivot computation | `SA:6225` | ◐ engine only (no pivot UI) |
+| Undo/redo snapshots (200, per sheet) | `SA:3203-3247` | ✔ (title « modifié », undo button state; real Ctrl+Z run pending, see log) |
+| Sheet add / rename / delete | `SA:4718-4743` | ✔ add verified on the server (« Feuille 3 » created); rename/delete ◐ |
+| Byte-identical round trip of the stored content | server `serde_json` | ✔ unit tests |
+
+**Window (desktop/windows/kubuno-office-spreadsheets)**
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Grid paint: values, styles, borders, merges, overflow, wrap, notes marker, frozen panes, headers, selection | `SA:4820-5570` | ✔ captures light/dark, 100 %/175 % |
+| Grid always light, chrome themed | `SA:243-248` | ✔ (dark capture: light grid, dark ribbon, as on the web) |
+| Selection: click, drag, Shift, headers, Ctrl+arrows, Home, PgUp/PgDn, Ctrl+A | `SA:3768-3818`, `SA:5812-6068` | ◐ click verified (posted); the rest wired |
+| Cell editor: type, Enter/Tab/Esc, F2, point mode, F4, autocomplete | `SA:3487-3768` | ✔ typing a formula with coloured refs + Enter + recalculation (posted input) |
+| Formula bar + Name Box (cell, range, defined name) | `SA:3422-3487`, `SA:2786` | ◐ shows the active cell (verified); typing in the bar wired |
+| Status bar: ref, size, error help, aggregates, sheet n/total, zoom | `SA:7955-7994` | ✔ (aggregates with the web's `num >= 1` rule) |
+| Zoom 25–300 % | `SA:7980` | ◐ wired (slider 50–200 like the web control) |
+| Sheet tabs | `SA:7898-7953` | ✔ add (posted click); rename (dialog instead of in-place field), delete (no question, as on the web) ◐ |
+| Clipboard: copy/cut/paste, paste special (values, format, formula, transpose, no borders) | `SA:4124-4192` | ◐ internal clipboard + OS text (desktop addition) |
+| Styles: bold, italic, underline, strike, font, size, colours | `SA:4513-4588` | ◐ wired; real-mouse test in the log |
+| Alignment, wrap, merge | `SA:4518`, `SA:3015` | ◐ |
+| Number format buttons, decimals | `SA:4665-4675` | ◐ |
+| Borders (8 kinds) | `SA:4675` | ◐ |
+| Insert/delete rows, columns, cells (shift) | `SA:6788-6848`, `SA:4195-4211` | ◐ |
+| Hide/unhide, column/row resize, autofit (double-click) | `SA:3018-3112` | ◐ |
+| Groups (rows/cols, collapse/expand) | `SA:3044-3080` | ◐ |
+| Freeze panes (presets), gridlines | `SA:3130-3135` | ◐ (frozen panes painted ✔) |
+| AutoSum, function entry, symbols | `SA:6737-6739`, `SA:6981` | ◐ |
+| Sort A→Z / Z→A, remove duplicates | `SA:6851`, `SA:4602` | ◐ |
+| Filters (funnels, filter mode) | `SA:5605-5610` | ◐ funnels painted; ✘ filter popup (⧗ D) |
+| Find / replace | `SA:4619-4652` | ◐ |
+| Comments (note marker, add/edit/delete) | `SA:4028-4041` | ◐ edit through a text dialog |
+| Format painter | `SA:4588` | ◐ |
+| Backstage: info, export xlsx/ods, close | `SA:8576-8646` | ◐ export wired to the server's export route |
+| Open local file / `--doc <id>` through the shell broker | — | ✔ both (sandbox profile, dev core) |
+| Save: digest-guarded session, join/leave, journal, conflict dialog, 413 | `SA:3141-3326` | ✔ edits saved (B3 = 15000 read back by the API); conflict/413/journal reuse Documents' tested session |
+| Title bar Tall + header menus (waffle, avatar) | — | ✔ captures |
+
+**Not done (✘), with the reason**
+
+| Feature | Web | Why |
+|---|---|---|
+| Charts, sparklines, chart wizard | `SA:1219-1411` | increment D (rendering + wizard); commands shown disabled |
+| Shapes, text boxes, WordArt, SmartArt, icons | `SA:1411-1620` | increment D (would reuse common/shapes-core of Diagrams) |
+| Pictures (insert, crop, rotate) | `SA:5631-5806` | increment D (needs WIC decoding in the Windows crate) |
+| Equations | `SA:1111-1180` | rendered by KaTeX (JavaScript): no native math renderer |
+| Pivot tables UI | `SA:6191-6350` | increment D (engine ready) |
+| Goal seek | `SA:4050-4114` | increment D |
+| Conditional-format, data-validation, sort, Name Manager dialogs | various | increment D (dialogs); engine ready |
+| Defined names persisted to the server | `SA:885` | the web writes them only to Yjs; no REST route (question) |
+| Real-time collaboration, presence | `SA:818` | Yjs room; needs a Rust Yjs client |
+| Protection, encryption | `SA:3936-4004` | protection: increment D; encryption needs AES/SHA in the core (Web Crypto on the web) |
+| Print | `SA:3818-3931` | increment D (print pipeline of Documents) |
+| Macros | — | JavaScript in the browser; no JS engine on the desktop |
+| Versions, sharing, collaborators | `api.ts:571-600` | server dialogs, increment D |
+| Clipboard history, full-screen as the browser's | `SA:2109` | history: increment D; full screen = maximize |
 
 ## 8. Risks and open questions
 
@@ -215,3 +284,24 @@ follows the theme.
 **2026-10-07 — increment 0.** Core skeleton: `js`, `jsdate`, `addr`, `model::{cell, style}`, `formula::{parser,
 value, eval, criteria, spill, functions::base}`, `format`; 43 unit tests; the golden harness runs the web engine on
 the Linux host and the first vectors match.
+
+**2026-10-07 — increment 1.** Every function file ported (math, stat, text, date, logical, lookup, financial,
+engineering, misc and their second halves), CF, refs, fill, validation, pivot, grid geometry, the editor and its
+commands, the workbook model. 116 unit tests; the golden harness covers ≈6 000 formulas and 4 774 direct calls of
+the web's helper modules; `cargo check` passes for wasm32, Linux (native, on the Linux host, tests included) and
+aarch64-apple-darwin; clippy clean.
+
+**2026-10-07 — increments A, B (part), C — as built.** `desktop/common/kubuno-office-spreadsheets-common` (launch
+options, the view model: scrolling, quadrants, the line editor with autocomplete; the window state; the server
+session `SheetsHost` over Documents' generic `session`/`live`, PATCH diff per sheet, create/delete sheet) and
+`desktop/windows/kubuno-office-spreadsheets` (`kubuno-spreadsheets.exe`: `spreadsheet_window.kbview` with the
+declarative ribbon in Tone="Spreadsheet", the custom controls `GridCanvas`, `SheetTabs`, `StatusZoom`, the
+Backstage page `BackstageInfo`, the confirm/prompt dialogs, Windows clipboard and local clock). Verified: the
+sample and a server workbook render at parity with the web (light and dark, 100 % and 175 %); typing a formula
+shows coloured references, commits, recalculates and marks the title « modifié »; a server workbook opens with
+`--doc` through the shell broker (sandbox profile, own dev core on PostgreSQL `kubuno_dev_spreadsheets`), an
+edit is saved (read back over the API) and a sheet added in the tabs is created on the server. Fixed on the way:
+right- and centre-aligned text drawn into a 100 000-DIP layout box did not render with DirectWrite (headers and
+numbers were missing); text is now placed from its measured width. The grid starts with A1 selected where the
+web starts with no selection (to align). Not done: the Visual Studio designer check (the disk was below the
+5 GB floor during the session) and everything marked ✘/⧗ in §7.
