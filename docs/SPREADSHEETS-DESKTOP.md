@@ -208,7 +208,7 @@ follows the theme.
 | References: colours, F4, auto-pair, autoBalance, normalize | `formulaRefs.ts` | ✔ unit tests + capture (coloured refs while editing) |
 | Fill series | `SA:4289-4342` | ◐ engine tested; fill-handle drag wired, not exercised in the window |
 | Pivot computation | `SA:6225` | ◐ engine only (no pivot UI) |
-| Undo/redo snapshots (200, per sheet) | `SA:3203-3247` | ✔ (title « modifié », undo button state; real Ctrl+Z run pending, see log) |
+| Undo/redo snapshots (200, per sheet) | `SA:3203-3247` | ✔ real Ctrl+Z undoes a real ribbon click (Bold), Ctrl+B reapplies |
 | Sheet add / rename / delete | `SA:4718-4743` | ✔ add verified on the server (« Feuille 3 » created); rename/delete ◐ |
 | Byte-identical round trip of the stored content | server `serde_json` | ✔ unit tests |
 
@@ -225,7 +225,7 @@ follows the theme.
 | Zoom 25–300 % | `SA:7980` | ◐ wired (slider 50–200 like the web control) |
 | Sheet tabs | `SA:7898-7953` | ✔ add (posted click); rename (dialog instead of in-place field), delete (no question, as on the web) ◐ |
 | Clipboard: copy/cut/paste, paste special (values, format, formula, transpose, no borders) | `SA:4124-4192` | ◐ internal clipboard + OS text (desktop addition) |
-| Styles: bold, italic, underline, strike, font, size, colours | `SA:4513-4588` | ◐ wired; real-mouse test in the log |
+| Styles: bold, italic, underline, strike, font, size, colours | `SA:4513-4588` | ✔ Bold by a real mouse click on the ribbon and by Ctrl+B (checked state follows); the others ◐ |
 | Alignment, wrap, merge | `SA:4518`, `SA:3015` | ◐ |
 | Number format buttons, decimals | `SA:4665-4675` | ◐ |
 | Borders (8 kinds) | `SA:4675` | ◐ |
@@ -303,5 +303,5 @@ shows coloured references, commits, recalculates and marks the title « modifié
 edit is saved (read back over the API) and a sheet added in the tabs is created on the server. Fixed on the way:
 right- and centre-aligned text drawn into a 100 000-DIP layout box did not render with DirectWrite (headers and
 numbers were missing); text is now placed from its measured width. The grid starts with A1 selected where the
-web starts with no selection (to align). Not done: the Visual Studio designer check (the disk was below the
+web starts with no selection (to align). Real input (under the shared lock): a mouse click on the ribbon's Bold, Ctrl+Z, Ctrl+B; UI Automation names checked (ribbon, formula bar, Name Box, tabs, grid, zoom). Not done: the Visual Studio designer check (the disk was below the
 5 GB floor during the session) and everything marked ✘/⧗ in §7.
