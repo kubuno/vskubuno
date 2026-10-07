@@ -246,23 +246,45 @@ follows the theme.
 | Print dialog: area, orientation, paper, scaling, margins, repeated rows, gridlines, headings, centring, live preview, Windows print dialog | `PrintDialog.tsx`, `sheetPrint.ts`, `SA:3818-3931` | ◐ layout unit-tested (`print.rs`), preview renders the web's print table; the dialog paints partially until the framework fix lands; values print unformatted like the web (QUIRK) |
 | No selection when the workbook opens | `SA:686` | ✔ capture (empty Name Box and bar, keys ignored until the first click) |
 
-**Not done (✘), with the reason**
+**Increment D (2026-10-07), by the parallel packages**
 
-| Feature | Web | Why |
+| Feature | Web | Desktop |
 |---|---|---|
-| Charts, sparklines, chart wizard | `SA:1219-1411` | increment D (rendering + wizard); commands shown disabled |
-| Shapes, text boxes, WordArt, SmartArt, icons | `SA:1411-1620` | increment D (would reuse common/shapes-core of Diagrams) |
-| Pictures (insert, crop, rotate) | `SA:5631-5806` | increment D (needs WIC decoding in the Windows crate) |
-| Equations | `SA:1111-1180` | rendered by KaTeX (JavaScript): no native math renderer |
-| Pivot tables UI | `SA:6191-6350` | increment D (engine ready) |
-| Goal seek | `SA:4050-4114` | increment D |
-| Conditional-format, data-validation, sort, Name Manager dialogs | various | increment D (dialogs); engine ready |
-| Defined names persisted to the server | `SA:885` | the web writes them only to Yjs; no REST route (question) |
-| Real-time collaboration, presence | `SA:818` | Yjs room; needs a Rust Yjs client |
-| Protection, encryption | `SA:3936-4004` | protection: increment D; encryption needs AES/SHA in the core (Web Crypto on the web) |
-| Macros | — | JavaScript in the browser; no JS engine on the desktop |
-| Versions, sharing, collaborators | `api.ts:571-600` | server dialogs, increment D |
-| Clipboard history, full-screen as the browser's | `SA:2109` | history: increment D; full screen = maximize |
+| Chart rendering (8 types, secondary axis) | `sheet-chart/*` | ✔ 27 charts checked against the web's SVG; captures `out-objects\` |
+| Pictures (crop, border) | `SA:5135-5200` | ✔ (the shadow is approximated) |
+| Shapes (144 kinds, lines with arrow heads, captions) | `ShapeView.tsx`, `shapes/svg.ts` | ✔ |
+| Object selection, move, resize, rotate, knobs, group move, order, align, duplicate, clipboard | `SA:1029-2060` | ✔ |
+| Galleries, chart wizard, armed drawing | `SA:7039-7175` | ◐ galleries and insertion checked with real input; wizard visuals pending the dialog paint fix |
+| Object context menus | `chartMenu.tsx`, `shapeMenu.tsx`, `imageMenu.tsx`, `groupMenu.tsx` | ✔ (plain menus, no mini toolbar) |
+| Format / size / alternative text | `SizePropsDialog.tsx`, `FormatObjectDialog.tsx` | ◐ one dialog plus a prompt |
+| Shape text editing | `ShapeTextEditor.tsx` | ◐ through a prompt, not in place |
+| Chart templates, chart font, move to another sheet, picture crop mode | various | ✘ not ported yet |
+| Icons, SmartArt, sparklines, Lien, Zone de texte, WordArt | `soon` on the web | same « bientôt disponible » |
+| Equations: rendering (KaTeX port, `common/math-core`) | `SA:1107-1218` | ✔ 62 formulas within 0.012 em of KaTeX |
+| Equations: ribbon presets, edit dialog | `SA:7014`, `SA:7723-7780` | ⧗ in progress |
+| Conditional formatting dialog | `ConditionalFormatDialog.tsx` | ✔ light and dark |
+| Data validation dialog, in-cell list, checkboxes | `DataValidationDialog.tsx`, `SA:5946`, `SA:8126` | ✔ |
+| Custom sort | `SortDialog.tsx`, `SA:6886-6952` | ✔ |
+| Column filter popup | `SA:556`, `SA:5605`, `SA:7997` | ✔ light and dark |
+| Nouveau / Dupliquer | `SA:8500`, `SA:8528` | ◐ server workbooks; not tested against the server |
+| Name Manager (names in the Yjs room) | `NameManagerDialog.tsx` | ◐ unit-tested, not opened in the app |
+| Goal seek | `SA:4050-4114` | ◐ unit-tested, not opened in the app |
+| Pivot table dialog, edit, refresh, delete | `PivotDialog.tsx`, `SA:6191-6372` | ◐ unit-tested, not opened in the app |
+| Sheet protection | `SheetProtectDialog.tsx`, `SA:3936` | ◐ unit-tested (hash interop with the web) |
+| Workbook encryption | `workbookCrypto.ts`, `SA:3960-4000` | ◐ interop vectors both ways with the web's code; not run end to end against the server |
+| Real-time collaboration, presence, defined names | `collabProvider.ts`, `SA:643-900` | ✔ live two-peer test (see « Collaboration (Yjs) ») |
+| Printing | `PrintDialog.tsx` | ◐ see above |
+| Macros | `macros/*` | ⧗ Boa decided (shared office desktop crate), next |
+| Versions, sharing, collaborators dialogs | `api.ts:571-600` | ✘ not done yet |
+| Clipboard history, browser full screen | `SA:2109` | ✘ history not done; full screen = maximize |
+
+Known defects found on the way:
+- **Web**: removing a sheet's protection sends `protection: null`, which the server reads as « unchanged »
+  (the desktop sends `false`).
+- **Encryption**: cells of a locked encrypted workbook can be typed and are dropped at save; the key stays in
+  memory after « Déchiffrer » until the window closes.
+- **Shell**: after the server came back, the sandbox shell stays « Serveur injoignable » with no more refresh
+  attempts (reported to the coordinator).
 
 ## Collaboration (Yjs)
 
