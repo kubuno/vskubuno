@@ -305,3 +305,33 @@ right- and centre-aligned text drawn into a 100 000-DIP layout box did not rende
 numbers were missing); text is now placed from its measured width. The grid starts with A1 selected where the
 web starts with no selection (to align). Real input (under the shared lock): a mouse click on the ribbon's Bold, Ctrl+Z, Ctrl+B; UI Automation names checked (ribbon, formula bar, Name Box, tabs, grid, zoom). Not done: the Visual Studio designer check (the disk was below the
 5 GB floor during the session) and everything marked ✘/⧗ in §7.
+
+**2026-10-07 — where I stopped (session limit).** Pushed since the last entry:
+- the save session and live thread moved to `desktop/common/kubuno-office-desktop-shared` (Documents
+  re-exports them; 506defd);
+- no initial selection, as on the web (959e529);
+- the print dialog with preview and native printing, plus a test compiling every view (7882733);
+- equations: a Rust port of KaTeX with KaTeX's fonts, drawn in the grid (6133fda, ac55be7). The ribbon entry
+  and the edit dialog are still to do.
+- Yjs collaboration (8773733, 7e11a77): the cells/names Y.Doc, interop vectors against the web's yjs and
+  y-protocols, a WebSocket room, presence avatars. **Never run against two live peers**, clippy not run on
+  7e11a77.
+- the chart/object engine in sheets-core (bd04c77).
+
+Unpushed, in worktrees under `E:\kubuno-build\agent-office-spreadsheets\`:
+- `wt-objects`, c3741f0: objects on the grid. The chart wizard and window handlers are not compiled; rebase
+  conflicts are listed in the fork's notes.
+- `wt-dialogs`, 729b692: CF, validation and sort dialogs, the filter popup, the validation list.
+
+Known bugs to fix next:
+- Large dialogs paint only a 32–146 DIP band in the real app (print, CF, validation, sort; headless paint is
+  complete). This looks like a framework paint/clip issue and must be investigated first.
+- The broker refuses a shell started through the `C:\kubuno-build` junction (image path `E:\…`): launch it from
+  `E:\`.
+- `{Res}` inside `<Option Label>` is shown raw.
+- The comment prompt shows the « Renommer la feuille » title.
+
+Then: rebase and push the two worktrees, run the live two-peer collab test, the remaining dialogs (names,
+goal seek, pivot, protection, encryption), and the equation dialog. Macros run JavaScript on the web: the
+desktop options (Boa, pure Rust; QuickJS, C) are for the user to choose. Parity captures and the coverage
+table (§7) need updating.
