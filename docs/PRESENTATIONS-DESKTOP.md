@@ -294,11 +294,11 @@ Desktop paths: `office/common/slides-core` (core), `office/desktop/common/kubuno
 | F34 | Phone remote, laser | Yjs awareness | ✘ (no Yjs on the desktop) |
 | F35 | Per-slide persistence | §2 | ✔ live round trip test on a dev core (`tests/live_roundtrip.rs`): edits identical, conflict kept until « keep mine », 413 terminal per slide |
 | F36 | Undo/redo (500 ms coalescing, depth 80) | `PEP:4976` | ✔ core `history` (tests) |
-| F37 | Image assets upload (`kbfile:`) | `PEP:4719` | ✔ insert / replace / background upload as assets (multipart), verified on a dev core: a 1.5 MB PNG stored as an asset, the slide JSON 1.2 KB; `data:` images still read; the web's on-open migration of legacy `data:` images ✘ |
-| F38 | Rename, star, trash, share, presence, Yjs merge | — | ✔ title field (rename at the next publish tick), star (verified on the server); trash from the start page; share and presence avatars ✘; Yjs replaced by the digest-guarded save (by design) |
+| F37 | Image assets upload (`kbfile:`) | `PEP:4719` | ✔ insert / replace / background upload as assets (multipart), verified on a dev core: a 1.5 MB PNG stored as an asset, the slide JSON 1.2 KB; `data:` images still read; legacy `data:` images migrated on open (distinct images uploaded once, element and background refs rewritten, changed slides saved; verified on a dev core: no `data:` left, 2 `kbfile:` refs) |
+| F38 | Rename, star, trash, share, presence, Yjs merge | — | ✔ title field (rename at the next publish tick), star (verified on the server); trash from the start page; share dialog (search, add, change role, withdraw — real input on a dev core with a second account), presence avatars from the session editors (not exercised live: one account per window); Yjs replaced by the digest-guarded save (by design) |
 | F39 | Status bar | `PEP:6061` | ✔ capture vs web |
 | — | Exports PDF/PNG/JPG/all | `PEP:5034` | ✔ off-screen render + PDF writer (tests); ◐ dialogs |
-| — | Web top bar extras (slide navigator, Slideshow button, share, « Affichage » tab of OfficeShell, Macros) | `OfficeShell` | ✔ navigator, Diaporama, Affichage › Plein écran (F11: maximize — a window resized over the taskbar is not laid out again by the framework at desktop-v0.1.1-alpha); share, notifications, Macros ✘ |
+| — | Web top bar extras (slide navigator, Slideshow button, share, « Affichage » tab of OfficeShell, Macros) | `OfficeShell` | ✔ navigator, Diaporama, Affichage › Plein écran (F11: maximize — a window resized over the taskbar is not laid out again by the framework at desktop-v0.1.1-alpha); share, the whole header cluster (bell with counter and this window's notices, settings menu with light/dark live, help menu), Macros ✘ |
 
 ## 7.1 As built (2026-10-07)
 
@@ -333,3 +333,16 @@ fixed on the way: the slideshow stage started before its control existed (black 
 control, background images stored under the element key, the star read a state the checkable command had
 already flipped. Framework limits seen: a window resized to the monitor's full size from code is not laid out
 again (`[host] resize … 0x887A0001`), the Backstage leaves the slide list's footer visible at its bottom.
+
+**2026-10-07 (3)** — legacy `data:` images migrated on open, sharing, presence, the header cluster, Backstage
+footer (office cd23332, f8a17de). Real input on a dev core: share dialog (search, add, role change, withdraw with
+a second account), bell (empty menu, counter), settings menu (light/dark live), help menu (« À propos » resolves
+to the server's `/about`), Backstage without the slide list's footer. Framework limits found: `HeaderActions`
+lays hidden buttons out at full width (`StackNode::flex_layout` ignores `Visible`), so a cluster without
+settings/help pushes the bell out of view (the app shows the whole cluster, as the web does); the cluster keeps
+`OnPrimary` ink after a live switch to the dark theme (near-invisible icons); the Backstage squeezes the docked
+siblings to zero height and raises no open/close event. Designer check (VS lock, own hive, closed through DTE):
+`presentation_window.kbview` and `share_dialog.kbview` open in the designer and render with the project's
+runtime; custom controls show their « build the project » placeholders and the title band's free regions are
+empty at design time. A fresh hive first shows VS's sign-in and personalisation dialogs behind the main window:
+they block the solution load and DTE registration until dismissed.
