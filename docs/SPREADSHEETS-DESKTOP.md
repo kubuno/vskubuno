@@ -264,17 +264,76 @@ follows the theme.
 | Versions, sharing, collaborators | `api.ts:571-600` | server dialogs, increment D |
 | Clipboard history, full-screen as the browser's | `SA:2109` | history: increment D; full screen = maximize |
 
+## Collaboration (Yjs)
+
+Real-time collaboration uses the core's generic Yjs room, exactly as the web editor does. Nothing is added to
+the office server, and no REST route writes the defined names.
+
+**Protocol.** `GET /collab/<room>/sync` upgrades to a WebSocket.
+- Authentication: native clients pass `?token=<access token>`; browsers pass a `?kt=` ticket.
+- Access: the core asks the owning module whether the user may join (`POST /internal/collab/authorize`,
+  fail-open). Today only the owner may.
+- On connect, the core sends the text frame `{"type":"sync","empty":bool}`, then the persisted parts (snapshot
+  plus update log, raw Yjs v1 updates).
+- Every binary frame a client sends is persisted and relayed to everyone in the room, the sender included.
+- Text frames (presence) are relayed but not persisted. Presence travels as
+  `{"kbAwareness": base64(y-protocols awareness update)}`; states renew every 15 s, and a silent peer is dropped
+  after 30 s.
+- On every (re)connection, the client sends its whole state and its presence. Reconnection waits
+  `min(1000·2ⁿ, 15000)` ms and fetches a fresh token each time.
+
+**Schema** (room `office-spreadsheet:<id>`):
+- one `Y.Map` `cells:<sheetId>` per sheet: cell key → the stored cell object as plain JSON;
+- `Y.Map` `names`: UPPERCASE name → definition string. This map is where defined names live.
+
+Presence state: `user {id, name, color = userColor(id), avatar}`, `sel {col letters, row, sheet id}`,
+`cursor {x, y}` (content coordinates).
+
+**Seeding.** At the first synchronisation:
+- a sheet whose map is empty while the workbook has cells writes them into the room;
+- a sheet whose map has cells takes the room's cells instead;
+- names are seeded from the workbook when the room has none, and are read from the room afterwards.
+
+Editing in the room:
+- Local edits are published as one diff per sheet: changed keys are set, removed keys are deleted.
+- Unpublished local edits go out before a collaborator's update is mirrored.
+- A mirrored change adds no undo entry and does not mark the workbook dirty.
+- The REST save keeps running beside the room, as on the web.
+- An encrypted workbook never joins.
+
+**Desktop implementation.**
+- `kubuno_office_sheets_core::collab`: `yrs` 0.23 (the core's version). It holds `SheetsDoc`, the awareness
+  codec, and `userColor`. Interop vectors come from the web's yjs 13.6.31 / y-protocols 1.0.7.
+- `kubuno_office_desktop_shared::collab::Room`: the transport. It runs tungstenite on its own thread, with rustls
+  and webpki roots, the same stack as `kubuno-desktop-sync`.
+- `kubuno_office_spreadsheets_common::collab`: the seeding, mirroring, publishing and presence rules.
+- The window: `spreadsheet_window_collab.rs`, the peers' selections and pointers on the grid
+  (`controls/grid/presence.rs`), and `PresenceAvatars` in the status band.
+
+Verified live (desktop + headless web on the dev core):
+- cells both ways;
+- defined names both ways, resolving in formulas;
+- presence and leave.
+
+Not ported: the offline Yjs cache (`y-indexeddb`); the desktop crash journal covers local work.
+
+**What Documents can reuse:** `Room` and the awareness codec as they are. Documents adds its own `Y.Doc`
+binding (the web's TipTap/ProseMirror schema in a `Y.XmlFragment`) in place of `SheetsDoc`.
+
+Open issues:
+- A name defined as `='Feuille 1'!$A$1` gives `#REF!` on both the web and the desktop: an engine issue with a
+  quoted sheet name that contains a space, shared by both, to fix on both sides.
+- While the room is live, a save conflict resolves as « keep mine », as on the web (to confirm).
+
 ## 8. Risks and open questions
 
-- **Defined names cannot be saved by REST**: the web writes them only to the Yjs room; `UpdateSheetDto` has no
-  `names`. The desktop reads them (`GET sheet` returns them) and the Name Manager edits them in memory; persisting
-  needs either a Yjs client in the desktop or a server route (question for the user).
-- **Collaboration (Yjs)**: the web mirrors cells to a Yjs room; a desktop save through REST is seen by web peers
-  only after their next load (the web does not subscribe to REST changes). A Yjs client in Rust (`yrs`) is the
-  way to real-time parity; not in this lot.
-- **Macros** run as JavaScript in the browser; the desktop has no JS engine (a QuickJS embedding would be a C
-  dependency in the Windows crate). Equations are rendered by KaTeX (JavaScript): the desktop shows their LaTeX
-  source in the box until a native math renderer exists.
+- **Defined names** persist in the Yjs room (see « Collaboration (Yjs) »), as on the web.
+- **Collaboration**: done through the core's Yjs room (above).
+- **Macros** run as JavaScript in the browser. The user's decision (2026-10-07): the desktop runs them with **Boa**
+  (a pure-Rust JS engine), in a shared office desktop crate used by Spreadsheets, Presentations and Diagrams,
+  exposing the same macro API as the web (`Kubuno.Sheet`, `Utils`, `App`: `SA:6486-6640`; `macros/runtime.ts`).
+  Scheduled after the current priorities.
+- **Equations**: rendered natively by `common/math-core`, a Rust port of KaTeX with KaTeX's fonts.
 - **Encrypted workbooks** (Agile AES-256 / SHA-512, Web Crypto): portable Rust implementations exist (`aes`, `sha2`),
   not in the core's dependency set yet.
 - The web's own bugs are ported as quirks (results must agree across clients); they are listed in §1.2 and in the
