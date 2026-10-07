@@ -131,10 +131,15 @@ office/
   desktop/windows/kubuno-office-diagrams                  the Win32 window, kubuno-diagrams.exe
 ```
 
-### 2.1 `kubuno-office-shapes-core` (new, `office/common/shapes`)
+### 2.1 `kubuno-office-shapes-core` (`office/common/shapes-core`)
 
 The web's `shapes/` folder is shared by every office editor, so its port is a crate of its own that every office
 client can use (sheets, slides and whiteboard desktop apps later), not a module of the diagrams core.
+
+**As built:** the crate was written by the Presentations lot (`office/common/shapes-core`, commit 6e30cbc) while this
+lot started; the diagrams core **reuses it** (`Path`/`Cmd` with SVG arcs, the 144 presets, native geometries,
+adjustments, the catalogue) instead of a second port. The Canvas 2D context described below lives in
+`diagrams-core::canvas` (the shapes crate produces paths; the diagram code paints them through `Ctx2D`).
 
 - `canvas` — **a Canvas 2D context in Rust** (`Ctx2D`): the state stack (transform, fill/stroke style, line width,
   dash, cap/join, global alpha, shadow, font, text align/baseline), the current path (`moveTo`, `lineTo`,
@@ -251,10 +256,89 @@ mouse on the ribbon (under the shared VS/input lock), keyboard shortcuts, UIA na
 
 **2026-10-07** — note written.
 
+**2026-10-07 (as built)**
+- Core `office/common/diagrams-core`: canvas (Ctx2D over a `Surface` trait), color, model (JSON-object backed,
+  lossless, `js_number`), file (.kbdia gzip, export JSON, canonical pages), geometry, layout, render (scene, connectors
+  with rounded corners and hops, minimap, rulers, thumbnails, export frame), editor (per-page history, pointer state
+  machine, every command of §1.2), stencils (+ office catalogue via shapes-core), hardware (30 SVGs), io (draw.io both
+  ways, CSV), templates, pdf. 67 unit tests + 5 golden tests (two-page diagram made through the web UI by CDP
+  automation) — pass on Windows and natively on Linux (.220, cargo 1.98.1); `cargo check` wasm32 and
+  aarch64-apple-darwin clean; clippy `-D warnings` clean.
+- Portable app `desktop/common/kubuno-office-diagrams-common`: options, sample/file/server sources, diagram client
+  over the shell broker **as an account** (`kubuno_desktop_sync::account_api`; the first version passed the account
+  key as a file-sync instance id — fixed with a regression test), `DiagramServer` (diff-based save, join/leave, own
+  user left out of « also editing »), journal `<data>/diagrams/journal`, reuse of Documents' `api::session`/`api::live`.
+- Windows app `kubuno-diagrams.exe`: `diagram_window.kbview` (ribbon Tone=Diagrams, contextual Forme/Connecteur tabs,
+  backstage, dock with Formes/Propriétés/Calques, page bar, status zoom), custom controls DiagramCanvas, StencilPalette,
+  LayerList, PageTabs, StatusZoom, ShapeGallery (catalogue from shapes-core), user control FormatPanel, dialogs
+  (confirm, prompt, style JSON, templates), D2D surface with DirectWrite, private clipboard format `Kubuno.Diagram`,
+  PNG/JPEG export through WIC.
+- Framework findings (to report to the framework owner): a named `DockPanel` cannot carry a literal `Title`
+  (« attribute `Title` must be a literal value » at runtime) — the panels are unnamed; a `{Res}` binding on a
+  button's `Text` is re-applied when a dialog shows and overwrites text set from code — dialog answers set from code
+  use literals in the view; posted (PostMessage) clicks reach neither the ribbon in the title strip nor the dock
+  panels nor dialog buttons — tests use the real mouse under the shared input lock.
+- Server round trip on a dev core (core :18180, office :13205, own DB `kubuno_dev_diagrams`): open by `--doc`, delete
+  a shape → saved (server 7 shapes), Ctrl+Z → saved (8), `leave` on close promotes the draft (`draft_file_id` null),
+  conflict (another client's PUT) → dialog → « Garder ma version » → server holds ours, 413 on a 2 MB page →
+  terminal status « Page trop volumineuse pour le serveur (2 Mio) », crash (process killed) → journal kept → reopen
+  offers « Récupérer vos modifications ? » → « Ouvrir la version du serveur » clears it.
+
+**Where this lot stopped (2026-10-07, session budget) and next steps**
+- `Kubuno.Office.slnx` regenerated with the generator (`KUBUNO_GEN_REPO=office KUBUNO_GEN_FRESH=1 KUBUNO_GEN_WRITE=1`):
+  no change, the three diagrams projects were already listed.
+- VS designer check **not verified**: the extension installed in hive `KubunoOfficeDiagrams`, devenv started, but no
+  DTE appeared in the ROT within 4 min; devenv was closed. Next: rerun `C:\kubuno-build\agent-office-diagrams\vs\designer.ps1`.
+- Release copy is the **debug** build (`C:\kubuno-build\release\diagrams\`); a release build with static CRT is next.
+- Exercise live the ◐ rows of §9 (gestures, context menus, exports from the ribbon, page add/rename/delete).
+- Report the framework findings above to the framework owner.
+
 ## 9. Feature coverage
 
-✔ done and verified · ◐ partial · ✘ not done · — not applicable. Updated as the increments land.
+✔ done and verified live (capture, real input or server round trip) · ◐ implemented and unit-tested, not
+exercised live · ✘ not done · — not applicable. Web lines are in `DiagramEditorPage.tsx` unless stated.
 
 | Feature | Web | Desktop |
 |---|---|---|
-| F1–F34 | see §1.2 | ✘ (not started) |
+| F1 Page data, lossless | `:49-123` | ✔ golden round trip; layers and unknown keys kept on the server (web drops them on reload) |
+| F2 Pages: tabs, add, rename, delete | `:2900-2929`, `:3856-3925` | ✔ tabs shown from server and file; add/rename/delete ◐ |
+| F3 Autosave | `:1049-1089` | ✔ session saves (delete → server 7 shapes); local file: save prompt on close ✔ |
+| F4 Undo/redo, per page | `:1091-1141` | ✔ real Ctrl+Z restores and saves (server 8 shapes) |
+| F5 Grid | `:497-834` | ✔ captures |
+| F6 Shapes, stencils, hardware, office catalogue | `stencils.ts`, `hardwareIcons.ts`, `shapes/*` | ✔ captures vs web (flowchart, star4 flipped, USB icon, cloud, swimlane) |
+| F7 Connectors, routing, hops, arrows, labels | `:163-426`, `stencils.ts:780-823` | ✔ straight/orthogonal/labels in captures; curved, hops ◐ (unit tests) |
+| F8 Selection furniture | `:497-834` | ✔ handles, ports, dashed box (capture); guides, lasso, ghost ◐ |
+| F9 Click select, move, magnetism, guides | `:1633-2244` | ✔ real click selects; move/guides ◐ |
+| F10 Resize, adjustment knobs | idem | ◐ |
+| F11 Draw a connector port → shape | idem | ◐ |
+| F12 Waypoints, segments, label drag | idem | ◐ (golden fixture has no waypoint: the web automation step failed) |
+| F13 Lasso | idem | ◐ |
+| F14 Armed tool, draw-to-create, drop from panel | idem, `diagram-draw.ts` | ◐ |
+| F15 Inline label editor | idem | ◐ |
+| F16 Context menus | `:3701-3817` | ◐ |
+| F17 Keys | `:2439-2470`, `:2814-2831` | ✔ Delete, Ctrl+A, Ctrl+D, Ctrl+Z (real keyboard); others ◐ |
+| F18 Wheel zoom, pan | | ◐ |
+| F19 Accueil tab | `:3016-3147` | ✔ layout = web (export order fixed); commands ◐ |
+| F20 Insertion (gallery, texte, modèles) | idem | ◐ (gallery and templates dialog built) |
+| F21 Disposition | idem | ✔ tab opened by real click; commands ◐ |
+| F22 Affichage | idem | ◐ |
+| F23 Contextual Connecteur tab | idem | ◐ |
+| F24 Contextual Forme tab | `:3555-3583` | ✔ appears on selection (capture) |
+| F25 Title bar: save, undo/redo, star, trash | | ✔ title « (modifié) », save state; star/trash ◐ |
+| F26 Backstage: start page, info, print, close | `DiagramsStartContent.tsx` | ✔ Accueil lists the account's diagrams, Imprimer opens the preview (real clicks); Parcourir is a list, not the Drive browser (no Drive browser component in the framework) |
+| F27 Formes panel | `:3194-3270` | ✔ search, categories, thumbnails (capture); drag ◐ |
+| F28 Propriétés panel | `:3317-3546` | ✔ preset applied, Texte tab (real clicks); other fields ◐ |
+| F29 Calques panel | `:3272-3316` | ✔ top layer first, eye hides the layer (real click) |
+| F30 Minimap | `:866-938` | ✔ capture; click/drag ◐ |
+| F31 Rulers | `:940-989` | ◐ (not in the compared captures: off in the fixture's view) |
+| F32 Status bar | | ✔ counts, selection label, zoom control |
+| F33 Macros | page bar | ✘ the desktop has no script runtime; the entry is shown disabled |
+| F34 Mobile read mode, touch | | — |
+| Save path: join, digest, conflict, 413, journal, leave | §3 | ✔ all verified on a dev core (§8) |
+| Exports PNG/JPEG/PDF/.drawio/JSON, import | `diagramIo.ts`, `diagramPdf.ts` | ◐ PNG size and JPEG/PDF validity unit-tested; not run from the ribbon live |
+
+Differences seen in the captures (web vs desktop, same diagram): fonts (system font vs Plus Jakarta Sans — accepted
+decision); dock panel widths follow the saved dock layout; the status zoom slider is longer than the web's compact
+one; the « Coller » glyph differs; the title-bar waffle icon is barely visible in dark mode (framework title bar);
+the backstage leaves a strip of the dock visible at the bottom; the print preview toolbar of the framework renders
+blank at 175 %. Web dark could not be captured: the web theme is a user setting, not `prefers-color-scheme`.
