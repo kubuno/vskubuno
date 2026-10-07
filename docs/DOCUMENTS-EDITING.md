@@ -18,7 +18,7 @@ C:\ and E:\, 2026-10-02); its decisions survive in the code comments that cite t
 ## 1. Shared code: the platform-neutral crate `kubuno-office-docs-core`
 
 User direction (2026-10-02): share the algorithms with the web rather than write them once per platform. Everything
-that is not drawing, input or windowing lives in **`desktop/common/kubuno-office-docs-core`** (name per the
+that is not drawing, input or windowing lives in **`kubuno-office-docs-core`** — since 2026-10-06 in the office repository, `office/common/core` (name per the
 `kubuno-<domain>-core` convention of the cross-module study), a member of the `desktop/common` workspace like
 `kubuno-desktop-sync`, depended on by path from `documents`. It has no Windows, Direct2D, DirectWrite or `kubuno_desktop_ui`
 dependency (only `serde`, `serde_json`) and is checked with `cargo check --all-targets` for `wasm32-unknown-unknown`,
@@ -142,35 +142,163 @@ maintained as commands land.
   module cannot run locally, save is tested against a local mock and open read-only against the live server, and the
   report says so.
 
-## 3. Command coverage
+## 3. Parity with the web editor
 
-✔ wired and verified · ◐ partial · ✘ not done (the model or the desktop lacks it). "Verified" = a unit test in
-`kubuno-office-docs-core` mirroring the web's command, plus a real run for the ones marked *(run)*. Clicks posted by the test driver
-(`PostMessage`, so as not to take the user's pointer) did not reach the ribbon's commands — most likely its hover
-tracking, which sees the real pointer elsewhere; not investigated further — so ribbon commands were run through their
-shortcuts, which execute the same `OnExecute` (`host::take_key` → `Command`).
+The target (user, 2026-10-07): **every feature of the web Documents editor**. This table lists them all, from the
+inventory of the web sources (`DEP` = `office/web/src/DocumentEditorPage.tsx`, `CE` = `canvas-engine.ts`,
+`docs/` = `office/web/src/documents/`), with the desktop's state.
 
-| Group | Commands | State |
+✔ done (a unit test of `kubuno-office-docs-core` mirroring the web, plus a real run where marked *(run)*) ·
+◐ partial (what is missing is said) · ✘ not done yet (why) · ⛔ blocked (a decision or a missing platform piece) ·
+— nothing to port (a stub, a no-op or a bug on the web; the desktop does not invent what the web lacks).
+
+Ribbon commands run through the same `OnExecute` whether clicked or typed (shortcut). Real mouse clicks on the ribbon
+were verified on 2026-10-07 (tab, combo box, split-button menu, button: see §5); clicks *posted* to the window
+(`PostMessage`) reach the page but not the ribbon, a property of the host's hover tracking (§5).
+
+### File and Backstage
+
+| Feature | Web | Desktop |
 |---|---|---|
-| Clipboard | Couper, Copier, Coller, Coller sans mise en forme (Ctrl+Shift+V), images collées redimensionnées | ✔ |
-| Clipboard | Historique du presse-papiers | ✘ (no desktop clipboard history yet) |
-| History | Annuler / Rétablir (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z), groupement 500 ms comme Yjs | ✔ *(run)* |
-| Font | Gras *(run)*, italique, souligné, barré (Ctrl+Shift+S), indice, exposant, police, taille, A+ / A−, casse (maj., min., titre, phrase, inverser), petites majuscules, couleur (auto, rouge, bleu), surlignage (jaune, vert, cyan, aucun), effacer la mise en forme, reproduire la mise en forme | ✔ |
-| Font | Espacement des caractères, « Autres couleurs » | ✘ (no picker dialog yet) |
-| Paragraph | Puces (Ctrl+Shift+8) *(run)*, numéros (Ctrl+Shift+7), cases à cocher, alignements (Ctrl+L/E/R/J), retrait −/+, interligne 1–3, espace avant/après, première ligne, suspendu, enchaînements (paragraphes solidaires, lignes solidaires, saut de page avant), afficher ¶ | ✔ |
-| Paragraph | Tri, numérotation des titres, trame, bordures, veuves et orphelines | ✘ |
-| Styles | Galerie (Normal, Titre 1–3, …) via `apply_named_style` | ✔ |
-| Edit | Rechercher (Ctrl+F), Remplacer / Tout remplacer (Ctrl+H), casse, Tout sélectionner, nombre de mots | ✔ |
-| Edit | Atteindre, outils de texte (lignes vides, espaces, tabulations, guillemets…) | ✘ |
-| Insert | Saut de page (Ctrl+Enter), tableau (grille), image (fichier, redimensionnée), trait horizontal, bloc de code, lien (Ctrl+K, boîte Kubuno) / supprimer le lien, symboles (24) | ✔ |
-| Insert | Saut de section, formes, zone de texte, en-tête/pied, table des matières, champs, légende, citation, notes, lettrine, signature, page de garde, texte↔tableau, signet, lien courriel | ✘ (structures the layout draws but the editor cannot create yet) |
-| Layout | Marges (presets) and the rulers: margins, indents, tab stops written to the model, undoable *(run)* | ✔ |
-| Layout | Orientation, taille, colonnes, couleur de page, filigrane, bordure de page | ✘ (bound in the ribbon, not written) |
-| References | Notes, citations, bibliographie, tables, index | ✘ |
-| View | Règle, ¶, zoom 100 % / une page / largeur, curseur de zoom, pages côte à côte | ✔ |
-| View | Lecture, navigation, macros | ✘ |
-| Review | Orthographe, suivi des modifications, commentaires | ✘ |
-| File | Enregistrer (Ctrl+S): local file in place, or the server session (§D) | ✔ (server path: mock-tested, see §5) |
+| Open a server document (`--doc <id>`), journal of unsaved work, recovery offer, conflict dialog, 413 terminal | `DEP:14559`, `useOfficeStore` | ✔ *(run, dev server)* — §5 |
+| Save (Ctrl+S, QAT) and autosave (30 s debounce, 700 ms for page setup) | `DEP:14326`, `:7080`, `:14336` | ✔ *(run)* |
+| Rename, info (created, modified, pages, words) | `DocumentsBackstage.tsx:62-78` | ◐ the Backstage shows title, pages, zoom; rename and dates not wired |
+| Info tabs « Résumé », « Personnalisation » | `ModuleBackstage.tsx:149` | — (« bientôt disponible » on the web) |
+| Save to source (DOCX/ODT) | `DEP:14748` | ✘ (server route exists; no desktop UI yet) |
+| Export PDF (raster), DOCX/ODT (server), TXT | `DEP:14689`, `:14758`, `:14738` | ✘ (desktop printing/export lot: `PRINTING.md`) |
+| Print | `DEP:14700` | ✘ (same) |
+| Star, trash, share, presence avatars | `DEP:15706`, `:15653`, `:15625`, `:15676` | ✘ star/trash/share not on the desktop window; presence ◐ (status bar lists the other editors of the editing session) |
+| New / duplicate | handlers `DEP:15227` | — (not reachable from the web editor's UI) |
+
+### Accueil (Home)
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Paste, cut, copy, paste without formatting | `DEP:11958-11960` | ✔ (the desktop pastes rich content too: private JSON, HTML, images) |
+| Clipboard history | `ribbon/clipboardGroup.tsx:127` | — (a no-op in the document body on the web) |
+| Format painter (once, sticky, Esc) | `DEP:11964`, `docs/format-painter.ts` | ✔ |
+| Clear formatting | `DEP:11969` | ✔ |
+| Font family, size, bold, italic, underline, strike, sub/superscript, grow/shrink, case, small caps, colour, highlight | `DEP:11988-12009`, `:15285` | ✔ (bold *(run)*) |
+| Character spacing dialog, « Autres couleurs » | `DEP:15291`, `RibbonColorBtn` | ✘ (no colour picker / spacing dialog on the desktop yet) |
+| Text effects (WordArt presets, outline, shadow, glow…) | `docs/text-effects/ribbon.tsx:353` | ✘ (the `textEffect` mark is kept on save; not painted) |
+| Bullets, numbering, alignment, indent, line spacing, space before/after, first-line, hanging | `DEP:12020-12040` | ✔ (bullets *(run)*) |
+| Task list, quote (blockquote) | `DEP:12022`, `:12144` | — (written but never painted on the web: `CE:1016`; the desktop keeps them, paints them the same way, i.e. not at all) |
+| Sort A→Z / Z→A | `DEP:872` | ✔ |
+| Number headings (1., 1.1) | `DEP:15305`, `CE:928` | ✔ |
+| Paragraph shading and border | `DEP:10769`, paint `DEP:5314-5346` | ◐ shading (default, light grey, none) and the default border are set and painted; the colour palette and the border's colour/width/style are not offered |
+| Paragraph flow: keep with next, keep lines, page break before | `DEP:10879` | ✔ |
+| Widow control, contextual spacing, suppress line numbers, don't hyphenate (flow popover) | `DEP:10879` | ◐ contextual spacing and suppressed line numbers are read and laid out; the toggles for widow control, contextual spacing, suppress line numbers and don't-hyphenate are not on the desktop ribbon (widow control and hyphenation have no effect on the web either) |
+| Styles gallery (Normal, Titre 1–4, Titre, Sous-titre, Citation, Sans interligne) | `DEP:10924`, `:11046` | ✔ |
+| Edit style dialog, per-document `styles` | `DEP:12779`, `:15212` | ✘ (`styles` kept on save; no dialog) |
+| Find, replace, replace all, case | `DEP:10410` | ✔ (whole word and regex: ✘) |
+| Link (Ctrl+K), remove link | `DEP:12050`, `:15553` | ✔ |
+| E-mail link | `DEP:15355` | ✔ |
+| Remove all links | `DEP:15361` | ✔ |
+| Bookmark | `DEP:15325` | ✔ |
+| Go to (headings, bookmarks) | `DEP:4130` | ✘ (dialog) |
+| Statistics / details dialogs | `DEP:4062`, `:4022` | ◐ word count in the status bar; no dialog |
+| Text tools: empty lines, spaces, tabs, quotes, number, reverse, dedupe, title, clear all | `DEP:12061-12071` | ✔ |
+
+### Insertion (Insert)
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Cover page (two variants) | `DEP:15376` | ✔ |
+| Page break (Ctrl+Enter) | `DEP:5569` | ✔ |
+| Section break (next page) | `DEP:5558` | ✔ |
+| Table (grid), text ↔ table | `DEP:12093`, `:969`, `:987` | ✔ (« Insérer un tableau… » prompt: ✘) |
+| Image (file, resized) | `DEP:15502` | ✔ |
+| Shapes (144, draw to create), text box | `docs/shapes/`, `DEP:5711` | ✘ (the next lot: `kubuno-office-shapes-core` exists; drawing and editing on the page are not done) |
+| Header / footer: display | `DEP:5296` | ✔ (rich, faded, fields, first page, per-section) |
+| Header / footer: inline editing (double-click, context tab) | `DEP:5633`, `:12292` | ✘ (next lot; the bands are read-only on the desktop) |
+| Page numbers: position | `DEP:14648` | ✔ |
+| Page numbers: format | `DEP:10848` | ✔ (the first number, `pageNumStart`, is read but not settable) |
+| Table of contents (insert, update) | `DEP:15083`, `:14846` | ◐ inserted with the defaults (the web opens its options dialog first) |
+| Update fields | `DEP:15070` | ◐ updates the table of contents; imported `field` nodes are not recomputed (`docs/fields.ts:408` not ported) |
+| Special characters panel, symbols | `DEP:10535` | ◐ the 24 symbols of the menu; no panel |
+| Date, time, date+time (static text) | `DEP:15312` | ✔ |
+| Caption (« Figure N : ») | `DEP:15317` | ✔ |
+| Horizontal rule, code block | `DEP:15316` | ✔ |
+| Footnote, endnote (insert, edit, delete; endnotes after the last content) | `DEP:15294`, `docs/endnotes.ts`, `CE:1743` | ✔ |
+| Drop cap | `DEP:12148`, `CE:1979` | ✘ (layout not ported) |
+| Signature line, « Page X sur Y » | `DEP:15364`, `:15371` | ✔ |
+
+### Mise en page (Layout)
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Margins (presets, rulers) on the caret's section | `DEP:15348`, `:5542` | ✔ *(run)* — the base section's margins are not undoable on the desktop (Yjs map on the web) |
+| Orientation of the caret's section | `DEP:5523` | ✔ *(run, real clicks)* |
+| Paper size | `DEP:14682` | ✔ |
+| Columns (base section) | `DEP:5577` | ✔ *(run, real clicks)* — no column guides on the ruler yet |
+| Line numbers | `DEP:10728`, `:5436` | ✔ (the interval is kept, not settable) |
+| Paragraph metrics box (indents, spacing in pt) | `DEP:10824` | ✘ (the rulers and the paragraph buttons cover it) |
+| Page colour (section-aware), gradient | `DEP:10603` | ◐ cream, light grey or none; no colour picker; gradients ✘ |
+| Watermark | `DEP:10631`, paint `:423` | ✔ (the six presets, or none; no colour/opacity editor) — painted on the desktop; **not visible on the web's screen** (`solidPageBg` paints an opaque page before the `destination-over` watermark, `DEP:7537`) |
+| Page border | `DEP:10681`, paint `:448` | ◐ the four styles or none with the default colour, width and distance; no editor |
+| Page Setup dialog (gutter, header/footer distance, vertical alignment, section start, odd/even, first page, default) | `DEP:3618` | ✘ (most of its settings have no effect on the web either: UI-only) |
+
+### Références
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Table of contents gallery: automatic, manual, remove | `docs/references/ribbon.tsx:62`, `DEP:14897`, `:14949` | ✔ |
+| Update the table (with its own settings) | `DEP:14846` | ✔ |
+| TOC options / table style dialogs | `TocOptionsDialog.tsx` | ✘ |
+| Ajouter le texte (outline level 0–3) | `outline.ts:90` | ✔ |
+| Insert footnote / endnote, next / previous, show notes | `docs/references/ribbon.tsx:99-114` | ✔ |
+| Citations, sources, citation style, bibliography | `SourcesDialog.tsx`, `DEP:15032-15038` | ✘ (`sources` and `citationStyle` are kept on save) |
+| Caption, table of figures | `DEP:15317`, `:14963` | ◐ caption ✔; table of figures ✘ |
+| Cross-reference | `CrossRefDialog.tsx` | ✘ |
+| Mark index entry, index | `MarkEntryDialog.tsx`, `DEP:14972` | ✘ (`indexEntry` marks kept) |
+| Mark citation, table of authorities | `DEP:14982` | ✘ (`citationEntry` marks kept) |
+
+### Affichage (View)
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Edit / read mode | `DEP:14554` | ✘ |
+| Ruler, formatting marks, text boundaries | `DEP:12197-12200` | ✔ |
+| Navigation pane | `DEP:3083` | ✘ |
+| Collapsible headings | `DEP:15545`, `CE:346` | ✘ |
+| Zoom: 100 %, one page, page width, slider, Ctrl+wheel | `DEP:12208-12219` | ✔ |
+| Zoom dialog, multiple pages | `DEP:3286`, `:13902` | ✘ (pages side by side happen by themselves below 50 %) |
+| Macros (show, record, pause) | `DEP:12223` | ✘ (the web's `Kubuno.Doc` scripting API has no desktop runtime) |
+
+### Révision (Review)
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Spelling (Hunspell), dictionary, language | `DEP:12316-12319`, `spellcheck.ts` | ✘ (needs a speller on the desktop) |
+| Track changes: recording (typing, paste, Backspace/Delete, typing over a selection; own pending insertion really removed; one revision per run of keystrokes; a paragraph join stays a real deletion; Delete leaves the caret before the struck text, as on the web) | `docs/track-changes.ts:255-330` | ✔ `edit/track.rs` (`tracked_insert`, `tracked_delete`): same marks and attributes as the web; web-written fixture `fixtures/web/track.json` |
+| Revision ink (author colour), underline / strike, change bar in the margin | `CE:374-417`, `CE:2585-2680` | ✔ `paint.rs` (`track::author_color` = `authorColor`) |
+| Accept / reject one or all; « Afficher le document final » (deleted text leaves the layout) | `track-changes.ts:560-620`, `CE:331-417` | ✔ `track::decide`, `Editor::set_final_view` |
+| Review pane (cards: author, relative age, kind, text; accept / reject; accept all / reject all with confirmation) | `docs/ReviewPane.tsx` | ◐ a dialog walking the revisions one at a time (Précédente / Suivante) instead of a side pane: the framework has no list pane yet |
+| Comments: new, gutter, reply, resolve | `DEP:15185`, `:12631` | ⛔ comments live in the web's Yjs map, not in the stored document (the envelope's `comments` is a mirror the web never reads back): a desktop comment would not reach the web — see the collaboration question in §5 |
+
+### Contextual tabs
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Table: insert/delete rows and columns, merge/split, style, shading, alignment, borders, sort, distribute, autofit, split table, formula, properties dialog, hover bands | `DEP:12336-12379`, `:4249`, `:6088` | ✘ (no table context tab yet; tables are laid out, painted and edited as text) |
+| Image: align, wrap, reset, layout dialog, handles | `DEP:12255-12268`, `:3748` | ✘ (images are inserted, resized at insertion and painted; no image tab) |
+| Shape: fill, outline, wrap, order, rotate, adjust handles | `docs/shapes/ribbon.tsx:91` | ✘ (with the shapes lot) |
+| Header & footer: fields, go to, first page, link to previous, close | `DEP:12292-12307` | ✘ (with inline header/footer editing) |
+
+### Outside the ribbon
+
+| Feature | Web | Desktop |
+|---|---|---|
+| Keyboard (typing, AltGr, dead keys, Enter, Backspace/Delete, Tab, arrows, Home/End, Page Up/Down, Ctrl shortcuts) | `DEP:6886-6994` | ✔ (typing *(run)*) |
+| IME composition | TipTap hidden view | ◐ the composition window is placed at the caret; not verified with a real Japanese/Chinese IME (none installed on the test PC) |
+| Mouse: click, double/triple click, drag, drag-move of text | `DEP:8643`, `:8296` | ◐ clicks and drag-select ✔; drag-and-drop of the selection ✘ |
+| Context menu | `DEP:9287` | ◐ the text items; spelling, comment, object and table items ✘ |
+| Floating mini toolbar | `DEP:1727` | ✘ |
+| Status bar: page X of Y, words, language, zoom | `DEP:13182` | ◐ page, zoom, save state; words via the ribbon; language ✘ |
+| Rulers: margins, indents, tab stops | `DEP:2378-3062` | ✔ *(run)* |
+| Autocorrect (`(c)→©`, `->→→`, `1/2→½`…), markdown input rules | `DEP:1284-1291` | ✘ |
+| Collaboration: live co-editing, remote carets | `useCollab`, `RemoteCursors` | ⛔ the desktop saves the whole document through REST; the web edits a Yjs room (see §5) |
+| Accessibility (UI Automation) | — | ◐ the system caret follows ours (screen readers, magnifier); no `TextPattern`: the framework publishes AccessKit nodes with a role, a name and a value, without text runs or a text selection, and the page canvas publishes none — a framework lot (AccessKit text runs) comes first |
 
 ## 4. Later: the web on the same crate (WASM)
 
@@ -216,3 +344,40 @@ this machine (the dev database was being moved by another agent), so open/save r
 of the tests — never against the live server, and never with real credentials. IME composition (posted messages
 cannot drive an IME), the ribbon by mouse (see §3), and a UIA `TextPattern` (only the system caret is exposed) remain
 to be checked by hand.
+
+**2026-10-07 — server path, page layout, references, review (office `5b12e58`…`e7e0a61`).** Verified live against
+an own development core (office + drive modules, own database, own ports) and the web editor in headless Chrome
+(captures in `C:\kubuno-build\release\documents\captures`):
+- open fidelity web vs desktop; an edit saved with Ctrl+S visible on the web (for a document whose Yjs room is empty —
+  see the question below); a concurrent web save → 412 → the conflict dialog (`conflict-dialog-1.png`); the crash
+  journal offered on reopen (`recover-dialog.png`); a 2 MiB document → 413 → a terminal status, no retry loop
+  (`limit-413-status.png`); offline edits kept in the journal, shown on an offline open (`offline-3-open-offline.png`),
+  saved once the server is back.
+- ribbon by real mouse clicks (under the shared input lock): Mise en page orientation / columns, Ctrl+S, bold,
+  Révision › Suivi des modifications, Afficher le document final, Volet Vérifications (Suivante, Accepter, Tout refuser
+  with its confirmation). Posted clicks do not reach the ribbon: the host's `WM_LBUTTONUP` → `track_leave` → an
+  immediate `WM_MOUSELEAVE` (the real cursor is elsewhere) moves the pointer away before the release is painted.
+- track changes against a document tracked **by the web** (`fixtures/web/track.json`): same ink, strike, underline
+  and change bars (`web-track.png` vs `desk-track-1.png`); typing / Delete tracked on the desktop and saved as the
+  same marks; final view; review dialog; accept and reject (`desk-track-*.png`).
+- a modal dialog opened by a ribbon command during the frame lays out against a half-built surface (first control
+  and action bar missing): every command-opened dialog is now deferred with `begin_invoke` (framework bug, not fixed
+  in core/desktop).
+
+Performance, release build (static CRT), 40-page document (420 paragraphs), window 1500×1000 at 175 %: open to idle
+1.2 s; typing (sent `WM_CHAR` + synchronous paint) median 38.8 ms, p95 44.8 ms; wheel scrolling (sent notch +
+synchronous paint) median 37.7 ms, p95 59.8 ms. Engine bench (`examples/typing_bench.rs`, 50 pages): edit 2.0 ms +
+relayout 4.8 ms per keystroke (was 5.4 + 12.9).
+
+Tests: `kubuno-office-docs-core` 282 + 5 web-fixture tests (also on Linux, .220), clippy `-D warnings` clean;
+`kubuno-documents` 33; `kubuno-office-desktop-common` checks on Linux.
+
+Not done, with the reason: IME (no Japanese/Chinese IME on this machine; installing one changes the user's system),
+UIA `TextPattern` (the framework's AccessKit nodes carry no text runs or selection), comments (they live in the web's
+Yjs map, see the question), header/footer inline editing, drop cap, shapes and text boxes, the table contextual tab,
+spelling — see §3 for every row. Open questions: (1) the web seeds a document from `content_json` only when its Yjs
+room is empty, so a desktop (or Android) REST save of a document already opened on the web is overwritten by the
+room — reseed when `content_etag` differs, make the desktop a Yjs peer, or have the core reset the room on a REST
+PATCH? (2) a fresh dev core fails its migrations (`uuid_generate_v4()`): the extensions are created in schema `core`.
+(3) the web's watermark is invisible on screen (opaque page ground painted before the `destination-over` watermark,
+`DEP:7537`).
