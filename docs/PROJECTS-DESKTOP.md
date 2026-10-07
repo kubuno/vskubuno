@@ -201,3 +201,23 @@ landed.
 ## 9. Log
 
 (as built — filled as increments land)
+
+**2026-10-07 — increment 0 done, A/B/C in progress (stopped: session limit).**
+
+- Pushed (office): `common/projects-core` (`d3cdc07`) — 44 unit tests + 3 golden tests: the core's scheduler lands
+  every task of two server-scheduled projects (all link types, lags, the 8 constraints, ALAP, deadline, nested
+  summaries, a link from a summary, default week and a six-day calendar with exceptions) on the server's figures;
+  lossless round trip of the real API JSON; `cargo check` wasm32 / aarch64-apple-darwin clean, tests + clippy clean
+  natively on Linux (.220). `desktop/common/kubuno-office-projects-common` (`f337308`): launch options, sample,
+  routes, outbox worker, journal, session, column layout, line editor — 11 tests, clippy clean; one session test
+  ignored (the resend after an offline re-read is not issued yet: to fix first).
+- Not pushed, kept in the worktree `E:\kubuno-build\agent-office-projects\wt` (branch `projects-desktop`, files
+  untracked): `desktop/windows/kubuno-office-projects` — window `.kbview` (full web ribbon, plan tabs, baseline and
+  filter bars, band, dock with inspector and resources, status bar), `GanttView` (table + chart port of
+  GanttRenderer, all gestures), `TimelineBand`, `PlanTabs`, `BoardView`, `MonthView`, `LoadView`, inspector,
+  properties, resources fr/en, icon. Last build: a dozen compile errors left (view macro field/control names,
+  `Widget` trait imports, `Cursor::Crosshair`); re-add the member to `desktop/Cargo.toml` to resume.
+- Next: make the Windows crate build, captures web vs desktop (light/dark, 100/175 %), `--doc` round trip on the
+  dev core (`kubuno_dev_projects`, core :18480, scripts in `C:\kubuno-build\agent-office-projects\tools`), real
+  input + UIA, VS designer + `Kubuno.Office.slnx` regeneration, then network/roadmap/resources views and the
+  registers (§7), Yjs presence once the shared `yrs` client lands.
