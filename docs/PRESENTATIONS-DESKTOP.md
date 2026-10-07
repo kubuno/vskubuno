@@ -255,13 +255,74 @@ The web has no conflict protection beyond Yjs. The desktop adds the Documents ru
 
 ## 7. Coverage (feature → web → desktop)
 
-✔ done and verified · ◐ partial · ✘ not done (reason) — updated as increments land.
+✔ done and verified (test or capture) · ◐ implemented, not verified by real input yet · ✘ not done (reason).
+Desktop paths: `office/common/slides-core` (core), `office/desktop/common/kubuno-office-presentations-common`
+(common), `office/desktop/windows/kubuno-office-presentations` (app).
 
 | F | Feature | Web | Desktop |
 |---|---|---|---|
-| — | everything | §1.2 | ✘ (design only) |
+| F1 | 960×540 slide, fractions, `sf` | `PEP:111` | ✔ core `model`, `render` (tests); 4:3 quirk kept |
+| F2 | z-order, hidden, rotation/flip, opacity, shadow | `PEP:736` | ✔ core `render` + app `d2d` (capture) |
+| F3 | Background colour / gradient / image | `PEP:793` | ✔ render; ◐ side panel pickers, background dialog |
+| F4 | Rich text rendering (runs, paras, effects, columns, autofit, WordArt) | `PEP:824` | ✔ core `richtext`/`render` (tests); `stroke_text` (text outline) ✘ in the D2D surface |
+| F5 | Shapes (~144 kinds, fills, knobs, captions) | `PEP:977` | ✔ `shapes-core` golden test against the web engine |
+| F6 | Images (sources, crop, filters, tint, border, radius) | `PEP:1146` | ✔ render; http(s) images ✘ (signed URLs not fetched) |
+| F7 | Lines (7 kinds, arrows, dashes) | `PEP:1191` | ✔ core (tests) |
+| F8 | Charts | `presentationChart.ts` | ✔ render; ◐ toolbar type / data dialog / legend |
+| F9 | Tables | `presentationTable.ts` | ✔ render; ◐ table bar (rows, cols, flags, styles, border, size, reset) |
+| F10 | SmartArt | `presentationSmartArt.ts` | ✔ core `smartart` (tests); ◐ insertion |
+| F11–F13 | Select, marquee, move, smart guides, grid snap, resize, rotate, knobs, crop | `PEP:2002-2368` | ✔ core `edit` (tests mirroring the web; locked-selectable and line-move bugs fixed); ◐ canvas input |
+| F14 | Tools (text, shape draw, 7 line kinds) | `PEP:2056-2098` | ✔ core; ◐ toolbar / gallery arming |
+| F15 | Double click (text, cell, crop, polyline end) | — | ◐ canvas |
+| F16 | Canvas keyboard | `PEP:2768` | ✔ core `key` (tests); ◐ canvas |
+| F17 | Element menu (all sections incl. shape/image/text/line) | `PEP:3106` | ✔ actions (common `model/actions.rs`, tests); ◐ menu clicks |
+| F18 | Ground menu (background, 11 layouts, guides) | `PEP:3248` | ◐ |
+| F19 | Rich text editing, marks, paragraph attrs, fit menu | `PEP:2664` | ✔ core `textedit`, `format` (tests); ◐ caret/IME in the canvas (no IME composition window yet) |
+| F20 | Zoom pill (fit, ±, %, grid, snap, checker, dark, ruler) | — | ✔ drawn (capture); ◐ clicks |
+| F21 | Slide list (selection, drag reorder, footer, menu) | `PEP:1435` | ◐; resizable width ✘ (fixed 150) |
+| F22 | Layouts, placeholders | `PEP:351` | ✔ core (tests) + capture |
+| F23 | Background editor | `PEP:4866` | ◐ dialog + side panel |
+| F24 | Transitions, hidden slides, notes pane | `PEP:168` | ◐ ribbon combos, notes bound two-way |
+| F25 | Accueil tab | `PEP:5524` | ✔ capture vs web; ◐ commands |
+| F26 | Insertion (shape gallery) + toolbar insertions | `PEP:5513`, `SlideToolbar` | ◐ |
+| F27 | Disposition | `PEP:5551` | ◐ (all commands wired to tested core ops) |
+| F28 | Animations tab | `PEP:5585` | ◐ |
+| F29/F30 | Transitions tab, Forme tab | — | ◐ |
+| F31 | Backstage | `useFileTab` | ◐ Informations, Ouvrir, Enregistrer une copie, Exporter PDF, Fermer; start page (recent/browse/new) ✘, Imprimer ✘ |
+| F32 | Slideshow (keys, click, black, numbers, autoplay, loop, timer, notes, bar) | `PEP:4285` | ◐ `SlideShow` control over core `show` (tests) |
+| F33 | Entry animations, transitions | `PEP:4442` | ✔ core (tests); ◐ drawing (layers for fade/wipe) |
+| F34 | Phone remote, laser | Yjs awareness | ✘ (no Yjs on the desktop) |
+| F35 | Per-slide persistence | §2 | ✔ live round trip test on a dev core (`tests/live_roundtrip.rs`): edits identical, conflict kept until « keep mine », 413 terminal per slide |
+| F36 | Undo/redo (500 ms coalescing, depth 80) | `PEP:4976` | ✔ core `history` (tests) |
+| F37 | Image assets upload (`kbfile:`) | `PEP:4719` | ✘ images are inserted as `data:` URLs (the server's 2 MiB slide limit applies) — upload route not wired yet |
+| F38 | Rename, star, trash, share, presence, Yjs merge | — | ✘ rename/star/share/presence (title bar has no title field yet); Yjs replaced by the digest-guarded save (by design) |
+| F39 | Status bar | `PEP:6061` | ✔ capture vs web |
+| — | Exports PDF/PNG/JPG/all | `PEP:5034` | ✔ off-screen render + PDF writer (tests); ◐ dialogs |
+| — | Web top bar extras (slide navigator, Slideshow button, share, « Affichage » tab of OfficeShell, Macros) | `OfficeShell` | ✘ not in the desktop chrome yet |
+
+## 7.1 As built (2026-10-07)
+
+- `common/slides-core` gains `format` (the toolbar's paragraph attributes, run marks and element fallback) and
+  `overlay` (the editor's furniture); `shapes` re-exports the shared shape engine.
+- `desktop/common/kubuno-office-presentations-common`: `model/actions.rs` (the element menu by key),
+  `model/gradient_css.rs` (picker CSS ↔ stored `grad`), `pdf.rs` (`pagesToPdf`), `api/live.rs::asset_fetch`.
+- `desktop/windows/kubuno-office-presentations` (`kubuno-presentations.exe`): `presentation_window.kbview` (ribbon
+  `Tone="Presentation"`, 200+ commands, five context menus, toolbar row, side panel, notes, status bar),
+  `slideshow_window`, dialogs (background, chart data, geometry, prompt, confirm), user control
+  `PresentationInfo`, custom controls `SlideCanvas`, `SlidePanel`, `SlideShow`; `platform/export.rs` renders through
+  a WIC-backed Direct2D context. View tests compile every view and check icons, labels, tab order and resources.
+- Verification: 64 core tests, 23 common tests (+1 ignored live), 13 app tests, clippy `-D warnings`; dev core on
+  127.0.0.1:18280 with database `kubuno_dev_presentations`; captures (desktop light/dark 175 %, web 100 %/175 %) in
+  `C:\kubuno-build\release\presentations\captures`. Not done: real mouse/keyboard runs over the ribbon and canvas,
+  UIA names check, VS designer check, desktop 100 % capture (the test machine runs at 175 %), web dark capture
+  (the web theme is an account setting, not `prefers-color-scheme`).
 
 ## 8. Log
 
 **2026-10-07** — design note; `kubuno-office-shapes-core` (shared with Diagrams) committed with its golden test
 against the web engine (every catalogue kind and slide kind: sub-paths, text frames, knobs).
+
+**2026-10-07** — `kubuno-office-slides-core` and `kubuno-office-presentations-common` (office 35047eb, c999f89,
+f01eebf); the Windows app `kubuno-presentations.exe` (office 53713c1), the solution regenerated by the generator
+(4e975fa), the live round trip test (9be547b). Coverage in §7; next: real-input runs, UIA, designer check, asset
+upload, backstage start page, title field and the web top bar's extras.
