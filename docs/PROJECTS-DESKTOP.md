@@ -155,36 +155,44 @@ reports each answer to the UI thread, and re-reads the project when the queue is
 
 | Feature | Web / server | Desktop |
 |---|---|---|
-| Lossless records, `.kbprj` import | `models/project.rs`, `SRV:1604` | ⧗ |
-| Working calendar (server + web mirror) | `working_calendar.rs`, `P/workingCalendar.ts` | ⧗ |
-| CPM (FS/SS/FF/SF, lags, 8 constraints, ALAP, deadlines, free float, roll-up, loop error) | `SRV:1223-1577` | ⧗ |
-| Outline numbering | `project_wbs.rs:87` | ⧗ |
-| Roll-up, scheduled dates, chart extent, status counts, CSV | `P/rollup.ts`, `P/schedule.ts`, `PE:529-554`, `PE:1664` | ⧗ |
-| Filter / sort / group / fold | `PE:449-515` | ⧗ |
-| Undo/redo (inverse calls, remap, 900 ms coalescing, 100 entries) | `useEditHistory.ts`, `PE:650-890` | ⧗ |
+| Lossless records, `.kbprj` import | `models/project.rs`, `SRV:1604` | ✔ round trip of the real API JSON; `.kbprj` opens read-only |
+| Working calendar (server + web mirror) | `working_calendar.rs`, `P/workingCalendar.ts` | ✔ golden schedules (default week, six-day week + exceptions) |
+| CPM (FS/SS/FF/SF, lags, 8 constraints, ALAP, deadlines, free float, roll-up, loop error) | `SRV:1223-1577` | ✔ golden schedules identical to the server's |
+| Outline numbering | `project_wbs.rs:87` | ✔ unit tests |
+| Roll-up, scheduled dates, chart extent, status counts, CSV | `P/rollup.ts`, `P/schedule.ts`, `PE:529-554`, `PE:1664` | ✔ unit tests; CSV export ◐ (not exercised live) |
+| Filter / sort / group / fold | `PE:449-515` | ◐ unit tests, filter bar shown |
+| Undo/redo (inverse calls, remap, 900 ms coalescing, 100 entries) | `useEditHistory.ts`, `PE:650-890` | ✔ real Ctrl+Z on the dev core sends the inverse PATCH (progress 50 → 60) |
 
 **Window — Gantt view**
 
 | Feature | Web | Desktop |
 |---|---|---|
-| Title bar Tall, waffle/account, title, star, share, undo/redo, save | `PE:2055-2120` | ⧗ |
-| Ribbon: Fichier, Accueil, Tâche, Liaisons, Périmètre, Pilotage, Format, Affichage | `PE:1781-1930` | ⧗ |
-| Plan view tabs (Gantt, Tableau, Calendrier, Ressources, Réseau, Roadmap) | `PE:2135-2150` | ⧗ |
-| Table: 11 columns, default 6, header menu, resize, compact, inline edits, ring, avatars, priority dot | `P/TaskRow.tsx`, `P/ganttTableConstants.ts` | ⧗ |
-| Chart: header, weekends, today, elbows, bars, brackets, milestones, progress, padlocks, check, avatars, link handle, baseline ghost, window veil, markers, hover tooltip | `P/GanttRenderer.ts` | ⧗ |
-| Chart gestures: move, resize both ends, phase move, link, markers, threshold, auto-scroll, Escape | `PE:1019-1490` | ⧗ |
-| Timeline band | `P/TimelineBand.tsx` | ⧗ |
-| Filter bar, baseline bar | `PE:2151-2191` | ⧗ |
-| Inspector (all fields, constraints, deadline, CPM figures, resources, predecessors with type/lag) | `P/TaskDetailPanel.tsx`, `PE:1933-1973` | ⧗ |
-| Resources panel (members, external, rate) | `PE:1986-2045` | ⧗ |
-| Context menus (row, header) | `PE:2441-2503` | ⧗ |
-| Status bar | `PE:2416-2434` | ⧗ |
-| Export CSV / PNG | `PE:1664-1681` | ⧗ |
-| Backstage: info, properties, modules, document production, print, close | `PE:1696-1746` | ⧗ |
+| Title bar Tall, waffle/account, title, star, share, undo/redo, save | `PE:2055-2120` | ✔ captured light/dark (share: ✘, the shell owns sharing) |
+| Ribbon: Fichier, Accueil, Tâche, Liaisons, Périmètre, Pilotage, Format, Affichage | `PE:1781-1930` | ✔ all tabs declared; real clicks verified (« 50 » → server); « Définir » flag icon missing in the framework set |
+| Plan view tabs (Gantt, Tableau, Calendrier, Ressources, Réseau, Roadmap) | `PE:2135-2150` | ✔ all six views |
+| Table: 11 columns, default 6, header menu, resize, compact, inline edits, ring, avatars, priority dot | `P/TaskRow.tsx`, `P/ganttTableConstants.ts` | ✔ captured against the web (same columns, values, rings, avatars, dots) |
+| Chart: header, weekends, today, elbows, bars, brackets, milestones, progress, padlocks, check, avatars, link handle, baseline ghost, window veil, markers, hover tooltip | `P/GanttRenderer.ts` | ✔ captured against the web (bars, elbows, padlocks, check, labels, today) |
+| Chart gestures: move, resize both ends, phase move, link, markers, threshold, auto-scroll, Escape | `PE:1019-1490` | ◐ implemented, unit-tested in the core, not exercised with real input |
+| Timeline band | `P/TimelineBand.tsx` | ✔ captured |
+| Filter bar, baseline bar | `PE:2151-2191` | ◐ |
+| Inspector (all fields, constraints, deadline, CPM figures, resources, predecessors with type/lag) | `P/TaskDetailPanel.tsx`, `PE:1933-1973` | ✔ shown on selection (real click); field edits ◐ (posted keys do not reach the fields; real typing not run) |
+| Resources panel (members, external, rate) | `PE:1986-2045` | ◐ |
+| Context menus (row, header) | `PE:2441-2503` | ◐ |
+| Status bar | `PE:2416-2434` | ✔ (counts, critical, done, finish vs target, sync state) |
+| Export CSV / PNG | `PE:1664-1681` | CSV ◐ · PNG ✘ (disabled) |
+| Backstage: info, properties, modules, document production, print, close | `PE:1696-1746` | ◐ info and properties; modules, document production, print ✘ |
 
-**Other views and registers**: board, calendar, resources (registry, heatmap, availability, cost), network,
-roadmap, time log, and the 18 registers of `P/` (§1.1) — ⧗ (increment D); the as-built table in §9 says which
-landed.
+**Other views and registers**
+
+| View | Web | Desktop |
+|---|---|---|
+| Tableau (board), drag between columns | `P/BoardView.tsx` | ✔ captured; drag ◐ |
+| Calendrier (month) | `P/CalendarView.tsx` | ✔ captured |
+| Plan de charge (load) | `P/ResourceLoadView.tsx` | ✔ captured |
+| Ressources: registry, heatmap, availability, costs | `P/resources/*` | ✔ captured light/dark; in-place edits ◐ (posted clicks on the sample) |
+| Réseau (PERT): frames, links, labels, drag, link, cut, timescale, zoom pill, per-project layout | `P/NetworkView.tsx` | ✔ captured light/dark on `--doc`; gestures ◐ (posted clicks; layout kept locally, the web keeps it in user prefs) |
+| Roadmap: versions, progress, tasks, create/rename/date/status/delete | `P/RoadmapView.tsx` | ✔ captured light/dark against the web; edits through the outbox ◐ (unit-tested) |
+| Time log, the 18 registers of `P/` (§1.1) | | ✘ not started (next) |
 
 ## 8. Risks and open questions
 
@@ -221,3 +229,33 @@ landed.
   dev core (`kubuno_dev_projects`, core :18480, scripts in `C:\kubuno-build\agent-office-projects\tools`), real
   input + UIA, VS designer + `Kubuno.Office.slnx` regeneration, then network/roadmap/resources views and the
   registers (§7), Yjs presence once the shared `yrs` client lands.
+
+**2026-10-07 (afternoon) — increments A, B, C landed, plan views done; registers next.**
+
+- Pushed (office `origin/main`, up to `64a404c`): the Windows app builds (`kubuno-projects.exe`, member of
+  `desktop/Cargo.toml` again), tests (core 59 + 3 golden, common 15, Windows 2) and clippy `-D warnings` clean.
+  Offline replay fixed (re-read before resend); a first read that fails (expired session, unreachable server) now
+  says why and retries instead of « Ouverture… » forever. New views: Roadmap (versions as `Change`s through the
+  outbox, temporary ids remapped), Réseau (`network.rs` geometry in the core, `NetworkView`), Ressources workspace
+  (`resources.rs` in the core, time off as `Change`s, `ResourcesView` with four sub-tabs; the « Ressources » tab
+  now opens it, the load histogram stays « load »).
+- Verified on the dev core (core :18680, drive :13601, office :13605, DB `kubuno_dev_projects`; demo project
+  `tools\demo.ps1`): `--doc` opens the server project through the sandbox shell's account; parity captures web vs
+  desktop light/dark at 100 % (DPI-unaware window) and 175 % for Gantt, Roadmap, Réseau, Ressources; **real
+  mouse and keyboard** (VS lock): row selection, ribbon « 50 » → server progress 50, Ctrl+Z → inverse PATCH
+  back to 60 (`tools\real-input.ps1`); UIA: 139 elements, all ribbon commands, tabs and roadmap parts named
+  (35 unnamed are layout groups).
+- `Kubuno.Office.slnx` regenerated with the generator (`KUBUNO_GEN_REPO=<worktree> KUBUNO_GEN_FRESH=1
+  KUBUNO_GEN_WRITE=1`): adds the Projects core, common and Windows projects.
+- **VS designer check not verified**: the extension installs in hive `KubunoOfficeProjects`, devenv starts, but
+  no DTE appears in the ROT (same as the Diagrams agent); devenv was closed. Script:
+  `C:\kubuno-build\agent-office-projects\vs\designer.ps1`.
+- Posted (PostMessage) clicks do not trigger ribbon buttons, shell nav items or text fields (they act on the
+  real button state); only real input exercises them — worth a framework fix for automation.
+- Release copy: **debug** build (E: was full, the release build failed for lack of space) in
+  `C:\kubuno-build\release\projects\` (exe + PDB).
+- Web side notes: the dev core forced an admin password change (done via `PATCH /me/password`); the web's dark
+  theme did not follow `prefers-color-scheme` in headless Chrome (dark web captures need the `kubuno-dark` theme);
+  `POST /projects/:id/duplicate` answers `DATABASE_ERROR` on a fresh database.
+- Next: the time log and the 18 registers (§7), real-input runs of the chart/network gestures, Yjs presence once
+  the shared `yrs` client is reusable, the designer check, a release (static CRT) build.
