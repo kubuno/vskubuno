@@ -165,7 +165,7 @@ Legend: ✔ done (unit test mirroring the web; *(run)* = also a real run) · ◐
 
 | Feature | Web | Desktop status |
 |---|---|---|
-| Open local file + `--doc <id>`; read-only display at parity | `APP`, `maths-api.ts` | ✘ (increment A) |
+| Open local file + `--doc <id>`; read-only display at parity | `APP`, `maths-api.ts` | ✔ *(run — captures light/dark)* |
 | WYSIWYG caret editor (visual + code) | `MTE` | ✘ (increment B) |
 | Ribbon: Insertion/Équation galleries | `APP:1251-1268` | ✘ (increment B) |
 | Ribbon: Calcul / Matrices / Statistiques / Nombres | `APP:1271-1345` | ✘ (increment B) |
@@ -204,17 +204,45 @@ round-trip via a hand-written `JSON.stringify`-compatible serialiser). Verified:
 (`x(x+1)` parses as a function call → NaN; a power of plain `()` atoms is not evaluable, `\left…\right` is); the tests
 document each.
 
-### Where I stopped / next steps (paused 2026-10-11)
+**2026-10-12 — increment A: the desktop app, read-only at parity.** Built the two desktop crates on the branch
+`maths-desktop-app` (a worktree off `main`; the shared office checkout was occupied by another agent's branch):
+- `desktop/common/kubuno-office-maths-common` — the portable app (launch options; `MathsDoc` over `engine::doc`;
+  the `/office/maths` routes; a `.kbmath` / bare-LaTeX opener; a text UI). 9 unit tests.
+- `desktop/windows/kubuno-office-maths` (`kubuno-maths.exe`) — the Win32 window (`maths_window.kbview`): the tall
+  title bar with the waffle/account, a ribbon (Fichier backstage with the formula info, Accueil = document / mode /
+  zoom, Insertion / Équation / Calcul), the status bar, and `MathsCanvas` filling the body. The canvas paints the
+  document read-only: paper sheets stacked and wheel-scrolled, each block drawn by kind — **formula** via the math
+  core's KaTeX layout (`render()` → glyph outlines, vendored painter), **text** via DirectWrite, **graph** via a
+  port of `drawGraph` (auto Y-range, nice ticks, curve breaks) sampled from `engine::expr`. Light/dark palettes.
+  Opens a local file or a server formula (`GET /office/maths/formulas/:id` through the shell broker).
 
-Done and on `main`: the design note and the shared-core engine (above). **Not started** (all desktop + VS + live
-verification): the desktop crates `desktop/common/kubuno-office-maths-common` and `desktop/windows/kubuno-office-maths`
-(increments A/B/C of §4), the `.kbview` ribbon, the VS designer integration (`Kubuno.Office.slnx` regen), the dev-core
-round-trip and the web-vs-desktop parity captures. **Resume point:** scaffold `kubuno-office-maths-common` following
-`kubuno-office-spreadsheets-common` (launch options + open-document state built on [`engine::doc`]), wire the window
-in `kubuno-office-maths` rendering each block's LaTeX through `kubuno_office_math_core::render()` (increment A,
-read-only at parity), then editing (B) and save (C, the plain `PATCH /formulas/:id {latex}` model of §2 — **not** the
-Documents digest/session model). Golden fixtures captured from the running web editor are still to be added next to
-the hand-verified unit tests. No desktop code was written, so nothing is on a side branch; `main` builds and passes.
+Verified: `cargo build` and `cargo clippy --all-targets -- -D warnings` clean for both crates; the exe runs and renders
+the sample (title + the quadratic formula typeset by KaTeX + a sin(x) graph) in **light and dark** — captures in
+`C:\kubuno-build\release\maths\captures\` (`desktop-sample-{light,dark}.png` at 100 %, `…-{light,dark}-fit.png` showing
+the whole sheet). VS: the `.rsproj` for both crates added to `Kubuno.Office.slnx` under Desktop (the shared
+`Kubuno.Office.Math.Core` project was already listed).
+
+### Where I stopped / next steps (2026-10-12)
+
+Done: deliverable #1 (design note), #2 (shared core, on `main` = `8fadf5e`), and **increment A** (read-only desktop app,
+on branch `maths-desktop-app`). Remaining:
+- **Increment B — editing**: the WYSIWYG caret editor (visual + code), the Insertion/Équation galleries, the
+  Calcul/Matrices/Statistiques/Nombres operations inserting their LaTeX result as a block, block manipulation,
+  multi-page, undo/redo. The engine already provides every operation; the window wires them (the ribbon commands are
+  present but announce "increment B").
+- **Increment C — save**: `PATCH /office/maths/formulas/:id {latex}` with the re-GET conflict check and an offline
+  journal (the plain model of §2, not the Documents digest/session model).
+- **Live VS designer check** not done this session (historically flaky — a fresh hive's DTE can take minutes to
+  appear; Diagrams deferred it too). The projects are in the solution; next run devenv `/rootsuffix KubunoOfficeMaths`.
+- **Web-vs-desktop side-by-side**: the desktop captures are against the built-in sample; a true side-by-side needs the
+  web Maths editor on a dev core (PostgreSQL + office + drive) open on the *same* formula. Deferred (dev-core setup).
+- **A dedicated "Maths" ribbon tone** needs a framework change; the window uses `Tone="Documents"` for now.
+- The capture tool frames only part of the (maximised) window at high DPI; the in-window layout is centred correctly.
+
+Follow-ups noted in the core: the cursor-based tree **edit operations** (`mathTree.ts` `insertNode`/`backspace`/
+`makeFrac`…) and the tree `slots`/`render` are deferred to the desktop editor layer (they need a path-addressed cursor,
+JS reference identity does not map to Rust); the graph **display list** / sampling (shared part of `drawGraph`) now
+lives in the desktop painter and can be lifted into `engine::graph` when a second client needs it.
 
 Follow-ups noted in the core: the cursor-based tree **edit operations** (`mathTree.ts` `insertNode`/`backspace`/
 `makeFrac`…) and the tree `slots`/`render` are deferred to the desktop editor layer (they need a path-addressed cursor,
