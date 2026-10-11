@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Kubuno Data (desktop) design note** (`docs/DATA-DESKTOP.md`). The design of record for the native desktop
+  version of the Office module's Data (BI) sub-application: the web feature inventory with file:line references, the
+  stored format and REST API (and why Data is server-coupled and does not use the Documents file-save method — the
+  `.kbdrp` Drive file is a best-effort pointer, the database is the source of truth), the desktop architecture, the
+  shared `kubuno-office-data-core` engine, the increments, the risks and the feature coverage table.
 - **Platform layout of the core** ("Kubuno Web: Generate Solution", `docs/WEB.md` "Platform layout of the core"). The
   core moved to `common/` (the shared server crates' workspace), `server/` (`kubuno-core`, its own workspace), `web/` (the
   host app and the npm packages; `frontend/` until it moves), `desktop/` (Kubuno Desktop, the former kubuno/desktop
