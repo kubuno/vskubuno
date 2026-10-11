@@ -131,4 +131,40 @@ regenerated so the projects appear under Desktop.
   DirectWrite. The desktop system font differs from the web's Plus Jakarta Sans (see memory
   `desktop-font-system.md`) — ignore that gap in comparisons.
 - **office is PostgreSQL-only**: the dev core for round-trip tests runs on a local PostgreSQL 16 with a
-  dedicated DB (`kubuno_dev_whiteboard`) and non-default port, never the shared dev DB or production.
+  dedicated DB (`kubuno_dev_whiteboard`) and non-default core port (e.g. 18921), never the shared dev DB or
+  production.
+
+## 6. Where this lot stopped / resume point (2026-10-11)
+
+Done and on `main` (office `f6b82b6`, pushed): the shared engine crate (§3), verified (22 tests, clippy
+`-D warnings`, wasm32/linux/macOS). The desktop framework (`desktop-v0.1.2-alpha`) was confirmed to build
+offline here (diagrams windows crate, `cargo check` exit 0, ~2 min) — so the GUI path is viable.
+
+Started, **not** on `main** (branch `whiteboard-desktop-wip`): `desktop/common/kubuno-office-whiteboard-common`
+has only its `Cargo.toml` (deps: whiteboard-core + desktop-common + desktop-shared + sync/account). It does
+**not** compile yet (no `src/`).
+
+Templates to mirror (confirmed by reading): **Diagrams** for the window/ribbon/Direct2D surface
+(`desktop/common/kubuno-office-diagrams-common/src/{app,platform,doc,api/*}.rs`;
+`desktop/windows/kubuno-office-diagrams/src/{lib,main,windows_ui,platform/surface,controls/diagram_canvas,views/diagram_window.kbview}.rs`),
+and **Spreadsheets** for the live Yjs collaboration — it already drives `collab::Room` with a
+`SheetsDoc` exactly like our `WhiteboardDoc`
+(`desktop/common/kubuno-office-spreadsheets-common/src/collab.rs`,
+`desktop/windows/kubuno-office-spreadsheets/src/views/spreadsheet_window_collab.rs`).
+
+Resume order:
+1. Finish `kubuno-office-whiteboard-common`: `lib.rs`; `app.rs` (`PROGRAM="kubuno-whiteboard"`, `Options`,
+   `run`); `platform.rs` (copy Diagrams); `doc.rs` → `OpenBoard` (a `WhiteboardDoc` + title + background +
+   `Source{Sample,File(.kbwbd),Server(id)}`, `open_file`/`to_kbwbd`/`sample`); `api/client.rs` (board routes
+   from `whiteboard-api.ts` via `SyncWire`: get, open_by_file, list/recent, update); `collab.rs` (a `Collab`
+   mirroring Spreadsheets over `WhiteboardDoc`: greeting, settle/seed, `on_binary`/`on_text`, publish local
+   diff; `sync_url` from the core; presence is a follow-up). Add the member + `[workspace.dependencies]` entry
+   to `desktop/Cargo.toml` (pull first). `cargo test -p kubuno-office-whiteboard-common`.
+2. `desktop/windows/kubuno-office-whiteboard` (bin `kubuno-whiteboard`): mirror Diagrams; implement the core's
+   `render::Surface` over Direct2D in `platform/surface.rs`; `BoardCanvas` custom `Control` with `on_paint`;
+   the `whiteboard_window.kbview` ribbon.
+3. Increment A: open `--doc <id>` (debug build + `--dev-instance office-whiteboard`, broker token) and render
+   read-only; captures web vs desktop. Then B (editing), then C (live collab; desktop↔web if feasible).
+4. Golden fixture: author a board in the running web editor against a dev core (DB `kubuno_dev_whiteboard`,
+   port 18921) and commit the real `.kbwbd`/Yjs bytes as a `whiteboard-core` fixture, to validate the
+   round-trip against the web's actual bytes.
