@@ -140,9 +140,22 @@ Done and on `main` (office `f6b82b6`, pushed): the shared engine crate (§3), ve
 `-D warnings`, wasm32/linux/macOS). The desktop framework (`desktop-v0.1.2-alpha`) was confirmed to build
 offline here (diagrams windows crate, `cargo check` exit 0, ~2 min) — so the GUI path is viable.
 
-Started, **not** on `main** (branch `whiteboard-desktop-wip`): `desktop/common/kubuno-office-whiteboard-common`
-has only its `Cargo.toml` (deps: whiteboard-core + desktop-common + desktop-shared + sync/account). It does
-**not** compile yet (no `src/`).
+**As built — Increment A (2026-10-12, branch `whiteboard-desktop-wip`):** the desktop app opens and renders a
+board **read-only at the renderer level**, verified by a real run.
+- `desktop/common/kubuno-office-whiteboard-common` — the portable app (`app`/`platform`/`doc`/`api`/`collab`):
+  `OpenBoard` over the core `WhiteboardDoc` (sample, local `.kbwbd`), the board REST client (metadata) and the
+  Yjs collaboration wiring (greeting/settle/seed, `sync_url`) modelled on Spreadsheets. 11 tests, clippy clean.
+- `desktop/windows/kubuno-office-whiteboard` (exe `kubuno-whiteboard.exe`) — a `BoardCanvas` custom control
+  that implements the core `render::Surface` over **Direct2D/DirectWrite** (CSS-colour parsing, path geometry
+  incl. SVG arcs, round-rect, dashes, shadow, text + measure), the `whiteboard_window.kbview` ribbon
+  (Fichier/Accueil/Affichage: backstage info, background picker, zoom), a `BackstageInfo` page and the
+  status-bar zoom. Pan (drag) + zoom (wheel/ribbon/slider). A server board (`--doc`) connects the Yjs room and
+  applies updates read-only.
+- **Evidence:** `kubuno-whiteboard.exe --sample` runs; captured light and dark — the sample sticky note (fold,
+  shadow, wrapped text), the rounded-rect shape (shapes-core geometry) and the dotted background all paint
+  correctly through the Direct2D surface.
+- **Known A-level refinements:** the board canvas clear colour follows the shell theme (should be the board's
+  own light canvas, as on the web); real-input tests on the ribbon and UIA names not yet done.
 
 Templates to mirror (confirmed by reading): **Diagrams** for the window/ribbon/Direct2D surface
 (`desktop/common/kubuno-office-diagrams-common/src/{app,platform,doc,api/*}.rs`;
