@@ -154,8 +154,28 @@ board **read-only at the renderer level**, verified by a real run.
 - **Evidence:** `kubuno-whiteboard.exe --sample` runs; captured light and dark — the sample sticky note (fold,
   shadow, wrapped text), the rounded-rect shape (shapes-core geometry) and the dotted background all paint
   correctly through the Direct2D surface.
-- **Known A-level refinements:** the board canvas clear colour follows the shell theme (should be the board's
-  own light canvas, as on the web); real-input tests on the ribbon and UIA names not yet done.
+**As built — Increment B (2026-10-12, merged to `main`):** the tools and editing are wired and verified.
+- `BoardCanvas` drives the shared engine: select, move, resize via the eight handles, draw a
+  shape/sticky/text/frame/arrow, freehand pen, eraser, z-order (front/back), group/ungroup, delete, and
+  undo/redo through the core `yrs` undo manager (local changes only). Each edit mutates the Yjs document and
+  the produced update is relayed to the collaboration room (the send side of C).
+- The ribbon's Accueil tab carries Outils / Édition / Disposition / Fond; live preview while drawing; the
+  board canvas is now a **light surface even in dark mode** (the A refinement).
+- **Evidence:** captured `wbB-light.png` — the enriched sample shows a frame, a sticky (fold+shadow+wrap), an
+  arrow with a head, a rounded-rect, bold text, a pen stroke and an ellipse, all painted through the Direct2D
+  surface, with the full tool ribbon.
+- **Verification:** clippy `-D warnings` clean; 6 (windows) + 11 (common) + 22 (core) tests pass.
+- **Merged to `main`** (`8fadf5e..9da622d`, whiteboard crates only, branch clean of other agents' work).
+
+**Remaining (infrastructure-gated):**
+- **C — live collaboration** is coded both ways (apply remote updates; relay local updates to the room) but a
+  real two-peer test (desktop↔web or desktop↔desktop) needs a running office WebSocket server; **no dev core
+  is up** (8080 / 18921 closed on 2026-10-12), so it is not yet live-tested.
+- **Golden Yjs fixture** from the web editor, and a **web-vs-desktop capture of the same board**, both need
+  the office + core + web stack on a dev DB (`kubuno_dev_whiteboard`, port 18921) — not brought up this lot.
+- **VS designer check** (hive `KubunoOfficeWhiteboard`) + `Kubuno.Office.slnx` regeneration — needs the
+  shared vs-lock and real input, not done this lot.
+- Real-input tests on the ribbon and UIA names not yet done.
 
 Templates to mirror (confirmed by reading): **Diagrams** for the window/ribbon/Direct2D surface
 (`desktop/common/kubuno-office-diagrams-common/src/{app,platform,doc,api/*}.rs`;
