@@ -151,15 +151,15 @@ Legend: ✔ done (unit test mirroring the web; *(run)* = also a real run) · ◐
 
 | Feature | Web | Core status |
 |---|---|---|
-| Expression tree model + serialise/parse + caret slots + edit ops + matrix edit | `mathTree.ts` | ✘ (this lot) |
-| Textual compiler (AST, eval) | `mathExpr.ts` | ✘ (this lot) |
-| Live calculator (LaTeX→number, LaTeX→expr, formatting) | `mathEval.ts` | ✘ (this lot) |
-| Number theory (prime/gcd-lcm/factorial/binomial/base) | `mathNumber.ts` | ✘ (this lot) |
-| CAS (all `*Latex`) | `mathCas.ts` | ✘ (this lot) |
-| Matrices (all `*Latex`) | `mathMatrix.ts` | ✘ (this lot) |
-| Statistics (summary/five-number/regression) | `mathStats.ts` | ✘ (this lot) |
-| Graph model + nice ticks + display list | `mathGraph.ts` | ✘ (this lot) |
-| Document model (parse_doc/serialize_doc round-trip) | `mathPages.ts` | ✘ (this lot) |
+| Expression tree model + serialise/parse + caret slots + edit ops + matrix edit | `mathTree.ts` | ✔ *(unit tests)* |
+| Textual compiler (AST, eval) | `mathExpr.ts` | ✔ *(unit tests)* |
+| Live calculator (LaTeX→number, LaTeX→expr, formatting) | `mathEval.ts` | ✔ *(unit tests)* |
+| Number theory (prime/gcd-lcm/factorial/binomial/base) | `mathNumber.ts` | ✔ *(unit tests)* |
+| CAS (all `*Latex`) | `mathCas.ts` | ✔ *(unit tests)* |
+| Matrices (all `*Latex`) | `mathMatrix.ts` | ✔ *(unit tests)* |
+| Statistics (summary/five-number/regression) | `mathStats.ts` | ✔ *(unit tests)* |
+| Graph model + nice ticks + display list | `mathGraph.ts` | ✔ *(unit tests)* |
+| Document model (parse_doc/serialize_doc round-trip) | `mathPages.ts` | ✔ *(unit tests)* |
 
 ### Desktop app
 
@@ -192,6 +192,33 @@ Legend: ✔ done (unit test mirroring the web; *(run)* = also a real run) · ◐
 
 ## 8. Log
 
-**2026-10-11 — design note + shared-core start.** (filled by the increments below)
+**2026-10-11 — design note + shared core (deliverable #2).** Extended `kubuno-office-math-core` (the existing
+KaTeX typesetting crate) with a new `engine` module — the platform-neutral Rust port of the web Maths workbench, no
+Win32/UI: `num_fmt` (JS `Number.toString`/`toPrecision` reproduced), `expr`, `tree` (model + serialise + tolerant
+parse), `eval`, `number`, `cas` (differentiate, simplify, integrate, definite integral, expand, factor, roots, exact
+roots, Taylor, nth derivative, tangent, extrema, inflection, asymptotes, limit, Σ/Π, eval-at), `matrix`, `stats`,
+`graph` (model + tick maths), `doc` (the `%%KBMATH-DOC%%` / multipage / plain-LaTeX stored forms, byte-identical
+round-trip via a hand-written `JSON.stringify`-compatible serialiser). Verified: `cargo test` 33 engine tests pass;
+`cargo clippy --all-targets -- -D warnings` clean; `cargo check` clean for `wasm32-unknown-unknown`,
+`aarch64-apple-darwin` and `x86_64-unknown-linux-gnu`. Semantics were matched to the web, including its quirks
+(`x(x+1)` parses as a function call → NaN; a power of plain `()` atoms is not evaluable, `\left…\right` is); the tests
+document each.
+
+### Where I stopped / next steps (paused 2026-10-11)
+
+Done and on `main`: the design note and the shared-core engine (above). **Not started** (all desktop + VS + live
+verification): the desktop crates `desktop/common/kubuno-office-maths-common` and `desktop/windows/kubuno-office-maths`
+(increments A/B/C of §4), the `.kbview` ribbon, the VS designer integration (`Kubuno.Office.slnx` regen), the dev-core
+round-trip and the web-vs-desktop parity captures. **Resume point:** scaffold `kubuno-office-maths-common` following
+`kubuno-office-spreadsheets-common` (launch options + open-document state built on [`engine::doc`]), wire the window
+in `kubuno-office-maths` rendering each block's LaTeX through `kubuno_office_math_core::render()` (increment A,
+read-only at parity), then editing (B) and save (C, the plain `PATCH /formulas/:id {latex}` model of §2 — **not** the
+Documents digest/session model). Golden fixtures captured from the running web editor are still to be added next to
+the hand-verified unit tests. No desktop code was written, so nothing is on a side branch; `main` builds and passes.
+
+Follow-ups noted in the core: the cursor-based tree **edit operations** (`mathTree.ts` `insertNode`/`backspace`/
+`makeFrac`…) and the tree `slots`/`render` are deferred to the desktop editor layer (they need a path-addressed cursor,
+JS reference identity does not map to Rust); the graph **display list** / sampling (shared part of `drawGraph`) is to
+be added when the desktop painter lands.
 </content>
 </invoke>
