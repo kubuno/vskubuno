@@ -167,12 +167,22 @@ board **read-only at the renderer level**, verified by a real run.
 - **Verification:** clippy `-D warnings` clean; 6 (windows) + 11 (common) + 22 (core) tests pass.
 - **Merged to `main`** (`8fadf5e..9da622d`, whiteboard crates only, branch clean of other agents' work).
 
-**Remaining (infrastructure-gated):**
-- **C — live collaboration** is coded both ways (apply remote updates; relay local updates to the room) but a
-  real two-peer test (desktop↔web or desktop↔desktop) needs a running office WebSocket server; **no dev core
-  is up** (8080 / 18921 closed on 2026-10-12), so it is not yet live-tested.
-- **Golden Yjs fixture** from the web editor, and a **web-vs-desktop capture of the same board**, both need
-  the office + core + web stack on a dev DB (`kubuno_dev_whiteboard`, port 18921) — not brought up this lot.
+**As built — Increment C + golden + parity (2026-10-12, against the shared dev stack 127.0.0.1:18900):**
+- **C — live collaboration, verified bidirectional.** Using the shared engine over the module's own sync
+  WebSocket (`/api/v1/office/whiteboard/boards/:id/sync`), a client (the desktop collab code) pushed four
+  elements to the live board; a **separate fresh client received exactly those four** (server relay +
+  persistence), and the **web editor renders them** (desktop→web). The window relays each local update to
+  the room and applies remote updates, both directions. (`.kbwbd` Drive-file consolidation triggers at 100
+  updates server-side — not reached with four edits; persistence confirmed by the fresh client's full pull.)
+- **Golden Yjs fixture (merged to main).** `common/whiteboard-core/tests/fixtures/live-board.kbwbd` is a real
+  gzipped Yjs snapshot captured from the live board; `tests/golden.rs` decodes the server's actual bytes
+  (four elements) and checks the scene round-trips losslessly.
+- **Web-vs-desktop parity.** Same board rendered in the web editor and the desktop app — the green sticky
+  (fold + shadow + wrapped text), the arrow with its head, the rounded-rect and the bold text match. The
+  differences are shell chrome (the web's side panels / vertical toolbar vs the Office ribbon) and fonts (web
+  Plus Jakarta Sans vs desktop Arial, ignored by convention); element geometry and colours match.
+
+**Remaining:**
 - **VS / `Kubuno.Office.slnx`** — **done + merged to main**: the three whiteboard projects (whiteboard-core,
   whiteboard-common, the Windows app) are in the solution under Common / Desktop/Common / Desktop/Windows,
   with the Windows app's `.rsproj`. devenv launches the `KubunoOfficeWhiteboard` hive with the VSIX
