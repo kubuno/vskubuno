@@ -173,8 +173,13 @@ board **read-only at the renderer level**, verified by a real run.
   is up** (8080 / 18921 closed on 2026-10-12), so it is not yet live-tested.
 - **Golden Yjs fixture** from the web editor, and a **web-vs-desktop capture of the same board**, both need
   the office + core + web stack on a dev DB (`kubuno_dev_whiteboard`, port 18921) — not brought up this lot.
-- **VS designer check** (hive `KubunoOfficeWhiteboard`) + `Kubuno.Office.slnx` regeneration — needs the
-  shared vs-lock and real input, not done this lot.
+- **VS / `Kubuno.Office.slnx`** — **done + merged to main**: the three whiteboard projects (whiteboard-core,
+  whiteboard-common, the Windows app) are in the solution under Common / Desktop/Common / Desktop/Windows,
+  with the Windows app's `.rsproj`. devenv launches the `KubunoOfficeWhiteboard` hive with the VSIX
+  (confirmed, VS Community 2026). The **live designer/editor capture is blocked by VS 2026's mandatory
+  first-run "Sign in to Visual Studio" welcome**, a fixed modal that resisted automated dismissal (UIA not
+  available on it, Escape/clicks/resize ineffective). Needs a one-time interactive sign-in-skip to
+  initialise the hive (or a settings pre-seed), after which the `.kbview` opens in the Kubuno editor.
 - Real-input tests on the ribbon and UIA names not yet done.
 
 Templates to mirror (confirmed by reading): **Diagrams** for the window/ribbon/Direct2D surface
