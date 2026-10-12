@@ -219,7 +219,27 @@ dev core with its own database — a later tour.
 Windows; `clippy --all-targets -- -D warnings` clean; `cargo check` clean for `wasm32-unknown-unknown`,
 `x86_64-unknown-linux-gnu`, `aarch64-apple-darwin`. Build dir `E:\kubuno-build\agent-calendar\target`.
 
-*(Increment A — the Win32 window + `MonthGrid` — recorded here as it lands.)*
+**2026-10-12 (as built — Increment A, Month view)** — the `desktop/` workspace: `desktop/common/
+kubuno-calendar-desktop-common` (launch options, the `CalendarView` state with navigation + period title, the
+offline sample dataset, the platform extension points incl. the Windows local clock + zone offset; 7 tests) and
+`desktop/windows/kubuno-calendar` (`kubuno-calendar.exe`): the `calendar_window.kbview` with the Tall title bar,
+the navigation toolbar (Today, ‹ ›, period title, the view switcher) and the `MonthGrid` custom control, which
+paints the month view through the core (the 4/5/6-week grid, all-day/multi-day banners stacked per week incl.
+continuation across weeks, up to four timed chips a day then « +N », the today accent circle and the moon
+principal-phase markers) in Direct2D, light and dark faithful to the web. Verified: `cargo build` + 7 tests;
+`clippy -D warnings` clean; captured light + dark (`E:\kubuno-build\agent-calendar\captures\cal-month-*.png`).
+The desktop crates were added to `Kubuno.Calendar.slnx` (a `/Desktop/` folder + two `.rsproj`).
+
+**2026-10-12 (as built — Increment B, Week / Day / Agenda)** — the core gained `layout_day` (overlap columns +
+vertical minutes for the time grids) and `week_days`, with tests (**31 core tests**). Two new controls:
+`TimeGrid` (the Day and Week time grids — the hour gutter, the day header with the today circle, the all-day
+banner row, the scrollable 24-hour grid at `PX_PER_HOUR`, overlap columns via `layout_day`, the red « now »
+line, wheel scroll) and `AgendaList` (the Schedule / « Planning » view — one group per non-empty day with its
+all-day and timed events). The window switches between Month / Day-Week / Agenda; the view switcher highlights
+the active view (Primary) and the « Année » button stays disabled until the Year view lands. Verified: `cargo
+build` + tests; `clippy -D warnings` clean; captured Week, Week-dark, Day, Agenda, Agenda-dark
+(`E:\kubuno-build\agent-calendar\captures\cal-{week,week-dark,day,agenda,agenda-dark}.png`). Live server and the
+VS designer render on the main instance are a later tour.
 
 ## 9. Feature coverage
 
@@ -237,10 +257,14 @@ Web lines are in the files of §1.1.
 | Banner day bounds, `isBannerEvent`, `shade` | `calendarUtils.ts:189-231` | ◐ core (`layout`) |
 | RRULE presets + custom round trip + FR humanizer | `rrule.ts` | ◐ core (`rrule`, 5 tests) |
 | Moon phase / illumination / principal phase / 8-phase | `moon.tsx` | ◐ core (`moon`, 5 tests) |
+| Overlap columns + vertical span for time grids (`layout_day`) | `calendarUtils.ts:103` + views | ◐ core (`layout::layout_day`) |
 | Calendar/event colour palettes | `calendarColors.ts` | ◐ core (`colors`) |
-| **Month view** rendered read-only at parity | `MonthView.tsx` | ✘ Increment A (started) |
-| Week / Day / custom N-day time grids | `WeekView`/`DayView` | ✘ Increment B |
-| Year / Schedule / Search views | `YearView`/`ScheduleView`/`SearchResultsView` | ✘ Increment B |
+| **Month view** rendered read-only at parity (banners, chips, +N, today, moon) | `MonthView.tsx` | ✔ Increment A, captured light+dark |
+| **Week / Day time grids** (header, all-day row, hour grid, overlap, now-line, wheel scroll) | `WeekView`/`DayView` | ◐ Increment B, captured light+dark (fixture) |
+| **Agenda (Schedule)** view (day groups, all-day + timed, today) | `ScheduleView.tsx` | ◐ Increment B, captured (fixture) |
+| Custom N-day view | `WeekView` (`dayCount`) | ✘ (TimeGrid supports it; not wired to a switch) |
+| Year / Search views | `YearView`/`SearchResultsView` | ✘ later |
+| View switcher + navigation (Today, ‹ ›, period title) | `CalendarToolbar.tsx` | ◐ Month/Week/Day/Agenda wired |
 | Event editor (fields, recurrence dialog, reminders, guests, rooms) | `EventEditor.tsx` | ✘ Increment C |
 | Create/edit/delete + recurring scope, wired to REST | `api.ts` + server | ✘ Increment C |
 | Sidebar: calendar list, mini-month, holidays, world clock, moon, weather | `CalendarSidebarBody.tsx` | ✘ Increment C |
