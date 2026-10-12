@@ -157,8 +157,8 @@ half (launch, routes, worker, journal, save session); ⬚ marks the Win32 window
 | Scripts sidebar + Éditeur/Déclencheurs/Historique switcher | `:253-317` | ◐ Win32 left sidebar with the three-view switch; Éditeur renders, the other two are placeholders (B) |
 | Code editing (type, select, clipboard, undo/redo) | Monaco | ✔ B1: caret, selection, keyboard nav, typing, Enter/Tab, Backspace/Delete, cut/copy/paste, undo/redo (shared `EditState`); verified live |
 | Syntax highlighting (lexical) | Monaco | ✔ Direct2D editor renders the Monaco `vs`/`vs-dark` **lexical** colours (keywords, strings, numbers, comments, primitive types) |
-| Syntax highlighting (semantic tints) | Monaco TS worker | ⛔ needs the TypeScript language service (Monaco ships tsserver in a worker) — decision Q3 |
-| IntelliSense (`Kubuno.*` from `/api-types`) | `:671-683` | ⛔ same TS language service (Monaco's TS worker + the `.d.ts`) — decision Q3 |
+| Syntax highlighting (semantic tints) | Monaco TS worker | ✔ Q3: a Rust oxc analyser colours type/function/variable identifiers (full Monaco parity, captured) |
+| IntelliSense / autocomplete | `:671-683` | ✔ Q3: a completion popup from the Kubuno `api-types` + local AST symbols + keywords (captured) |
 | Line-number gutter / folding | Monaco options | ✔ gutter + **fold gutter UI** (▾/▸ markers at region headers, click to collapse/expand, ⋯ hint; visual-row rendering) |
 | Ribbon: clipboard (cut/copy/paste) + undo/redo | web ribbon | ✔ wired to the editor ops (captured enabled) |
 | Ribbon: compile / run; save; triggers/history panels | `:664-669,610-662,321-542` | ✘ need a dev core + the Desktop shell broker + a login (see Log) |
@@ -318,7 +318,24 @@ large pile of server-feature code that cannot be verified this tour, the save/co
 conflict dialog are left for a tour that stands up that infrastructure. The server side is already done and
 unit-tested: the digest precondition (`script::digest`, Q1) and the desktop save session (`session.rs`).
 
-**Still owed:** the semantic tints + autocomplete (Q3); compile / run / save (+ autosave + conflict dialog) wiring
-and their live proof; the Déclencheurs / Historique panels with real data; the live `--doc` round-trip and same-uuid
-web↔desktop captures — all gated on the dev core + Desktop shell + login above; the live VS designer GUI render; the
-desktop 175 % capture.
+**2026-10-12 — Q3 resolved (decision: a Rust TypeScript analyser, not tsserver): semantic highlighting +
+autocomplete.** Added to `kubuno-office-code-editor`, powered by the **oxc** TypeScript parser (chosen over swc for
+a lighter footprint and a microsecond arena parse, so it re-runs on every edit — no JS engine, no tsserver):
+* `semantic` — classifies identifiers from the AST in two passes (declarations → kind; then an occurrence per use,
+  priority type-position > call-target > name-match); `highlight()` overlays the Monaco **type teal / function gold
+  / variable light-blue** colours onto the lexical tokens, never touching strings/comments/numbers and leaving the
+  lexical colour where it is unsure (never a wrong colour). Palettes gained the exact Monaco function/variable
+  colours (vs `#795E26`/`#001080`, vs-dark `#DCDCAA`/`#9CDCFE`). **Captured: the desktop editor matches the Monaco
+  `vs`/`vs-dark` reference, light and dark.**
+* `completion` — a popup from the **Kubuno script API** (parsed from the module's own `api-types` `.d.ts`, embedded:
+  after `Kubuno.` the API namespaces, after `Kubuno.App.` that namespace's members, nothing invented), the **local
+  AST symbols** in scope, and TypeScript keywords; `context_at()` finds the word + member chain, `complete()`
+  filters. The Windows control renders it at the caret, keyboard-navigable (↑/↓/Enter/Tab/Esc) and filtering as you
+  type / on Ctrl+Space. **Captured live.**
+
+Verified: 35 crate tests (incl. 6 semantic + 4 completion), clippy `-D warnings` clean on both crates.
+
+**Still owed (server-backed, gated on the dev core + Desktop shell + login — a dedicated later tour):** compile /
+run / save (+ autosave + conflict dialog) wiring and live proof; the Déclencheurs / Historique panels with real
+data; the live `--doc` round-trip and same-uuid web↔desktop captures; the live VS designer GUI render; the desktop
+175 % capture.
