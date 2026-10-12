@@ -263,6 +263,33 @@ Verified: `cargo build` + 31 core / 7 common tests; `clippy -D warnings` clean; 
 (`E:\kubuno-build\agent-calendar\captures\cal-{month-light,month-dark,week,week-dark,day,agenda,agenda-dark}.png`).
 The live web side-by-side (same data) is pending the shared dev stack.
 
+**2026-10-12 (live web side-by-side + now-line dot removal)** — with the shared dev stack up
+(`http://127.0.0.1:18900`, calendar `cafe0000-…-0001`, October 2026 data), captured the REAL web Calendar for
+Month/Week/Day/Agenda (headless Chrome as devtester, `agent-devstack/tools/shoot-cal.ps1`) and diffed it
+against the desktop. **The grid styling matches**; residual gaps fixed from the live web: (a) the Day/Week
+timed block shows the title then the time range (and location) below — not a time prefix (new
+`draw_timed_block`); (b) the Week/Day titles read « Semaine du 12 octobre 2026 » / « Mercredi 14 octobre 2026 »
+(core `DateLong`/`FullDate`, title-cased); (c) the agenda card subtitle appends the location.
+**User request (both platforms):** removed the small round dot at the start of the « now » line (web
+`WeekView.tsx`/`DayView.tsx`/`CalendarMiniPanel.tsx`, desktop `TimeGrid`) — the line and the gutter time pill
+stay; the web dist was rebuilt (`tsc -b` clean) and redeployed to the running stack. Captures:
+`E:\kubuno-build\agent-calendar\captures\{web,cal}-{month,week,day,agenda}-*.png` + `*-nodot.png`.
+
+Residual, non-blocking differences (desktop vs web): the desktop is a **standalone window** (no host
+sidebar/shell — architectural); real server events all inherit the calendar's blue (the desktop sample is
+multi-colour — a data, not styling, difference); minor web-only extras not yet ported (the « GMT+2 » gutter
+label, a moon marker in the Week day-header, the Day view's centred full-date sub-header, the agenda
+« (Jour x/n) » multi-day hint).
+
+**Server-coupled `--doc` live load + CRUD — NOT started this tour (scope).** Plan: build the desktop shell
+`kubuno-desktop.exe` and colocate it with `kubuno-calendar.exe`, seed devtester creds into a sandbox
+(`USAGE.txt` steps 2-4), then wire the app's `--doc <calendar-id>` branch to `GET /calendar/events?from&until`
+over the broker token source (deps `kubuno-desktop-sync`/`-account`, as Projects does), then
+create/edit/delete + the recurrence (RRULE) editor against the REST API. **Compatibility consideration:** the
+stack's shell builds from core **main** while this app targets the framework git tag `desktop-v0.1.2-alpha`;
+the named-pipe broker protocol must match — build the shell from the same tag, or bump the app's framework,
+before relying on the broker. This is the next increment.
+
 ## 9. Feature coverage
 
 ✔ done and verified · ◐ implemented and unit-tested, not exercised live · ✘ not done · — not applicable.
