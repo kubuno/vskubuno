@@ -241,6 +241,28 @@ build` + tests; `clippy -D warnings` clean; captured Week, Week-dark, Day, Agend
 (`E:\kubuno-build\agent-calendar\captures\cal-{week,week-dark,day,agenda,agenda-dark}.png`). Live server and the
 VS designer render on the main instance are a later tour.
 
+**2026-10-12 (visual-fidelity pass — Month / Week / Day / Agenda)** — matched the web source token by token
+(`web/src/theme.css`, `MonthView.tsx`, `WeekView.tsx`, `DayView.tsx`, `ScheduleView.tsx`, `EventBanners.tsx`,
+`CalendarToolbar.tsx`). Before → after, with the web reference:
+
+| Element | Before | After (web source) |
+|---|---|---|
+| Event chip (Month) | coloured dot + text in grey | **solid filled pill**, white text (faded time + title), `rounded-md` = **8px** (`theme.css:46` overrides Tailwind; `MonthView.tsx:243-260`) |
+| Today marker | 20px circle, 12px num | **filled circle** 28px Month / 32px Week-Day-Agenda, 14–16px white (`MonthView.tsx:185`, `WeekView.tsx:201`, `ScheduleView.tsx:100`) |
+| Weekday header | 11px bold | **12px, UPPERCASE, regular, tertiary** (`MonthView.tsx:150`) |
+| Cell shading | off-month surface-1 | off-month **surface-2**, weekend **surface-1** (`MonthView.tsx:183`) |
+| Banner bar | plain rounded rect, radius 4 | body **radius 5**, **darker arrow tips** (`shade×0.62`, 7px) for off-range ends, 3/10px margins (`EventBanners.tsx:9-54`) |
+| Moon marker | grey disc | **principal-phase shape** (new/half/full), surface-3 + border-strong outline, lit `#f6c453` (`moon.tsx:94-98`) |
+| Time grid | gutter 56, solid hour lines | **gutter 60**, hour lines `border@60%`, **half-hour guide `@40%`**, labels right-aligned `09:00`, hour 0 hidden (`WeekView.tsx:146,252-254`) |
+| Timed block | plain fill, radius 4 | **radius 8 + 1px white inner ring** (`ring-1 ring-surface-0/60`), bold (semibold) title, faded time (`WeekView.tsx`) |
+| Now line | line + dot | **dot (8/10px) + 2px line + red gutter time-pill** (`#d93025`, `WeekView.tsx:331-336,160`) |
+| Agenda | full-width day header + flat rows | **left date badge** (weekday + today circle) + **filled `rounded-lg` 12px cards** with title + `HH:MM – HH:MM` subtitle (`ScheduleView.tsx:95-145`) |
+| Toolbar | 5 blue view buttons, glyph arrows | **secondary Today**, **ghost circular ‹ ›**, 22px title, **view switcher = soft dropdown** (`CalendarToolbar.tsx:73-88,152-163`) |
+
+Verified: `cargo build` + 31 core / 7 common tests; `clippy -D warnings` clean; re-captured all four views light + dark
+(`E:\kubuno-build\agent-calendar\captures\cal-{month-light,month-dark,week,week-dark,day,agenda,agenda-dark}.png`).
+The live web side-by-side (same data) is pending the shared dev stack.
+
 ## 9. Feature coverage
 
 ✔ done and verified · ◐ implemented and unit-tested, not exercised live · ✘ not done · — not applicable.
