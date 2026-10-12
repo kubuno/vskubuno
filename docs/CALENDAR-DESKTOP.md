@@ -482,8 +482,45 @@ Web lines are in the files of §1.1.
 | Event editor (fields, recurrence dialog, reminders, guests, rooms) | `EventEditor.tsx` | ✘ Increment C |
 | Create/edit/delete + recurring scope, wired to REST | `api.ts` + server | ✘ Increment C |
 | Sidebar: calendar list, mini-month, holidays, world clock, moon, weather | `CalendarSidebarBody.tsx` | ✘ Increment C |
-| Import / subscribe / share / export, CalDAV settings | `Calendar*Modal.tsx` + server | ✘ Increment C |
+| Import / subscribe / share / export, CalDAV settings | `Calendar*Modal.tsx` + server | ✔ sidebar « Gérer » menu; all round-trips proven live (§10) |
 | Appointment scheduling, polls, notifications, settings | `AppointmentScheduleEditor` etc. | ✘ Increment C |
 | Occurrence expansion | server (`recurrence_service.rs`) | — server-side (client receives expanded) |
 | Holidays data | core (`/holidays`) | — core server feed (not computed) |
 | VS designer views, `Kubuno.Calendar.slnx` | — | ✘ later |
+
+## 10. Calendar-management surface (2026-10-12)
+
+The sidebar's « Mes agendas » header now carries a **« Gérer » dropdown** (`DropDownButton`, web
+`CalendarSidebarBody` entry points) with five items, each the desktop counterpart of a web `Calendar*Modal`:
+
+- **S'abonner à un agenda…** (`CalendarSubscribeModal.tsx`) — name + feed URL → `POST /calendar/calendars/subscribe`.
+- **Partager…** (`CalendarShareModal.tsx`) — a dialog (`share_dialog`, `ShareList` control): share with users
+  (directory search → `/users/search`, `POST …/share`), list + revoke (`GET …/shares`, `DELETE …/share/:id`,
+  names via `/users/lookup`), and a public read-only `.ics` link (`PATCH { is_public }` + the feed URL).
+- **Importer .ics…** / **Exporter (.ics)** — native file dialogs (`file_dialog.rs`, `GetOpen/SaveFileNameW`) →
+  `POST /calendar/import` (UID-preserving) / `GET …/export`.
+- **CalDAV…** (`CalendarCalDavSettings.tsx`) — display-only dialog (`caldav_dialog`, `CalDavList` control):
+  the main endpoint (server URL + username from `GET /api/v1/me`) and each calendar's CalDAV URL from its token.
+
+New live helpers in `desktop/common/.../live.rs`: `subscribe_calendar`, `import_ics`, `export_calendar`,
+`list_shares`/`share_calendar`/`unshare_calendar`/`search_users`/`lookup_users`, `set_calendar_public`,
+`public_feed_url`, `server_origin`, `fetch_username`. New palette token `danger`.
+
+**Proven live** against the dev stack (`127.0.0.1:18900`, calendar `cafe0000-…-0001`, user `devtester`): import
+of a probe event (VEVENT count 4→5, seen in the re-export, then removed); export served 4 VEVENTs; public toggle
+on/off with the feed served (`/public/calendars/<token>/feed.ics` → 200, 4 VEVENTs); share/unshare of a second
+user (`admin`, name resolved to « Administrateur »); CalDAV endpoint answers PROPFIND 207 / OPTIONS 200 for the
+shown token. The « Gérer » menu was captured (`scratchpad/cal-mgmt-menu.png`, all five items with their icons).
+
+**Capture limit**: the modal dialogs themselves could not be captured reliably — in this session the desktop
+window alternates non-deterministically between a full (2170×1470) and a clipped (1240×840) render, and the
+AccessKit UIA tree only intermittently exposes the dropdown, so synthetic clicks to open a modal don't land
+consistently. Same class as the accepted headless web-editor block; functionality is proven via the API
+round-trips above. Web side-by-sides of these modals remain blocked (they open from SPA interactions that don't
+fire under headless Chrome, like the editor).
+
+### Remaining (not done, to list)
+- Full weather widget via `/weather/forecast` (only the « Ajouter un lieu » affordance is shown).
+- The `/calendar/scheduling` (appointment/booking) page.
+- VS designer live render of the views.
+- Editor pixel-exact side-by-side (pending the web deep-link decision).
