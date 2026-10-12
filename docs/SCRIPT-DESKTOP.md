@@ -153,12 +153,12 @@ half (launch, routes, worker, journal, save session); ⬚ marks the Win32 window
 
 | Feature | Web | Desktop status |
 |---|---|---|
-| Open local `.kbscr` (gzip round-trip) + `--doc <id>` launch option | `ScriptApp.tsx`, `script-api.ts` | ◐ portable: `app::open_file` + `--doc` wiring + broker + one-window claim (unit-tested); ⬚ Win32 display |
-| Scripts sidebar + Éditeur/Déclencheurs/Historique switcher | `:253-317` | ⬚ Win32 window |
-| Code editing (type, select, clipboard, undo/redo) | Monaco | ⬚ Win32 monospace `TextArea` (editing at parity; see Q2) |
-| Syntax highlighting | Monaco | ⛔ no framework tokenizer/styled-run code surface (dedicated lot) |
-| IntelliSense (`Kubuno.*` from `/api-types`) | `:671-683` | ⛔ needs a completion UI over a code control (dedicated lot) |
-| Line-number gutter / folding | Monaco options | ⛔ no gutter/folding primitive in the framework |
+| Open local `.kbscr` (gzip round-trip) + `--doc <id>` launch option | `ScriptApp.tsx`, `script-api.ts` | ✔ Win32: opens a local `.kbscr`/`.ts` read-only; `--doc` wired through the broker/worker (live round-trip owed with a dev core) |
+| Scripts sidebar + Éditeur/Déclencheurs/Historique switcher | `:253-317` | ◐ Win32 left sidebar with the three-view switch; Éditeur renders, the other two are placeholders (B) |
+| Code editing (type, select, clipboard, undo/redo) | Monaco | ⬚ increment B (the control is structured for it) |
+| Syntax highlighting | Monaco | ✔ Direct2D editor renders the Monaco `vs`/`vs-dark` **lexical** colours (keywords, strings, numbers, comments, primitive types); semantic tints (type/var/function identifiers) are B |
+| IntelliSense (`Kubuno.*` from `/api-types`) | `:671-683` | ⬚ increment B (needs a completion UI + the `.d.ts`) |
+| Line-number gutter / folding | Monaco options | ◐ gutter ✔ (line numbers, vs/vs-dark colours); folding is B |
 | Save (`PATCH source_code`) + **content-digest precondition** + conflict + offline journal | `:592-608,579-585` | ✔ server digest precondition (`script::digest`, 409 `SAVE_CONFLICT`) + portable `session`/`worker`/`journal` (unit-tested both sides); ⬚ Win32 wiring |
 | Autosave cadence (`office.script_autosave_s`, default 30) | `:579-585` | ◐ portable `routes::AUTOSAVE_KEY`/config read; ⬚ Win32 timer |
 | Compile (`POST /compile`) | `:664-669` | ◐ portable `Job::Compile`/`Event::Compiled` (unit-tested); ⬚ Win32 command |
@@ -167,7 +167,7 @@ half (launch, routes, worker, journal, save session); ⬚ marks the Win32 window
 | History (runs list + detail) | `:440-542` | ◐ portable `FetchRuns`/`get_run`; ⬚ Win32 panel |
 | Star / duplicate / trash / rename | `:872-900` | ◐ portable `routes`/`Job::Patch`; ⬚ Win32 title-bar actions |
 | Ribbon colours match the web (tab strip, selected/hover, group bg, text/icon, bottom border) | web ribbon | ◐ framework-level (a separate agent aligns ribbon colours for desktop-v0.1.3-alpha; Script inherits on the rebump) |
-| VS designer (`.kbview`, slnx) | — | _(see Log)_ |
+| VS designer (`.kbview`, slnx) | — | ◐ the window `.kbview` is compile-validated by the `#[kubuno_desktop::view]` macro; the three projects are listed in `Kubuno.Office.slnx`; the live GUI designer render is owed |
 
 ## 7. Risks and open questions
 
@@ -243,11 +243,40 @@ numbers `#B5CEA8`, keywords `#569CD6`, types/classes `#4EC9B0`, regexp `#D16969`
 Monaco's *semantic* highlighting; the base TextMate grammar leaves them default, so matching the base grammar first
 is the parity target.
 
-**Still owed (next increment, large): the Direct2D code editor + the Win32 window.** Per the Q2 decision, a full
-Direct2D code-editor control (syntax highlighting with the palette above, autocomplete/IntelliSense from
-`/api-types`, a line-number gutter, folding) built in `desktop/common` (office), **not** the core framework (so it
-does not bloat/delay `desktop-v0.1.3-alpha`); then the window `.kbview` (tall title bar + ribbon + backstage), the
-scripts sidebar with the three-view switcher, and the console / triggers / history panels wired to the portable
-`session`/`worker`; then the `Kubuno.Office.slnx` regeneration and the VS designer check. The dev-core-backed
-web-vs-desktop parity captures and the ribbon-colour comparison depend on that window and are owed with it (ribbon
-colours inherit the framework alignment landing in `desktop-v0.1.3-alpha`; never hardcoded).
+**2026-10-12 — increment A: the Win32 window + the read-only Direct2D code editor.** Delivered (built, clippy
+`-D warnings` clean, runs, captured):
+
+* **New shared model crate `desktop/common/kubuno-office-code-editor`** (OS-neutral, dependency-free, 12 tests): a
+  lexical TypeScript/JS tokenizer modelled on Monaco's Monarch grammar (keywords, strings/templates, numbers,
+  line/block comments carried across lines, identifiers; **primitive type names classified as types**, matching
+  Monaco's TextMate `support.type.primitive`), and the **exact Monaco `vs`/`vs-dark` palettes**. Built in
+  `desktop/common` (office), not the core framework, per the Q2 placement decision.
+* **New Windows app `desktop/windows/kubuno-office-script`** (`kubuno-script.exe`): the `.kbview` window — tall
+  title bar with the shell waffle/account, the ribbon (Fichier backstage + Accueil with the Clipboard/Script/Run
+  groups, read-only in A), the left sidebar switching Éditeur/Déclencheurs/Historique, the status bar; and the
+  **Direct2D `CodeEditor` control** that paints the source read-only with the highlighting above, a line-number
+  gutter and wheel scrolling, honouring light/dark. Opens a local `.kbscr`/`.ts` or `--doc <id>` (broker/worker,
+  applied on the UI thread). Monospace **column** layout so token spacing matches (DirectWrite trims a run's
+  spaces, which collapsed gaps — fixed). Launch parser now consumes `--dev-instance`/`--sandbox` values.
+* **`Kubuno.Office.slnx`**: the three projects added (Desktop/Common: script-common, code-editor; Desktop/Windows:
+  script). The `.kbview` is compile-validated by the view macro.
+
+**Highlighting fidelity vs Monaco (verified by side-by-side captures, same source, light + dark):** comments,
+strings, templates, numbers, control keywords and primitive types match Monaco `vs`/`vs-dark` pixel-for-pixel. The
+**gap** is Monaco's *semantic* tints — type/class identifiers teal (`Kubuno`, `Promise`), variables light-blue
+(const names), functions gold (`listFiles`) — which the desktop leaves default foreground; those need a TS semantic
+analyser and are increment B (the lexical layer never miscolours, it just under-colours those identifiers).
+
+**Ribbon colours:** the window omits `Tone`, so the ribbon shows the framework's **default accent** (blue), not a
+Script tone — the expected gap, to be covered by the `desktop-v0.1.3-alpha` ribbon-colour alignment (never
+hardcoded). The editor-body colours (which this lot controls) match Monaco exactly.
+
+**Captures (100 %, `C:\kubuno-build`→`E:`):** `desktop_dark_100.png`, `desktop_light_100.png` (the app on the
+sample script); `web_monaco_dark_100.png`, `web_monaco_light_100.png`, `web_monaco_dark_175.png`,
+`web_monaco_light_175.png` (stock Monaco 0.55.1 `vs`/`vs-dark`, the web editor's component, same source). Desktop
+175 % needs a 175 %-DPI display session (the editor is DIP-based, so it scales as the web 175 % shots show).
+
+**Still owed (increment B, and A-closure):** editing + caret/selection/clipboard/undo-redo, autocomplete/IntelliSense,
+folding, the semantic tints; the ribbon commands and the Déclencheurs / Historique panels; save wired to the digest
+precondition + conflict dialog + autosave; the live VS designer GUI render; a native dev core for the `--doc` live
+round-trip and same-uuid web-vs-desktop captures; the desktop 175 % capture.
