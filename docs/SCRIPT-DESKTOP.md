@@ -155,10 +155,11 @@ half (launch, routes, worker, journal, save session); ⬚ marks the Win32 window
 |---|---|---|
 | Open local `.kbscr` (gzip round-trip) + `--doc <id>` launch option | `ScriptApp.tsx`, `script-api.ts` | ✔ Win32: opens a local `.kbscr`/`.ts` read-only; `--doc` wired through the broker/worker (live round-trip owed with a dev core) |
 | Scripts sidebar + Éditeur/Déclencheurs/Historique switcher | `:253-317` | ◐ Win32 left sidebar with the three-view switch; Éditeur renders, the other two are placeholders (B) |
-| Code editing (type, select, clipboard, undo/redo) | Monaco | ⬚ increment B (the control is structured for it) |
-| Syntax highlighting | Monaco | ✔ Direct2D editor renders the Monaco `vs`/`vs-dark` **lexical** colours (keywords, strings, numbers, comments, primitive types); semantic tints (type/var/function identifiers) are B |
-| IntelliSense (`Kubuno.*` from `/api-types`) | `:671-683` | ⬚ increment B (needs a completion UI + the `.d.ts`) |
-| Line-number gutter / folding | Monaco options | ◐ gutter ✔ (line numbers, vs/vs-dark colours); folding is B |
+| Code editing (type, select, clipboard, undo/redo) | Monaco | ✔ B1: caret, selection, keyboard nav, typing, Enter/Tab, Backspace/Delete, cut/copy/paste, undo/redo (shared `EditState`); verified live |
+| Syntax highlighting (lexical) | Monaco | ✔ Direct2D editor renders the Monaco `vs`/`vs-dark` **lexical** colours (keywords, strings, numbers, comments, primitive types) |
+| Syntax highlighting (semantic tints) | Monaco TS worker | ⛔ needs the TypeScript language service (Monaco ships tsserver in a worker) — decision Q3 |
+| IntelliSense (`Kubuno.*` from `/api-types`) | `:671-683` | ⛔ same TS language service (Monaco's TS worker + the `.d.ts`) — decision Q3 |
+| Line-number gutter / folding | Monaco options | ◐ gutter ✔; folding **model** ✔ (`compute_folds`); the fold gutter UI is B |
 | Save (`PATCH source_code`) + **content-digest precondition** + conflict + offline journal | `:592-608,579-585` | ✔ server digest precondition (`script::digest`, 409 `SAVE_CONFLICT`) + portable `session`/`worker`/`journal` (unit-tested both sides); ⬚ Win32 wiring |
 | Autosave cadence (`office.script_autosave_s`, default 30) | `:579-585` | ◐ portable `routes::AUTOSAVE_KEY`/config read; ⬚ Win32 timer |
 | Compile (`POST /compile`) | `:664-669` | ◐ portable `Job::Compile`/`Event::Compiled` (unit-tested); ⬚ Win32 command |
@@ -276,7 +277,27 @@ sample script); `web_monaco_dark_100.png`, `web_monaco_light_100.png`, `web_mona
 `web_monaco_light_175.png` (stock Monaco 0.55.1 `vs`/`vs-dark`, the web editor's component, same source). Desktop
 175 % needs a 175 %-DPI display session (the editor is DIP-based, so it scales as the web 175 % shots show).
 
-**Still owed (increment B, and A-closure):** editing + caret/selection/clipboard/undo-redo, autocomplete/IntelliSense,
-folding, the semantic tints; the ribbon commands and the Déclencheurs / Historique panels; save wired to the digest
+**2026-10-12 — increment B1: editing in the code editor.** The Direct2D editor is now editable. New in the shared
+`kubuno-office-code-editor` crate: an **`EditState`** (text as lines, caret, selection, undo/redo with typing
+coalesced; insert / newline / backspace / delete-selection; caret movement incl. Home → indent → column 0;
+Unicode-correct columns; 8 tests) and a **folding model** (`compute_folds`: collapsible ranges from bracket pairs
+and multi-line comments, from the lexical tokens; 5 tests). The Windows `CodeEditor` wires it: `on_key_down` maps
+arrows / Home / End / PageUp-Down / Backspace / Delete / Enter / Tab and Ctrl+A/C/X/V/Z/Y; `on_key_press` inserts
+typed chars; `on_mouse_down` focuses + sets the caret (Shift extends); clipboard via `kubuno_desktop::controls::
+host::{clipboard_text,set_clipboard_text}`; re-tokenizes + scrolls the caret into view on each change; paints a
+blinking caret (`focus::caret_visible`) and the Monaco-coloured selection highlight. Verified: builds; clippy
+`-D warnings` clean; 25 crate tests; **live typing, caret and multi-line keyboard selection captured, light + dark**.
+
+**Q3 — semantic highlighting + IntelliSense need the TypeScript language service.** Confirmed from the web
+(`ScriptApp.tsx:671-683`, `monacoSetup.ts`): the web uses **no** custom Monarch tokens, theme or completion
+provider — Monaco's bundled **TypeScript worker (tsserver)** drives both the semantic token tints (type names teal,
+functions gold, variables light-blue) and autocomplete/hover/errors, informed by the `/api-types` `.d.ts`. A
+faithful Rust reproduction is not a lexer change; options: **(a)** a syntactic approximation of the tints (fast,
+diverges from tsc on member access / resolution — not "full parity"); **(b)** embed the TypeScript language service
+(e.g. tsserver in a JS engine, or a Rust TS analyser). Needs a user/coordinator decision before either semantic
+highlighting or IntelliSense can claim Monaco parity.
+
+**Still owed (B/C, and A-closure):** the fold gutter UI; the semantic tints + autocomplete (Q3); the ribbon
+commands and the Déclencheurs / Historique panels (real data needs a dev core); save wired to the digest
 precondition + conflict dialog + autosave; the live VS designer GUI render; a native dev core for the `--doc` live
 round-trip and same-uuid web-vs-desktop captures; the desktop 175 % capture.
