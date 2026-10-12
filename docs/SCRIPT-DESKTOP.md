@@ -159,7 +159,7 @@ half (launch, routes, worker, journal, save session); ⬚ marks the Win32 window
 | Syntax highlighting | Monaco | ⛔ no framework tokenizer/styled-run code surface (dedicated lot) |
 | IntelliSense (`Kubuno.*` from `/api-types`) | `:671-683` | ⛔ needs a completion UI over a code control (dedicated lot) |
 | Line-number gutter / folding | Monaco options | ⛔ no gutter/folding primitive in the framework |
-| Save (`PATCH source_code`) + re-read conflict guard + offline journal | `:592-608,579-585` | ✔ portable `session`/`worker`/`journal` (unit-tested); ⬚ Win32 wiring |
+| Save (`PATCH source_code`) + **content-digest precondition** + conflict + offline journal | `:592-608,579-585` | ✔ server digest precondition (`script::digest`, 409 `SAVE_CONFLICT`) + portable `session`/`worker`/`journal` (unit-tested both sides); ⬚ Win32 wiring |
 | Autosave cadence (`office.script_autosave_s`, default 30) | `:579-585` | ◐ portable `routes::AUTOSAVE_KEY`/config read; ⬚ Win32 timer |
 | Compile (`POST /compile`) | `:664-669` | ◐ portable `Job::Compile`/`Event::Compiled` (unit-tested); ⬚ Win32 command |
 | Run + live console (SSE) | `:610-662`, console `:59-121` | ◐ portable `Job::Run` → `run_id`; ⬚ Win32 SSE console panel |
@@ -215,8 +215,39 @@ Verified: 13 unit tests pass (command line, `.kbscr` open, routes match the web 
 round-trip, session load/save/offline/conflict/take-theirs); `cargo clippy --all-targets -- -D warnings` clean; the
 whole crate builds in the desktop workspace against the `desktop-v0.1.2-alpha` framework tag.
 
-**Still owed (next increment): the Win32 window** — the `.kbview` (tall title bar + ribbon + backstage), the scripts
-sidebar with the three-view switcher, the monospace code editor, and the console / triggers / history panels, wired
-to the portable `session`/`worker`; then the `Kubuno.Office.slnx` regeneration and the VS designer check. The
-dev-core-backed web-vs-desktop parity captures and the ribbon-colour comparison depend on that window and are owed
-with it (ribbon colours are a framework-level alignment landing in `desktop-v0.1.3-alpha`, which Script inherits).
+**2026-10-12 — the save conflict model (Q1 decision: server content-digest precondition).** The user chose to
+protect the save on the server, mirroring how Documents actually protects (a content compare, since per
+`office-server-doc-defects` a bare `If-Match` header does not protect on this server). Implemented:
+
+* **Server** (`office/server`): new `script::digest` — `source_digest()` (lowercase hex SHA-256 of the source's
+  UTF-8 bytes) and a pure `save_allowed()` with a failing-first test. `UpdateScriptDto` gains `base_digest`;
+  `scripts::update` refuses a source save whose `base_digest` no longer matches the stored source's digest with the
+  new `OfficeError::SaveConflict` → **`409 SAVE_CONFLICT`** carrying `current_source` + `current_digest`. No
+  `base_digest` = last-write-wins, so the web editor (which sends none) is unchanged. No schema change (digest
+  computed server-side); the single-script responses now carry the content `digest` so the client has its next
+  base. `office_script.scripts` has no `etag` column, so a digest — not an `If-Match` token — is the right guard.
+* **Client** (`kubuno-office-script-common`): `routes::patch_source` sends the optional `base_digest`; the worker
+  carries the digest on `Fetched`/`Saved` and maps `409 SAVE_CONFLICT` to `Event::SaveConflict`; the save session
+  sends `base_digest`, raises a conflict on rejection, and resolves keep-mine (re-base on theirs, overwrite) /
+  take-theirs with the offline journal. The earlier pre-save re-GET guard is replaced by this server precondition.
+
+Verified: server lib builds, 4 `script::digest` tests pass; the client crate's 13 tests pass (incl. save-with-digest,
+409 conflict keep-mine/take-theirs); `clippy -D warnings` clean on both. Q1 is resolved.
+
+**Syntax theme of record (for the code-editor lot).** The web Script editor uses **stock Monaco `vs-dark`**
+(`monacoSetup.ts` only pins the CDN to monaco-editor **0.55.1**; `ScriptApp.tsx:727` sets `theme="vs-dark"`,
+`defaultLanguage="typescript"`) — there is no custom theme. The Direct2D code editor must reproduce Monaco 0.55.1's
+`vs-dark` TypeScript palette: editor bg `#1E1E1E`, default fg `#D4D4D4`, comments `#6A9955`, strings `#CE9178`,
+numbers `#B5CEA8`, keywords `#569CD6`, types/classes `#4EC9B0`, regexp `#D16969`, line-number gutter `#858585`
+(active `#C6C6C6`), selection `#264F78`, caret `#AEAFAD`. Function/variable tints (`#DCDCAA`/`#9CDCFE`) come from
+Monaco's *semantic* highlighting; the base TextMate grammar leaves them default, so matching the base grammar first
+is the parity target.
+
+**Still owed (next increment, large): the Direct2D code editor + the Win32 window.** Per the Q2 decision, a full
+Direct2D code-editor control (syntax highlighting with the palette above, autocomplete/IntelliSense from
+`/api-types`, a line-number gutter, folding) built in `desktop/common` (office), **not** the core framework (so it
+does not bloat/delay `desktop-v0.1.3-alpha`); then the window `.kbview` (tall title bar + ribbon + backstage), the
+scripts sidebar with the three-view switcher, and the console / triggers / history panels wired to the portable
+`session`/`worker`; then the `Kubuno.Office.slnx` regeneration and the VS designer check. The dev-core-backed
+web-vs-desktop parity captures and the ribbon-colour comparison depend on that window and are owed with it (ribbon
+colours inherit the framework alignment landing in `desktop-v0.1.3-alpha`; never hardcoded).
