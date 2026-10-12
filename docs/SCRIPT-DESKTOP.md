@@ -159,7 +159,9 @@ half (launch, routes, worker, journal, save session); ⬚ marks the Win32 window
 | Syntax highlighting (lexical) | Monaco | ✔ Direct2D editor renders the Monaco `vs`/`vs-dark` **lexical** colours (keywords, strings, numbers, comments, primitive types) |
 | Syntax highlighting (semantic tints) | Monaco TS worker | ⛔ needs the TypeScript language service (Monaco ships tsserver in a worker) — decision Q3 |
 | IntelliSense (`Kubuno.*` from `/api-types`) | `:671-683` | ⛔ same TS language service (Monaco's TS worker + the `.d.ts`) — decision Q3 |
-| Line-number gutter / folding | Monaco options | ◐ gutter ✔; folding **model** ✔ (`compute_folds`); the fold gutter UI is B |
+| Line-number gutter / folding | Monaco options | ✔ gutter + **fold gutter UI** (▾/▸ markers at region headers, click to collapse/expand, ⋯ hint; visual-row rendering) |
+| Ribbon: clipboard (cut/copy/paste) + undo/redo | web ribbon | ✔ wired to the editor ops (captured enabled) |
+| Ribbon: compile / run; save; triggers/history panels | `:664-669,610-662,321-542` | ✘ need a dev core + the Desktop shell broker + a login (see Log) |
 | Save (`PATCH source_code`) + **content-digest precondition** + conflict + offline journal | `:592-608,579-585` | ✔ server digest precondition (`script::digest`, 409 `SAVE_CONFLICT`) + portable `session`/`worker`/`journal` (unit-tested both sides); ⬚ Win32 wiring |
 | Autosave cadence (`office.script_autosave_s`, default 30) | `:579-585` | ◐ portable `routes::AUTOSAVE_KEY`/config read; ⬚ Win32 timer |
 | Compile (`POST /compile`) | `:664-669` | ◐ portable `Job::Compile`/`Event::Compiled` (unit-tested); ⬚ Win32 command |
@@ -297,7 +299,26 @@ diverges from tsc on member access / resolution — not "full parity"); **(b)** 
 (e.g. tsserver in a JS engine, or a Rust TS analyser). Needs a user/coordinator decision before either semantic
 highlighting or IntelliSense can claim Monaco parity.
 
-**Still owed (B/C, and A-closure):** the fold gutter UI; the semantic tints + autocomplete (Q3); the ribbon
-commands and the Déclencheurs / Historique panels (real data needs a dev core); save wired to the digest
-precondition + conflict dialog + autosave; the live VS designer GUI render; a native dev core for the `--doc` live
-round-trip and same-uuid web-vs-desktop captures; the desktop 175 % capture.
+**2026-10-12 — increment B2 part 1: fold gutter + clipboard ribbon.** The code editor gains a clickable **fold
+gutter** (▾/▸ markers at every collapsible region from `compute_folds`; click to collapse/expand; the hidden body
+shows a ⋯ hint; all painting, caret, selection and clicks work in **visual rows** over the visible source lines).
+The **Accueil → Presse-papiers** group (Couper / Copier / Coller) and **Annuler / Rétablir** are wired to the
+editor's ops (`EditState` gains `can_undo`/`can_redo`; the control exposes cut/copy/paste/undo/redo/select_all).
+Verified: builds; clippy `-D warnings` clean; the fold markers render at the region headers and the clipboard
+ribbon is enabled (captured, light + dark).
+
+**Infrastructure blocker for the rest of B2 (compile / run / save proof / panels / live `--doc`).** These are all
+server-backed and were confirmed to need a **three-component standup**, not a quick CLI: (1) a **dev core** (its
+run is VS-integrated — SSH tunnel to PG, module deployed into the dev-core `modules/` folders, data key + initial
+admin password; `vskubuno/docs/WEB.md §6`), (2) the **Kubuno Desktop shell** running as the **token broker server**
+(the app's `connect_account` is a broker *client*; `kubuno-desktop-account/broker`), and (3) a **logged-in account**
+in the sandbox (`login.rs`, `KUBUNO_SANDBOX_DIR`). Without all three, the desktop cannot authenticate a `--doc`
+session, so compile/run/save and the triggers/history panels cannot be exercised or captured. Rather than ship a
+large pile of server-feature code that cannot be verified this tour, the save/compile/run wiring, the panels and the
+conflict dialog are left for a tour that stands up that infrastructure. The server side is already done and
+unit-tested: the digest precondition (`script::digest`, Q1) and the desktop save session (`session.rs`).
+
+**Still owed:** the semantic tints + autocomplete (Q3); compile / run / save (+ autosave + conflict dialog) wiring
+and their live proof; the Déclencheurs / Historique panels with real data; the live `--doc` round-trip and same-uuid
+web↔desktop captures — all gated on the dev core + Desktop shell + login above; the live VS designer GUI render; the
+desktop 175 % capture.
