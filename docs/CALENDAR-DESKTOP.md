@@ -483,7 +483,7 @@ Web lines are in the files of §1.1.
 | Create/edit/delete + recurring scope, wired to REST | `api.ts` + server | ✘ Increment C |
 | Sidebar: calendar list, mini-month, holidays, world clock, moon, weather | `CalendarSidebarBody.tsx` | ✘ Increment C |
 | Import / subscribe / share / export, CalDAV settings | `Calendar*Modal.tsx` + server | ✔ sidebar « Gérer » menu; all round-trips proven live (§10) |
-| Appointment scheduling, polls, notifications, settings | `AppointmentScheduleEditor` etc. | ✘ Increment C |
+| Appointment scheduling, polls, notifications, settings | `AppointmentScheduleEditor` etc. | ✔ schedule editor + sidebar list + CRUD, round-trip proven (§11); polls/notifications/settings later |
 | Occurrence expansion | server (`recurrence_service.rs`) | — server-side (client receives expanded) |
 | Holidays data | core (`/holidays`) | — core server feed (not computed) |
 | VS designer views, `Kubuno.Calendar.slnx` | — | ✘ later |
@@ -524,3 +524,55 @@ fire under headless Chrome, like the editor).
 - The `/calendar/scheduling` (appointment/booking) page.
 - VS designer live render of the views.
 - Editor pixel-exact side-by-side (pending the web deep-link decision).
+
+## 11. Scheduling / booking pages (2026-10-12)
+
+The biggest remaining feature — the web `/calendar/scheduling` surface (the 2nd sidebar section) and its editor
+(`web/src/AppointmentScheduleEditor.tsx`, reached at `/calendar/booking/new|:id`).
+
+- **Sidebar « Pages de réservation »** (web `CalendarSidebarBody` « Booking pages »): a new `ScheduleList`
+  control lists the owner's bookable schedules (title + duration) and a « Nouveau planning » button creates one;
+  clicking a row opens the editor on it. The sidebar was also laid out more compactly so weather/moon/booking
+  fit a short window (on a 1080p/175 % display the earlier layout pushed booking below the fold).
+- **`ScheduleEditor` (`schedule_editor.{rs,kbview}`)** — a two-pane dialog ported token-by-token from the web:
+  a settings pane (step 1: title, duration, weekly availability, time zone, scheduling window rolling/fixed +
+  max-days/min-hours, booked settings buffer/max-per-day/guests, calendar; step 2: location+details,
+  description, email reminders) and a live **`AvailabilityPreview`** control — a 7-day 07:00–20:00 week grid
+  that paints the weekly ranges as tinted blocks, matching the web preview. Defaults match the web
+  (Mon–Fri 09:00–17:00, 60 min, Europe/Paris).
+- **Live wiring** (`desktop/common/.../live.rs`): `list_schedules`, `get_schedule`, `save_schedule`
+  (POST/PATCH), `delete_schedule`, `booking_page_url`, with `ScheduleWrite`/`AvailRule`/`ScheduleSummary`/
+  `ScheduleFull` mirroring the web `SaveScheduleDto`/`AppointmentSchedule`.
+
+**Proven live** against the dev stack (`/api/v1/calendar/appointment-schedules`): create → 201 with id +
+public_token; get → the schedule with its 2 availability rules; delete → 204 — with the exact DTO the desktop
+`save_schedule` builds. The desktop **sidebar** booking entry was captured and composed side-by-side with the
+web (`scratchpad/sched-sidebyside.png`); the **web editor** was captured headlessly at `/calendar/booking/new`
+(`scratchpad/web-sched-editor.png`) — it shows exactly what `ScheduleEditor` + `AvailabilityPreview` port.
+
+**Reductions (first increment):** the weekly editor manages one range per weekday; extra ranges and
+date-specific overrides on an existing schedule are **preserved untouched** on save (stashed as `extra_rules`).
+The custom booking-form-field builder is not yet ported.
+
+### Window-stability finding (capture artifact, not a bug)
+The desktop window renders **correctly** when run normally or maximized (verified: 1942×1038 at 175 % DPI, no
+truncation, `scratchpad/winstab.png`). The earlier reports of the window "alternating" between a full
+(2170×1470) and a clipped (1240×840) render were a **capture-harness artifact**: a DPI-unaware PowerShell
+`MoveWindow(1240,840)` on a 175 % monitor yields only ~709 logical px, too narrow for the absolute-positioned
+toolbar (so controls overlapped), and `GetWindowRect` returned virtualized vs true pixels depending on the PS
+process's DPI state. No app-side rendering bug.
+
+### Desktop dialog capture is blocked (evidenced)
+No desktop **modal dialog** (event editor, share, CalDAV, schedule editor) can be opened by scripted input in
+this environment: synthetic `mouse_event` clicks do not fire the app's handlers, and UIA `InvokePattern.Invoke`
+on the button does not trigger the modal-opening path either — **confirmed by invoking the known-good
+« Nouvel événement » button, which likewise does not open its dialog**. So the schedule editor is not broken;
+it is un-capturable via scripting, the same accepted limitation as the other dialogs. Its fidelity rests on the
+web side-by-side + the shared port.
+
+### Remaining (not done)
+- The custom booking-form-field builder and multi-range / date-override weekly editing.
+- Full weather widget via `/weather/forecast`; the module **settings page + notifications worker**.
+- VS designer live render; editor pixel-exact side-by-side (pending the web deep-link decision).
+- Scrollable sidebar (AutoScroll on the absolute-child docked panel does not engage — a framework limitation;
+  worked around by compacting the layout).
