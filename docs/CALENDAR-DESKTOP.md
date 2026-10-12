@@ -290,6 +290,31 @@ stack's shell builds from core **main** while this app targets the framework git
 the named-pipe broker protocol must match — build the shell from the same tag, or bump the app's framework,
 before relying on the broker. This is the next increment.
 
+**2026-10-12 (server-coupled `--doc`: live load + CRUD round-trip)** — the desktop is now connected to the
+server through the Kubuno shell's token broker.
+- **Broker compatibility — resolved by diff (not guessed):** the named-pipe broker code
+  (`kubuno-desktop-account/src/broker/{proto,transport,client,server,mod}.rs` + `owner/key/app/store/migrate.rs`
+  and `kubuno-desktop-sync::tokens`) is **byte-identical** between framework tag `desktop-v0.1.2-alpha` and
+  core `main`, so a **main-built `kubuno-desktop.exe`** is compatible with this app (also independently confirmed
+  by the Script tour). Built the shell from core main and colocated it with `kubuno-calendar.exe`.
+- **Live load:** `--doc <calendar-id>` fetches `GET /calendar/events` over the broker and renders the server's
+  expanded instances. Seeded the sandbox per `USAGE.txt` (devtester, `--dev-instance calendardev`). Two seeding
+  gotchas found: the `config.json`/`creds.json` must be **valid JSON with no BOM** (unescaped Windows
+  backslashes or a UTF-8 BOM make the shell skip the instance → no account), and the **app must inherit
+  `KUBUNO_SANDBOX_DIR`** (PowerShell `Start-Process` dropped it here; launching from a shell that exports the
+  var works).
+- **Same-data side-by-side (what we could not do before):** opened `cafe0000-…-0001` and the desktop renders the
+  SAME real events as the web — Month/Week/Agenda match element for element (recurring standups expanded by the
+  server, the multi-day Lyon trip, the all-day holiday, the `· Salle A`/`· Lyon` locations). Captures
+  `cal-{month,week,agenda}-live.png` vs `web-{month,week,agenda}-light.png`.
+- **CRUD round-trip (live):** a « Nouvel événement test » toolbar button `POST`s an event → it appears in the
+  desktop (`cal-month-created.png`) AND in the web (`web-month-created.png`); a « Supprimer » button `DELETE`s
+  it → gone from the server (0 left) and the desktop shows the real events with the 15th clean
+  (`cal-month-after-delete.png`). **Edit (rename) and the recurrence (RRULE) editor are wired in the core
+  (`live::rename_event`, scope/occurrence aware) but not yet surfaced in the UI — next.**
+- Note: the broker access token expires (~15 min) and separate logins/web captures rotate it, so a long session
+  shows an empty grid until the sandbox is re-seeded (`USAGE.txt`) — an ops detail, not an app bug.
+
 ## 9. Feature coverage
 
 ✔ done and verified · ◐ implemented and unit-tested, not exercised live · ✘ not done · — not applicable.
