@@ -427,7 +427,33 @@ server through the Kubuno shell's token broker.
   coordinator): editor fidelity validated token-by-token against the extracted spec + the desktop captures
   (`cal-editor-2col/guests/full-dark/reminders.png`). A real editor side-by-side needs the user's own browser
   (real key/pointer events) or a deep-link route added to the web.
-- Still open from before: import/subscribe/share/export, CalDAV, scheduling, Year view, Search, VS designer.
+- Still open from before: import/subscribe/share/export, CalDAV, scheduling, VS designer.
+
+### 8.5 Year view, Search, and the Moon/Weather/Booking sidebar sections (proven live)
+
+- **Year view** (`controls/year_grid.rs`, web `YearView.tsx`): a « Année » switcher entry drawing a 4×3 grid of
+  mini-months — each with the month name (accent for the current month) + its event count, a weekday row,
+  today a filled accent disc, and up to three event-colour dots per day. Clicking a day opens that Day, a month
+  name opens that Month. `live::fetch_year` loads the whole year for the dots; `reload_live` picks the window by
+  view mode. **Proven live** (clicking Oct 14 → Day view of 14 Oct, Revue produit). Light `cal-year-dpiaware.png`,
+  dark `cal-year-dark.png`, genuine web side-by-side `year-side-by-side-light.png`.
+- **Search** (`controls/search_results.rs`, web `SearchResultsView.tsx`): a toolbar search field filters a
+  ±1-year pool (`live::fetch_search_range`) by title/description/location, excluding hidden calendars, and shows
+  the matches (count + colour dot + title + day/time) in a list that replaces the view while a query is typed;
+  a result click opens that event's Day. **Proven live** (« revue » → 1 result → Day of 14 Oct). Light
+  `cal-search.png`, web side-by-side `search-side-by-side-light.png`.
+- **Sidebar Moon / Weather / Booking** (web `CalendarSidebarBody` sections): a « Lune » row (a `MoonWidget`
+  drawing today's moon via a new `draw.rs::draw_moon` — the lit limb carved/extended by a terminator ellipse —
+  with the phase name + illumination from the core, e.g. « Premier croissant 1% » = the web's « Waxing crescent
+  1% »); a « Météo » section with « Ajouter un lieu »; a « Pages de réservation » section. `cal-sidebar-widgets.png`,
+  side-by-side `sidebar-widgets-side-by-side.png`. The full weather forecast widget (the `/weather/forecast`
+  endpoint exists) and the `/calendar/scheduling` page are later increments.
+- **Headless web captures, now reliable for SPA views**: the year and search views DO render under headless
+  Chrome (own ephemeral `--user-data-dir`, killed by profile/PID), so genuine side-by-sides were composed
+  (`scratchpad/compose.ps1`). Only the editor still can't be opened headlessly (§8.4). ⚠️ Desktop captures of
+  grids need a **DPI-aware** PowerShell (`SetProcessDpiAwarenessContext(-4)`) and a large window, or
+  `MoveWindow` from a DPI-unaware shell makes the control clip wider than the window and the right columns
+  overflow off-screen (seen first on the Year grid, true of the Month grid too).
 
 ## 9. Feature coverage
 
