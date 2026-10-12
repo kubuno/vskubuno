@@ -351,6 +351,45 @@ server through the Kubuno shell's token broker.
 - Note: the broker access token expires (~15 min) and separate logins/web captures rotate it, so a long session
   shows an empty grid until the sandbox is re-seeded (`USAGE.txt`) — an ops detail, not an app bug.
 
+### 8.2 Editor sub-parts: custom recurrence, calendar picker, colour swatches (proven live)
+
+- **Custom-recurrence dialog** (`views/recurrence_dialog.{kbview,rs}`, web `RecurrenceCustomDialog.tsx`):
+  « Personnalisé… » in the recurrence field opens a 400px dialog over the core's `CustomRecurrence` — interval
+  + unit, the weekly weekday toggles (a `WeekdayPicker` custom control, L M M J V S D, Monday first), the
+  monthly by-month-day / by-weekday choice, and the Never / On-date / After-N end rule, with a live French
+  summary (`describe_rrule`). Proven live: set weekly + Mon/Wed → `FREQ=WEEKLY;BYDAY=MO,WE`, which the server
+  expands onto Mon 12 AND Wed 14. Light `cal-custom-dialog.png`, dark `cal-custom-dark.png`.
+- **Calendar picker** (« Agenda » dropdown) and **colour swatches** (« Couleur », a `ColorSwatches` custom
+  control: the calendar colour then the fixed `EVENT_SWATCHES`, with a 2px ring on the selected one). The
+  window fetches the calendars once (`live::fetch_calendars`) and offers the writable ones; picking a calendar
+  moves the event, picking a swatch sets the colour (first swatch = « default » = clear). Proven live: one
+  event created with the gold swatch AND moved to a second calendar → server shows `color #f9ab00`,
+  `calendar_id = <Projet Beta>`. Light `cal-editor-cc.png`, dark `cal-editor-cc-dark.png`.
+- **KEY PATTERN — read custom controls on Save, not in `collect`/`run`.** A `Custom<T>` control is torn down
+  when its dialog closes, so `self.ctrl.with(|v| …)` returns `None` after `show_dialog` returns. Read the
+  control's state in the click handler **before** `close()` (the colour in `save_click`, the RRULE in the
+  recurrence dialog's `done_click`) and stash it in a plain field that `collect`/`run` then reads. Plain
+  **bindings** (TwoWay fields) persist fine — only custom-control reads need this. (First symptom: colour saved
+  as the calendar default, byday dropped from the RRULE.)
+- `EventWrite` now also carries `description`, `color`/`clear_color`, `reminders`, `attendees`, the three
+  guest-permission flags and `calendar_target`; `save_event` serialises them (description now sent too).
+
+### 8.3 Not yet done on the editor, and why (the height wall)
+
+- **Reminders and guests** (web `RemindersField.tsx`, `GuestField/GuestRow/GuestPermissions.tsx`) are **not**
+  ported yet. Both are dynamic lists of rows that embed live dropdowns / an email field, which a painted custom
+  control cannot host, so they need either a `Repeater` with an interactive item template or fixed slots.
+- **Blocker to resolve first: the single-column editor is already taller than the work area.** At this test
+  display's ~175 % DPI, `DesignHeight=760` renders ~1330 px against a ~1089 px work area, so Save is already
+  near/below the screen edge (the captures look complete only because `PrintWindow` grabs the whole, partly
+  off-screen window). Before adding reminders/guests, wrap the editor's fields in a **`ScrollArea`** (fixed
+  dialog height, scrolling content, footer buttons in the action bar) or move to the web's two-column layout.
+  Mind custom-control (`ColorSwatches`) hit-testing under a scroll offset when doing this.
+- **Sidebar** (`CalendarSidebarBody.tsx` + mini-month) is a separate structural change: dock a left panel in
+  `calendar_window.kbview`, add a calendars list with visibility toggles (+ a `hidden_calendars` set filtered
+  in the month/week/agenda controls) and a mini-month (the framework's `MonthCalendar` control is a quick
+  start; token-exact styling would want a custom control). Not started.
+
 ## 9. Feature coverage
 
 ✔ done and verified · ◐ implemented and unit-tested, not exercised live · ✘ not done · — not applicable.
