@@ -148,20 +148,24 @@ piece) · — nothing to port.
 
 ### Desktop app
 
+Legend for the "portable" split: the portable app crate `kubuno-office-script-common` is the testable, OS-neutral
+half (launch, routes, worker, journal, save session); ⬚ marks the Win32 window (the next increment) still owed.
+
 | Feature | Web | Desktop status |
 |---|---|---|
-| Open local `.kbscr` + `--doc <id>`; read-only display at parity | `ScriptApp.tsx`, `script-api.ts` | _(see Log)_ |
-| Scripts sidebar + Éditeur/Déclencheurs/Historique switcher | `:253-317` | _(see Log)_ |
-| Code editing (type, select, clipboard, undo/redo) | Monaco | ◐ monospace `TextArea` — editing at parity |
+| Open local `.kbscr` (gzip round-trip) + `--doc <id>` launch option | `ScriptApp.tsx`, `script-api.ts` | ◐ portable: `app::open_file` + `--doc` wiring + broker + one-window claim (unit-tested); ⬚ Win32 display |
+| Scripts sidebar + Éditeur/Déclencheurs/Historique switcher | `:253-317` | ⬚ Win32 window |
+| Code editing (type, select, clipboard, undo/redo) | Monaco | ⬚ Win32 monospace `TextArea` (editing at parity; see Q2) |
 | Syntax highlighting | Monaco | ⛔ no framework tokenizer/styled-run code surface (dedicated lot) |
 | IntelliSense (`Kubuno.*` from `/api-types`) | `:671-683` | ⛔ needs a completion UI over a code control (dedicated lot) |
 | Line-number gutter / folding | Monaco options | ⛔ no gutter/folding primitive in the framework |
-| Save (`PATCH source_code`) + debounced autosave | `:592-608,579-585` | _(see Log)_ |
-| Compile (`POST /compile`) | `:664-669` | _(see Log)_ |
-| Run + live console (SSE) | `:610-662`, console `:59-121` | _(see Log)_ |
-| Triggers (list/create cron·event·webhook/toggle/delete) | `:321-436` | _(see Log)_ |
-| History (runs list + detail) | `:440-542` | _(see Log)_ |
-| Star / duplicate / trash / rename | `:872-900` | _(see Log)_ |
+| Save (`PATCH source_code`) + re-read conflict guard + offline journal | `:592-608,579-585` | ✔ portable `session`/`worker`/`journal` (unit-tested); ⬚ Win32 wiring |
+| Autosave cadence (`office.script_autosave_s`, default 30) | `:579-585` | ◐ portable `routes::AUTOSAVE_KEY`/config read; ⬚ Win32 timer |
+| Compile (`POST /compile`) | `:664-669` | ◐ portable `Job::Compile`/`Event::Compiled` (unit-tested); ⬚ Win32 command |
+| Run + live console (SSE) | `:610-662`, console `:59-121` | ◐ portable `Job::Run` → `run_id`; ⬚ Win32 SSE console panel |
+| Triggers (list/create cron·event·webhook/toggle/delete) | `:321-436` | ◐ portable routes + worker jobs; ⬚ Win32 panel |
+| History (runs list + detail) | `:440-542` | ◐ portable `FetchRuns`/`get_run`; ⬚ Win32 panel |
+| Star / duplicate / trash / rename | `:872-900` | ◐ portable `routes`/`Job::Patch`; ⬚ Win32 title-bar actions |
 | Ribbon colours match the web (tab strip, selected/hover, group bg, text/icon, bottom border) | web ribbon | ◐ framework-level (a separate agent aligns ribbon colours for desktop-v0.1.3-alpha; Script inherits on the rebump) |
 | VS designer (`.kbview`, slnx) | — | _(see Log)_ |
 
@@ -189,3 +193,30 @@ tests) pass; `cargo clippy --all-targets -- -D warnings` clean; `cargo check` cl
 and (natively) the host target; `aarch64-apple-darwin` target installed. Established (and recorded here) that the
 web executes scripts **server-side** (SSE), so the core carries no JS engine and no Boa — matching the web and the
 "don't invent semantics" rule.
+
+**2026-10-12 — shared-core cross-target verification + the portable app crate (deliverable #3, portable half).**
+Re-verified the shared core on every target: `cargo test` (4 `.kbscr` round-trip tests) on the host, and `cargo
+check` clean for `wasm32-unknown-unknown`, `aarch64-apple-darwin` and `x86_64-unknown-linux-gnu`. Added the portable
+app crate `desktop/common/kubuno-office-script-common` (wired into the desktop workspace):
+
+* `app` — the launch options (`--doc <id>`, a local `.kbscr`/`.ts`, `--view editor|triggers|history`, `--dark`,
+  `--culture`), `run()` registering the Windows-less portable platform, the shell token broker for `--doc`, and the
+  one-window-per-document claim; `open_file()` decodes a gzipped `.kbscr` through the shared core byte-compatibly; a
+  `TextUi` portable default prints the source.
+* `platform` — the `LaunchRules`/`Clock`/`UiHost` extension points with portable defaults, like the other apps.
+* `api` — the `/office/script` routes as pure request builders; a worker thread owning the shared transport
+  (`connect_account` through the broker) running load/save/compile/run/triggers/runs jobs; the offline journal of
+  the unsent source.
+* `session` — the **thin-PATCH save** Script actually uses (confirmed against `server/src/script/handlers/
+  scripts.rs`: no `If-Match`, no editing session, no 413 path, like Maths): load once, journal every edit, and on
+  save re-read first to catch a concurrent web save, raising a conflict the user resolves (keep mine / take theirs).
+
+Verified: 13 unit tests pass (command line, `.kbscr` open, routes match the web API, worker jobs, journal
+round-trip, session load/save/offline/conflict/take-theirs); `cargo clippy --all-targets -- -D warnings` clean; the
+whole crate builds in the desktop workspace against the `desktop-v0.1.2-alpha` framework tag.
+
+**Still owed (next increment): the Win32 window** — the `.kbview` (tall title bar + ribbon + backstage), the scripts
+sidebar with the three-view switcher, the monospace code editor, and the console / triggers / history panels, wired
+to the portable `session`/`worker`; then the `Kubuno.Office.slnx` regeneration and the VS designer check. The
+dev-core-backed web-vs-desktop parity captures and the ribbon-colour comparison depend on that window and are owed
+with it (ribbon colours are a framework-level alignment landing in `desktop-v0.1.3-alpha`, which Script inherits).
