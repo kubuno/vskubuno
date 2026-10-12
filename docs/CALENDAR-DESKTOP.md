@@ -396,23 +396,37 @@ server through the Kubuno shell's token broker.
   `*_vis` flag (reminders ≤ 2, guests ≤ 4). A `Repeater` with an interactive item template is the way to make
   them unbounded; fixed slots were enough for parity here and avoid per-item binding/event plumbing.
 
-### 8.4 Still to do
+### 8.4 Sidebar + edit-an-event's-guests (proven live), and the editor side-by-side blocker
 
-- **Sidebar** (`CalendarSidebarBody.tsx` + `CalendarMiniPanel.tsx`): a left panel docked in
-  `calendar_window.kbview`, a calendars list with visibility toggles + colours (needs a `hidden_calendars` set
-  in `State` filtered in the month/week/agenda controls), and a mini-month navigator. The web reference is
-  captured at `captures/web-cal-test.png` (mini-month, « My calendars » with the tinted checkbox, Booking/
-  Weather/Moon sections). The framework `MonthCalendar` is a quick start; a token-exact mini-month wants a
-  custom paint control (like `WeekdayPicker`/`ColorSwatches`). Not started.
-- **Genuine web↔desktop side-by-side of the EDITOR: blocked.** Headless Chrome (`--remote-debugging-port`,
-  ephemeral `--user-data-dir`, devtester) logs in and renders the calendar + the **web sidebar**
-  (`web-cal-test.png`) once `Emulation.setDeviceMetricsOverride` is set (without it, `captureScreenshot`
-  returns a blank frame). But the **event editor would not open** under synthetic CDP clicks — the Create→Event
-  menu items and the day/event quick card did not respond (they likely need real pointer events / a portal that
-  headless positions off-screen). Editor fidelity is instead validated token-by-token against the extracted web
-  spec and in the desktop captures. A real side-by-side of the editor needs a reliable way to open the web
-  editor (e.g. driving it through the user's own browser, or a deep-link route if one exists). ⚠️ Kill only the
-  headless Chrome **by PID** — `taskkill /IM chrome.exe` also closes the user's own Chrome.
+- **Sidebar DONE** (`controls/mini_month.rs` + `controls/calendar_list.rs`, web `CalendarSidebarBody.tsx` /
+  `CalendarMiniPanel.tsx`): a left panel docked in `calendar_window.kbview` with a `MiniMonth` navigator (month
+  arrows, narrow weekday row, round day cells — today a filled accent disc, other-month dimmed) and a
+  `CalendarList` (« Mes agendas »: a colour-tinted checkbox + name per calendar). Both are custom paint
+  controls, like `WeekdayPicker`/`ColorSwatches` (chosen over the framework `MonthCalendar` for a token-exact
+  look). Wiring, **proven live**: toggling a calendar hides/shows its events across Month/Week/Day (a
+  `hidden_calendars` set in `State`, applied by `State::visible_events()` which the three view controls now draw
+  from); clicking a mini-month day sets `view.current` and reloads. Genuine side-by-side composed at
+  `captures/sidebar-side-by-side-light.png` (desktop vs `web-cal-test.png`); dark at `cal-sidebar-dark.png`.
+  The web's Booking/Weather/Moon sidebar sections are not ported (lower priority).
+- **Editing an existing event's guests DONE** (`live::fetch_guest_emails` / `fetch_attendees` / `sync_attendees`):
+  `for_edit` loads the current non-organizer guests into the rows; on save, `save_event` reconciles the edited
+  list through the attendee API (`POST`/`DELETE /calendar/events/:id/attendees`), since `PATCH /events` takes no
+  attendees. `EventWrite.attendees` is now always sent; create still POSTs them inline. **Proven live**: opened
+  an event with `bob@`, added `carol@`, removed `bob@`, saved → server shows `[organizer, carol@]` (organizer
+  always kept). Routes: `GET/POST /events/:id/attendees`, `DELETE /events/:id/attendees/:aid`.
+- **Genuine web↔desktop side-by-side of the EDITOR: still blocked, now with the precise reason.** Headless
+  Chrome (own ephemeral `--user-data-dir`, killed by PID / by profile-dir, never the user's) logs in and renders
+  the calendar + the **web sidebar** once `Emulation.setDeviceMetricsOverride` is set (without it,
+  `captureScreenshot` returns a blank frame). **The web `EventEditor` has NO route** — it is React state in
+  `CalendarApp.tsx` (`{createDay !== null && <CreateEventModal/>}`), opened by `setCreateDay` via the **'c'
+  keyboard shortcut** (`window.addEventListener('keydown')`), `onDayCreate` (double-click a day) or the Create
+  menu. In headless, synthetic keydown — both CDP `Input.dispatchKeyEvent` AND JS
+  `window.dispatchEvent(new KeyboardEvent('keydown',{key:'c'}))` — does **not** fire the handler (even view
+  shortcuts like 'w' don't), and synthetic Create-menu / day clicks only mount the transient quick card, never
+  `.kb-form-title-field`. So the full web editor can't be opened programmatically here. Fallback (per the
+  coordinator): editor fidelity validated token-by-token against the extracted spec + the desktop captures
+  (`cal-editor-2col/guests/full-dark/reminders.png`). A real editor side-by-side needs the user's own browser
+  (real key/pointer events) or a deep-link route added to the web.
 - Still open from before: import/subscribe/share/export, CalDAV, scheduling, Year view, Search, VS designer.
 
 ## 9. Feature coverage
