@@ -174,9 +174,9 @@ Legend: ✔ done (unit test mirroring the web; *(run)* = also a real run) · ◐
 | Block canvas: select, delete, duplicate, re-order, insert | `APP:426-575` | ◐ selection + delete/duplicate/move-order/insert done; free placement, resize, rotate and smart guides not yet (frames are rendered, not edited) |
 | Undo / redo | `APP:348-351` | ✔ (document snapshots) |
 | Multi-page, paper formats, orientation | `mathPages.ts` | ◐ add page + rendered; per-page format/orientation UI not yet |
-| Save (`PATCH latex`, re-GET conflict, offline journal) | `maths-api.ts` | ◐ increment C: PATCH + re-GET conflict check + local journal written; the live `--doc` round-trip is pending the shared dev stack |
+| Save (`PATCH latex`, re-GET conflict, offline journal) | `maths-api.ts` | ✔ *(contract verified live against the shared dev core — login, GET, PATCH persists, re-GET conflict detected, restore; see the log)* — the full GUI `--doc` edit→save needs a signed-in sandbox account |
 | Print / export | `mathPrint.ts` | ✘ (later lot: printing) |
-| Dockable panels (Objets/Symboles/Propriétés) | `APP:945-1005` | ✘ (later) |
+| Dockable panels (Objets/Symboles/Propriétés) + structures bar | `APP:945-1005`, `MTE` | ◐ the Objets / Symboles / Propriétés docks and the WYSIWYG structures bar (live KaTeX previews, appended to the selection) are present and wired; the Symboles search box, per-block property *editing* and drag-to-reorder docks are later refinements |
 | VS designer integration (`.kbview`, slnx) | — | ◐ the two `.rsproj` are in `Kubuno.Office.slnx`; the live designer check is pending a free vs-lock |
 
 ## 7. Risks and open questions
@@ -244,11 +244,34 @@ the whole sheet). VS: the `.rsproj` for both crates added to `Kubuno.Office.slnx
 Verified: both crates `cargo build` + `cargo clippy --all-targets -- -D warnings` clean. The `maths-desktop-app`
 branch was rebased onto `origin/main` (which had the Whiteboard increment B) cleanly and merged to `main`.
 
+**2026-10-12 (later) — VS designer, C round-trip, web parity, side panels.**
+- **VS designer (main instance, no fresh hive)**: `devenv` (no `/rootsuffix`, already signed in) opens
+  `maths_window.kbview` and the **Kubuno designer renders the view** — the tall title bar, the full ribbon
+  (Accueil/Insertion/Équation/Calcul/Matrices/Statistiques/Nombres with the Bloc/Historique/Mode groups) and the
+  `MathsCanvas` control (a named placeholder, since the lone view is opened outside its project). Capture
+  `vs-designer-maths.png`; vs-lock taken and released promptly.
+- **Increment C round-trip (live, against the shared dev core `http://127.0.0.1:18900`)**: verified the exact save
+  contract the desktop sends — login → `GET /office/maths/formulas/:id` (`e^{i\pi}+1=0`) → `PATCH {latex}` **persists**
+  → a simulated concurrent `PATCH` is **detected by the re-GET conflict check** (server ≠ our base) → restored. The
+  window's `save_server` is thin glue over this. The full *GUI* `--doc` edit→save still needs a signed-in sandbox
+  account (a Kubuno Desktop shell / sign-in seeding) — the desktop auth borrows tokens from the shell broker, which
+  wasn't available to seed here.
+- **Web-vs-desktop parity**: same formula `e^{i\pi}+1=0` in the web (Visual mode, headless Chrome) and the desktop —
+  **renders identically** (KaTeX typesetting). Differences: the web's *Coloration* (coloured tokens) vs solid ink; the
+  web's dock panels / structures bar (now also on the desktop, below); ribbon organisation. Composites
+  `web-vs-desktop-maths.png` and `web-vs-desktop-panels.png`.
+- **Dockable side panels + structures bar** (the biggest visual gap): added `ObjectsPanel`, `SymbolsPanel`,
+  `PropertiesPanel` (docked around the canvas in a `DockArea`) and `StructuresBar` (below the ribbon, with **live
+  KaTeX previews** — a custom control can paint glyph outlines where a ribbon gallery cell cannot). Wired to insert
+  blocks / append structures and symbols; the Propriétés dock follows the selection. Capture `desktop-panels.png`.
+All merged to `main`.
+
 ### Where I stopped / next steps (2026-10-12)
 
 Done: deliverables #1 (design note), #2 (shared core), **increment A** (read-only display, live-captured),
-**increment B** (editing + the full compute suite), **increment C** (save state machine + conflict check + journal),
-and the VS solution entries — merged to `main`. Two emphasised B items are **blocked by missing capabilities**, not by
+**increment B** (editing + the full compute suite), **increment C** (save — contract verified live against the dev
+core), the **VS designer check** (view renders), **web-vs-desktop parity** (identical rendering), and the **dockable
+side panels + structures bar** — all merged to `main`. Two items are **blocked by missing capabilities**, not by
 time:
 - **WYSIWYG caret editor** ⛔ — needs math-core to emit a *slot-mapped* layout (the web's `mc-h` markers) so a click
   maps to a tree slot and a caret can sit between nodes. `render()` currently emits a flat display list with no link
@@ -259,17 +282,15 @@ time:
   same reason). The structures are offered as buttons that append their snippet to the selected formula.
 
 Pending (not blocked):
-- **Live VS designer check** — the vs-lock was held by another agent (`officeData`); do it when free: devenv
-  `/rootsuffix KubunoOfficeMaths`, dismiss the first-run sign-in/personalise dialogs that sit *behind* the main window
-  before waiting for DTE, confirm the views open, release the lock promptly.
-- **`--doc` round-trip + web-vs-desktop capture** — waiting for the coordinator's shared dev stack (DB
-  `kubuno_dev_office`, ~port 18900) and a Maths formula id; then run the increment-C save against it and capture the
-  same formula in the web editor beside the desktop.
-- **Live real-input test of a Calcul operation** — needs the vs-lock for real clicks; wiring is compile-verified and
-  the engine is unit-tested.
-- Block **free placement / resize / rotate / smart guides** (frames are rendered, not edited), a dedicated **Maths
-  ribbon tone** (framework change; uses `Tone="Documents"`), and **print/export**.
+- **Full GUI `--doc` edit→save round-trip** — the save *contract* is verified live (above); exercising it through the
+  window needs a signed-in sandbox account against the dev core. The desktop auth borrows tokens from the Kubuno
+  Desktop shell's broker (`BrokerProvider::for_app`); mounting a sandbox shell (`KUBUNO_SANDBOX_DIR`, `owner.sign_in`
+  with the dev-core tokens) is the remaining step, then a real-input edit + Ctrl+S under the vs-lock.
+- **Live real-input test** of a Calcul operation / a panel click — needs the vs-lock for real clicks; the wiring is
+  compile-verified, the engine unit-tested, and the designer confirms the controls render.
+- **Refinements**: the Symboles **search box**, per-block property **editing** in the Propriétés dock, block **free
+  placement / resize / rotate / smart guides** (frames are rendered, not edited), a dedicated **Maths ribbon tone**
+  (framework change; uses `Tone="Documents"`), and **print/export**.
 
 The graph **display list** / sampling (the shared part of `drawGraph`) currently lives in the desktop painter and can
 be lifted into `engine::graph` when a second client needs it.
-</invoke>
