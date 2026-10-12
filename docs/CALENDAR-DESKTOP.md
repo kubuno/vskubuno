@@ -310,8 +310,44 @@ server through the Kubuno shell's token broker.
 - **CRUD round-trip (live):** a « Nouvel événement test » toolbar button `POST`s an event → it appears in the
   desktop (`cal-month-created.png`) AND in the web (`web-month-created.png`); a « Supprimer » button `DELETE`s
   it → gone from the server (0 left) and the desktop shows the real events with the 15th clean
-  (`cal-month-after-delete.png`). **Edit (rename) and the recurrence (RRULE) editor are wired in the core
-  (`live::rename_event`, scope/occurrence aware) but not yet surfaced in the UI — next.**
+  (`cal-month-after-delete.png`).
+
+### 8.1 Event editor dialog (create / edit / recurrence) — surfaced and proven live
+
+- **The editor dialog** (`views/event_editor.{kbview,rs}`, `EventEditor`) is now the real create/edit surface,
+  replacing the test buttons: a `WindowKind="Dialog"` panel (title, all-day, start/end date + time, a
+  recurrence preset, scope when editing a series, location, description, Annuler/Enregistrer) matching the web
+  `EventEditor.tsx` in light AND dark (`cal-editor-open.png`, `cal-editor-dark.png`). « Nouvel événement » and a
+  double-click on a day open **create**; a double-click on an event chip opens **edit**, prefilled (`for_edit`).
+- **Live round-trips proven on the server** (`http://127.0.0.1:18900`, calendar `cafe0000-…-0001`):
+  - **Create:** typed a title → `POST` → `200`, the event appears on the grid after the reload and is confirmed
+    by a direct `GET` (`cal-created-result.png`).
+  - **Edit:** double-clicked a chip → dialog prefilled with the existing title → renamed → `PATCH` with the
+    correct `event_id` → `200`; `GET` confirms the new title persisted.
+  - **Recurrence:** picked « Toutes les semaines » → `collect()` built `FREQ=WEEKLY;BYDAY=MO` → `POST` → `200`;
+    the server expands it and the desktop renders the occurrence on every Monday (12/19/26, `cal-dpiaware.png`).
+  - **Delete** still round-trips via REST (`204`), used here to clean up the test events afterwards.
+- **ROOT-CAUSE FIX — two-way bindings.** The declarative view bindings default to **`OneWay`**
+  (`kubuno-desktop-views binding.rs`): a plain `Text="{Binding Title}"` only *displays* the field and never
+  writes the user's input back to the view-model. The editor's first version omitted the mode, so every field
+  (`collect()` read `self.title == ""`) produced an empty payload → the server rejected it `HTTP 422`. The fix
+  is `Mode=TwoWay` on **every** input binding (`Title`, `AllDay`, `StartDate/Time`, `EndDate/Time`,
+  `Recurrence`, `Scope`, `Location`, `Description`). Lesson for every future kbview form: input fields need
+  `Mode=TwoWay` or they silently do not persist.
+- **Testing notes (UI automation).** Framework `TextField`/`Dropdown` controls do **not** honour UIA
+  `ValuePattern.SetValue` (and expose no readable `Value`) — drive them with real focus + keystrokes
+  (`SendKeys`), and a `Dropdown` by focus + arrow-down. The editor opens as an **owned** window (not a
+  desktop-root child) and Windows foreground-lock can keep it from becoming foreground, so find it via
+  `EnumWindows` by title (`Nouvel…`/`Modifier…`). For chip double-clicks the automating process must be
+  **per-monitor DPI-aware** (`SetProcessDpiAwarenessContext(-4)`) or `SetCursorPos` lands on the wrong row.
+- **Broker launch (the reliable recipe).** Launch the **app alone** (do not pre-start a shell): it spawns its
+  own `kubuno-desktop.exe` (colocated next to the app exe) which adopts the signed-in account from the sandbox.
+  Pre-starting an explicit shell consumed the one-shot credentials and left the app's spawned shell with no
+  account (empty grid). Sign in once via the shell's form, then reuse that sandbox tag.
+- **Known in-session refresh lag (not a desktop bug).** After a create/edit, the immediate re-fetch sometimes
+  returns the *pre-change* snapshot for the rest of the session (server-side recurrence-expansion cache lag);
+  a fresh process shows everything. The desktop reload path is correct (`on_saved → reload_live → on_loaded`,
+  and `account_api::request` does no client-side caching). Worth revisiting server-side if it bites users.
 - Note: the broker access token expires (~15 min) and separate logins/web captures rotate it, so a long session
   shows an empty grid until the sandbox is re-seeded (`USAGE.txt`) — an ops detail, not an app bug.
 
