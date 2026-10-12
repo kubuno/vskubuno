@@ -374,21 +374,46 @@ server through the Kubuno shell's token broker.
 - `EventWrite` now also carries `description`, `color`/`clear_color`, `reminders`, `attendees`, the three
   guest-permission flags and `calendar_target`; `save_event` serialises them (description now sent too).
 
-### 8.3 Not yet done on the editor, and why (the height wall)
+### 8.3 Two-column editor + reminders + guests (proven live)
 
-- **Reminders and guests** (web `RemindersField.tsx`, `GuestField/GuestRow/GuestPermissions.tsx`) are **not**
-  ported yet. Both are dynamic lists of rows that embed live dropdowns / an email field, which a painted custom
-  control cannot host, so they need either a `Repeater` with an interactive item template or fixed slots.
-- **Blocker to resolve first: the single-column editor is already taller than the work area.** At this test
-  display's ~175 % DPI, `DesignHeight=760` renders ~1330 px against a ~1089 px work area, so Save is already
-  near/below the screen edge (the captures look complete only because `PrintWindow` grabs the whole, partly
-  off-screen window). Before adding reminders/guests, wrap the editor's fields in a **`ScrollArea`** (fixed
-  dialog height, scrolling content, footer buttons in the action bar) or move to the web's two-column layout.
-  Mind custom-control (`ColorSwatches`) hit-testing under a scroll offset when doing this.
-- **Sidebar** (`CalendarSidebarBody.tsx` + mini-month) is a separate structural change: dock a left panel in
-  `calendar_window.kbview`, add a calendars list with visibility toggles (+ a `hidden_calendars` set filtered
-  in the month/week/agenda controls) and a mini-month (the framework's `MonthCalendar` control is a quick
-  start; token-exact styling would want a custom control). Not started.
+- **The height wall is fixed by matching the web's layout.** The web `EventEditor.tsx` is a **two-column
+  modal, 1024 px wide**: a full-width header (title, the date/time row, all-day + the recurrence field) over a
+  left « details » card (location, reminders, calendar + colour, description) and a right `w-[320px]` guests
+  column, with Save in the `FloatingWindow` footer. The desktop editor now mirrors it (`DesignWidth=960`,
+  `DesignHeight=610`): two columns are shorter than the old single stack, so « Enregistrer » stays on-screen at
+  175 % DPI (~1067 px vs ~1089 px work area). Captures `cal-editor-2col.png`, `cal-editor-guests.png`,
+  `cal-editor-full-dark.png`.
+- **Reminders** (`RemindersField.tsx`): up to two rows, each a method dropdown (Notification / E-mail) + an
+  offset dropdown (5/10/15/30 min, 1/2 h, 1 day before) + a remove button, and an « Ajouter un rappel » link;
+  a new event defaults to one notification 10 min before. `EventWrite.reminders` is `(method, minutes)` pairs
+  that `save_event` serialises. Proven live: `[{popup,15},{email,10}]` round-tripped.
+- **Guests + permissions** (`GuestField/GuestRow/GuestPermissions.tsx`): the right column has an « Invités »
+  e-mail field + « Ajouter », up to four removable invited rows, and the three « Autorisations des invités »
+  toggles (modify/invite/see, web defaults false/true/true). `EventWrite.attendees` is an e-mail list;
+  attendees + the three flags are sent on create. Proven live: `alice@example.com` invited and
+  `guests_can_modify=true` persisted. Editing an existing event's attendees (the attendee API) is still to do.
+- **Lists use fixed slots, not a `Repeater`.** Both reminders and guests are plain bound rows shown/hidden by a
+  `*_vis` flag (reminders ≤ 2, guests ≤ 4). A `Repeater` with an interactive item template is the way to make
+  them unbounded; fixed slots were enough for parity here and avoid per-item binding/event plumbing.
+
+### 8.4 Still to do
+
+- **Sidebar** (`CalendarSidebarBody.tsx` + `CalendarMiniPanel.tsx`): a left panel docked in
+  `calendar_window.kbview`, a calendars list with visibility toggles + colours (needs a `hidden_calendars` set
+  in `State` filtered in the month/week/agenda controls), and a mini-month navigator. The web reference is
+  captured at `captures/web-cal-test.png` (mini-month, « My calendars » with the tinted checkbox, Booking/
+  Weather/Moon sections). The framework `MonthCalendar` is a quick start; a token-exact mini-month wants a
+  custom paint control (like `WeekdayPicker`/`ColorSwatches`). Not started.
+- **Genuine web↔desktop side-by-side of the EDITOR: blocked.** Headless Chrome (`--remote-debugging-port`,
+  ephemeral `--user-data-dir`, devtester) logs in and renders the calendar + the **web sidebar**
+  (`web-cal-test.png`) once `Emulation.setDeviceMetricsOverride` is set (without it, `captureScreenshot`
+  returns a blank frame). But the **event editor would not open** under synthetic CDP clicks — the Create→Event
+  menu items and the day/event quick card did not respond (they likely need real pointer events / a portal that
+  headless positions off-screen). Editor fidelity is instead validated token-by-token against the extracted web
+  spec and in the desktop captures. A real side-by-side of the editor needs a reliable way to open the web
+  editor (e.g. driving it through the user's own browser, or a deep-link route if one exists). ⚠️ Kill only the
+  headless Chrome **by PID** — `taskkill /IM chrome.exe` also closes the user's own Chrome.
+- Still open from before: import/subscribe/share/export, CalDAV, scheduling, Year view, Search, VS designer.
 
 ## 9. Feature coverage
 
