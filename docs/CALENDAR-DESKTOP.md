@@ -481,9 +481,9 @@ Web lines are in the files of §1.1.
 | View switcher + navigation (Today, ‹ ›, period title) | `CalendarToolbar.tsx` | ◐ Month/Week/Day/Agenda wired |
 | Event editor (fields, recurrence dialog, reminders, guests, rooms) | `EventEditor.tsx` | ✘ Increment C |
 | Create/edit/delete + recurring scope, wired to REST | `api.ts` + server | ✘ Increment C |
-| Sidebar: calendar list, mini-month, holidays, world clock, moon, weather | `CalendarSidebarBody.tsx` | ✘ Increment C |
+| Sidebar: calendar list, mini-month, holidays, world clock, moon, weather | `CalendarSidebarBody.tsx` | ✔ list, mini-month, moon, booking, **weather (today's forecast + add-location)** (§12); world clock/holidays later |
 | Import / subscribe / share / export, CalDAV settings | `Calendar*Modal.tsx` + server | ✔ sidebar « Gérer » menu; all round-trips proven live (§10) |
-| Appointment scheduling, polls, notifications, settings | `AppointmentScheduleEditor` etc. | ✔ schedule editor + sidebar list + CRUD, round-trip proven (§11); polls/notifications/settings later |
+| Appointment scheduling, polls, notifications, settings | `AppointmentScheduleEditor` etc. | ✔ scheduling (§11), **settings page** (§12), **reminder notifications** (§12), round-trips proven; polls later |
 | Occurrence expansion | server (`recurrence_service.rs`) | — server-side (client receives expanded) |
 | Holidays data | core (`/holidays`) | — core server feed (not computed) |
 | VS designer views, `Kubuno.Calendar.slnx` | — | ✘ later |
@@ -576,3 +576,46 @@ web side-by-side + the shared port.
 - VS designer live render; editor pixel-exact side-by-side (pending the web deep-link decision).
 - Scrollable sidebar (AutoScroll on the absolute-child docked panel does not engage — a framework limitation;
   worked around by compacting the layout).
+
+## 12. Weather, settings and notifications (2026-10-12)
+
+The remaining user-facing features, each matched to the web and wired to the server.
+
+- **Sidebar weather** (web `CalendarWeatherWidget` / `WeatherSettings`): the « Météo » section shows today's
+  forecast for the default location (name, condition, high/low, precip% when notable — `WeatherList` control),
+  and « Ajouter un lieu » opens `WeatherDialog` (geocoder search → pick → save). Live helpers:
+  `weather_geocode`, `weather_add_location`, `weather_locations`, `weather_forecast_today`,
+  `weather_delete_location`. **Proven live**: geocode « Paris » → add → forecast (code/20°/8°), then removed.
+- **Settings** (web `CalendarSettingsPage` / `ModuleSettingsForm`): a toolbar gear opens `SettingsDialog` with a
+  representative subset grouped Region / Events / Notifications / Display. Loaded from the resolved config
+  (`GET /modules/calendar/config`, `fetch_calendar_settings`) and saved as user preferences
+  (`PATCH /me`, `save_calendar_settings` with a `SettingValue` enum so the UI crate needs no `serde_json`).
+  **Proven live**: `time_format` 24h→12h → config effective reflects it → reverted. (Work schedule, holiday
+  calendars, secondary timezone, world clock are later increments.)
+- **Reminder notifications** (web `CalendarNotificationWorker`): `notify::start_worker` spawns a 60-second
+  background thread that fetches the next 8 days of events, computes the due reminders and raises a native
+  balloon (`Shell_NotifyIcon`, the shell's mechanism). The reminder-due logic is a pure, **unit-tested**
+  function `reminders::due_reminders` (+/-1-minute window, de-dup key, honours « notify only if accepted »);
+  `reminder_body` builds the FR/EN text. Honours the notifications mode (off/in_app/desktop). Added `Default`
+  to the core `EventInstance`/`Instant` for the tests.
+
+### Also this tour
+- The sidebar was **compacted** (mini-month 190 px, tighter gaps) so weather/moon/booking fit a 1080p/175 %
+  window — `AutoScroll` does not engage on an absolute-child docked panel (framework limitation).
+
+### Live-capture blocker (environment, not code)
+The desktop app's stored broker session (the `calendardev` / `sandbox-cal` account) is **expired**, and the
+shell will not re-prompt for sign-in (it believes it is signed in), so no non-interactive re-seed was possible.
+With no valid session the app loads no calendars/events/weather, so **live desktop captures of server data
+could not be produced this tour** — all server round-trips were proven directly against the API (the exact
+DTOs/endpoints the desktop code uses), the reminder logic by unit tests, and the web side-by-sides were
+captured headlessly (`scratchpad/web-settings.png`, `web-sched.png` = sidebar with the Weather section). Native
+notification balloons are additionally suppressed by Windows for an **unregistered** standalone app (no AUMID /
+Start-Menu identity); in a shell-integrated `.kbpkg` install they route normally.
+
+### Remaining (not done)
+- The full weather forecast dashboard widget (`/weather/forecast` hourly/air-quality/charts; sidebar shows
+  today only); world clock and holidays; working-hours/location and secondary-timezone settings; booking
+  form-field builder + multi-range/specific-date availability; polls.
+- VS designer live render; editor pixel-exact side-by-side (deep-link decision); scrollable sidebar (framework
+  `AutoScroll` limitation); a non-interactive broker re-seed path for live desktop testing.
