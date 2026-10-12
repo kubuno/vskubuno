@@ -161,7 +161,11 @@ half (launch, routes, worker, journal, save session); ⬚ marks the Win32 window
 | IntelliSense / autocomplete | `:671-683` | ✔ Q3: a completion popup from the Kubuno `api-types` + local AST symbols + keywords (captured) |
 | Line-number gutter / folding | Monaco options | ✔ gutter + **fold gutter UI** (▾/▸ markers at region headers, click to collapse/expand, ⋯ hint; visual-row rendering) |
 | Ribbon: clipboard (cut/copy/paste) + undo/redo | web ribbon | ✔ wired to the editor ops (captured enabled) |
-| Ribbon: compile / run; save; triggers/history panels | `:664-669,610-662,321-542` | ✘ need a dev core + the Desktop shell broker + a login (see Log) |
+| Save (`PATCH source_code` + digest) + autosave | `:592-608,579-585` | ✔ live: edit in desktop → Ctrl+S → source changed on the server (API-verified); autosave on a timer |
+| Compile (`POST /compile`) | `:664-669` | ✔ live: F7 → Console "Compilé." |
+| Run + console | `:610-662`, `:59-121` | ✔ live: F5 → run on the server → the run's console output (`[log] hello from devstack`) + status in the Console |
+| Déclencheurs / Historique panels (real data) | `:321-542` | ✔ live: the panels render the server's real triggers and run history |
+| Conflict dialog (keep mine / take theirs) | `:447-465` (projects) | ◐ wired (vendored ConfirmDialog) + unit-tested both sides; the live 409 needs the digest-aware office deployed |
 | Save (`PATCH source_code`) + **content-digest precondition** + conflict + offline journal | `:592-608,579-585` | ✔ server digest precondition (`script::digest`, 409 `SAVE_CONFLICT`) + portable `session`/`worker`/`journal` (unit-tested both sides); ⬚ Win32 wiring |
 | Autosave cadence (`office.script_autosave_s`, default 30) | `:579-585` | ◐ portable `routes::AUTOSAVE_KEY`/config read; ⬚ Win32 timer |
 | Compile (`POST /compile`) | `:664-669` | ◐ portable `Job::Compile`/`Event::Compiled` (unit-tested); ⬚ Win32 command |
@@ -335,7 +339,23 @@ a lighter footprint and a microsecond arena parse, so it re-runs on every edit �
 
 Verified: 35 crate tests (incl. 6 semantic + 4 completion), clippy `-D warnings` clean on both crates.
 
-**Still owed (server-backed, gated on the dev core + Desktop shell + login — a dedicated later tour):** compile /
-run / save (+ autosave + conflict dialog) wiring and live proof; the Déclencheurs / Historique panels with real
-data; the live `--doc` round-trip and same-uuid web↔desktop captures; the live VS designer GUI render; the desktop
-175 % capture.
+**2026-10-12 — the server tour: a live `--doc` session against the shared dev core.** With the shared dev stack up
+(core `http://127.0.0.1:18900`, office module, DB `kubuno_dev_shared`, account `devtester`, sample script
+`5c65a7e3-…`), the broker `--doc` flow was stood up and the server-backed features proven **live** (captures under
+`captures/`):
+* Built the **broker shell** (`kubuno-desktop.exe`) from core main — first verifying the named-pipe broker
+  protocol is **byte-identical** between tag `desktop-v0.1.2-alpha` (which the app links) and core main (the
+  `kubuno-desktop-account/broker` dir, `login.rs`, `app.rs` and `kubuno-desktop-sync` all diff-empty) — colocated
+  it with `kubuno-script.exe`, seeded the account (native login → `config.json`/`creds.json` written **without a
+  BOM**, which serde rejects) and launched `kubuno-desktop.exe --background` then the app `--doc <uuid>`.
+* Proven: the editor loads the server script; **Save** (edit → Ctrl+S) changed the source on the server
+  (API-verified `EDITEDLIVE777`); **Run** (F5) executed on the server and showed the real console `[log] hello from
+  devstack` and the run in the Historique; **Compile** (F7) → "Compilé."; the **Déclencheurs** panel showed a real
+  server trigger; the Save/Compile/Run ribbon is enabled only while connected. Same-uuid web↔desktop captures taken
+  (the web Script editor is Monaco **vs-dark only**; the desktop editor is theme-aware vs/vs-dark — a divergence,
+  the desktop additionally offers a light editor).
+
+**Still owed:** the **live 409 conflict dialog** (the shared dev stack's office was built without this branch's
+digest precondition; the dialog and both sides are wired + unit-tested, but triggering the live 409 needs the
+digest-aware office deployed, not done to avoid disrupting the shared stack); the **live VS designer GUI render**;
+the **desktop 175 %** capture (the host is at 100 % DPI).
