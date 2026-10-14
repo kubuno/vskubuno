@@ -174,10 +174,17 @@ prefix is added by `_tools/gen_master_solution.ps1` when stitching the master so
 | # | Today | Target |
 |---|---|---|
 | D1 | `Kubuno.Web.Sdk` shows a `src` not on disk (linked) | co-located at `web/src/sdk/`; shown = disk (§4c-A) |
-| D2 | `common/core` → `Kubuno.Drive.Core` / `Kubuno.Office.Docs.Core` (inconsistent) | always `Kubuno.<Module>.Core` |
-| D3 | core-desktop crates misprefixed `Kubuno.Drive.*` / `Kubuno.Web.*` | `Kubuno.Desktop.*` (their real location) |
+| D2 | `common/core` → `Kubuno.Drive.Core` vs `Kubuno.Office.Docs.Core` | **NOT a bug.** Names are derived from the crate names by `ProjectNaming.ForModuleCrate` (`kubuno-drive-core`→`.Core`; `kubuno-office-docs-core`→`.Docs.Core`): the difference is in the *crate* names (office's shared core is the documents core). "Fixing" it means renaming Cargo crates (invasive, breaks consumers). Out of scope unless the owner asks. |
+| D3 | `Kubuno.Drive.Desktop.Shared` / `Kubuno.Web.Views.Compiler.Core` in core's Desktop | **NOT a bug.** `ProjectNaming.ForCrate` derives these from crate names `kubuno-drive-desktop-shared` / `kubuno-web-views-compiler-core`. Same note as D2. |
 | D4 | `Kubuno.Web.Drive` vs `Kubuno.Drive.Web` read as a collision | documented rule: core-package vs module-frontend |
 | D5 | admin buried in `src/core/admin`, hard to find | `src/admin` + `Kubuno.Web.Admin` (done) |
+
+**Refined scope (after reading `ProjectNaming`).** The naming (R2) is already one consistent rule derived from
+crate/folder names; D2/D3 are rule-consistent, not defects. The real generator work is therefore **R3
+co-location** (discover host-tree packages at `web/src/<id>` without linked sources, wired to the Option-A disk
+move + `build.sh` + `kubuno-packages.mjs`), the **admin** project at `web/src/admin`, and the **`Web/packages/`
+subfolder** (O1). Project names change only if the owner chooses to rename Cargo crates — a separate, invasive
+decision, out of scope by default.
 
 ## 7. Disk moves required
 
