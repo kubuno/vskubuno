@@ -435,6 +435,44 @@ namespace Kubuno.Web.Logic.Generation
                 result.Add(new FrontendProject(FrontendKind.App, root, isCore ? ProjectNaming.CoreFrontend : ProjectNaming.ForModuleFrontend(id), NpmName(root), null, Array.Empty<string>(), null));
             }
 
+            // The core packages in dependency order (ui, then sdk, then drive), the others by name.
+            var order = new[] { "ui", "sdk", "drive" };
+            var handled = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            string Key(string path) => Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar);
+
+            // The core's host-tree packages (@kubuno/ui, sdk, drive, built from the host app's sources): CO-LOCATED in
+            // web/src/<id> when the package.json lives there (the project tree then matches disk, no linked items),
+            // else still wrapped in web/packages/<id> with the sources linked in (the transition). In dependency order.
+            if (isCore)
+            {
+                foreach (var shortName in order)
+                {
+                    if (!CorePackageSources.TryGetValue(shortName, out var folders))
+                    {
+                        continue;
+                    }
+
+                    var colocated = Path.Combine(frontend, "src", shortName);
+                    var wrapped = Path.Combine(frontend, "packages", shortName);
+                    var package = File.Exists(Path.Combine(colocated, "package.json")) ? colocated
+                        : File.Exists(Path.Combine(wrapped, "package.json")) ? wrapped
+                        : null;
+                    if (package is null)
+                    {
+                        continue;
+                    }
+
+                    // Co-located: the package IS its source folder (no linked items). Wrapped: link the host src/ folders.
+                    var linked = string.Equals(package, colocated, StringComparison.OrdinalIgnoreCase)
+                        ? (IReadOnlyList<string>)Array.Empty<string>()
+                        : folders.Select(folder => Path.Combine(frontend, "src", folder)).Where(System.IO.Directory.Exists).ToList();
+                    result.Add(new FrontendProject(FrontendKind.Package, package, ProjectNaming.ForNpmPackage(NpmName(package), shortName, null), NpmName(package), shortName, linked, frontend));
+                    handled.Add(Key(package));
+                }
+            }
+
+            // The other packages (self-contained: host-runtime, vectors, views, views-compiler, views-migrate; and a
+            // module's packages), whose sources live in packages/<name>. Skip any already added above.
             foreach (var packages in new[] { Path.Combine(frontend, "packages"), Path.Combine(root, "packages") })
             {
                 if (!System.IO.Directory.Exists(packages))
@@ -442,13 +480,11 @@ namespace Kubuno.Web.Logic.Generation
                     continue;
                 }
 
-                // The core packages in dependency order (ui, then sdk, then drive), the others by name.
-                var order = new[] { "ui", "sdk", "drive" };
                 foreach (var package in System.IO.Directory.GetDirectories(packages)
                     .OrderBy(path => Array.IndexOf(order, Path.GetFileName(path).ToLowerInvariant()) is var rank && rank >= 0 ? rank : order.Length)
                     .ThenBy(path => path, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (!File.Exists(Path.Combine(package, "package.json")))
+                    if (!File.Exists(Path.Combine(package, "package.json")) || handled.Contains(Key(package)))
                     {
                         continue;
                     }
@@ -468,6 +504,7 @@ namespace Kubuno.Web.Logic.Generation
                     // Kubuno.Web.UI for @kubuno/ui in the core, Kubuno.<Module>.Web.<Name> in a module (ProjectNaming).
                     var projectName = ProjectNaming.ForNpmPackage(npmName, shortName, isCore ? null : id);
                     result.Add(new FrontendProject(FrontendKind.Package, package, projectName, npmName, packageId, linked, nodeModules));
+                    handled.Add(Key(package));
                 }
             }
 
