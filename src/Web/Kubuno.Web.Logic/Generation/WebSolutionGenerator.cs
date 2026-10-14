@@ -281,7 +281,8 @@ namespace Kubuno.Web.Logic.Generation
                 // the host's declarations: ui, then sdk, then drive).
                 foreach (var app in appProjects)
                 {
-                    dependencies.AddRange(packageProjects.Select(package => (app, package.Path)));
+                    // The console builds nothing (it is part of the app): not a build dependency of the host.
+                    dependencies.AddRange(packageProjects.Where(package => package.Frontend.Kind != FrontendKind.Console).Select(package => (app, package.Path)));
                 }
 
                 for (var index = 1; index < packageProjects.Count; index++)
@@ -541,6 +542,23 @@ namespace Kubuno.Web.Logic.Generation
                     builder.Append("    <DefaultItemExcludes>$(DefaultItemExcludes);types\\**;*.tgz</DefaultItemExcludes>\n");
                 }
             }
+            else if (frontend.Kind == FrontendKind.Console)
+            {
+                // The admin console: a part of the app shown as its own project, co-located and NOT published.
+                builder.Append("    <KubunoWebRole>Package</KubunoWebRole>\n");
+                builder.Append("    <!-- ").Append(isCore ? "The Kubuno core admin console" : "The " + Escape(repository.Id) + " module's admin console")
+                    .Append(": a part of the app, CO-LOCATED with its sources (this folder = disk). NOT an npm\n");
+                builder.Append("         package (no KubunoPackageId, not published): it is compiled by the app's own build and lazy-loaded at runtime. This\n");
+                builder.Append("         project exists only to group the console under its own node (the app project hides this folder). -->\n");
+                if (frontend.NodeModulesDirectory is not null)
+                {
+                    builder.Append("    <KubunoNodeModulesDirectory>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\\")
+                        .Append(Escape(Relative(frontend.Directory, frontend.NodeModulesDirectory + System.IO.Path.DirectorySeparatorChar).TrimEnd('/').Replace('/', '\\'))).Append("'))\\</KubunoNodeModulesDirectory>\n");
+                }
+
+                builder.Append("    <!-- Build outputs are not sources (obj\\ already excluded by the SDK). -->\n");
+                builder.Append("    <DefaultItemExcludes>$(DefaultItemExcludes);*.tgz</DefaultItemExcludes>\n");
+            }
             else
             {
                 builder.Append("    <KubunoWebRole>").Append(isCore ? "CoreFrontend" : "ModuleFrontend").Append("</KubunoWebRole>\n");
@@ -555,7 +573,7 @@ namespace Kubuno.Web.Logic.Generation
                 builder.Append("    <LaunchJsonFolder>.kubuno</LaunchJsonFolder>\n");
 
                 var packageFolders = repository.Frontends
-                    .Where(other => other.Kind == FrontendKind.Package)
+                    .Where(other => other.Kind == FrontendKind.Package || other.Kind == FrontendKind.Console)
                     .SelectMany(other => other.LinkedSources.Concat(new[] { other.Directory }))
                     .Where(path => (path + System.IO.Path.DirectorySeparatorChar).StartsWith(frontend.Directory + System.IO.Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                     .Select(path => Relative(frontend.Directory, path).TrimEnd('/').Replace('/', '\\') + "\\**")

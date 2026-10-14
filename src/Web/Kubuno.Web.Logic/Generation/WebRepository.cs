@@ -32,6 +32,13 @@ namespace Kubuno.Web.Logic.Generation
 
         /// <summary>A publishable npm package (<c>packages/&lt;name&gt;/package.json</c>): <c>@kubuno/ui</c>, sdk, drive.</summary>
         Package,
+
+        /// <summary>
+        /// A part of the host/module app shown as its own project, co-located with its sources and NOT published: the
+        /// admin console (<c>web/src/admin</c>, <c>Kubuno.Web.Admin</c> / <c>Kubuno.&lt;Module&gt;.Admin</c>). Compiled by the
+        /// app's own build, lazy-loaded at runtime; a minimal private package.json lets Visual Studio load it.
+        /// </summary>
+        Console,
     }
 
     /// <summary>
@@ -433,6 +440,16 @@ namespace Kubuno.Web.Logic.Generation
             else if (File.Exists(Path.Combine(root, "package.json")))
             {
                 result.Add(new FrontendProject(FrontendKind.App, root, isCore ? ProjectNaming.CoreFrontend : ProjectNaming.ForModuleFrontend(id), NpmName(root), null, Array.Empty<string>(), null));
+            }
+
+            // The admin console: a part of the app shown as its own project, co-located in web/src/admin (not an npm
+            // package; a minimal private package.json lets Visual Studio load it). Kubuno.Web.Admin in the core,
+            // Kubuno.<Module>.Admin in a module.
+            var adminConsole = Path.Combine(frontend, "src", "admin");
+            if (File.Exists(Path.Combine(adminConsole, "package.json")))
+            {
+                var consoleName = isCore ? "Kubuno.Web.Admin" : "Kubuno." + ProjectNaming.Product(id) + ".Admin";
+                result.Add(new FrontendProject(FrontendKind.Console, adminConsole, consoleName, null, null, Array.Empty<string>(), frontend));
             }
 
             // The core packages in dependency order (ui, then sdk, then drive), the others by name.
