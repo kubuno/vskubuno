@@ -61,8 +61,10 @@ if (!existsSync(stamp) || statSync(stamp).mtimeMs < sourcesTime) {
   console.log('Kubuno: host app declarations up to date')
 }
 
-// 2. The package's type tree, in obj\package.
-const output = join(frontend, 'packages', id, 'obj', 'package')
+// 2. The package's type tree, in obj\package. The package is co-located in src\<id> (its package.json lives there)
+// or still wrapped in packages\<id>; the VS build writes into that folder's obj (never the committed types/dist).
+const packageDir = existsSync(join(frontend, 'src', id, 'package.json')) ? join(frontend, 'src', id) : join(frontend, 'packages', id)
+const output = join(packageDir, 'obj', 'package')
 rmSync(output, { recursive: true, force: true })
 for (const [from, to] of trees[id]) {
   mkdirSync(join(output, to), { recursive: true })
