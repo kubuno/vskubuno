@@ -15,6 +15,14 @@ Short answer: **Android — yes, buildable from Windows/VS; iOS — yes in Rust 
 (no way around it). The real cost is not the toolchain, it is the renderer: Kubuno has no portable GPU 2D
 renderer today, and building one is the central work item (it also unblocks Linux/macOS desktop).**
 
+**Owner constraint: no Tauri.** This study's direction is *already* not Tauri — Path B is **native GPU 2D
+rendering** (the app draws its own pixels through `wgpu`/`vello`), not a system webview wrapped in a shell, which
+is what Tauri (and its mobile support) is. The build tooling likewise avoids the Tauri ecosystem: we do **not**
+use `cargo-mobile2` (a tauri-apps project). Android packaging uses the `rust-mobile` ecosystem (`android-activity`
++ `cargo-apk`/`cargo-ndk`, or `xbuild`) or Kubuno's own NDK/APK step inside the VS mobile layer; iOS uses the
+Apple toolchain directly on the Mac. None of `android-activity`, `winit`, `wgpu`, `vello`, `cargo-apk`, `cargo-ndk`
+or `xbuild` is a Tauri project.
+
 ## 2. Starting point (what exists vs. what is roadmap)
 
 | Capability | Today |
@@ -52,13 +60,15 @@ It is strictly larger than Path A and subsumes the shared-cores work.
 - **Android from Windows: feasible, no Java.** `rustc` targets `aarch64-linux-android` / `x86_64-linux-android`
   cross-compile on Windows with the **Android NDK** (the NDK clang as linker). A pure-Rust app shell uses
   **`android-activity` + NativeActivity** (no Java/Kotlin compiled). Packaging an APK (bundle the `.so`,
-  generate `AndroidManifest.xml`, `zipalign`, sign) is done by `cargo-apk`, `xbuild`, or `cargo-mobile2`
-  (Tauri; runs on Windows, targets Android). The `.rsproj` already passes `--target`; what is missing in VS is
+  generate `AndroidManifest.xml`, `zipalign`, sign) is done by `cargo-apk`/`cargo-ndk` or `xbuild` (all
+  `rust-mobile`, not Tauri — see the owner constraint in §1), or by Kubuno's own NDK/APK step in the VS mobile
+  layer. The `.rsproj` already passes `--target`; what is missing in VS is
   everything *after* `cargo build`: NDK linker wiring, APK packaging, signing, `adb` install/launch, Logcat,
   on-device debug — i.e. the roadmap's mobile layer, but pointed at **Rust** instead of Gradle.
 - **iOS: Rust yes, but the build needs a Mac.** `aarch64-apple-ios` requires the iOS SDK from **Xcode**, which
-  only exists on macOS; `cargo-mobile2` on Windows cannot target iOS. So "entirely from VS on Windows" has a
-  hard limit for iOS. Mitigation: **VS "Pair to Mac"** (the owner has a Mac) or a macOS CI runner drives the
+  only exists on macOS — an intrinsic Apple constraint, independent of any build tool. So "entirely from VS on
+  Windows" has a hard limit for iOS. Mitigation: **VS "Pair to Mac"** (the owner has a Mac) or a macOS CI runner
+  drives the
   iOS build/sign/run/log remotely — exactly what the roadmap already names. Day-to-day dev + all Android stays
   on Windows.
 
