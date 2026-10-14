@@ -80,13 +80,15 @@ namespace Kubuno.Web.Tests
             var files = WebSolutionGenerator.Plan(new[] { repository }, solutionPath, WebSdkVersions.Current, null);
             var root = XDocument.Parse(files.Single(file => file.Mergeable).Content).Root!;
             CollectionAssert.AreEqual(
-                new[] { "/Common/", "/Server/", "/Web/", "/Desktop/", "/Desktop/Common/", "/Desktop/Windows/", "/Desktop/Linux/", "/Desktop/macOS/", "/Mobile/" },
+                new[] { "/Common/", "/Server/", "/Web/", "/Web/packages/", "/Desktop/", "/Desktop/Common/", "/Desktop/Windows/", "/Desktop/Linux/", "/Desktop/macOS/", "/Mobile/" },
                 root.Elements("Folder").Select(folder => (string)folder.Attribute("Name")!).ToArray());
             CollectionAssert.AreEquivalent(new[] { "common/kubuno-db/Kubuno.Core.Db.rsproj", "common/kubuno-vectors/Kubuno.Core.Vectors.rsproj" }, ProjectPaths(root, "/Common/"));
             CollectionAssert.AreEqual(new[] { "server/Kubuno.Core.Server.rsproj" }, ProjectPaths(root, "/Server/"));
+            // The host app sits directly under Web; the self-contained npm packages under Web/packages, mirroring disk.
+            CollectionAssert.AreEqual(new[] { "web/Kubuno.Core.Frontend.esproj" }, ProjectPaths(root, "/Web/"));
             CollectionAssert.AreEquivalent(
-                new[] { "web/Kubuno.Core.Frontend.esproj", "web/packages/ui/Kubuno.Web.UI.esproj", "web/packages/sdk/Kubuno.Web.Sdk.esproj", "web/packages/vectors/Kubuno.Web.Vectors.esproj" },
-                ProjectPaths(root, "/Web/"));
+                new[] { "web/packages/ui/Kubuno.Web.UI.esproj", "web/packages/sdk/Kubuno.Web.Sdk.esproj", "web/packages/vectors/Kubuno.Web.Vectors.esproj" },
+                ProjectPaths(root, "/Web/packages/"));
             CollectionAssert.AreEquivalent(
                 new[] { "desktop/common/kubuno-desktop-sync/Kubuno.Desktop.Sync.rsproj", "desktop/common/kubuno-desktop-shell-common/Kubuno.Desktop.Shell.Common.rsproj" },
                 ProjectPaths(root, "/Desktop/Common/"));

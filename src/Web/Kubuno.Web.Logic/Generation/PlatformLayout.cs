@@ -33,6 +33,7 @@ namespace Kubuno.Web.Logic.Generation
             Common,
             Server,
             Web,
+            Web + "/packages",
             Desktop,
             Desktop + "/Common",
             Desktop + "/Windows",
@@ -110,8 +111,13 @@ namespace Kubuno.Web.Logic.Generation
                     return Server;
                 case "web":
                 case "frontend":
+                    // The self-contained npm packages live in web/packages/<name>; show them under a Web/packages
+                    // subfolder that mirrors disk. The host app and the co-located packages (web/src/<id>) stay directly
+                    // under Web.
+                    return segments.Count > 1 && string.Equals(segments[1], "packages", StringComparison.OrdinalIgnoreCase) ? Web + "/packages" : Web;
                 case "packages":
-                    return Web;
+                    // The former layout: an npm package at the repository root (packages/<name>).
+                    return Web + "/packages";
                 case "desktop":
                     return segments.Count > 1 && DesktopPlatforms.Contains(segments[1].ToLowerInvariant()) ? Desktop + "/" + PlatformNames[segments[1]] : Desktop;
                 case "mobile":
