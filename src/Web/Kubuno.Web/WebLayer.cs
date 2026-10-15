@@ -30,6 +30,11 @@ namespace Kubuno.Web
             // surface (the project's dev server, else the bundled design host); every other view keeps the desktop's.
             Kubuno.Views.Designer.DesignSurface.DesignSurfaceHostFactoryHost.AddTargetFactory(new WebDesigner.WebDesignSurfaceHostFactory());
 
+            // Path B bridge: a mobile Rust crate's views (kubuno-mobile-*) also open on the web WebView2 surface (bundled
+            // host) so they are edited with the web designer's hover/selection, until the mobile layer ships its own native
+            // (vello) design surface. Added after the web factory, so a genuine web view still wins.
+            Kubuno.Views.Designer.DesignSurface.DesignSurfaceHostFactoryHost.AddTargetFactory(new WebDesigner.MobileBridgeDesignSurfaceHostFactory());
+
             // The dialog gallery (docs/ARCHITECTURE.md, "Themed dialogs"): built only when the gallery opens.
             Kubuno.Shared.UI.DialogGallery.Register("Kubuno Web: Multi-Repository Solution (RepositoryPickerDialog)", () => new RepositoryPickerDialog(@"Z:\src", new[]
             {

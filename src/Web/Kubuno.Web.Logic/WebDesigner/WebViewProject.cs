@@ -112,6 +112,25 @@ namespace Kubuno.Web.Logic.WebDesigner
             return null;
         }
 
+        /// <summary>
+        /// A standalone view project rooted at <paramref name="root"/> for a view that belongs to no web project - a mobile
+        /// Rust view bridged to the web design surface (the portable renderer does not host its own design surface yet, so
+        /// the web WebView2 surface renders the shared `.kbview` vocabulary and gives its hover/selection). No dev server is
+        /// expected, so <see cref="WebDesignSurfaceHost"/> uses the bundled design host (host elements only, which is all a
+        /// primitive mobile view uses); the host element registry is the bundled host's own - its
+        /// <c>kbview-registry.web.json</c> (emitted beside the bundle, <paramref name="bundledHostFolder"/>), so the
+        /// Toolbox and Properties window (which read a registry file, not the live page) get the same host elements the
+        /// surface renders. Views come from <paramref name="root"/>'s <c>src</c>.
+        /// </summary>
+        public static WebViewProject ForBundledHost(string root, string? bundledHostFolder = null, IWebProjectFiles? files = null)
+        {
+            files ??= PhysicalWebProjectFiles.Instance;
+            // Absolute: Create()'s Path.Combine(root, host) keeps a rooted host as-is, and Create() drops it when the
+            // file is absent (an older bundle without the emitted registry) - the previous behaviour, no registry.
+            var hostRegistry = string.IsNullOrEmpty(bundledHostFolder) ? null : Path.Combine(bundledHostFolder!, "kbview-registry.web.json");
+            return Create(root, hostRegistry, Array.Empty<string>(), null, null, files);
+        }
+
         /// <summary>The package a project without its own design entry (a module) needs in its dev server for the design page.</summary>
         public const string HostRuntimePackage = "@kubuno/host-runtime";
 

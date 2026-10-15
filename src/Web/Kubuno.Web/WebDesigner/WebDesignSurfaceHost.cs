@@ -50,6 +50,8 @@ namespace Kubuno.Web.WebDesigner
         private readonly DispatcherTimer _monitor;
         private readonly string _bundledFolder;
         private readonly bool _bundledAvailable;
+        /// <summary>The device form factor the page is told about (e.g. "mobile"), or null; passed as the bundled page's <c>?ff=</c> query.</summary>
+        private readonly string? _formFactor;
         private bool _initStarted;
         private bool _disposed;
         private bool _pageReady;
@@ -67,12 +69,13 @@ namespace Kubuno.Web.WebDesigner
         /// <summary>A dev server page that never started (and the discovery file then): not shown again until it changes or « Réessayer ».</summary>
         private (Uri Page, string? Discovery)? _brokenPage;
 
-        public WebDesignSurfaceHost(DesignSurfaceDocument document, WebViewProject project, string bundledFolder)
+        public WebDesignSurfaceHost(DesignSurfaceDocument document, WebViewProject project, string bundledFolder, string? formFactor = null)
         {
             DocumentPath = document.Path;
             Project = project;
             BaseDirectory = Path.GetDirectoryName(document.Path);
             _bundledFolder = bundledFolder;
+            _formFactor = formFactor;
             _bundledAvailable = File.Exists(Path.Combine(bundledFolder, "index.html"));
             _runtime = new WebDesignRuntimeSource(OnRuntimeAction);
 
@@ -262,7 +265,8 @@ namespace Kubuno.Web.WebDesigner
 
             if (!wasBundled)
             {
-                Navigate(new Uri("https://" + BundledHostName + "/index.html"));
+                var query = string.IsNullOrEmpty(_formFactor) ? string.Empty : "?ff=" + Uri.EscapeDataString(_formFactor);
+                Navigate(new Uri("https://" + BundledHostName + "/index.html" + query));
                 KubunoLog.WriteLine($"[web-designer] {Path.GetFileName(DocumentPath)}: the bundled design host ({state}).");
             }
         }

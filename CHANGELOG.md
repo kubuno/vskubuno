@@ -6,7 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The Toolbox is no longer empty when editing a mobile view.** A `.kbview` / `.kbcontrol` of a `kubuno-mobile-*`
+  crate, bridged to the web design surface, got no Toolbox controls: the surface renders with the shared web
+  vocabulary, but the Toolbox read a registry *file*, and the bundled design host (used for mobile) exposed none —
+  so it fell back to the language server's desktop registry, which is empty for a mobile crate. The bundled host now
+  ships its host element registry as a file beside the page (`kbview-registry.web.json`), and a mobile view reads it,
+  so its Toolbox fills with the same 71 shared controls the surface renders (grouped into the usual tabs). The
+  Properties window and ⚡ events, which read the same registry, are populated too.
+- **Dragging a Toolbox control onto a view edited on the web surface works again.** A Toolbox item only carried its
+  markup as drag text when the designer's registry target was exactly `"web"`; a view edited on the WebView2 surface
+  whose target is not `"web"` (a mobile Rust crate's view — the web compiler reads its `Cargo.toml`'s
+  `kubuno-desktop-views` dependency as a desktop target) got no text, so the WebView2 page never detected the drag and
+  refused it everywhere ("no-drop" cursor). Every Toolbox item now carries its markup as text regardless of target
+  (harmless for the desktop native surface, which reads the private format), so a drag is detected and inserts the
+  control.
+
 ### Added
+
+- **A mobile Rust crate's views open in the web design surface.** The `.kbview` / `.kbcontrol` files of a
+  `kubuno-mobile-*` crate (e.g. `kubuno-mobile-render`) now open in the shared Kubuno View Designer on the **web**
+  WebView2 surface (its hover/selection, corner type tags, viewport toolbar) instead of the desktop Rust surface —
+  a bridge until the mobile layer ships its own native (vello) design surface, which will speak the same stable-id
+  design-surface protocol. A view is matched to this surface by its nearest `Cargo.toml` `[package]` name; genuine
+  web-project views still win. The web design host renders it in bundled mode (host elements), which is all a
+  primitive mobile view uses today. The bridge tells the design page it is editing for a phone (`?ff=mobile` on the
+  bundled host URL), so the view opens as a device (phone frame, no responsive-width presets, neutral stage).
 
 - **Kubuno Data (desktop) design note** (`docs/DATA-DESKTOP.md`). The design of record for the native desktop
   version of the Office module's Data (BI) sub-application: the web feature inventory with file:line references, the
