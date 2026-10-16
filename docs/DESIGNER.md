@@ -767,8 +767,8 @@ tears down a whole design surface process.
 
 - `SendSetText`/`SendSetDesignMode`/`SendSelect` - write one JSON line to
   `Process.StandardInput` (`ProcessStartInfo.RedirectStandardInput` is now
-  `true`, alongside the pre-existing `RedirectStandardError`; `SetDocumentText`
-  - `IDesignSurfaceHost`'s own member - now calls `SendSetText` instead of
+  `true`, alongside the pre-existing `RedirectStandardError`; `SetDocumentText` -
+  `IDesignSurfaceHost`'s own member - now calls `SendSetText` instead of
   writing the temp file the class doc used to describe) and cache the last
   value sent, so a crash-restart (`OnSurfaceExited`'s existing backoff) can
   **resend** design mode/selection/text to the fresh process instead of

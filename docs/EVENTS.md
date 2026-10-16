@@ -1958,8 +1958,8 @@ and the padlock sits in the locked control's top-right corner, clear of its text
 > « les coins des fenêtres desktop doivent être arrondis par défaut (un arrondi paramétrable dans Visual Studio bien
 > sûr) ».
 
-**The property.** `CornerRadius` (F32, DIP, category *Appearance*, type converter `CornerRadius`) on the view's root
-- every window kind - and on `FloatingWindow`; `CornerPreference` (`Default`, `Round` = 8, `RoundSmall` = 4,
+**The property.** `CornerRadius` (F32, DIP, category *Appearance*, type converter `CornerRadius`) on the view's root -
+every window kind - and on `FloatingWindow`; `CornerPreference` (`Default`, `Round` = 8, `RoundSmall` = 4,
 `DoNotRound` = 0) stays as the preset, `CornerRadius` wins when both are written. Code: `Form::set_corner_radius` /
 `corner_radius`, `host::FormOptions::corner_radius` (`None`: the preset's), `FormOptions::corner_radius()` (the
 radius asked for, a floating panel's included).
