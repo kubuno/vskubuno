@@ -149,8 +149,8 @@ inventory of the web sources (`DEP` = `office/web/src/DocumentEditorPage.tsx`, `
 `docs/` = `office/web/src/documents/`), with the desktop's state.
 
 ✔ done (a unit test of `kubuno-office-docs-core` mirroring the web, plus a real run where marked *(run)*) ·
-◐ partial (what is missing is said) · ✘ not done yet (why) · ⛔ blocked (a decision or a missing platform piece) ·
-- nothing to port (a stub, a no-op or a bug on the web; the desktop does not invent what the web lacks).
+◐ partial (what is missing is said) · ✘ not done yet (why) · ⛔ blocked (a decision or a missing platform piece) · -
+nothing to port (a stub, a no-op or a bug on the web; the desktop does not invent what the web lacks).
 
 Ribbon commands run through the same `OnExecute` whether clicked or typed (shortcut). Real mouse clicks on the ribbon
 were verified on 2026-10-07 (tab, combo box, split-button menu, button: see §5); clicks *posted* to the window

@@ -835,8 +835,8 @@ Work package DSG-9 (§6) is implemented, scoped exactly as the table asks:
 **split across `kubuno-desktop-views`** (`src/design.rs`'s own snap/insertion-index/
 drop-validation math, `src/protocol.rs`'s wire extensions, `examples/
 view_embed.rs`'s wiring) **and a NEW C# file**,
-`Kubuno.Desktop.Designer/DesignSurface/RustDesignSurfaceHost.DragDrop.cs`
-- a `partial class` split out for the same reason DSG-6's own `RustDesignSurfaceHost
+`Kubuno.Desktop.Designer/DesignSurface/RustDesignSurfaceHost.DragDrop.cs` -
+a `partial class` split out for the same reason DSG-6's own `RustDesignSurfaceHost
 .Protocol.cs` was ("so this work does not collide with concurrent changes"):
 `RustDesignSurfaceHost.cs`, `RustDesignSurfaceHost.Protocol.cs` and
 `IDesignSurfaceHost.cs` were all under active concurrent development by other
@@ -934,8 +934,8 @@ messages:
 
 - **`drag_enter(component)`** (`kubuno/dragEnter`) - remembers the registry
   element name being dragged; clears any stale target.
-- **`drag_over(layout, doc, x, y) -> Option<&DropTarget>`** (`kubuno/dragOver`)
-  - **routing rule**: if the element directly under the pointer itself
+- **`drag_over(layout, doc, x, y) -> Option<&DropTarget>`** (`kubuno/dragOver`) -
+  **routing rule**: if the element directly under the pointer itself
   accepts children (`registry::lookup`'s own `ChildrenModel != None`), the
   target is THAT element (dropping "into" it); otherwise the target is its
   PARENT (dropping "near" a leaf targets its container) - the same rule a
@@ -1205,8 +1205,8 @@ session's own scope):
 4. **A simulated toolbox drop's insertion index did not match a manual
    trace at the same drop point.** `--simulate-toolbox`'s own fixed short
    path (a few `dragOver` steps then `drop`) landed at `index: 0` where an
-   earlier manual trace at a deliberately-chosen deeper point gave `index: 3`
-   - both are `flow_insertion_index`'s correct answer for their OWN actual
+   earlier manual trace at a deliberately-chosen deeper point gave `index: 3` -
+   both are `flow_insertion_index`'s correct answer for their OWN actual
    drop coordinates (`drop`'s own handler re-evaluates `drag_over` at the
    EXACT drop point, `DESIGNER.md` §10's own "Toolbox drop" section already
    documents this), so this is very likely `--simulate-toolbox`'s fixed path

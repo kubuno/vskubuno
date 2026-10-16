@@ -57,8 +57,8 @@
   <ItemGroup>
     <!--
       Supplied by both hosts at run time (MSBuild.exe and dotnet's own bundled MSBuild already
-      have these types loaded); referenced here only to compile against, never copied or shipped
-      - the standard shape for a cross-host custom-task package.
+      have these types loaded); referenced here only to compile against, never copied or shipped -
+      the standard shape for a cross-host custom-task package.
     -->
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.8" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>

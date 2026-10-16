@@ -482,8 +482,8 @@ the instance kept by a hot reload; glyph placement and blink phases), 24 doc tes
 7, `showcase` 1; `kubuno-views-ls` 146. `kubuno-desktop-data` (DATA-2 part): `binding_source` typed reads/writes, detail list,
 paging requests, queued events of a named component; `error_provider` paths; `navigator` item states, layout and hit
 test; `tests/sqlite.rs` - an `OnRowValidating` XML handler (a view model's `dispatch_event`) refuses a move
-synchronously through the scope, typed bindings with `N0`/`fr-FR`/`NullValue` save `1234` and NULL; `tests/registry.rs`
-- `BindingNavigator` is a linked Data control, the new properties are declared, and a real `Runtime` owns the
+synchronously through the scope, typed bindings with `N0`/`fr-FR`/`NullValue` save `1234` and NULL; `tests/registry.rs` -
+`BindingNavigator` is a linked Data control, the new properties are declared, and a real `Runtime` owns the
 components of a view (configured before the first paint, kept by a hot reload, a renamed element is a new instance).
 
 ## 14. DATA-3 as built (2026-09-30)
