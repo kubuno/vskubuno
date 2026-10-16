@@ -553,13 +553,13 @@ namespace Kubuno.Shared.DevAssistant.Session
                     builder.Append(" (").Append(string.Join(", ", command.Aliases.Select(a => "`/" + a + "`"))).Append(')');
                 }
 
-                builder.Append(" — ").Append(UI.AssistantText.IsFrench ? command.DescriptionFr : command.DescriptionEn).Append('\n');
+                builder.Append(" - ").Append(UI.AssistantText.IsFrench ? command.DescriptionFr : command.DescriptionEn).Append('\n');
             }
 
             builder.Append(UI.AssistantText.S("\n**Références**\n", "\n**References**\n"));
             builder.Append(UI.AssistantText.S(
-                "- `#fichier` ou `#fichier:chemin` — le document actif ou un fichier\n- `#sélection` — la sélection de l'éditeur\n- `#élément` — l'élément sélectionné dans le concepteur de vues\n",
-                "- `#file` or `#file:path` — the active document or a file\n- `#selection` — the editor selection\n- `#element` — the element selected in the view designer\n"));
+                "- `#fichier` ou `#fichier:chemin` - le document actif ou un fichier\n- `#sélection` - la sélection de l'éditeur\n- `#élément` - l'élément sélectionné dans le concepteur de vues\n",
+                "- `#file` or `#file:path` - the active document or a file\n- `#selection` - the editor selection\n- `#element` - the element selected in the view designer\n"));
             return builder.ToString();
         }
 

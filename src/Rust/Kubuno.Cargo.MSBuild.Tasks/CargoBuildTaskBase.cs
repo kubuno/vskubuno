@@ -15,7 +15,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
     /// Shared plumbing for every task in this assembly: builds a <see cref="CargoCommand"/> (left
     /// to each subclass), runs it with <c>--message-format=json-diagnostic-rendered-ansi</c>, and
     /// feeds each output line through <see cref="CargoMessageParser"/>/<see cref="CargoDiagnosticLogging"/>
-    /// as it streams — so an Error List entry appears while cargo is still running, not only once
+    /// as it streams - so an Error List entry appears while cargo is still running, not only once
     /// the whole build has finished.
     /// </summary>
     public abstract class CargoBuildTaskBase : MSBuildTask
@@ -28,7 +28,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
         public string? Package { get; set; }
 
         /// <summary>
-        /// "debug" (the default — emits no flag), "release" (emits <c>--release</c>), or any other
+        /// "debug" (the default - emits no flag), "release" (emits <c>--release</c>), or any other
         /// name (emitted as <c>--profile &lt;name&gt;</c>). See <see cref="CargoCommand.WithProfile"/>.
         /// </summary>
         public string? Profile { get; set; }
@@ -62,7 +62,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
         /// <summary>
         /// Working directory for the cargo process. Defaults to <see cref="ManifestPath"/>'s own
         /// directory, which is also used to resolve relative diagnostic spans to absolute paths
-        /// (see <see cref="CargoMessageParser.Parse"/>) — correct whenever the manifest is a
+        /// (see <see cref="CargoMessageParser.Parse"/>) - correct whenever the manifest is a
         /// workspace root or a standalone package; a member of a larger workspace should set
         /// <see cref="WorkspaceRoot"/> explicitly.
         /// </summary>
@@ -168,7 +168,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
             if (!result.Succeeded && !Log.HasLoggedErrors)
             {
                 // cargo failed (non-zero exit) but produced no parsed diagnostic with Error
-                // severity (e.g. a manifest error, or a linker failure with no compiler span) —
+                // severity (e.g. a manifest error, or a linker failure with no compiler span) -
                 // still fail the MSBuild task, with whatever it wrote to stderr as the message.
                 OnFailedWithoutErrors(result);
             }
@@ -197,7 +197,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
             if (line.IsError)
             {
                 // Plain-text stderr (progress like "Compiling foo v0.1.0", or a non-JSON cargo
-                // error) never goes through the JSON parser — only stdout is
+                // error) never goes through the JSON parser - only stdout is
                 // `--message-format`-encoded.
                 Log.LogMessage(MessageImportance.Normal, line.Text);
                 return;

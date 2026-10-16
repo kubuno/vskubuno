@@ -7,17 +7,17 @@ namespace Kubuno.Cargo.MSBuild.Tasks.Internal
 {
     /// <summary>
     /// Pure mapping from one parsed <see cref="CargoBuildEvent"/> (already produced by
-    /// <see cref="CargoMessageParser"/>) to MSBuild logging calls — kept separate from any actual
+    /// <see cref="CargoMessageParser"/>) to MSBuild logging calls - kept separate from any actual
     /// <see cref="Microsoft.Build.Utilities.Task"/> so it can be unit tested against a plain
     /// <see cref="TaskLoggingHelper"/>, with no live cargo process involved.
     ///
     /// Every diagnostic becomes exactly one Error List entry (<see cref="TaskLoggingHelper.LogError"/>
     /// or <see cref="TaskLoggingHelper.LogWarning"/>, with file/line/column/code so it is clickable
-    /// there), plus — when it has one — a second, plain message carrying the full rustc-rendered
+    /// there), plus - when it has one - a second, plain message carrying the full rustc-rendered
     /// text (source snippet, carets, notes) for the Build Output pane. This mirrors the two-sink
     /// split the Open Folder integration already uses (`IBuildMessageService` for the Error List
     /// entry, `IVsOutputWindowPane` for the rendered text) instead of trying to cram both into one
-    /// message, which that integration found could crash devenv — see this repo's CHANGELOG.
+    /// message, which that integration found could crash devenv - see this repo's CHANGELOG.
     /// </summary>
     public static class CargoDiagnosticLogging
     {
@@ -99,7 +99,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks.Internal
                 default:
                     // Note / Help / FailureNote: never their own Error List entry (rustc always
                     // attaches these to a preceding error/warning as children in the same
-                    // diagnostic — logging them as bare messages here is only a fallback for the
+                    // diagnostic - logging them as bare messages here is only a fallback for the
                     // rare top-level "failure-note" summary line, which has no primary span).
                     log.LogMessage(MessageImportance.Normal, "{0}: {1}", diagnostic.Severity, diagnostic.Message);
                     break;

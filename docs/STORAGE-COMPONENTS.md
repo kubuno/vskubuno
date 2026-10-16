@@ -1,4 +1,4 @@
-# Storage components — where a Kubuno app keeps its data, on every platform (design, and lot 1 as built)
+# Storage components - where a Kubuno app keeps its data, on every platform (design, and lot 1 as built)
 
 > Product-owner requirement (2026-10-02): « n'oublie pas de créer des composants (par média ou OS) pour la gestion du
 > stockage ou du partage des données ou variables, par exemple : la base des registres pour Windows, les cookies pour
@@ -20,15 +20,15 @@ model this note copies for `.kbsettings`), `SHARED-CORES.md`, `WEB-VIEWS.md`, `M
 
 ## 0. Summary
 
-- **One canonical API per need, several media.** A view (or plain code) uses a *portable* component — `Settings`,
-  `SecretStore`, `KeyValueStore`, `FileStore`, `SharedChannel`… — whose back-end is chosen per platform (files on the
+- **One canonical API per need, several media.** A view (or plain code) uses a *portable* component - `Settings`,
+  `SecretStore`, `KeyValueStore`, `FileStore`, `SharedChannel`… - whose back-end is chosen per platform (files on the
   desktop, the Keychain on macOS, `localStorage`/IndexedDB on the web, DataStore on Android…) and can be overridden
   (`Backend="Registry"`). The same `.kbview` and the same code-behind run everywhere.
 - **Platform components when the medium itself is wanted.** `RegistryKey` (Windows), `CookieStore` (web),
   `UserDefaults` (macOS/iOS), `GSettingsKey` (Linux)… exist only where the medium exists; the language server warns
   when a view of a project that also targets another platform uses one, the runtime answers `Unsupported` there.
 - **Everything is scoped to the app** (`AppId`, the module isolation rule of `VIEWS-SPEC.md`): a folder, a Registry
-  key, a credential scope, a key prefix — never another app's. Secrets never reach a plain file, a cookie, a binding
+  key, a credential scope, a key prefix - never another app's. Secrets never reach a plain file, a cookie, a binding
   or a log. A **sandboxed profile** (`KUBUNO_SANDBOX_DIR`) moves every medium (files, Registry, secret names) away from
   the user's real profile: tests and samples run for real without touching it.
 - **Designer parity with Windows Forms**: a « Stockage » / « Storage » Toolbox tab, the component tray, enum
@@ -62,7 +62,7 @@ model this note copies for `.kbsettings`), `SHARED-CORES.md`, `WEB-VIEWS.md`, `M
 | `windows/src/crates/kubuno-desktop-data` | `DbConnection`… and a `SecretResolver` (environment `ConnectionStrings__X`, Credential Manager `Kubuno:<UserSecretsId>:…`, `%APPDATA%\Kubuno\UserSecrets\<id>\secrets.json`) | a **third** secret naming scheme (open question Q4) |
 | `windows/src/shell/services/settings.rs` | the shell's preferences in `shell.json` (serde struct, defaults, no versioning, write errors ignored) and the `Run` key through `winreg` (skipped in a sandbox) | to migrate onto `Settings` (lot ST-6) |
 | `windows/src/drive/…/services/settings` | drive's settings, one JSON store at `%LOCALAPPDATA%\KubunoDrive\settings.json` (port of Files' `UserSettingsService`) | idem |
-| `core/frontend` (web) | `localStorage` in ~29 files (theme, favourites, panel layouts, admin pins, recents, i18n `instance-lang`), `sessionStorage` (setup draft id), cookies: `access_token` (**JS-readable**, `SameSite=Strict`, 15 min, `Secure` on https — for downloads, see `kubuno-core/src/auth/middleware.rs`), language cookie (`SameSite=Lax`, 1 year), OAuth state cookie (path `/auth/oauth/callback`); the `refresh_token` cookie is **HttpOnly**, set by the server and never touched by JS; `BroadcastChannel` `kubuno-auth` and `kubuno-session-activity` | no common wrapper: each feature names its keys; modules share the host origin, so web isolation is a naming convention (§6.1) |
+| `core/frontend` (web) | `localStorage` in ~29 files (theme, favourites, panel layouts, admin pins, recents, i18n `instance-lang`), `sessionStorage` (setup draft id), cookies: `access_token` (**JS-readable**, `SameSite=Strict`, 15 min, `Secure` on https - for downloads, see `kubuno-core/src/auth/middleware.rs`), language cookie (`SameSite=Lax`, 1 year), OAuth state cookie (path `/auth/oauth/callback`); the `refresh_token` cookie is **HttpOnly**, set by the server and never touched by JS; `BroadcastChannel` `kubuno-auth` and `kubuno-session-activity` | no common wrapper: each feature names its keys; modules share the host origin, so web isolation is a naming convention (§6.1) |
 | Android (`mobile`) | multi-account `AccountManager`, Room/SQLite, WorkManager | out of this repository; mapping in §3 |
 
 Findings: three secret naming schemes (`Kubuno/<account>/<item>`, `Kubuno:<id>:<key>`, now `Kubuno/app.<app>/<name>`);
@@ -73,7 +73,7 @@ of it.
 
 ## 3. Inventory and mapping per platform
 
-Legend: **bold** = the back-end `Backend="Auto"` picks; ✓ = available as an explicit back-end; — = none.
+Legend: **bold** = the back-end `Backend="Auto"` picks; ✓ = available as an explicit back-end; - = none.
 
 ### 3.1 App settings (typed, defaults, scopes, notifications, upgrade)
 
@@ -94,7 +94,7 @@ which a per-app, per-user store cannot require; `GSettingsKey` reads desktop-wid
 | | Windows | macOS | Linux | Web | Android | iOS |
 |---|---|---|---|---|---|---|
 | Store | **Credential Manager** (generic, `CRED_PERSIST_LOCAL_MACHINE`, DPAPI per user, ≤ 2 560 bytes) | **Keychain** (device-local) | **Secret Service** (GNOME Keyring, KWallet); absent on headless sessions → session-only or opt-in `0600` file | **none in the browser**: a secret stays in memory for the page's life, or on the server (a vault module) | Android Keystore + encrypted DataStore | **Keychain** (access groups to share between the user's Kubuno apps) |
-| Name | `Kubuno/app.<app>/<name>` (sandbox: `Kubuno/sandbox-<tag>.app.<app>/<name>`) | idem (service) | idem (attributes) | — | alias `kubuno.<app>.<name>` | service `com.kubuno.<app>`, account `<name>` |
+| Name | `Kubuno/app.<app>/<name>` (sandbox: `Kubuno/sandbox-<tag>.app.<app>/<name>`) | idem (service) | idem (attributes) | - | alias `kubuno.<app>.<name>` | service `com.kubuno.<app>`, account `<name>` |
 
 Never: a secret in `localStorage`, `sessionStorage`, IndexedDB, a non-HttpOnly cookie, a settings file, the Registry,
 a URL, a log, a crash report.
@@ -140,12 +140,12 @@ A `Persistence="Session|Persistent"` property on `KeyValueStore`/`FileStore` pic
 |---|---|---|---|---|---|---|
 | Message channel | **named pipe** `\\.\pipe\kubuno-<sid>-<channel>` (owner = current user, ACL; the broker's squatting checks) | **Unix socket** in `user_runtime_dir()` (`0700`; XPC later for sandboxed apps) | **Unix socket** in `$XDG_RUNTIME_DIR/kubuno` (`SO_PEERCRED`); D-Bus session bus as an alternative for desktop integration | **`BroadcastChannel('kubuno:<channel>')`** (same origin, every tab), `SharedWorker` for a single owner, `postMessage` to iframes/popups, `storage` events | bound `Service` / `ContentProvider` with a signature permission | App Groups + Darwin notifications |
 | Shared state (small) | a `Settings` set with `AppId="kubuno"` (shared namespace, opt-in) | idem + `NSUserDefaults` suite `group.com.kubuno` | idem | IndexedDB `kubuno:shared` | `ContentProvider` | App Group `UserDefaults(suiteName:)` |
-| Shared memory | file mapping (`CreateFileMapping`, named `Local\Kubuno-…`) — only for large, read-mostly data | `shm_open` | `memfd`/`shm_open` | `SharedArrayBuffer` (needs cross-origin isolation: not on the host) | `SharedMemory` | — |
-| Window-to-window in one app | `WM_COPYDATA` (legacy, discouraged: no auth) | — | — | `postMessage` | — | — |
+| Shared memory | file mapping (`CreateFileMapping`, named `Local\Kubuno-…`) - only for large, read-mostly data | `shm_open` | `memfd`/`shm_open` | `SharedArrayBuffer` (needs cross-origin isolation: not on the host) | `SharedMemory` | - |
+| Window-to-window in one app | `WM_COPYDATA` (legacy, discouraged: no auth) | - | - | `postMessage` | - | - |
 
 `SharedChannel` (ST-4) is the portable component: `<SharedChannel x:Name="sync" Channel="drive.selection"
 OnMessageReceived="…"/>`, `Send(json)`, JSON payloads ≤ 64 KiB, the channel name scoped `kubuno:<app>:<channel>` unless
-`Scope="User"` (any Kubuno app of the user — the cross-app case, explicit and reviewed). The token broker stays the only
+`Scope="User"` (any Kubuno app of the user - the cross-app case, explicit and reviewed). The token broker stays the only
 channel that carries tokens.
 
 ### 3.8 Environment variables
@@ -189,7 +189,7 @@ has its own clipboard code (`DOCUMENTS-EDITING.md`); the component wraps the sam
 | `FileStore` | isolated files, temp, cache with eviction (`Kind="Data|Cache|Temp"`, `MaxSize`) | `Count`, `Size`, `Files` (list) | the directories of §3.4 | OPFS, Cache Storage | files dirs | ST-2 |
 | `LocalDatabase` | a `DbConnection` source `app:<name>` (SQLCipher optional) | (data components) | SQLite/SQLCipher | IndexedDB / SQLite-WASM | Room | ST-2 |
 | `SharedChannel` | messages between the app's instances / the user's Kubuno apps | `LastMessage`, `Connected` | pipe / Unix socket | `BroadcastChannel` | bound service / App Groups | ST-4 |
-| `Environment` | environment variables (read-only) | `Variables.<NAME>` | `std::env` | build-time | — | ST-5 |
+| `Environment` | environment variables (read-only) | `Variables.<NAME>` | `std::env` | build-time | - | ST-5 |
 | `Clipboard` | data exchange | `HasText`, `Text` (one-way) | Win32 / NSPasteboard / X11-Wayland | async Clipboard API | ClipboardManager | ST-5 |
 
 Common to every portable component: `AppId` (empty = the app's own), `Backend` (`Auto` + the explicit choices of its
@@ -209,8 +209,8 @@ row), `design_mode` / design surface → memory, never the developer's profile; 
 
 Availability is declared once, in `kubuno_desktop_views_meta::kbview::PLATFORM_ELEMENTS` (`("RegistryKey", &["windows"])`):
 
-- the **language server** reads the project's targets — `[package.metadata.kubuno] targets = ["windows", "linux",
-  "macos"]` in `Cargo.toml` (desktop default: `windows`; web projects: `web`) — and warns on an element whose platforms
+- the **language server** reads the project's targets - `[package.metadata.kubuno] targets = ["windows", "linux",
+  "macos"]` in `Cargo.toml` (desktop default: `windows`; web projects: `web`) - and warns on an element whose platforms
   do not cover them (code `platform-only`); the web profile (WEB-VIEWS §5) will make it an error;
 - the **runtime** registers the class everywhere (a view still loads on another OS) but its calls return
   `StorageError::Unsupported` and its bindings read nothing; code that needs it uses `#[cfg(windows)]` on its own calls
@@ -221,7 +221,7 @@ Availability is declared once, in `kubuno_desktop_views_meta::kbview::PLATFORM_E
 ### 4.3 Back-end choice
 
 `Backend="Auto"` is the platform default of §3 (files on the three desktops: inspectable, sandbox-friendly, roaming
-through `%APPDATA%`, identical code paths — the Registry is an explicit choice for apps that integrate with Windows
+through `%APPDATA%`, identical code paths - the Registry is an explicit choice for apps that integrate with Windows
 tooling, Group Policy preferences or `reg.exe` scripts). An explicit back-end that does not exist on the platform is an
 error at open (`Unsupported`), reported by `last_error()` and a log line, and the component falls back to memory so
 the view keeps working. The engine never silently switches media for persisted data.
@@ -312,7 +312,7 @@ canonical form both writers produce byte for byte):
 `{Binding Theme, Source=settings, Mode=TwoWay}` (the `Source=` grammar of `VIEWS-SPEC.md` §6.1: the component is a
 binding provider). A list setting binds as rows with a `Value` field (`ItemsSource`). Considered and deferred: a
 `{Setting Theme}` markup extension (sugar for the line above; it would need a change of the shared binding grammar on
-both targets — open question Q2).
+both targets - open question Q2).
 
 ### 5.5 Language server
 
@@ -323,7 +323,7 @@ both targets — open question Q2).
   an `Application` setting = warning);
 - `<SecretStore>` exposes only `Available` (and `<Name>.Exists`, open); `<RegistryKey>` value names are open;
 - diagnostics `platform-only` (§4.2) and `open-settings` (information: a `<Settings>` naming a set with no
-  `.kbsettings` is open — any name, no default, no typed class).
+  `.kbsettings` is open - any name, no default, no typed class).
 
 ---
 
@@ -344,7 +344,7 @@ both targets — open question Q2).
 ### 6.2 Encryption at rest
 
 Secrets: the OS stores (DPAPI, Keychain, Secret Service). Databases with personal data: SQLCipher, key in the OS store
-(`kubuno-desktop-sync-engine`). Settings and key/value files: **not encrypted** (they hold preferences, never secrets — the
+(`kubuno-desktop-sync-engine`). Settings and key/value files: **not encrypted** (they hold preferences, never secrets - the
 format and the tooling warn on secret-like names); on Windows they inherit the profile's ACL, on Unix the user's
 `0700` XDG directories. Web: nothing encrypted client-side (no key would be safer than the data).
 
@@ -368,7 +368,7 @@ cookie the server sets; `CookieStore` cannot read or write an HttpOnly cookie (t
 of the host's own cookies (`refresh_token`, `access_token`, the language cookie); `SameSite=None` only with `Secure`;
 `Partitioned` when the module is embedded cross-site; `navigator.storage.persist()` asked once for module data, never
 for caches. Observation (not changed here): the host writes the access token into a JS-readable `access_token` cookie
-for downloads (`client.ts` `writeTokenCookie`, `SameSite=Strict`, 15 min) — the token is in JS memory anyway, but a
+for downloads (`client.ts` `writeTokenCookie`, `SameSite=Strict`, 15 min) - the token is in JS memory anyway, but a
 download URL with a short-lived signed ticket would remove it (Q7).
 
 ### 6.5 Logging
@@ -383,7 +383,7 @@ the OS error; a corrupted settings file is reported with its position only (the 
 - **In-memory back-ends** everywhere (`MemoryBackend`, `MemorySecretStore`, `Backend="Memory"` in views), and a memory
   back-end shared with the test to play "another process" (external changes, upgrades, administrators' values).
 - **Sandboxed profile** (`KUBUNO_SANDBOX_DIR`): files under the sandbox, Registry under
-  `HKCU\Software\Kubuno\Sandbox\<tag>` (deleted at the end of the test), secret names prefixed — one test per binary
+  `HKCU\Software\Kubuno\Sandbox\<tag>` (deleted at the end of the test), secret names prefixed - one test per binary
   (the variable is process-wide).
 - **Registry tests** run below a throw-away `HKCU\Software\Kubuno\Tests\<name>-<pid>-<nanos>` (`RegistryRoot::under`),
   deleted by a drop guard even when an assertion fails; parents left empty are removed with `RegDeleteKeyExW` (which
@@ -399,7 +399,7 @@ the OS error; a corrupted settings file is reported with its position only (the 
 
 ---
 
-## 8. Prior art — what we take, what we avoid
+## 8. Prior art - what we take, what we avoid
 
 | Prior art | Take | Avoid |
 |---|---|---|
@@ -418,7 +418,7 @@ the OS error; a corrupted settings file is reported with its position only (the 
 
 | Lot | Content | Size | Order / depends on |
 |---|---|---|---|
-| **ST-1** (done) | `kubuno-desktop-app-storage` (paths moved from `kubuno-desktop-account`, `machine_config_dir`, `AppId`, typed settings engine with scopes, defaults, notifications, external-change refresh, versioned upgrade, shared instances; File / Registry / Memory back-ends; `AppSecrets`; Windows Registry API with views and sandbox redirection); `<Settings>`, `<SecretStore>`, `<RegistryKey>` components; `.kbsettings` format + `settings!` typed class; `kubuno_desktop::storage` handles; LS members/diagnostics; Toolbox tab, icons, Properties category; settings editor + item template; sample; tests | L | — |
+| **ST-1** (done) | `kubuno-desktop-app-storage` (paths moved from `kubuno-desktop-account`, `machine_config_dir`, `AppId`, typed settings engine with scopes, defaults, notifications, external-change refresh, versioned upgrade, shared instances; File / Registry / Memory back-ends; `AppSecrets`; Windows Registry API with views and sandbox redirection); `<Settings>`, `<SecretStore>`, `<RegistryKey>` components; `.kbsettings` format + `settings!` typed class; `kubuno_desktop::storage` handles; LS members/diagnostics; Toolbox tab, icons, Properties category; settings editor + item template; sample; tests | L | - |
 | **ST-2** (done, §12) | `KeyValueStore`, `FileStore` (data/cache/temp, eviction), `LocalDatabase` for the data components; **Registry key picker** in Properties; `AccountScoped` settings (Q6); one secret naming scheme (Q4); the shell's `shell.json` and drive's `settings.json` migrated onto `Settings` (one-time import, logged); undo/redo in the settings editor; the declared defaults on the design surface. Moved to a later lot: the `Schema` drop-down, platform badges and target filtering in the Toolbox, the `Error` event | L | ST-1 |
 | ST-3 | **web**: `@kubuno/views` `Settings` (server user preferences + `localStorage` cache, `storage`/`BroadcastChannel` notifications), `CookieStore`, `WebStorage`, `KeyValueStore`/`FileStore` on IndexedDB/OPFS/Cache Storage, `SecretStore` memory-only; per-module budgets; registry `web` blocks; conformance with the desktop export; a server endpoint for user preferences per module (core) | L | ST-1; coordinate with the web views agent (core/frontend) |
 | ST-4 | `SharedChannel` (pipes / Unix sockets / BroadcastChannel), file and Registry change watchers (`ReadDirectoryChangesW`, `RegNotifyChangeKeyValue`, inotify, FSEvents) replacing the 2 s poll | M | ST-1 |
@@ -448,7 +448,7 @@ that lot and the web views work to settle.
 
 ---
 
-## 11. Part 2 — as built (lot ST-1, 2026-10-02)
+## 11. Part 2 - as built (lot ST-1, 2026-10-02)
 
 ### 11.1 Code
 
@@ -501,7 +501,7 @@ became dirty; closed without saving). C#: `Kubuno.Views.Tests`, `Kubuno.Desktop.
 
 ---
 
-## 12. Part 3 — lot ST-2 (2026-10-02)
+## 12. Part 3 - lot ST-2 (2026-10-02)
 
 ### 12.1 Built
 

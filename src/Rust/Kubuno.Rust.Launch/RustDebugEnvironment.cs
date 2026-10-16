@@ -15,11 +15,11 @@ namespace Kubuno.Rust.Launch
     {
         /// <summary>
         /// The PATH entries to prepend, in the order the loader should search them:
-        /// 1. the profile directory itself (`&lt;target-dir&gt;/[&lt;triple&gt;/]&lt;profile&gt;`) —
+        /// 1. the profile directory itself (`&lt;target-dir&gt;/[&lt;triple&gt;/]&lt;profile&gt;`) -
         ///    where Cargo uplifts the crate's own dylibs;
-        /// 2. its `deps` subdirectory — where dependency dylibs land, with their PDBs, which the
+        /// 2. its `deps` subdirectory - where dependency dylibs land, with their PDBs, which the
         ///    debugger finds beside them;
-        /// 3. the toolchain's host-triple std lib directory — where `std-*.dll` lives when
+        /// 3. the toolchain's host-triple std lib directory - where `std-*.dll` lives when
         ///    the build links it dynamically.
         /// </summary>
         public static IReadOnlyList<string> BuildPathAdditions(string targetDir, string? targetTriple, string profile, string sysroot, string hostTriple)
@@ -48,13 +48,13 @@ namespace Kubuno.Rust.Launch
         /// <param name="hostTriple">The host triple whose std lib directory to add (e.g. "x86_64-pc-windows-msvc").</param>
         /// <param name="existingPath">
         /// The PATH to append after the prepended entries, or null to omit the inherited
-        /// PATH entirely (the caller — the VSIX — decides whether/how to read the current
+        /// PATH entirely (the caller - the VSIX - decides whether/how to read the current
         /// process's PATH; this library stays pure and doesn't read the environment itself).
         /// </param>
         /// <param name="rustBacktrace">The default RUST_BACKTRACE value; pass null to omit the variable entirely.</param>
         /// <param name="overrides">
         /// Applied last and win over every computed value above, including PATH and
-        /// RUST_BACKTRACE — this is how a caller opts out of either.
+        /// RUST_BACKTRACE - this is how a caller opts out of either.
         /// </param>
         public static IReadOnlyDictionary<string, string> Build(
             string targetDir,

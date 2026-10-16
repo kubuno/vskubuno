@@ -1,5 +1,5 @@
 //! The foundations sample's window (`main_view.kbview`): the pages follow the Sidebar, the lists are
-//! 10 000 rows long, and the controls of the views are reached from code — typed handles, a custom
+//! 10 000 rows long, and the controls of the views are reached from code - typed handles, a custom
 //! control of another crate (`Custom<ChipBar>`), the Repeater's current item, menus shown from code.
 
 use std::sync::Arc;
@@ -61,7 +61,7 @@ fn message(i: usize) -> Row {
         .with("Id", Value::F32(i as f32))
         .with("Author", Value::Str(AUTHORS[i % AUTHORS.len()].to_string()))
         .with("Presence", Value::Str(PRESENCES[i % PRESENCES.len()].to_string()))
-        .with("Text", Value::Str(format!("Message n° {} — la liste ne construit que les éléments visibles.", i + 1)))
+        .with("Text", Value::Str(format!("Message n° {} - la liste ne construit que les éléments visibles.", i + 1)))
         .with("Time", Value::Str(format!("{:02}:{:02}", (9 + i / 60) % 24, i % 60)))
 }
 

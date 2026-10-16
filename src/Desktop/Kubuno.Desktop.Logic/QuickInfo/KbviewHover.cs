@@ -28,7 +28,7 @@ namespace Kubuno.Desktop.Logic.QuickInfo
         private static readonly Regex Title = new Regex(@"^\*\*`(?<name>[^`]+)`\*\*(?<rest>.*)$", RegexOptions.CultureInvariant);
         private static readonly Regex OnElement = new Regex(@"^\s*(?<event>event\s+)?on\s+`<(?<element>[^>`]+)>`", RegexOptions.CultureInvariant);
         private static readonly Regex DefaultLine = new Regex(@"^\*Default: `(?<value>.*)`\*$", RegexOptions.CultureInvariant);
-        private static readonly Regex EventLine = new Regex(@"^\*(?<category>[^*]+?) — `(?<args>[^`]*)`\*$", RegexOptions.CultureInvariant);
+        private static readonly Regex EventLine = new Regex(@"^\*(?<category>[^*]+?) - `(?<args>[^`]*)`\*$", RegexOptions.CultureInvariant);
         private static readonly Regex ValidValuesLine = new Regex(@"^Valid values:\s*(?<values>.*)$", RegexOptions.CultureInvariant);
 
         public KbviewHoverKind Kind { get; private set; }

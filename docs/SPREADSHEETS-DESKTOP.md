@@ -1,8 +1,8 @@
-# Kubuno Spreadsheets (desktop) — design note
+# Kubuno Spreadsheets (desktop) - design note
 
 Status: design of record for the native desktop version of the office module's spreadsheet editor
 (`kubuno-spreadsheets.exe`), written before the app code (mission of 2026-10-07: « the desktop app must fully
-catch up with the web version — every feature of the web Spreadsheets editor, not a subset »). It follows the
+catch up with the web version - every feature of the web Spreadsheets editor, not a subset »). It follows the
 method of `DOCUMENTS-EDITING.md`: the web editor is the behavioural and visual reference, its engine is ported
 into a platform-neutral shared core (`kubuno-office-sheets-core`), the desktop app is the portable app of
 `desktop/common` plus the Win32 window of `desktop/windows`. Section 7 (coverage) and section 9 (log) are kept up
@@ -92,8 +92,8 @@ A **local file** is either that content file (`.kbcal` gzipped or plain JSON; sh
 | Route | Use |
 |---|---|
 | `GET /spreadsheets/:id` | `{ spreadsheet, sheets: [{id, name, position}] }` (owner or collaborator) |
-| `GET /spreadsheets/:id/sheets/:sid` | `{ sheet, data, names }` — `data` is that sheet's `SheetData` |
-| `PATCH /spreadsheets/:id/sheets/:sid` | `{ name?, data?: {cells, colStyles?, rowStyles?}, col_widths?, row_heights?, frozen_rows?, frozen_cols?, merges?, gridlines?, images?, equations?, charts?, shapes?, cf?, validations?, row_groups?, col_groups?, pivots?, protection?, enc?, clear_enc?, position? }` — read-modify-write of the whole content file; **no precondition** (no etag, no If-Match) |
+| `GET /spreadsheets/:id/sheets/:sid` | `{ sheet, data, names }` - `data` is that sheet's `SheetData` |
+| `PATCH /spreadsheets/:id/sheets/:sid` | `{ name?, data?: {cells, colStyles?, rowStyles?}, col_widths?, row_heights?, frozen_rows?, frozen_cols?, merges?, gridlines?, images?, equations?, charts?, shapes?, cf?, validations?, row_groups?, col_groups?, pivots?, protection?, enc?, clear_enc?, position? }` - read-modify-write of the whole content file; **no precondition** (no etag, no If-Match) |
 | `POST /spreadsheets/:id/sheets` | `{ name?, id? }` (client-minted id honoured) |
 | `DELETE /spreadsheets/:id/sheets/:sid` | refused for the last sheet |
 | `POST /spreadsheets/:id/editing/join` · `ping` · `DELETE leave` · `POST save` | the draft-file editing session (**owner only**), like documents |
@@ -102,7 +102,7 @@ A **local file** is either that content file (`.kbcal` gzipped or plain JSON; sh
 
 Server facts that shape the save path (same family as documents, `office-documents-desktop` notes): a PATCH writes
 the **draft** when one exists and mirrors it to the main file (`write_content_mirrored`); `leave` promotes the
-draft and deletes it when the last editor leaves; nothing protects a write against a concurrent one — the
+draft and deletes it when the last editor leaves; nothing protects a write against a concurrent one - the
 desktop's precondition is a **digest of the whole workbook re-read right before each save** (§5.3); the request
 body is capped at 2 MiB by axum (413, terminal for that sheet).
 
@@ -148,7 +148,7 @@ one (numbers within 1e-11 relative, everything else identical).
 | Crate | Folder | Role |
 |---|---|---|
 | `kubuno-office-sheets-core` | `common/sheets-core` | the engine (§4) |
-| `kubuno-office-spreadsheets-common` | `desktop/common/` | the complete portable app: launch options (`--doc <id>`, a file, `--dark`, `--culture`, `--zoom`, `--sample`), the open workbook's view state (active sheet, selection, scroll, zoom), the server path (routes, the save rules, journal, the live thread — the session state machine of `kubuno-office-desktop-common` reused, §5.3), the text interface, the platform extension points |
+| `kubuno-office-spreadsheets-common` | `desktop/common/` | the complete portable app: launch options (`--doc <id>`, a file, `--dark`, `--culture`, `--zoom`, `--sample`), the open workbook's view state (active sheet, selection, scroll, zoom), the server path (routes, the save rules, journal, the live thread - the session state machine of `kubuno-office-desktop-common` reused, §5.3), the text interface, the platform extension points |
 | `kubuno-office-spreadsheets` | `desktop/windows/` | `kubuno-spreadsheets.exe`: the window (`.kbview`, declarative ribbon, backstage, formula bar, sheet tabs, status bar), the `GridCanvas` custom control (Direct2D), dialogs, clipboard |
 
 Linux/macOS entry points join when the framework has a portable renderer (as for Documents).
@@ -240,9 +240,9 @@ follows the theme.
 | Comments (note marker, add/edit/delete) | `SA:4028-4041` | ◐ edit through a text dialog |
 | Format painter | `SA:4588` | ◐ |
 | Backstage: info, export xlsx/ods, close | `SA:8576-8646` | ◐ export wired to the server's export route |
-| Open local file / `--doc <id>` through the shell broker | — | ✔ both (sandbox profile, dev core) |
+| Open local file / `--doc <id>` through the shell broker | - | ✔ both (sandbox profile, dev core) |
 | Save: digest-guarded session, join/leave, journal, conflict dialog, 413 | `SA:3141-3326` | ✔ edits saved (B3 = 15000 read back by the API); conflict/413/journal reuse Documents' tested session |
-| Title bar Tall + header menus (waffle, avatar) | — | ✔ captures |
+| Title bar Tall + header menus (waffle, avatar) | - | ✔ captures |
 | Print dialog: area, orientation, paper, scaling, margins, repeated rows, gridlines, headings, centring, live preview, Windows print dialog | `PrintDialog.tsx`, `sheetPrint.ts`, `SA:3818-3931` | ◐ layout unit-tested (`print.rs`), preview renders the web's print table; the dialog paints partially until the framework fix lands; values print unformatted like the web (QUIRK) |
 | No selection when the workbook opens | `SA:686` | ✔ capture (empty Name Box and bar, keys ignored until the first click) |
 
@@ -363,17 +363,17 @@ Open issues:
 
 ## 9. Log
 
-**2026-10-07 — increment 0.** Core skeleton: `js`, `jsdate`, `addr`, `model::{cell, style}`, `formula::{parser,
+**2026-10-07 - increment 0.** Core skeleton: `js`, `jsdate`, `addr`, `model::{cell, style}`, `formula::{parser,
 value, eval, criteria, spill, functions::base}`, `format`; 43 unit tests; the golden harness runs the web engine on
 the Linux host and the first vectors match.
 
-**2026-10-07 — increment 1.** Every function file ported (math, stat, text, date, logical, lookup, financial,
+**2026-10-07 - increment 1.** Every function file ported (math, stat, text, date, logical, lookup, financial,
 engineering, misc and their second halves), CF, refs, fill, validation, pivot, grid geometry, the editor and its
 commands, the workbook model. 116 unit tests; the golden harness covers ≈6 000 formulas and 4 774 direct calls of
 the web's helper modules; `cargo check` passes for wasm32, Linux (native, on the Linux host, tests included) and
 aarch64-apple-darwin; clippy clean.
 
-**2026-10-07 — increments A, B (part), C — as built.** `desktop/common/kubuno-office-spreadsheets-common` (launch
+**2026-10-07 - increments A, B (part), C - as built.** `desktop/common/kubuno-office-spreadsheets-common` (launch
 options, the view model: scrolling, quadrants, the line editor with autocomplete; the window state; the server
 session `SheetsHost` over Documents' generic `session`/`live`, PATCH diff per sheet, create/delete sheet) and
 `desktop/windows/kubuno-office-spreadsheets` (`kubuno-spreadsheets.exe`: `spreadsheet_window.kbview` with the
@@ -388,7 +388,7 @@ numbers were missing); text is now placed from its measured width. The grid star
 web starts with no selection (to align). Real input (under the shared lock): a mouse click on the ribbon's Bold, Ctrl+Z, Ctrl+B; UI Automation names checked (ribbon, formula bar, Name Box, tabs, grid, zoom). Not done: the Visual Studio designer check (the disk was below the
 5 GB floor during the session) and everything marked ✘/⧗ in §7.
 
-**2026-10-07 — where I stopped (session limit).** Pushed since the last entry:
+**2026-10-07 - where I stopped (session limit).** Pushed since the last entry:
 - the save session and live thread moved to `desktop/common/kubuno-office-desktop-shared` (Documents
   re-exports them; 506defd);
 - no initial selection, as on the web (959e529);
@@ -418,7 +418,7 @@ goal seek, pivot, protection, encryption), and the equation dialog. Macros run J
 desktop options (Boa, pure Rust; QuickJS, C) are for the user to choose. Parity captures and the coverage
 table (§7) need updating.
 
-**2026-10-07 (evening) — paused at the user's request: where I stopped, next steps.**
+**2026-10-07 (evening) - paused at the user's request: where I stopped, next steps.**
 - On main:
   - objects, charts, shapes and pictures (bd04c77, 9130d7b, 0eff471, fcb4356);
   - dialogs A: conditional formatting, validation, sort, filter (b2558ee, a89b2c6);

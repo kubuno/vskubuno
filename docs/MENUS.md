@@ -25,8 +25,8 @@
 | `MenuBar` | control (`Control` level) | `MenuStrip`, WPF `Menu` | `MenuItem` (the top-level menus) |
 | `ContextMenu` | component (tray) | `ContextMenuStrip` | `MenuItem`, `MenuSeparator`, `MenuHeader`, `<ContextMenu.ItemTemplate>` |
 | `MenuItem` | structural | `ToolStripMenuItem`, WPF `MenuItem` | `MenuItem`, `MenuSeparator`, `MenuHeader`, `<MenuItem.ItemTemplate>` |
-| `MenuSeparator` | structural | `ToolStripSeparator` | — |
-| `MenuHeader` | structural | the web's `{ type: 'label' }` row | — |
+| `MenuSeparator` | structural | `ToolStripSeparator` | - |
+| `MenuHeader` | structural | the web's `{ type: 'label' }` row | - |
 | `DropDownButton` | control (`ButtonBase`) | `ToolStripDropDownButton` | the menu's items |
 | `SplitButton` | control (`ButtonBase`) | `ToolStripSplitButton` | the menu's items |
 
@@ -71,8 +71,8 @@ click (split). Events `OnDropDownOpening`, `OnDropDownClosed`.
 
 ## 3. Run time (`kubuno-desktop-views`)
 
-- **One menu engine.** Every menu of a view — a context menu, each top-level menu of a bar (`#bar:<item id>`), the
-  items of a drop-down button (`#dd:<button id>`) — is a `MenuSpec` (`window::read_menus`) opened by the runtime as an
+- **One menu engine.** Every menu of a view - a context menu, each top-level menu of a bar (`#bar:<item id>`), the
+  items of a drop-down button (`#dd:<button id>`) - is a `MenuSpec` (`window::read_menus`) opened by the runtime as an
   `OpenMenu` (`window.rs`): each level its own floating surface (popups may leave the window), sub-menus to any depth,
   kept inside the monitor, `OnOpening`/`OnDropDownOpening` before it reads its bindings and lists, owner draw.
 - **Keyboard.** While a menu is open it has the keyboard (nothing reaches the focused control): arrows, Home/End,
@@ -86,7 +86,7 @@ click (split). Events `OnDropDownOpening`, `OnDropDownClosed`.
   a click leaves; **Alt + a mnemonic** opens its menu directly. Escape on a keyboard-opened menu returns to the bar.
 - **Shortcuts (accelerators).** Each item's `ShortcutKeys` (else its command's `Shortcut`) runs it while its menu is
   closed, **before** the focused control reads the key (WinForms `ProcessCmdKey`): its check mark, its `OnClick`, its
-  command — only when it is enabled and visible as its menu would show it. A `<Command>` no item runs gets its shortcut
+  command - only when it is enabled and visible as its menu would show it. A `<Command>` no item runs gets its shortcut
   too when the view has no ribbon (a ribbon runs its commands' shortcuts itself). The first of two equal shortcuts wins
   (the language server warns, §6).
 - **Context menus** open on a right-button release over a control that names one, and on **Shift+F10 / the

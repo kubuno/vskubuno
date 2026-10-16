@@ -10,7 +10,7 @@ namespace Kubuno.Rust.Cargo.Diagnostics
     /// </summary>
     public static class AnsiText
     {
-        // Matches CSI sequences (ESC '[' ... final byte) — SGR color/style codes, cursor moves, etc.
+        // Matches CSI sequences (ESC '[' ... final byte) - SGR color/style codes, cursor moves, etc.
         // This covers everything rustc/cargo emit; OSC sequences are not used by either.
         private static readonly Regex CsiSequence = new Regex("\u001B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
 

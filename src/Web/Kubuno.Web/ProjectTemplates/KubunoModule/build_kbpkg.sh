@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build_kbpkg.sh — le paquet Kubuno générique d'un MODULE, identique sur tous les systèmes.
+# build_kbpkg.sh - le paquet Kubuno générique d'un MODULE, identique sur tous les systèmes.
 #
 # Script auto-détectant : déposé tel quel dans n'importe quel dépôt module, il
 # lit l'id et la version depuis Cargo.toml.
@@ -8,7 +8,7 @@
 # Un module n'est pas un logiciel système. Il n'enregistre aucun service (le core
 # le supervise), ne possède rien sous /etc, et porte ses migrations dans son
 # binaire. Ce qu'un gestionnaire de paquets faisait vraiment respecter pour lui
-# tenait en une ligne de dépendance — une vérification que le core fait mieux,
+# tenait en une ligne de dépendance - une vérification que le core fait mieux,
 # connaissant sa propre version. Et la marketplace n'a jamais appelé dpkg : elle
 # ouvrait le .deb elle-même pour en extraire la charge utile. Le .deb n'était
 # donc déjà qu'un conteneur, de forme debian, ce qui explique que l'installation
@@ -19,17 +19,17 @@
 #
 # LE FORMAT
 # Une archive ZIP dont la RACINE est le répertoire du module tel que le core
-# s'attend à le trouver sur disque — rien n'est traduit à l'installation :
+# s'attend à le trouver sur disque - rien n'est traduit à l'installation :
 #   module.toml            le manifeste que le core lit déjà
 #   kubuno-<id>[.exe]      l'exécutable nommé par [process].entrypoint
 #   frontend/              entry.js, entry.css, ressources
-#   migrations/            référence — les vraies vivent dans le binaire
+#   migrations/            référence - les vraies vivent dans le binaire
 #   config.toml.example    si le module en livre un
 #   LICENSE, CHANGELOG.md
 #   SHA256SUMS             chaque fichier ci-dessus, pour vérifier une copie
 #                          hors ligne sans catalogue
 #
-# La cible est portée par le NOM DU FICHIER — <id>-<version>-<os>-<arch>.kbpkg —
+# La cible est portée par le NOM DU FICHIER - <id>-<version>-<os>-<arch>.kbpkg -
 # que le catalogue lit pour proposer le bon fichier à chaque serveur.
 #
 # Usage :
@@ -41,7 +41,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 export SQLX_OFFLINE=true
 
-# Id et version viennent du MANIFESTE du module (module.toml) — la source
+# Id et version viennent du MANIFESTE du module (module.toml) - la source
 # autoritaire, présente aussi quand Cargo.toml est un workspace sans [package]
 # (ex. p2pnas). Repli sur Cargo.toml pour un module mono-crate sans les champs.
 MODULE=$(grep -m1 '^id'      module.toml | sed -E 's/.*"([^"]+)".*/\1/')
@@ -80,11 +80,11 @@ esac
 EXE="kubuno-${MODULE}"
 [[ "$OS" == "windows" ]] && EXE="kubuno-${MODULE}.exe"
 
-echo "==> ${MODULE} ${VERSION} — ${OS}/${ARCH}"
+echo "==> ${MODULE} ${VERSION} - ${OS}/${ARCH}"
 
 if [[ "$SKIP_BUILD" -eq 0 ]]; then
   echo "==> Compilation"
-  # `TARGET` (facultatif) compile pour un autre triplet — build croisé Windows/macOS.
+  # `TARGET` (facultatif) compile pour un autre triplet - build croisé Windows/macOS.
   cargo build --release ${TARGET:+--target "$TARGET"} --bin "kubuno-${MODULE}"
   [[ -f frontend/package.json ]] && ( cd frontend && npm ci --silent && npm run build --silent )
 fi
@@ -99,7 +99,7 @@ BIN="target/release/${EXE}"
 HAS_FRONTEND=0
 if [[ -f frontend/package.json ]]; then
   HAS_FRONTEND=1
-  [[ -d frontend/dist ]] || { echo "frontend/dist introuvable — construisez le frontend" >&2; exit 1; }
+  [[ -d frontend/dist ]] || { echo "frontend/dist introuvable - construisez le frontend" >&2; exit 1; }
 fi
 
 WORK="$(mktemp -d)"
@@ -149,7 +149,7 @@ printf '    %s Mo · %d fichiers\n' "$(( (SIZE + 524288) / 1048576 ))" "$(unzip 
 
 # Boucle de dev locale : installe le paquet dans le core de cette machine par le
 # MÊME chemin que la production (kubuno modules:install → store), puis redémarre.
-# Un module s'installe uniquement au format .kbpkg — il n'y a plus de .deb.
+# Un module s'installe uniquement au format .kbpkg - il n'y a plus de .deb.
 if [[ "$INSTALL" -eq 1 ]]; then
   echo "==> Installation locale (kubuno modules:install)"
   sudo kubuno modules:install "$OUT"

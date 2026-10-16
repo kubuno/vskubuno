@@ -255,7 +255,7 @@ namespace Kubuno.Desktop.DataSources
                 return;
             }
 
-            var title = (Kubuno.Views.Designer.DesignerText.IsFrench ? "Modèle de vue" : "View model") + (_viewModelLabel.Length > 0 ? " — " + _viewModelLabel : string.Empty);
+            var title = (Kubuno.Views.Designer.DesignerText.IsFrench ? "Modèle de vue" : "View model") + (_viewModelLabel.Length > 0 ? " - " + _viewModelLabel : string.Empty);
             var root = Item(new DataSourceNode(DataSourceNodeKind.ViewModel, "viewmodel:" + _viewModelLabel, null), title, KnownMonikers.Class, title);
             foreach (var member in _viewModelMembers)
             {

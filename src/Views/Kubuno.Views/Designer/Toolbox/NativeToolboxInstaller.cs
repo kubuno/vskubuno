@@ -489,7 +489,7 @@ namespace Kubuno.Views.Designer.Toolbox
             var data = new OleDataObject();
             data.SetData(ToolboxItemFormat.FormatName, new MemoryStream(ToolboxItemFormat.Encode(component.Name)));
             // Always carry the element's markup as text, not only for the "web" target. A WebView2 surface (the web
-            // designer, and the mobile Rust client's bridged web surface — whose registry target is not "web") only
+            // designer, and the mobile Rust client's bridged web surface - whose registry target is not "web") only
             // *detects* a Toolbox drag that carries text (docs/WEB-VIEWS.md section 11, "Hybrid"); without it the drag is
             // refused everywhere. It is harmless for the desktop native surface (which reads the private format above),
             // and a drop onto the XML pane inserts this markup.

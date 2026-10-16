@@ -1,4 +1,4 @@
-# Kubuno Views — event system (WinForms model) — design note
+# Kubuno Views - event system (WinForms model) - design note
 
 > Scope: product request "a very complete event system modelled on Windows Forms, including the
 > abstraction levels that let developers create their own events". This note maps each layer of the
@@ -7,8 +7,8 @@
 > `docs/XML_VIEWS.md` §2/§4/§7 and `docs/DESIGNER.md` §11 (Properties window, ⚡ tab).
 >
 > **Status (2026-09-29):** EVT-1 to EVT-5 are **done** (see §9, "EVT-1 as built", §10,
-> "EVT-2 and EVT-3 as built", §11, "EVT-4 as built" — the attribute is `#[kubuno_desktop_views::event_handlers]`,
-> see there —, and §12, "EVT-5 as built"); EVT-6: see §13; EVT-7 is split in two: **EVT-7a** (the control
+> "EVT-2 and EVT-3 as built", §11, "EVT-4 as built" - the attribute is `#[kubuno_desktop_views::event_handlers]`,
+> see there -, and §12, "EVT-5 as built"); EVT-6: see §13; EVT-7 is split in two: **EVT-7a** (the control
 > hierarchy and the overridable `on_…` methods) is done, see §14; EVT-7b (custom controls and user controls
 > in XML, tooling) is done, see §15; EVT-7c (WinForms-rich property sets) is §16; **EVT-8** (paint and the
 > `Graphics` API, owner-draw, drag and drop, the paint debug overlay) is done, see §17.
@@ -85,7 +85,7 @@ The standard catalogue (`kubuno-desktop-views/src/events/args.rs`):
 
 | Args | Fields | Used by |
 |---|---|---|
-| `EventArgs` (unit struct) | — | Click, Enter/Leave, GotFocus/LostFocus, Load, Shown, Activated… |
+| `EventArgs` (unit struct) | - | Click, Enter/Leave, GotFocus/LostFocus, Load, Shown, Activated… |
 | `MouseEventArgs` | button, clicks, x, y, delta, mods | MouseDown/Up/Move/Click/DoubleClick/Wheel |
 | `KeyEventArgs` | key, mods, handled, suppress_key_press | KeyDown, KeyUp |
 | `KeyPressEventArgs` | key_char, handled | KeyPress |
@@ -250,7 +250,7 @@ WinForms sequences:
 
 ## 4. Custom events: three abstraction levels
 
-### 4.1 Level 1 — events declared by application code
+### 4.1 Level 1 - events declared by application code
 
 WinForms: `public event EventHandler<T> ValueCommitted;` plus `[Category]`, `[Description]`,
 `[DefaultEvent]`. Rust:
@@ -277,7 +277,7 @@ A view model can also declare events (`#[event] pub saved: Event<EventArgs>` on 
 `ViewModel`). They do not appear in the designer, because they belong to no element, but other Rust
 code subscribes to them normally.
 
-### 4.2 Level 2 — user controls (composite `.kbview`)
+### 4.2 Level 2 - user controls (composite `.kbview`)
 
 WinForms `UserControl`: a designed composite that appears in the project's Toolbox after a build.
 Kubuno: a `.kbview` whose root is `<UserControl x:Class="RatingBar">`, with a code-behind struct
@@ -309,7 +309,7 @@ impl RatingBar {
 - `raise_self` fills the sender with the user control's own `ElementRef`, which the runtime provides
   through a thread-local "current element" set while the user control's subtree dispatches.
 
-### 4.3 Level 3 — custom controls in Rust
+### 4.3 Level 3 - custom controls in Rust
 
 WinForms: a `Control` subclass with `OnPaint`, attributes, and a designer. Kubuno: a type implementing
 the component trait, fully in Rust:
@@ -451,7 +451,7 @@ instead of `&mut dyn ViewModel`.
 
 | # | Package | Owns | Depends on | Size | Tests / live verification |
 |---|---|---|---|---|---|
-| EVT-1 ✅ done (§9) | Args, traits, `Event<A>`/`Subscription`, `ElementRef`/`Sender` | new `kubuno-desktop-views/src/events/{mod,args,multicast,sender}.rs`, `#[derive(EventArgs)]` in new `kubuno-desktop-views-macros` | — | M | Unit tests: order, drop = unsubscribe, add/remove during raise, re-entrancy skip, depth cap, `Handled` short-circuit, `Cancelable` visibility |
+| EVT-1 ✅ done (§9) | Args, traits, `Event<A>`/`Subscription`, `ElementRef`/`Sender` | new `kubuno-desktop-views/src/events/{mod,args,multicast,sender}.rs`, `#[derive(EventArgs)]` in new `kubuno-desktop-views-macros` | - | M | Unit tests: order, drop = unsubscribe, add/remove during raise, re-entrancy skip, depth cap, `Handled` short-circuit, `Cancelable` visibility |
 | EVT-2 ✅ done (§10) | Input router and ordered synthesis (mouse, hover, keys, focus, validation) | `events/router.rs`, `node.rs` `fire` (typed), every `families/*.rs` call site | EVT-1 | L | Scripted `Frame` sequences asserting exact WinForms orders (§3); legacy `ViewEvent` tests unchanged; live: `view_preview` with an event log overlay |
 | EVT-3 ✅ done (§10) | Registry metadata and catalogue | `registry/{mod,export,docs_fr}.rs`, families' `EventMeta` tables, aliases, `validate.rs` alias hint; C# `Registry/EventMeta.cs`, `KbviewElementObject` categories and default event | EVT-1 | M | Registry test: every `default_event` exists; alias parse tests; C# JSON round-trip; live: ⚡ tab grouped with descriptions in VS experimental instance |
 | EVT-4 ✅ done (§11) | Typed handlers and migration | `kubuno-desktop-views-macros` `#[handlers]`, `EventSink`, `Runtime::frame_typed`, legacy adapter; `handler_insert.rs` typed stub | EVT-1, EVT-2 | L | `trybuild` pass/fail tests (bad signature, async + Handled); existing `handlers!` tests untouched; live: `KubunoLot8App` old and new style both click through |
@@ -503,13 +503,13 @@ dependencies.
 
 **Traits (`events/mod.rs`).**
 
-- `EventArgs: Any` — `as_any`, `as_any_mut`, `legacy_value()` (default `Value::Bool(true)`),
+- `EventArgs: Any` - `as_any`, `as_any_mut`, `legacy_value()` (default `Value::Bool(true)`),
   `type_chain()`, plus four hooks with `None` defaults that the derive overrides: `as_handled`,
   `as_handled_mut`, `as_cancelable`, `as_cancelable_mut`. They are how `Event::raise` (and later the
   router) finds `Handled`/`Cancelable` on a generic `A` without specialization.
-- `impl dyn EventArgs { is::<T>(), downcast_ref::<T>(), downcast_mut::<T>(), is_a(name) }` — `is_a`
+- `impl dyn EventArgs { is::<T>(), downcast_ref::<T>(), downcast_mut::<T>(), is_a(name) }` - `is_a`
   tests the chain, i.e. handler/event compatibility (§5.3).
-- `ArgsChain { const NAME; const CHAIN: &[&str] }` — compile-time name and ancestor chain, root last.
+- `ArgsChain { const NAME; const CHAIN: &[&str] }` - compile-time name and ancestor chain, root last.
 - `Handled { handled, set_handled }`, `Cancelable { cancel, set_cancel }`.
 
 **`#[derive(EventArgs)]`** (re-exported as `kubuno_desktop_views::events::EventArgs`, same name as the trait, like
@@ -538,7 +538,7 @@ rejected (`EventArgs: Any`), type parameters get a `'static` bound, unknown opti
 | `DragEventArgs { data, allowed, effect, x, y, mods }` | `DataObject { text, files, custom }`, `DragDropEffects` bit set (`NONE/COPY/MOVE/LINK/SCROLL/ALL`, `\|`, `contains`) |
 | `ScrollEventArgs { kind, old, new, orientation }` | `ScrollEventType` (WinForms' nine values), `ScrollOrientation`; legacy `F32(new)` |
 | `LayoutEventArgs { affected_element, affected_property }` | both `Option<String>` (element = stable id) |
-| `ValueChangedEventArgs<T> { old, new, source }` | `ChangeSource::{User, Binding, Code}`; hand-written impl, legacy value = `new` via `IntoLegacyValue` (bool, String, f32, f64, i32, u32, usize, `Option<usize>` → `-1` for none, `Value`). Aliases `TextChangedEventArgs` (`String`), `CheckedChangedEventArgs` (`bool`), `SelectionChangedEventArgs` (`Option<usize>`), `NumericValueChangedEventArgs` (`f32`) — all share the chain `ValueChangedEventArgs → EventArgs` |
+| `ValueChangedEventArgs<T> { old, new, source }` | `ChangeSource::{User, Binding, Code}`; hand-written impl, legacy value = `new` via `IntoLegacyValue` (bool, String, f32, f64, i32, u32, usize, `Option<usize>` → `-1` for none, `Value`). Aliases `TextChangedEventArgs` (`String`), `CheckedChangedEventArgs` (`bool`), `SelectionChangedEventArgs` (`Option<usize>`), `NumericValueChangedEventArgs` (`f32`) - all share the chain `ValueChangedEventArgs → EventArgs` |
 | `PropertyChangedEventArgs { property }` | legacy `Str(property)` |
 | `HotReloadedEventArgs { diagnostics }` | |
 
@@ -584,22 +584,22 @@ still pass; `cargo clippy --all-targets -D warnings` is clean for both crates.
 In `Z:\src\desktop\windows` (uncommitted there) and in this repository. Existing `.kbview` files and
 `handlers!` projects are unchanged: old attribute names are aliases, legacy handlers receive the same values.
 
-### EVT-2 — input router and typed `fire`
+### EVT-2 - input router and typed `fire`
 
 - **`kubuno_desktop_ui` (scope note)**: `FocusRing` records every focus move with its cause
   (`take_changes() -> Vec<FocusChange { from, to, cause }>`, `FocusCause::{Pointer, Keyboard, Program,
-  Removed}`, capped at 64 unread) and can put the focus back silently (`restore`) — the only kubuno_desktop_ui change;
+  Removed}`, capped at 64 unread) and can put the focus back silently (`restore`) - the only kubuno_desktop_ui change;
   every exe was rebuilt (`tools/build-all.ps1`) and restaged. `kubuno-desktop-controls` was not changed: the
   latched buttons, `click_count`, wheel and the key/text queue of `Frame`/`host::events()` were enough.
 - **`kubuno-desktop-views/src/events/router.rs`**: `SlotEvents` (per compiled element: stable id, element name,
-  `x:Name`/focus id, the handler of each `On*` attribute resolved to its canonical event — aliases and, on the
-  root, view events —, `native_click`, `keyboard_click` for Button/IconButton/LinkLabel,
+  `x:Name`/focus id, the handler of each `On*` attribute resolved to its canonical event - aliases and, on the
+  root, view events -, `native_click`, `keyboard_click` for Button/IconButton/LinkLabel,
   `standard_double_click = !native_click`), `InputRouter` (owned by `Runtime`, state keyed by element id so it
   survives hot reloads), `Dispatch { vm, handlers, events }`, `raise()`.
 - **How a frame runs**: `DesignSlot` (the wrapper `compile::build_node` puts around every element) registers
   its `SlotEvents` and bounds with the router while painting, and sets the *current element* (the sender of
   the events its node raises). `Runtime::frame_with_design` calls `router.begin_frame` right after
-  `FocusRing::begin_frame` — routed against the PREVIOUS frame's geometry, like the focus ring: Load →
+  `FocusRing::begin_frame` - routed against the PREVIOUS frame's geometry, like the focus ring: Load →
   Activated (first frame), window focus edges, focus moves, MouseLeave/MouseEnter (the deepest element under
   the pointer; the parent gets MouseLeave when the pointer enters a child), MouseMove (to the capturing element
   while a button is held), MouseHover (400 ms at rest, `request_repaint_after` for the rest), MouseDown
@@ -615,7 +615,7 @@ In `Z:\src\desktop\windows` (uncommitted there) and in this repository. Existing
   (`FocusRing::restore`) and balances the new side (its LostFocus and Leave; for the pointer the old element's
   Enter and GotFocus again). Removal: LostFocus/Leave, no validation.
 - **Dispatch**: an event reaches only the handler its element names, through the new
-  `HandlerTable::dispatch_args` — a typed handler (`insert_typed`, `TypedHandler = FnMut(&mut dyn ViewModel,
+  `HandlerTable::dispatch_args` - a typed handler (`insert_typed`, `TypedHandler = FnMut(&mut dyn ViewModel,
   &ElementRef, &mut dyn EventArgs)`, can set `handled`/`cancel`) wins, else the legacy handler gets
   `args.legacy_value()`. A handled KeyDown/KeyPress/KeyUp is consumed from the host queue; `suppress_key_press`
   drops the following KeyPress. Router events are returned as `ViewEventKind::Other { name, args: Rc<dyn
@@ -623,8 +623,8 @@ In `Z:\src\desktop\windows` (uncommitted there) and in this repository. Existing
 - **Typed `fire`**: `PaintCx::fire`/`InteractCx::fire` take `&mut dyn EventArgs` instead of a `Value`; every
   call site (node.rs and the five families) passes the typed args whose legacy value is exactly what it passed
   before (`EmptyEventArgs`, `CheckedChangedEventArgs`, `TextChangedEventArgs`, `NumericValueChangedEventArgs`,
-  `SelectionChangedEventArgs`, and three new ones: `ItemEventArgs { index }` — toolbar/breadcrumb items,
-  `ItemActivateEventArgs { item: Value }` — row/node activation, `ItemCheckEventArgs { index, checked }`). The
+  `SelectionChangedEventArgs`, and three new ones: `ItemEventArgs { index }` - toolbar/breadcrumb items,
+  `ItemActivateEventArgs { item: Value }` - row/node activation, `ItemCheckEventArgs { index, checked }`). The
   `ViewEventKind` each site reports is unchanged. `PaintCx` gained `router`/`sender` (`pub(crate)`) and
   `with_surface(canvas, frame)` (the scroll area and tab page paths used to rebuild it field by field).
 - **Deviations / not built**: within a phase, Leave is raised before Enter rather than strictly in paint
@@ -641,16 +641,16 @@ In `Z:\src\desktop\windows` (uncommitted there) and in this repository. Existing
   (`ok_down → ok_click → ok_mouse_click → ok_up`, legacy `Bool(true)`), and `FocusRing`'s change log test in
   kubuno-desktop-ui. All previous `ViewEvent` tests unchanged.
 
-### EVT-3 — registry metadata
+### EVT-3 - registry metadata
 
 - **`EventMeta`** = `{ name, doc, category: EventCategory, args_type, args_chain, cancelable, routing:
   Routing, aliases, browsable }` built with `const` methods (`EventMeta::new(..).category(..).args::<A>()
   .aliases(&[..]).routing(..).hidden()`; `args::<A>()` reads `ArgsChain` and sets `cancelable` when the chain
   contains `CancelEventArgs`). `display_name()`, `matches(attr)`.
 - **Catalogue**: `COMMON_EVENTS` (24: Click, DoubleClick, MouseClick, MouseDoubleClick, the 7 mouse, 3 key, 6
-  focus/validation, Resize, Move, SizeChanged, LocationChanged) on every control — not on the gated
+  focus/validation, Resize, Move, SizeChanged, LocationChanged) on every control - not on the gated
   structural elements (`is_gated`: Item, Column, TabItem, Option, Step, AccordionSection, BreadcrumbItem,
-  ToolbarItem) — a component's own entry of the same name wins (Button's OnClick doc). `VIEW_EVENTS` (OnLoad,
+  ToolbarItem) - a component's own entry of the same name wins (Button's OnClick doc). `VIEW_EVENTS` (OnLoad,
   OnShown, OnActivated, OnDeactivate) are accepted on the root element only (validator, LS, `SlotEvents`).
   `ComponentMeta::{event (own by name or alias, then common), all_events, has_common_events, default_event,
   alias_target}`.
@@ -677,8 +677,8 @@ In `Z:\src\desktop\windows` (uncommitted there) and in this repository. Existing
   common and root view events, and createHandler finds a handler already written under an alias (no second
   attribute); a request is written under the attribute name it asks for.
 - **C#**: `EventMeta` gained the fields (+ `EffectiveDisplayName`, `LocalizedCategory` through
-  `DesignerText.EventCategory` — Action, Comportement, Focus, Touche, Souris, Glisser-déplacer, Disposition,
-  Propriété modifiée —, `Matches`, `AttributeNames`); `ComponentMeta.DefaultEvent`, `DefaultEventFor(isRoot)`,
+  `DesignerText.EventCategory` - Action, Comportement, Focus, Touche, Souris, Glisser-déplacer, Disposition,
+  Propriété modifiée -, `Matches`, `AttributeNames`); `ComponentMeta.DefaultEvent`, `DefaultEventFor(isRoot)`,
   `FindEvent`. The ⚡ tab rows carry the event's category, display name (`Click`, not `OnClick`) and
   description; non-browsable and (off the root) root-only events are hidden; `DefaultEventAttribute`/
   `GetDefaultEvent` come from the registry (root: OnLoad); a row reads and edits its handler under an alias
@@ -688,10 +688,10 @@ In `Z:\src\desktop\windows` (uncommitted there) and in this repository. Existing
   press has `click_count >= 2` (the element under the pointer, `""` for the frame's title bar), after
   `selectionChanged`, and cancels the move drag the second press started; the coordinator resolves the
   element's default event and calls the same `CreateOrShowHandler` as the ⚡ tab.
-- **Tests**: Rust — registry (every default event exists, design-note defaults, aliases, common vs own,
+- **Tests**: Rust - registry (every default event exists, design-note defaults, aliases, common vs own,
   unique names/aliases), props alias reading, validator (common/alias/root-only, alias hint), export (metadata
   and key set), docs_fr (common/view French docs), protocol (`doubleClick`), LS (alias-wired handler found,
-  common + root view event handlers). C# — fixture round-trip of the new fields and an old-shape export,
+  common + root view event handlers). C# - fixture round-trip of the new fields and an old-shape export,
   default events, ⚡ categories/display names/descriptions (English and French), root events, alias rows,
   `doubleClick` parsing, the short *Create Handler* list (290 Designer tests pass).
 
@@ -703,7 +703,7 @@ The designer ran on the project's own `kubuno_ui.dll` (§15 of DESIGNER.md). The
 listed the events grouped by category in French (Action, Disposition, Focus, Propriété modifiée, Souris,
 Touche). A real double-click on a button without handler wrote `OnClick="on_second_click"`, the `fn
 on_second_click` stub and its `handlers!` entry, and opened the code at the stub. **Found live**: that entry
-(`"x" => |vm, value| x(vm, value),`) did not compile — `handlers!` only accepted a block body — a
+(`"x" => |vm, value| x(vm, value),`) did not compile - `handlers!` only accepted a block body - a
 pre-existing `createHandler`/macro mismatch; the macro now takes any expression. F5 (no console window, see
 GETTING-STARTED "Console window"), then a real click on the button: VS's Output ▸ Debug pane showed the
 application's `tracing` lines `event MouseDown`, `event Click`, `event MouseClick`, `event MouseUp`, in that
@@ -786,7 +786,7 @@ empty `EventSink` are still emitted, so only the real mistake is reported.
   `impl ViewModel for X`, the `handlers!` table and its `"name" => |a, b| body` entries, the prelude import
   point, the 5-argument `.frame(` calls).
 - **`kubuno/createHandler`**: in a file with a typed impl, the stub is a method appended to it (after a blank
-  line) — `fn on_ok_click(&mut self, sender: &Sender<Button>, e: &MouseEventArgs) { // TODO }`: sender typed with
+  line) - `fn on_ok_click(&mut self, sender: &Sender<Button>, e: &MouseEventArgs) { // TODO }`: sender typed with
   the element's control type (`&ElementRef` for a structural element), args from `EventMeta::args_rust`
   (`&dyn EventArgs` for the root, `&mut` when `args_mut`); `use kubuno_desktop_views::prelude::*;` is added when
   missing; no table entry. A legacy file keeps the legacy stub (§5.4 point 3). The C# `HandlerCreationService`
@@ -823,8 +823,8 @@ real `ButtonNode` click reaches typed methods in the WinForms order with a typed
 beside a legacy entry, `controls` (one type per control), `ElementProps` doctest; macro unit tests on the
 expansion and on every error message (4), 8 `compile_fail` doctests and a passing example; all previous tests
 unchanged (478 unit tests in `kubuno-desktop-views`). LS: `code_behind` (7), `handler_insert` typed round trips (4:
-typed method in the impl, signatures per event — MouseDown, KeyDown `&mut`, TextChanged, Validating `&mut
-CancelEventArgs`, Switch toggled, GotFocus `&dyn EventArgs`, root Load —, structural element, prelude added
+typed method in the impl, signatures per event - MouseDown, KeyDown `&mut`, TextChanged, Validating `&mut
+CancelEventArgs`, Switch toggled, GotFocus `&dyn EventArgs`, root Load -, structural element, prelude added
 and empty impls), `convert_handlers` (3: the previous template converted exactly, append to an existing typed
 impl in a CRLF file, reasons), an LSP round trip (`createHandler` typed, `codeAction` absent/present,
 `convertHandlers`). C#: caret position of a typed stub past the added import, `ArgsRustType`/`ArgsMut` from the
@@ -842,7 +842,7 @@ In `Z:\src\desktop\windows` (`kubuno-views-ls` only, uncommitted there) and in t
   "…")]`, `#[handler(skip)]`, receiver, the parameters classified as `AnySender` (`&ElementRef`,
   `&Sender<AnyElement>`), `Sender(C)`, `AnyArgs` (`&dyn EventArgs`) or `Args { ty, generic }`, the body's braces,
   the item's start with its doc comments/attributes) and of the `handlers!` table entries (now with their offsets).
-  It is *unknown* — and no handler is ever reported missing — when no typed impl or table is found, or when a file
+  It is *unknown* - and no handler is ever reported missing - when no typed impl or table is found, or when a file
   builds handlers in a way the scanner cannot read (`HandlerTable::new(`, `insert_typed(`, an unparsable table).
 - **Compatibility** (`accepts`) follows the runtime (`with_args`, `typed_sender`), not §5.3's chain rule: a
   `Sender<C>` must name the element's own control; args must be absent, `&dyn EventArgs`, `EmptyEventArgs`, the
@@ -855,7 +855,7 @@ In `Z:\src\desktop\windows` (`kubuno-views-ls` only, uncommitted there) and in t
 - **`kubuno/compatibleHandlers { uri, elementId, event }`** → `{ handlers }`: typed methods first (declaration
   order), then table entries.
 - **`kubuno/renameHandler { uri, old?, new, position?, rustRenamed? }`** → `{ edit, oldName, reason }`: every event
-  attribute naming `old` in the folder's views (`edit::set_attribute`, under the name the file uses — an alias
+  attribute naming `old` in the folder's views (`edit::set_attribute`, under the name the file uses - an alias
   stays an alias), the method name (or its `#[handler(name)]` string), `.old(` calls, the table entry's string, the
   identifier it forwards to and the legacy `fn old`. Refused (with `reason`) when `new` is not a method identifier
   or is already taken by any `fn` of the folder. From a `.rs` file, `position` gives the method under the cursor;
@@ -863,14 +863,14 @@ In `Z:\src\desktop\windows` (`kubuno-views-ls` only, uncommitted there) and in t
   method bound under `#[handler(name)]` is left alone (the views name the string).
 - **`kubuno/removeHandler { uri, elementId, event }`** → `{ edit, handlerName, removedStub }`: removes the
   attribute as written (canonical or alias); when that was the handler's only reference in the folder's views and
-  its body is still the stub (`// TODO: implement <any name>` — a renamed stub keeps its original comment —, the legacy `let _ = (vm, value);`, or empty), deletes the
-  method with its doc/attributes and one adjacent blank line — or the legacy `fn` and its forwarding table entry
+  its body is still the stub (`// TODO: implement <any name>` - a renamed stub keeps its original comment -, the legacy `let _ = (vm, value);`, or empty), deletes the
+  method with its doc/attributes and one adjacent blank line - or the legacy `fn` and its forwarding table entry
   (only when the entry is exactly `name(vm, value)`).
 - **Diagnostics**: an event attribute naming a handler the set does not have is a WARNING `missing-handler`
   ("handler `x` not found in the code-behind"); one whose every declaration refuses the event is a WARNING
   `incompatible-handler` ("… cannot take the arguments of `OnMouseUp` (`MouseEventArgs` from a `Button`)"). Both
   carry `data { handler, elementId, event }`. The main loop now wakes every 1.5 s (`recv_timeout`) and republishes
-  the diagnostics of an open view when the (modified time, length) of its folder's `.rs` files changed — a
+  the diagnostics of an open view when the (modified time, length) of its folder's `.rs` files changed - a
   handler added or renamed in Rust and saved clears or raises the warning without touching the view.
 - **Code actions** (`quick_fixes`, computed from the document, not from the client's `context.diagnostics`):
   *Create handler `x`* (`handler_insert::insert_handler_stub`, the code-behind edit only, marked preferred), *Use
@@ -892,7 +892,7 @@ In `Z:\src\desktop\windows` (`kubuno-views-ls` only, uncommitted there) and in t
   remove. No separate "Rename handler…" row menu: the grid's own cell is the rename gesture.
 - **Applying** (`WorkspaceEditApplier`, `VsWorkspaceFileHost`): every file of the answer is planned first (no
   overlap, fits its text), then applied as ONE edit per file through the document's buffer when it is open in any
-  editor (running document table: the designer's `.kbview`, a code window's `.rs`) — never reopening it —, else
+  editor (running document table: the designer's `.kbview`, a code window's `.rs`) - never reopening it -, else
   spliced into the file on disk. The open `.rs` of the view's folder are sent as `openFiles`.
 - **Rust editor rename**: `RustAnalyzerMiddleLayer` intercepts `textDocument/rename`, lets rust-analyzer answer,
   then asks `kubuno/renameHandler { position, rustRenamed: true, openFiles }` (when the Kubuno Views server is
@@ -933,13 +933,13 @@ button `OnClick="missing_one"`:
 - the Error List and the XML editor showed the warning *handler `missing_one` not found in the code-behind* (line 15,
   squiggle, light bulb); the light bulb's *Create handler `missing_one`* added the typed stub to the open `main_view.rs`
   buffer; once saved, the warning disappeared without touching the view;
-- the ⚡ Click row of that button showed a dropdown listing `on_hello_click`, `any_click`, `missing_one` — not
+- the ⚡ Click row of that button showed a dropdown listing `on_hello_click`, `any_click`, `missing_one` - not
   `switch_only`;
 - typing `other_click` in that row renamed the handler in the view and in the Rust method (both buffers edited,
   unsaved); the project built;
 - F2 (Refactor.Rename) on `other_click` in the Rust editor, renamed `other_pressed`: rust-analyzer renamed the method
   and the view's `OnClick` followed;
-- clearing the row removed the attribute and the stub (with its blank line); the project built — **found live**: the
+- clearing the row removed the attribute and the stub (with its blank line); the project built - **found live**: the
   renamed stub kept its `// TODO: implement missing_one` comment and was not recognized as a stub; the check now accepts
   any name there;
 - a Rust hover (`ViewModel`) showed the C#-style Quick Info (signature, `kubuno_desktop_views::binding`, the documentation);
@@ -962,7 +962,7 @@ use none of this behave as before (the host changes are opt-in per frame).
   queue at a time; a process-wide registry maps UI thread → window, filled at `WM_NCCREATE`, emptied at
   `WM_NCDESTROY`). `is_ui_thread()` is `!InvokeRequired`.
 - **Frames for work, not looks**: the host asks for a frame with an invalidation when the window can paint, and
-  **renders directly when it is minimised or hidden** (no `WM_PAINT` would come) — for `WM_KUBUNO_WAKE`, for the new
+  **renders directly when it is minimised or hidden** (no `WM_PAINT` would come) - for `WM_KUBUNO_WAKE`, for the new
   `request_wake_after(ms)` (a second one-shot `SetTimer`, id `0x4B56`, same per-frame "shortest wins" rule as
   `request_repaint_after`, which keeps its paint-only meaning) and for a close request. A render re-entered from a
   modal loop is turned into an invalidation (`Host::rendering`).
@@ -971,7 +971,7 @@ use none of this behave as before (the host changes are opt-in per frame).
   bypasses everything) queues `InputEvent::CloseRequested(CloseReason)` for the next frame instead of destroying the
   window (`InputEvent` is `#[non_exhaustive]`, so this is additive). `CloseReason::{UserClosing,
   ApplicationExitCall, WindowsShutDown, TaskManagerClosing}`: a plain `WM_CLOSE` (caption, Alt+F4, task bar,
-  `close_window`) is `UserClosing` — as WinForms gives `Form.Close()` —, `request_close(reason)` marks the `wParam`
+  `close_window`) is `UserClosing` - as WinForms gives `Form.Close()` -, `request_close(reason)` marks the `wParam`
   (`0x4B55_000r`), `WM_QUERYENDSESSION` renders a frame **synchronously** with `WindowsShutDown` and answers `FALSE`
   when the page called `cancel_close()`. **Safety net**: a `CloseRequested` nobody consumed by the end of its frame
   closes the window (`quit`), so a page that stops deferring (the template's "waiting for the view to compile"
@@ -1008,7 +1008,7 @@ AsyncResult<R>` (queue + `UiWaker`), `invoke(f) -> Result<R, DispatchError>` (bl
 `invoke_required`, `is_closed`. `AsyncResult<R>` is the oneshot: `wait`, `wait_timeout`, `try_take`,
 `is_completed`, and `Future`. `DispatchError::{Closed, OnUiThread, WrongViewModel, Timeout}`. **Deviations**: `invoke`
 on the UI thread returns `OnUiThread` at once rather than running inline (the view model is already mutably borrowed
-there — use it); closures need the typed frame (`frame_typed`): under the untyped `frame` they report
+there - use it); closures need the typed frame (`frame_typed`): under the untyped `frame` they report
 `WrongViewModel`. Lock poisoning is ignored (single-operation critical sections), no `unwrap`.
 
 ### Executor and async handlers (`events/executor.rs`)
@@ -1029,7 +1029,7 @@ there — use it); closures need the typed frame (`frame_typed`): under the unty
   the args **by value**. `&mut A` / `&A` / a sender / a trait object are compile errors; writable args by value
   (`FormClosingEventArgs`, `KeyEventArgs`) are refused by the new marker trait **`ReadOnlyArgs`** (implemented by the
   derive for args without `handled`/`cancel`, and by `EmptyEventArgs`/`ValueChangedEventArgs<T>`), whose
-  `on_unimplemented` message says to set them in a synchronous handler — the §6 rule, enforced. The generated arm
+  `on_unimplemented` message says to set them in a synchronous handler - the §6 rule, enforced. The generated arm
   clones the args (`typed::copy_for_async`), takes `UiHandle::<Self>::current()` and spawns the handler's future named
   after it; its first poll is in the same frame (step 3 or 5). `HandlerInfo::asynchronous`. An `async fn` helper that
   is not a handler needs `#[handler(skip)]`.
@@ -1082,7 +1082,7 @@ wake-up requests and coalescing; an async `OnLoad` handler awaiting a 1 s delay 
 getting its args copy from a timer; close cancels tasks/handles and disables `UiHandle`; nested `spawn_local`, nested
 `update` refused). Macros: 4 new unit tests (async expansion, async errors ×8, parameters-only exemption, syntax-error
 recovery and item splitting) + 2 doctests (an async handler compiles; `FormClosingEventArgs` by value in an async
-handler does not — checked to fail on `ReadOnlyArgs`, with the message pointing at the user's type).
+handler does not - checked to fail on `ReadOnlyArgs`, with the message pointing at the user's type).
 `kubuno-desktop-controls` host: 4 new tests (per-frame wake/close declarations, close request queued once and reported until
 consumed, reason round trip through `wParam`, waker thread identity). `kubuno-views-ls` tests unchanged and passing.
 `cargo clippy --all-targets -D warnings` clean on the three crates; no `unwrap` outside tests. The whole workspace
@@ -1106,9 +1106,9 @@ elsewhere, so the release lands "outside"); the keyboard was used instead.
 
 ## Scope note (product owner, 2026-09-29)
 
-Changing `kubuno_desktop_ui` (and `kubuno-desktop-controls`) is explicitly in scope whenever the event system needs it — e.g. real input events (mouse/keyboard/focus/validation sequences), hit-testing, Paint and drag-and-drop hooks belong in the widgets/host that execute them, not in a layer bolted on top. Constraints when doing so: `kubuno_desktop_ui` is a dylib without a stable ABI — after any change, rebuild every exe (`tools/build-all.ps1`) and restage; keep the gallery and the desktop apps (shell, drive, documents, chat) building and behaving; add CHANGELOG entries in the desktop repo.
+Changing `kubuno_desktop_ui` (and `kubuno-desktop-controls`) is explicitly in scope whenever the event system needs it - e.g. real input events (mouse/keyboard/focus/validation sequences), hit-testing, Paint and drag-and-drop hooks belong in the widgets/host that execute them, not in a layer bolted on top. Constraints when doing so: `kubuno_desktop_ui` is a dylib without a stable ABI - after any change, rebuild every exe (`tools/build-all.ps1`) and restage; keep the gallery and the desktop apps (shell, drive, documents, chat) building and behaving; add CHANGELOG entries in the desktop repo.
 
-## Requirement — WinForms-style overridable control methods ("OnPaint" family) (product owner, 2026-09-29)
+## Requirement - WinForms-style overridable control methods ("OnPaint" family) (product owner, 2026-09-29)
 
 Custom controls (EVT-7) and user code must be able to override the WinForms `protected virtual On…` family, not only subscribe to events. Rust shape: a `Control` trait with default methods (the "base" behaviour, callable explicitly like `base.OnPaint(e)`), implemented by `#[derive(Component)]` controls and optionally by subclass-like wrappers of existing controls:
 - **Painting**: `on_paint(&mut self, e: &mut PaintEventArgs)` with a WinForms-`Graphics`-like API over kubuno's `Canvas` (lines, rects, rounded rects, ellipses, arcs, paths, gradients, images, text with layout/measure, clip, transforms, save/restore, antialias), `on_paint_background`, `invalidate()` / `invalidate_rect()` / `refresh()`, double-buffered by default (like `DoubleBuffered`), `ControlStyles`-equivalent flags (UserPaint, Opaque, ResizeRedraw, Selectable, SupportsTransparentBackColor…). `PaintEventArgs` becomes real in EVT-8 (borrowed canvas via a scoped callback instead of `Any`).
@@ -1119,7 +1119,7 @@ Custom controls (EVT-7) and user code must be able to override the WinForms `pro
 - Designer: overridden paint is what the designer shows (it renders through the project's own kubuno_ui.dll / design host); `DesignMode` flag available to the control.
 Implemented across EVT-7 (Component trait + overrides + registry) and EVT-8 (Paint/Graphics, owner-draw, drag-drop); changes to `kubuno_desktop_ui`/`kubuno-desktop-controls` expected (host invalidation, double buffering, message hook).
 
-## Requirement — tooling that goes with custom controls & overrides (product owner, 2026-09-29)
+## Requirement - tooling that goes with custom controls & overrides (product owner, 2026-09-29)
 
 Everything WinForms/VS provides around custom controls must have a Kubuno equivalent:
 - **Override assistance**: completion inside `impl Control for X` listing overridable `on_…` methods with their exact signatures (like typing `override` in C#), a quick action "Substituer des membres…" (Override members dialog with checkboxes), and "Implémenter le trait" for required items; generated bodies call the base behaviour by default.
@@ -1133,10 +1133,10 @@ Everything WinForms/VS provides around custom controls must have a Kubuno equiva
 - **Code navigation**: Class View / Object Browser-like listing of controls, their properties/events/overridable methods from the registry; Go to definition from `.kbview` element → Rust control type.
 - **Snippets**: `onpaint`, `event`, `handler`, `prop` (bindable property with change notification).
 
-## Requirement — cascading control hierarchy rooted in Component/Control equivalents (product owner, 2026-09-29)
+## Requirement - cascading control hierarchy rooted in Component/Control equivalents (product owner, 2026-09-29)
 
 Mirror the WinForms hierarchy (System.ComponentModel.Component → System.Windows.Forms.Control → …) in idiomatic Rust (no class inheritance: **trait hierarchy + embedded base state + generated delegation**):
-- Levels: `Component` (site/container, `DesignMode`, `Disposed` event, non-visual components) → `Control: Component` (bounds, anchor/dock, visible/enabled, parent/children, focus, all `on_…` overrides + events, invalidate/paint) → `ScrollableControl` → `ContainerControl` → `UserControl` / `View` (the Form equivalent: Load/Shown/Closing). Intermediate bases: `ButtonBase` (Button, CheckBox, RadioButton, IconButton, Switch), `TextBoxBase` (TextField, TextArea, MaskedField, SearchField), `ListControl` (ListBox, ComboBox, CheckedListBox, Dropdown), `ScrollBarBase`, `LabelBase`, `ContainerBase` (Panel, GroupBox, Card, Stack…), etc. — every existing Kubuno control placed in the tree.
+- Levels: `Component` (site/container, `DesignMode`, `Disposed` event, non-visual components) → `Control: Component` (bounds, anchor/dock, visible/enabled, parent/children, focus, all `on_…` overrides + events, invalidate/paint) → `ScrollableControl` → `ContainerControl` → `UserControl` / `View` (the Form equivalent: Load/Shown/Closing). Intermediate bases: `ButtonBase` (Button, CheckBox, RadioButton, IconButton, Switch), `TextBoxBase` (TextField, TextArea, MaskedField, SearchField), `ListControl` (ListBox, ComboBox, CheckedListBox, Dropdown), `ScrollBarBase`, `LabelBase`, `ContainerBase` (Panel, GroupBox, Card, Stack…), etc. - every existing Kubuno control placed in the tree.
 - Each level = a trait with default methods (the "virtual" behaviour) + a plain base-state struct embedded in the concrete control; `#[derive(Component)]` with `#[kubuno(extends = ButtonBase)]` generates the delegation boilerplate and a `base()`/`base_mut()` accessor so an override can call the parent's implementation (like `base.OnPaint(e)`); trait upcasting (`&dyn Button` → `&dyn ButtonBase` → `&dyn Control` → `&dyn Component`, stable since Rust 1.86) gives polymorphism, plus `downcast_ref::<T>()`.
 - User code extends any level: `#[kubuno(extends = Button)] struct RoundButton` overriding `on_paint`, inheriting all Button props/events.
 - Metadata inheritance: the registry records the base chain; properties/events/default event are inherited and overridable; the Properties window shows inherited members, the Object Browser/Class View shows the hierarchy, `.kbview` validation accepts inherited attributes, and the Toolbox/`is`-checks (e.g. "any ButtonBase") use it.
@@ -1202,7 +1202,7 @@ are non-visual `Component`s (`controls::items`, not in the prelude: one is named
 
 - **Argument shape.** `fn on_click(&mut self, e: &mut EventCx<'_, MouseEventArgs>)`: `EventCx` derefs to the args
   (`e.x`, `e.handled = true`) and carries the `RaiseSink` the caller lends for the call (the router's, a node's: the
-  element's `.kbview` handler) — so an override stays one argument and `base_mut().on_click(e)` works. Raising order:
+  element's `.kbview` handler) - so an override stays one argument and `base_mut().on_click(e)` works. Raising order:
   the sink (the XML handler, WinForms' designer-generated subscription) then the control's Rust subscribers
   (`button.click().subscribe(…)`, held in the core's `EventMap`, created on first use); a sink handler that sets
   `handled` stops the Rust subscribers. `on_paint(&mut self, e: &mut PaintEventCx<'_>)`: `e.graphics` (the Kubuno
@@ -1259,7 +1259,7 @@ are non-visual `Component`s (`controls::items`, not in the prelude: one is named
   the class's `on_paint` (which paints the same `kubuno_desktop_ui` button); the other nodes paint their widgets as before. A
   slot disposes its instance when dropped (hot reload, view closed).
 - **Rust code.** `ControlHost` hosts controls built in Rust outside any view: `host.add(control) -> HostedControl<C>`
-  (sited under its name, or a generated `label2`), then `host.frame(canvas, frame)` each frame — the same router
+  (sited under its name, or a generated `label2`), then `host.frame(canvas, frame)` each frame - the same router
   (with `report_all`: every raised event is returned), its own focus ring (`SELECTABLE`, `tab_stop`,
   `is_input_key(Tab)`), `focus()` requests, hover/pressed state, `on_paint_background` (unless `OPAQUE`) and `on_paint`,
   a repaint when a control invalidated. `Button` and `Label` paint themselves standalone (`widget()` builds the
@@ -1324,7 +1324,7 @@ a level not in the chain, a user base without `levels`, a tuple struct, a generi
 
 - **Pixel comparison.** `view_preview` on `settings.kbview` and on the five tabs of `showcase.kbview` (one copy per
   selected tab), and `showcase`: captured with the binaries of before the change (saved aside) and after the final
-  build and restage: **0 differing pixels** on every capture except the animated `<Spinner>` of the Display tab (84–86 px, which also differ between two captures of the same binary); a first run showed a list row highlighted, the real pointer resting over it — identical once the pointer was moved away. The gallery, drive, documents and chat start and close on `WM_CLOSE` with the rebuilt runtime.
+  build and restage: **0 differing pixels** on every capture except the animated `<Spinner>` of the Display tab (84–86 px, which also differ between two captures of the same binary); a first run showed a list row highlighted, the real pointer resting over it - identical once the pointer was moved away. The gallery, drive, documents and chat start and close on `WM_CLOSE` with the rebuilt runtime.
 - **Scratch app** `C:\kubuno-build\evt7a` (the *Kubuno Desktop Application* template's files, built with cargo): the
   template's view (its `<Button>` now painted through `controls::Button`) and, under it, a `ControlHost` with
   `#[kubuno(extends = Button, overrides(Control))] struct RoundButton` (a pill drawn in `on_paint` with the current
@@ -1333,19 +1333,19 @@ a level not in the chain, a user base without `levels`, a tuple struct, a generi
   subscriber (sender `round`, element `RoundButton`) → `on_click: after base`; the pill shows the count; the plain
   button counts its own clicks; the XML "Say hello" button still runs its typed handler.
 
-## Requirement — WinForms-rich property sets on every control (product owner, 2026-09-29)
+## Requirement - WinForms-rich property sets on every control (product owner, 2026-09-29)
 
 Each control must expose (and the runtime must really honour) a property set as rich as its WinForms counterpart, organised in the same categories, inherited through the Component/Control hierarchy:
 - **Accessibilité**: AccessibleName, AccessibleDescription, AccessibleRole (→ UIA / AccessKit).
 - **Apparence**: BackColor/ForeColor (see colour policy below), Font (family/size/style), Cursor, TextAlign, ImageAlign/TextImageRelation, Image/BackgroundImage/BackgroundImageLayout, FlatStyle-like Variant, BorderStyle, RightToLeft, UseMnemonic (`&` access keys), UseVisualStyleBackColor-like flag.
 - **Comportement**: Enabled, Visible, TabIndex, TabStop, ContextMenu (menu element reference), AllowDrop, UseWaitCursor, ToolTip text (extender-provider style, like WinForms' ToolTip component), control-specific (AutoCheck, ThreeState, ReadOnly, MaxLength, Multiline, WordWrap, AcceptsReturn/AcceptsTab, PasswordChar, CharacterCasing, SelectionMode, Sorted, DropDownStyle, Minimum/Maximum/SmallChange/LargeChange, Increment, DecimalPlaces, ThousandsSeparator, Format/CustomFormat, ShowCheckBox, MultiSelect, FullRowSelect, GridLines, HideSelection, LabelEdit, View…).
-- **Données**: Tag, (DataBindings) — binding editor for any property (`{Binding …}`), DataSource/DisplayMember/ValueMember for list controls.
+- **Données**: Tag, (DataBindings) - binding editor for any property (`{Binding …}`), DataSource/DisplayMember/ValueMember for list controls.
 - **Design**: (Name), Locked, GenerateMember/Modifiers-equivalent (visibility of the generated accessor on the view model).
 - **Focus**: CausesValidation.
 - **Disposition**: Location (X, Y) and Size (Width, Height) as expandable composite properties, MinimumSize/MaximumSize, Margin/Padding (expandable All/Left/Top/Right/Bottom), AutoSize/AutoSizeMode, Anchor, Dock.
 - **View (Form equivalent)**: Text/Title, Icon, StartPosition, FormBorderStyle, ControlBox/MinimizeBox/MaximizeBox, ShowInTaskbar, TopMost, Opacity, WindowState, AcceptButton/CancelButton, KeyPreview, AutoScroll, MinimumSize/MaximumSize.
-Composite/expandable properties, reset to default, bold when non-default, rich editors (colour, font, image, cursor, collection), multi-selection editing — as in WinForms. Runtime support lands in kubuno-desktop-views/kubuno_desktop_ui (per control class of the hierarchy), not metadata only; each property gets a French/English description.
-Colour policy (decided 2026-09-29): **theme tokens by default + free colours allowed**. The colour editor offers Kubuno theme tokens first (Primary, Surface, Danger… — follow light/dark/high-contrast automatically), then free `#RRGGBB(AA)` / system colours like WinForms; a free colour triggers a non-blocking designer warning when it breaks contrast (WCAG) in one of the themes.
+Composite/expandable properties, reset to default, bold when non-default, rich editors (colour, font, image, cursor, collection), multi-selection editing - as in WinForms. Runtime support lands in kubuno-desktop-views/kubuno_desktop_ui (per control class of the hierarchy), not metadata only; each property gets a French/English description.
+Colour policy (decided 2026-09-29): **theme tokens by default + free colours allowed**. The colour editor offers Kubuno theme tokens first (Primary, Surface, Danger… - follow light/dark/high-contrast automatically), then free `#RRGGBB(AA)` / system colours like WinForms; a free colour triggers a non-blocking designer warning when it breaks contrast (WCAG) in one of the themes.
 
 ## 15. EVT-7b as built (2026-09-29)
 
@@ -1378,7 +1378,7 @@ there): new crate `kubuno-desktop-views-meta`, `kubuno-desktop-views-macros`, `k
 
 ### Registry (`kubuno-desktop-views`)
 
-- **Registration without `inventory`:** each derive emits a static constructor (`#[used]` in `.CRT$XCU`, Windows —
+- **Registration without `inventory`:** each derive emits a static constructor (`#[used]` in `.CRT$XCU`, Windows -
   the only desktop target) calling `registry::register_class`, so a linked class registers before `main`, even from an
   rlib nothing references (the binary names it with `extern crate app as _;`). Verified experimentally before building
   on it. The macro skips it inside `kubuno_desktop_views` itself.
@@ -1413,7 +1413,7 @@ requests: `kubuno/registryVersion` (what the designer polls) and `kubuno/crateCo
   "Choisir des éléments…" (designer context menu) adds controls of the other crates linked into the project.
 - **Properties window:** custom properties with their categories (Apparence, Comportement… mapped from the English
   names) and descriptions; `#[browsable(false)]` hides one; the default property/event follow the attributes.
-- **Component tray** under the design surface: the view's non-visual elements (`<Timer>`, user components) — select
+- **Component tray** under the design surface: the view's non-visual elements (`<Timer>`, user components) - select
   (Properties window), double-click (default event handler), Delete.
 - **Overrides without rust-analyzer:** "Substituer des membres…" (light bulb on an `impl Control for X` / on the
   struct) opens a checkbox list of the members of the class's chain (57 members: 13 hooks, 29 event methods, 15 level
@@ -1425,9 +1425,9 @@ requests: `kubuno/registryVersion` (what the designer polls) and `kubuno/crateCo
   file not named after its module gets a `#[path]`); the "Ajouter ›" commands name the files after the module
   (`RoundButton` → `src\round_button.rs`) and put them in `src`. (Found live: a template whose target file name differs
   from the entered name makes Visual Studio's project system fail to find the new item.)
-- **Fixed — Properties window empty after reopening a solution.** Visual Studio stops `kubuno-views-ls` itself when a
+- **Fixed - Properties window empty after reopening a solution.** Visual Studio stops `kubuno-views-ls` itself when a
   solution closes and starts a new one for the next; the client kept `IsInitialized = true` from the first server, so
-  the designer of the reopened solution could send its first requests on the new connection *before* `initialize` —
+  the designer of the reopened solution could send its first requests on the new connection *before* `initialize` -
   `kubuno-views-ls` rejects that and exits, and nothing (Properties window, selection sync, registry) worked until
   Visual Studio restarted. The client now resets the state on every new connection and when a connection drops
   (`ReadyRpc` never returns a disposed connection), and a designer that waits too long asks Visual Studio to start the
@@ -1437,7 +1437,7 @@ requests: `kubuno/registryVersion` (what the designer polls) and `kubuno/crateCo
 
 - Registration is Windows-only (`.CRT$XCU`); other targets would need their own section (`.init_array`).
 - A project control appears in the Toolbox and renders for real only after a build (design build); before that it is a
-  named placeholder — completion and validation work at once (scan).
+  named placeholder - completion and validation work at once (scan).
 - Snippets are offered by the extension's own completion source in `.rs` files, not through the VS snippet manager.
 
 ### Tests
@@ -1465,7 +1465,7 @@ inserted with their base calls; the project rebuilds and the design build follow
 every 500 ms in the debug output. Solution closed and reopened in the same session: Visual Studio restarts the server,
 the restored designer gets its selection sync, Toolbox project tab and registry again.
 
-## 16. EVT-7c as built — WinForms-rich property sets (2026-09-29)
+## 16. EVT-7c as built - WinForms-rich property sets (2026-09-29)
 
 The requirement above ("WinForms-rich property sets on every control"), implemented in `desktop/windows`
 (`kubuno_desktop_controls`, `kubuno_desktop_ui`, `kubuno-desktop-views`, `kubuno-views-ls`) and in the Designer.
@@ -1578,7 +1578,7 @@ documents and chat start. `tools/test-templates.ps1 -Run`: all four templates bu
 font/composite converters, category map, multi-selection, entity round trip, the theme-tokens fixture generated from
 the runtime).
 
-## 17. EVT-8 as built — painting, the `Graphics` API, owner-draw, drag and drop (2026-09-29)
+## 17. EVT-8 as built - painting, the `Graphics` API, owner-draw, drag and drop (2026-09-29)
 
 In `Z:\src\desktop\windows` (uncommitted there): `kubuno-drive-desktop-app-controls` (two default methods on `Canvas`, `Debug`/
 `PartialEq` on `Rect`, `Clone` on `ShadowLayer`), `kubuno-desktop-controls` (host: `dnd`, `paint_debug`; painter),
@@ -1589,7 +1589,7 @@ defaults (see "Live verification").
 
 ### The `Graphics` API (`kubuno_desktop_ui::graphics`)
 
-- **`Graphics<'a>`**, a borrowed view over a `&dyn Canvas` — `System.Drawing.Graphics`' surface in Rust: `draw_line(s)`,
+- **`Graphics<'a>`**, a borrowed view over a `&dyn Canvas` - `System.Drawing.Graphics`' surface in Rust: `draw_line(s)`,
   `draw/fill_rectangle(s)`, `draw/fill_rounded_rectangle` (.NET 9), `draw/fill_ellipse`, `draw_arc`, `draw/fill_pie`,
   `draw_bezier(s)`, `draw_curve` and `draw/fill_closed_curve` (cardinal splines), `draw/fill_polygon`, `draw/fill_path`,
   `clear`, `draw_string` (in a box: `StringFormat` alignment and line alignment, wrapping, `StringTrimming` incl. the
@@ -1599,23 +1599,23 @@ defaults (see "Live verification").
   `clip_bounds`, `is_visible`), transforms (translate, scale, rotate, `rotate_transform_at`, `multiply_transform`,
   `transform`, `set_transform`, `reset_transform`; `Matrix` with `MatrixOrder`, prepend by default like GDI+),
   `save`/`restore` (WinForms' `GraphicsState`: restoring discards the later states; an unknown state does nothing) and
-  `with_saved`, and the hints (`SmoothingMode` — antialiased by default, a deliberate deviation from WinForms —,
+  `with_saved`, and the hints (`SmoothingMode` - antialiased by default, a deliberate deviation from WinForms -,
   `TextRenderingHint`, `InterpolationMode`, `CompositingMode`).
 - Value types: `Color` (straight alpha, `rgb`/`argb`/`from_hex`, from/to the theme's `D2D1_COLOR_F`), `PointF`, `SizeF`,
-  `RectExt` (helpers on the shared `Rect`), `Brush` (`Solid`, `LinearGradientBrush` — `from_rect` with
-  `LinearGradientMode`, `with_angle`, stops, `WrapMode` —, `RadialGradientBrush`: GDI+'s elliptical `PathGradientBrush`),
+  `RectExt` (helpers on the shared `Rect`), `Brush` (`Solid`, `LinearGradientBrush` - `from_rect` with
+  `LinearGradientMode`, `with_angle`, stops, `WrapMode` -, `RadialGradientBrush`: GDI+'s elliptical `PathGradientBrush`),
   `Pen` (width, `DashStyle` or a custom pattern in pen widths, dash offset, `LineCap`s, `LineJoin`, miter limit,
   `PenAlignment::Inset`), `GraphicsPath` (figures of lines, cubic/quadratic Béziers and SVG-style arcs; `add_line(s)`,
-  `add_rectangle`, `add_rounded_rectangle`, `add_ellipse`, `add_arc` — GDI+'s true-angle arcs, clockwise on screen —,
+  `add_rectangle`, `add_rounded_rectangle`, `add_ellipse`, `add_arc` - GDI+'s true-angle arcs, clockwise on screen -,
   `add_pie`, `add_polygon`, `add_bezier(s)`, `add_curve`, `add_closed_curve`, `add_path`, `start_figure`/`close_figure`,
   `transform`, `flatten`, `bounds`, `is_visible` by `FillMode`), `Font` (points like WinForms, or DIP, or a theme text
-  role — the default, which follows the app font —; `FontStyle` bits), `StringFormat`, `Image` (a file decoded by WIC on
+  role - the default, which follows the app font -; `FontStyle` bits), `StringFormat`, `Image` (a file decoded by WIC on
   first use per device, or a bitmap).
 - **How it draws.** When the canvas lends its renderer (new `Canvas::graphics_renderer`, default `None`; the host's
   painter lends it), each call is drawn with Direct2D on the canvas' own device context, in the frame's `BeginDraw`: the
   op pushes its clip (axis-aligned when the transform allows, a geometric-mask layer otherwise), composes its transform
-  with the context's current one (the scroll offsets), sets its hints, draws, and restores everything — so `Graphics`
-  calls interleave safely with the canvas primitives — and reports what it drew for the scroll extents (new
+  with the context's current one (the scroll offsets), sets its hints, draws, and restores everything - so `Graphics`
+  calls interleave safely with the canvas primitives - and reports what it drew for the scroll extents (new
   `Canvas::note_drawn`). Gradient stops are interpolated in straight alpha, dashes are a custom stroke style, text goes
   through a DirectWrite layout (formats built per family/size/weight and kept). Without a renderer (another app's
   canvas, a test canvas) the calls fall back to the primitives: rectangles and circles as rounded fills and strokes,
@@ -1628,7 +1628,7 @@ defaults (see "Live verification").
   the recording incomplete (`has_unrecorded_drawing`).
 - **Lending to event args.** Every method takes `&self`, and a `Graphics` is covariant in its lifetime: `GraphicsSlot`
   lends one to `'static` event args for the duration of a raise (a scope guard clears it, even on a panic); read
-  afterwards, the slot answers a null `Graphics` that draws nothing — never a dangling one.
+  afterwards, the slot answers a null `Graphics` that draws nothing - never a dangling one.
 - Deviations: images and icons follow translation and scale, not rotation; `EllipsisPath` trims at a character with
   the last `\` segment kept; `PathGradientBrush` is the elliptical case only; no hatch or texture brushes, no regions
   beyond rectangles and paths, no `PageUnit`.
@@ -1640,12 +1640,12 @@ defaults (see "Live verification").
   the paint buffer off for that paint), `clip_rectangle` / `bounds()` (surface coordinates, as before),
   `client_rectangle()` (local), `state`. The `Paint` event's `PaintEventArgs { clip_rectangle, graphics() }` is real:
   its handlers (the element's `OnPaint="…"`, Rust subscribers of `control.paint()`) draw on the lent surface.
-- **`on_paint_background`** (root behaviour): the control's `BackColor` — over the parent's background (the canvas'
-  `current_bg`) when the colour has alpha and the class has `SUPPORTS_TRANSPARENT_BACK_COLOR`, made opaque otherwise —,
+- **`on_paint_background`** (root behaviour): the control's `BackColor` - over the parent's background (the canvas'
+  `current_bg`) when the colour has alpha and the class has `SUPPORTS_TRANSPARENT_BACK_COLOR`, made opaque otherwise -,
   then its `BackgroundImage` laid out by `BackgroundImageLayout`, clipped to the bounds. It raises no event.
 - **`on_paint`**: unchanged (the base raises `Paint`).
 - **`on_print`** (WinForms `OnPrint`, product-owner request): called for off-screen rendering (`draw_to_bitmap`) and
-  printing; the default runs `paint_layers(e)` when `USER_PAINT` is set — `on_paint_background` unless `OPAQUE`, then
+  printing; the default runs `paint_layers(e)` when `USER_PAINT` is set - `on_paint_background` unless `OPAQUE`, then
   `on_paint` (which raises `Paint`, as in the reference source; `OnPrint` raises nothing of its own). `paint_layers` is a
   provided method called on the outer object, so an `on_print` override that calls it reaches the class's own
   `on_paint`, which `self.base_mut().on_print(e)` would not (the delegation limit of §14); the override catalogue's stub
@@ -1667,7 +1667,7 @@ defaults (see "Live verification").
 - **`ControlStyles` honoured** (documented on the type): `USER_PAINT`, `OPAQUE`, `RESIZE_REDRAW`,
   `SUPPORTS_TRANSPARENT_BACK_COLOR`, `OPTIMIZED_DOUBLE_BUFFER`; `DOUBLE_BUFFER` and `ALL_PAINTING_IN_WM_PAINT` hold by
   construction (no flicker is possible, no separate erase pass).
-- **`<PaintBox>`** (display family, default event `OnPaint`): a surface its `Paint` handler draws on — the design
+- **`<PaintBox>`** (display family, default event `OnPaint`): a surface its `Paint` handler draws on - the design
   note's `<Canvas>`, renamed because `Canvas` is the drawing trait of the prelude (a `Sender<Canvas>` stub would not
   compile).
 - Registry: `OnPaint` joins the common events (category Appearance; raised by custom controls, `<PaintBox>` and
@@ -1683,7 +1683,7 @@ defaults (see "Live verification").
   owner-drawn widget never gets a second `&mut`). Without a handler, or when it sets `draw_default`, the item paints
   normally (WinForms would leave it blank).
 - The widgets: `ListBox` (`OwnerDrawFixed`; `OwnerDrawVariable` with `measure_items` → `item_heights`, used for layout,
-  hit-testing, scrolling and the scroll indicator — single column, as in WinForms), `ComboBox` and `Dropdown` (their
+  hit-testing, scrolling and the scroll indicator - single column, as in WinForms), `ComboBox` and `Dropdown` (their
   edit field with `COMBO_BOX_EDIT`, and their drop-down rows; variable heights are not applied to the drop-down),
   `ListView` (`owner_draw`: rows in Details, tiles in LargeIcon), `TreeView` (`OwnerDrawText`: the label;
   `OwnerDrawAll`: the row), `DataTable` (new `owner_draw_cells`: each cell, `sub_index` = column, clipped to its column),
@@ -1704,11 +1704,11 @@ defaults (see "Live verification").
 - **Host (`kubuno_desktop_controls::host::dnd`)**: `DataObject` (text, files, custom formats by name; `from_text`, `from_files`,
   `with_custom`, `has_format` / `formats` with WinForms' names) and `DragDropEffects` (with `pick(mods)`: Ctrl copies,
   Shift moves…) now live here and are re-exported by `kubuno_desktop_views::events`. **Target**: a page calls `accept_drops`
-  (views: when an element has `AllowDrop`), and the window registers with OLE once (`RegisterDragDrop`; a refusal — a
-  design surface owns its drop target — is remembered; revoked at `WM_DESTROY`). Each OLE call (`DragEnter`,
+  (views: when an element has `AllowDrop`), and the window registers with OLE once (`RegisterDragDrop`; a refusal - a
+  design surface owns its drop target - is remembered; revoked at `WM_DESTROY`). Each OLE call (`DragEnter`,
   `DragOver`, `DragLeave`, `Drop`) updates the `Tracker` (the frame's `DragFrame`: phase, data, allowed effects, client
   DIP point, modifiers, buttons, internal) and **renders a frame at once** from the drop target (never inside another
-  paint), so the page's handlers answer (`set_effect`, masked by the allowed effects) before OLE is answered — the
+  paint), so the page's handlers answer (`set_effect`, masked by the allowed effects) before OLE is answered - the
   cursor shows what a drop would do while the pointer moves. A foreign data object is read (`CF_HDROP`,
   `CF_UNICODETEXT`, every registered `HGLOBAL` format up to 1 MB); the process's own drag hands over its `DataObject`
   whole. `accept_files` (EVT-7c) still works: with the OLE target registered, dropped files nobody answered for become
@@ -1724,7 +1724,7 @@ defaults (see "Live verification").
   bits) and `suggested_effect()`; its coordinates stay relative to the element (WinForms gives screen coordinates).
   `Control` gained `on_drag_enter/over/drop/leave` (overridable, in the catalogue) with their accessors, and
   `do_drag_drop(data, allowed) -> DragOperation` (also `kubuno_desktop_views::dnd::do_drag_drop`), which completes with the
-  effect — poll it, or `.await` it in an async handler. `ItemDrag`, `GiveFeedback` and `QueryContinueDrag` are not
+  effect - poll it, or `.await` it in an async handler. `ItemDrag`, `GiveFeedback` and `QueryContinueDrag` are not
   raised (the source uses OLE's default cursors).
 
 ### Paint debug overlay
@@ -1791,7 +1791,7 @@ clippy --all-targets -D warnings` clean on `kubuno_desktop_ui`, `kubuno-desktop-
 - Not automated: a file drag from the Explorer itself (a synthetic drag source did not complete its OLE loop); the
   file path of `DragEventArgs` was covered by the OLE round-trip test and the cross-process drag.
 
-## Requirement — the WinForms printing stack (product owner, 2026-09-29; built 2026-09-30: see `docs/PRINTING.md`)
+## Requirement - the WinForms printing stack (product owner, 2026-09-29; built 2026-09-30: see `docs/PRINTING.md`)
 
 `on_print` (EVT-8) is the control's side of printing. The rest of WinForms' printing stack is to come:
 
@@ -1803,7 +1803,7 @@ clippy --all-targets -D warnings` clean on `kubuno_desktop_ui`, `kubuno-desktop-
 - on Windows through the print spooler / XPS, with Direct2D printing (`ID2D1PrintControl` over an XPS print job), the
   page `Graphics` being the EVT-8 `Graphics` over a print surface, and controls rendered onto it through `on_print`.
 
-## 18. User controls as built — Windows Forms parity (2026-10-01)
+## 18. User controls as built - Windows Forms parity (2026-10-01)
 
 A pass over the whole user control workflow against Windows Forms' `UserControl`, in a fresh *Kubuno Desktop
 Application* in Visual Studio (`GETTING-STARTED.md` §6, "User controls", has the walkthrough). It differs from §4.2
@@ -1959,7 +1959,7 @@ and the padlock sits in the locked control's top-right corner, clear of its text
 > sûr) ».
 
 **The property.** `CornerRadius` (F32, DIP, category *Appearance*, type converter `CornerRadius`) on the view's root
-— every window kind — and on `FloatingWindow`; `CornerPreference` (`Default`, `Round` = 8, `RoundSmall` = 4,
+- every window kind - and on `FloatingWindow`; `CornerPreference` (`Default`, `Round` = 8, `RoundSmall` = 4,
 `DoNotRound` = 0) stays as the preset, `CornerRadius` wins when both are written. Code: `Form::set_corner_radius` /
 `corner_radius`, `host::FormOptions::corner_radius` (`None`: the preset's), `FormOptions::corner_radius()` (the
 radius asked for, a floating panel's included).
@@ -1977,33 +1977,33 @@ radius asked for, a floating panel's included).
 
 **Two paths** (`kubuno_desktop_controls::host::frame`).
 
-- **DWM** — Windows 11 (build ≥ 22000) and a radius equal to a DWM preset (8, 4) or 0: `DWMWA_WINDOW_CORNER_PREFERENCE`.
+- **DWM** - Windows 11 (build ≥ 22000) and a radius equal to a DWM preset (8, 4) or 0: `DWMWA_WINDOW_CORNER_PREFERENCE`.
   DWM's shadow, its 1 px border (tinted with the band's colour, as before), the system materials clipped to the curve,
   and DWM squares a maximised or snapped window itself. The default window takes this path: nothing else changes for
   it (same window, same swap chain).
-- **Host** — any other radius, and every radius on Windows 10 (DWM rounds nothing there): the window is created
+- **Host** - any other radius, and every radius on Windows 10 (DWM rounds nothing there): the window is created
   `WS_EX_NOREDIRECTIONBITMAP` (its pixels come from its DirectComposition swap chain only, transparent where nothing is
   painted, like a floating panel's), DWM's non-client rendering is turned off (`DWMNCRP_DISABLED`: no square shadow or
   border behind the curve), `WM_NCCALCSIZE` makes it all client area, and the window is the visible frame plus an
   8-DIP margin on every side. Each frame the host clears to transparent, paints the shadow in the margin
-  (`frame::FRAME_SHADOW`: `0 2px 12px` at 22 % plus a contact shadow — the web window's shadow tightened to the
+  (`frame::FRAME_SHADOW`: `0 2px 12px` at 22 % plus a contact shadow - the web window's shadow tightened to the
   margin), fills the frame's rounded rectangle with the ground, draws the band, the page, the caption and the grip in
   the frame's coordinates under a rounded clip, then the 1 px border along the curve (the form's `BorderColor`, else
   the band's colour, else the theme's floating-surface border). The page's coordinates are the frame's, one margin
   in: its `Frame` (size, pointer, origin on screen) and its content offset (`host::content_offset`: the offset the
   host pushes for the frame is taken back out of it, so the rectangles a view registers for hit-testing, its
-  accessibility nodes and its popups are in the same space as its pointer — measured: before that, a click 5 pixels
+  accessibility nodes and its popups are in the same space as its pointer - measured: before that, a click 5 pixels
   inside a field's edge missed it). The host adds the margin back where it meets Windows: popup windows, drops,
   accessibility bounds and `host::screen_geometry` (a window property, `KubunoPageInset`, carries the inset for it).
   A floating panel (the shell's flyouts) shares this code and gets the same fix.
-- **Square when Windows squares** — the host path checks every size change and frame (`frame::squared`): `IsZoomed`,
+- **Square when Windows squares** - the host path checks every size change and frame (`frame::squared`): `IsZoomed`,
   `IsWindowArranged` (Aero Snap, snap layouts; before it exists, a normal window away from its restore rectangle),
   or a window covering its monitor. The margin then goes (the frame fills the snapped area exactly), the curve and
   the border too; the maximised window's off-screen frame is taken back in `WM_NCCALCSIZE`.
-- **What the host path does not do** — the window then gets DWM's nearest preset on Windows 11 (0 below 2 DIP, 4
+- **What the host path does not do** - the window then gets DWM's nearest preset on Windows 11 (0 below 2 DIP, 4
   below 6, else 8) and square corners on Windows 10: a system material where the system draws one (`Backdrop` Mica,
   Mica Alt, Acrylic on Windows 11 22H2+, build 22621: only DWM clips its material to a curve, so no black or white
-  corner can show; before 22H2 `Backdrop` is a no-op and does not count — the shell's `MicaAlt` window is rounded by
+  corner can show; before 22H2 `Backdrop` is a no-op and does not count - the shell's `MicaAlt` window is rounded by
   the host there), Windows' own title bar (`Chrome="System"`), a
   translucent window at creation (`Opacity` < 100, `TransparencyKey`: a layered window), an embedded window (the
   designer's surface) and a floating panel (its own composition clip). The path is chosen when the window is created
@@ -2012,7 +2012,7 @@ radius asked for, a floating panel's included).
 
 **Hit testing (host path).** The margin is the resize band, as Windows' invisible borders are. A window region
 (`CreateRoundRectRgn`, the frame grown by the margin, rounded at radius + margin) cuts the window rectangle's corners
-off, so a click there reaches what is behind. The region also cuts what the window draws — measured: a 16-DIP shadow
+off, so a click there reaches what is behind. The region also cuts what the window draws - measured: a 16-DIP shadow
 came out cut at its edge, hence a margin and a shadow that fit in it. A squared window gets its whole rectangle as its
 region, never no region: a window without DWM's frame and without a region of its own gets the classic theme's, with
 rounded top corners (measured on a snapped window). `frame::shape_hit` answers first: on the curve's resize band, on
@@ -2027,7 +2027,7 @@ clips the view to it, live as the property changes. The language server validate
 completes the usual radii.
 
 **Testing switches** (environment variables, read once per process): `KUBUNO_CUSTOM_CORNERS=1` forces the host path
-for every radius it can draw — what Windows 10 gets, reproduced on Windows 11; `KUBUNO_CORNER_RADIUS=<dip>` overrides
+for every radius it can draw - what Windows 10 gets, reproduced on Windows 11; `KUBUNO_CORNER_RADIUS=<dip>` overrides
 the radius of every top-level window of the process (not a floating panel's). The gallery also takes
 `KUBUNO_UI_ZOOM=0.5714` to render at 100 % on a 175 % monitor.
 
@@ -2048,9 +2048,9 @@ button and the grip).
 | `Standard` (default) | **32 DIP** | dialogs, tool windows, secondary forms, MDI documents and in-window dialogs, the in-page `FloatingWindow` (`ConfirmDialog`…) | Windows 11's caption height; the design system's `h-8`. |
 | `Tall` | **64 DIP** | a main window showing the header's menus left of the caption buttons (shell, chat, documents) | The web module header's `h-16` (the office editor's `topbarHeight={64}`). |
 
-**Defaults.** `TitleBarStyle` unset resolves to `Tall` when the view hosts the header's menus — one of the header's
+**Defaults.** `TitleBarStyle` unset resolves to `Tall` when the view hosts the header's menus - one of the header's
 standard items on its root (`ShowSearch`, `ShowNotifications`, `ShowSettings`, `ShowHelp`, `ShowWaffle`, `ShowAccount`),
-or a `HeaderActions` / `WaffleButton` / `AccountButton` inside a child placed in a `TitleBar.Region` — and to `Standard`
+or a `HeaderActions` / `WaffleButton` / `AccountButton` inside a child placed in a `TitleBar.Region` - and to `Standard`
 otherwise (`kubuno_desktop_views::window::title_bar_style`). A tool window keeps the standard band whatever its style.
 `TitleBarHeight`, when written, still wins over the style (the web band is `TitleBarHeight="50"`). Code:
 `window_chrome::TitleBarStyle`, `ChromeStyle::size`, `Form::set_title_bar_style`; the VS Properties window lists
@@ -2063,7 +2063,7 @@ font for the title; a taller band keeps the web's (30-DIP buttons, radius 5, gly
 **Centring.** Everything in the band is centred vertically on it, in every height: Kubuno-style caption buttons, the
 icon, the title, the page's `TitleBar.Region` items (the header's 36-DIP buttons in the tall band), and Windows-style
 caption buttons, which now fill the band's height (46 DIP wide, their glyph on the band's middle; they used to stay
-32 DIP tall at the top of a taller band — chat's 50-DIP bar showed it). Their hit-test rectangles are the drawn ones:
+32 DIP tall at the top of a taller band - chat's 50-DIP bar showed it). Their hit-test rectangles are the drawn ones:
 the whole column answers `HTMINBUTTON` / `HTMAXBUTTON` / `HTCLOSE`, so the snap layouts flyout opens from the full
 height of the maximise button; the caption hit test, the drag areas and the popups opening under title-bar buttons
 read the same layout. With a host-drawn rounded frame (`KUBUNO_CORNER_RADIUS=16`) the close column is clipped by the

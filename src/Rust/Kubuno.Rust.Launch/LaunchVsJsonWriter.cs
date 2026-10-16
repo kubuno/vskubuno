@@ -13,12 +13,12 @@ namespace Kubuno.Rust.Launch
     /// Schema facts this relies on (see the launch report for full sourcing):
     /// - Right-clicking an .exe in Solution Explorer → "Add Debug Configuration" generates
     ///   `{ "version": "0.2.1", "defaults": {}, "configurations": [ { "type": "default",
-    ///   "project": "bin\\hello.exe", "projectTarget": "", "name": "hello.exe" } ] }` — the
+    ///   "project": "bin\\hello.exe", "projectTarget": "", "name": "hello.exe" } ] }` - the
     ///   `"type": "default"` configuration is VS's own native-exe-launch shape for a
     ///   project-less Open Folder codebase (source: "Create build and debug tasks with JSON
     ///   files", learn.microsoft.com/visualstudio/ide/customize-build-and-debug-tasks-in-visual-studio).
     /// - The "Default properties" table of the `launch.vs.json` schema reference documents
-    ///   `args` (array), `currentDir` (string — local working directory; auto-detected
+    ///   `args` (array), `currentDir` (string - local working directory; auto-detected
     ///   unless set), `env`, `name`, `project`, `projectTarget` (source:
     ///   learn.microsoft.com/cpp/build/launch-vs-schema-reference-cpp, "Default properties").
     ///   `cwd` is documented separately and is for *remote* debugging only, so this writer
@@ -38,7 +38,7 @@ namespace Kubuno.Rust.Launch
     /// - No `natvisFile`/`visualizerFile`-equivalent field is documented for a local Windows
     ///   `"type": "default"` configuration: `visualizerFile` only appears in that schema
     ///   page's "C++ Linux properties" table (gdb/lldb remote debugging), not in "Default
-    ///   properties". So this writer does not emit a natvis field — see
+    ///   properties". So this writer does not emit a natvis field - see
     ///   <see cref="LaunchDescription.NatvisFiles"/> and the launch report for the two real
     ///   mechanisms (PDB-embedded std natvis; dropping files into VS's own Natvis
     ///   directories, or shipping them as VSIX-registered assets, documented at
@@ -56,7 +56,7 @@ namespace Kubuno.Rust.Launch
         /// <param name="projectPath">
         /// The `project` field: VS's own generator uses a path relative to the workspace
         /// root (e.g. `bin\hello.exe`); pass <see cref="LaunchDescription.ExecutablePath"/>
-        /// itself if a relative path isn't available — an absolute path works too.
+        /// itself if a relative path isn't available - an absolute path works too.
         /// </param>
         /// <param name="indent">The base indentation, in spaces, of the returned object (0 = flush left).</param>
         public static string WriteConfigurationEntry(LaunchDescription description, string projectPath, int indent = 0)

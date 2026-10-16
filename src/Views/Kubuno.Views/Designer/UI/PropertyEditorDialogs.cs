@@ -544,7 +544,7 @@ namespace Kubuno.Views.Designer.UI
         private string ItemText(MemberProxy member, int index)
         {
             var label = member.Label;
-            var text = _polymorphic && label != member.Tag ? member.Tag + " — " + label : label;
+            var text = _polymorphic && label != member.Tag ? member.Tag + " - " + label : label;
             return index.ToString(CultureInfo.InvariantCulture) + "  " + text;
         }
 
@@ -660,7 +660,7 @@ namespace Kubuno.Views.Designer.UI
                     editor = WithBindingButtons(member, descriptor, editor, setText);
                 }
 
-                editor.GotKeyboardFocus += (_, _) => _description.Text = descriptor.DisplayName + " — " + descriptor.Description;
+                editor.GotKeyboardFocus += (_, _) => _description.Text = descriptor.DisplayName + " - " + descriptor.Description;
                 BindingDialog.AddRow(_properties, row++, name, editor);
             }
         }

@@ -411,7 +411,7 @@ namespace Kubuno.Desktop.TemplateWizard
             if (declaring is null && depth < 16)
             {
                 // A file of a sub-folder of `src` (docs/DESKTOP-MIGRATION.md "Source layout"): declared by the folder's
-                // module file — created, and itself declared by its parent, when the folder is not a module yet.
+                // module file - created, and itself declared by its parent, when the folder is not a module yet.
                 if (FolderModuleToCreate(effective, File.Exists) is { } create)
                 {
                     var folderName = Path.GetFileName(Path.GetDirectoryName(create)) ?? string.Empty;

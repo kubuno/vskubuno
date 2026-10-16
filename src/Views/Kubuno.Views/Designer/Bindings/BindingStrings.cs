@@ -89,7 +89,7 @@ namespace Kubuno.Views.Designer.Bindings
         public static string Group(string id, string label) => id switch
         {
             "item" => T("Item (row of ", "Élément (ligne de ") + label + ")",
-            "context" => label.Length > 0 ? T("Data context", "Contexte de données") + " — " + label : T("Data context", "Contexte de données"),
+            "context" => label.Length > 0 ? T("Data context", "Contexte de données") + " - " + label : T("Data context", "Contexte de données"),
             "sources" => T("Data sources", "Sources de données"),
             "resources" => T("Resources (.kbres)", "Ressources (.kbres)"),
             _ => label,

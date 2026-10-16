@@ -1,6 +1,6 @@
-# Kubuno web views — `.kbview` for the web UI, designed in Visual Studio — design note
+# Kubuno web views - `.kbview` for the web UI, designed in Visual Studio - design note
 
-> Status: **design study, partly built** (2026-10-01; built so far: WV-0, WV-1, WV-2, WV-3, WV-4, WV-8, WV-9a — see §12–§14; WV-5a in part and the first core pilot, the header's WaffleMenu & AccountMenu — see §15). Product-owner decision (2026-10-01): the Kubuno **web** UI
+> Status: **design study, partly built** (2026-10-01; built so far: WV-0, WV-1, WV-2, WV-3, WV-4, WV-8, WV-9a - see §12–§14; WV-5a in part and the first core pilot, the header's WaffleMenu & AccountMenu - see §15). Product-owner decision (2026-10-01): the Kubuno **web** UI
 > (core host + module frontends) moves toward a declarative view format similar to the desktop `.kbview`, editable in
 > the Visual Studio visual designer (Toolbox, design surface, Properties, ⚡ events, code-behind); the design surface
 > renders with **WebView2** (WebKit is dropped); existing React/TSX code is migrated or transformed.
@@ -9,7 +9,7 @@
 > `DESIGNER.md` (design surface protocol, Toolbox, Properties, element ids), `EVENTS.md` (events, custom controls,
 > metadata), `DATA.md` (data components, `{Binding Source=…}`), `RIBBON.md`, `ICONS.md`, `ARCHITECTURE.md` (layers,
 > `Kubuno.Web`), `kubuno-desktop-resources` (`.kbres`, `{Res}`; `docs/RESOURCES.md` is referenced by the code but not in the
-> repository yet), and `docs/WEB.md` (phases 1–2: core and modules opened, built and debugged in VS — being written in
+> repository yet), and `docs/WEB.md` (phases 1–2: core and modules opened, built and debugged in VS - being written in
 > parallel; this note assumes its `.esproj` + `.rsproj` solution shape).
 
 ## 0. What the web code looks like today (measured)
@@ -58,7 +58,7 @@ What this says, and what it means for the design:
   `ConfirmDialog`, `MenuDropdown`, `Spinner`, `Checkbox`, `Toggle`. The long tail (DataTable: 2 uses, Accordion: 3)
   is not yet adopted.
 - **Copy-pasted helpers are everywhere**: a local `SettingsRow` in **20 repos**, a local `RadioGroup` in **20 repos**,
-  `Section` in 12, four separate `Ribbon.tsx` copies (office, app, build, flow — the "no cross-module import" rule
+  `Section` in 12, four separate `Ribbon.tsx` copies (office, app, build, flow - the "no cross-module import" rule
   makes modules vendor them). These are the first shared elements to create; migration removes the copies.
 - **State is React-local**: 4 894 `useState`, 1 302 `useEffect`, 3 532 `.map(` list renderings, ~650 React Query
   calls, a few zustand stores per module plus the shell stores of `@kubuno/sdk`. The code-behind model must keep
@@ -71,7 +71,7 @@ What this says, and what it means for the design:
 - **Modules are runtime-loaded ESM** (`loadRemoteModules.ts`): `entry.js` exports `register()` + `sdkVersion`; shared
   specifiers (`react`, `@ui`, `@kubuno/sdk`, `@kubuno/drive`, `zustand`, React Query, i18next, Radix menu) are
   `external` and resolved by the host's **import map** (`build/importmap-plugin.ts`) to unique instances. The npm
-  packages `@kubuno/sdk` and `@kubuno/drive` are **type surfaces whose `index.js` throws** — only `@kubuno/ui` ships
+  packages `@kubuno/sdk` and `@kubuno/drive` are **type surfaces whose `index.js` throws** - only `@kubuno/ui` ships
   real code. Every `@ui` component is already registered under a string key (`themed('ui.Button', …)` in
   `ComponentRegistry`), which is a ready-made name → component indirection.
 - **The desktop vocabulary is already a port of the web one**: desktop `Button` has the web variants
@@ -79,7 +79,7 @@ What this says, and what it means for the design:
   and `FloatingWindow` were ported *from* the web (`DESKTOP-MIGRATION.md`); the desktop icon set is Lucide like
   `lucide-react`. Convergence is natural; the differences are mostly names and the children model.
 - **A live-capture caveat** (found while checking the verification method): two consecutive headless Chrome
-  screenshots of the live login page (`http://192.168.1.220:8080`, 1440×900) differ — the left panel is an animated
+  screenshots of the live login page (`http://192.168.1.220:8080`, 1440×900) differ - the left panel is an animated
   WebGL background. Pixel-parity checks must freeze or mask animations (§7).
 
 ## 1. Goals and constraints
@@ -88,7 +88,7 @@ What this says, and what it means for the design:
 
 1. **One view language for desktop and web.** Same file extension (`.kbview`), same grammar (the lossless rowan
    tree of `kubuno-desktop-views`), same markup extensions (`{Binding}`, `{Res}`), same `x:Name`, same `On*` event attributes,
-   same element ids for the designer, and — wherever the control exists on both sides — **the same element and
+   same element ids for the designer, and - wherever the control exists on both sides - **the same element and
    property names and the same enum values**. On the web an element maps to an `@kubuno/ui` (or `@kubuno/sdk`)
    React component; on the desktop to a `kubuno-desktop-views` registry component. A view file belongs to **one target**
    (its code-behind is TypeScript or Rust); what is shared is the vocabulary, the tooling and the skills, not files.
@@ -106,13 +106,13 @@ What this says, and what it means for the design:
 | **Binding to stores and React Query** | `{Binding Path}` resolves against the view instance, then its data context. Hooks (`useQuery`, zustand selectors, `@kubuno/sdk` stores) run in `use()` and land in `@bind` fields; the common query/mutation cases are declarative non-visual components `<Query>`/`<Mutation>` (the web analogue of `DATA.md`'s `BindingSource`/`TableAdapter`) (§2.2). |
 | **Events** | `On*` attributes named by the registry (`OnClick`, `OnCheckedChanged`, `OnTextChanged`, `OnSelectionChanged`…), the same names as the desktop; the runtime adapts React props (`onClick`, `onChange(checked)`) into `(sender, e)` with typed args (`MouseEventArgs`, `CheckedChangedEventArgs`…), `e.handled`/`e.cancel` mapped to `stopPropagation`/`preventDefault` (§2.2). |
 | **i18n with `.kbres` / `{Res}`** | `.kbres` (neutral + satellites `name.fr.kbres`) becomes the source of module strings; the Vite plugin compiles it to i18next bundles passed to `registerModuleTranslations`, so the runtime stays i18next (language switch, RTL, the 13 languages). `{Res key}` resolves through i18next's `t(ns:key)`. Extension needed on both targets: arguments and plurals, `{Res notes_selected_count, Count={Binding SelectedCount}}` (§2.4, WV-6). |
-| **Theming and module accent** | No colour literals in views (the desktop rule, `XML_VIEWS.md` §1): colours are theme tokens (`ForeColor="TextSecondary"`, `Surface="Card"`), mapped to the CSS variables of `theme.css`. The module accent keeps coming from `[data-module="<id>"]` set by `ModuleArea` — a view inside a module inherits it, nothing to do. Tailwind-only styling is allowed during migration through a web-only `Class` attribute, flagged by the language server (open question Q3). |
+| **Theming and module accent** | No colour literals in views (the desktop rule, `XML_VIEWS.md` §1): colours are theme tokens (`ForeColor="TextSecondary"`, `Surface="Card"`), mapped to the CSS variables of `theme.css`. The module accent keeps coming from `[data-module="<id>"]` set by `ModuleArea` - a view inside a module inherits it, nothing to do. Tailwind-only styling is allowed during migration through a web-only `Class` attribute, flagged by the language server (open question Q3). |
 | **Performance** | The production path is compiled (no XML parser shipped); bindings are precompiled accessors; nodes subscribe to the paths they read (fine-grained re-render, better than many hand-written screens that re-render whole pages on every `useState`); `Repeater` keyed and optionally virtualised. Budget: runtime ≤ 15 KB gzip; no regression in React Profiler commit time on the pilot screens (§2.1). |
 | **SSR** | Not needed (checked, §0). The runtime may assume `window`/`document`. |
 | **Accessibility** | WinForms' own property names on every control: `AccessibleName`, `AccessibleDescription`, `AccessibleRole` → `aria-label`, `aria-describedby`, `role`; `TabIndex` keeps DOM order (a positive value is a language-server warning on the web); diagnostics for an icon-only button without `AccessibleName`, an image without `AlternateText`, a form field without a label (§5). The accessibility tree is part of the parity check (§7). |
-| **Coexistence with TSX** | A compiled `.kbview` **is a React component** (default export of its code-behind) — it drops into `RouteRegistry`, `WidgetRegistry`, sidebar/toolbar/right-panel stores unchanged; a TSX screen embeds a view with `<NotesSettingsPage …/>` or `<KbView view={…}/>`; a view embeds any React component registered as a custom control, or through `<ReactHost>` (§2.3). |
+| **Coexistence with TSX** | A compiled `.kbview` **is a React component** (default export of its code-behind) - it drops into `RouteRegistry`, `WidgetRegistry`, sidebar/toolbar/right-panel stores unchanged; a TSX screen embeds a view with `<NotesSettingsPage …/>` or `<KbView view={…}/>`; a view embeds any React component registered as a custom control, or through `<ReactHost>` (§2.3). |
 | **`@kubuno/*` external singletons, import map** | The compiled module imports only `@ui`, `@kubuno/sdk`, `@kubuno/views` (new), `react/jsx-runtime`, `lucide-react` (bundled, as today). `@kubuno/views` becomes a new shared specifier in the host import map (one instance of the binding engine, design-mode hooks and control-handle registry), like `@ui` (§6.4). |
-| **RTL** | `Dock="Left"` on the web means *start* (logical properties: `inset-inline-start`, grid areas mirror) — a view written for `fr` is correct in `ar`/`he` without change; the desktop keeps physical edges until it gets an RTL story. |
+| **RTL** | `Dock="Left"` on the web means *start* (logical properties: `inset-inline-start`, grid areas mirror) - a view written for `fr` is correct in `ar`/`he` without change; the desktop keeps physical edges until it gets an RTL story. |
 
 ### 1.3 Non-goals
 
@@ -134,7 +134,7 @@ What this says, and what it means for the design:
 | Bundle size | + parser (~30–60 KB) per page | Smallest per view, no shared runtime | Runtime ~10–15 KB gzip once (shared chunk), plans are small; parser only in dev/designer |
 | Debugging | Stack traces into the interpreter | Source maps to `.kbview` | Source maps for every accessor/handler dispatch to the attribute in `.kbview`; React DevTools shows `View(NotesSettingsPage) > Button#save` |
 | Designer (unsaved buffer) | Natural: parse the buffer | Needs a compile per keystroke | The designer parses the buffer in the browser (same parser, WASM) and feeds the **same renderer** |
-| Divergence risk | — | Designer would need its own renderer → two code paths | One renderer; the only difference is *how a binding is evaluated* (compiled accessor vs path walker), covered by a conformance suite rendering every test view both ways and diffing the DOM |
+| Divergence risk | - | Designer would need its own renderer → two code paths | One renderer; the only difference is *how a binding is evaluated* (compiled accessor vs path walker), covered by a conformance suite rendering every test view both ways and diffing the DOM |
 
 **Recommendation (c)**, which is the desktop's own choice transposed (`XML_VIEWS.md` §2: the interpreter is
 canonical, the build step validates and adds typed sugar): **one renderer** used in production and in the
@@ -144,7 +144,7 @@ plans, and emits source maps.
 **One grammar, compiled to WASM.** The parser is the Rust rowan parser of `kubuno-desktop-views` (lossless CST, `ast`,
 `validate`, `edit`, element ids). It is factored out of the Windows-only crate (WV-1) and compiled to WebAssembly in
 an npm package `@kubuno/views-compiler` (Node for the Vite plugin, browser for the design surface). A TypeScript
-re-implementation would be a second grammar drifting from the first — exactly what `XML_VIEWS.md` §6 forbids. (This
+re-implementation would be a second grammar drifting from the first - exactly what `XML_VIEWS.md` §6 forbids. (This
 is unrelated to the desktop's abandoned wasmtime components: here WASM is a build-time/designer library, never a
 runtime of the product. Open question Q5.)
 
@@ -158,12 +158,12 @@ runtime of the product. Open question Q5.)
   shaken); a bound icon name uses the `ICON_MAP` of `@kubuno/sdk`;
 - `.kubuno/views/NotesSettingsPage.kbview.d.ts` (types of `ViewBase`: one field per `x:Name`, abstract handler
   signatures) and `.kubuno/views/NotesSettingsPage.check.ts` (binding paths written as TS expressions against the
-  code-behind type) — generated, gitignored, the web equivalent of `OUT_DIR`; never committed (the `ARCHITECTURE.md`
+  code-behind type) - generated, gitignored, the web equivalent of `OUT_DIR`; never committed (the `ARCHITECTURE.md`
   rule). `npm run typecheck` becomes `kbview-tsc -b`: `tsc -b` plus remapping of errors in check files back to
   `.kbview` line/column (Vue's `vue-tsc` approach).
 
 **Specifier constraints.** The generated module imports `@ui` (never `@kubuno/ui`; the existing `tsconfig.paths`
-mapping applies), `@kubuno/sdk`, `@kubuno/views` and `react/jsx-runtime` — all already in every module's `external`
+mapping applies), `@kubuno/sdk`, `@kubuno/views` and `react/jsx-runtime` - all already in every module's `external`
 set except `@kubuno/views`, which joins `SHARED` in each module's `vite.config.ts` and `SPECIFIER_TO_CHUNK` in the
 host's import-map plugin (chunk `kubuno-desktop-views`). Inside the core build the same specifiers resolve by alias, as
 today. No module ever bundles the renderer: one binding engine, one design-mode registry, one control-handle store.
@@ -193,7 +193,7 @@ Three files, as on the desktop (`PROGRAMMING-MODEL.md` §1):
 ```
 
 ```ts
-// NotesSettingsPage.ts — the code-behind (Form1.cs)
+// NotesSettingsPage.ts - the code-behind (Form1.cs)
 import { bind, type MouseEventArgs, type Button } from '@kubuno/views'
 import { useSaveShortcut } from '@ui'
 import { ViewBase } from './NotesSettingsPage.kbview'
@@ -228,18 +228,18 @@ export default NotesSettingsPage.component()   // a React component: RouteRegist
 | `#[kubuno_desktop::view("main_view.kbview")]` on the struct | `class X extends ViewBase` where `ViewBase` is imported from `./X.kbview` |
 | `Form1.Designer.cs` / the macro's in-memory expansion | the Vite plugin's generated module + `.kubuno/views/X.kbview.d.ts` |
 | `initialize_component()` | done by `X.component()` on mount: the instance is created once per mounted view (`useRef`), its control handles linked by `x:Name`, initial property values read from the plan (`this.save.text === "Enregistrer…"` before the first paint) |
-| a field per `x:Name` (`status: kubuno_desktop::forms::TextField`) | a typed handle per `x:Name` (`save: Button` from `@kubuno/views`): `text`, `enabled`, `visible`, `checked`, `value`, `focus()`, `click`… — setting one re-renders only that element (each handle is a slot in the view's store, the same idea as the desktop's composed `__kb.N.Text` bindings) |
-| `#[bind] user_name: String` | `@bind accessor userName = ''` (a standard TC39 accessor decorator — TS 6, no `experimentalDecorators`); assignments notify the bound nodes |
+| a field per `x:Name` (`status: kubuno_desktop::forms::TextField`) | a typed handle per `x:Name` (`save: Button` from `@kubuno/views`): `text`, `enabled`, `visible`, `checked`, `value`, `focus()`, `click`… - setting one re-renders only that element (each handle is a slot in the view's store, the same idea as the desktop's composed `__kb.N.Text` bindings) |
+| `#[bind] user_name: String` | `@bind accessor userName = ''` (a standard TC39 accessor decorator - TS 6, no `experimentalDecorators`); assignments notify the bound nodes |
 | `#[data_context]` | `dataContext` property (any object, or a `<Query>` result) for paths not found on the instance |
 | handler = plain method, `match` generated by name | handler = plain method; the generated `ViewBase` declares each handler the view names as **abstract**, so a missing handler is a `tsc` error at the attribute (the counterpart of rustc E0599); a method with fewer parameters is accepted (TS assignability = the desktop's several handler shapes) |
 | `async fn f(ui: UiHandle<Self>)` | `async` methods; `this` stays valid (the instance outlives renders); writes after unmount are dropped with a dev warning |
 | `Form_Load`, `FormClosing` | `OnLoad` (after first commit), `OnUnload` (unmount) on the root; `OnShown` on dialogs |
-| `MessageBox.Show` | `MessageBox.show(...)` from `@kubuno/views`, implemented with `ConfirmDialog`/`useConfirm` (never `window.confirm` — CLAUDE.md rule) |
+| `MessageBox.Show` | `MessageBox.show(...)` from `@kubuno/views`, implemented with `ConfirmDialog`/`useConfirm` (never `window.confirm` - CLAUDE.md rule) |
 | `form.show_dialog(owner)` | `await Dialog.show(SomeDialogView, props)` → `DialogResult` (on top of `FloatingWindow`/`ConfirmDialog`) |
 
-**Class rather than hooks-only — the recommendation, with the alternative.** A hooks-only model (`defineView(view,
+**Class rather than hooks-only - the recommendation, with the alternative.** A hooks-only model (`defineView(view,
 () => ({ …handlers, …state }))`) is more idiomatic React, but: (1) the designer's "double-click → create handler"
-must insert a method into a well-defined place — a class body is the same operation as the desktop's `impl` block,
+must insert a method into a well-defined place - a class body is the same operation as the desktop's `impl` block,
 while an object literal returned from a closure is fragile to locate and to rename; (2) typed fields per `x:Name`
 and abstract handler checks need a nominal type to attach to; (3) the WinForms mental model (and Claude's skills) is
 shared with the desktop. Hooks remain first-class through `use()`. Open question Q2.
@@ -262,7 +262,7 @@ reactive keys binds them: `Key="calendar-events, {Binding rangeStart}, {Binding 
 handles (by `x:Name`, else element id); elements whose `x:Name` vanished lose their handle state (the desktop
 `FocusRing` rule). Code-behind saved → the module re-executes; the host component swaps the live instance's prototype
 (`Object.setPrototypeOf(instance, New.prototype)`), so new methods take effect without losing field values. A view
-that does not compile keeps its last good plan and shows an overlay with file/line/column (the Vite overlay) — the
+that does not compile keeps its last good plan and shows an overlay with file/line/column (the Vite overlay) - the
 desktop's "keep the last good tree" rule.
 
 **Expressions.** No expression language in attributes (XAML's choice, and the desktop's). Logic goes to getters in
@@ -272,14 +272,14 @@ generated getter (§6.2). This keeps views designable and diffs small.
 
 ### 2.3 Embedding both ways (screen-by-screen migration)
 
-- **A view inside TSX**: a compiled view is a component — `<NotesSettingsPage noteId={id}/>`, typed props from
+- **A view inside TSX**: a compiled view is a component - `<NotesSettingsPage noteId={id}/>`, typed props from
   the view's `Props` (declared on the root: `<Stack x:Props="NotesSettingsPageProps">`, read in code as
   `this.props`). `<KbView view={NotesSettingsPage} …/>` is the same for dynamic cases.
 - **A React component inside a view (custom control)**: registered with metadata, the web counterpart of
   `#[derive(Component)]` (`EVENTS.md` §4.3):
 
   ```ts
-  // controls.ts — scanned by the language server (Toolbox, Properties, completion) and imported by the plugin
+  // controls.ts - scanned by the language server (Toolbox, Properties, completion) and imported by the plugin
   export const NoteCard = defineControl(NoteCardImpl, {
     category: 'Notes', icon: 'StickyNote', defaultEvent: 'OnOpen',
     props:  { Note: { kind: 'object', bindable: true }, Selected: { kind: 'Bool', default: false } },
@@ -291,7 +291,7 @@ generated getter (§6.2). This keeps views designable and diffs small.
   Used as `<NoteCard Note="{Binding item}" OnOpen="card_open"/>`. A user control is a `.kbcontrol` (VIEWS-SPEC.md §1.1) with a code-behind
   (`UserControl` root), usable as an element by its file stem, as on the desktop (`<Repeater ItemTemplate="NoteRow">`).
 - **Unregistered component (migration escape hatch)**: `<ReactHost Component="./NoteEditor#NoteEditor"
-  Props="{Binding editorProps}"/>` — rendered for real in the designer (it is real React), no Properties rows beyond
+  Props="{Binding editorProps}"/>` - rendered for real in the designer (it is real React), no Properties rows beyond
   `Props`. The codemod emits it for subtrees it cannot convert; the language server reports a "migration debt" count
   per repo.
 
@@ -305,7 +305,7 @@ generated getter (§6.2). This keeps views designable and diffs small.
   (`XML_VIEWS.md` §3 as built: row, then user control, then page scope); `DataTable`/`ListBox`/`Dropdown` take
   `ItemsSource` too.
 - **`{Res}`**: `{Res key[, Source=set]}`; web extension `{Res key, Count={Binding n}, Name={Binding user.name}}` →
-  i18next interpolation/plurals (the `.kbres` model gains plural forms `key_one`/`key_other` — also useful on the
+  i18next interpolation/plurals (the `.kbres` model gains plural forms `key_one`/`key_other` - also useful on the
   desktop). Design-time culture switch = the designer's language picker (`DesignLanguagePicker`), sent as
   `setResources` (same message as the desktop).
 - **Layout**: the web is responsive, the desktop's default root is an absolute WinForms surface (`DESIGNER.md` §14).
@@ -323,7 +323,7 @@ generated getter (§6.2). This keeps views designable and diffs small.
 ## 3. Element mapping
 
 Canonical `.kbview` names = **the desktop names** (they are already in the grammar, the registry, the Toolbox and the
-docs); the web registry maps each to its React component (open question Q1). "—" = missing on that side.
+docs); the web registry maps each to its React component (open question Q1). "-" = missing on that side.
 
 | `.kbview` element | Web (`@ui` / `@kubuno/sdk`) | Desktop (`kubuno-desktop-views`) | Notes / work to converge |
 |---|---|---|---|
@@ -331,32 +331,32 @@ docs); the web registry maps each to its React component (open question Q1). "�
 | `IconButton` | `Button` (icon only) | `IconButton` | Web: `AccessibleName` required (diagnostic). |
 | `CheckBox` | `Checkbox` | `CheckBox` | |
 | `RadioButton` | `Radio` | `RadioButton` | |
-| `RadioGroup` | — (20 local copies) | — (`RadioButtons` proposed in `XML_VIEWS.md` §7) | **Add on both** (`SelectedValue` two-way). |
+| `RadioGroup` | - (20 local copies) | - (`RadioButtons` proposed in `XML_VIEWS.md` §7) | **Add on both** (`SelectedValue` two-way). |
 | `Switch` | `Toggle` | `Switch` | `On` ↔ `checked`. |
 | `Slider` | `RangeSlider` | `Slider` | |
 | `NumericField` | `NumberInput` | `NumericField` | |
 | `TextField` | `Input`, `OutlinedField` | `TextField` | Web `Variant="Outlined"` selects `OutlinedField`; `LeftIcon`/`RightIcon` → add on desktop. |
 | `TextArea` | `Textarea` | `TextArea` | Web mentions → custom control. |
-| `SearchField` | — (shell search bar, `Input` + icon) | `SearchField` | Add on web. |
-| `MaskedField` | — (`PhoneField` partial) | `MaskedField` | Add on web. |
+| `SearchField` | - (shell search bar, `Input` + icon) | `SearchField` | Add on web. |
+| `MaskedField` | - (`PhoneField` partial) | `MaskedField` | Add on web. |
 | `Dropdown` + `Option` | `Dropdown` (`options[]`) | `Dropdown`/`Option` | Adapter children → `options`. |
 | `ComboBox` | `Combobox` | `ComboBox` | |
 | `DatePicker` | `DatePicker`, `DateField` | `DatePicker` | |
 | `MonthCalendar` | inline `DatePicker` panel | `MonthCalendar` | Web: expose the inline panel. |
 | `ColorField`, `GradientField` | same | same | |
-| `Label` | — (raw `p`/`span` + Tailwind) | `Label` | **Add on web** with `TextStyle="Body|Caption|Title|Heading|Overline"` tokens — replaces most of the 23 000 HTML tags. |
+| `Label` | - (raw `p`/`span` + Tailwind) | `Label` | **Add on web** with `TextStyle="Body|Caption|Title|Heading|Overline"` tokens - replaces most of the 23 000 HTML tags. |
 | `LinkLabel` | `Link` / `a` | `LinkLabel` | Web: `NavigateTo` (SPA route) or `Href`. |
 | `Badge`, `Spinner`, `ProgressBar`, `Separator`, `Callout`, `EmptyState`, `Stepper`/`Step`, `Breadcrumb`/`BreadcrumbItem`, `Accordion`/`AccordionSection`, `Tabs`/`TabItem` | same names | same names | Adapters for the array-fed ones. |
 | `Icon` | `lucide-react` via `ICON_MAP` | `Icon` | Same Lucide names (`ICONS.md`). |
 | `Avatar`, `PictureBox` | Radix avatar (core), `img` | `Avatar`, `PictureBox` | Add `Avatar` to `@ui`; `PictureBox` → `img` with `AlternateText`. |
-| `PaintBox` | — (canvas code) | `PaintBox` | Web: a `<canvas>` with an `OnPaint(sender, e: { ctx, width, height, dpr })` handler — small, useful for charts/previews. |
+| `PaintBox` | - (canvas code) | `PaintBox` | Web: a `<canvas>` with an `OnPaint(sender, e: { ctx, width, height, dpr })` handler - small, useful for charts/previews. |
 | `Panel` | `div` | `Panel` | Web: `Dock` → CSS grid areas (logical start/end), `Layout="Absolute"` for X/Y/Anchor. |
 | `Stack` | `div.flex` | `Stack` | `Direction`, `Gap`, `Align`, `Wrap`, `Padding` (tokens or px). |
 | `TableLayoutPanel` | `div.grid` | `TableLayoutPanel` | Web over CSS grid; responsive `Columns.Compact`. |
 | `ScrollArea` | `div` overflow | `ScrollArea` | |
 | `GroupBox` | local `Section` (12 repos) | `GroupBox` | Add on web. |
 | `Card` | `Card` | `Card` | Slots via property elements. |
-| `SettingsRow` | — (20 local copies) | — | **Add on both** (label + description + content), the single most duplicated helper. |
+| `SettingsRow` | - (20 local copies) | - | **Add on both** (label + description + content), the single most duplicated helper. |
 | `Splitter` | `ResizeHandle` + `useResizableWidth` | `Splitter` | Add element on web. |
 | `Toolbar`/`ToolbarItem` | local toolbars + `useToolbarStore` | same | Add on web. |
 | `Sidebar`/`SidebarSection`/`SidebarItem` | `SidebarNavItem` (sdk) + `useSidebarStore` | same | Add on web (sidebar bodies are a big migration target). |
@@ -366,13 +366,13 @@ docs); the web registry maps each to its React component (open question Q1). "�
 | `ContextMenu`/`MenuItem` | `MenuDropdown` (`items[]`), `useContextMenu` | same | Adapter; the CLAUDE.md rule "menus = `MenuDropdown`" is enforced by construction. |
 | `FloatingWindow` | `FloatingWindow` | `FloatingWindow` | Desktop port of the web one. |
 | `DockArea`/`DockPanel`/`WorkspaceShell`/`MenuBar` | `@kubuno/sdk` workspace | `DockArea`/`DockPanel`/`WorkspaceShell` | Desktop ported from web; `MenuBar` element missing from the desktop registry. |
-| `ListBox`, `CheckedListBox`, `ListView`, `TreeView` | — (bespoke, 3 532 `.map`) | same | **Add on web** (virtualised, keyboard, ARIA listbox/tree). |
+| `ListBox`, `CheckedListBox`, `ListView`, `TreeView` | - (bespoke, 3 532 `.map`) | same | **Add on web** (virtualised, keyboard, ARIA listbox/tree). |
 | `DataTable`/`Column` | `DataTable` (2 uses) | `DataTable`/`Column` | Align columns API. |
 | `Repeater` | `.map` | `Repeater` | Web runtime. |
 | `Timer` | `setInterval` | `Timer` | Non-visual, web runtime. |
 | `Query`, `Mutation` | React Query | (`BindingSource`, `TableAdapter`) | Web-only non-visual components. |
-| `Ribbon*`, `Command` | 4 local copies (office, app, build, flow) | `Ribbon` family (`RIBBON.md`) | **Promote the web ribbon to `@ui`** and align on `RIBBON.md`'s classes — removes three copies. |
-| `UserControl`, `ReactHost` | component, — | `UserControl`, — | `ReactHost` web-only. |
+| `Ribbon*`, `Command` | 4 local copies (office, app, build, flow) | `Ribbon` family (`RIBBON.md`) | **Promote the web ribbon to `@ui`** and align on `RIBBON.md`'s classes - removes three copies. |
+| `UserControl`, `ReactHost` | component, - | `UserControl`, - | `ReactHost` web-only. |
 
 **Web-only today (add to the desktop when needed, or keep web-only with a target flag):** `FieldGroup`,
 `PhoneField`, `DateField`, `AddressField`, `LabelCombobox`, `LabelField`, `Editable`, `RichText`, `FloatCheckbox`,
@@ -381,7 +381,7 @@ docs); the web registry maps each to its React component (open question Q1). "�
 `MobileSheet`, `SpinnerOverlay`.
 
 **Desktop-only today:** `PaintBox` (proposed above), `MaskedField`, `SearchField`, list controls, `Timer`,
-`StatusBar`, `Toolbar`, `Sidebar` — all proposed for the web above.
+`StatusBar`, `Toolbar`, `Sidebar` - all proposed for the web above.
 
 **Convergence mechanism**: a shared spec checked by tests, not by discipline. Both registries export the same JSON
 shape (`DESIGNER.md` §5 export); a conformance test (in CI of `core` and of `desktop`) diffs the web
@@ -396,14 +396,14 @@ target-only element/property used on the other target.
 Everything except the surface is reused: the editor factory with Design | XML | Split (`DesignerSplitView`),
 `IDesignSurfaceHost` (a buffer-text-shaped seam, `setText`/selection/`EditRequested`), the editing pipeline
 (`Editing/*`, one `ITextEdit` per request, compound undo), the Properties publisher (`KbviewElementObject`, an
-`ICustomTypeDescriptor` built from registry JSON — no CLR type per component), the Events tab
+`ICustomTypeDescriptor` built from registry JSON - no CLR type per component), the Events tab
 (`KbviewEventBindingService` → `kubuno/createHandler`), the native Toolbox installer (tabs per registry family, icons
 rasterised from the Lucide XAML), collection editors (`ChildCollectionPlanner`), smart tags, the resource picker
 (`.kbres`), the icon picker, F7/Shift+F7, the document outline (`documentSymbol`).
 
 All of it lived in `Kubuno.Desktop`, and the web layer may not reference the desktop layer
 (`tests/Kubuno.Architecture.Tests`). Per `ARCHITECTURE.md` ("code moves DOWN"), **WV-8 moves the view designer into a
-shared lower layer** — `Kubuno.Views` / `Kubuno.Views.Logic` between Rust and the targets — leaving
+shared lower layer** - `Kubuno.Views` / `Kubuno.Views.Logic` between Rust and the targets - leaving
 `RustDesignSurfaceHost`, the design build of `kubuno_ui.dll` and the desktop templates in `Kubuno.Desktop`; the web
 layer adds `WebDesignSurfaceHost`. The same move is already planned for the mobile renderer.
 
@@ -446,11 +446,11 @@ runtime must come from somewhere:
   question Q4).
 
 Fallback when the project is not set up (no `node_modules`, dev server failing): a design host bundled in the VSIX
-renders built-in elements only, with an info bar "Aperçu : runtime intégré — exécutez `npm ci` …" (the desktop's
+renders built-in elements only, with an info bar "Aperçu : runtime intégré - exécutez `npm ci` …" (the desktop's
 *NotBuilt* state and **Générer** button, same UX).
 
 **Handshake.** First message from the page: `{"type":"surfaceInfo","version":1,"target":"web","views":"0.1.0",
-"ui":"0.1.12","sdk":1,"hostRuntime":"0.1.12"}` — the host refuses a surface whose `views` ABI differs from the
+"ui":"0.1.12","sdk":1,"hostRuntime":"0.1.12"}` - the host refuses a surface whose `views` ABI differs from the
 compiler's, as `CheckSurfaceInfo` does for the DLL hash.
 
 ### 4.3 Design mode in the browser
@@ -467,7 +467,7 @@ Implemented in `@kubuno/views` (design build only, tree-shaken from production):
 - **Input neutralisation**: an overlay layer captures every pointer and key event while design mode is on (the
   desktop's `neutralize_frame`): widgets never receive clicks, focus or typing; handlers never run.
 - **Adorners** drawn in the overlay: hover stroke, selection frame 3 DIP outside the bounds, grab handles (filled
-  when resizable — only absolute children and sized elements), parent dashed outline, faint outlines around
+  when resizable - only absolute children and sized elements), parent dashed outline, faint outlines around
   invisible containers (`setDesignOptions.containerOutlines`), insertion markers per container kind: a line between
   `Stack` children (perpendicular to `Direction`), a cell highlight in `TableLayoutPanel` (drop sets `Row`/`Column`
   attached properties), dock bands for `Panel Dock`, free XY with snaplines only in `Layout="Absolute"`.
@@ -511,7 +511,7 @@ child window (as the desktop surface did when OLE skipped `devenv`'s target, `DE
   from source (like EVT-7b's `scan_source`), so they appear in the Toolbox before any build; `projectComponents` sends
   them to the surface, which renders the real component (it is loaded by the dev server) or a labelled placeholder
   while it fails to compile.
-- VS asks the language server `kubuno/registry` exactly as today — Toolbox tabs, Properties rows, ⚡ events and
+- VS asks the language server `kubuno/registry` exactly as today - Toolbox tabs, Properties rows, ⚡ events and
   smart tags need no web-specific code.
 
 ### 4.6 Sample data vs live data
@@ -529,10 +529,10 @@ child window (as the desktop surface did when OLE skipped `devenv`'s target, `DE
 ## 5. Language server: one `kubuno-views-ls`, two target profiles
 
 **Recommendation: share `kubuno-views-ls`.** Same grammar, element ids, `applyEdit`/`elementAtOffset`/
-`rangeOfElement`, completion, hover, outline, `{Res}` support (`kubuno-desktop-resources-model`), diagnostics framework — a
+`rangeOfElement`, completion, hover, outline, `{Res}` support (`kubuno-desktop-resources-model`), diagnostics framework - a
 second server would duplicate 7 200 lines and drift.
 
-- **Profile selection** per document: walk up from the `.kbview` — `Cargo.toml` depending on `kubuno-desktop`/`kubuno-desktop-views`
+- **Profile selection** per document: walk up from the `.kbview` - `Cargo.toml` depending on `kubuno-desktop`/`kubuno-desktop-views`
   → `desktop`; `package.json` depending on `@kubuno/views-compiler` → `web`; an explicit `kubuno.views.json`
   (`{"target": "web"}`) wins.
 - **Registry provider**: `desktop` = the compiled-in registry (today); `web` = `node_modules/@kubuno/ui/
@@ -551,7 +551,7 @@ second server would duplicate 7 200 lines and drift.
 - **Types stay with TypeScript**: the Rust server does structural checks; type errors in bindings and handlers come
   from `kbview-tsc` (generated check files remapped to `.kbview` positions), surfaced in VS's Error List through the
   TypeScript project system. The `.kbview.d.ts` files are regenerated by the language server on change (debounced)
-  so `this.save.` completes in the `.ts` editor without a running dev server — the same generator code as the Vite
+  so `this.save.` completes in the `.ts` editor without a running dev server - the same generator code as the Vite
   plugin (shared Rust, WASM on the Node side).
 - **Limit to accept**: a rename started from the TS editor (tsserver's F2) does not update `.kbview` attributes; the
   rename started from the designer or the `.kbview` does both. A tsserver plugin can close this later.
@@ -562,9 +562,9 @@ second server would duplicate 7 200 lines and drift.
 
 | Class | What | Volume (estimate from §0) | Treatment |
 |---|---|---|---|
-| **A — straightforward** | Settings pages, admin panels, dialogs, forms, simple lists, sidebar bodies, filter panels, widgets | core admin (189 files) + settings (≈ 97 files across repos) + ≈ 100 dialogs + most of contacts, tasks, forum, wiki, notes, keestore, p2pnas, photos | Codemod + review; needs only the core element set (WV-5a). |
-| **B — needs new elements** | Lists with templates and drag-reorder, master/detail, navigation trees, toolbars, workspaces, ribbons, data tables, popovers | drive and mail lists, chat lists, calendar side panels, forms builder, media library, books, app/build/flow chrome | Codemod after WV-5b elements exist; `ReactHost` for leftovers. |
-| **C — custom control** | Canvas/editor surfaces and third-party widgets | 71 heavy files: office editors (22), PaintSharp (12), maps (8), Monaco (code), xterm, Tiptap composers (mail, notes), media player, flow canvas, calendar Day/Week/Month/Year grids, 3D | Stay TSX, wrapped with `defineControl` (Toolbox entry, properties, events); the chrome around them (ribbons, panels, dialogs, settings) migrates as A/B. |
+| **A - straightforward** | Settings pages, admin panels, dialogs, forms, simple lists, sidebar bodies, filter panels, widgets | core admin (189 files) + settings (≈ 97 files across repos) + ≈ 100 dialogs + most of contacts, tasks, forum, wiki, notes, keestore, p2pnas, photos | Codemod + review; needs only the core element set (WV-5a). |
+| **B - needs new elements** | Lists with templates and drag-reorder, master/detail, navigation trees, toolbars, workspaces, ribbons, data tables, popovers | drive and mail lists, chat lists, calendar side panels, forms builder, media library, books, app/build/flow chrome | Codemod after WV-5b elements exist; `ReactHost` for leftovers. |
+| **C - custom control** | Canvas/editor surfaces and third-party widgets | 71 heavy files: office editors (22), PaintSharp (12), maps (8), Monaco (code), xterm, Tiptap composers (mail, notes), media player, flow canvas, calendar Day/Week/Month/Year grids, 3D | Stay TSX, wrapped with `defineControl` (Toolbox entry, properties, events); the chrome around them (ribbons, panels, dialogs, settings) migrates as A/B. |
 | **Host shell** | `core/shell`, routing, module loading, theme engine, `@ui` primitives themselves | ≈ 33 shell files + `src/ui` | Not migrated (the primitives *are* the controls). |
 
 ### 6.2 Codemod (`@kubuno/views-migrate`, ts-morph)
@@ -598,7 +598,7 @@ converted elements %, `Class` count, `ReactHost` count, TODOs.
 ### 6.3 Order
 
 1. **Foundations in core** (WV-1…WV-7): the runtime is served by the host, so core comes first, but only its
-   plumbing — no core screen yet.
+   plumbing - no core screen yet.
 2. **Pilot: notes** (9 `.tsx`, 4 264 LOC): `NotesSettingsPage`, `NotesFilterPanel`, `NotesSidebarBody`,
    `NotesMiniPanel`, `NotesRecentWidget` (A/B), `NoteCard` as a custom control first, `NoteEditor` kept as
    `ReactHost`. Small, exercises the full chain (module build, externals, import map, `.kbpkg`, registries, i18n with
@@ -618,13 +618,13 @@ converted elements %, `Class` count, `ReactHost` count, TODOs.
   codemod CLI; a devDependency), `@kubuno/host-runtime` (designer only, §4.2). `@kubuno/ui` gains new elements and
   `kbview-registry.json` (minor bumps); `@kubuno/sdk` gains the sidebar/toolbar elements' metadata.
 - **Handshake**: a module using views exports `viewsAbi` next to `sdkVersion`; `loadRemoteModules` rejects a
-  mismatch and records it (`reason: 'views-mismatch'`) like `sdk-mismatch`. `SDK_VERSION` does not change — the
-  additions are additive — unless an `@ui`/`sdk` export is renamed or removed (existing rule).
+  mismatch and records it (`reason: 'views-mismatch'`) like `sdk-mismatch`. `SDK_VERSION` does not change - the
+  additions are additive - unless an `@ui`/`sdk` export is renamed or removed (existing rule).
 - **Ordering**: a host providing `@kubuno/views` must be deployed before modules using it. A module built against a
-  newer runtime on an older host fails at ES link time (unknown specifier) — the loader already records that as
+  newer runtime on an older host fails at ES link time (unknown specifier) - the loader already records that as
   `import-error` and the bell shows it. `module.toml` gains an optional `[frontend] views_abi = 1` so the core can
   refuse to install a `.kbpkg` the running host cannot load (better than a runtime failure).
-- **Flow (mode publié)**: core release (tag + `npm publish` of the four packages — **by the user**, `!` prefix, ≤ 3
+- **Flow (mode publié)**: core release (tag + `npm publish` of the four packages - **by the user**, `!` prefix, ≤ 3
   tags per push) → `_tools/bump_npm_floors.sh` in the modules → module migration commits → `release.sh` per module.
   `_tools/check_versions.py` learns the new packages and the `viewsAbi`/`views_abi` agreement. Every touched repo gets
   its `CHANGELOG.md` `[Unreleased]` entry (English).
@@ -638,21 +638,21 @@ enough.
 
 | Lot | Content | Size | Depends on | Main risk | Verification |
 |---|---|---|---|---|---|
-| **WV-0** | Freeze the shared spec: canonical names (Q1), code-behind model (Q2), styling rule (Q3), layout/size classes (Q4); `kbview-registry.json` schema = `kubuno/registry` + `web` block | S | — | Decisions reopened later | Review of this note |
-| **WV-1** | Split platform-neutral crates out of `kubuno-desktop-views`: `kubuno-desktop-views-syntax` (lexer, rowan CST, `ast`, `edit`, element ids, validator core) and `kubuno-desktop-views-model` (registry types + JSON loader); `kubuno-desktop-views` re-exports, no behaviour change | M | WV-0 | Churn in a crate other agents edit daily (`git status` shows concurrent work) — do it in one short window, re-export everything | `cargo test` of `kubuno-desktop-views` and `kubuno-views-ls` unchanged; desktop designer smoke test |
+| **WV-0** | Freeze the shared spec: canonical names (Q1), code-behind model (Q2), styling rule (Q3), layout/size classes (Q4); `kbview-registry.json` schema = `kubuno/registry` + `web` block | S | - | Decisions reopened later | Review of this note |
+| **WV-1** | Split platform-neutral crates out of `kubuno-desktop-views`: `kubuno-desktop-views-syntax` (lexer, rowan CST, `ast`, `edit`, element ids, validator core) and `kubuno-desktop-views-model` (registry types + JSON loader); `kubuno-desktop-views` re-exports, no behaviour change | M | WV-0 | Churn in a crate other agents edit daily (`git status` shows concurrent work) - do it in one short window, re-export everything | `cargo test` of `kubuno-desktop-views` and `kubuno-views-ls` unchanged; desktop designer smoke test |
 | **WV-2** | `@kubuno/views-compiler`: WASM build (Node + browser), Vite plugin (plan + accessors + source maps + `.d.ts` + check files + HMR), `kbview-tsc` | L | WV-1, WV-4 (fixture registry is enough to start) | WASM toolchain in module CI (offline `.kbpkg` builds: the package ships the `.wasm`, no Rust needed downstream) | Golden tests (view → plan), `tsc` errors remapped to `.kbview` lines, HMR keeps state (vitest + browser) |
 | **WV-3** | `@kubuno/views` runtime in core: renderer, binding engine (one/two-way, `StringFormat`, `{Res}` via i18next), events → args, `ViewBase`/`component()`/`@bind`/handles, `Repeater`, `Query`/`Mutation`, `Timer`, `KbView`, `defineControl`, `ReactHost`, `MessageBox`/`Dialog`; import-map entry, `viewsAbi` handshake | L | WV-2 | Re-render granularity and React 19 semantics (StrictMode double mount, concurrent rendering) | Conformance suite (compiled vs interpreted DOM equal), React Profiler budget, bundle ≤ 15 KB gzip |
-| **WV-4** | Web registry: `*.meta.ts` per family for the existing `@ui`/sdk components, `build:registry`, conformance test vs desktop export + allowlist | M | WV-0 | Metadata drifting from props — mitigated by `satisfies Props` | Test in core CI; JSON diff report |
+| **WV-4** | Web registry: `*.meta.ts` per family for the existing `@ui`/sdk components, `build:registry`, conformance test vs desktop export + allowlist | M | WV-0 | Metadata drifting from props - mitigated by `satisfies Props` | Test in core CI; JSON diff report |
 | **WV-5a** | Core element set on web: `Label`/text styles, `Stack`, `TableLayoutPanel`, `Panel` (dock grid, absolute), `ScrollArea`, `GroupBox`, `SettingsRow`, `RadioGroup`, `Icon`, `PictureBox`, `LinkLabel`, children→props adapters (Tabs, Accordion, Breadcrumb, Stepper, Dropdown, ContextMenu); same names added on the desktop where missing | M | WV-3 | Visual drift from the existing hand-written screens | **Visual**: gallery page per element, light/dark, ltr/rtl, 390/1280 px |
 | **WV-5b** | List & navigation elements: `ListBox`, `CheckedListBox`, `ListView`, `TreeView` (virtualised, ARIA), `DataTable` alignment, `Toolbar`, `Sidebar*`, `StatusBar`, `Splitter`, `Popover`, `SearchField`, `MaskedField`, `Avatar`, `PaintBox`; Ribbon promoted to `@ui` on `RIBBON.md`'s classes | L | WV-5a | Ribbon unification touches 4 modules | **Visual** + keyboard/screen-reader pass (NVDA) on lists and trees |
 | **WV-6** | i18n: `.kbres` → i18next bundles in the plugin, `{Res}` arguments and plurals (both targets), converter `i18n.ts` → `.kbres` | M | WV-2 | 13 languages × keys: a lossy conversion would be silent | Round-trip test: every key/language identical before/after; RTL screenshot |
 | **WV-7** | Language server web profile: profile detection, registry from JSON, `oxc` code-behind reader, `createHandler`/rename/remove/compatible handlers for TS, go-to-definition into `.ts`, web diagnostics, `.d.ts` generation | L | WV-1, WV-4 | `oxc` version churn; TS edits must respect user formatting (insert, never reformat) | Unit + round-trip tests (as the 127 + 18 existing); live in VS |
-| **WV-8** | VS: move the designer down to `Kubuno.Views*` (shared layer), desktop keeps its surface host; architecture tests updated | M | — (can start now) | Concurrent edits in `Kubuno.Desktop/Designer` (uncommitted work today) — coordinate, move files without changing behaviour | Designer test suite (343) green; desktop designer smoke test in the experimental instance. **Done 2026-10-02** (section 4.1) |
-| **WV-9a** | **Spike**: WebView2 in a VS document pane — focus/keyboard routing with VS accelerators, Toolbox drag into WebView2 (`text/plain` channel vs child-window `IDropTarget`), DPI 100/175 %, VS theme switch | S–M | — | Highest risk of the plan (like DSG-7 for desktop) | **Visual**, real mouse in the experimental instance (outside the agent sandbox; synthetic input is dropped inside it) |
+| **WV-8** | VS: move the designer down to `Kubuno.Views*` (shared layer), desktop keeps its surface host; architecture tests updated | M | - (can start now) | Concurrent edits in `Kubuno.Desktop/Designer` (uncommitted work today) - coordinate, move files without changing behaviour | Designer test suite (343) green; desktop designer smoke test in the experimental instance. **Done 2026-10-02** (section 4.1) |
+| **WV-9a** | **Spike**: WebView2 in a VS document pane - focus/keyboard routing with VS accelerators, Toolbox drag into WebView2 (`text/plain` channel vs child-window `IDropTarget`), DPI 100/175 %, VS theme switch | S–M | - | Highest risk of the plan (like DSG-7 for desktop) | **Visual**, real mouse in the experimental instance (outside the agent sandbox; synthetic input is dropped inside it) |
 | **WV-9b** | `WebDesignSurfaceHost`: protocol bridge, `surfaceInfo`, design host via the project's dev server, bundled fallback + info bar, `@kubuno/host-runtime` package | L | WV-8, WV-9a, WV-3 | Dev-server lifecycle inside VS (ports, crashes, restarts) | **Visual**: open a view, select, edit property, undo; kill the dev server → fallback |
 | **WV-10** | Design mode in the browser: overlay, hit-test, adorners, insertion markers per layout, absolute move/resize, viewport toolbar, sample/live data, run mode | L | WV-3, WV-9b | Components that do not expose a DOM root; portals (menus, popovers) outside the page tree | **Visual** per container kind; hit-test unit tests in jsdom |
 | **WV-11** | Codemod `@kubuno/views-migrate` (ts-morph): conversions of §6.2, `ReactHost` extraction, report | L | WV-5a, WV-6 | Over-promising automation: measure on the pilot before committing to the bulk | Converted output compiles, renders, parity check passes |
-| **WV-12** | Pilot **notes** (+ templates "Kubuno Web View" item, web module template with a `.kbview` main view, `.kbview` default editor in `.esproj` via CPS, `.ts` nested under `.kbview`) | M | WV-2…WV-11 | First real use reveals gaps — budget for fixes in earlier lots | Parity check on all notes screens; designer: open, edit, ⚡ create handler, F5 |
+| **WV-12** | Pilot **notes** (+ templates "Kubuno Web View" item, web module template with a `.kbview` main view, `.kbview` default editor in `.esproj` via CPS, `.ts` nested under `.kbview`) | M | WV-2…WV-11 | First real use reveals gaps - budget for fixes in earlier lots | Parity check on all notes screens; designer: open, edit, ⚡ create handler, F5 |
 | **WV-13…** | Rollout per §6.3, one lot per repo (or per core admin section); each lot ends with parity check + `.kbpkg --install` test + CHANGELOG | S–L each | WV-12 | Long tail of B/C screens | Same method |
 
 **What must be done first**: WV-0 (decisions), then **WV-1 and WV-8 in parallel** (both are refactorings with no
@@ -688,28 +688,28 @@ surface plan) in parallel with **WV-4**; WV-2/WV-3 next.
 
 ## 9. Open questions for the user
 
-1. **Canonical element names** — desktop names (`Switch`, `TextField`, `CheckBox`, `Slider`, `NumericField`,
+1. **Canonical element names** - desktop names (`Switch`, `TextField`, `CheckBox`, `Slider`, `NumericField`,
    `TextArea`, `RadioButton`, `ComboBox`, `Popover`) for both targets, with the web registry mapping them to
    `Toggle`, `Input`, `Checkbox`, `RangeSlider`, `NumberInput`, `Textarea`, `Radio`, `Combobox`, `AnchoredPopover`?
-   **Recommended: yes** — they already exist in the grammar, Toolbox, docs and desktop views; React component names
+   **Recommended: yes** - they already exist in the grammar, Toolbox, docs and desktop views; React component names
    stay as they are.
-2. **Code-behind model** — a class extending the generated `ViewBase` (handlers as methods, `@bind accessor`, hooks
+2. **Code-behind model** - a class extending the generated `ViewBase` (handlers as methods, `@bind accessor`, hooks
    in `use()`), or hooks-only functions? **Recommended: the class**, for parity with `#[kubuno_desktop::view]`, reliable
    handler insertion by the designer and typed `x:Name` fields.
-3. **Free styling on the web** — allow a web-only `Class="…"` (Tailwind) attribute during the migration, flagged and
+3. **Free styling on the web** - allow a web-only `Class="…"` (Tailwind) attribute during the migration, flagged and
    counted by the language server, or tokens only from day one? **Recommended: allow it with warnings and a per-repo
-   budget that must reach zero for class A screens** — tokens-only from day one would block the codemod on 23 000
+   budget that must reach zero for class A screens** - tokens-only from day one would block the codemod on 23 000
    hand-styled elements.
-4. **Layout and design runtime** — (a) flow by default on the web with absolute positioning only in `Panel
+4. **Layout and design runtime** - (a) flow by default on the web with absolute positioning only in `Panel
    Layout="Absolute"`, responsive values by size-class suffixes shared with the future mobile renderer; (b) the
    designer renders through the project's own Vite dev server plus a new npm package `@kubuno/host-runtime` (real
    `@ui`/`sdk` singletons), with live data as an opt-in toggle against a configured core. **Recommended: (a) yes,
-   (b) yes** — the alternative for (b), loading the shared chunks from a running core, makes the designer depend on
+   (b) yes** - the alternative for (b), loading the shared chunks from a running core, makes the designer depend on
    the network and a live server.
-5. **WASM for the parser** — compile the existing Rust `.kbview` parser to WebAssembly (`@kubuno/views-compiler`) so
-   the web uses the same grammar, rather than writing a TypeScript parser? **Recommended: WASM** — a build/design-time
+5. **WASM for the parser** - compile the existing Rust `.kbview` parser to WebAssembly (`@kubuno/views-compiler`) so
+   the web uses the same grammar, rather than writing a TypeScript parser? **Recommended: WASM** - a build/design-time
    library only, never a product runtime (unlike the abandoned desktop WASM components).
-6. **Scope** — editors (office, PaintSharp, maps, Monaco, xterm, media player, calendar grids) stay React custom
+6. **Scope** - editors (office, PaintSharp, maps, Monaco, xterm, media player, calendar grids) stay React custom
    controls permanently, and the host shell stays TSX? **Recommended: yes**; only their chrome (ribbons, panels,
    dialogs, settings) migrates.
 
@@ -721,12 +721,12 @@ web-only `Class` tolerated with warnings and a per-repo budget that must reach z
 request + size-class responsive values, designer through the project's Vite dev server and `@kubuno/host-runtime`;
 the Rust parser compiled to WASM for build/design time).
 
-**Scope (question 6) — rejected: everything migrates.** The host shell migrates to views as well, and so do the
+**Scope (question 6) - rejected: everything migrates.** The host shell migrates to views as well, and so do the
 editors (office, PaintSharp, maps, Monaco, xterm, media player, calendar grids): their whole UI becomes `.kbview`
 views. Only the irreducible rendering/engine core of an editor (a canvas or document engine, a map renderer, a code
 editor engine) may stay as code, and then strictly as a **designable custom control** registered in the element
 registry (metadata, properties, events, design-time rendering), placed and configured from views like any other
-element — never as an untracked TSX island. The lot plan must therefore include the shell and every editor, each
+element - never as an untracked TSX island. The lot plan must therefore include the shell and every editor, each
 with its custom-control boundary defined explicitly.
 
 **New components (2026-10-01).** Migrating everything implies creating new components. A dedicated lot, run before
@@ -742,12 +742,12 @@ first, and the **first module ported after the core is drive** (not notes). The 
 follows immediately (note: the drive web UI largely lives in `core/frontend/src/drive`, alongside the `drive`
 module repo). WV-12 and the rollout table must be re-ordered accordingly.
 
-## Module isolation (user requirement, 2026-10-01) — normative
+## Module isolation (user requirement, 2026-10-01) - normative
 
 Kubuno web modules **never import functions, components or types from one another** in the classic programming sense
 (no `import … from '<other-module>'`, no shared source, no project/package references between module repos). The only
 shared code is the host-provided singletons resolved through the import map (`@kubuno/ui`, `@kubuno/sdk`,
-`@kubuno/drive`, and — new — `@kubuno/views`), and cross-module collaboration goes exclusively through the core's
+`@kubuno/drive`, and - new - `@kubuno/views`), and cross-module collaboration goes exclusively through the core's
 extension points (ExtensionRegistry, ModuleServiceRegistry, event bus, routes). Views must not break this:
 
 1. **Generated code** (Vite plugin output, `.d.ts`, `ViewBase`) may only import the module's own files and the
@@ -764,10 +764,10 @@ extension points (ExtensionRegistry, ModuleServiceRegistry, event bus, routes). 
    package reference between modules**; each module builds alone against the published `@kubuno/*` packages and the
    shared crates' git tags. The designer Toolbox for a module shows host elements + that module's own controls only
    (+ extension slots), never another module's controls.
-5. **Desktop parity**: the same rule holds for desktop modules/apps — reuse goes through `kubuno_desktop_ui`/`kubuno-desktop-views`
+5. **Desktop parity**: the same rule holds for desktop modules/apps - reuse goes through `kubuno_desktop_ui`/`kubuno-desktop-views`
    (the shared "host" layer) or through module services, never through one app's crate depending on another's.
 
-## 11. WV-9a findings (2026-10-01) — WebView2 in a Visual Studio document pane
+## 11. WV-9a findings (2026-10-01) - WebView2 in a Visual Studio document pane
 
 Spike, built and measured in the experimental hive `/rootsuffix KubunoWV` (Visual Studio 18, WebView2 runtime
 154.0.4258.48, one monitor at 175 %), with real mouse and keyboard input (`mouse_event`/`keybd_event`: synthetic input
@@ -788,14 +788,14 @@ mechanism, with the limits and risks listed at the end.
 never shipped in the VSIX, no binding conflict possible. One `CoreWebView2Environment` per process, profile in
 `%LOCALAPPDATA%\Kubuno\webview2\<hive>` (here `18.0_dc9e2338KubunoWV`).
 
-### Q1 — focus and keyboard routing
+### Q1 - focus and keyboard routing
 
 - **Mechanism.** Keys typed in the WebView2 go to the browser process; Visual Studio's message loop
   (`PreTranslateMessage`, `IVsWindowPane.TranslateAccelerator`, the key bindings) never sees them. WebView2 reports
   every *accelerator* key (Ctrl/Alt chords, F-keys, Del, arrows, Tab, Esc…) before the page (`AcceleratorKeyPressed`),
   which the WPF control raises as `PreviewKeyDown`/`KeyDown` (`Handled` = the page does not get it). The pane decides
   with `AcceleratorRouting` (the page keeps Tab/arrows/Enter/Esc/F2 for its own navigation, and every text-editing key
-  while one of its text editors has the focus — the page reports that with `focusState`), then asks Visual Studio which
+  while one of its text editors has the focus - the page reports that with `focusState`), then asks Visual Studio which
   command the key is bound to: `IVsFilterKeys2.TranslateAcceleratorEx` with `VSTAEXF_NoFireCommand` on a WM_KEYDOWN
   built from the key (hwnd = the WebView2 control's window), marks the key handled, and runs the command after the
   handler returned with `IVsUIShell.PostExecCommand` (the browser is blocked while the handler runs: no modal UI inside
@@ -806,7 +806,7 @@ never shipped in the VSIX, no binding conflict possible. One `CoreWebView2Enviro
   Ctrl+Z → `Edit.Undo`, Ctrl+Y → `Edit.Redo` (the **buffer's** history: the pane gets it from
   `ITextBufferUndoManagerProvider`, every surface gesture is one `ITextBuffer` edit in one undo transaction, the page
   re-renders from the buffer), F4 → `View.PropertiesWindow`, F7 → `View.ViewCode` (opens the code window on the same
-  buffer: the pane must handle `ViewCode` itself and open the Code logical view — the shell does not), Ctrl+Shift+B →
+  buffer: the pane must handle `ViewCode` itself and open the Code logical view - the shell does not), Ctrl+Shift+B →
   `Build.BuildSolution`, Del → `Edit.Delete` (the pane removes the selected element, one undo unit), Ctrl+A →
   `Edit.SelectAll`. **Typing** reaches the page (plain characters are never accelerators): inline text editing typed
   "titrex", Backspace, Left, Del and Ctrl+A all handled by the page's editor, Enter committed one `setAttribute`.
@@ -825,7 +825,7 @@ never shipped in the VSIX, no binding conflict possible. One `CoreWebView2Enviro
   `KUBUNO_WEBVIEW2_HOST_INPUT=1`), which would route input through Visual Studio's loop first; multi-key chords
   (Ctrl+K, Ctrl+C): `TranslateAcceleratorEx` reports a chord start, the spike does not follow it.
 
-### Q2 — Toolbox drag and drop into WebView2
+### Q2 - Toolbox drag and drop into WebView2
 
 Three channels tried with real mouse drags from the Visual Studio Toolbox:
 
@@ -839,7 +839,7 @@ Airspace: an **auto-hidden** tool window's flyout (the Toolbox) is drawn under t
 invisible over the surface); docked/pinned tool windows are fine. Not exercised live: Toolbox double-click insertion
 (`IVsToolboxUser.ItemPicked`, implemented).
 
-### Q3 — selection sync and property edits
+### Q3 - selection sync and property edits
 
 Click → `selectionChanged {id, ids, bounds}` → an `ICustomTypeDescriptor` built from the element's markup and the
 catalog, published with `ITrackSelection` → the Properties window shows (Element), (Id), Text, Variant, Enabled…
@@ -853,29 +853,29 @@ protocol is the desktop's (`setText`, `select`, `setDesignMode`, `setCanvasBackg
 `unhandledKey`, `surfaceError`, `toolboxDragDetected` (and spike-only `setComponents`, `setDropChannel`,
 `showFontSpecimen`, `metrics`, `log`). Messages whose source is not the page's origin are ignored.
 
-### Q4 — DPI
+### Q4 - DPI
 
 At 175 %: page `devicePixelRatio` 1.75, page viewport × dpr = WPF control DIP × scale to ±1 physical px (2790 vs 2789,
 3409 vs 3408), adorners on the elements. Per-monitor DPI change, **simulated** (one monitor; changing the system scale
 would have disturbed the user's session): the controller's `RasterizationScale` forced to 1.0
 (`ShouldDetectMonitorScaleChanges=false`) → the page sees dpr 1 (`matchMedia` change), re-lays out, adorners follow;
 back to 1.75 likewise. The WPF control does not expose its controller (`m_webview2Base.CoreWebView2Controller`,
-reflection — spike only). Not tested: a real 100 % session, a real move between monitors.
+reflection - spike only). Not tested: a real 100 % session, a real move between monitors.
 
-### Q5 — Visual Studio theme
+### Q5 - Visual Studio theme
 
 `VSColorTheme.ThemeChanged` → `setVsTheme {mode, colors}` (canvas, text, accent, border, panel from
 `EnvironmentColors`) + `CoreWebView2Profile.PreferredColorScheme`: switching Dark → Light in Tools > Options re-coloured
 the open surface at once (canvas `#1F1F1F` → `#F5F5F5`), no reload.
 
-### Q6 — lifecycle
+### Q6 - lifecycle
 
 - 40 open/close cycles through DTE: GDI objects flat (170), USER objects flat (85–87), private bytes 664 → 672 MB
   (~0.2 MB/cycle), process handles +7–8 per cycle (not attributed: no forced GC inside devenv); the WebView2 browser
   processes of the profile all exit when the last surface closes (0 left), so every open starts a browser: surface
   ready in 750–950 ms warm (the 85 s of the very first open were the frame waiting behind the start window).
 - Hive restart: the document reopens with its surface. Runtime missing (`KUBUNO_WEBVIEW2_BROWSER_FOLDER` pointed at an
-  empty folder — `WebView2RuntimeNotFoundException`): an info bar on the document plus the reason in the pane, no crash.
+  empty folder - `WebView2RuntimeNotFoundException`): an info bar on the document plus the reason in the pane, no crash.
 
 ### Fonts (user requirement, 2026-10-01)
 
@@ -885,7 +885,7 @@ the open surface at once (canvas `#1F1F1F` → `#F5F5F5`), no reload.
   "Fira Code", monospace`; body 13.5 px weight 500, `font-medium` → 600, buttons 500, roles 10.5/11.5/13.5/15.5/21.5 px,
   antialiased.
 - **The spike ships byte-identical copies** of `core/frontend/public/fonts` (SHA-256 checked) for Jakarta (both),
-  Outfit and DM Mono, declared exactly as `index.css`, with the production stacks, weights and sizes — no system UI
+  Outfit and DM Mono, declared exactly as `index.css`, with the production stacks, weights and sizes - no system UI
   face. Licences: `PlusJakartaSans-OFL.txt`, `Outfit-OFL.txt` (copied), `DMMono-OFL.txt` (OFL 1.1 text with the
   copyright line read from the font's own `name` table: core ships no licence text for DM Mono nor for Roboto). Roboto
   (Apache 2.0, third in the stack) is not shipped until core has its licence/NOTICE.
@@ -906,11 +906,11 @@ own controls and `ExtensionSlot` placeholders, never another module's controls. 
 
 ### Risks left for WV-9b
 
-1. Airspace: auto-hide flyouts and any WPF popup over the surface are hidden by the WebView2 window — accept (docked
+1. Airspace: auto-hide flyouts and any WPF popup over the surface are hidden by the WebView2 window - accept (docked
    tool windows) or evaluate `WebView2CompositionControl` (no HWND; cost: capture-based rendering, input forwarding).
 2. Activation must follow every page gesture (pointer down, context menu, drag start), never the browser's focus events.
 3. Multi-key chords and `AllowHostInputProcessing` unexplored.
-4. Drops: every Toolbox item needs a format Chromium surfaces (`CF_UNICODETEXT`) for the detection step — a one-line
+4. Drops: every Toolbox item needs a format Chromium surfaces (`CF_UNICODETEXT`) for the detection step - a one-line
    change in the desktop installer; the overlay hides OLE's drag image while it is up.
 5. The WPF control hides its controller (DPI handling, focus events): own `HwndHost` over
    `CreateCoreWebView2ControllerAsync`, or keep the reflection.
@@ -951,9 +951,9 @@ Windows and on `wasm32-unknown-unknown`. Not done: the desktop designer smoke te
 this lot; the export and `view_embed` compile unchanged, and the export is now also read back by the model loader in a
 test).
 
-## 13. WV-2 as built (2026-10-02) — `@kubuno/views-compiler`
+## 13. WV-2 as built (2026-10-02) - `@kubuno/views-compiler`
 
-### 13.1 Where things live (repository placement — decision)
+### 13.1 Where things live (repository placement - decision)
 
 This note did not say how the core consumes the Rust grammar; the choice follows CLAUDE.md §3 ("published"
 mode, tagged git dependencies, like `kubuno-seccomp` / `kubuno-storage`):
@@ -961,7 +961,7 @@ mode, tagged git dependencies, like `kubuno-seccomp` / `kubuno-storage`):
 | Piece | Repository / path | Consumed by |
 |---|---|---|
 | Grammar (unchanged) | desktop `windows/src/crates/kubuno-desktop-views-syntax`, `-model` | everything below |
-| **Web compiler** `kubuno-web-views-compiler-core` (new, platform-neutral: validation against a web registry, plan, `.d.ts`, check files, handle types) | desktop `windows/src/crates/kubuno-web-views-compiler-core` (workspace member, `.rsproj`, `Kubuno.Desktop.slnx`) | the WASM shim (git tag); later the language server's web profile (path, WV-7) — §5's "one generator, shared Rust" |
+| **Web compiler** `kubuno-web-views-compiler-core` (new, platform-neutral: validation against a web registry, plan, `.d.ts`, check files, handle types) | desktop `windows/src/crates/kubuno-web-views-compiler-core` (workspace member, `.rsproj`, `Kubuno.Desktop.slnx`) | the WASM shim (git tag); later the language server's web profile (path, WV-7) - §5's "one generator, shared Rust" |
 | WASM shim (C ABI, JSON in/out, no wasm-bindgen) | core `frontend/packages/views-compiler/wasm/` (own `[workspace]`, not a member of the core's Rust workspace) | `kubuno-web-views-compiler-core = { git = "https://github.com/kubuno/desktop", tag = "views-web-v0.1.0" }` |
 | Built `.wasm` (≈ 474 KB) + `BUILD-INFO.json` | committed in `frontend/packages/views-compiler/wasm/`, shipped in the npm package | module builds: **no Rust toolchain, offline-able** |
 | `@kubuno/views-compiler` (Vite plugin, `kbview-tsc`, browser entry) | core `frontend/packages/views-compiler/` (`dist/` committed, like `@kubuno/ui`'s) | modules (devDependency), the core host |
@@ -987,7 +987,7 @@ project-local modules `./x`, `../x`, `/x`) plus the `.kbcontrol` user controls (
 the code-behind's default export). A project element never shadows a host one; any other module is an
 **error** (module isolation rule 1).
 
-**Plan format (ABI 1)** — JSON, the contract between compiler, runtime and designer:
+**Plan format (ABI 1)** - JSON, the contract between compiler, runtime and designer:
 
 - `Plan {abi, file, kind: view|control, root, tray[], names{x:Name → id}, handlers[], design_size?}`;
   non-visual elements (`ContextMenu`, `ToolTip`, `Timer`, `Query`…) go to `tray`.
@@ -1051,7 +1051,7 @@ transform, which leaves them as written (oxc does not lower TC39 decorators, and
   with `Counter.kbview(4,4)`, last good view kept), fix it (recovered, still no reload). The `kbview-tsc` CLI
   was also run by hand on both fixtures.
 
-## 14. WV-3 as built (2026-10-02) — `@kubuno/views` runtime
+## 14. WV-3 as built (2026-10-02) - `@kubuno/views` runtime
 
 Sources: core `frontend/src/views/` (`plan.ts`, `view.ts`, `render.tsx`, `binding.ts`, `events.ts`,
 `resolve.ts`, `controls.tsx`, `handles.generated.ts`); package `frontend/packages/views/` (types built by
@@ -1090,7 +1090,7 @@ Sources: core `frontend/src/views/` (`plan.ts`, `view.ts`, `render.tsx`, `bindin
 formats, args, StrictMode rendering, handles, plan swap, prototype swap, ABI refusal, missing handler); the
 **conformance suite** (2 tests, Linux and Windows): `Form.kbview` with the host's real `@ui` components,
 rendered compiled and interpreted in React StrictMode through 7 steps (click, typing in a two-way field, an
-object-field event, a check box mirrored by a switch, a tab change, a slot button writing a handle) — the same
+object-field event, a check box mirrored by a switch, a tab change, a slot button writing a handle) - the same
 DOM at every step (React `useId` values normalised); HMR in Chrome (§13.3, StrictMode). Size: the runtime
 alone, bundled and minified with rolldown, **24.5 KB raw / 9.8 KB gzip** (budget 15 KB). Core
 `tsc -p tsconfig.app.json` and `tsconfig.node.json` clean; a host build emits `shared/kubuno-views-*.js` and its
@@ -1120,11 +1120,11 @@ Shared contract with the desktop: `SHELL-CONTROLS.md` (names, properties, events
 
 | Piece | Where (core/frontend) | Notes |
 |---|---|---|
-| `WaffleMenu` user control | `src/core/shell/menus/WaffleMenu.kbcontrol` + `.ts` | `UserControl` › `ScrollArea` (`ScrollbarGutter="StableBothEdges"`) › `Panel` › `AppTileGrid` (its header band — « Vos favoris » + pencil, or « Annuler » / « OK » + help line — is the `<AppTileGrid.Header>` property element) + `MenuLink` « Plus de modules ». Code-behind: `Apps`, `Favorites`, `Editing` (controlled when the host passes it), the draft, the contract's events. |
+| `WaffleMenu` user control | `src/core/shell/menus/WaffleMenu.kbcontrol` + `.ts` | `UserControl` › `ScrollArea` (`ScrollbarGutter="StableBothEdges"`) › `Panel` › `AppTileGrid` (its header band - « Vos favoris » + pencil, or « Annuler » / « OK » + help line - is the `<AppTileGrid.Header>` property element) + `MenuLink` « Plus de modules ». Code-behind: `Apps`, `Favorites`, `Editing` (controlled when the host passes it), the draft, the contract's events. |
 | `AccountMenu` user control | `src/core/shell/menus/AccountMenu.kbcontrol` + `.ts` | `UserControl` › header `Stack` (`Dock="Top"`) + `ScrollArea` (`Dock="Fill"`): hero (`Avatar` 96 + camera `IconButton`, greeting `Label`, « Gérer votre compte » `LinkLabel`), the folding accounts card (a `Repeater` over the rows, three row shapes chosen by `Visible`), the actions card (four clickable `Stack`s: two native buttons, two links). |
-| Irreducible part | `AppTileGrid.tsx` (custom control, `defineControl`) | The tile grid with drag-and-drop reorder/add/remove, the auto-scroll near the edges and the scroll bar's gutter measure — the same name and events as the desktop's `AppTileGrid`. |
+| Irreducible part | `AppTileGrid.tsx` (custom control, `defineControl`) | The tile grid with drag-and-drop reorder/add/remove, the auto-scroll near the edges and the scroll bar's gutter measure - the same name and events as the desktop's `AppTileGrid`. |
 | Menu semantics | `menuItemHost.tsx`, `MenuLink.tsx` | The host decides that the content is a menu: `WaffleButton` provides `DropdownMenu.Item asChild` through `MenuItemHostContext`; the tiles and « Plus de modules » become menu items (roles, arrow keys, close on select); anywhere else they stay links. |
-| Hosts (platform chrome) | `WaffleButton.tsx`, `AccountButton.tsx` | Custom controls with the contract's names. The popover is not part of the user control: a Radix menu in a `<body>` portal for the launcher; for the account panel a `<body>` portal placed by `placePanel` (under the button, end edges aligned — start in RTL —, flipped above when the room below is shorter, clamped 8 px into the viewport); Escape and a click outside close, the focus goes back to the button. They own the data and act on the events. `HeaderActions` and `MobileFab` place them; the former `WaffleMenu.tsx` and `UserPanel.tsx` are removed. |
+| Hosts (platform chrome) | `WaffleButton.tsx`, `AccountButton.tsx` | Custom controls with the contract's names. The popover is not part of the user control: a Radix menu in a `<body>` portal for the launcher; for the account panel a `<body>` portal placed by `placePanel` (under the button, end edges aligned - start in RTL -, flipped above when the room below is shorter, clamped 8 px into the viewport); Escape and a click outside close, the focus goes back to the button. They own the data and act on the events. `HeaderActions` and `MobileFab` place them; the former `WaffleMenu.tsx` and `UserPanel.tsx` are removed. |
 | Project registry | `controls.meta.ts` → `kbview-controls.json` (`npm run build:registry` writes it next to the host registry; `kubuno.views.json` lists it) | `AppTileGrid`, `MenuLink`, `WaffleButton`, `AccountButton`: the core project's own controls (module isolation rule 2). |
 | Core build | `vite.config.ts` (`kbview()` before React), `tsconfig.app.json` (`rootDirs` + `.kubuno/views`), `kubuno.views.json` | `tsc -b` type-checks the bindings and handlers of the two controls (generated check files). |
 
@@ -1141,7 +1141,7 @@ Shared contract with the desktop: `SHELL-CONTROLS.md` (names, properties, events
 | `LinkLabel` | `@ui` `LinkLabel` (new) | `Text`, `Role`, `OnClick`; web `Href` |
 | `Avatar` | `@ui` `Avatar` (new, Radix avatar) | `DisplayName`, `Initials`, `Image`, `Tint`, `Shape`, `AvatarSize` |
 | `Icon` | `@ui` `IconGlyph` (new) | `Name`, `Size`, `Disc` |
-| `IconButton` | `@ui` `IconButton` (new: round) | `Icon`, `Diameter`, `Glyph`, `Filled` — the desktop's members, replacing WV-4's mapping onto `Button` with web-only `Variant` / `Size` |
+| `IconButton` | `@ui` `IconButton` (new: round) | `Icon`, `Diameter`, `Glyph`, `Filled` - the desktop's members, replacing WV-4's mapping onto `Button` with web-only `Variant` / `Size` |
 
 Web rendering rules added to the runtime: a container with `AccessibleRole="PushButton"` renders a native `<button>`,
 one with `Href` an `<a>` (a plain click stays in the app and raises `OnClick`, a modified click opens the address);
@@ -1154,8 +1154,8 @@ classes; a size utility written there wins over the `Role`'s step).
   host reach the elements that read them through `this.props` or a getter (the root defers a notification to the
   commit); the layout containers above.
 - Compiler (`@kubuno/views-compiler`): compiled plans read their components through getters (`get c()`), so a view
-  that sits in an import cycle — any core view: `@ui` (DatePicker) → the core's stores → `@kubuno/sdk` → the shell →
-  the view — finds its components at render time. Before, the components were `undefined` there and the host's
+  that sits in an import cycle - any core view: `@ui` (DatePicker) → the core's stores → `@kubuno/sdk` → the shell →
+  the view - finds its components at render time. Before, the components were `undefined` there and the host's
   registry fallback (`viewsHost`) hid it.
 - Compiler (`kubuno-web-views-compiler-core`, desktop repository; the WASM rebuilt from the local checkout): a bound property whose
   registry `editor` is `list` / `object` is type-checked as an array / any value (a custom control's `Apps`,
@@ -1197,7 +1197,7 @@ the Vite build and the registry checks (`build:registry --check`, conformance 0 
 
 ### 15.5 Left to do
 
-- `Class` budget of the two controls: **35** attributes (5 in `WaffleMenu`, 30 in `AccountMenu`) — hover states,
+- `Class` budget of the two controls: **35** attributes (5 in `WaffleMenu`, 30 in `AccountMenu`) - hover states,
   off-scale sizes (`text-base`, `text-2xl`), the white cards' radius, the absolute corners of the close and camera
   buttons, the hero's ring. To reach zero: hover / pressed states on containers, a `CornerRadius` on `Panel`, `Label`
   weights, end-anchored absolute placement.
@@ -1210,16 +1210,16 @@ the Vite build and the registry checks (`build:registry --check`, conformance 0 
 - Design-time data for the two controls (WV-10), `HeaderActions` as a view, the desktop's `Popup…` properties on the
   web buttons.
 
-## 16. WV-7 as built (2026-10-05) — the language server's web profile
+## 16. WV-7 as built (2026-10-05) - the language server's web profile
 
 `kubuno-views-ls` (desktop repository, crate `kubuno-desktop-views-ls`, module `src/web/`) answers web views with the
 same LSP methods and payloads as desktop views; nothing changed for desktop views (their 166 + 1 + 18 tests unchanged).
 
 - **Profile detection** (`web/mod.rs`, mirrored in Visual Studio by `Kubuno.Views.Logic.ViewTargets`): walking up from the
-  view's folder, the first marker decides — `kubuno.views.json` (its `target`; without one it is the web compiler's
+  view's folder, the first marker decides - `kubuno.views.json` (its `target`; without one it is the web compiler's
   configuration, so web), a `package.json` depending on `@kubuno/views-compiler` or a `*.esproj` → web, a `Cargo.toml`
   naming `kubuno-desktop` → desktop; nothing → desktop. The web project root is the marker's folder (`core/frontend`).
-- **Registry** (`web/project.rs`): read from JSON exactly as `ViewProject` does — `hostRegistry` of `kubuno.views.json`
+- **Registry** (`web/project.rs`): read from JSON exactly as `ViewProject` does - `hostRegistry` of `kubuno.views.json`
   (else `node_modules/@kubuno/ui/kbview-registry.web.json` upwards), the project registries with their `./x` modules
   rewritten to `/dir/x`, and one user control per `.kbcontrol` of the `sources`. The files are re-read when they change
   (stamps, checked every 1.5 s): elements added by WV-5a/5b appear without restarting.
@@ -1233,12 +1233,12 @@ same LSP methods and payloads as desktop views; nothing changed for desktop view
 - **`.d.ts`**: the compiler's `dts` / `check` / span map written to `.kubuno/views/<path>.kbview.{d.ts,check.ts,check.json}`
   (byte-identical to `writeGenerated`), on open and 400 ms after the last edit, only when the content changed.
 
-**Handler protocol for the web designer (WV-9b / WV-10)** — the desktop's methods, called with a web view's URI:
+**Handler protocol for the web designer (WV-9b / WV-10)** - the desktop's methods, called with a web view's URI:
 
 | Method | Params | Result |
 |---|---|---|
-| `kubuno/compatibleHandlers` | `{ uri, elementId, event, openFiles? }` (`event` = `OnClick`…, `elementId` = stable id, `""` = root) | `{ handlers: string[] }` — the class's methods whose parameters fit, in declaration order |
-| `kubuno/createHandler` | `{ uri, elementId, event, suggestedName?, openFiles? }` | `{ handlerName, location?, edit? }` — `location` (no edit) when the event is already wired; else `edit` (`WorkspaceEdit.changes`: the attribute in the view, the method + missing `@kubuno/views` type imports in the `.ts`); a `suggestedName` naming an existing method only binds it |
+| `kubuno/compatibleHandlers` | `{ uri, elementId, event, openFiles? }` (`event` = `OnClick`…, `elementId` = stable id, `""` = root) | `{ handlers: string[] }` - the class's methods whose parameters fit, in declaration order |
+| `kubuno/createHandler` | `{ uri, elementId, event, suggestedName?, openFiles? }` | `{ handlerName, location?, edit? }` - `location` (no edit) when the event is already wired; else `edit` (`WorkspaceEdit.changes`: the attribute in the view, the method + missing `@kubuno/views` type imports in the `.ts`); a `suggestedName` naming an existing method only binds it |
 | `kubuno/renameHandler` | `{ uri, old?, new, position?, rustRenamed?, openFiles? }` (`uri` may be the `.ts`, with `position` on the method; `rustRenamed: true` = the TS side was already renamed) | `{ edit?, oldName?, reason? }` |
 | `kubuno/removeHandler` | `{ uri, elementId, event, openFiles? }` | `{ edit?, handlerName?, removedStub }` |
 | `kubuno/bindingPaths` | `{ uri, openFiles? }` | `{ paths: string[] }` |
@@ -1255,7 +1255,7 @@ completion and Rust Go To Definition fallback step aside for web views. `KbviewV
 `Kubuno.Views.Logic.IntelliSense` (shared).
 
 **Verified**: LS tests 178 + 1 + 18 + 4 (new: profile detection, oxc reader, import/method insertion, naming, stubs,
-JSON resources, project registries, and four round trips through the server — a fixture project, the desktop profile
+JSON resources, project registries, and four round trips through the server - a fixture project, the desktop profile
 unchanged, and the core's pilot `AccountMenu` / `WaffleMenu` copied with their registries: no error, completion,
 `{Res}` keys, compatible handlers, F12 to the exact TS line, `createHandler` inserting `avatar_click(_sender: Avatar, _e:
 MouseEventArgs)` and `, type Avatar` only); `clippy -D warnings`; vskubuno tests (Views 458, Desktop 232 against this
@@ -1290,9 +1290,9 @@ New elements: **`TableLayoutPanel`** (runtime: CSS grid, `ColumnStyles`/`RowStyl
 `minmax(0, Nfr)`, `AutoSize` → `auto`, missing column = `Percent 1`, missing row = `AutoSize`; children in reading order or at
 `TableLayoutPanel.Row/Column`, `RowSpan/ColumnSpan`; aligned in their cell by `Anchor`/`Dock Fill`; `GrowStyle`, `CellBorderStyle
 Single`, `CellSpacing`), **`GroupBox`** (`@ui`: the modules' `Section`; web `Description`), **`SettingsRow`** (`@ui`, new on both
-targets — web first: 240 px label column beside the control, stacked ≤ 640 px; `Label`, `Description`, `Orientation`,
+targets - web first: 240 px label column beside the control, stacked ≤ 640 px; `Label`, `Description`, `Orientation`,
 `ShowDivider`), **`RadioGroup`** (`@ui`, new on both targets: `Option` children or `ItemsSource`, two-way `SelectedValue`,
-`Orientation`; one native radio group — `Radio` gained `name` — so Tab enters once and the arrow keys move the choice;
+`Orientation`; one native radio group - `Radio` gained `name` - so Tab enters once and the arrow keys move the choice;
 `role="radiogroup"`), **`PictureBox`** (`@ui`: `SizeMode` → `object-fit`, `CornerRadius`, `BorderStyle`, `AccessibleName` = alt text).
 Also two desktop members the web lacked: `Badge MaxWidth`, `FloatingWindow ShowClose`.
 
@@ -1304,11 +1304,11 @@ camera button's shadow (`BorderBrush`, `Elevation`), weights (`FontWeight`), the
 bar (`ScrollBarStyle`), the close and camera buttons' corners (`Panel Layout="Absolute"` + `Anchor`), `min-w-0` / `w-full` (now the
 runtime's defaults); the « Plus de modules » look moved into `MenuLink` (the launcher's footer link, inset by the grid's
 `--kb-waffle-inset`). Left, by design or waiting for a decision: off-scale text sizes (`text-base`, `text-2xl`, `text-[10px]`,
-`text-[11px]` — VIEWS-SPEC §7.1: a role, never a size), the hero avatar's ring (outline + shadow), the overlapping preview
+`text-[11px]` - VIEWS-SPEC §7.1: a role, never a size), the hero avatar's ring (outline + shadow), the overlapping preview
 avatars (`-space-x-1`), the chips' / badge's `flex items-center justify-center shrink-0`.
 
-Parity (§7 / §15.4 method, bench `C:\kubuno-build\agent-webelements`: `run-cap.ps1`, `cap.mjs` — cards now found by their
-computed 20 px radius —, `compare.mjs`; before = core `cbe1e58`, after = this lot; 60 states): launcher **0.000–0.001 %** on all
+Parity (§7 / §15.4 method, bench `C:\kubuno-build\agent-webelements`: `run-cap.ps1`, `cap.mjs` - cards now found by their
+computed 20 px radius -, `compare.mjs`; before = core `cbe1e58`, after = this lot; 60 states): launcher **0.000–0.001 %** on all
 60; account panel **0.000 %** in `fr` and `en` (all themes, widths, states); accessibility trees **60/60 equal**; keyboard logs
 equal. Intended differences, Arabic only (panel 0.78–1.93 %): the close and camera buttons sit on the end side (logical
 anchoring; the former classes were physical `right-*`), the other accounts' names are start-aligned (the former `text-left`).
@@ -1324,14 +1324,14 @@ sections with `aria-expanded`, compact rail, `ItemsSource`, two-way `SelectedIte
 shell's search pill; Escape clears; web `OnSearch` on Enter), `MaskedField` (WinForms mask characters, `Invalid` →
 `aria-invalid`, values shown LTR in RTL), `PaintBox` (a `<canvas>`; `OnPaint(sender, e: PaintEventArgs { ctx, width, height,
 dpr, data })` in CSS px, repainted on resize, pixel-ratio change and when the web `PaintData` changes), `Popover` alignment
-(`Placement`, `Alignment Center`, `PopupWidth/Height`, `LightDismiss`, `OnOpened`; Escape closes and returns the focus — in
+(`Placement`, `Alignment Center`, `PopupWidth/Height`, `LightDismiss`, `OnOpened`; Escape closes and returns the focus - in
 `AnchoredPopover`, so for every user of it), `Avatar Presence`. Runtime: converter `items-source-icons`, args adapter `paint`.
 `scripts/verify-nav.mjs`: 50/50 (LTR and RTL). Known limit: `SearchField`'s clear-button label is English only (`@ui` has no
-i18next). **Ribbon: not promoted** (next lot) — the copies are office, app, flow `ribbon/Ribbon.tsx` (≈ 980 lines, 13–18
+i18next). **Ribbon: not promoted** (next lot) - the copies are office, app, flow `ribbon/Ribbon.tsx` (≈ 980 lines, 13–18
 lines apart) and build (573 lines, an older fork, ≈ 494 lines apart), each tied to `react-i18next`, `WorkspaceTheme`, a local
 `officeThemes` and `types.ts`: move `Ribbon`/`RibbonTabStrip`/types to `@ui` (i18next → `uiT`, theme → tokens), map onto
 RIBBON.md's classes (`Command`, adaptive sizing), ≈ 30 ribbon metas against the desktop ribbon family, publish `@kubuno/ui`,
-migrate the four modules (rebase build first) — several days over five repositories.
+migrate the four modules (rebase build first) - several days over five repositories.
 
 ### 17.4 WV-5b: lists and trees (`@ui`, `lists.meta.ts`)
 
@@ -1340,9 +1340,9 @@ migrate the four modules (rebase build first) — several days over five reposit
 | `ListBox` | `SelectionMode`, `SelectedIndex` (two-way), `ItemsSource`, `ItemHeight`, `OnSelectionChanged` | `DisplayMember`, `ValueMember`, `SelectedValue` (two-way), `OnSelectedValueChanged`, `OnItemActivate` |
 | `CheckedListBox` | `SelectedIndex`, `CheckOnClick`, `ItemsSource`, `OnSelectionChanged`, `OnCheckedChanged` (`ItemCheckEventArgs`) | `DisplayMember`, `ValueMember`, `ItemHeight` |
 | `ListView` | `SelectedIndex`, `MultiSelect`, `ItemsSource`, `OnSelectionChanged`, `OnItemActivate` | `View` (`Details`/`List`/`LargeIcon`), `ItemHeight` |
-| `TreeView` | `SelectedPath` (two-way, dot-separated indexes `0.2.1`), `MultiSelect`, `ItemsSource` (children in `Items`), `ItemHeight`, `OnSelectionChanged`, `OnItemActivate` | — |
+| `TreeView` | `SelectedPath` (two-way, dot-separated indexes `0.2.1`), `MultiSelect`, `ItemsSource` (children in `Items`), `ItemHeight`, `OnSelectionChanged`, `OnItemActivate` | - |
 | `Item` | `Text` | `Value`, `Icon`, `Checked` (two-way), `Expanded`, `OnCheckedChanged` |
-| `DataTable` (alignment) | `SelectedIndex` (two-way, in `ItemsSource` order whatever the sort), `OnSelectionChanged` (default event), `OnRowActivated` (double-click / Enter), `Density`, `EmptyTitle`, `EmptyText` | — |
+| `DataTable` (alignment) | `SelectedIndex` (two-way, in `ItemsSource` order whatever the sort), `OnSelectionChanged` (default event), `OnRowActivated` (double-click / Enter), `Density`, `EmptyTitle`, `EmptyText` | - |
 
 `@ui` `ListBox.tsx`, `ListView.tsx`, `TreeView.tsx` over `listCore.ts` (keyboard model) and `useVirtualList.ts` (fixed rows,
 32 px by default; without a `Height` a list grows to 320 px, then scrolls): WAI-ARIA listbox / grid / tree keyboard
@@ -1360,7 +1360,7 @@ selection highlight of the DataTable's card layout (< 700 px), `SmallIcon`/`Tile
 `gallery.html` + `vite.gallery.config.ts` (dev and verification only, never in the product build): one view per element under
 `src/gallery/pages/` (`X.kbview` + code-behind `X.ts`, class named after the file), rendered with the host's CSS, i18n and
 icon resolver; `?el=X&theme=light|dark&dir=ltr|rtl`. `scripts/capture-gallery.mjs` captures every page in 8 states (own Chrome
-profile and port, one tab; the viewport grows to the content's height — Chrome's `captureBeyondViewport` shifts RTL pages);
+profile and port, one tab; the viewport grows to the content's height - Chrome's `captureBeyondViewport` shifts RTL pages);
 it also captures the element marked `AccessibleDescription="gallery-hover"` hovered and `gallery-click` opened.
 `scripts/verify-wv5a.mjs` (28 checks), `verify-nav.mjs` (50), `verify-lists.mjs` (39): keyboard, ARIA tree, events,
 two-way bindings, anchoring, in LTR and RTL.
@@ -1371,7 +1371,7 @@ two-way bindings, anchoring, in LTR and RTL.
   until then); the web-only members proposed for the desktop (states, `CornerRadius` on containers, `BorderBrush`,
   `Elevation`, `DividerColor`, `FontWeight`/`FontStyle`, `Panel.Layout`).
 - The plan carries `design_size` in design builds only: a root `Panel Layout="Absolute"` anchors against its first layout in
-  production (the WASM compiler would have to emit it — desktop repository).
+  production (the WASM compiler would have to emit it - desktop repository).
 - The other `NOT_YET('WV-5a')` members (TextBoxBase `PasswordChar`/`CharacterCasing`…, `Invalid`, `Card Surface`, `CheckBox
   ThreeState/AutoCheck`, `RadioButton AutoCheck`, `Slider LargeChange`, `NumericField DecimalPlaces/ThousandsSeparator`,
   `TextArea MinLines/MaxLines`, `Breadcrumb RootChevron`).
@@ -1379,10 +1379,10 @@ two-way bindings, anchoring, in LTR and RTL.
 - The runtime alone is now 16.8 KB gzip (was 12.7 KB at the pilot, budget 15 KB, §14): the anchoring, table and menu logic.
 - Publishing `@kubuno/ui` 0.1.14 and `@kubuno/views` 0.1.1 (user).
 
-## 18. WV-9b / WV-10 as built (2026-10-05) — the web views in the Visual Studio designer
+## 18. WV-9b / WV-10 as built (2026-10-05) - the web views in the Visual Studio designer
 
 A `.kbview` / `.kbcontrol` of a web project opens in the shared Kubuno View Designer (Design | XML | Split, Toolbox,
-Properties, ⚡ events, Document Outline, component tray — all of `Kubuno.Views`, §4.1) with its Design pane rendered by
+Properties, ⚡ events, Document Outline, component tray - all of `Kubuno.Views`, §4.1) with its Design pane rendered by
 WebView2. Checked live on `Kubuno.Core.slnx` with the core pilot's `WaffleMenu.kbcontrol` and `AccountMenu.kbcontrol`.
 The WV-9a spike (`.kbwebspike`, `WebDesigner/Spike/`, `SpikeViewDocument`, `WebSurfaceProtocol`) is removed; its
 mechanisms live on in the classes below. Shared-layer seams: `DESIGNER.md` §21.
@@ -1394,11 +1394,11 @@ mechanisms live on in the classes below. Shared-layer seams: `DESIGNER.md` §21.
 | `WebDesignSurfaceHostFactory` | An `ITargetDesignSurfaceHostFactory` added by `WebLayer`: claims the views of web projects (`WebViewProject.Find`, the profile rule of `kubuno-views-ls`, §5), every other view keeps the desktop's Rust surface. |
 | `WebDesignSurfaceHost` (+ `.Protocol`, `.Input`, `.Language`) | `IProtocolDesignSurfaceHost`, `IDesignSurfaceStatusAware`, `IDesignSurfaceRuntimeAware`, `IDesignSurfaceLanguageServices`. A WPF `WebView2` (Visual Studio's own WebView2 assemblies, one environment per process, profile `%LOCALAPPDATA%\Kubuno\webview2\<hive>`). The page speaks the desktop wire shapes (parsed by the shared `DesignSurfaceProtocol`, `…DragDropProtocol`, `…ContextMenuProtocol`), so the shared `DesignSurfaceEditingCoordinator` drives it unchanged. The state the designer pushes (text, design mode, selection, zoom, language, project controls, theme, document info) is kept and replayed whole on every `ready` of a (re)loaded page. |
 | `DesignServer` + `DesignServerDiscovery` | The project's dev server: found through `<root>/.kubuno/design-server.json` (written by the Vite plugin while it listens: `{version, urls, designPath, pid, root}`), probed at `project.json`, local addresses first. « Démarrer le serveur de développement » runs `npm run dev` hidden (through `obj\kubuno-npm.cmd` when `Kubuno.Web.Sdk` prepared the node overlay, Visual Studio's Node.js appended to the `PATH`), with `CHOKIDAR_USEPOLLING` on a network drive (Node's `fs.watch` fails on `Z:` with `UNKNOWN -4094`, measured) and in a kill-on-close job object: the server ends with Visual Studio. Output in Output > Kubuno. |
-| `WebDesignRuntimeSource` | The runtime bar (`IDesignSurfaceRuntimeText`): nothing on the project's dev server; « Aperçu : runtime intégré — le serveur de développement du projet ne tourne pas… » + « Démarrer le serveur de développement », « …démarrage… » + « Annuler », « …n'a pas démarré » + « Réessayer ». A 4 s monitor switches to the dev server when one answers and back to the bundled host after two failed probes. |
+| `WebDesignRuntimeSource` | The runtime bar (`IDesignSurfaceRuntimeText`): nothing on the project's dev server; « Aperçu : runtime intégré - le serveur de développement du projet ne tourne pas… » + « Démarrer le serveur de développement », « …démarrage… » + « Annuler », « …n'a pas démarré » + « Réessayer ». A 4 s monitor switches to the dev server when one answers and back to the bundled host after two failed probes. |
 | Bundled design host | `tools\web-design-host\` in the VSIX = the static build of `@kubuno/host-runtime` (core `npm run build:design-host`), served from the virtual host `https://kubuno-design.invalid/` (`SetVirtualHostNameToFolderMapping`): built-in elements, the production fonts and themes, project controls as labelled placeholders, no code-behind. VSIX property `KubunoWebDesignHostDir` (default: the sibling core checkout's `packages/host-runtime/dist`, a build warning when absent). |
 | Keys (`AcceleratorRouting.RouteDesignSurface`, `VsKeyBindings`) | In design mode the page keeps Del, Backspace, arrows, Tab, Enter, Esc, F2, Ctrl+C/X/V/D; Visual Studio gets Ctrl+Z/Y (the buffer's undo), Ctrl+S, F4, F7 and every other binding (`IVsFilterKeys2.TranslateAcceleratorEx` + `PostExecCommand`, §11). Every page gesture activates the document frame. |
 | Toolbox drops | The §11 hybrid channel: the page reports `toolboxDragDetected`, a layered child window over the browser takes the OLE drag with `WebToolboxDropTarget` (the Toolbox item through `ToolboxDataObjectReader`) and drives the page with `dragEnter/dragOver/drop/dragLeave`; the page answers `dropTargetChanged` and posts `insertChild`. Web Toolbox items also carry `CF_UNICODETEXT` = `<Name />`. |
-| Registry, handlers | `kubuno/registry {uri}` (the language server's web profile, §16) — the host's own `WebRegistry` (host registry + project registries with rewritten modules, `origin: "project"`) only when the server answers with the desktop registry. Handlers: the server's `kubuno/createHandler` (§16; the interim C# TypeScript stub writer is gone), the caret put in the new TypeScript method. F7 / Shift+F7 know `.ts` / `.tsx` / `X.kbcontrol.ts`, and `View.ToggleDesigner` (F7 in Visual Studio 2026's default scheme). |
+| Registry, handlers | `kubuno/registry {uri}` (the language server's web profile, §16) - the host's own `WebRegistry` (host registry + project registries with rewritten modules, `origin: "project"`) only when the server answers with the desktop registry. Handlers: the server's `kubuno/createHandler` (§16; the interim C# TypeScript stub writer is gone), the caret put in the new TypeScript method. F7 / Shift+F7 know `.ts` / `.tsx` / `X.kbcontrol.ts`, and `View.ToggleDesigner` (F7 in Visual Studio 2026's default scheme). |
 
 Protocol additions (host → page): `setDocumentInfo {file, codeBehind, className, userControls, designData}`,
 `setVsTheme {mode, colors}`, `setZoom {zoom}`, `setLanguage {lang}`; (page → host) `surfaceInfo {version: 1, target:
@@ -1450,9 +1450,9 @@ is the desktop protocol.
   `.ts`; light / dark, 390 / 1440, FR / AR (`waffle-*-175dpi.png`, `account-*-175dpi.png`); killing the dev server
   brings the bundled host and the bar back within 8 s (`account-fallback-after-stop.png`); closing Visual Studio ends
   the dev server it started. Nothing was saved (the core files are unchanged).
-- **Tests**: C# — `Kubuno.Web.Tests` 63 (web project detection, registry merge, discovery, messages, key routing),
+- **Tests**: C# - `Kubuno.Web.Tests` 63 (web project detection, registry merge, discovery, messages, key routing),
   `Kubuno.Views.Tests` 460 (+ per-document factory selection, TypeScript F7 / Shift+F7), every other suite green;
-  frontend — 57 tests in `src/views` + `src/core/shell/menus` (jsdom: hit-test, layout map, drop targets per layout
+  frontend - 57 tests in `src/views` + `src/core/shell/menus` (jsdom: hit-test, layout map, drop targets per layout
   kind, move / resize ops, keyboard, protocol), 14 in `@kubuno/views-compiler` (+ the design-server route), the
   conformance suite; `tsc -p tsconfig.app.json` clean.
 
@@ -1467,7 +1467,7 @@ is the desktop protocol.
   re-installed when the active designer's target changes (desktop ⇄ web).
 - Found, not fixed: `generatedPaths` (`project.ts`) writes generated files outside `.kubuno/views` for a view outside
   the project root; the launcher's and account panel's chrome are hard-coded light (`#E9EEF6` in `WaffleButton` /
-  `AccountButton`), unreadable in the dark theme — the designer shows it faithfully.
+  `AccountButton`), unreadable in the dark theme - the designer shows it faithfully.
 
 ### 18.5 Canvas of pages, and the shipped design host (2026-10-06)
 
@@ -1487,7 +1487,7 @@ is the desktop protocol.
   no `project/`) built from an older registry, and the bundled page then reported « unknown property » errors
   (`FontWeight`, `HtmlTag`, `AutoSize`). A missing folder stays a warning (the designer then needs the dev server).
 
-## 19. WV-6 as built (2026-10-05) — `.kbres` resources on the web
+## 19. WV-6 as built (2026-10-05) - `.kbres` resources on the web
 
 ### 19.1 What was built (core `frontend/packages/views-compiler`, `frontend/src/views`)
 
@@ -1502,11 +1502,11 @@ is the desktop protocol.
   argument is an ordinary one-way binding); the runtime's resolver receives them
   (`setResourceResolver((key, set, args) => …)`), `interpolationOptions(args)` turns them into i18next options (each
   name as written and with a lower-case first letter, `Count` → `count` as a number). Plural forms follow i18next
-  (`key_zero` for 0, then `key_<CLDR category>`, then `key`) — the desktop's `plural::candidates` does the same, so
+  (`key_zero` for 0, then `key_<CLDR category>`, then `key`) - the desktop's `plural::candidates` does the same, so
   one `.kbres` gives the same string on both targets. `View.t(key, set, args)` takes the same arguments; a view
   re-reads its strings when a bound argument changes and when a bundle is added.
 - **Converter `kbres-convert`** (`src/i18n-convert.ts`, `bin/kbres-convert.js`): JSON locale folders and TS modules
-  calling `registerModuleTranslations` (read by a static evaluator: literals, constants, imports — anything else is
+  calling `registerModuleTranslations` (read by a static evaluator: literals, constants, imports - anything else is
   an error with its position) → one `.kbres` set; `--verify` reads it back and compares every key and value.
 - **The core's navigation labels are converted** (`src/core/i18n/nav.kbres` + 12 satellites; `nav.ts` imports the set).
 
@@ -1519,7 +1519,7 @@ is the desktop protocol.
 - Runtime: plural choice for `fr` (0 and 1 singular), `ar` (zero, one, two, few, many, other), `en`
   (`runtime.test.tsx`).
 - RTL capture: the gallery page `Resources` (`src/gallery/pages/Resources.kbview` + `.kbres` in en / fr / ar) shows
-  the six Arabic plural forms right-to-left — `C:\kubuno-build\agent-webmig\captures\wv6\Resources-{light,dark}-rtl-{390,1280}.png`.
+  the six Arabic plural forms right-to-left - `C:\kubuno-build\agent-webmig\captures\wv6\Resources-{light,dark}-rtl-{390,1280}.png`.
 
 ### 19.3 The two designer defects of §18.4, fixed
 
@@ -1530,10 +1530,10 @@ is the desktop protocol.
 - `generatedPaths`: a view outside the root goes under `.kubuno/views/_external/<absolute path segments>` (drive colon
   removed, `..` → `_up`), the same rule as the language server; stale generated files of deleted views are removed.
   A project opened through a link (`C:\kubuno-build` → `E:\…` junction: Vite hands out real paths) keeps its project
-  paths — found while checking the migrated screens in the designer (the views' imports of project controls pointed
+  paths - found while checking the migrated screens in the designer (the views' imports of project controls pointed
   to `../../../…`).
 
-## 20. WV-11 as built (measured, 2026-10-05) — `@kubuno/views-migrate`
+## 20. WV-11 as built (measured, 2026-10-05) - `@kubuno/views-migrate`
 
 ### 20.1 What it does
 
@@ -1546,7 +1546,7 @@ project's `tsconfig.app.json`, the registries of `kubuno.views.json`, the Englis
   (headings, lists, forms, `<label>`); Tailwind classes turned into properties only where the result is
   pixel-identical (roles, weights, theme colours, flex rows/columns with exact gaps), the rest kept in `Class`;
   `t()` → `{Res}` (arguments, `count`); state → `@bind accessor`; hooks split into `useStores()` (reading nothing of
-  the class) and `useHooks()`, their results published as fields with `View.publish` (shallow comparison — a hook
+  the class) and `useHooks()`, their results published as fields with `View.publish` (shallow comparison - a hook
   returning a fresh equal object does not loop); derived constants → getters (`View.memo` when they build objects,
   deps = what the body **and its guard** read); inline handlers → methods; setter calls → assignments; two-way
   `value`/`onChange` → `Mode=TwoWay`; `cond && <X/>` and early returns → `Visible` with guarded getters; `.map` →
@@ -1570,7 +1570,7 @@ administration home and « coming soon »:
 | Measure | Result |
 |---|---|
 | Status | 1 converted, 9 partial, 0 skipped |
-| Elements mapped to `.kbview` elements | 112 / 158 (71 %) — 40 parts left in React, 80 `Class` attributes |
+| Elements mapped to `.kbview` elements | 112 / 158 (71 %) - 40 parts left in React, 80 `Class` attributes |
 | `npm run typecheck` (`tsc -b`, generated view types included) on the output | 0 errors, 10 / 10 |
 | Renders (headless Chrome, own profile) | 10 / 10 |
 | §7 parity, unedited codemod output (≤ 0.5 % root pixels, same AX tree, same text, same Tab order; light/dark × fr/en/ar × 1440/390 = 12 captures each) | **10 / 10 PASS**, max root diff 0.000 %, AX / text / keyboard identical in all 120 captures |
@@ -1623,7 +1623,7 @@ Codemod over the whole core batch (279 files after `--split`): **21 converted, 2
 elements mapped (72 %)**, 866 parts, 1578 `Class` attributes. Per batch: settings 84 %, users 66 %, modules 81 %,
 admin settings 73 %, security 70 %, directory 65 %, operations 73 %, the rest 74 %, shell and sign-in 66 %.
 
-Opens in the VS designer (hive `KubunoWebMig2`, solution opened from its real path — through the `C:\kubuno-build`
+Opens in the VS designer (hive `KubunoWebMig2`, solution opened from its real path - through the `C:\kubuno-build`
 junction Vite cannot serve the code-behind, « code-behind not loaded »): `ApiTokensTab`, `MyDataTab`,
 `TwoFactorSection`, `AppHeader`, `LoginPage`, `ThemesPanel` (the component gallery renders), `AdminNavTree`
 (captures `C:\kubuno-build\agent-webmig2\vs\out\vs-*.png`).
@@ -1639,7 +1639,7 @@ dependencies, methods passed as values bound once (`ref={setNode}`), conditional
 components used as tags, template literals kept verbatim in parts, a screen nothing of which maps left as TSX, a
 module's generated catalogue (`src/i18n.data.json`) read as its bundle.
 
-Runtime and registry changes they needed (`@kubuno/views` 0.1.3, `@kubuno/ui` 0.1.16, `@kubuno/views-migrate` 0.1.1 —
+Runtime and registry changes they needed (`@kubuno/views` 0.1.3, `@kubuno/ui` 0.1.16, `@kubuno/views-migrate` 0.1.1 -
 versions and changelogs prepared, **not published**): nested object fields, `HostStrings` / `setTranslator`, a view no
 longer rendering itself again from its own hooks (`notifyElements`), `Visible` bindings without a value hide, `@ui`
 elements whose `className` lands on their root get `Class` without a `display: contents` wrapper (`kbRootClass`),
@@ -1652,7 +1652,7 @@ change; memoizing every registry read made the home page render without end).
 ### 21.3 What stays React (ReactHost islands), and why
 
 - **Canvases and charts**: `AreaChart`, `BarChart`, `TrendChart`, `Sparkline`, `ReportSeriesChart`, the login
-  animation (`LoginAnimation*`) — drawn on `<canvas>` / `<svg>` with refs and pointer tracking.
+  animation (`LoginAnimation*`) - drawn on `<canvas>` / `<svg>` with refs and pointer tracking.
 - **Editors and complex widgets**: `PreviewFrame` (a shadow root with its own React root), `GalleryBody` and the
   theme preview stage (context providers), `EditableCard` and the cards built on it (inline editing with focus
   management), the rules tree and condition editors (`leafKinds`, `detectorLeaf`), `DataTable` with column objects
@@ -1661,7 +1661,7 @@ change; memoizing every registry read made the home page render without end).
   (Radix dropdowns), `SearchBar`, `SidebarNavItem`, `InstanceLogo` (`<img>` / `KubunoLogo`), the shell menus' hosts and
   the workspace dock (`shell/workspace/*`), the setup wizard (`SetupWizard`, `LanguageMenu`, `SetupWordmark`).
 - **Elements without a view equivalent yet**: `<img>`, `<input>` outside a field, `<table>`, `<pre>`, `<label htmlFor>`,
-  `<a target>`, `autoFocus`, `ref` callbacks, computed `style` objects — 866 parts in all, each with a TODO comment in its
+  `<a target>`, `autoFocus`, `ref` callbacks, computed `style` objects - 866 parts in all, each with a TODO comment in its
   view naming the reason.
 
 Next: more elements for these (Image, Table, a `Ref` binding), the parts as `.kbcontrol`, `@kubuno/host-runtime` for
@@ -1703,7 +1703,7 @@ tree 6/33 (23), image edit 43/62 (19), fonts pages 36/51 (14), labels 25/32, arc
 image picker source 27/37, dialog breadcrumb + tree 11/15, mini panel 4/6, mobile home 6/9, gauge 4/5, trash banner 6/6.
 
 Left as TSX: `FilesDashboardWidget` (renders nothing: it waits for a `files` module that never exists),
-`ModuleMountExplorer` (needs a module publishing a storage mount), and the screens nothing of which maps — `DriveHome`,
+`ModuleMountExplorer` (needs a module publishing a storage mount), and the screens nothing of which maps - `DriveHome`,
 file / folder cards and rows, the context menu, the viewers layer, the Files open / save / folder-picker / audio /
 paint / remote-storage windows, `FilePreviewOverlay` / `Shell`, `ImagePreviewOverlay`, `FontsExplorer`,
 `DualPaneExplorer` (unsupported statements, spreads, local components, `FloatingWindow` props). Irreducible islands:
@@ -1719,7 +1719,7 @@ paint / remote-storage windows, `FilePreviewOverlay` / `Shell`, `ImagePreviewOve
   `node_modules`, the designer stays on the bundled host and its bar says `npm install -D @kubuno/host-runtime`
   (« Réessayer »).
 - **The registry errors** (`Label` has no `HtmlTag`) came from the VSIX's bundled design host, whose compiled-in
-  registry predated `HtmlTag` — not from the language server nor the C# registry merge. The designer now sends the
+  registry predated `HtmlTag` - not from the language server nor the C# registry merge. The designer now sends the
   project's own host registry (`setHostRegistry`, re-sent when the file changes) to the bundled page.
 - **Junctions**: Vite started from a link path (`C:\kubuno-build` → `E:\…`) answers module requests with
   `index.html` (« code-behind not loaded »). `RealPaths` (`GetFinalPathNameByHandle`; mapped network drives keep
@@ -1745,18 +1745,18 @@ paint / remote-storage windows, `FilePreviewOverlay` / `Shell`, `ImagePreviewOve
 
 1. **Regression (core `0b661a0`)**: the converted `Shell`'s `<Slot name="app-dialogs">` never rendered again, so the
    dialogs a module registers after the first render (Files open / save / folder picker, audio player, paint, remote
-   storage) never appeared. **Root cause**: `Slot` read `SlotRegistry.getSlot` on render without subscribing — a
+   storage) never appeared. **Root cause**: `Slot` read `SlotRegistry.getSlot` on render without subscribing - a
    latent bug the TSX shell hid, because `App` renders again on `loadedVersion` and a TSX child renders with its
    parent; the views runtime memoises its elements, so the `ReactHost` holding `Slot` (bound values unchanged) no
    longer did. Not the codemod: its output (`slot_props` memoised, `Slot` as the component) is right. **Fixed at
    both ends** (core `279de48`): the runtime renders a `ReactHost`'s component again whenever its view root renders
    (a `RootRender` context only `ReactHost` nodes read), and the registry notifies (`useSlotRegistryVersion`, used by
-   `Slot`, `useHasSlot`, `useModuleAdminSections`; keys by module and rank — drive gives six entries). The same
-   pattern in the other converted screens — getters memoising a registry read on deps the registry is not part of
-   (home widgets, notification groups, the top bar's settings override) — is fixed by `invalidateViews()` once module
+   `Slot`, `useHasSlot`, `useModuleAdminSections`; keys by module and rank - drive gives six entries). The same
+   pattern in the other converted screens - getters memoising a registry read on deps the registry is not part of
+   (home widgets, notification groups, the top bar's settings override) - is fixed by `invalidateViews()` once module
    bundles have loaded (`modulesStore`). Tests: `src/core/slots/SlotRegistry.test.tsx` (register after mount; a hosted
    component renders with its root), both failing before the fix. Proof: the bench's dev core on the MySQL dev
-   database with drive installed, headless Chrome — with `0b661a0`'s host none of open / save / folder picker appears,
+   database with drive installed, headless Chrome - with `0b661a0`'s host none of open / save / folder picker appears,
    with the fixed host all three do, from `/` and `/drive` (`E:/kubuno-build/agent-slotfix/proof.mjs`, captures
    `after-drive-*.png`).
 2. Codemod: `defaultValue`s go into a module's catalogue (`src/i18n.data.json`, fallback language) and
@@ -1787,7 +1787,7 @@ does the same.
 - **View** (`.kbview`): a page the router shows (`<Route element>`, `RouteRegistry.register`, a router table such as
   `ADMIN_SECTIONS`, what the app's root component renders in place of its routes), a window (floating window,
   full-screen viewer or player), a dialog, a wizard, a flyout.
-- **User control** (`.kbcontrol`, root `<UserControl x:Props="XProps">`): anything placed inside another screen — a
+- **User control** (`.kbcontrol`, root `<UserControl x:Props="XProps">`): anything placed inside another screen - a
   page's panes, sections and tabs, the header, sidebars and menus, the panels given to host slots and extension
   points, cards, badges, tree items, and the rows and items lists repeat. `XProps` are its properties, its `on…`
   callbacks its events. A user control is an element named after its file: unique in the project, never a host
@@ -1807,7 +1807,7 @@ does the same.
 `@kubuno/views-migrate` (core `packages/views-migrate/src/layout.ts`, `relayout.ts`; tests `test/layout.test.ts`,
 fixture `test/fixtures/layout/`):
 
-- `classify`: each component's uses, read with the TypeScript parser — route (a `Route`'s `element` / `Component`, a
+- `classify`: each component's uses, read with the TypeScript parser - route (a `Route`'s `element` / `Component`, a
   call whose callee names a route, a `{ path, element }` object, a `…routes` / `…sections` / `…screens` table, the app
   component returning it alone), JSX placement (alone or among other elements: next to other elements it is a part),
   a view's `ReactHost` getter, a value handed to a host (slot, extension point, registry), a re-export. Then: a root
@@ -1824,7 +1824,7 @@ fixture `test/fixtures/layout/`):
   same way, `--place`, `--move`, `--rename` (files and class, through ts-morph), `--exclude`, `--split`. It stops on a
   user control name clash with the files named. It is idempotent (a second run moves nothing, tested).
 - Check of the markup change, outside the tests: every view becoming a user control (core 164, drive 27) compiled
-  before and after with the project's compiler — the plan under the new root equals the old root's, the diagnostics
+  before and after with the project's compiler - the plan under the new root equals the old root's, the diagnostics
   are the same, no `view-file-kind` warning (`/kubuno/tmp/weblayout/verify-controls.mjs` on the Linux build host).
 
 ### 23.3 Applied to core and drive
@@ -1843,7 +1843,7 @@ not; no TSX original was left beside its view.
 
 §7 parity, before (core `b5d6427`'s screens, drive `3ddad51`) against after (core `acd586b`, drive `2244475`), both
 served by a Windows dev core, captured by node and headless Chrome on the Linux build host through an SSH tunnel:
-**149 / 149 screens pass** — core 118 (pilot 13, settings 10, users 8, modules 8, admin settings 7, security 13 + 2,
+**149 / 149 screens pass** - core 118 (pilot 13, settings 10, users 8, modules 8, admin settings 7, security 13 + 2,
 directory 15 + 2, operations 11 + 2, misc 14, shell 8, sign-in 5), drive 31 (8 + 23); worst root difference 0.006 %,
 accessibility tree, text and Tab order identical everywhere (`/kubuno/tmp/weblayout/bench/captures/diff-*-after1`).
 

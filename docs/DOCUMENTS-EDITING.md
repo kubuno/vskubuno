@@ -1,4 +1,4 @@
-# Kubuno Documents (desktop) — the editing path
+# Kubuno Documents (desktop) - the editing path
 
 Status: plan and log of the editing lot (user request of 2026-10-02: « fais ce qui n'est pas fait, et les pages ne sont
 pas encore éditables »), started after app lot 3 (`DESKTOP-MIGRATION.md`). This file is the design of record for the
@@ -18,7 +18,7 @@ C:\ and E:\, 2026-10-02); its decisions survive in the code comments that cite t
 ## 1. Shared code: the platform-neutral crate `kubuno-office-docs-core`
 
 User direction (2026-10-02): share the algorithms with the web rather than write them once per platform. Everything
-that is not drawing, input or windowing lives in **`kubuno-office-docs-core`** — since 2026-10-06 in the office repository, `office/common/core` (name per the
+that is not drawing, input or windowing lives in **`kubuno-office-docs-core`** - since 2026-10-06 in the office repository, `office/common/core` (name per the
 `kubuno-<domain>-core` convention of the cross-module study), a member of the `desktop/common` workspace like
 `kubuno-desktop-sync`, depended on by path from `documents`. It has no Windows, Direct2D, DirectWrite or `kubuno_desktop_ui`
 dependency (only `serde`, `serde_json`) and is checked with `cargo check --all-targets` for `wasm32-unknown-unknown`,
@@ -29,10 +29,10 @@ dependency (only `serde`, `serde_json`) and is checked with `cargo check --all-t
 | `model` | the stored document held losslessly (`Node`: raw JSON per key; bare document vs multi-page envelope; write-back rules) | moved from `documents/src/model/{mod,node,fixtures}.rs` |
 | `pm` | ProseMirror position arithmetic over `Node` (`node_size`, `resolve` → path + parent offset, `text_between`), the office schema's leaf/textblock/container classification | new |
 | `marks` | `TextMark` (bold, italic, underline, strike, code, size, family, colour, highlight, script, caps, letter spacing, link, revision) read from a node's `marks`, and the mark JSON writers the commands use | new (port of `extractMarks`) |
-| `measure` | the `Measure` trait (advance width of a string in a `TextMark`; ascent/descent) — the **only** door to fonts: DirectWrite on the desktop, `measureText` on the web | from `doc/para.rs` |
+| `measure` | the `Measure` trait (advance width of a string in a `TextMark`; ascent/descent) - the **only** door to fonts: DirectWrite on the desktop, `measureText` on the web | from `doc/para.rs` |
 | `layout` | the port of `canvas-engine.ts`: `parse` (`parseDoc` → render paragraphs with ProseMirror positions, lists, headings, tables, images, breaks), `paragraph` (`layoutParagraph`, the line breaker with its quirks), `table` (`layoutTable` over `tables.rs`), `flow` (`layoutParagraphs`: the continuous layout, contextual spacing) with a per-block cache, `paginate` (`paginateMulti`: pages, columns, `breakBefore`, keep-with-next/keep-lines), `caret` (`posToCoords`, `coordsToPos`, `selectionRects`, `adjacentLineCenter`, word/paragraph/line boundaries, `prevWordPos`/`nextWordPos`) | `para.rs`, `tables.rs`, `images.rs` moved; the rest ported from the web |
 | `edit` | steps and their exact inverses, transactions, history grouped like the web, commands (typing, Enter, Backspace/Delete across blocks, marks, block attributes, lists, indent, spacing, breaks, insertions), clipboard payloads (plain text, HTML in and out, private JSON), find/replace | `history.rs`/`clipboard.rs` payload layer reworked; commands new |
-| `editor` | `Editor`: the document + selection + history + cached layout and pages — the façade a platform drives (desktop now, WASM later) | new |
+| `editor` | `Editor`: the document + selection + history + cached layout and pages - the façade a platform drives (desktop now, WASM later) | new |
 
 What stays in `documents` (Windows): painting the pages (Direct2D/DirectWrite: `doc/paint.rs`, `doc/fonts.rs`,
 `platform/painter.rs`), the DirectWrite `Measure`, input (keys, `WM_CHAR`, IME), the Win32 clipboard formats, the
@@ -55,8 +55,8 @@ one on the web; the desktop uses ProseMirror's count (an edit must land where th
 ### Edits, exactly reversible
 
 The one primitive step is `Replace { parent: Path, from, to, with: Vec<Node> }` (replace children `from..to` of the
-node at `parent`, a path of child indices from the body). Its inverse is computed while applying it — the removed
-nodes, byte-identical — so undo restores the stored bytes exactly; there are no hand-written inverses. Typing in a
+node at `parent`, a path of child indices from the body). Its inverse is computed while applying it - the removed
+nodes, byte-identical - so undo restores the stored bytes exactly; there are no hand-written inverses. Typing in a
 paragraph replaces the paragraph node; a mark or attribute change replaces the nodes it touches. Consecutive replaces of
 the same node inside one undo group are coalesced (first inverse, last forward), so a typed sentence costs two copies
 of its paragraph, not two per keystroke.
@@ -72,11 +72,11 @@ Each increment is verified before the next: `cargo test` (core + documents), `ca
 core's cross-target `cargo check`, real runs with captures in light and dark, then `dist\kubuno-documents.exe`
 refreshed (a self-contained exe: kubuno-desktop-ui is linked statically).
 
-### A — editable pages
+### A - editable pages
 
 1. Core crate: model moved, positions, marks, `Measure`, the parse/paragraph/flow/paginate port with ProseMirror
    positions, the caret functions. Documents paints the **paginated layout** (`PageLayout`s) instead of its old
-   paragraph-only flow — lists, tables, headings, colours, underline, highlight, sub/superscript become visible.
+   paragraph-only flow - lists, tables, headings, colours, underline, highlight, sub/superscript become visible.
 2. Caret and selection: blink (web: solid 0.5 s after a move, then 1 s period), click, drag with auto-scroll (48 px
    edge, ≤ 30 px a step), Shift+click, double-click word, triple-click paragraph (cell-aware), Ctrl+A; ←/→ (by
    character, by word with Ctrl), ↑/↓ keeping the goal column with the wrap-boundary affinity of `nav-keys.ts`,
@@ -97,21 +97,21 @@ refreshed (a self-contained exe: kubuno-desktop-ui is linked statically).
 7. Live reflow: the layout cache keys each top-level block by a revision counter bumped by the steps that touch it, so
    a keystroke re-lays out one block and re-paginates (pagination is linear and cheap); measurement is cached per
    (string, font). Painting only the visible pages; no flicker (single Direct2D frame).
-8. Accessibility: the canvas exposes its text and caret — at least the caret position (system caret moved with
+8. Accessibility: the canvas exposes its text and caret - at least the caret position (system caret moved with
    `SetCaretPos`, which screen readers and magnifiers follow); a UIA `TextPattern` provider if the host's
    accessibility layer allows it (see §4).
 9. Context menu (right click): Couper, Copier, Coller, Coller sans mise en forme · Lien… · Saut (page) · Texte (gras,
-   italique, souligné, barré) · Aligner · Paragraphe… · Tout sélectionner — the web's `buildCtxItems` minus what the
+   italique, souligné, barré) · Aligner · Paragraphe… · Tout sélectionner - the web's `buildCtxItems` minus what the
    desktop does not have, using the menus agent's `ContextMenu`/`MenuItem` components; a right click outside the
    selection moves the caret, inside keeps it (web).
 
-### B — ribbon commands
+### B - ribbon commands
 
 Every `<Command>` the model supports gets an `OnExecute` and its `Checked`/`Enabled` bound to the selection
 (`Editor::state_at_selection`: marks in common, block type, alignment, list kind, spacing). The table in §3 is
 maintained as commands land.
 
-### C — what lot 3 left
+### C - what lot 3 left
 
 * Ruler edits written to the model through `edit` (undoable): indents → `indentLeft`/`indentFirstLine`/
   `indentRight` (rounded px, `null` when 0, like `setParaIndentAttrs`), tab stops → `tabStops: [{pos, type}]` (the
@@ -119,11 +119,11 @@ maintained as commands land.
   when its page setup changes, since a bare document has nowhere to store margins). During a drag the change is live
   but not recorded; the release records one step (web `commit=false` then `commit=true`).
 * Pages side by side like the web: the page container is a wrapping row (`flex-wrap`, column gap 24, row gap
-  `PAGE_GAP`, centred, rows top-aligned), so as many pages as fit the viewport width share a row — at 50 % two or more
+  `PAGE_GAP`, centred, rows top-aligned), so as many pages as fit the viewport width share a row - at 50 % two or more
   A4 pages on a common screen. The vertical ruler and the active page follow the caret's page.
 * Redo the two wrong captures of the ruler comparison (« DESKTOP 100 % » showed a VS window; « dark » was light).
 
-### D — open and save
+### D - open and save
 
 * Open: a local file (`content_json` or `.kbdoc`), and from the server through the shell's token broker / the
   sandbox profile (never real credentials), `GET /api/v1/office/documents/:id`.
@@ -134,8 +134,8 @@ maintained as commands land.
   on close after any in-flight save. Works with the server as deployed (no etag rotation on draft promotion, delta
   500) and with office `c3c6429` (not deployed).
 * Ctrl+S, the dirty indicator in the title, a conflict dialog (Kubuno `ConfirmDialog`: keep mine / take theirs).
-* Offline-first: edits persist locally first — a journal of the document bytes per open document under the app's
-  local data folder, replayed at start — before any server write (`DESKTOP-OFFLINE-SYNC.md`). Syncing documents
+* Offline-first: edits persist locally first - a journal of the document bytes per open document under the app's
+  local data folder, replayed at start - before any server write (`DESKTOP-OFFLINE-SYNC.md`). Syncing documents
   through `kubuno-desktop-sync-engine` (outbox, feeds) is a later increment: the document is one opaque blob of up to 2 MiB,
   not rows, and the conflict rule above (digest, owner-only sessions) is specific to it.
 * Tests against the dev core and dev database only (`KUBUNO_DEV_DATABASE_URL`, `docs/WEB.md` §6–7); if the office
@@ -150,7 +150,7 @@ inventory of the web sources (`DEP` = `office/web/src/DocumentEditorPage.tsx`, `
 
 ✔ done (a unit test of `kubuno-office-docs-core` mirroring the web, plus a real run where marked *(run)*) ·
 ◐ partial (what is missing is said) · ✘ not done yet (why) · ⛔ blocked (a decision or a missing platform piece) ·
-— nothing to port (a stub, a no-op or a bug on the web; the desktop does not invent what the web lacks).
+- nothing to port (a stub, a no-op or a bug on the web; the desktop does not invent what the web lacks).
 
 Ribbon commands run through the same `OnExecute` whether clicked or typed (shortcut). Real mouse clicks on the ribbon
 were verified on 2026-10-07 (tab, combo box, split-button menu, button: see §5); clicks *posted* to the window
@@ -160,29 +160,29 @@ were verified on 2026-10-07 (tab, combo box, split-button menu, button: see §5)
 
 | Feature | Web | Desktop |
 |---|---|---|
-| Open a server document (`--doc <id>`), journal of unsaved work, recovery offer, conflict dialog, 413 terminal | `DEP:14559`, `useOfficeStore` | ✔ *(run, dev server)* — §5 |
+| Open a server document (`--doc <id>`), journal of unsaved work, recovery offer, conflict dialog, 413 terminal | `DEP:14559`, `useOfficeStore` | ✔ *(run, dev server)* - §5 |
 | Save (Ctrl+S, QAT) and autosave (30 s debounce, 700 ms for page setup) | `DEP:14326`, `:7080`, `:14336` | ✔ *(run)* |
 | Rename, info (created, modified, pages, words) | `DocumentsBackstage.tsx:62-78` | ◐ the Backstage shows title, pages, zoom; rename and dates not wired |
-| Info tabs « Résumé », « Personnalisation » | `ModuleBackstage.tsx:149` | — (« bientôt disponible » on the web) |
+| Info tabs « Résumé », « Personnalisation » | `ModuleBackstage.tsx:149` | - (« bientôt disponible » on the web) |
 | Save to source (DOCX/ODT) | `DEP:14748` | ✘ (server route exists; no desktop UI yet) |
 | Export PDF (raster), DOCX/ODT (server), TXT | `DEP:14689`, `:14758`, `:14738` | ✘ (desktop printing/export lot: `PRINTING.md`) |
 | Print | `DEP:14700` | ✘ (same) |
 | Star, trash, share, presence avatars | `DEP:15706`, `:15653`, `:15625`, `:15676` | ✘ star/trash/share not on the desktop window; presence ◐ (status bar lists the other editors of the editing session) |
-| New / duplicate | handlers `DEP:15227` | — (not reachable from the web editor's UI) |
+| New / duplicate | handlers `DEP:15227` | - (not reachable from the web editor's UI) |
 
 ### Accueil (Home)
 
 | Feature | Web | Desktop |
 |---|---|---|
 | Paste, cut, copy, paste without formatting | `DEP:11958-11960` | ✔ (the desktop pastes rich content too: private JSON, HTML, images) |
-| Clipboard history | `ribbon/clipboardGroup.tsx:127` | — (a no-op in the document body on the web) |
+| Clipboard history | `ribbon/clipboardGroup.tsx:127` | - (a no-op in the document body on the web) |
 | Format painter (once, sticky, Esc) | `DEP:11964`, `docs/format-painter.ts` | ✔ |
 | Clear formatting | `DEP:11969` | ✔ |
 | Font family, size, bold, italic, underline, strike, sub/superscript, grow/shrink, case, small caps, colour, highlight | `DEP:11988-12009`, `:15285` | ✔ (bold *(run)*) |
 | Character spacing dialog, « Autres couleurs » | `DEP:15291`, `RibbonColorBtn` | ✘ (no colour picker / spacing dialog on the desktop yet) |
 | Text effects (WordArt presets, outline, shadow, glow…) | `docs/text-effects/ribbon.tsx:353` | ✘ (the `textEffect` mark is kept on save; not painted) |
 | Bullets, numbering, alignment, indent, line spacing, space before/after, first-line, hanging | `DEP:12020-12040` | ✔ (bullets *(run)*) |
-| Task list, quote (blockquote) | `DEP:12022`, `:12144` | — (written but never painted on the web: `CE:1016`; the desktop keeps them, paints them the same way, i.e. not at all) |
+| Task list, quote (blockquote) | `DEP:12022`, `:12144` | - (written but never painted on the web: `CE:1016`; the desktop keeps them, paints them the same way, i.e. not at all) |
 | Sort A→Z / Z→A | `DEP:872` | ✔ |
 | Number headings (1., 1.1) | `DEP:15305`, `CE:928` | ✔ |
 | Paragraph shading and border | `DEP:10769`, paint `DEP:5314-5346` | ◐ shading (default, light grey, none) and the default border are set and painted; the colour palette and the border's colour/width/style are not offered |
@@ -227,14 +227,14 @@ were verified on 2026-10-07 (tab, combo box, split-button menu, button: see §5)
 
 | Feature | Web | Desktop |
 |---|---|---|
-| Margins (presets, rulers) on the caret's section | `DEP:15348`, `:5542` | ✔ *(run)* — the base section's margins are not undoable on the desktop (Yjs map on the web) |
+| Margins (presets, rulers) on the caret's section | `DEP:15348`, `:5542` | ✔ *(run)* - the base section's margins are not undoable on the desktop (Yjs map on the web) |
 | Orientation of the caret's section | `DEP:5523` | ✔ *(run, real clicks)* |
 | Paper size | `DEP:14682` | ✔ |
-| Columns (base section) | `DEP:5577` | ✔ *(run, real clicks)* — no column guides on the ruler yet |
+| Columns (base section) | `DEP:5577` | ✔ *(run, real clicks)* - no column guides on the ruler yet |
 | Line numbers | `DEP:10728`, `:5436` | ✔ (the interval is kept, not settable) |
 | Paragraph metrics box (indents, spacing in pt) | `DEP:10824` | ✘ (the rulers and the paragraph buttons cover it) |
 | Page colour (section-aware), gradient | `DEP:10603` | ◐ cream, light grey or none; no colour picker; gradients ✘ |
-| Watermark | `DEP:10631`, paint `:423` | ✔ (the six presets, or none; no colour/opacity editor) — painted on the desktop; **not visible on the web's screen** (`solidPageBg` paints an opaque page before the `destination-over` watermark, `DEP:7537`) |
+| Watermark | `DEP:10631`, paint `:423` | ✔ (the six presets, or none; no colour/opacity editor) - painted on the desktop; **not visible on the web's screen** (`solidPageBg` paints an opaque page before the `destination-over` watermark, `DEP:7537`) |
 | Page border | `DEP:10681`, paint `:448` | ◐ the four styles or none with the default colour, width and distance; no editor |
 | Page Setup dialog (gutter, header/footer distance, vertical alignment, section start, odd/even, first page, default) | `DEP:3618` | ✘ (most of its settings have no effect on the web either: UI-only) |
 
@@ -274,7 +274,7 @@ were verified on 2026-10-07 (tab, combo box, split-button menu, button: see §5)
 | Revision ink (author colour), underline / strike, change bar in the margin | `CE:374-417`, `CE:2585-2680` | ✔ `paint.rs` (`track::author_color` = `authorColor`) |
 | Accept / reject one or all; « Afficher le document final » (deleted text leaves the layout) | `track-changes.ts:560-620`, `CE:331-417` | ✔ `track::decide`, `Editor::set_final_view` |
 | Review pane (cards: author, relative age, kind, text; accept / reject; accept all / reject all with confirmation) | `docs/ReviewPane.tsx` | ◐ a dialog walking the revisions one at a time (Précédente / Suivante) instead of a side pane: the framework has no list pane yet |
-| Comments: new, gutter, reply, resolve | `DEP:15185`, `:12631` | ⛔ comments live in the web's Yjs map, not in the stored document (the envelope's `comments` is a mirror the web never reads back): a desktop comment would not reach the web — see the collaboration question in §5 |
+| Comments: new, gutter, reply, resolve | `DEP:15185`, `:12631` | ⛔ comments live in the web's Yjs map, not in the stored document (the envelope's `comments` is a mirror the web never reads back): a desktop comment would not reach the web - see the collaboration question in §5 |
 
 ### Contextual tabs
 
@@ -298,7 +298,7 @@ were verified on 2026-10-07 (tab, combo box, split-button menu, button: see §5)
 | Rulers: margins, indents, tab stops | `DEP:2378-3062` | ✔ *(run)* |
 | Autocorrect (`(c)→©`, `->→→`, `1/2→½`…), markdown input rules | `DEP:1284-1291` | ✘ |
 | Collaboration: live co-editing, remote carets | `useCollab`, `RemoteCursors` | ⛔ the desktop saves the whole document through REST; the web edits a Yjs room (see §5) |
-| Accessibility (UI Automation) | — | ◐ the system caret follows ours (screen readers, magnifier); no `TextPattern`: the framework publishes AccessKit nodes with a role, a name and a value, without text runs or a text selection, and the page canvas publishes none — a framework lot (AccessKit text runs) comes first |
+| Accessibility (UI Automation) | - | ◐ the system caret follows ours (screen readers, magnifier); no `TextPattern`: the framework publishes AccessKit nodes with a role, a name and a value, without text runs or a text selection, and the page canvas publishes none - a framework lot (AccessKit text runs) comes first |
 
 ## 4. Later: the web on the same crate (WASM)
 
@@ -311,7 +311,7 @@ The web keeps `canvas-engine.ts` for now. Switching it to `kubuno-office-docs-co
   `width`, `pmPos`, `y`, `height`, `ascent`, `baseline`, `pmStart`, `pmEnd`, `table`…), `posToCoords`,
   `coordsToPos`, `selectionRects`, `wordBoundariesAt`, `paragraphBoundariesAt`, `lineStartAt`, `lineEndAt`,
   `prevWordPos`, `nextWordPos`, `adjacentLineCenter`. `paintLayout` stays in TypeScript (Canvas 2D), reading the same
-  structures — only the layout moves.
+  structures - only the layout moves.
 * **Measurer bridge**: the core calls `Measure` for every token. Across the JS boundary that must be batched: the
   core collects the distinct `(font, text)` pairs it has not cached, asks JS once per layout pass
   (`measureBatch(fonts[], texts[]) -> Float32Array`), then lays out from its cache; font metrics
@@ -319,16 +319,16 @@ The web keeps `canvas-engine.ts` for now. Switching it to `kubuno-office-docs-co
   `fontStr()` does, so the browser's cache keys match.
 * **Size and speed** (estimates to confirm when built): ~300–500 KB of WASM with `opt-level = "s"` and LTO
   (serde_json dominates), ~120–200 KB gzipped. Layout of a 50-page document is dominated by measurement; with the
-  batch bridge and the per-block cache, a keystroke re-lays out one block — well under a frame.
+  batch bridge and the per-block cache, a keystroke re-lays out one block - well under a frame.
 * **Fidelity checks**: run the existing parity harness (`layout/parity.rs`, recorded from the real
-  `canvas-engine.ts` in Chrome) against the WASM build with the browser's `measureText` — line tops, line contents
+  `canvas-engine.ts` in Chrome) against the WASM build with the browser's `measureText` - line tops, line contents
   and span `x` must match within 0.5 px; then the 337-document corpus: page count and the `pmStart/pmEnd` of every
   line identical. Known divergences (the horizontal-rule position bug above) are fixed on the web side first, or the
   harness records them explicitly.
 
 ## 5. Log
 
-**2026-10-02 — A, B, C, D (first pass).** `kubuno-office-docs-core`: 247 tests, clippy `-D warnings` clean, `cargo check`
+**2026-10-02 - A, B, C, D (first pass).** `kubuno-office-docs-core`: 247 tests, clippy `-D warnings` clean, `cargo check`
 for `wasm32-unknown-unknown`, `x86_64-unknown-linux-gnu` and `aarch64-apple-darwin`. `kubuno-documents`: 128 tests
 (the save session on its worker thread against an in-memory server and journal: Ctrl+S saves, a server-side change
 raises the conflict instead of overwriting, « take theirs » reloads, offline opens the journal and keeps it on close,
@@ -341,14 +341,14 @@ and desktop at 100 % and 50 % side by side, desktop dark at 100 % and 50 %).
 
 Not verified live: **the server path** (`--doc <id>`). No development core with the office module was available on
 this machine (the dev database was being moved by another agent), so open/save ran only against the in-memory server
-of the tests — never against the live server, and never with real credentials. IME composition (posted messages
+of the tests - never against the live server, and never with real credentials. IME composition (posted messages
 cannot drive an IME), the ribbon by mouse (see §3), and a UIA `TextPattern` (only the system caret is exposed) remain
 to be checked by hand.
 
-**2026-10-07 — server path, page layout, references, review (office `5b12e58`…`e7e0a61`).** Verified live against
+**2026-10-07 - server path, page layout, references, review (office `5b12e58`…`e7e0a61`).** Verified live against
 an own development core (office + drive modules, own database, own ports) and the web editor in headless Chrome
 (captures in `C:\kubuno-build\release\documents\captures`):
-- open fidelity web vs desktop; an edit saved with Ctrl+S visible on the web (for a document whose Yjs room is empty —
+- open fidelity web vs desktop; an edit saved with Ctrl+S visible on the web (for a document whose Yjs room is empty -
   see the question below); a concurrent web save → 412 → the conflict dialog (`conflict-dialog-1.png`); the crash
   journal offered on reopen (`recover-dialog.png`); a 2 MiB document → 413 → a terminal status, no retry loop
   (`limit-413-status.png`); offline edits kept in the journal, shown on an offline open (`offline-3-open-offline.png`),
@@ -375,7 +375,7 @@ Tests: `kubuno-office-docs-core` 282 + 5 web-fixture tests (also on Linux, .220)
 Not done, with the reason: IME (no Japanese/Chinese IME on this machine; installing one changes the user's system),
 UIA `TextPattern` (the framework's AccessKit nodes carry no text runs or selection), comments (they live in the web's
 Yjs map, see the question), header/footer inline editing, drop cap, shapes and text boxes, the table contextual tab,
-spelling — see §3 for every row. Open questions: (1) *resolved 2026-10-07* (office `5aa449b`, core `a2c595a`): a desktop (or
+spelling - see §3 for every row. Open questions: (1) *resolved 2026-10-07* (office `5aa449b`, core `a2c595a`): a desktop (or
 Android) REST save of a document open on the web is no longer overwritten by the web's Yjs room. Each document,
 spreadsheet and presentation has a `collab_epoch` (office migration 000065) that names its room
 (`office-document:<id>~<epoch>`); a REST content write without `X-Collab-Epoch` bumps it in the same transaction

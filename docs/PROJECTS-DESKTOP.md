@@ -1,8 +1,8 @@
-# Kubuno Projects (desktop) — design note
+# Kubuno Projects (desktop) - design note
 
 Status: design of record for the native desktop version of the office module's project editor
 (`kubuno-projects.exe`), written before the app code (mission of 2026-10-07: « the desktop app must fully catch up
-with the web version — every feature of the web Projects editor, not a subset »). It follows the method of
+with the web version - every feature of the web Projects editor, not a subset »). It follows the method of
 `DOCUMENTS-EDITING.md` and `SPREADSHEETS-DESKTOP.md`: the web editor is the behavioural and visual reference, its
 logic goes into a platform-neutral shared core (`kubuno-office-projects-core`), the desktop app is the portable app
 of `desktop/common` plus the Win32 window of `desktop/windows`. Section 7 (coverage) and section 9 (log) are kept up
@@ -38,7 +38,7 @@ Paths are relative to the office repository (`office/`). `PE` is `web/src/Projec
 - **The schedule is the server's.** `POST /projects/:id/cpm` (`SRV:1223-1577`) computes ES/EF/LS/LF, floats,
   criticality, deadline misses and the summary roll-up in working days of the project calendar
   (`services/working_calendar.rs`). The web calls it only after Gantt drags, link edits, project date moves,
-  deletion undos and the « Replanifier » button — **not** after a duration typed in the table, so bars stay where
+  deletion undos and the « Replanifier » button - **not** after a duration typed in the table, so bars stay where
   they were until the next schedule (ported as is).
 - **Undo is a stack of inverse REST calls** (`history/useEditHistory.ts`): 100 entries, ids resolved through a remap
   table (an undone deletion re-creates rows under new ids), a failed inverse clears both stacks, continuous edits
@@ -132,7 +132,7 @@ reports each answer to the UI thread, and re-reads the project when the queue is
 - **Refusals** (4xx): the call and the rest of its command are dropped, the history cleared (the web's rule for a
   failed inverse), the message shown in the status bar.
 - **413**: requests are small rows; not reachable in practice (handled as a refusal).
-- **Collaboration**: the Yjs `meta.rev` bump and the presence need a Rust Yjs client (`yrs`) — the one the
+- **Collaboration**: the Yjs `meta.rev` bump and the presence need a Rust Yjs client (`yrs`) - the one the
   Spreadsheets agent is building; until it lands the desktop re-reads the project every 30 s while idle so web
   edits show up, and web peers see desktop edits on their next read (§8).
 
@@ -163,7 +163,7 @@ reports each answer to the UI thread, and re-reads the project when the queue is
 | Filter / sort / group / fold | `PE:449-515` | ◐ unit tests, filter bar shown |
 | Undo/redo (inverse calls, remap, 900 ms coalescing, 100 entries) | `useEditHistory.ts`, `PE:650-890` | ✔ real Ctrl+Z on the dev core sends the inverse PATCH (progress 50 → 60) |
 
-**Window — Gantt view**
+**Window - Gantt view**
 
 | Feature | Web | Desktop |
 |---|---|---|
@@ -208,19 +208,19 @@ reports each answer to the UI thread, and re-reads the project when the queue is
 
 ## 9. Log
 
-(as built — filled as increments land)
+(as built - filled as increments land)
 
-**2026-10-07 — increment 0 done, A/B/C in progress (stopped: session limit).**
+**2026-10-07 - increment 0 done, A/B/C in progress (stopped: session limit).**
 
-- Pushed (office): `common/projects-core` (`d3cdc07`) — 44 unit tests + 3 golden tests: the core's scheduler lands
+- Pushed (office): `common/projects-core` (`d3cdc07`) - 44 unit tests + 3 golden tests: the core's scheduler lands
   every task of two server-scheduled projects (all link types, lags, the 8 constraints, ALAP, deadline, nested
   summaries, a link from a summary, default week and a six-day calendar with exceptions) on the server's figures;
   lossless round trip of the real API JSON; `cargo check` wasm32 / aarch64-apple-darwin clean, tests + clippy clean
   natively on Linux (.220). `desktop/common/kubuno-office-projects-common` (`f337308`): launch options, sample,
-  routes, outbox worker, journal, session, column layout, line editor — 11 tests, clippy clean; one session test
+  routes, outbox worker, journal, session, column layout, line editor - 11 tests, clippy clean; one session test
   ignored (the resend after an offline re-read is not issued yet: to fix first).
 - Not pushed, kept in the worktree `E:\kubuno-build\agent-office-projects\wt` (branch `projects-desktop`, files
-  untracked): `desktop/windows/kubuno-office-projects` — window `.kbview` (full web ribbon, plan tabs, baseline and
+  untracked): `desktop/windows/kubuno-office-projects` - window `.kbview` (full web ribbon, plan tabs, baseline and
   filter bars, band, dock with inspector and resources, status bar), `GanttView` (table + chart port of
   GanttRenderer, all gestures), `TimelineBand`, `PlanTabs`, `BoardView`, `MonthView`, `LoadView`, inspector,
   properties, resources fr/en, icon. Last build: a dozen compile errors left (view macro field/control names,
@@ -230,7 +230,7 @@ reports each answer to the UI thread, and re-reads the project when the queue is
   input + UIA, VS designer + `Kubuno.Office.slnx` regeneration, then network/roadmap/resources views and the
   registers (§7), Yjs presence once the shared `yrs` client lands.
 
-**2026-10-07 (afternoon) — increments A, B, C landed, plan views done; registers next.**
+**2026-10-07 (afternoon) - increments A, B, C landed, plan views done; registers next.**
 
 - Pushed (office `origin/main`, up to `64a404c`): the Windows app builds (`kubuno-projects.exe`, member of
   `desktop/Cargo.toml` again), tests (core 59 + 3 golden, common 15, Windows 2) and clippy `-D warnings` clean.
@@ -251,7 +251,7 @@ reports each answer to the UI thread, and re-reads the project when the queue is
   no DTE appears in the ROT (same as the Diagrams agent); devenv was closed. Script:
   `C:\kubuno-build\agent-office-projects\vs\designer.ps1`.
 - Posted (PostMessage) clicks do not trigger ribbon buttons, shell nav items or text fields (they act on the
-  real button state); only real input exercises them — worth a framework fix for automation.
+  real button state); only real input exercises them - worth a framework fix for automation.
 - Release copy: **debug** build (E: was full, the release build failed for lack of space) in
   `C:\kubuno-build\release\projects\` (exe + PDB).
 - Web side notes: the dev core forced an admin password change (done via `PATCH /me/password`); the web's dark

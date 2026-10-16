@@ -1,4 +1,4 @@
-# Resources — `.kbres` files, the typed `Resources` class, `{Res key}` and the resource editor
+# Resources - `.kbres` files, the typed `Resources` class, `{Res key}` and the resource editor
 
 The Kubuno equivalent of Windows Forms' `Resources.resx`, its strongly typed `Properties.Resources` class, the
 Visual Studio resource editor, per-form resources and satellite assemblies. It also covers foundation lot **F2
@@ -9,7 +9,7 @@ verified, and what is left.
 
 ---
 
-## Part 1 — Design
+## Part 1 - Design
 
 ### 1. What Windows Forms gives, and what we keep
 
@@ -41,7 +41,7 @@ verified, and what is left.
 
 **XML, not TOML**, because:
 - the views (`.kbview`) are XML: one syntax in the project, the same escaping rules, and Visual Studio colours both;
-- string values are often multi-line and contain quotes, `#`, `=` — XML text content holds them verbatim, where TOML
+- string values are often multi-line and contain quotes, `#`, `=` - XML text content holds them verbatim, where TOML
   needs `'''…'''` blocks whose rules developers get wrong;
 - a comment per entry is an attribute, next to the value, not a separate `# comment` line that drifts;
 - `.resx`/`.resw` (the import source) are XML too, so one small reader serves both.
@@ -69,8 +69,8 @@ entries the neutral file lacks are warned about (never used), a different kind i
 ### 3. Culture and fallback
 
 `culture()` follows Windows' display language (`GetUserPreferredUILanguages`) until `set_culture` is called
-(`CurrentUICulture`-like). A lookup in `fr-CA` tries `fr-CA`, then `fr` (the .NET order), then — a Kubuno addition for
-sets that only ship specific cultures, like drive's `fr-FR` — the other cultures of the same language (`fr-FR`), then
+(`CurrentUICulture`-like). A lookup in `fr-CA` tries `fr-CA`, then `fr` (the .NET order), then - a Kubuno addition for
+sets that only ship specific cultures, like drive's `fr-FR` - the other cultures of the same language (`fr-FR`), then
 the neutral file. `"invariant"` (or `""`) shows the neutral values.
 
 `set_culture` raises a change notification (`on_culture_changed`); the view layer subscribes once per process and
@@ -94,7 +94,7 @@ kubuno_desktop::resources::set_culture("fr");                  // every {Res …
   collision is a compile error at the path literal), finds the satellites beside it, and embeds everything with
   `include_str!` / `include_bytes!` (absolute paths, so rustc rebuilds when one changes): no loose file at run time.
 - Generated code is tiny (one accessor per entry calling the embedded `StaticSet`); the satellites are embedded as
-  text and parsed on first use of their culture (Drive's own approach for 49 × 1 450 strings — compile time stays
+  text and parsed on first use of their culture (Drive's own approach for 49 × 1 450 strings - compile time stays
   flat). Parsed cultures are kept for the process, which is what lets accessors return `&'static str`.
 - Every set registers itself for `{Res …}` lookups **before `main`** (a `.CRT$XCU` initializer) and again on first use.
 - **rust-analyzer**: the `data_source!` pitfall (no `Span::local_file` in its proc-macro server) is handled the same
@@ -167,7 +167,7 @@ missing translations; `import-resx` converts one file. Drive would then use `kub
 
 ---
 
-## Part 2 — As built (2026-10-01)
+## Part 2 - As built (2026-10-01)
 
 ### Crates (desktop: `windows/src/crates/`)
 
@@ -179,14 +179,14 @@ missing translations; `import-resx` converts one file. Drive would then use `kub
 | `kubuno-resources-tool` | `import-locales`, `import-resx`, `check`. |
 | `kubuno-desktop` (facade) | `kubuno_desktop::resources` (the crate) and `kubuno_desktop::resources!`. |
 
-Changes in shared crates (targeted): `kubuno-desktop-views` — new `resources.rs` (`{Res}` parsing, resolution, `install`:
+Changes in shared crates (targeted): `kubuno-desktop-views` - new `resources.rs` (`{Res}` parsing, resolution, `install`:
 image resolver + icon loader + repaint on culture change), `binding.rs` (`parse_binding` recognises `{Res}`,
 `PropSource::resolve` goes through it), `common.rs` (colour/font/cursor bindings and `BackgroundImage`),
 `window.rs` (window `Icon`), `families/media.rs` (no base-dir join for `kbres:`), `runtime.rs` (`install()` in
 `with_port`), `design.rs` (`view_title` resolves a `{Res}` title), `protocol.rs` (`HostMessage::SetResources`,
-`ResourceSetWire`, `apply_resources`), `examples/view_embed.rs` (handles it). `kubuno-desktop-controls/styled.rs` — the
+`ResourceSetWire`, `apply_resources`), `examples/view_embed.rs` (handles it). `kubuno-desktop-controls/styled.rs` - the
 `kbres:` resolver hook (`set_resource_image_resolver`), SVG routed to `icon_image::decode_svg_bytes`.
-`kubuno-views-ls` — new `resources.rs`, wired in `server.rs`. Workspace `Cargo.toml` and `Kubuno.Desktop.slnx`
+`kubuno-views-ls` - new `resources.rs`, wired in `server.rs`. Workspace `Cargo.toml` and `Kubuno.Desktop.slnx`
 (four `.rsproj`).
 
 ### Visual Studio (vskubuno)
@@ -206,18 +206,18 @@ image resolver + icon loader + repaint on culture change), `binding.rs` (`parse_
 
 ### Verified
 
-- **Tests**: Rust — model 15 (format round trip, diagnostics with ranges, XML, cultures, names, import), runtime 6 +
+- **Tests**: Rust - model 15 (format round trip, diagnostics with ranges, XML, cultures, names, import), runtime 6 +
   generated 1 (culture fallback incl. `fr-CA` → `fr`, `de-AT` → `de-DE`, loaded sets, URIs, notifications, the real
   macro expansion incl. `.CRT$XCU` registration), macros 3 (codegen, errors, path resolution), kubuno-desktop-views 5
   (`{Res}` parsing, **binding refresh on culture change**, `setResources`), LS 1 (completion, hover, definition,
-  **diagnostics**). C# — 22 in `Kubuno.Desktop.Tests/Resources` (format round trip identical to Rust's, names,
+  **diagnostics**). C# - 22 in `Kubuno.Desktop.Tests/Resources` (format round trip identical to Rust's, names,
   references, **editor model** incl. undo/redo and persistence, F12 logic, `setResources` encoding, project scan,
   editor grid/ICO). Full suites: kubuno-desktop-views 701, LS 132, `Kubuno.Desktop.Tests` 616, `Kubuno.Rust.Tests` 383.
   `cargo clippy -D warnings` clean on every touched crate; 0 C# warnings.
 - **Sample**: English → French live switch (title, localised banner, colour, texts, button), `fr-CA` falls back to
   `fr`, dark theme; the drive locales convert to 49 files (1 432 strings, a few untranslated per culture).
 - **Own VS hive `KubunoRes`** (VSIX built from this tree): resource file created from the item template; strings
-  added in the grid; an image added (Add Existing File — copied into `Resources/`, Images category with thumbnail);
+  added in the grid; an image added (Add Existing File - copied into `Resources/`, Images category with thumbnail);
   nesting in Solution Explorer; designer showing `{Res}` values, switched to French and back with the Language picker; the frame title follows the language too, also on the bundled design surface;
   Button `Image` set to `{Res app_icon}` through the Select Resource dialog (written to the XML, one undo unit);
   F12 from `Resources::logo()` / `Resources::culture_status()` to their entries; build and F5 (the app starts in the

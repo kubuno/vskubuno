@@ -18,7 +18,7 @@
 
     <RibbonBackstage Header="Fichier">
       <BackstageTab x:Name="bs_info" Header="Informations" Icon="Info">
-        <Label Text="Document sans titre — modifié il y a quelques instants."/>
+        <Label Text="Document sans titre - modifié il y a quelques instants."/>
       </BackstageTab>
       <BackstageSeparator/>
       <BackstageButton x:Name="bs_close" Label="Fermer" SmallIcon="X" OnClick="close_click"/>

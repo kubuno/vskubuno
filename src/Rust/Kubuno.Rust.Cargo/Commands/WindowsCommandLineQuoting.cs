@@ -6,7 +6,7 @@ namespace Kubuno.Rust.Cargo.Commands
     /// <summary>
     /// Joins argv-style arguments into a single Windows command-line string using the same
     /// quoting rules as the Microsoft C runtime / <c>CommandLineToArgvW</c> (and, notably, the
-    /// same rules .NET's own <c>Process</c> applies when given an argument list) — so an
+    /// same rules .NET's own <c>Process</c> applies when given an argument list) - so an
     /// argument round-trips correctly however many literal backslashes and quotes it contains.
     /// </summary>
     internal static class WindowsCommandLineQuoting

@@ -1,13 +1,13 @@
-# Kubuno Calendar (desktop) — design note
+# Kubuno Calendar (desktop) - design note
 
 Status: design of record for the native desktop version of the **Calendar** module (`kubuno-calendar.exe`),
-started 2026-10-12. User goal: the desktop app catches up with the **whole** web Calendar — every view and
+started 2026-10-12. User goal: the desktop app catches up with the **whole** web Calendar - every view and
 every feature, not a subset. Method: the one of the Office desktop apps (`DATA-DESKTOP.md`, `PROJECTS-DESKTOP.md`,
 `DOCUMENTS-EDITING.md`): a platform-neutral core crate that ports the web's pure logic, a portable desktop app
 in `calendar/desktop/common`, and only the Win32 window and its drawing in `calendar/desktop/windows`. §8 is the
 as-built log and §9 the feature-coverage table, kept up to date as the increments land.
 
-Reference for behaviour and looks: **the web app**, `calendar/web/src` — `CalendarApp.tsx` (the orchestrator),
+Reference for behaviour and looks: **the web app**, `calendar/web/src` - `CalendarApp.tsx` (the orchestrator),
 `MonthView.tsx` / `WeekView.tsx` / `DayView.tsx` / `YearView.tsx` / `ScheduleView.tsx`, `EventEditor.tsx`,
 `RecurrenceCustomDialog.tsx`, `CalendarSidebarBody.tsx`, and the pure helpers `calendarUtils.ts`, `rrule.ts`,
 `holidays.ts`, `moon.tsx`, `calendarColors.ts`. The repo follows the platform layout (`common/ server/ web/
@@ -18,7 +18,7 @@ desktop/ mobile/`); Calendar had no `common/` or `desktop/` before this work.
 > the server** (the `rrule` crate in `server/src/services/recurrence_service.rs`), which returns ready
 > `EventInstance`s over the requested window. The Documents file-save method (content digest, `PUT …/data`,
 > 2 MiB cap, join/leave edit sessions, offline journal) **does not apply**, as with Data. This is the central
-> divergence from the user's brief, which assumed client-side RRULE expansion and client-computed holidays —
+> divergence from the user's brief, which assumed client-side RRULE expansion and client-computed holidays -
 > see §3 and §6.
 
 ## 1. What the web app does
@@ -36,7 +36,7 @@ desktop/ mobile/`); Calendar had no `common/` or `desktop/` before this work.
 | `ScheduleGrid.tsx` (`:71`) | the « Find a time » tool inside the editor: `HOUR_H=44`, `SNAP_MIN=15`, busy bands from `findCommonSlots` |
 | `SearchResultsView.tsx` (`:38`) | client-side filter over ±1 year of events |
 | `calendarUtils.ts` | the layout math (see §1.2) |
-| `rrule.ts` | RRULE presets, custom round trip, French humanizer — **no expansion** |
+| `rrule.ts` | RRULE presets, custom round trip, French humanizer - **no expansion** |
 | `holidays.ts` | public holidays fetched from the **core** (`GET /holidays`), mapped to all-day events |
 | `moon.tsx` | synodic moon-phase computation, 100% client-side |
 | `calendarColors.ts` / `EVENT_SWATCHES` | the colour palettes |
@@ -44,13 +44,13 @@ desktop/ mobile/`); Calendar had no `common/` or `desktop/` before this work.
 
 ### 1.2 Pure layout math (`calendarUtils.ts`)
 
-- `calendarGrid(month, weekStartsOn)` (`:138`) — `startOfWeek(startOfMonth) … endOfWeek(endOfMonth)`.
-- `layoutDayEvents(evs)` (`:103`) — side-by-side overlap columns: sort by start then longer-first, group
+- `calendarGrid(month, weekStartsOn)` (`:138`) - `startOfWeek(startOfMonth) … endOfWeek(endOfMonth)`.
+- `layoutDayEvents(evs)` (`:103`) - side-by-side overlap columns: sort by start then longer-first, group
   transitive overlaps into clusters, give each event the first free column, split the cluster width
   (`100/cols`); `MIN_SPAN=30` min.
-- `layoutBanners(events, days)` (`:247`) — clip each all-day/multi-day event to the visible days, greedily
+- `layoutBanners(events, days)` (`:247`) - clip each all-day/multi-day event to the visible days, greedily
   stack into non-overlapping rows; returns `{segs, rows}` with `startCol/endCol/continuesBefore/After/row`.
-- `isBannerEvent`/`bannerStartDay`/`bannerEndDay` (`:202-231`) — all-day events are stored as UTC-midnight
+- `isBannerEvent`/`bannerStartDay`/`bannerEndDay` (`:202-231`) - all-day events are stored as UTC-midnight
   instants and read offset-independently (`allDayLocal`, `:212`); a timed event ending exactly at local
   midnight is pulled back a day.
 - `shade(hex, factor)` (`:189`), `isWeekend` (`:37`), `writableCalendars`/`isCalendarLocked` (`:45`/`:52`),
@@ -67,7 +67,7 @@ desktop/ mobile/`); Calendar had no `common/` or `desktop/` before this work.
 - **Occurrence expansion is server-side** (`services/recurrence_service.rs`): `expand(event, color, from,
   until)` builds `DTSTART…\nRRULE:…`, parses with the `rrule` crate, enumerates `.after(from).before(until)
   .all(500)`, drops `exdates`, and emits `EventInstance`s with id `"{event_id}_{occ_ts}"`. `GET /calendar/
-  events?from&until&calendar_ids` returns `{ events: EventInstance[] }` — the ready occurrences for the window.
+  events?from&until&calendar_ids` returns `{ events: EventInstance[] }` - the ready occurrences for the window.
   **The web, the desktop and mobile all receive expanded instances**; no client expands recurrences.
 - **Calendars** (`calendar.calendars`): personal/shared/subscription/birthday; `caldav_token`;
   `subscription_url`/`last_synced_at` for mirrored `.ics` feeds; `calendar.calendar_shares` for read/write
@@ -86,7 +86,7 @@ desktop/ mobile/`); Calendar had no `common/` or `desktop/` before this work.
 - **CalDAV is real, server-side** (`handlers/caldav/mod.rs`): `/.well-known/caldav`, `/caldav/:username/`
   (principal), `/caldav/:username/:token/` (collection, token = `caldav_token`), `/caldav/:username/:token/:uid`
   (resource). Token-authenticated, outside the Axum `require_auth` layer.
-- **module.toml**: id `calendar`, port 3102; two sidebar items — `/calendar` (« Calendar ») and
+- **module.toml**: id `calendar`, port 3102; two sidebar items - `/calendar` (« Calendar ») and
   `/calendar/scheduling` (« Planification »); scalar settings include `week_starts_on`, `show_weekends`,
   `show_week_numbers`, `default_view`, `day_start_hour`, `min_event_height`, `dim_past_events`,
   `default_event_duration_min`, `default_reminder_min`, `secondary_timezone`, `notifications_mode`. The
@@ -102,7 +102,7 @@ calendar/
   desktop/{linux,macos}/                                     thin entry points (later)
 ```
 
-### 2.1 `kubuno-calendar-core` (`calendar/common/core`) — as built
+### 2.1 `kubuno-calendar-core` (`calendar/common/core`) - as built
 
 A standalone, platform-neutral crate (path dependency, sans-IO like `kubuno-drive-core`), ported from the web's
 pure logic. No UI, no Windows, no network. It does **not** expand recurrences (that is the server's job, §1.3);
@@ -123,14 +123,14 @@ for `wasm32-unknown-unknown`, `x86_64-unknown-linux-gnu` and `aarch64-apple-darw
 
 ### 2.2 Desktop app (scaffold + Increment A)
 
-- `desktop/common/kubuno-calendar-desktop-common` — the portable app: launch options (`kubuno-calendar
+- `desktop/common/kubuno-calendar-desktop-common` - the portable app: launch options (`kubuno-calendar
   [--dark] [--culture fr|en] [--view month|week|day|year|schedule] [--date yyyy-mm-dd] [--sample|--live]`), the
   in-memory view state, and (later) a **Calendar REST client** over the shell's token broker
-  (`kubuno-office-desktop-common::api::client` pattern — or a calendar-local transport). Like Data, there is
+  (`kubuno-office-desktop-common::api::client` pattern - or a calendar-local transport). Like Data, there is
   **no file-save session / journal**: the client will `listEvents(from, until)` for the window, mutate with
   `events`/`calendars` REST calls, and let the server re-expand. Offline is a read cache (later tour).
-- `desktop/windows/kubuno-calendar` — `kubuno-calendar.exe`: the main form `views/calendar_window.kbview`
-  (TitleBarStyle Tall with header menus, a declarative ribbon/toolbar matching the web nav — Today, ‹ ›, the
+- `desktop/windows/kubuno-calendar` - `kubuno-calendar.exe`: the main form `views/calendar_window.kbview`
+  (TitleBarStyle Tall with header menus, a declarative ribbon/toolbar matching the web nav - Today, ‹ ›, the
   period title, the view switcher), and the custom control `MonthGrid` drawn with the framework's `Graphics`
   (Direct2D), laying events out through `kubuno_calendar_core::layout`. Increment A renders the **Month view
   read-only at parity**; later increments add Week/Day/Year/Schedule, the event editor, the sidebar/mini-month,
@@ -160,37 +160,37 @@ derived to match the framework dark surfaces. Font stays system (desktop font de
 
 ## 4. Increments
 
-- **Note** — this file (commit 1, vskubuno).
-- **Core** — `kubuno-calendar-core` (date + model + rrule + layout + moon + colors), unit tests mirroring the
+- **Note** - this file (commit 1, vskubuno).
+- **Core** - `kubuno-calendar-core` (date + model + rrule + layout + moon + colors), unit tests mirroring the
   web, cross-target checks. *(as built, commit 2, calendar.)*
-- **A** — the Win32 window + the `MonthGrid` custom control rendering the **Month view read-only at parity**
+- **A** - the Win32 window + the `MonthGrid` custom control rendering the **Month view read-only at parity**
   (events laid out via the core, banners stacked, chips + « +N », today/selection, moon marker), light + dark,
   from a seeded/fixture dataset (live server deferred). *(started this tour.)*
-- **B** — Week / Day / custom N-day time grids (overlap columns, now-line, banner row), Year and Schedule views.
-- **C** — the event editor (all fields, recurrence dialog, reminders, guests, rooms, colour), create/edit/delete
+- **B** - Week / Day / custom N-day time grids (overlap columns, now-line, banner row), Year and Schedule views.
+- **C** - the event editor (all fields, recurrence dialog, reminders, guests, rooms, colour), create/edit/delete
   wired to the REST calls with the recurring scope dialog; the sidebar (calendar list, mini-month, holidays,
   world clock, moon, weather), filters, import/subscribe/share, CalDAV settings, appointment scheduling, the
   notification worker, settings.
-- **Live server + VS** — a dev core + the calendar module + drive on a local PostgreSQL (`kubuno_dev_calendar`)
+- **Live server + VS** - a dev core + the calendar module + drive on a local PostgreSQL (`kubuno_dev_calendar`)
   for a real round trip; the views in the VS designer, `Kubuno.Calendar.slnx` regenerated.
 
 ## 5. Risks and known divergences
 
 - **Server coupling (confirmed approach, no file save).** Calendar cannot be meaningfully exercised without a
   dev core + the module on PostgreSQL. Read-only parity of the views is testable against a fixture event set;
-  the true round trip (create/edit/recurring scope) needs the dev core — a later tour. This matches Data's
+  the true round trip (create/edit/recurring scope) needs the dev core - a later tour. This matches Data's
   approach; the Documents file-save method is not used.
-- **The brief's assumptions corrected.** (a) RRULE **expansion** is server-side, not client-side — the core
+- **The brief's assumptions corrected.** (a) RRULE **expansion** is server-side, not client-side - the core
   ports parse/build/humanize only, as the web does. (b) **Holidays** are a core server feed (`/holidays`), not
-  a client computation — there is nothing to port; only **moon** is client-computed, and it is in the core.
-- **No dark theme in the module CSS** — the desktop derives dark from the framework shell (§2.3); any mismatch
+  a client computation - there is nothing to port; only **moon** is client-computed, and it is in the core.
+- **No dark theme in the module CSS** - the desktop derives dark from the framework shell (§2.3); any mismatch
   is a framework-theme question, not a module one.
 - **Timezone.** The web reads instants in the browser's local zone; the core takes `offset_minutes` from the
   platform. A fixed offset does not model a DST transition inside a visible range (rare for a month grid); the
   live app will pass the OS offset per instant in a later tour if needed. All-day events are offset-independent
   (UTC date), matching the web.
 - **i18n leak.** The web's RRULE humanizer and several defaults are hard-coded French regardless of locale; the
-  core reproduces that exactly (English returns the French humanizer form), so the two agree — not a new bug.
+  core reproduces that exactly (English returns the French humanizer form), so the two agree - not a new bug.
 - **Fonts.** DirectWrite with the web family names + system fallback, so label wrapping can differ by a few px.
 
 ## 6. Verification
@@ -199,27 +199,27 @@ derived to match the framework dark surfaces. Font stays system (desktop font de
 Linux and macOS; golden parity of the layout against the web (same month/events → identical grid, banner rows
 and overlap columns); for Increment A, side-by-side captures of the desktop Month view vs the web Month view on
 the same month and data, light and dark, with the differences listed; the live server round trip on a calendar
-dev core with its own database — a later tour.
+dev core with its own database - a later tour.
 
 ## 7. Open questions for the user
 
 1. Confirm the **server-coupled** approach (no Documents-style file save) and that standing up the calendar dev
    core (core + module + drive on local PostgreSQL `kubuno_dev_calendar`) is in scope for the increment that
    needs the live round trip.
-2. **Dark theme**: the module has none on the web — is deriving it from the framework shell acceptable, or
+2. **Dark theme**: the module has none on the web - is deriving it from the framework shell acceptable, or
    should a calendar dark token set be authored (and mirrored back to the web)?
 3. Scope/priority of the heavier server features for the desktop (CalDAV setup page, appointment scheduling,
    polls, weather, analytics) vs the core calendaring (views + event editor + recurrence).
 
 ## 8. Log
 
-**2026-10-12** — note written (commit 1). Shared core `kubuno-calendar-core` built (commit 2): `date`, `model`
+**2026-10-12** - note written (commit 1). Shared core `kubuno-calendar-core` built (commit 2): `date`, `model`
 (`Instant`/`LocalDateTime`, lossless `EventInstance`), `rrule` (presets, custom round trip, FR humanizer),
 `layout` (month grid, overlap columns, banner stacking, `shade`), `moon`, `colors`. **29 unit tests pass** on
 Windows; `clippy --all-targets -- -D warnings` clean; `cargo check` clean for `wasm32-unknown-unknown`,
 `x86_64-unknown-linux-gnu`, `aarch64-apple-darwin`. Build dir `E:\kubuno-build\agent-calendar\target`.
 
-**2026-10-12 (as built — Increment A, Month view)** — the `desktop/` workspace: `desktop/common/
+**2026-10-12 (as built - Increment A, Month view)** - the `desktop/` workspace: `desktop/common/
 kubuno-calendar-desktop-common` (launch options, the `CalendarView` state with navigation + period title, the
 offline sample dataset, the platform extension points incl. the Windows local clock + zone offset; 7 tests) and
 `desktop/windows/kubuno-calendar` (`kubuno-calendar.exe`): the `calendar_window.kbview` with the Tall title bar,
@@ -230,18 +230,18 @@ principal-phase markers) in Direct2D, light and dark faithful to the web. Verifi
 `clippy -D warnings` clean; captured light + dark (`E:\kubuno-build\agent-calendar\captures\cal-month-*.png`).
 The desktop crates were added to `Kubuno.Calendar.slnx` (a `/Desktop/` folder + two `.rsproj`).
 
-**2026-10-12 (as built — Increment B, Week / Day / Agenda)** — the core gained `layout_day` (overlap columns +
+**2026-10-12 (as built - Increment B, Week / Day / Agenda)** - the core gained `layout_day` (overlap columns +
 vertical minutes for the time grids) and `week_days`, with tests (**31 core tests**). Two new controls:
-`TimeGrid` (the Day and Week time grids — the hour gutter, the day header with the today circle, the all-day
+`TimeGrid` (the Day and Week time grids - the hour gutter, the day header with the today circle, the all-day
 banner row, the scrollable 24-hour grid at `PX_PER_HOUR`, overlap columns via `layout_day`, the red « now »
-line, wheel scroll) and `AgendaList` (the Schedule / « Planning » view — one group per non-empty day with its
+line, wheel scroll) and `AgendaList` (the Schedule / « Planning » view - one group per non-empty day with its
 all-day and timed events). The window switches between Month / Day-Week / Agenda; the view switcher highlights
 the active view (Primary) and the « Année » button stays disabled until the Year view lands. Verified: `cargo
 build` + tests; `clippy -D warnings` clean; captured Week, Week-dark, Day, Agenda, Agenda-dark
 (`E:\kubuno-build\agent-calendar\captures\cal-{week,week-dark,day,agenda,agenda-dark}.png`). Live server and the
 VS designer render on the main instance are a later tour.
 
-**2026-10-12 (visual-fidelity pass — Month / Week / Day / Agenda)** — matched the web source token by token
+**2026-10-12 (visual-fidelity pass - Month / Week / Day / Agenda)** - matched the web source token by token
 (`web/src/theme.css`, `MonthView.tsx`, `WeekView.tsx`, `DayView.tsx`, `ScheduleView.tsx`, `EventBanners.tsx`,
 `CalendarToolbar.tsx`). Before → after, with the web reference:
 
@@ -263,36 +263,36 @@ Verified: `cargo build` + 31 core / 7 common tests; `clippy -D warnings` clean; 
 (`E:\kubuno-build\agent-calendar\captures\cal-{month-light,month-dark,week,week-dark,day,agenda,agenda-dark}.png`).
 The live web side-by-side (same data) is pending the shared dev stack.
 
-**2026-10-12 (live web side-by-side + now-line dot removal)** — with the shared dev stack up
+**2026-10-12 (live web side-by-side + now-line dot removal)** - with the shared dev stack up
 (`http://127.0.0.1:18900`, calendar `cafe0000-…-0001`, October 2026 data), captured the REAL web Calendar for
 Month/Week/Day/Agenda (headless Chrome as devtester, `agent-devstack/tools/shoot-cal.ps1`) and diffed it
 against the desktop. **The grid styling matches**; residual gaps fixed from the live web: (a) the Day/Week
-timed block shows the title then the time range (and location) below — not a time prefix (new
+timed block shows the title then the time range (and location) below - not a time prefix (new
 `draw_timed_block`); (b) the Week/Day titles read « Semaine du 12 octobre 2026 » / « Mercredi 14 octobre 2026 »
 (core `DateLong`/`FullDate`, title-cased); (c) the agenda card subtitle appends the location.
 **User request (both platforms):** removed the small round dot at the start of the « now » line (web
-`WeekView.tsx`/`DayView.tsx`/`CalendarMiniPanel.tsx`, desktop `TimeGrid`) — the line and the gutter time pill
+`WeekView.tsx`/`DayView.tsx`/`CalendarMiniPanel.tsx`, desktop `TimeGrid`) - the line and the gutter time pill
 stay; the web dist was rebuilt (`tsc -b` clean) and redeployed to the running stack. Captures:
 `E:\kubuno-build\agent-calendar\captures\{web,cal}-{month,week,day,agenda}-*.png` + `*-nodot.png`.
 
 Residual, non-blocking differences (desktop vs web): the desktop is a **standalone window** (no host
-sidebar/shell — architectural); real server events all inherit the calendar's blue (the desktop sample is
-multi-colour — a data, not styling, difference); minor web-only extras not yet ported (the « GMT+2 » gutter
+sidebar/shell - architectural); real server events all inherit the calendar's blue (the desktop sample is
+multi-colour - a data, not styling, difference); minor web-only extras not yet ported (the « GMT+2 » gutter
 label, a moon marker in the Week day-header, the Day view's centred full-date sub-header, the agenda
 « (Jour x/n) » multi-day hint).
 
-**Server-coupled `--doc` live load + CRUD — NOT started this tour (scope).** Plan: build the desktop shell
+**Server-coupled `--doc` live load + CRUD - NOT started this tour (scope).** Plan: build the desktop shell
 `kubuno-desktop.exe` and colocate it with `kubuno-calendar.exe`, seed devtester creds into a sandbox
 (`USAGE.txt` steps 2-4), then wire the app's `--doc <calendar-id>` branch to `GET /calendar/events?from&until`
 over the broker token source (deps `kubuno-desktop-sync`/`-account`, as Projects does), then
 create/edit/delete + the recurrence (RRULE) editor against the REST API. **Compatibility consideration:** the
 stack's shell builds from core **main** while this app targets the framework git tag `desktop-v0.1.2-alpha`;
-the named-pipe broker protocol must match — build the shell from the same tag, or bump the app's framework,
+the named-pipe broker protocol must match - build the shell from the same tag, or bump the app's framework,
 before relying on the broker. This is the next increment.
 
-**2026-10-12 (server-coupled `--doc`: live load + CRUD round-trip)** — the desktop is now connected to the
+**2026-10-12 (server-coupled `--doc`: live load + CRUD round-trip)** - the desktop is now connected to the
 server through the Kubuno shell's token broker.
-- **Broker compatibility — resolved by diff (not guessed):** the named-pipe broker code
+- **Broker compatibility - resolved by diff (not guessed):** the named-pipe broker code
   (`kubuno-desktop-account/src/broker/{proto,transport,client,server,mod}.rs` + `owner/key/app/store/migrate.rs`
   and `kubuno-desktop-sync::tokens`) is **byte-identical** between framework tag `desktop-v0.1.2-alpha` and
   core `main`, so a **main-built `kubuno-desktop.exe`** is compatible with this app (also independently confirmed
@@ -304,7 +304,7 @@ server through the Kubuno shell's token broker.
   `KUBUNO_SANDBOX_DIR`** (PowerShell `Start-Process` dropped it here; launching from a shell that exports the
   var works).
 - **Same-data side-by-side (what we could not do before):** opened `cafe0000-…-0001` and the desktop renders the
-  SAME real events as the web — Month/Week/Agenda match element for element (recurring standups expanded by the
+  SAME real events as the web - Month/Week/Agenda match element for element (recurring standups expanded by the
   server, the multi-day Lyon trip, the all-day holiday, the `· Salle A`/`· Lyon` locations). Captures
   `cal-{month,week,agenda}-live.png` vs `web-{month,week,agenda}-light.png`.
 - **CRUD round-trip (live):** a « Nouvel événement test » toolbar button `POST`s an event → it appears in the
@@ -312,7 +312,7 @@ server through the Kubuno shell's token broker.
   it → gone from the server (0 left) and the desktop shows the real events with the 15th clean
   (`cal-month-after-delete.png`).
 
-### 8.1 Event editor dialog (create / edit / recurrence) — surfaced and proven live
+### 8.1 Event editor dialog (create / edit / recurrence) - surfaced and proven live
 
 - **The editor dialog** (`views/event_editor.{kbview,rs}`, `EventEditor`) is now the real create/edit surface,
   replacing the test buttons: a `WindowKind="Dialog"` panel (title, all-day, start/end date + time, a
@@ -327,7 +327,7 @@ server through the Kubuno shell's token broker.
   - **Recurrence:** picked « Toutes les semaines » → `collect()` built `FREQ=WEEKLY;BYDAY=MO` → `POST` → `200`;
     the server expands it and the desktop renders the occurrence on every Monday (12/19/26, `cal-dpiaware.png`).
   - **Delete** still round-trips via REST (`204`), used here to clean up the test events afterwards.
-- **ROOT-CAUSE FIX — two-way bindings.** The declarative view bindings default to **`OneWay`**
+- **ROOT-CAUSE FIX - two-way bindings.** The declarative view bindings default to **`OneWay`**
   (`kubuno-desktop-views binding.rs`): a plain `Text="{Binding Title}"` only *displays* the field and never
   writes the user's input back to the view-model. The editor's first version omitted the mode, so every field
   (`collect()` read `self.title == ""`) produced an empty payload → the server rejected it `HTTP 422`. The fix
@@ -335,7 +335,7 @@ server through the Kubuno shell's token broker.
   `Recurrence`, `Scope`, `Location`, `Description`). Lesson for every future kbview form: input fields need
   `Mode=TwoWay` or they silently do not persist.
 - **Testing notes (UI automation).** Framework `TextField`/`Dropdown` controls do **not** honour UIA
-  `ValuePattern.SetValue` (and expose no readable `Value`) — drive them with real focus + keystrokes
+  `ValuePattern.SetValue` (and expose no readable `Value`) - drive them with real focus + keystrokes
   (`SendKeys`), and a `Dropdown` by focus + arrow-down. The editor opens as an **owned** window (not a
   desktop-root child) and Windows foreground-lock can keep it from becoming foreground, so find it via
   `EnumWindows` by title (`Nouvel…`/`Modifier…`). For chip double-clicks the automating process must be
@@ -349,12 +349,12 @@ server through the Kubuno shell's token broker.
   a fresh process shows everything. The desktop reload path is correct (`on_saved → reload_live → on_loaded`,
   and `account_api::request` does no client-side caching). Worth revisiting server-side if it bites users.
 - Note: the broker access token expires (~15 min) and separate logins/web captures rotate it, so a long session
-  shows an empty grid until the sandbox is re-seeded (`USAGE.txt`) — an ops detail, not an app bug.
+  shows an empty grid until the sandbox is re-seeded (`USAGE.txt`) - an ops detail, not an app bug.
 
 ### 8.2 Editor sub-parts: custom recurrence, calendar picker, colour swatches (proven live)
 
 - **Custom-recurrence dialog** (`views/recurrence_dialog.{kbview,rs}`, web `RecurrenceCustomDialog.tsx`):
-  « Personnalisé… » in the recurrence field opens a 400px dialog over the core's `CustomRecurrence` — interval
+  « Personnalisé… » in the recurrence field opens a 400px dialog over the core's `CustomRecurrence` - interval
   + unit, the weekly weekday toggles (a `WeekdayPicker` custom control, L M M J V S D, Monday first), the
   monthly by-month-day / by-weekday choice, and the Never / On-date / After-N end rule, with a live French
   summary (`describe_rrule`). Proven live: set weekly + Mon/Wed → `FREQ=WEEKLY;BYDAY=MO,WE`, which the server
@@ -365,11 +365,11 @@ server through the Kubuno shell's token broker.
   moves the event, picking a swatch sets the colour (first swatch = « default » = clear). Proven live: one
   event created with the gold swatch AND moved to a second calendar → server shows `color #f9ab00`,
   `calendar_id = <Projet Beta>`. Light `cal-editor-cc.png`, dark `cal-editor-cc-dark.png`.
-- **KEY PATTERN — read custom controls on Save, not in `collect`/`run`.** A `Custom<T>` control is torn down
+- **KEY PATTERN - read custom controls on Save, not in `collect`/`run`.** A `Custom<T>` control is torn down
   when its dialog closes, so `self.ctrl.with(|v| …)` returns `None` after `show_dialog` returns. Read the
   control's state in the click handler **before** `close()` (the colour in `save_click`, the RRULE in the
   recurrence dialog's `done_click`) and stash it in a plain field that `collect`/`run` then reads. Plain
-  **bindings** (TwoWay fields) persist fine — only custom-control reads need this. (First symptom: colour saved
+  **bindings** (TwoWay fields) persist fine - only custom-control reads need this. (First symptom: colour saved
   as the calendar default, byday dropped from the RRULE.)
 - `EventWrite` now also carries `description`, `color`/`clear_color`, `reminders`, `attendees`, the three
   guest-permission flags and `calendar_target`; `save_event` serialises them (description now sent too).
@@ -400,7 +400,7 @@ server through the Kubuno shell's token broker.
 
 - **Sidebar DONE** (`controls/mini_month.rs` + `controls/calendar_list.rs`, web `CalendarSidebarBody.tsx` /
   `CalendarMiniPanel.tsx`): a left panel docked in `calendar_window.kbview` with a `MiniMonth` navigator (month
-  arrows, narrow weekday row, round day cells — today a filled accent disc, other-month dimmed) and a
+  arrows, narrow weekday row, round day cells - today a filled accent disc, other-month dimmed) and a
   `CalendarList` (« Mes agendas »: a colour-tinted checkbox + name per calendar). Both are custom paint
   controls, like `WeekdayPicker`/`ColorSwatches` (chosen over the framework `MonthCalendar` for a token-exact
   look). Wiring, **proven live**: toggling a calendar hides/shows its events across Month/Week/Day (a
@@ -417,11 +417,11 @@ server through the Kubuno shell's token broker.
 - **Genuine web↔desktop side-by-side of the EDITOR: still blocked, now with the precise reason.** Headless
   Chrome (own ephemeral `--user-data-dir`, killed by PID / by profile-dir, never the user's) logs in and renders
   the calendar + the **web sidebar** once `Emulation.setDeviceMetricsOverride` is set (without it,
-  `captureScreenshot` returns a blank frame). **The web `EventEditor` has NO route** — it is React state in
+  `captureScreenshot` returns a blank frame). **The web `EventEditor` has NO route** - it is React state in
   `CalendarApp.tsx` (`{createDay !== null && <CreateEventModal/>}`), opened by `setCreateDay` via the **'c'
   keyboard shortcut** (`window.addEventListener('keydown')`), `onDayCreate` (double-click a day) or the Create
-  menu. In headless, synthetic keydown — both CDP `Input.dispatchKeyEvent` AND JS
-  `window.dispatchEvent(new KeyboardEvent('keydown',{key:'c'}))` — does **not** fire the handler (even view
+  menu. In headless, synthetic keydown - both CDP `Input.dispatchKeyEvent` AND JS
+  `window.dispatchEvent(new KeyboardEvent('keydown',{key:'c'}))` - does **not** fire the handler (even view
   shortcuts like 'w' don't), and synthetic Create-menu / day clicks only mount the transient quick card, never
   `.kb-form-title-field`. So the full web editor can't be opened programmatically here. Fallback (per the
   coordinator): editor fidelity validated token-by-token against the extracted spec + the desktop captures
@@ -432,7 +432,7 @@ server through the Kubuno shell's token broker.
 ### 8.5 Year view, Search, and the Moon/Weather/Booking sidebar sections (proven live)
 
 - **Year view** (`controls/year_grid.rs`, web `YearView.tsx`): a « Année » switcher entry drawing a 4×3 grid of
-  mini-months — each with the month name (accent for the current month) + its event count, a weekday row,
+  mini-months - each with the month name (accent for the current month) + its event count, a weekday row,
   today a filled accent disc, and up to three event-colour dots per day. Clicking a day opens that Day, a month
   name opens that Month. `live::fetch_year` loads the whole year for the dots; `reload_live` picks the window by
   view mode. **Proven live** (clicking Oct 14 → Day view of 14 Oct, Revue produit). Light `cal-year-dpiaware.png`,
@@ -443,7 +443,7 @@ server through the Kubuno shell's token broker.
   a result click opens that event's Day. **Proven live** (« revue » → 1 result → Day of 14 Oct). Light
   `cal-search.png`, web side-by-side `search-side-by-side-light.png`.
 - **Sidebar Moon / Weather / Booking** (web `CalendarSidebarBody` sections): a « Lune » row (a `MoonWidget`
-  drawing today's moon via a new `draw.rs::draw_moon` — the lit limb carved/extended by a terminator ellipse —
+  drawing today's moon via a new `draw.rs::draw_moon` - the lit limb carved/extended by a terminator ellipse -
   with the phase name + illumination from the core, e.g. « Premier croissant 1% » = the web's « Waxing crescent
   1% »); a « Météo » section with « Ajouter un lieu »; a « Pages de réservation » section. `cal-sidebar-widgets.png`,
   side-by-side `sidebar-widgets-side-by-side.png`. The full weather forecast widget (the `/weather/forecast`
@@ -457,7 +457,7 @@ server through the Kubuno shell's token broker.
 
 ## 9. Feature coverage
 
-✔ done and verified · ◐ implemented and unit-tested, not exercised live · ✘ not done · — not applicable.
+✔ done and verified · ◐ implemented and unit-tested, not exercised live · ✘ not done · - not applicable.
 Web lines are in the files of §1.1.
 
 | Feature | Web | Desktop |
@@ -484,22 +484,22 @@ Web lines are in the files of §1.1.
 | Sidebar: calendar list, mini-month, holidays, world clock, moon, weather | `CalendarSidebarBody.tsx` | ✔ list, mini-month, moon, booking, **weather (today's forecast + add-location)** (§12); world clock/holidays later |
 | Import / subscribe / share / export, CalDAV settings | `Calendar*Modal.tsx` + server | ✔ sidebar « Gérer » menu; all round-trips proven live (§10) |
 | Appointment scheduling, polls, notifications, settings | `AppointmentScheduleEditor` etc. | ✔ scheduling (§11), **settings page** (§12), **reminder notifications** (§12), round-trips proven; polls later |
-| Occurrence expansion | server (`recurrence_service.rs`) | — server-side (client receives expanded) |
-| Holidays data | core (`/holidays`) | — core server feed (not computed) |
-| VS designer views, `Kubuno.Calendar.slnx` | — | ✘ later |
+| Occurrence expansion | server (`recurrence_service.rs`) | - server-side (client receives expanded) |
+| Holidays data | core (`/holidays`) | - core server feed (not computed) |
+| VS designer views, `Kubuno.Calendar.slnx` | - | ✘ later |
 
 ## 10. Calendar-management surface (2026-10-12)
 
 The sidebar's « Mes agendas » header now carries a **« Gérer » dropdown** (`DropDownButton`, web
 `CalendarSidebarBody` entry points) with five items, each the desktop counterpart of a web `Calendar*Modal`:
 
-- **S'abonner à un agenda…** (`CalendarSubscribeModal.tsx`) — name + feed URL → `POST /calendar/calendars/subscribe`.
-- **Partager…** (`CalendarShareModal.tsx`) — a dialog (`share_dialog`, `ShareList` control): share with users
+- **S'abonner à un agenda…** (`CalendarSubscribeModal.tsx`) - name + feed URL → `POST /calendar/calendars/subscribe`.
+- **Partager…** (`CalendarShareModal.tsx`) - a dialog (`share_dialog`, `ShareList` control): share with users
   (directory search → `/users/search`, `POST …/share`), list + revoke (`GET …/shares`, `DELETE …/share/:id`,
   names via `/users/lookup`), and a public read-only `.ics` link (`PATCH { is_public }` + the feed URL).
-- **Importer .ics…** / **Exporter (.ics)** — native file dialogs (`file_dialog.rs`, `GetOpen/SaveFileNameW`) →
+- **Importer .ics…** / **Exporter (.ics)** - native file dialogs (`file_dialog.rs`, `GetOpen/SaveFileNameW`) →
   `POST /calendar/import` (UID-preserving) / `GET …/export`.
-- **CalDAV…** (`CalendarCalDavSettings.tsx`) — display-only dialog (`caldav_dialog`, `CalDavList` control):
+- **CalDAV…** (`CalendarCalDavSettings.tsx`) - display-only dialog (`caldav_dialog`, `CalDavList` control):
   the main endpoint (server URL + username from `GET /api/v1/me`) and each calendar's CalDAV URL from its token.
 
 New live helpers in `desktop/common/.../live.rs`: `subscribe_calendar`, `import_ics`, `export_calendar`,
@@ -512,7 +512,7 @@ on/off with the feed served (`/public/calendars/<token>/feed.ics` → 200, 4 VEV
 user (`admin`, name resolved to « Administrateur »); CalDAV endpoint answers PROPFIND 207 / OPTIONS 200 for the
 shown token. The « Gérer » menu was captured (`scratchpad/cal-mgmt-menu.png`, all five items with their icons).
 
-**Capture limit**: the modal dialogs themselves could not be captured reliably — in this session the desktop
+**Capture limit**: the modal dialogs themselves could not be captured reliably - in this session the desktop
 window alternates non-deterministically between a full (2170×1470) and a clipped (1240×840) render, and the
 AccessKit UIA tree only intermittently exposes the dropdown, so synthetic clicks to open a modal don't land
 consistently. Same class as the accepted headless web-editor block; functionality is proven via the API
@@ -527,17 +527,17 @@ fire under headless Chrome, like the editor).
 
 ## 11. Scheduling / booking pages (2026-10-12)
 
-The biggest remaining feature — the web `/calendar/scheduling` surface (the 2nd sidebar section) and its editor
+The biggest remaining feature - the web `/calendar/scheduling` surface (the 2nd sidebar section) and its editor
 (`web/src/AppointmentScheduleEditor.tsx`, reached at `/calendar/booking/new|:id`).
 
 - **Sidebar « Pages de réservation »** (web `CalendarSidebarBody` « Booking pages »): a new `ScheduleList`
   control lists the owner's bookable schedules (title + duration) and a « Nouveau planning » button creates one;
   clicking a row opens the editor on it. The sidebar was also laid out more compactly so weather/moon/booking
   fit a short window (on a 1080p/175 % display the earlier layout pushed booking below the fold).
-- **`ScheduleEditor` (`schedule_editor.{rs,kbview}`)** — a two-pane dialog ported token-by-token from the web:
+- **`ScheduleEditor` (`schedule_editor.{rs,kbview}`)** - a two-pane dialog ported token-by-token from the web:
   a settings pane (step 1: title, duration, weekly availability, time zone, scheduling window rolling/fixed +
   max-days/min-hours, booked settings buffer/max-per-day/guests, calendar; step 2: location+details,
-  description, email reminders) and a live **`AvailabilityPreview`** control — a 7-day 07:00–20:00 week grid
+  description, email reminders) and a live **`AvailabilityPreview`** control - a 7-day 07:00–20:00 week grid
   that paints the weekly ranges as tinted blocks, matching the web preview. Defaults match the web
   (Mon–Fri 09:00–17:00, 60 min, Europe/Paris).
 - **Live wiring** (`desktop/common/.../live.rs`): `list_schedules`, `get_schedule`, `save_schedule`
@@ -545,10 +545,10 @@ The biggest remaining feature — the web `/calendar/scheduling` surface (the 2n
   `ScheduleFull` mirroring the web `SaveScheduleDto`/`AppointmentSchedule`.
 
 **Proven live** against the dev stack (`/api/v1/calendar/appointment-schedules`): create → 201 with id +
-public_token; get → the schedule with its 2 availability rules; delete → 204 — with the exact DTO the desktop
+public_token; get → the schedule with its 2 availability rules; delete → 204 - with the exact DTO the desktop
 `save_schedule` builds. The desktop **sidebar** booking entry was captured and composed side-by-side with the
 web (`scratchpad/sched-sidebyside.png`); the **web editor** was captured headlessly at `/calendar/booking/new`
-(`scratchpad/web-sched-editor.png`) — it shows exactly what `ScheduleEditor` + `AvailabilityPreview` port.
+(`scratchpad/web-sched-editor.png`) - it shows exactly what `ScheduleEditor` + `AvailabilityPreview` port.
 
 **Reductions (first increment):** the weekly editor manages one range per weekday; extra ranges and
 date-specific overrides on an existing schedule are **preserved untouched** on save (stashed as `extra_rules`).
@@ -565,7 +565,7 @@ process's DPI state. No app-side rendering bug.
 ### Desktop dialog capture is blocked (evidenced)
 No desktop **modal dialog** (event editor, share, CalDAV, schedule editor) can be opened by scripted input in
 this environment: synthetic `mouse_event` clicks do not fire the app's handlers, and UIA `InvokePattern.Invoke`
-on the button does not trigger the modal-opening path either — **confirmed by invoking the known-good
+on the button does not trigger the modal-opening path either - **confirmed by invoking the known-good
 « Nouvel événement » button, which likewise does not open its dialog**. So the schedule editor is not broken;
 it is un-capturable via scripting, the same accepted limitation as the other dialogs. Its fidelity rests on the
 web side-by-side + the shared port.
@@ -574,7 +574,7 @@ web side-by-side + the shared port.
 - The custom booking-form-field builder and multi-range / date-override weekly editing.
 - Full weather widget via `/weather/forecast`; the module **settings page + notifications worker**.
 - VS designer live render; editor pixel-exact side-by-side (pending the web deep-link decision).
-- Scrollable sidebar (AutoScroll on the absolute-child docked panel does not engage — a framework limitation;
+- Scrollable sidebar (AutoScroll on the absolute-child docked panel does not engage - a framework limitation;
   worked around by compacting the layout).
 
 ## 12. Weather, settings and notifications (2026-10-12)
@@ -582,7 +582,7 @@ web side-by-side + the shared port.
 The remaining user-facing features, each matched to the web and wired to the server.
 
 - **Sidebar weather** (web `CalendarWeatherWidget` / `WeatherSettings`): the « Météo » section shows today's
-  forecast for the default location (name, condition, high/low, precip% when notable — `WeatherList` control),
+  forecast for the default location (name, condition, high/low, precip% when notable - `WeatherList` control),
   and « Ajouter un lieu » opens `WeatherDialog` (geocoder search → pick → save). Live helpers:
   `weather_geocode`, `weather_add_location`, `weather_locations`, `weather_forecast_today`,
   `weather_delete_location`. **Proven live**: geocode « Paris » → add → forecast (code/20°/8°), then removed.
@@ -601,13 +601,13 @@ The remaining user-facing features, each matched to the web and wired to the ser
 
 ### Also this tour
 - The sidebar was **compacted** (mini-month 190 px, tighter gaps) so weather/moon/booking fit a 1080p/175 %
-  window — `AutoScroll` does not engage on an absolute-child docked panel (framework limitation).
+  window - `AutoScroll` does not engage on an absolute-child docked panel (framework limitation).
 
 ### Live-capture blocker (environment, not code)
 The desktop app's stored broker session (the `calendardev` / `sandbox-cal` account) is **expired**, and the
 shell will not re-prompt for sign-in (it believes it is signed in), so no non-interactive re-seed was possible.
 With no valid session the app loads no calendars/events/weather, so **live desktop captures of server data
-could not be produced this tour** — all server round-trips were proven directly against the API (the exact
+could not be produced this tour** - all server round-trips were proven directly against the API (the exact
 DTOs/endpoints the desktop code uses), the reminder logic by unit tests, and the web side-by-sides were
 captured headlessly (`scratchpad/web-settings.png`, `web-sched.png` = sidebar with the Weather section). Native
 notification balloons are additionally suppressed by Windows for an **unregistered** standalone app (no AUMID /

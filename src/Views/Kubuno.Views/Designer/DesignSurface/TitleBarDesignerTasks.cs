@@ -62,7 +62,7 @@ namespace Kubuno.Views.Designer.DesignSurface
         /// <summary>
         /// The button a « Ajouter un bouton » task inserts in <paramref name="region"/>: an <c>IconButton</c> sized for the
         /// view's title bar (<see cref="BandHeight"/>): 36 DIP in the tall 64 DIP header, the caption buttons' 30 in a band
-        /// of 40 DIP or more, 24 in the standard 32 DIP one — the web header's look.
+        /// of 40 DIP or more, 24 in the standard 32 DIP one - the web header's look.
         /// </summary>
         public static string ButtonXml(string text, string region)
         {

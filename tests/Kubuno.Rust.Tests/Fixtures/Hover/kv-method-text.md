@@ -9,4 +9,4 @@ pub fn text(&self) -> String
 
 ---
 
-The `Text` property (`""` when the element sets none) — `((Button)sender).Text`.
+The `Text` property (`""` when the element sets none) - `((Button)sender).Text`.

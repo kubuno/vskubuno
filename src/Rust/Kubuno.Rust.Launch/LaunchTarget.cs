@@ -14,18 +14,18 @@ namespace Kubuno.Rust.Launch
     /// <param name="Kind">Whether this is a bin, example, or test target.</param>
     /// <param name="Profile">
     /// The Cargo profile used to build it: "dev"/"debug" and "release" are the built-in
-    /// profiles (both map to the "debug" and "release" output directories respectively —
+    /// profiles (both map to the "debug" and "release" output directories respectively -
     /// see <see cref="ExecutableResolver.ResolveProfileDirectoryName"/>); anything else is
     /// a custom profile name, whose output directory is the profile name itself.
     /// </param>
     /// <param name="TargetDir">
     /// The resolved Cargo target directory (i.e. what `CARGO_TARGET_DIR` points to, or
-    /// `&lt;workspace root&gt;/target` when unset — see <see cref="CargoLayout.ResolveTargetDir"/>).
+    /// `&lt;workspace root&gt;/target` when unset - see <see cref="CargoLayout.ResolveTargetDir"/>).
     /// Does NOT include the profile or target-triple subdirectory.
     /// </param>
     /// <param name="WorkspaceRoot">
     /// The Cargo workspace root (directory containing the workspace `Cargo.toml`). Used as
-    /// the default debuggee working directory (overridable — see <see cref="RustDebugEnvironment"/>).
+    /// the default debuggee working directory (overridable - see <see cref="RustDebugEnvironment"/>).
     /// </param>
     /// <param name="PackageRoot">
     /// The owning package's root directory (directory containing the package's `Cargo.toml`).

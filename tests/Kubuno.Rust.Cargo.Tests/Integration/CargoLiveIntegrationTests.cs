@@ -15,9 +15,9 @@ namespace Kubuno.Rust.Cargo.Tests.Integration
     /// <summary>
     /// End-to-end tests against a *real* "cargo" process (the fixture-based tests elsewhere in
     /// this project cover parsing logic against captured output without needing the Rust
-    /// toolchain installed; these instead prove the whole pipeline — <see cref="CargoCommand"/>,
+    /// toolchain installed; these instead prove the whole pipeline - <see cref="CargoCommand"/>,
     /// <see cref="ProcessRunner"/>, <see cref="CargoMetadataReader"/> and
-    /// <see cref="CargoMessageParser"/> together — against a live "cargo build". Skips itself
+    /// <see cref="CargoMessageParser"/> together - against a live "cargo build". Skips itself
     /// (rather than failing) when "cargo" isn't on PATH, since this repo's tests otherwise don't
     /// require the Rust toolchain.
     /// </summary>

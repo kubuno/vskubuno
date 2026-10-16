@@ -18,7 +18,7 @@ namespace Kubuno.Rust.Cargo.Diagnostics
         /// <param name="workspaceRoot">
         /// Absolute workspace root (<see cref="Metadata.CargoMetadata.WorkspaceRoot"/>). Span
         /// file names in compiler messages are reported relative to the directory Cargo was
-        /// invoked from — normally the workspace root — so this is required to turn them into
+        /// invoked from - normally the workspace root - so this is required to turn them into
         /// absolute, Error-List-ready paths.
         /// </param>
         public static CargoBuildEvent Parse(string line, string workspaceRoot)

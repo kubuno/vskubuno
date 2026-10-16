@@ -1,6 +1,6 @@
 //! The printing sample's window (`main_view.kbview`): a text, printed by the designed
 //! `print_document1` (its `BeginPrint` / `PrintPage` / `EndPrint` handlers below), previewed by
-//! `print_preview_dialog1`, set up by `page_setup_dialog1` and `print_dialog1` — and, with the
+//! `print_preview_dialog1`, set up by `page_setup_dialog1` and `print_dialog1` - and, with the
 //! "Preview (code)" button, by a document and a preview dialog built entirely in code.
 
 use std::cell::RefCell;

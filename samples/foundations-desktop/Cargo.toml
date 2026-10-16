@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 # The Kubuno desktop foundations sample (docs/DESKTOP-MIGRATION.md, lot F1): every element the
-# migration of the Kubuno apps needs, in `.kbview` views editable in the Visual Studio designer —
+# migration of the Kubuno apps needs, in `.kbview` views editable in the Visual Studio designer -
 # a Sidebar and a StatusBar around the pages, a Repeater of 10 000 messages shown by a user control
 # (MessageRow) next to a ListView of 10 000 rows, a wrapped Repeater of cards, Avatars, PictureBoxes,
 # a Popover, menus with sub-menus, a TableLayoutPanel form, wrapping and filling Stacks, and a

@@ -8,7 +8,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks.Tests.Internal
 {
     /// <summary>
     /// Pins <see cref="CargoDiagnosticLogging"/>'s mapping from a parsed <see cref="CargoBuildEvent"/>
-    /// to MSBuild's own logging calls — the piece that turns a cargo diagnostic into a clickable
+    /// to MSBuild's own logging calls - the piece that turns a cargo diagnostic into a clickable
     /// Visual Studio Error List entry. Uses the same real, captured
     /// <c>cargo build --message-format=json-diagnostic-rendered-ansi</c> fixtures
     /// <c>Kubuno.Rust.Cargo.Tests</c> parses, so a regression in either the parser or this mapping
@@ -95,7 +95,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks.Tests.Internal
 
             BuildErrorEventArgs error = Assert.Single(engine.Errors);
             // TaskLoggingHelper.LogError falls back to the task's own project file (here the
-            // fake engine's ProjectFileOfTaskNode) when passed a null file — never a genuinely
+            // fake engine's ProjectFileOfTaskNode) when passed a null file - never a genuinely
             // empty/missing file, which is the correct MSBuild behavior for a fileless diagnostic.
             Assert.Equal("test.rsproj", error.File);
             Assert.Equal(0, error.LineNumber);

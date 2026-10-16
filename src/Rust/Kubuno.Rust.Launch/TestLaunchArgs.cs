@@ -5,7 +5,7 @@ namespace Kubuno.Rust.Launch
 {
     /// <summary>
     /// Builds the argument list passed directly to a `cargo test --no-run` test binary
-    /// (not to `cargo test` itself — the debugger launches the binary, so there is no
+    /// (not to `cargo test` itself - the debugger launches the binary, so there is no
     /// `cargo` process in between) to run a single test or a module filter.
     /// </summary>
     public static class TestLaunchArgs
@@ -20,7 +20,7 @@ namespace Kubuno.Rust.Launch
         /// </param>
         /// <param name="exact">
         /// Append `--exact`, requiring <paramref name="filter"/> to match the whole test
-        /// name rather than a substring. Only meaningful for a single-test filter — pass
+        /// name rather than a substring. Only meaningful for a single-test filter - pass
         /// false for a module filter.
         /// </param>
         /// <param name="noCapture">Append `--nocapture`, so `println!`/`eprintln!` output isn't swallowed.</param>

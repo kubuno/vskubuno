@@ -1,4 +1,4 @@
-# `.kbview` views — shared specification (desktop and web)
+# `.kbview` views - shared specification (desktop and web)
 
 > Status: **normative, version 1** (lot WV-0, frozen 2026-10-01). It applies to both targets: the desktop
 > (`kubuno-desktop-views`, Rust code-behind) and the web (`@kubuno/views`, TypeScript code-behind), and to the mobile renderer
@@ -18,7 +18,7 @@
 ## 1. Files and targets
 
 - A view is a `.kbview` file (XML 1.0, UTF-8). It belongs to **one target**: its code-behind is Rust (desktop) or
-  TypeScript (web). What both targets share is the vocabulary, the grammar, the tooling and this specification —
+  TypeScript (web). What both targets share is the vocabulary, the grammar, the tooling and this specification -
   not files.
 - The target of a view is decided by the language server, walking up from the file: an explicit
   `kubuno.views.json` (`{"target": "web" | "desktop"}`) wins; else a `package.json` depending on
@@ -42,7 +42,7 @@ module kind).
 - A view is a user control when its root is `<UserControl>` **or** its code-behind declares it as one
   (`#[derive(UserControl)]` naming it). Such a file **MUST** be a `.kbcontrol`; every other view **MUST** be a `.kbview`.
 - The language server warns (`view-file-kind`) when the extension disagrees with the kind, and offers the quick fix
-  « Renommer en .kbcontrol » / « Renommer en .kbview »: it renames the file and updates every path naming it — the
+  « Renommer en .kbcontrol » / « Renommer en .kbview »: it renames the file and updates every path naming it - the
   code-behind's `#[kubuno_desktop::view(…)]` / `#[user_control(view = …)]` and the `x:Inherits` of the views deriving from it.
 - Inheritance keeps the kind: an inherited user control (`<UserControl x:Inherits="address_editor.kbcontrol">`) is a
   `.kbcontrol`, an inherited form a `.kbview`.
@@ -65,7 +65,7 @@ module kind).
 
 - a **view** (`.kbview`) stands on its own: a page a route or the router's tables show (`<Route element>`,
   `RouteRegistry.register`, the administration's `ADMIN_SECTIONS`), a window (a floating window, a full-screen viewer
-  or player), a dialog, a wizard, a flyout — and on the desktop the main window, its tool windows and its splash;
+  or player), a dialog, a wizard, a flyout - and on the desktop the main window, its tool windows and its splash;
 - a **user control** (`.kbcontrol`) is placed inside something else: a page's pane, section or tab, a sidebar, a
   header and its menus, a panel given to a host slot or extension point, a card, a badge, a tree item, and every row
   or item a list repeats. Its props are its properties and its callbacks its events (web: `x:Props="XProps"`, whose
@@ -74,7 +74,7 @@ module kind).
 On the desktop a window's content pages are user controls (the window hosts them); on the web a page the router shows
 is a view, because the router, not a window of the module, hosts it. A user control is an element of its project,
 named after its file (`<SearchResultRow/>` for `SearchResultRow.kbcontrol`): its name is unique in the project and is
-no host element's name (`EmptyState`, `Breadcrumb` and `Sidebar` are taken) — the compiler reports a clash as an error
+no host element's name (`EmptyState`, `Breadcrumb` and `Sidebar` are taken) - the compiler reports a clash as an error
 in every view. Module isolation is unchanged: a user control is placed only by its own module's views.
 
 **Web: a converted user control keeps its DOM.** A `.kbcontrol` whose `<UserControl>` root carries only the file's
@@ -88,14 +88,14 @@ it was converted from. Any other `<UserControl>` root (a property, a name, docke
 
 The web counterpart of `DESKTOP-MIGRATION.md`, "Source layout": a frontend groups its source by **role**, so that a
 human finds a screen by what it is. The **app root** is a module's `src/` (where `entry.ts` stays, with `i18n.ts`,
-`i18n.data.json`, `index.css`) and the core's `src/core/` (the core's other trees — `ui/`, `sdk/`, `views/`,
-`kbview/`, `gallery/` — are libraries and tools, not the app). A folder exists only when it holds something.
+`i18n.data.json`, `index.css`) and the core's `src/core/` (the core's other trees - `ui/`, `sdk/`, `views/`,
+`kbview/`, `gallery/` - are libraries and tools, not the app). A folder exists only when it holds something.
 
 | Folder (under the app root) | Holds | Drive / core examples |
 |---|---|---|
 | `views/` | the views of pages and windows (`.kbview`) | `views/DriveApp.kbview`, `views/FilesStoragePage.kbview`, `views/Files3DViewer.kbview`; core `views/HomePage.kbview` |
 | `dialogs/` | dialogs and wizards (`.kbview`) | `dialogs/TagDialog.kbview`, `dialogs/DuplicatesDialog.kbview` |
-| `pages/` | the user controls one component places — a page's panes, sections, tabs, the panels given to a host slot — **and the item controls their lists repeat**, next to them | `pages/FilesTreeSidebar.kbcontrol`, `pages/MobileHome.kbcontrol` |
+| `pages/` | the user controls one component places - a page's panes, sections, tabs, the panels given to a host slot - **and the item controls their lists repeat**, next to them | `pages/FilesTreeSidebar.kbcontrol`, `pages/MobileHome.kbcontrol` |
 | `controls/` | the user controls several components place, and the small React building blocks they share | `controls/TagDots.kbcontrol`, `controls/DialogTree.kbcontrol` |
 | `<feature>/` | an area big enough for its own folder (an administration section, the fonts browser, the Drive explorer's parts): its views, dialogs and user controls **side by side**, with its own logic (`api.ts`, hooks, types); a sub-area gets a subfolder | core `admin/sections/holidays/`, drive `fonts/`, `drive-app/` |
 | `model/` | stores, state and types the views show (no UI) | drive `model/driveExtras.ts`; core `store/` |
@@ -109,7 +109,7 @@ Rules:
    `.kbview` / `.kbcontrol` of the same stem, `.parts.tsx` likewise).
 2. **A folder holding more than a dozen views is split by role** like the app root (core `admin/`, `shell/`,
    `settings/sections/`, `admin/settings/`: `views/`, `dialogs/`, `pages/`, `controls/` inside); below that, a feature
-   folder keeps its views and user controls side by side — the extension tells which is which.
+   folder keeps its views and user controls side by side - the extension tells which is which.
 3. **An item control lives next to the list that repeats it** (`pages/` with its page, or the feature folder), not in a
    separate `rows/` folder; a user control placed by several components goes to `controls/` of the area.
 4. **An existing folder keeps its name when it says more than the generic role** (core `api/` plays `services/`,
@@ -126,7 +126,7 @@ folder; `--relayout` classifies and moves the views a project already has (`git 
 
 **Rule: the canonical element names are the desktop names** (decision 1). The web registry maps each canonical name
 onto a React component; React component names do not change. A name means the same thing on every target: same
-properties, same enum values, same events, same children model — differences are allowlisted (§11).
+properties, same enum values, same events, same children model - differences are allowlisted (§11).
 
 ### 2.1 Mapping table (as built in WV-4)
 
@@ -182,7 +182,7 @@ Web-only elements (`ReactHost`, `Query`, `Mutation`) carry `target: web-only` in
 
 Migration order (WEB-VIEWS §10): core (host shell, admin, core screens), then drive (`core/frontend/src/drive`).
 Inventory of JSX uses of `@ui`/sdk components in `core/frontend/src/core` and `src/drive` (313 `.tsx` files,
-2026-10-01): **1 209 of 1 286 uses (94 %) are covered** by the WV-4 registry. Not covered: `ConfirmDialog` (39 —
+2026-10-01): **1 209 of 1 286 uses (94 %) are covered** by the WV-4 registry. Not covered: `ConfirmDialog` (39 -
 the `useConfirm` pattern, which becomes `MessageBox.show` in code-behind, WV-3, not an element), `LabelIcon` (6),
 `Collapse`, `MobileSheet`(+`Item`/`Separator`), `RequiredMark` (folded into fields' `Required`), `ConflictDialog`,
 `KubunoLogo`, `StartPage`, `HelpBubble`, `DataTableSkeleton`, `ToastProvider`, `FloatCheckbox`, the colour/font
@@ -246,14 +246,14 @@ converter) = a **theme token** name (§4.1); icons = a Kubuno icon name (Lucide,
 view, or `{Res key}`. Any bindable value MAY be `{Binding …}` or `{Res …}` (§6).
 
 Numbers with a `type_converter` (kind `F32`): `Opacity` = a percentage 0–100; `CornerRadius` = a radius in DIP, finite
-and ≥ 0 (`0` = square corners) — the language server reports anything else and completes `8` (the default, Windows
+and ≥ 0 (`0` = square corners) - the language server reports anything else and completes `8` (the default, Windows
 11's), `4`, `0`, `12`, `16`, `24`. On the view's root it is the window's corner radius (desktop: 8 by default for a
-window with a title bar, square for a borderless one, always square while maximised or snapped — see
+window with a title bar, square for a borderless one, always square while maximised or snapped - see
 `EVENTS.md` §19); on `FloatingWindow` the in-view window's (8 by default). Both are desktop properties: a web page
 is not a window, and the web `FloatingWindow` keeps the web's square corners (`--kb-window-radius: 0px`).
 
-Title bar height (desktop, view root): `TitleBarStyle` = `Standard` (32 DIP, Windows 11's caption height — dialogs, tool
-windows, secondary windows) or `Tall` (64 DIP, the web module header — a main window showing the header's menus).
+Title bar height (desktop, view root): `TitleBarStyle` = `Standard` (32 DIP, Windows 11's caption height - dialogs, tool
+windows, secondary windows) or `Tall` (64 DIP, the web module header - a main window showing the header's menus).
 Unset, it is `Tall` for a view with a header item (`ShowSearch`, `ShowWaffle`, `ShowAccount`…) or a `HeaderActions` /
 `WaffleButton` / `AccountButton` in a `TitleBar.Region`, `Standard` otherwise. `TitleBarHeight` (F32, DIP), when
 written, wins over the style. Caption buttons and title-bar items are centred vertically in every height (see
@@ -280,10 +280,10 @@ written, wins over the style. Caption buttons and title-bar items are centred ve
 |---|---|---|
 | `Stack` | `Flow` | children along `Direction` (`TopDown`, `LeftToRight`, `RightToLeft`, `BottomUp`), `Gap` (F32 px), `Padding` (F32 px, one value), `CrossAlign` (`Stretch`, `Start`, `Center`, `End`), `WrapContents`; a child with `Stack.Fill="true"` takes the remaining room |
 | `TableLayoutPanel` | `Flow` | grid of `ColumnCount` × `RowCount`, sized by `ColumnStyles`/`RowStyles`, children placed by `TableLayoutPanel.Row/Column/RowSpan/ColumnSpan` or in reading order (`GrowStyle`) |
-| `Panel`, `UserControl` | `DockAnchor` | children docked (`Dock`) as bands in document order, the last `Fill` takes the rest; undocked children placed by `X`/`Y`/`Width`/`Height`/`Anchor` — see §5.2 |
+| `Panel`, `UserControl` | `DockAnchor` | children docked (`Dock`) as bands in document order, the last `Fill` takes the rest; undocked children placed by `X`/`Y`/`Width`/`Height`/`Anchor` - see §5.2 |
 | `Splitter` | `Split` | two panes, `Orientation`, `Distance` |
 | `Tabs` | `Tabs` | one `TabItem` visible at a time |
-| `Card`, `GroupBox`, `ScrollArea`, `FloatingWindow`, `Popover`, `WorkspaceShell`, `TabItem`, `DockPanel` | — | one child (`SingleWidget`) filling the content area |
+| `Card`, `GroupBox`, `ScrollArea`, `FloatingWindow`, `Popover`, `WorkspaceShell`, `TabItem`, `DockPanel` | - | one child (`SingleWidget`) filling the content area |
 
 ### 5.2 Flow by default, absolute on request (decision 4a)
 
@@ -305,14 +305,14 @@ written, wins over the style. Caption buttons and title-bar items are centred ve
 - Syntax: `Property.<Class>="value"` next to the base attribute: `Direction="TopDown" Direction.Expanded="LeftToRight"`,
   `Visible.Compact="false"`, `ColumnCount.Compact="1"`.
 - Resolution: the value for the current class is `Property.<Class>` when written, **else the base value** (no cascade
-  between classes — what you read on the attribute is what applies). Bindings are allowed in suffixed values.
+  between classes - what you read on the attribute is what applies). Bindings are allowed in suffixed values.
 - Allowed on any property that is not `design_time`, not `root_only`, and not an event. The desktop accepts the
   syntax and applies the class of its window width when its renderer supports it; until then the language server
   reports "size classes not applied on this target" (information, not an error).
 
 ## 6. Bindings and resources
 
-### 6.1 `{Binding}` — the desktop grammar (`kubuno-desktop-views` `binding.rs`), on both targets
+### 6.1 `{Binding}` - the desktop grammar (`kubuno-desktop-views` `binding.rs`), on both targets
 
 ```
 {Binding Path[, Mode=OneWay|TwoWay|OneTime|OneWayToSource][, UpdateSourceTrigger=PropertyChanged|LostFocus|Explicit]
@@ -321,11 +321,11 @@ written, wins over the style. Caption buttons and title-bar items are centred ve
 ```
 
 - `Path`: dotted member path (`prefs.font`, `locations.data.locations`); first unnamed part, or `Path=`.
-- `Mode`: `OneWay` (default), `TwoWay` (also writes the user's changes back), `OneTime` (reads the source once — per
-  item of a `Repeater` — and keeps that value), `OneWayToSource` (only writes; the property keeps showing what was
+- `Mode`: `OneWay` (default), `TwoWay` (also writes the user's changes back), `OneTime` (reads the source once - per
+  item of a `Repeater` - and keeps that value), `OneWayToSource` (only writes; the property keeps showing what was
   entered, its `FallbackValue` before that). A write-back happens on the property's **change event**, named by the
   registry (web: `prop_map[P].change`, e.g. `Checked` ↔ `OnCheckedChanged`).
-- `UpdateSourceTrigger`: when a write-back reaches the source — `PropertyChanged` (default; `Default` is accepted),
+- `UpdateSourceTrigger`: when a write-back reaches the source - `PropertyChanged` (default; `Default` is accepted),
   `LostFocus` (when the focus leaves the element, or the window), `Explicit` (when the code asks:
   `kubuno_desktop_views::binding::update_sources(vm, path)` on the desktop). The property shows the pending value meanwhile.
   Inside an item template a write is always immediate (the row only exists while the item is built).
@@ -349,13 +349,13 @@ written, wins over the style. Caption buttons and title-bar items are centred ve
   and a two-way binding of a read-only member.
 - **Not in this version**: `ElementName`, `RelativeSource`, expressions. Logic lives in code-behind getters
   (`Enabled="{Binding canSave}"`) and converters.
-- Design time: `d:Property="value"` (any property) replaces the property's value in the designer only — the sample a
+- Design time: `d:Property="value"` (any property) replaces the property's value in the designer only - the sample a
   bound property shows while the view model is not running.
 - Resolution order: the view instance (fields, `@bind` accessors / `#[bind]` fields, getters), then its
   `dataContext` / `#[data_context]`; inside a `Repeater` item: the row, then the user control, then the page.
 - A value that starts with `{` and ends with `}` is a markup extension; v1 has no escape for a literal in braces.
 
-### 6.2 `{Res}` — resources
+### 6.2 `{Res}` - resources
 
 `{Res key[, Source=set]}`: a string (or image, colour…) of the view's `.kbres` resources in the current culture,
 one-way. Web: `.kbres` compiles to i18next bundles; `{Res}` resolves through `t(ns:key)` (WV-6). Reserved for WV-6
@@ -374,7 +374,7 @@ handlers.
 Design mode never runs handlers or mutations. Sample values come from `d:` attributes, `d:DataContext="{SampleData
 X.sample.json}"`, `Repeater DesignItemCount`, `<Query d:Sample="…">`; the web designer MAY switch to live data
 (opt-in, WEB-VIEWS §4.6). A file named by `d:ItemsSource="design/rows.json"` is relative to the folder of the view
-holding the attribute — a user control nested by a view of another folder reads its own `design/` folder (desktop:
+holding the attribute - a user control nested by a view of another folder reads its own `design/` folder (desktop:
 `ClassRegistration::view_dir`).
 
 ## 7. Typography
@@ -389,16 +389,16 @@ DirectWrite format in `TextFormats`; the web sizes in `theme.css`.
 
 | Role (`Label Role`, `kubuno_desktop_ui::display::Role`) | Web token | Web (`theme.css`) | Desktop (`metrics::text`, DIP) | Desktop format | Desktop line box |
 |---|---|---|---|---|---|
-| `Micro` — badges, counters | `--kb-text-micro` | 10.5 px | 10.5 (`MICRO`) | `micro` | 16 |
-| `Meta` — metadata, captions | `--kb-text-meta` (= host `text-xs`) | 11.5 px | 11.5 (`META`) | `caption` | 16 |
-| `Body` — labels, fields, menus, tabs (default) | `--kb-text-body` (= host `text-sm`) | 13.5 px | 13.5 (`BODY`) | `body` | 20 |
-| `Heading` — section headers, card titles | `--kb-text-heading` | 15.5 px | 15.5 (`HEADING`) | `heading` | 24 |
-| `Title` — object name heading a panel | `--kb-text-title` | 21.5 px | 21.5 (`TITLE`) | `title` | 30 |
-| `Badge` — initials and counts in small avatar and count pills | `--kb-text-badge` | 10 px | 10 (`BADGE`) | `role_badge` | 16 |
-| `Caption` — small pills and chips | `--kb-text-caption` | 11 px | 11 (`CAPTION`) | `role_caption` | 16 |
-| `Subtitle` — a group title one step above a heading | `--kb-text-subtitle` (= Tailwind `text-base`, line 24) | 16 px | 16 (`SUBTITLE`) | `role_subtitle` | 24 |
-| `Display` — a large greeting or display line | `--kb-text-display` (= Tailwind `text-2xl`, line 32) | 24 px | 24 (`DISPLAY`) | `role_display` | 32 |
-| page title (not a Label role) | `--kb-text-page` | 22.5 px (27.5 in `.kb-admin`) | 22.5 (`PAGE`; `PAGE_ADMIN` 27.5) | `page` | — |
+| `Micro` - badges, counters | `--kb-text-micro` | 10.5 px | 10.5 (`MICRO`) | `micro` | 16 |
+| `Meta` - metadata, captions | `--kb-text-meta` (= host `text-xs`) | 11.5 px | 11.5 (`META`) | `caption` | 16 |
+| `Body` - labels, fields, menus, tabs (default) | `--kb-text-body` (= host `text-sm`) | 13.5 px | 13.5 (`BODY`) | `body` | 20 |
+| `Heading` - section headers, card titles | `--kb-text-heading` | 15.5 px | 15.5 (`HEADING`) | `heading` | 24 |
+| `Title` - object name heading a panel | `--kb-text-title` | 21.5 px | 21.5 (`TITLE`) | `title` | 30 |
+| `Badge` - initials and counts in small avatar and count pills | `--kb-text-badge` | 10 px | 10 (`BADGE`) | `role_badge` | 16 |
+| `Caption` - small pills and chips | `--kb-text-caption` | 11 px | 11 (`CAPTION`) | `role_caption` | 16 |
+| `Subtitle` - a group title one step above a heading | `--kb-text-subtitle` (= Tailwind `text-base`, line 24) | 16 px | 16 (`SUBTITLE`) | `role_subtitle` | 24 |
+| `Display` - a large greeting or display line | `--kb-text-display` (= Tailwind `text-2xl`, line 32) | 24 px | 24 (`DISPLAY`) | `role_display` | 32 |
+| page title (not a Label role) | `--kb-text-page` | 22.5 px (27.5 in `.kb-admin`) | 22.5 (`PAGE`; `PAGE_ADMIN` 27.5) | `page` | - |
 
 The last four roles (2026-10-05) give a name to the free sizes the web screens used before they were views
 (`text-[10px]`, `text-[11px]`, `text-base`, `text-2xl`): a view names a role, never a size (`Class="text-…"` is not
@@ -423,15 +423,15 @@ bold. Elements choose a role, never a size or a font: `Font` is a desktop-only `
   in `src/index.css`): **Plus Jakarta Sans** (variable 200–800, roman and drawn italic), then **Outfit** (variable
   100–900) and **Roboto** (variable 100–900) as fallbacks, `Arial, sans-serif` last; monospace **DM Mono** 400 then
   `Fira Code, monospace`. Licences: SIL OFL 1.1 for Plus Jakarta Sans, Outfit and DM Mono, Apache 2.0 for Roboto.
-- **Desktop**: **Segoe UI Variable** (Text / Display optical sizes; earlier user decision — Plus Jakarta Sans stays
+- **Desktop**: **Segoe UI Variable** (Text / Display optical sizes; earlier user decision - Plus Jakarta Sans stays
   on the web), DirectWrite fallback chain of the OS.
 
 ### 7.3 Rendering web views with the production fonts (requirement)
 
 The user requirement « pour la version web, tu vas devoir rapatrier la police utilisée pour obtenir le même rendu »:
 
-- Every web rendering of a view — production, the project's Vite dev server, the **Visual Studio design surface**
-  (WebView2), `@kubuno/host-runtime`, the VSIX's bundled fallback design host — **MUST** use exactly the production
+- Every web rendering of a view - production, the project's Vite dev server, the **Visual Studio design surface**
+  (WebView2), `@kubuno/host-runtime`, the VSIX's bundled fallback design host - **MUST** use exactly the production
   font files (same `.woff2` bytes, same `@font-face` declarations: families, weight ranges, styles,
   `font-display`) and the host's own CSS that sets roles and weights (`index.css` + `theme.css`, never re-declared by
   a module or by the design host).
@@ -454,7 +454,7 @@ The user requirement « pour la version web, tu vas devoir rapatrier la police u
 - **Web ↔ web** (TSX before, view after): same engine (Chromium, headless Chrome or WebView2), same fonts, same CSS
   → **pixel parity with the usual small tolerance** (anti-aliasing), after `document.fonts.ready`; a text-metric
   difference here is a bug, not noise.
-- **Web ↔ desktop**: never compared pixel to pixel — the sizes are the same (§7.1), but the faces
+- **Web ↔ desktop**: never compared pixel to pixel - the sizes are the same (§7.1), but the faces
   (Plus Jakarta Sans vs Segoe UI Variable, whose advances differ at the same size) and the rasterisers differ by
   design. They are compared by **structure**: the same element tree, the
   same text content, the same roles, accessibility tree and layout relations (order, alignment, which element fills),
@@ -467,7 +467,7 @@ The user requirement « pour la version web, tu vas devoir rapatrier la police u
 - An event is an attribute named `On<Event>` whose value is a **handler name** (a code-behind method):
   `OnClick="save_click"`. Older names are accepted as **aliases** (`OnToggled` → `OnCheckedChanged`, `OnChanged` →
   `OnTextChanged`).
-- **Default handler name** (designer ⚡ double-click, both targets — the desktop language server's
+- **Default handler name** (designer ⚡ double-click, both targets - the desktop language server's
   `view_handler_name`, Windows Forms style): `<x:Name in snake_case>_<event display name in snake_case>`
   (`save_click`, `prefs_checked_changed`); without `x:Name`, the element name (`button_click`); the root's view
   events use the view's file stem (`notes_settings_page_load`, like `Form1_Load`).
@@ -520,7 +520,7 @@ export default NotesSettingsPage.component()                 // a React componen
 block with the several shapes `EVENTS.md` §5.4 lists. The two models correspond member for member
 (WEB-VIEWS §2.2 table).
 
-## 10. The element registry — `kbview-registry.json` schema (version 1)
+## 10. The element registry - `kbview-registry.json` schema (version 1)
 
 ### 10.1 Document
 
@@ -568,7 +568,7 @@ The web file `kbview-registry.web.json` (shipped in `@kubuno/ui`) has the same s
 
 ### 10.3 `PropertyJson`
 
-`name`, `kind` (`"Bool"` \| `"F32"` \| `"String"` \| `{"Enum": [...]}` — serde's externally tagged encoding),
+`name`, `kind` (`"Bool"` \| `"F32"` \| `"String"` \| `{"Enum": [...]}` - serde's externally tagged encoding),
 `default` (string, `""` = none), `doc`, `doc_fr`, `category` (`Accessibility`, `Appearance`, `Behavior`, `Data`,
 `Design`, `Focus`, `Icon`, `Layout`, `Misc`, `Paging`, `Printing`, `Title Bar`, `Window Style`), `browsable`,
 `bindable`, `localizable`, `serialization` (`"Visible"`/`"Hidden"`/`"Content"`/null), `editor` (`icon`, `image`,
@@ -636,7 +636,7 @@ levels (`Control`, `TextBoxBase`, `View`) are shared tables (`levels.ts`), remap
   `design_time`, `root_only`, `aliases`; for every event: presence, `category`, `args_type`, `args_chain`,
   `cancelable`, `aliases`, `root_only`.
 - Every difference is a **failure** unless an entry of `core/frontend/src/kbview/allowlist.ts` accepts it
-  (`{kind, element, member?, level?, field?, reason}`, `*` wildcards) — and an entry that accepts nothing is a
+  (`{kind, element, member?, level?, field?, reason}`, `*` wildcards) - and an entry that accepts nothing is a
   failure too. Informational only: desktop elements absent from the web (coverage), `doc_fr` differences.
 - Report: JSON (`failures`, `allowlisted` with reasons, `info`, `unused_allowlist`, `summary`) written by the test to
   `KBVIEW_CONFORMANCE_REPORT` (default: the OS temp directory) and by `npm run check:registry`.
@@ -692,12 +692,12 @@ Found while freezing the spec against the real desktop registry:
 - The web registry is one file in `@kubuno/ui` covering the `@ui` **and** sdk elements (each with its `module`),
   not one file per package.
 
-## Module isolation (user requirement, 2026-10-01) — normative
+## Module isolation (user requirement, 2026-10-01) - normative
 
 Kubuno web modules **never import functions, components or types from one another** in the classic programming sense
 (no `import … from '<other-module>'`, no shared source, no project/package references between module repos). The only
 shared code is the host-provided singletons resolved through the import map (`@kubuno/ui`, `@kubuno/sdk`,
-`@kubuno/drive`, and — new — `@kubuno/views`), and cross-module collaboration goes exclusively through the core's
+`@kubuno/drive`, and - new - `@kubuno/views`), and cross-module collaboration goes exclusively through the core's
 extension points (ExtensionRegistry, ModuleServiceRegistry, event bus, routes). Views must not break this:
 
 1. **Generated code** (Vite plugin output, `.d.ts`, `ViewBase`) may only import the module's own files and the
@@ -714,5 +714,5 @@ extension points (ExtensionRegistry, ModuleServiceRegistry, event bus, routes). 
    package reference between modules**; each module builds alone against the published `@kubuno/*` packages and the
    shared crates' git tags. The designer Toolbox for a module shows host elements + that module's own controls only
    (+ extension slots), never another module's controls.
-5. **Desktop parity**: the same rule holds for desktop modules/apps — reuse goes through `kubuno_desktop_ui`/`kubuno-desktop-views`
+5. **Desktop parity**: the same rule holds for desktop modules/apps - reuse goes through `kubuno_desktop_ui`/`kubuno-desktop-views`
    (the shared "host" layer) or through module services, never through one app's crate depending on another's.

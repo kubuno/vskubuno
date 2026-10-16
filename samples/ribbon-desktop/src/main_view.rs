@@ -1,5 +1,5 @@
 //! The ribbon sample's window (`main_view.kbview`): the ribbon's commands and elements handled in
-//! code — commands bound to the view's state (`Bold`, `Italic`), typed fields of the ribbon's
+//! code - commands bound to the view's state (`Bold`, `Italic`), typed fields of the ribbon's
 //! elements (`self.bold`, `self.ctx_table`), their events, and a ribbon element added from code.
 
 use kubuno_desktop::prelude::*;

@@ -64,47 +64,47 @@ the views compiler) and mobile (unsolved: §5.1.3).
 ## 3. Inventory
 
 Columns: **W** web, **B** backend, **D** desktop, **A** Android. Value = correctness risk × size × change rate,
-graded ★ (low) to ★★★ (high). "—" = no implementation.
+graded ★ (low) to ★★★ (high). "-" = no implementation.
 
 ### 3.1 Office and notes
 
 | Algorithm | W | B | D | A | Agree? | Value |
 |---|---|---|---|---|---|---|
 | ProseMirror document model and `.kbdoc` JSON | schema in `office/frontend/src/DocumentEditorPage.tsx`; read by `canvas-engine.ts` | `PmNode` in converters, `handlers/documents.rs` 1308 | `documents/src/model/node.rs` 374 + `mod.rs` 319 (byte-exact round trip, unknown subtrees kept raw) | `app-docs/.../pm/PmModel.kt` 478 + `PmParser.kt` 696 ("names copied from the web") | three hand-written models; two serialisers write the same format differently (browser omits absent keys, serde writes `null`: desktop `tests/fixtures/README.md`) | ★★★ |
-| Line breaking, line box, pagination, tables, lists, images | `office/frontend/src/canvas-engine.ts` **4033** + `documents/layout/*` (≈ 2700) | — | `documents/src/doc/para.rs` 960, `tables.rs` 2176, `lists.rs` 751, `images.rs` 915, `convert.rs` 607 — a deliberate quirk-for-quirk port | no engine: Compose renderers `ui/render/Pm*Renderer.kt` (≈ 2200) with constants copied from the web (`DocsDesign.kt`) | desktop kept honest by `parity.rs` (Chrome recordings, 9/9 paragraphs, line ends within 0.28 px on 2026-09-19); not ported yet: floats, drop caps, inline atoms, letter spacing, indents, tab stops; Android uses the platform line breaker (different breaks by construction) | ★★★ |
-| Editing, undo/redo, clipboard | ProseMirror + `history/useEditHistory.ts`, `documents/track-changes.ts` 652 | — | `edit/history.rs` 1339, `caret.rs` 1184, `clipboard.rs` 1182 | `DocEditorScreen.kt` 1234 + `DocActions.kt` 1068 | three independent models | ★★ |
-| Heading sizes, spacing, line-height ratio 1.15 | `canvas-engine.ts:233-261, 844` | — | `convert.rs:26, 132-135` | `DocsDesign.kt:321, 366-392` | agree today (H6 = 11 pt, bold ≤ level 4) but copied by hand three times; the comment in `parity.rs` is already stale | ★★ (codegen/constants) |
-| DOCX / ODT / DOC / XLSX / ODS / ODP import-export | — | `office/src/converters/*` (server only) | through the server | through the server | single implementation | ★ (already shared by the API) |
-| Spreadsheet formulas, recalc, fill series, pivot, number formats | `formula-engine.ts` 1611, `formula-refs.ts` 250, `formula-fns/*` (12 files), `fill-series.ts` 383, `pivot-engine.ts`, `data/format.ts` | — (`services/data_engine.rs` is a separate BI evaluator) | — | — | one implementation today | ★★ now, ★★★ the day a second platform needs sheets |
+| Line breaking, line box, pagination, tables, lists, images | `office/frontend/src/canvas-engine.ts` **4033** + `documents/layout/*` (≈ 2700) | - | `documents/src/doc/para.rs` 960, `tables.rs` 2176, `lists.rs` 751, `images.rs` 915, `convert.rs` 607 - a deliberate quirk-for-quirk port | no engine: Compose renderers `ui/render/Pm*Renderer.kt` (≈ 2200) with constants copied from the web (`DocsDesign.kt`) | desktop kept honest by `parity.rs` (Chrome recordings, 9/9 paragraphs, line ends within 0.28 px on 2026-09-19); not ported yet: floats, drop caps, inline atoms, letter spacing, indents, tab stops; Android uses the platform line breaker (different breaks by construction) | ★★★ |
+| Editing, undo/redo, clipboard | ProseMirror + `history/useEditHistory.ts`, `documents/track-changes.ts` 652 | - | `edit/history.rs` 1339, `caret.rs` 1184, `clipboard.rs` 1182 | `DocEditorScreen.kt` 1234 + `DocActions.kt` 1068 | three independent models | ★★ |
+| Heading sizes, spacing, line-height ratio 1.15 | `canvas-engine.ts:233-261, 844` | - | `convert.rs:26, 132-135` | `DocsDesign.kt:321, 366-392` | agree today (H6 = 11 pt, bold ≤ level 4) but copied by hand three times; the comment in `parity.rs` is already stale | ★★ (codegen/constants) |
+| DOCX / ODT / DOC / XLSX / ODS / ODP import-export | - | `office/src/converters/*` (server only) | through the server | through the server | single implementation | ★ (already shared by the API) |
+| Spreadsheet formulas, recalc, fill series, pivot, number formats | `formula-engine.ts` 1611, `formula-refs.ts` 250, `formula-fns/*` (12 files), `fill-series.ts` 383, `pivot-engine.ts`, `data/format.ts` | - (`services/data_engine.rs` is a separate BI evaluator) | - | - | one implementation today | ★★ now, ★★★ the day a second platform needs sheets |
 | Autosave, etag, `If-Match`, 412 arbitration | `api.ts` has no `If-Match` (collab websocket) | `handlers/documents.rs:11, 328` | `api/client.rs` defines the header but cannot send it (`kubuno-desktop-sync` has no generic PATCH/headers) | `DocsDelta.kt` 223 etag cache, 412 arbitration | three behaviours; shared documents get no etag on Android | ★★ (protocol, see §3.6) |
-| Notes body | plain text, no markdown library found | `content: String` | — | — | nothing to share yet | ★ |
+| Notes body | plain text, no markdown library found | `content: String` | - | - | nothing to share yet | ★ |
 
 ### 3.2 Drive and file sync
 
 | Algorithm | W | B | D | A | Agree? | Value |
 |---|---|---|---|---|---|---|
 | **File/folder name rules** | `maxLength=255` characters only (`RenameModal.tsx:108`, `NewFolderModal.tsx:49`) | folders: empty, > 255 **bytes**, `/ \ \0`, `.`, `..` (`drive/src/services/folders.rs:907-918`, verified); file rename: > **1000** bytes, same chars (`files.rs:390-395, 718`, verified); uploads: `sanitize_filename` (deletes illegal chars) | `kubuno-desktop-sync/engine.rs:268-302`: maps illegal chars to `-`, strips trailing dots/spaces, prefixes `_` to reserved names, **Windows only** (`#[cfg(windows)]`) | no check; `File(dir, name)` + `name.part` (`OfflineFiles.kt:96-97`) | **no**: the server accepts `:`, `<>"|?*`, `CON`, trailing dots via rename/create-folder; the desktop maps `a:b` and `a-b` to the same local path; limits differ (255 chars / 255 bytes / 1000 bytes) | ★★★ |
-| Case and Unicode normalisation | — | case-sensitive uniqueness (`files.rs:140`, `folders.rs:476`, `kubuno-storage/src/naming.rs` "Linux behaviour"), no NFC | none | none | `A.txt` and `a.txt` coexist on the server and collide on NTFS/APFS; NFD names from macOS never compared | ★★★ |
-| Auto-rename and conflict-copy naming | — | `name (2)` (`kubuno-storage/src/naming.rs`) | legacy `{stem} (conflit {HOSTNAME} {epoch}){ext}` (`push.rs:395`, `HOSTNAME` unset on Windows → "desktop"); engine `<title> (conflit {machine} {YYYY-MM-DD HH-MM})` (`kubuno-desktop-sync-engine` `adapter.rs:355`) | none (never edits content in place) | four rules | ★★ |
-| Content hash | — | SHA-256 (`files.rs:1064`, etag = `content_hash`) | SHA-256 (`push.rs:17, 379`) | SHA-256 (`Entities.kt:117`) | yes | ★ (trivial, constant) |
+| Case and Unicode normalisation | - | case-sensitive uniqueness (`files.rs:140`, `folders.rs:476`, `kubuno-storage/src/naming.rs` "Linux behaviour"), no NFC | none | none | `A.txt` and `a.txt` coexist on the server and collide on NTFS/APFS; NFD names from macOS never compared | ★★★ |
+| Auto-rename and conflict-copy naming | - | `name (2)` (`kubuno-storage/src/naming.rs`) | legacy `{stem} (conflit {HOSTNAME} {epoch}){ext}` (`push.rs:395`, `HOSTNAME` unset on Windows → "desktop"); engine `<title> (conflit {machine} {YYYY-MM-DD HH-MM})` (`kubuno-desktop-sync-engine` `adapter.rs:355`) | none (never edits content in place) | four rules | ★★ |
+| Content hash | - | SHA-256 (`files.rs:1064`, etag = `content_hash`) | SHA-256 (`push.rs:17, 379`) | SHA-256 (`Entities.kt:117`) | yes | ★ (trivial, constant) |
 | Chunked upload | no chunking | 10 MiB default, client may override (`config/settings.rs:90`, `uploads.rs:29`) | legacy: one multipart POST, no chunks; engine: none | 8 MiB, session + next chunk persisted (`Transfers.kt:17`) | three behaviours | ★★ |
-| Mass-delete and reorg guards | — | protected folders | `MASS_DELETE_RATIO` 0.2 floor 50, same-etag-survives = reorg, `subtree_really_gone` (`push.rs:44-47, 135-140`) | none found | guards that prevented real data loss exist on one platform only | ★★★ |
-| Delta page size, cursor type | — | max 2000 | 500, numeric (legacy); opaque (engine `delta.rs:11`) | 2000, Long | minor | ★ |
+| Mass-delete and reorg guards | - | protected folders | `MASS_DELETE_RATIO` 0.2 floor 50, same-etag-survives = reorg, `subtree_really_gone` (`push.rs:44-47, 135-140`) | none found | guards that prevented real data loss exist on one platform only | ★★★ |
+| Delta page size, cursor type | - | max 2000 | 500, numeric (legacy); opaque (engine `delta.rs:11`) | 2000, Long | minor | ★ |
 
 ### 3.3 Calendar, tasks, contacts, mail
 
 | Algorithm | W | B | D | A | Agree? | Value |
 |---|---|---|---|---|---|---|
-| **Recurrence expansion** | builds/parses/describes rules: `calendar/frontend/src/rrule.ts` 171 | `calendar/src/services/recurrence_service.rs` 144 (`rrule` 0.12), six callers (events, availability, appointments, rooms ×2, room stats) | — (was in the abandoned `calendar-core.wasm`) | — | **no** (verified): the backend writes `DTSTART:<UTC>Z` and expands in `Tz::UTC` (`recurrence_service.rs:39-60`), ignoring `event.timezone`, so a weekly 09:00 Paris event is at 10:00 after the DST change; the frontend derives `BYDAY`/`BYMONTHDAY` from the **local** date (`rrule.ts:102-111`), so an event at 00:30 Paris on Monday (Sunday 22:30 UTC) is expanded on the wrong day; `UNTIL` is end of day **UTC** (`rrule.ts:115-117`); hard cap `.all(500)` | ★★★ |
-| EXDATE / RECURRENCE-ID / VTIMEZONE in iCalendar | — | not exported/imported (`icalendar_service.rs`); TZID lost on import, floating time = UTC, ambiguous autumn hour → UTC | — | — | incomplete | ★★ |
-| iCalendar escape/fold | — | three implementations: `icalendar` crate, hand-rolled in calendar `icalendar_service.rs:291-322`, hand-rolled in mail `services/imip.rs:42, 62` | — | — | three | ★★ (backend-only, but same algorithm thrice) |
-| Task recurrence | presets `FREQ=…` in `InlineComposer.tsx:79-84` | stored as a string, never validated or expanded; `rrule` and `chrono-tz` are unused dependencies of tasks; `parse_ical_dt` ignores TZID (`tasks/src/services/icalendar_service.rs:33-46`) | — | — | the presets do nothing | ★★ (a calendar-core consumer) |
-| vCard | — | hand-written `contacts/src/services/vcard_service.rs` 228, 3.0 only, no output folding, `trim_start` on unfold eats content spaces, parameter values upper-cased, no `item1.` groups | — | — | backend only | ★ now, ★★ when a native contacts app exists |
-| MIME parsing | — | `mail-parser` 0.9 at six call sites | — | — (server JSON) | single library | ★ |
-| **Subject normalisation (threading)** | `MessageCard.tsx:426` `/^\s*(re|fwd|tr)\s*:\s*/i` | duplicated `normalize_subject` in `server/deliver.rs:707` and `services/sync_service.rs:982`: lower-case, exact `"re: "`, `"fwd: "`, `"fw: "` once (verified) | — | uses server `thread_id` | three behaviours: `RE:x`, `Re[2]:`, `AW:`, `TR :`, `Re: Re:` handled differently | ★★ |
-| Reply subject / quoting | `InlineCompose.tsx:127-172` (`startsWith('Re:')`, case-sensitive) | — | — | none (no quoting) | `RE: x` → `Re: RE: x` | ★★ |
-| Address parsing | `AddressSuggest.tsx:49` (`lastIndexOf('<')`) | `handlers/addresses/mod.rs:116` | — | `ComposeViewModel.kt:100` (splits on `,`, `;`, space) | three; Android breaks `"Doe, John" <j@x.com>` | ★★ |
-| HTML sanitising | DOMPurify, `EmailHtmlView.tsx` 586 (forbid list + hook, "kept in step" by comment) | `ammonia` with a custom allowlist, `services/html_sanitize.rs` 237; but `send.rs:167` and `store.rs:285` still call bare `ammonia::clean` | — | WebView with JS off, no sanitiser, remote images can be loaded | allowlists differ; two server paths bypass the hardened one | ★★★ (security), but see §5.5: keep the browser's DOMPurify, share the **policy** |
+| **Recurrence expansion** | builds/parses/describes rules: `calendar/frontend/src/rrule.ts` 171 | `calendar/src/services/recurrence_service.rs` 144 (`rrule` 0.12), six callers (events, availability, appointments, rooms ×2, room stats) | - (was in the abandoned `calendar-core.wasm`) | - | **no** (verified): the backend writes `DTSTART:<UTC>Z` and expands in `Tz::UTC` (`recurrence_service.rs:39-60`), ignoring `event.timezone`, so a weekly 09:00 Paris event is at 10:00 after the DST change; the frontend derives `BYDAY`/`BYMONTHDAY` from the **local** date (`rrule.ts:102-111`), so an event at 00:30 Paris on Monday (Sunday 22:30 UTC) is expanded on the wrong day; `UNTIL` is end of day **UTC** (`rrule.ts:115-117`); hard cap `.all(500)` | ★★★ |
+| EXDATE / RECURRENCE-ID / VTIMEZONE in iCalendar | - | not exported/imported (`icalendar_service.rs`); TZID lost on import, floating time = UTC, ambiguous autumn hour → UTC | - | - | incomplete | ★★ |
+| iCalendar escape/fold | - | three implementations: `icalendar` crate, hand-rolled in calendar `icalendar_service.rs:291-322`, hand-rolled in mail `services/imip.rs:42, 62` | - | - | three | ★★ (backend-only, but same algorithm thrice) |
+| Task recurrence | presets `FREQ=…` in `InlineComposer.tsx:79-84` | stored as a string, never validated or expanded; `rrule` and `chrono-tz` are unused dependencies of tasks; `parse_ical_dt` ignores TZID (`tasks/src/services/icalendar_service.rs:33-46`) | - | - | the presets do nothing | ★★ (a calendar-core consumer) |
+| vCard | - | hand-written `contacts/src/services/vcard_service.rs` 228, 3.0 only, no output folding, `trim_start` on unfold eats content spaces, parameter values upper-cased, no `item1.` groups | - | - | backend only | ★ now, ★★ when a native contacts app exists |
+| MIME parsing | - | `mail-parser` 0.9 at six call sites | - | - (server JSON) | single library | ★ |
+| **Subject normalisation (threading)** | `MessageCard.tsx:426` `/^\s*(re|fwd|tr)\s*:\s*/i` | duplicated `normalize_subject` in `server/deliver.rs:707` and `services/sync_service.rs:982`: lower-case, exact `"re: "`, `"fwd: "`, `"fw: "` once (verified) | - | uses server `thread_id` | three behaviours: `RE:x`, `Re[2]:`, `AW:`, `TR :`, `Re: Re:` handled differently | ★★ |
+| Reply subject / quoting | `InlineCompose.tsx:127-172` (`startsWith('Re:')`, case-sensitive) | - | - | none (no quoting) | `RE: x` → `Re: RE: x` | ★★ |
+| Address parsing | `AddressSuggest.tsx:49` (`lastIndexOf('<')`) | `handlers/addresses/mod.rs:116` | - | `ComposeViewModel.kt:100` (splits on `,`, `;`, space) | three; Android breaks `"Doe, John" <j@x.com>` | ★★ |
+| HTML sanitising | DOMPurify, `EmailHtmlView.tsx` 586 (forbid list + hook, "kept in step" by comment) | `ammonia` with a custom allowlist, `services/html_sanitize.rs` 237; but `send.rs:167` and `store.rs:285` still call bare `ammonia::clean` | - | WebView with JS off, no sanitiser, remote images can be loaded | allowlists differ; two server paths bypass the hardened one | ★★★ (security), but see §5.5: keep the browser's DOMPurify, share the **policy** |
 
 ### 3.4 Other modules
 
@@ -114,13 +114,13 @@ graded ★ (low) to ★★★ (high). "—" = no implementation.
 | forms | quiz scoring / input formats | scoring server-only (`services/scoring.rs` 141); email/url/number checked only by HTML inputs | no server format validation | ★★ |
 | maps | haversine, bearing, destination point | 7 haversine copies: Rust `gpx_service.rs:360`, TS `greatCircle.ts:16`, `mapMarkers.ts:47`, `mapSketch.ts:27`, `MapsLocalCard.tsx:42`, Kotlin `MapsViewModel.kt:799`; bearing in TS and Kotlin | numerically equal (R = 6 371 000 m) | ★ (tiny, stable: vectors suffice) |
 | maps | distance/duration formatting, turn instructions | `routing.ts:132` (1 decimal < 10 km), `mapMarkers.ts:5` (always 1), `mapSketch.ts:83` (2 decimals), Kotlin `DirectionsPanel.kt:280`, `NavOverlay.kt:140` (hard-coded "km", no miles), three Kotlin `formatDuration`; instructions built separately, Kotlin hard-coded French (`MapsViewModel.kt` ≈ 795) | **no** | ★★ (formatting rules + i18n, §3.5) |
-| maps | tile math | web only (`mapOffline.ts:17-21`) | — | ★ |
+| maps | tile math | web only (`mapOffline.ts:17-21`) | - | ★ |
 | photos | EXIF, thumbnails, dedup | server `photo_service.rs` 560 (`kamadak-exif`, `image`): **Orientation is never read**, so thumbnails of rotated phone photos come out unrotated; thumbnail size 256 (`instance.rs:50`) vs 400 (`settings.rs:75`); SHA-256 dedup on server and Android | one implementation, with a bug | ★ for sharing (server-side), fix in place |
 | chat | formatting, mentions | no markdown, no mention parser on any side | nothing to share yet; when added, one core from day one | ★ (future ★★) |
 | keestore | KDBX crypto, Argon2 | browser only (`kdbxweb` + `hash-wasm`, already WASM); server is a blob store; `argon2`, `aes-gcm`, `totp-rs` declared in `keestore/Cargo.toml` but unused | no drift (parameters come from the KDBX header) | ★ now; ★★★ the day a native keestore client exists (a Rust KDBX core would then be the one to trust) |
 | flow | `{{ }}` expression language | Rust only, `flow/src/runtime/expr.rs` 827; the frontend reads catalogues from the API | single implementation | ★ (a future editor-side checker would reuse it through WASM) |
 | notes, wiki | markdown rendering | server `pulldown-cmark` 0.11 with `SMART_PUNCTUATION` (`notes/src/services/markdown_service.rs`, `wiki/src/.../wiki_markup.rs` 572); client `react-markdown` + `remark-gfm` without smart punctuation | **no** (quotes and dashes render differently) | ★★ |
-| code | — | Monaco on the web, git services on the server | nothing duplicated | — |
+| code | - | Monaco on the web, git services on the server | nothing duplicated | - |
 
 ### 3.5 Cross-cutting
 
@@ -129,9 +129,9 @@ graded ★ (low) to ★★★ (high). "—" = no implementation.
 | **Search folding** (accents, ligatures) | server `kubuno-db/src/search.rs` 654 (NFD, marks dropped, **œ/æ/ß expanded**, stemmer); Postgres `unaccent` still called directly by mail (`filters.rs:87-98`, `search_query.rs:501+`); ≥ 8 JS copies (`ui/uiText.ts:97`, `ui/mention/foldHighlight.ts`, `RoleCreateDialog.tsx:13`, `MapsSearchDropdown.tsx:27`, `chat/ExpressionPanel.tsx:80`, `office/fill-series.ts`, `app/store.ts`…) with two regexes (`[̀-ͯ]` vs `\p{Diacritic}`); none in Kotlin | **no**: "coeur" finds "cœur" on the server, not in a client filter | core-repo `kubuno-text` fold (small): server native, web through a host package (or a TS port held by vectors: the function is ≈ 30 lines), Kotlin through vectors |
 | Byte sizes | 20+ copies: base 1024 French units in core `utils/format.ts`, drive `api/format.ts` (localised), chat ×2, mail ×3, admin ×3, p2pnas; English units in keestore, forum, core widgets; Android `core-ui/Format.kt` (correct), mail ×2, **`app-photos/PhotoViewer.kt:268` base 1000** | **no** (units, decimals, base) | not a Rust core: one TS helper in `@kubuno/sdk` and one in `core-ui`, held by a shared vector file; delete the copies |
 | Dates, relative time | `core/frontend/src/core/intl/datetime.ts` (intents over `Intl`, the right design); forum uses the browser locale instead of the app locale, p2pnas hard-codes French, mail has a third variant | mostly | keep platform-native (`Intl`, `java.time`/ICU, Foundation); share the **intent vocabulary** (`date`, `weekdayDate`, …) as generated data |
-| Plurals, i18n | web i18next with CLDR `_one`/`_other` keys in core; maps and photos have no plural keys ("2 photo"); Android: 5 strings in resources, no `<plurals>`, mostly hard-coded French; desktop: no i18n | **no** | platform-native plural rules (CLDR is in every platform); share the **catalogue** (one source per module, generated to i18next JSON, Android resources, desktop resources) — a codegen lot, not a core |
+| Plurals, i18n | web i18next with CLDR `_one`/`_other` keys in core; maps and photos have no plural keys ("2 photo"); Android: 5 strings in resources, no `<plurals>`, mostly hard-coded French; desktop: no i18n | **no** | platform-native plural rules (CLDR is in every platform); share the **catalogue** (one source per module, generated to i18next JSON, Android resources, desktop resources) - a codegen lot, not a core |
 | Permissions / ACL | server `kubuno-core/src/authz/` 2149; clients only test `role === 'admin'` | n/a (no client evaluator) | keep server-only; clients ask the server ("can I") instead of re-evaluating |
-| Shared UI copied between module frontends | `collab/presence.tsx` byte-identical in app and flow, near-identical in core and office; `CollaboratorsDialog.tsx` in forms and office; `ShareDialog.tsx` core vs app | — | not an algorithm question: these belong in `@kubuno/ui`/`@kubuno/sdk` (module isolation forbids the copies only when they import each other, but they will drift) |
+| Shared UI copied between module frontends | `collab/presence.tsx` byte-identical in app and flow, near-identical in core and office; `CollaboratorsDialog.tsx` in forms and office; `ShareDialog.tsx` core vs app | - | not an algorithm question: these belong in `@kubuno/ui`/`@kubuno/sdk` (module isolation forbids the copies only when they import each other, but they will drift) |
 
 ### 3.6 Client protocol: API client, tokens, offline sync
 
@@ -142,8 +142,8 @@ graded ★ (low) to ★★★ (high). "—" = no implementation.
 | Pull loop (page + cursor in one transaction, stop if the cursor does not move, unknown kind skipped) | `kubuno-desktop-sync-engine` (`engine.rs` 1298) | `core-sync/SyncEngine.kt` 88 | yes in intent; page sizes differ | ★★ |
 | Outbox classification, coalescing, rollback, backoff | `outbox.rs` 519: `min(2^n × 2 s, 15 min)` ± 20 %, `Retry-After`, no give-up, explicit rollback | `OutboxDrain.kt` 145: WorkManager `retry()`, 3–5 attempts then the intent is lost (a mistake already listed in DESKTOP-OFFLINE-SYNC §4.1) | **no** | ★★★ |
 | HTTP retry | `kubuno-desktop-api-client` `client.rs:37`: 4 attempts, 500 ms base, 30 s cap, ± 20 % | none explicit; websocket reconnect flat 5 s | no | ★ |
-| Field-level three-way merge (DESKTOP-OFFLINE-SYNC §7.4) | `conflict.rs` 127 | — | one side | ★★★ when PIM apps go offline on mobile |
-| Generated API types | hand-written | hand-written (the generated `api-spec/clients/kotlin` is **not used** by the Android apps) | — | codegen candidate (§5.3) |
+| Field-level three-way merge (DESKTOP-OFFLINE-SYNC §7.4) | `conflict.rs` 127 | - | one side | ★★★ when PIM apps go offline on mobile |
+| Generated API types | hand-written | hand-written (the generated `api-spec/clients/kotlin` is **not used** by the Android apps) | - | codegen candidate (§5.3) |
 
 ### 3.7 Ranking
 
@@ -158,7 +158,7 @@ graded ★ (low) to ★★★ (high). "—" = no implementation.
 | 6 | Spreadsheet engine | large but single-platform today; becomes rank 1–2 the day desktop or mobile sheets start |
 | 7 | Sanitiser policy, vCard, iCalendar escaping | security/standards; partly backend-only dedup |
 | 8 | Search folding, markdown options | small, user-visible mismatches; core-repo text helpers / shared options |
-| — | Sizes, dates, plurals, haversine | **not cores**: platform-native helpers, one per platform, held by shared vectors; catalogues by codegen |
+| - | Sizes, dates, plurals, haversine | **not cores**: platform-native helpers, one per platform, held by shared vectors; catalogues by codegen |
 
 ## 4. Precedents and lessons
 
@@ -225,8 +225,8 @@ Measured sizes (`wasm32-unknown-unknown`, release profile of the views compiler,
 |---|---|---|---|
 | `tiny` (probe) | name validation + NFC (`unicode-normalization`) + `serde_json`, C ABI | 183 KB | 86 KB |
 | `rr` (probe) | `rrule` 0.12 expansion + `serde_json` (pulls `chrono-tz` 0.8 **and `regex`**) | 2 087 KB | 478 KB |
-| `kubuno-web-views-compiler-core` (shipping) | `.kbview` parser, validator, plan and `.d.ts` generator | 474 KB | — |
-| `calendar-core.wasm` (2026-07, removed) | `rrule` + `chrono` + SQLite, WASI | 2.9 MB | — |
+| `kubuno-web-views-compiler-core` (shipping) | `.kbview` parser, validator, plan and `.d.ts` generator | 474 KB | - |
+| `calendar-core.wasm` (2026-07, removed) | `rrule` + `chrono` + SQLite, WASI | 2.9 MB | - |
 
 Reading:
 
@@ -367,7 +367,7 @@ iOS GRDB/Core Data) and HTTP stay in each platform.
 | Owned by one module (its formats, its rules) | the **module repository**, as a workspace member `crates/kubuno-<domain>-core` next to the backend, which uses it by path | `kubuno-office-docs-core` (office), `kubuno-calendar-core` (calendar; tasks uses it as a client of the format), mail rules (mail), sheet engine (office) | `<domain>-core-vX.Y.Z` on that repo |
 | Drive naming, path and conflict rules | the **drive** repository, in the existing `kubuno-drive` client crate (`default-features = false` already keeps it light) or a sibling `kubuno-drive-core` | name verdicts, case/NFC keys, conflict names | `drive-core-vX.Y.Z` |
 | Used by several modules or by the core itself | the **core** repository (`core/crates/`) | text normalisation for search, plural/format helpers if any, the KDP client protocol (`kubuno-sync-core`, the server half already lives in `kubuno-db::journal`) | `<crate>-vX.Y.Z` like `db-v0.9.0` |
-| Client-only infrastructure (secrets, accounts, sockets) | `desktop/common` (stays) | `kubuno-desktop-account`, `kubuno-desktop-secrets` | — |
+| Client-only infrastructure (secrets, accounts, sockets) | `desktop/common` (stays) | `kubuno-desktop-account`, `kubuno-desktop-secrets` | - |
 
 **Pilot exception for `kubuno-office-docs-core`**: it is being extracted inside the desktop workspace, where the code and
 the parity harness are. Keep it there until the web adopts it (like `kubuno-web-views-compiler-core`, which lives next to its
@@ -438,7 +438,7 @@ Sizes: **S** ≤ 3 days, **M** 1–2 weeks, **L** 3–6 weeks of agent work, tes
 
 | Lot | Content | Size | Depends on |
 |---|---|---|---|
-| **SC-0** Vectors | JSON format (`{suite, version, cases:[{id, input, expected, note}]}`), runners for Rust (`kubuno-vectors` dev-dependency), TS (vitest helper) and Kotlin (JUnit helper); vendoring script with checksums; `check_versions.py` entries | S | — |
+| **SC-0** Vectors | JSON format (`{suite, version, cases:[{id, input, expected, note}]}`), runners for Rust (`kubuno-vectors` dev-dependency), TS (vitest helper) and Kotlin (JUnit helper); vendoring script with checksums; `check_versions.py` entries | S | - |
 | **SC-1** `kubuno-office-docs-core` (pilot 1) | Extract `model/`, `doc/convert`, `para`, `lists`, `tables`, `images` (layout decisions only), the constants, and the history/edit operations that do not touch the UI into a neutral crate; text measurement behind a trait; turn the Chrome parity recordings into committed vectors (generated, reviewed, with the font set named); CI wasm32 check. Then SC-1b: WASM shim + office frontend running the Rust layout behind a flag, compared with `canvas-engine.ts` on the vectors and the 18-document corpus, before any switch | M (1) + L (1b) | SC-0 |
 | **SC-2** Recurrence and time zones (pilot 2) | `kubuno-recurrence` (core repo) or `kubuno-calendar-core`: expansion in the event's zone (fixes the DST/weekday bug), `UNTIL` in the event's zone, EXDATE/RECURRENCE-ID semantics, rule builder/describer used by the web (replaces `rrule.ts` logic, keeps its UI), iCalendar escape/fold (replaces the three copies); the backend's six callers switch; tasks validates its rules with it; vectors first (DST transitions, midnight-crossing, monthly last-weekday, leap years, count/until) | M | SC-0 |
 | **SC-3** Drive names (pilot 3) | One verdict function (`valid`, `invalid(reason)`, `portable-warning`) with server, Windows, macOS, Linux profiles, a case/NFC comparison key and the conflict-copy name; the server applies it to rename and create-folder (choose: reject or sanitise, Q4), desktop and Android use it before writing to disk; the web validates in the dialog through WASM (or the TS port held by vectors, the logic is small) | S–M | SC-0 |

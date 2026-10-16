@@ -1,4 +1,4 @@
-# Printing — the Windows Forms printing stack for Kubuno desktop applications (design and as built)
+# Printing - the Windows Forms printing stack for Kubuno desktop applications (design and as built)
 
 > Scope: product-owner requirement of `docs/EVENTS.md` ("the WinForms printing stack", 2026-09-29): `PrintDocument`,
 > `PrinterSettings`/`PageSettings`, `PrintPreviewControl`, `PrintPreviewDialog`, `PrintDialog`, `PageSetupDialog`, with
@@ -61,9 +61,9 @@ types; the component classes themselves are `kubuno_desktop::printing::component
 | Class | Kind | Properties (XML) | Events |
 |---|---|---|---|
 | `PrintDocument` | component (tray) | `DocumentName`, `OriginAtMargins`; Kubuno additions (WinForms has them under `DefaultPageSettings`/`PrinterSettings`): `PrinterName`, `Landscape`, `PaperSize` (Letter, Legal, A4, A3, A5 or a paper name of the printer), `Margins` (`"l, r, t, b"`, 1/100 inch), `Copies`, `PrintToFile`, `PrintFileName` | `BeginPrint`, `QueryPageSettings`, `PrintPage` (default), `EndPrint` |
-| `PrintPreviewDialog` | component | `Document` (reference drop-down), `Text` (title), `Width`, `Height` | — |
-| `PrintDialog` | component | `Document`, `AllowCurrentPage`, `AllowPrintToFile`, `AllowSelection`, `AllowSomePages`, `PrintToFile`, `ShowNetwork` | — |
-| `PageSetupDialog` | component | `Document`, `AllowMargins`, `AllowOrientation`, `AllowPaper`, `AllowPrinter`, `MinMargins`, `ShowNetwork` | — |
+| `PrintPreviewDialog` | component | `Document` (reference drop-down), `Text` (title), `Width`, `Height` | - |
+| `PrintDialog` | component | `Document`, `AllowCurrentPage`, `AllowPrintToFile`, `AllowSelection`, `AllowSomePages`, `PrintToFile`, `ShowNetwork` | - |
+| `PageSetupDialog` | component | `Document`, `AllowMargins`, `AllowOrientation`, `AllowPaper`, `AllowPrinter`, `MinMargins`, `ShowNetwork` | - |
 | `PrintPreviewControl` | control | `Document`, `AutoZoom`, `Zoom`, `Columns`, `Rows`, `StartPage` | `StartPageChanged` |
 | `PreviewPagesButton` | control, hidden from the Toolbox | the preview dialog's layout buttons (`Pages`, `Checked`) | `Click` |
 
@@ -79,23 +79,23 @@ kept by the document), `invalidate`, `revision`, `last_error`.
 
 **Args.** `PrintEventArgs { cancel, print_action }`, `QueryPageSettingsEventArgs { cancel, print_action, page_settings,
 page_number }`, `PrintPageEventArgs { cancel, has_more_pages, page_bounds, margin_bounds, page_settings, page_number,
-graphics() }` — all `CancelEventArgs` in the args chain (the ⚡ tab offers `&mut`).
+graphics() }` - all `CancelEventArgs` in the args chain (the ⚡ tab offers `&mut`).
 
 **Loop** (WinForms' `PrintController.Print`): `BeginPrint` (cancel: nothing happens, no `EndPrint`); per page
 `QueryPageSettings` (a copy of `DefaultPageSettings`, changeable for that page) then `PrintPage` while `has_more_pages`;
 `cancel` in either stops the job (the spool job is cancelled); then `EndPrint`. A safety stop at 100 000 pages.
 
-## 3. How a page reaches the printer — and why this route
+## 3. How a page reaches the printer - and why this route
 
 - Every page is recorded into an **`ID2D1CommandList`** on a Direct2D device of the job's own (a detached `Renderer`,
-  no window), through the EVT-8 `Graphics` over the host's `Painter` — so `draw_string`, paths, gradients, images, and
+  no window), through the EVT-8 `Graphics` over the host's `Painter` - so `draw_string`, paths, gradients, images, and
   the canvas primitives the `kubuno_desktop_ui` widgets use (a control printed with `draw_to_bitmap`) all work on paper.
 - **`ID2D1PrintControl`** turns each command list into a page of an **XPS print job** of the Windows spooler
   (`IPrintDocumentPackageTargetFactory::CreateDocumentPackageTargetForPrintJob`). The job's **print ticket** comes from
   the driver's `DEVMODE` (`DocumentProperties` merges paper, orientation, copies, collation, duplex, colour, tray,
   resolution; `PTConvertDevModeToPrintTicket` converts it); a page whose settings differ (`QueryPageSettings`) gets a
   page-scope ticket.
-- **Print to file**: the job's output stream is a file stream — "Microsoft Print to PDF" writes a PDF there, silently.
+- **Print to file**: the job's output stream is a file stream - "Microsoft Print to PDF" writes a PDF there, silently.
   `print()` then waits for the spooler to finish the job (polling its queue for the job's id, up to 120 s) so the file
   is complete when it returns; without a file name a Save dialog (`GetSaveFileNameW`) offers the printer's format.
 - **Why not GDI** (`CreateDC` + `StartDoc`): Direct2D cannot draw vectors onto a printer DC; the only bridge is a
@@ -118,7 +118,7 @@ area's corner). With `OriginAtMargins` the `Graphics` is translated to the margi
 primitives stay in page coordinates).
 
 **Page range.** `PrintRange::SomePages` (from the Print dialog) is honoured by the spooler sink: pages outside
-`from_page..=to_page` are rendered (the handler's state advances) but not sent — WinForms leaves that to the handler.
+`from_page..=to_page` are rendered (the handler's state advances) but not sent - WinForms leaves that to the handler.
 `Selection` and `CurrentPage` are the handler's to interpret, as in WinForms.
 
 ## 4. Events of a view's document: the deferred print
@@ -129,7 +129,7 @@ borrowed, so a document of that view cannot raise its own XML handlers (that wou
 - A component raises to its Rust subscribers, then `kubuno_desktop_views::scope::raise_now(name, "OnPrintPage", args)`, which
   runs the XML handler synchronously when the runtime lent its sink.
 - `print()` (and `show_preview`, i.e. `PrintPreviewDialog.show_dialog()`) called while the view is busy
-  (`view_is_busy`: the component is sited in the running view and `scope::can_raise_now()` — new in `kubuno-desktop-views` — is
+  (`view_is_busy`: the component is sited in the running view and `scope::can_raise_now()` - new in `kubuno-desktop-views` - is
   false) records the request and asks for a frame; the document is a `BindingProvider` whose `binding_sync` (called by
   the runtime once per frame with the sink lent) runs it. **Net effect: the print or preview starts right after the
   handler that asked for it returns, before the next paint.** `print()` returns `Ok(0)` then; `last_error()` tells
@@ -151,7 +151,7 @@ borrowed, so a document of that view cannot raise its own XML handlers (that wou
   the card shadow on `surface_2`; "Génération de l'aperçu…", "Aucune page à afficher.", the error text; in the designer
   an empty Letter sheet.
 - `PrintPreviewDialog` window: a host window (`run_scoped`, modal to the application's window, Kubuno chrome, the
-  application's theme — `kubuno_desktop::Application::set_theme` forwards it through `kubuno_desktop_print::set_dialog_theme`) showing
+  application's theme - `kubuno_desktop::Application::set_theme` forwards it through `kubuno_desktop_print::set_dialog_theme`) showing
   an inline `.kbview`: **Print** (`IconButton` Printer), **Zoom** (`Dropdown`: Automatique, 500 %…10 %), five
   `PreviewPagesButton`s (1, 2, 3, 4, 6 pages; the current one highlighted), **Page** (`NumericField` bound to
   `preview.StartPage`) "sur N" (`preview.PageText`), **Fermer**. FR/EN texts follow the user's UI language; every tool
@@ -164,11 +164,11 @@ borrowed, so a document of that view cannot raise its own XML handlers (that wou
   `DATA_ELEMENTS`, `PRINT_ELEMENTS` (their union is `LIBRARY_ELEMENTS`, tested) and `PRINT_TYPED`: `#[kubuno_desktop::view]`
   types a named `<PrintDocument>` field `kubuno_desktop::printing::PrintDocument` (likewise the dialogs and the preview control).
 - **Language server**: `kubuno-views-ls` now follows `name = { workspace = true }` dependencies through the workspace
-  root's `[workspace.dependencies]` — how an application depending on `kubuno-desktop` reaches `kubuno-desktop-print` (and `kubuno-desktop-data`):
+  root's `[workspace.dependencies]` - how an application depending on `kubuno-desktop` reaches `kubuno-desktop-print` (and `kubuno-desktop-data`):
   the printing elements are known (no diagnostics), completed, documented, and their handlers get
   `fn print_document1_print_page(&mut self, _sender: &Control, _e: &mut PrintPageEventArgs)`.
 - **Designer**: components from the Kubuno library crates (`kubuno_desktop_print`, `kubuno_desktop_data`) get Toolbox tabs of their own
-  by `#[toolbox(category)]` — **"Impression"** (FR) / "Printing" — in every project, without "Choose Items…"
+  by `#[toolbox(category)]` - **"Impression"** (FR) / "Printing" - in every project, without "Choose Items…"
   (`NativeToolboxInstaller.LibraryItems`); they go to the component tray (non-visual); the Properties window shows the
   `Printing` category as "Impression"; `Document` is a drop-down of the view's `PrintDocument`s (the existing
   `reference:` editor); a double-click on a `PrintDocument` creates its `PrintPage` handler (its default event).
@@ -178,7 +178,7 @@ borrowed, so a document of that view cannot raise its own XML handlers (that wou
   `examples/view_embed.rs` (kubuno-desktop-views' surface with the data and printing components linked):
   `cargo build --release -p kubuno-desktop-print --example view_embed`.
 - **Accessibility** (`kubuno-desktop-views`, `node/custom.rs`): UI Automation's Invoke now clicks custom controls (it only
-  clicked built-in buttons) — found testing the preview dialog's page buttons.
+  clicked built-in buttons) - found testing the preview dialog's page buttons.
 
 ## 7. As built: tests and live verification (2026-09-30)
 

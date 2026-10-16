@@ -463,14 +463,14 @@ namespace Kubuno.Shared.DevAssistant.UI
                     ("#élément", AssistantText.S("l'élément sélectionné dans le concepteur", "the element selected in the designer")),
                 })
                 {
-                    _completionList.Items.Add(new ListBoxItem { Content = token + "  —  " + description, Tag = token });
+                    _completionList.Items.Add(new ListBoxItem { Content = token + "  -  " + description, Tag = token });
                 }
             }
             else
             {
                 foreach (var command in _controller.Commands)
                 {
-                    _completionList.Items.Add(new ListBoxItem { Content = "/" + command.Name + "  —  " + (AssistantText.IsFrench ? command.DescriptionFr : command.DescriptionEn), Tag = "/" + command.Name });
+                    _completionList.Items.Add(new ListBoxItem { Content = "/" + command.Name + "  -  " + (AssistantText.IsFrench ? command.DescriptionFr : command.DescriptionEn), Tag = "/" + command.Name });
                 }
             }
 

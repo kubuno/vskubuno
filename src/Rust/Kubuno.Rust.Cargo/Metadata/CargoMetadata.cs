@@ -18,7 +18,7 @@ namespace Kubuno.Rust.Cargo.Metadata
         /// <summary>
         /// Absolute path to the build output directory. Reflects Cargo's own resolution of
         /// <c>CARGO_TARGET_DIR</c> (env var), <c>build.target-dir</c> (config) or the
-        /// workspace-relative default ("target") — nothing needs to be re-derived here.
+        /// workspace-relative default ("target") - nothing needs to be re-derived here.
         /// </summary>
         public string TargetDirectory { get; set; } = string.Empty;
 

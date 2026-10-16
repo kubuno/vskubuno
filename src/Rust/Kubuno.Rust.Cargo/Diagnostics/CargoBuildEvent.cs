@@ -41,7 +41,7 @@ namespace Kubuno.Rust.Cargo.Diagnostics
     /// <summary>
     /// A "build-script-executed" line: a package's build script ran; <see cref="LinkedPaths"/> are the library
     /// search paths it asked for (<c>cargo:rustc-link-search</c>, as <c>native=C:\…</c> / <c>all=…</c> or a plain
-    /// path) — what anything linking that package later must pass to <c>rustc -L</c> too.
+    /// path) - what anything linking that package later must pass to <c>rustc -L</c> too.
     /// </summary>
     public sealed class CargoBuildScriptEvent : CargoBuildEvent
     {

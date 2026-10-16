@@ -24,7 +24,7 @@ namespace Kubuno.Rust.Cargo.Metadata
         /// </param>
         /// <param name="manifestPath">Optional explicit path to a Cargo.toml, passed as <c>--manifest-path</c>.</param>
         /// <param name="environmentVariables">
-        /// Extra/overriding environment variables for the child process — set
+        /// Extra/overriding environment variables for the child process - set
         /// <c>CARGO_TARGET_DIR</c> here to steer the reported <see cref="CargoMetadata.TargetDirectory"/>
         /// without touching the current process's own environment. When omitted, Cargo resolves
         /// it the normal way (inheriting whatever <c>CARGO_TARGET_DIR</c> the host process has set).

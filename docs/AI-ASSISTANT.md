@@ -1,4 +1,4 @@
-# Kubuno Dev Assistant — an AI pair programmer for building Kubuno, inside Visual Studio (design study)
+# Kubuno Dev Assistant - an AI pair programmer for building Kubuno, inside Visual Studio (design study)
 
 Status: **design, 2026-10-01; lot DA-1 (MVP) built the same day - see §14 "As built"**. The product owner accepted every
 recommendation of §12 (name, C# net8 host, Opus 5.5 by default with a 5 $ cap, checkpoint + final review, own window
@@ -76,7 +76,7 @@ calls the provider **in-proc**; it does not go through the pipe.
   Credential Manager with `CRED_PERSIST_LOCAL_MACHINE`, deliberately so that credentials do not roam. The VSIX side
   uses the same store and the same persistence choice (§8.1).
 
-### 1.3 The `assistant` module (`Z:\src\assistant`, port 3107) — out of scope, and why
+### 1.3 The `assistant` module (`Z:\src\assistant`, port 3107) - out of scope, and why
 
 The module is an **end-user product feature** of a Kubuno instance. It offers self-hosted multi-model chat (Ollama,
 OpenAI, Anthropic, Google), agents, conversations synced through the delta protocol, administrator policies, and a
@@ -300,7 +300,7 @@ read tools (§6.3).
 | `/release` | **Read-only** release checklist: version audit (`Kubuno.Web.Logic.Versions.VersionAudit`, `check_versions.py`), CHANGELOG `[Unreleased]` present, build/clippy/tsc green. **It prints the commands for the user to run; it never runs them.** | version audit, changelog read, build | medium |
 | `/multi-os` | Review a diff or files against `MULTI-OS-AUDIT.md` rules (paths, FHS hard-coding, `\\?\` canonicalisation, line endings, case) | file read, docs | high |
 | `/changelog` | Draft the `[Unreleased]` entry (English, Keep a Changelog) for the current diff | git diff, file edit | low |
-| `/aide` | List commands and references | — | — |
+| `/aide` | List commands and references | - | - |
 
 Each command is **owned by the layer that knows the domain** (§9.6). `/vue`, `/handler` and `/ressource` belong to
 Desktop (and Web for web views). `/migrer` belongs to Desktop (legacy screens) and Web (TSX). `/test` and `/expliquer`
@@ -615,7 +615,7 @@ onto another model. It is not mutated in place.
 ### 9.5 Relationship with `kubuno-vs-mcp`
 
 Unchanged contract: read-only, no write or execute over the pipe. DA-8 adds the read-only Kubuno tools
-(`kubuno_docs_*`, `kbview_registry`, `kbview_validate`, `kbview_selected_element` — the planned
+(`kubuno_docs_*`, `kbview_registry`, `kbview_validate`, `kbview_selected_element` - the planned
 `kubuno_view_selection`) to the bridge, so Copilot agent mode and Claude Code benefit as well. The Dev Assistant does
 not depend on the pipe.
 
@@ -629,7 +629,7 @@ not depend on the pipe.
 | Rust | `Kubuno.Rust` (`DevAssistant\`) | cargo / rustc / rust-analyzer / Test Explorer / debug tools, `/test`, `/expliquer` for Rust |
 | Desktop | `Kubuno.Desktop` (`DevAssistant\`) | `.kbview` / `.kbres` tools (LS edit APIs, registry, validation, designer selection), `#élément`, `/vue` `/handler` `/ressource`, `/migrer` (legacy desktop), the designer inline action |
 | Web | `Kubuno.Web` (`DevAssistant\`) | npm / tsc / module.toml / version-audit tools, `DevDatabaseGuard` wiring, `/migrer` (TSX), web-view profile of `/vue` |
-| Mobile | — | nothing yet. The contracts allow a Gradle/adb toolset later. |
+| Mobile | - | nothing yet. The contracts allow a Gradle/adb toolset later. |
 
 **Extension contracts** (MEF, `Kubuno.Shared.DevAssistant.Extensibility`, imported with `[ImportMany]`, so Core never
 names a higher layer):

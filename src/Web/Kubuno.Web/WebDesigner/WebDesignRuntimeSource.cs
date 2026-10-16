@@ -70,7 +70,7 @@ namespace Kubuno.Web.WebDesigner
                             "Aperçu indisponible : le serveur de développement de ce module a besoin de @kubuno/host-runtime pour la page de conception (npm install -D @kubuno/host-runtime dans le dossier frontend, puis Réessayer), et l'hôte de conception intégré à l'extension est absent.")
                         : T(
                             "Preview: bundled runtime - this module's dev server cannot show the design page: @kubuno/host-runtime is not installed (npm install -D @kubuno/host-runtime in the frontend folder, then Retry). The project's own controls show as placeholders.",
-                            "Aperçu : runtime intégré — le serveur de développement de ce module ne peut pas afficher la page de conception : @kubuno/host-runtime n'est pas installé (npm install -D @kubuno/host-runtime dans le dossier frontend, puis Réessayer). Les contrôles du projet sont des espaces réservés.");
+                            "Aperçu : runtime intégré - le serveur de développement de ce module ne peut pas afficher la page de conception : @kubuno/host-runtime n'est pas installé (npm install -D @kubuno/host-runtime dans le dossier frontend, puis Réessayer). Les contrôles du projet sont des espaces réservés.");
                 }
 
                 if (NoBundledHost && State != DesignSurfaceRuntimeState.Project)
@@ -84,13 +84,13 @@ namespace Kubuno.Web.WebDesigner
                 {
                     DesignSurfaceRuntimeState.NotBuilt => T(
                         "Preview: bundled runtime - the project's dev server is not running (npm run dev); the project's own controls show as placeholders.",
-                        "Aperçu : runtime intégré — le serveur de développement du projet ne tourne pas (npm run dev) ; les contrôles du projet sont des espaces réservés."),
+                        "Aperçu : runtime intégré - le serveur de développement du projet ne tourne pas (npm run dev) ; les contrôles du projet sont des espaces réservés."),
                     DesignSurfaceRuntimeState.Building => T(
                         "Preview: starting the project's dev server (npm run dev)...",
                         "Aperçu : démarrage du serveur de développement du projet (npm run dev)…"),
                     DesignSurfaceRuntimeState.Failed => T(
                         "Preview: bundled runtime - the project's dev server did not start (see Output > Kubuno).",
-                        "Aperçu : runtime intégré — le serveur de développement du projet n'a pas démarré (voir Sortie > Kubuno)."),
+                        "Aperçu : runtime intégré - le serveur de développement du projet n'a pas démarré (voir Sortie > Kubuno)."),
                     _ => null,
                 };
             }

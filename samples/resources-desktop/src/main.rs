@@ -4,7 +4,7 @@
 
 mod main_view;
 
-// `Resources::welcome_text()`, `Resources::logo()`, `Resources::app_icon()`… — culture-aware, with
+// `Resources::welcome_text()`, `Resources::logo()`, `Resources::app_icon()`… - culture-aware, with
 // every file embedded in the executable (nothing is read from disk at run time).
 kubuno_desktop::resources!("resources.kbres");
 

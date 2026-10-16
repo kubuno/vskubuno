@@ -13,7 +13,7 @@ namespace Kubuno.Rust.Launch
         /// Resolves the effective Cargo target directory, honouring `CARGO_TARGET_DIR`.
         /// Mirrors Cargo's own precedence: an explicit override wins outright (Cargo
         /// resolves a relative `CARGO_TARGET_DIR` against the invocation directory, which
-        /// this library has no notion of, so callers should pass an absolute value — the
+        /// this library has no notion of, so callers should pass an absolute value - the
         /// Kubuno desktop workspace always does: `CARGO_TARGET_DIR=C:\kubuno-build\desktop-target`);
         /// otherwise it defaults to `&lt;workspaceRoot&gt;/target`.
         /// </summary>

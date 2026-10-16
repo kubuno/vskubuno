@@ -10,14 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **The Toolbox is no longer empty when editing a mobile view.** A `.kbview` / `.kbcontrol` of a `kubuno-mobile-*`
   crate, bridged to the web design surface, got no Toolbox controls: the surface renders with the shared web
-  vocabulary, but the Toolbox read a registry *file*, and the bundled design host (used for mobile) exposed none —
+  vocabulary, but the Toolbox read a registry *file*, and the bundled design host (used for mobile) exposed none -
   so it fell back to the language server's desktop registry, which is empty for a mobile crate. The bundled host now
   ships its host element registry as a file beside the page (`kbview-registry.web.json`), and a mobile view reads it,
   so its Toolbox fills with the same 71 shared controls the surface renders (grouped into the usual tabs). The
   Properties window and ⚡ events, which read the same registry, are populated too.
 - **Dragging a Toolbox control onto a view edited on the web surface works again.** A Toolbox item only carried its
   markup as drag text when the designer's registry target was exactly `"web"`; a view edited on the WebView2 surface
-  whose target is not `"web"` (a mobile Rust crate's view — the web compiler reads its `Cargo.toml`'s
+  whose target is not `"web"` (a mobile Rust crate's view - the web compiler reads its `Cargo.toml`'s
   `kubuno-desktop-views` dependency as a desktop target) got no text, so the WebView2 page never detected the drag and
   refused it everywhere ("no-drop" cursor). Every Toolbox item now carries its markup as text regardless of target
   (harmless for the desktop native surface, which reads the private format), so a drag is detected and inserts the
@@ -27,7 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **A mobile Rust crate's views open in the web design surface.** The `.kbview` / `.kbcontrol` files of a
   `kubuno-mobile-*` crate (e.g. `kubuno-mobile-render`) now open in the shared Kubuno View Designer on the **web**
-  WebView2 surface (its hover/selection, corner type tags, viewport toolbar) instead of the desktop Rust surface —
+  WebView2 surface (its hover/selection, corner type tags, viewport toolbar) instead of the desktop Rust surface -
   a bridge until the mobile layer ships its own native (vello) design surface, which will speak the same stable-id
   design-surface protocol. A view is matched to this surface by its nearest `Cargo.toml` `[package]` name; genuine
   web-project views still win. The web design host renders it in bundled mode (host elements), which is all a
@@ -36,7 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Kubuno Data (desktop) design note** (`docs/DATA-DESKTOP.md`). The design of record for the native desktop
   version of the Office module's Data (BI) sub-application: the web feature inventory with file:line references, the
-  stored format and REST API (and why Data is server-coupled and does not use the Documents file-save method — the
+  stored format and REST API (and why Data is server-coupled and does not use the Documents file-save method - the
   `.kbdrp` Drive file is a best-effort pointer, the database is the source of truth), the desktop architecture, the
   shared `kubuno-office-data-core` engine, the increments, the risks and the feature coverage table.
 - **Platform layout of the core** ("Kubuno Web: Generate Solution", `docs/WEB.md` "Platform layout of the core"). The
@@ -256,9 +256,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   anywhere but to the chosen provider (no telemetry). An offline test provider replays recorded answers without a key.
 - **Data bindings are first-class in the designer** (`docs/DESIGNER.md` §18): every bindable row of the Properties
   window now has a drop-down arrow in its value cell (categorised and alphabetical views alike) that opens a
-  **binding picker** — the template's row, the view's data context (its `#[bind]` fields, a user control's
+  **binding picker** - the template's row, the view's data context (its `#[bind]` fields, a user control's
   properties, a hand-written `impl ViewModel`'s paths, with their Rust types), the data sources and their columns,
-  the `.kbres` resources and the named data components, fitting members first, the others greyed — with the
+  the `.kbres` resources and the named data components, fitting members first, the others greyed - with the
   property's own values and editor one click away. A bound value shows a binding marker (amber with « ! » when the
   language server reports a problem), its design-time value and a short note of its problem
   (`{Binding Title} · Stockage · ⚠ chemin inconnu`); typing `{Binding …}` keeps working, with a check of the
@@ -364,17 +364,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   paths the graph's build scripts declare (`cargo:rustc-link-search`, e.g. `windows-targets`' import libraries), which a
   project depending on `winreg` or `windows-sys` 0.48 needed (`LNK1181 windows.0.48.5.lib`).
 
-- **Kubuno Splash Screen** item template: a new splash screen is now an 800 × 500 view holding a `<SplashArtwork>` —
+- **Kubuno Splash Screen** item template: a new splash screen is now an 800 × 500 view holding a `<SplashArtwork>` -
   Kubuno's procedural artwork (Kubuno, Drive, Chat or Documents) with the product name, version, a status line, a
-  progress bar and the legal lines — which the designer draws exactly as the application will show it. Its code
+  progress bar and the legal lines - which the designer draws exactly as the application will show it. Its code
   gets `show_at_startup()`, which shows the splash at once on its own thread, set up from the view
   (`kubuno::splash::from_kbview`), and fades it out into the main window.
 
-- **Icons, chosen and drawn like in Windows Forms** (`docs/ICONS.md`): every icon property — a button's, a menu item's,
+- **Icons, chosen and drawn like in Windows Forms** (`docs/ICONS.md`): every icon property - a button's, a menu item's,
   a toolbar item's, a sidebar item's, a status label's, an empty state's, a docked panel's, the `<Icon>` element's
-  `Name`, the ribbon's `SmallIcon`/`LargeIcon` and the window's own `Icon` — shows the icon itself in its Properties
+  `Name`, the ribbon's `SmallIcon`/`LargeIcon` and the window's own `Icon` - shows the icon itself in its Properties
   window row, and "…" opens an **icon picker**: the whole Kubuno icon set as a searchable gallery (by name or keyword,
-  by set — Lucide, the Kubuno themed icons, the module logos — or recently used), the project's images with
+  by set - Lucide, the Kubuno themed icons, the module logos - or recently used), the project's images with
   **Import…** (a file outside the view's folder is copied into its `resources` folder) and its resource files, a
   preview at 16, 20, 24 and 32 pixels on the light and the dark theme drawn by the runtime itself, and **No icon**.
   The choice is written as one undo unit: `Icon="Save"`, `Icon="resources/save.svg"` or `Icon="{Res Logo}"`.
@@ -410,10 +410,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   missing translation is reported.
 - `samples/resources-desktop`: strings, images, a multi-size icon and a colour in English and French, switched live.
 - **The ribbon in the designer** (`docs/RIBBON.md`): a new **Ruban** (Ribbon) Toolbox tab lists `Ribbon` and every
-  element composing it — tabs, contextual tab groups, groups, control groups, boxes, the quick access toolbar, the
+  element composing it - tabs, contextual tab groups, groups, control groups, boxes, the quick access toolbar, the
   Backstage and its tabs, buttons and separators, buttons, toggle and radio buttons, menu and split buttons, colour
   pickers, menu items, check boxes, combo boxes, text boxes, numeric fields, galleries with their categories and
-  items, labels, separators — plus the non-visual `Command`, each with its own 16 px icon. Dropping a `Ribbon` on a
+  items, labels, separators - plus the non-visual `Command`, each with its own 16 px icon. Dropping a `Ribbon` on a
   form inserts a ribbon docked on top with a tab, a group and a button; each element arrives with what makes it
   usable. On the design surface a click selects a tab (which becomes the shown tab), a group or a control; the
   Properties window lists their properties (the container layout ones hidden) and events, with the `Command` picker.
@@ -473,7 +473,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   Form*, *Kubuno Splash Screen* and *Kubuno Flyout*, each a `.kbview` and its code, next to *Kubuno User Control*.
 - **The designer draws a form's window exactly as it runs**: the same painter as the running window (the web
   `FloatingWindow`'s band, icon, title and subtitle, caption buttons, square or rounded corners, border, resize grip),
-  following the view's window properties live — `WindowKind`, `FormBorderStyle` (a tool window's slim band, no band
+  following the view's window properties live - `WindowKind`, `FormBorderStyle` (a tool window's slim band, no band
   for a borderless window), `TitleBarHeight`, `TitleBarBackground`/`Foreground`, `Subtitle`, `TitleAlignment`,
   `CaptionButtonStyle`, `CaptionButtons`, `HelpButton`, `ShowIcon`, `ExtendContentIntoTitleBar`, `CornerPreference`,
   `BorderColor`, `SizeGripStyle`.
@@ -1796,7 +1796,7 @@ ound_button.rs`) and the module is declared in
 - **Design surface DSG-6 protocol** (`Kubuno.VisualStudio.Designer`): `RustDesignSurfaceHost` now
   speaks the DSG-6 line-delimited JSON protocol (`vskubuno/docs/DESIGNER.md` §9) with the design
   surface exe over its own stdin/stdout (`ProcessStartInfo.RedirectStandardInput`/
-  `RedirectStandardOutput`, both now `true`) — implemented in a new sibling file,
+  `RedirectStandardOutput`, both now `true`) - implemented in a new sibling file,
   `RustDesignSurfaceHost.Protocol.cs` (the class is now `partial`, kept separate from its
   keyboard-forwarding code). `SetDocumentText` (`IDesignSurfaceHost`) now sends a `setText`
   message instead of writing a temp file, which this class no longer creates or cleans up; new

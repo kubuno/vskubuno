@@ -289,7 +289,7 @@ namespace Kubuno.Desktop.Logic.Migrations
                 toolTip += Environment.NewLine + migration.File;
             }
 
-            return new MigrationsNode(MigrationsNodeKind.Migration, "m|" + migration.Version.ToString(CultureInfo.InvariantCulture), migration.Label + " — " + stateText, toolTip, moniker)
+            return new MigrationsNode(MigrationsNodeKind.Migration, "m|" + migration.Version.ToString(CultureInfo.InvariantCulture), migration.Label + " - " + stateText, toolTip, moniker)
             {
                 Migration = migration,
                 State = state,

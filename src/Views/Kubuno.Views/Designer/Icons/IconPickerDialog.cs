@@ -331,7 +331,7 @@ namespace Kubuno.Views.Designer.Icons
                 glyphs = _catalog.Search(_search.Text, choice?.Set);
             }
 
-            var tiles = glyphs.Select(g => new Tile(g.Name, g.Name, IconDrawing.ToImage(g, _ink, LightAccent, 24), $"{g.Name} — {IconText.SetName(g.Set)}\n{string.Join(", ", g.Keywords)}")).ToList();
+            var tiles = glyphs.Select(g => new Tile(g.Name, g.Name, IconDrawing.ToImage(g, _ink, LightAccent, 24), $"{g.Name} - {IconText.SetName(g.Set)}\n{string.Join(", ", g.Keywords)}")).ToList();
             _gallery.ItemsSource = tiles;
             _count.Text = IconText.Count(tiles.Count, _catalog.Icons.Count(g => g.Layers.Count > 0));
         }

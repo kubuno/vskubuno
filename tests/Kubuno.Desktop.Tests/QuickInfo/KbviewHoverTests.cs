@@ -69,7 +69,7 @@ namespace Kubuno.Desktop.Tests.QuickInfo
         [TestMethod]
         public void AnEventShowsTheEventKeywordItsArgsAndCategory()
         {
-            var hover = KbviewHover.Parse("**`OnClick`** event on `<Button>`\n\nRaised when the button is activated.\n\n*Action — `MouseEventArgs`*")!;
+            var hover = KbviewHover.Parse("**`OnClick`** event on `<Button>`\n\nRaised when the button is activated.\n\n*Action - `MouseEventArgs`*")!;
             Assert.AreEqual(KbviewHoverKind.Event, hover.Kind);
             Assert.AreEqual("MouseEventArgs", hover.EventArgs);
             Assert.AreEqual("Action", hover.EventCategory);
@@ -85,7 +85,7 @@ namespace Kubuno.Desktop.Tests.QuickInfo
         [TestMethod]
         public void AnOlderEventNameKeepsItsRemark()
         {
-            var hover = KbviewHover.Parse("**`OnPress`** event on `<Button>`\n\nRaised when clicked.\n\n*Action — `MouseEventArgs`*\n\n*Older name for `OnClick`.*")!;
+            var hover = KbviewHover.Parse("**`OnPress`** event on `<Button>`\n\nRaised when clicked.\n\n*Action - `MouseEventArgs`*\n\n*Older name for `OnClick`.*")!;
             StringAssert.EndsWith(hover.ToQuickInfo().ToPlainText(), "Older name for OnClick.");
         }
 

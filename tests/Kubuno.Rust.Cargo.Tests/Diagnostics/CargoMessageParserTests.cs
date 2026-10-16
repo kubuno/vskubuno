@@ -141,7 +141,7 @@ namespace Kubuno.Rust.Cargo.Tests.Diagnostics
         public async Task Span_paths_in_a_workspace_are_resolved_relative_to_the_workspace_root_not_the_package_directory()
         {
             // The "app" package lives in <workspace_root>\app, but Cargo reports its span
-            // file_name as "app\src\main.rs" — relative to the workspace root, not to the
+            // file_name as "app\src\main.rs" - relative to the workspace root, not to the
             // package's own manifest directory. Use the real workspace root captured alongside
             // this build (same fixtures-workspace) to prove the resolved path matches.
             var metadataRunner = new FakeProcessRunner(

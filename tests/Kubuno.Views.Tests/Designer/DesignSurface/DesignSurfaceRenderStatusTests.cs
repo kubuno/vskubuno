@@ -78,7 +78,7 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
             });
             var model = DesignErrorBannerModel.Build(status, null);
             Assert.IsTrue(model.IsVisible && model.IsError);
-            Assert.AreEqual("La vue contient des erreurs — dernier aperçu valide affiché.", model.Headline);
+            Assert.AreEqual("La vue contient des erreurs - dernier aperçu valide affiché.", model.Headline);
             // In text order, each with its line:column - what a click selects in the XML pane.
             CollectionAssert.AreEqual(new[] { "2:12", "9:3" }, model.Entries.Select(e => e.Location).ToArray());
             Assert.AreEqual("unterminated string", model.Entries[0].Text);
@@ -122,7 +122,7 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
             });
             var model = DesignErrorBannerModel.Build(status, name => name == "Avatar");
             Assert.AreEqual(3, model.Entries.Count);
-            StringAssert.StartsWith(model.Headline, "La vue contient 2 erreurs et 1 avertissement —");
+            StringAssert.StartsWith(model.Headline, "La vue contient 2 erreurs et 1 avertissement -");
             Assert.AreEqual(1, model.Entries.Count(e => e.IsWarning));
 
             var stale = DesignErrorBannerModel.Build(new DesignSurfaceRenderStatus(DesignSurfaceRenderState.Stale, new[]
@@ -151,7 +151,7 @@ namespace Kubuno.Views.Tests.Designer.DesignSurface
         public void Banner_SaysWhenNothingCanBeShownOrTheFileWasRecovered()
         {
             var empty = DesignErrorBannerModel.Build(new DesignSurfaceRenderStatus(DesignSurfaceRenderState.Empty, new[] { new DesignSurfaceDiagnostic(1, 1, 1, 1, "expected an element name") }), null);
-            StringAssert.StartsWith(empty.Headline, "La vue contient des erreurs — rien");
+            StringAssert.StartsWith(empty.Headline, "La vue contient des erreurs - rien");
             var recovered = DesignErrorBannerModel.Build(new DesignSurfaceRenderStatus(DesignSurfaceRenderState.Recovered, new[] { new DesignSurfaceDiagnostic(3, 9, 3, 9, "expected `\"`") }), null);
             StringAssert.StartsWith(recovered.Headline, "La vue n'est pas du XML bien formé");
             Assert.IsTrue(recovered.IsError);

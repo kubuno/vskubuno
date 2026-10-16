@@ -1,9 +1,9 @@
 <Project>
 
   <!--
-    Kubuno.Rust.Sdk — pure MSBuild SDK for a .rsproj (docs/RSPROJ.md work package 1). Modeled on
+    Kubuno.Rust.Sdk - pure MSBuild SDK for a .rsproj (docs/RSPROJ.md work package 1). Modeled on
     Microsoft.VisualStudio.JavaScript.SDK: a project using this SDK never lists .rs files or
-    repeats [dependencies] — it names one Cargo package (<CargoPackage>) and otherwise defers to
+    repeats [dependencies] - it names one Cargo package (<CargoPackage>) and otherwise defers to
     Cargo itself. This file (the implicit TOP import of `<Project Sdk="Kubuno.Rust.Sdk/…">`) only
     sets defaults; Sdk.targets (the implicit BOTTOM import) does the actual work, since several
     defaults (CargoProfile in particular) depend on properties (Configuration) the project body may
@@ -11,8 +11,8 @@
 
     Like the JS SDK, this SDK sits on top of Microsoft.Common.props/.targets (imported here and at
     the bottom of Sdk.targets): Visual Studio's Common Project System (work package 3) drives a
-    project through that standard targets graph — design-time builds, solution Build/Rebuild/Clean,
-    project configurations, output groups — so cargo is plugged into its documented extension
+    project through that standard targets graph - design-time builds, solution Build/Rebuild/Clean,
+    project configurations, output groups - so cargo is plugged into its documented extension
     points (CoreCompile, BeforeClean, Restore) instead of redefining Build/Clean/Rebuild. (Work
     package 1 first shipped without Microsoft.Common; that was enough for the command line but not
     for CPS, which calls targets such as GetTargetPath/BuiltProjectOutputGroup/ResolveReferences
@@ -23,7 +23,7 @@
           Condition="'$(MicrosoftCommonPropsHasBeenImported)' != 'true' and Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
 
   <PropertyGroup>
-    <!-- Standard MSBuild defaults every project is expected to have — a .sln's
+    <!-- Standard MSBuild defaults every project is expected to have - a .sln's
          ProjectConfigurationPlatforms section, and `-p:Configuration=Release`, both assume these. -->
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <!-- A Rust executable is native code for one architecture: x64 is the only platform offered and
@@ -38,7 +38,7 @@
     <DebuggerFlavor Condition="'$(DebuggerFlavor)' == ''">RustDebugger</DebuggerFlavor>
 
     <!-- A fake, unused target framework so `dotnet build`/`dotnet restore` recognize this as a
-         project worth evaluating at all (the JS SDK's own documented trick — docs/RSPROJ.md §2).
+         project worth evaluating at all (the JS SDK's own documented trick - docs/RSPROJ.md §2).
          Never used to resolve any actual .NET reference (NoStdLib below). -->
     <TargetFramework Condition="'$(TargetFramework)' == ''">net6.0</TargetFramework>
     <TargetFrameworks Condition="'$(TargetFrameworks)' == ''"></TargetFrameworks>
@@ -117,10 +117,10 @@
     <KubunoCommonControlsV6 Condition="'$(KubunoCommonControlsV6)' == ''">false</KubunoCommonControlsV6>
 
     <!--
-      The task assembly this SDK ships (work package 2) — resolved relative to this very file,
+      The task assembly this SDK ships (work package 2) - resolved relative to this very file,
       exactly like the JS SDK locates its own task DLL. Two TFMs are shipped side by side, picked by
       $(MSBuildRuntimeType) ("Full" = the .NET Framework MSBuild.exe VS ships; anything else = the
-      .NET host `dotnet build` uses) — a plain netstandard2.0 task assembly does NOT load under the
+      .NET host `dotnet build` uses) - a plain netstandard2.0 task assembly does NOT load under the
       .NET host (see Kubuno.Cargo.MSBuild.Tasks.csproj's own comment).
     -->
     <_KubunoCargoTasksTfm Condition="'$(_KubunoCargoTasksTfm)' == '' and '$(MSBuildRuntimeType)' == 'Full'">net472</_KubunoCargoTasksTfm>
@@ -131,7 +131,7 @@
   <!--
     Default items (docs/RSPROJ.md §3 "File globbing"), mirroring the JS SDK's own Sdk.props: every
     file under the project folder becomes a None item, purely so Solution Explorer has something to
-    show — cargo compiles, MSBuild only displays, so nothing is ever a Compile item. Items are
+    show - cargo compiles, MSBuild only displays, so nothing is ever a Compile item. Items are
     evaluated after every property, so EnableDefaultItems/DefaultItemExcludes (set in Sdk.targets,
     overridable by the project) already have their final values here. .kbview files fall out of
     this glob and open with the extension's own editor factory (dispatch is by file extension, not

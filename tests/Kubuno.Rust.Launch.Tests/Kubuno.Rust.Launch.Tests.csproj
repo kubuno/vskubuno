@@ -2,7 +2,7 @@
 
   <!--
     Runs with plain `dotnet test`, no Visual Studio host required. Targets net8.0 (an
-    installed LTS runtime) rather than netstandard2.0 — a netstandard TFM can't itself
+    installed LTS runtime) rather than netstandard2.0 - a netstandard TFM can't itself
     produce a runnable test executable; the library under test stays netstandard2.0.
   -->
   <PropertyGroup>

@@ -109,7 +109,7 @@ namespace Kubuno.Rust.Launch
 
         /// <summary>
         /// Runs `rustc -vV` (verbose version) through the given <paramref name="processRunner"/>
-        /// and extracts the `host: &lt;triple&gt;` line — the triple `RustDebugEnvironment` needs to
+        /// and extracts the `host: &lt;triple&gt;` line - the triple `RustDebugEnvironment` needs to
         /// locate the host standard library's dylib directory (see
         /// <see cref="GetTargetLibDir"/>) when the target isn't cross-compiled. Kept as a
         /// separate call from <see cref="GetSysroot"/> (rather than folded into one `rustc`
@@ -209,7 +209,7 @@ namespace Kubuno.Rust.Launch
 
         /// <summary>
         /// The directory rustup/rustc ships the standard library's `.natvis` files in:
-        /// `&lt;sysroot&gt;/lib/rustlib/etc`. Doesn't touch disk — see
+        /// `&lt;sysroot&gt;/lib/rustlib/etc`. Doesn't touch disk - see
         /// <see cref="FindNatvisFiles"/> to actually list what's there.
         /// </summary>
         public static string GetNatvisDirectory(string sysroot)

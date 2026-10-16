@@ -5,7 +5,7 @@ namespace Kubuno.Rust.Cargo.Commands
 {
     /// <summary>
     /// Fluent builder for a Cargo invocation (build/check/test/clean/run). Building never
-    /// touches the file system or spawns anything — <see cref="ToCommandLine"/> only computes
+    /// touches the file system or spawns anything - <see cref="ToCommandLine"/> only computes
     /// the file name and argument string; running it is <see cref="Processes.IProcessRunner"/>'s job.
     /// </summary>
     public sealed class CargoCommand
@@ -33,7 +33,7 @@ namespace Kubuno.Rust.Cargo.Commands
 
         public static CargoCommand Run() => new CargoCommand(CargoCommandKind.Run);
 
-        /// <summary>`cargo fetch`: downloads dependencies without building — the MSBuild SDK's Restore hook.</summary>
+        /// <summary>`cargo fetch`: downloads dependencies without building - the MSBuild SDK's Restore hook.</summary>
         public static CargoCommand Fetch() => new CargoCommand(CargoCommandKind.Fetch);
 
         /// <summary>

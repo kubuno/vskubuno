@@ -33,16 +33,16 @@ namespace Kubuno.Views.Designer
         {
             DesignSurface.DesignSurfaceRuntimeState.NotBuilt => T(
                 "Preview: bundled runtime - build the project to use its own kubuno_desktop_ui.",
-                "Aperçu : runtime intégré — générez le projet pour utiliser sa propre kubuno_desktop_ui."),
+                "Aperçu : runtime intégré - générez le projet pour utiliser sa propre kubuno_desktop_ui."),
             DesignSurface.DesignSurfaceRuntimeState.Building => T(
                 "Preview: building the preview with the project's kubuno_desktop_ui...",
                 "Aperçu : compilation de l'aperçu avec la kubuno_desktop_ui du projet…"),
             DesignSurface.DesignSurfaceRuntimeState.Failed => T(
                 "Preview: bundled runtime - the preview could not be built with the project's kubuno_desktop_ui (see Output > Kubuno).",
-                "Aperçu : runtime intégré — l'aperçu n'a pas pu être compilé avec la kubuno_desktop_ui du projet (voir Sortie > Kubuno)."),
+                "Aperçu : runtime intégré - l'aperçu n'a pas pu être compilé avec la kubuno_desktop_ui du projet (voir Sortie > Kubuno)."),
             DesignSurface.DesignSurfaceRuntimeState.NotApplicable => T(
                 "Preview: bundled runtime - this view is not part of a project that uses kubuno-desktop-views.",
-                "Aperçu : runtime intégré — cette vue n'appartient pas à un projet qui utilise kubuno-desktop-views."),
+                "Aperçu : runtime intégré - cette vue n'appartient pas à un projet qui utilise kubuno-desktop-views."),
             DesignSurface.DesignSurfaceRuntimeState.OutOfDate => T(
                 "The project's controls changed since the last build: the designer shows their previous version. Build the project to see the changes.",
                 "Les contrôles du projet ont changé depuis la dernière génération : le concepteur montre leur version précédente. Générez le projet pour voir les modifications."),
@@ -69,21 +69,21 @@ namespace Kubuno.Views.Designer
         /// <summary>The text does not parse: the last good preview stays on screen.</summary>
         public static string ErrorBannerStale => T(
             "The view contains errors - showing the last valid preview.",
-            "La vue contient des erreurs — dernier aperçu valide affiché.");
+            "La vue contient des erreurs - dernier aperçu valide affiché.");
 
         /// <summary>Nothing could be shown.</summary>
         public static string ErrorBannerEmpty => T(
             "The view contains errors - nothing can be previewed yet.",
-            "La vue contient des erreurs — rien ne peut encore être affiché.");
+            "La vue contient des erreurs - rien ne peut encore être affiché.");
 
         /// <summary>A malformed file opened: the preview was rebuilt from what could be read.</summary>
         public static string ErrorBannerRecovered => T(
             "The view is not well-formed XML - the preview shows what could be read.",
-            "La vue n'est pas du XML bien formé — l'aperçu montre ce qui a pu être lu.");
+            "La vue n'est pas du XML bien formé - l'aperçu montre ce qui a pu être lu.");
 
         /// <summary>The view has errors: its valid part is shown.</summary>
         public static string ErrorBannerTolerant(int errors, int warnings) =>
-            T($"The view contains {ErrorCount(errors, warnings)} - ", $"La vue contient {ErrorCount(errors, warnings)} — ")
+            T($"The view contains {ErrorCount(errors, warnings)} - ", $"La vue contient {ErrorCount(errors, warnings)} - ")
             + (errors + warnings == 1
                 ? T("the element in question is shown as a placeholder or with its default value.",
                     "l'élément en cause est affiché comme un espace réservé ou avec sa valeur par défaut.")

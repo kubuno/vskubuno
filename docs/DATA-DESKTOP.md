@@ -1,4 +1,4 @@
-# Kubuno Data (desktop) — design note
+# Kubuno Data (desktop) - design note
 
 Status: design of record for the native desktop version of the Office module's **Data** sub-application
 (`kubuno-data.exe`), started 2026-10-11. User goal: the desktop app catches up with the **whole** web Data
@@ -14,7 +14,7 @@ Every file:line below is in `office/web/src` unless stated.
 > ⚠️ **Data is not a file document like the other Office apps.** It is a server-coupled BI tool (Power
 > BI-like). A report is a row of `office_data.reports` with its pages and widgets in `office_data.*`; the
 > `.kbdrp` Drive file is a **best-effort mirror / pointer** (`server/src/handlers/data_reports.rs:98-110`),
-> created with empty `pages`/`widgets` and **never kept in sync** with edits — the DB is the source of truth.
+> created with empty `pages`/`widgets` and **never kept in sync** with edits - the DB is the source of truth.
 > Every edit is its own REST call (auto-save), so the Documents save method (content digest, `PUT …/data`,
 > 2 MiB cap, join/leave edit sessions, offline journal) **does not apply**. This is the central divergence;
 > it drives §2.2, §3 and the open question in §6.
@@ -38,29 +38,29 @@ Every file:line below is in `office/web/src` unless stated.
 
 ### 1.2 Features (inventory)
 
-Shell — list/editor routing (`DataApp.tsx:33-51`); recents + Drive browse of `Office/Data` (`.kbdrp`/`.kbdst`) +
+Shell - list/editor routing (`DataApp.tsx:33-51`); recents + Drive browse of `Office/Data` (`.kbdrp`/`.kbdst`) +
 new (`:55-133`); trash/star/duplicate (`:68-75,162-173,274-290`); editable title (`:154-178`); backstage Fichier
 with stats (`:185-213`); Rapport/Données/Modèle strip (`:239-314`); SQL query editor (datasets, validate,
-preview, refresh — `:363-580`); semantic model view (tables, schema, measures, relations — `:584-675`); read-only
+preview, refresh - `:363-580`); semantic model view (tables, schema, measures, relations - `:584-675`); read-only
 macro API (`:216-229`).
 
-Report editor — 5-tab ribbon Accueil/Insertion/Modélisation/Affichage/Format(contextuel) (`:1283-1396`);
+Report editor - 5-tab ribbon Accueil/Insertion/Modélisation/Affichage/Format(contextuel) (`:1283-1396`);
 auto-save (one server mutation per edit, `:265-266`) + undo/redo by inverse ops with drag coalescing
 (`:534-541,142-255`); canvas with absolute-positioned widgets, drag/resize/z-order/lock (`:681-771`), 8 px grid
 snap (`:38-39`), clipboard copy/clone/paste (`:383-393`), align (distribute is a no-op, `:395-400`); dockable
-panes persisted under `kubuno:office:dataDock` — Fields (draggable columns, `:854-899`), Visualizations gallery +
+panes persisted under `kubuno:office:dataDock` - Fields (draggable columns, `:854-899`), Visualizations gallery +
 Wells editor with aggregations (`:901-996`), Format (general/data/colors/visual-elements/gauge/text/image/shape,
 `:1026-1125`), Filters (page + visual, `:1159-1229`); slicer cross-filtering (`:605-614,650-662`); multi-page
 (size/background/position, `:293-348,831-848`); Focus mode (`:809-827`); context menus widget/page (`:1237-1277`);
 shortcuts Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y / Suppr (`:357-374`); field drag&drop `text/kbfield` (`:882-950`).
 
-Visuals — **38** catalogue types in 8 categories (`visuals.tsx:43-90`), 37 `renderVisual` cases + `scorecard`
+Visuals - **38** catalogue types in 8 categories (`visuals.tsx:43-90`), 37 `renderVisual` cases + `scorecard`
 alias; static = text/image/shape; slicers = slicer/slicer_dropdown/slicer_range (+ filter_date/filter_dropdown).
 
-Data flow — a non-static, non-slicer widget fetches its rows through `executeApi.query` (`POST /office/data/execute`,
+Data flow - a non-static, non-slicer widget fetches its rows through `executeApi.query` (`POST /office/data/execute`,
 dataset_id + dimensions + metrics + merged filters + sort + limit 200), cached by React Query; refresh invalidates
 `['widget-data']`. Aggregations SUM/AVG/COUNT/COUNT_DISTINCT/MIN/MAX. SQL and measure evaluation run **on the
-server** — the client never executes a query.
+server** - the client never executes a query.
 
 ### 1.3 Stored format and API
 
@@ -77,7 +77,7 @@ server** — the client never executes a query.
   `reports` CRUD + `/trash`, `/restore`, `/duplicate`, `/open-by-file`; `pages` create/update/delete; `widgets`
   create/update/delete + `/widgets/batch`. Owner-only.
 - Server facts that shape the client: an edit is a **single REST mutation**, applied immediately; there is **no
-  etag, no content digest, no edit session** on a report — concurrency is last-write-wins per row. `widgets.batch`
+  etag, no content digest, no edit session** on a report - concurrency is last-write-wins per row. `widgets.batch`
   exists for bulk position moves. Measures and query results are server-computed (SQL against a datasource).
 
 ## 2. Architecture
@@ -89,7 +89,7 @@ office/
   desktop/windows/kubuno-office-data                        the Win32 window, kubuno-data.exe (planned)
 ```
 
-### 2.1 `kubuno-office-data-core` (`office/common/data-core`) — as built
+### 2.1 `kubuno-office-data-core` (`office/common/data-core`) - as built
 
 A standalone, platform-neutral crate (path dependency, like `diagrams-core`), ported from the web's pure logic.
 No UI, no Windows, no SQL (query execution stays on the server).
@@ -109,17 +109,17 @@ are intentionally absent (server-side on the web).
 
 ### 2.2 Desktop app (planned)
 
-- `desktop/common/kubuno-office-data-common` — the portable app: launch options
+- `desktop/common/kubuno-office-data-common` - the portable app: launch options
   (`kubuno-data [--dark] [--culture fr|en] [--sample|--live] [--doc <report-id|file-id> | file.kbdrp]`), opening a
   local `.kbdrp`, and a **Data REST client** over `kubuno-office-desktop-common`'s `Transport` (the shell's token
   broker). Unlike Documents, there is **no session host / journal**: the client calls `reports.get`/`open-by-file`
   to load, then `execute.query` per queryable widget, and maps each `EditOp` to its mutation
   (`widgets.create/update/delete`, `pages.*`, `reports.update`), optionally batching position moves. Offline =
   read-only cache (no local write journal) until the open question in §6 is settled.
-- `desktop/windows/kubuno-office-data` — `kubuno-data.exe`: `views/data_window.kbview` (TitleBarStyle Tall, header
+- `desktop/windows/kubuno-office-data` - `kubuno-data.exe`: `views/data_window.kbview` (TitleBarStyle Tall, header
   menus, declarative `<Ribbon Tone="Data">` matching the 5 web tabs, a `DockArea` with Fields / Visualizations +
   Wells / Format / Filters panes around the canvas, the pages bar, the status bar), the custom control
-  `ReportCanvas` (widgets drawn through a Direct2D `Surface`: cards, the chart families, tables, slicers — ported
+  `ReportCanvas` (widgets drawn through a Direct2D `Surface`: cards, the chart families, tables, slicers - ported
   from `visuals.tsx` via the core's shaping/format), `FieldsPane`, `VisualGallery`, `WellsEditor`, `FormatPane`,
   `FiltersPane`, `PagesBar`; dialogs reuse Documents' vendored confirm/prompt. Charts paint from
   `shape::*`/`format::*`, so the drawing stays faithful to the web.
@@ -137,7 +137,7 @@ own the Documents crates).
 1. Open (`--doc <id>`): `reports.get(id)` (or `open-by-file(fileId)` for a `.kbdrp`) → `{ report, pages, widgets }`
    into a `ReportDoc`; `datasets.list` for the Fields pane; `execute.query` per queryable widget of the current page.
 2. Each edit is one `EditOp` applied to the in-memory doc (instant, local) **and** mirrored to the server as its
-   REST mutation — no digest, no `PUT …/data`, no edit session. Position drags coalesce in the undo history and may
+   REST mutation - no digest, no `PUT …/data`, no edit session. Position drags coalesce in the undo history and may
    be flushed with `widgets.batch`.
 3. Undo/redo replay the inverse op locally and send the corresponding mutation; concurrency is the server's
    last-write-wins per row (as on the web).
@@ -148,16 +148,16 @@ own the Documents crates).
 
 ## 4. Increments
 
-- **Note** — this file (commit 1).
-- **Core** — `kubuno-office-data-core` (model + format + shape + palettes + wells + visuals + editor), unit tests
+- **Note** - this file (commit 1).
+- **Core** - `kubuno-office-data-core` (model + format + shape + palettes + wells + visuals + editor), unit tests
   mirroring the web, cross-target checks. *(as built, commit 2.)*
-- **A** — open a local `.kbdrp` and `--doc <id>`, display read-only at parity (canvas, widgets painted from the
+- **A** - open a local `.kbdrp` and `--doc <id>`, display read-only at parity (canvas, widgets painted from the
   core, pages, theme), light and dark; the Fields/Visualizations/Format panes shown.
-- **B** — editing: every gesture and ribbon command of §1.2 wired to `EditOp`s, panes and context menus,
+- **B** - editing: every gesture and ribbon command of §1.2 wired to `EditOp`s, panes and context menus,
   shortcuts; wells drag&drop; slicer cross-filter.
-- **C** — server mutations (§3), page management, star/rename/trash/duplicate, the SQL (Données) and semantic
+- **C** - server mutations (§3), page management, star/rename/trash/duplicate, the SQL (Données) and semantic
   model (Modèle) views, refresh.
-- **VS** — the views in the designer, `Kubuno.Office.slnx` regenerated.
+- **VS** - the views in the designer, `Kubuno.Office.slnx` regenerated.
 
 ## 5. Theme
 
@@ -179,8 +179,8 @@ follow the app light/dark theme. Chart colours come from the report's `paletteId
 - Fonts: the web asks for Inter/Georgia; the desktop uses DirectWrite with the same family names and the system
   fallback (desktop font decision), so chart label wrapping can differ by a few pixels.
 - Multi-select is only partially wired on the web (`DataReportEditor.tsx:133` operates on a single widget) and
-  `align 'distribute'` is a no-op (`:397`) — the desktop matches the web, these are not implemented beyond it.
-- Macros run JavaScript in the browser; the desktop has no script runtime — the read-only macro API is shown but
+  `align 'distribute'` is a no-op (`:397`) - the desktop matches the web, these are not implemented beyond it.
+- Macros run JavaScript in the browser; the desktop has no script runtime - the read-only macro API is shown but
   inert (listed as not done).
 
 ## 7. Verification
@@ -192,9 +192,9 @@ database and a datasource; real mouse on the ribbon (under the shared VS/input l
 
 ## 8. Log
 
-**2026-10-11** — note written (commit 1).
+**2026-10-11** - note written (commit 1).
 
-**2026-10-11 (as built — core)**
+**2026-10-11 (as built - core)**
 - Core `office/common/data-core` (`kubuno-office-data-core`): `model` (lossless `ReportDoc`, flattened `extra`,
   config accessors), `format` (fr-FR grouping with `U+202F`, every `NumberFormat` token, `parseFloat` subset),
   `shape` (series pivot, histogram, quartiles, OLS, moving average, squarified treemap), `palettes` (10 palettes,
@@ -206,14 +206,14 @@ database and a datasource; real mouse on the ribbon (under the shared VS/input l
 
 **Where this lot stopped (2026-10-11) and next steps**
 - Desktop app (`desktop/common/kubuno-office-data-common` + `desktop/windows/kubuno-office-data`) and the VS
-  integration are **not built yet** — they are increments A–C and VS above. The core is ready for them.
+  integration are **not built yet** - they are increments A–C and VS above. The core is ready for them.
 - Before increment C, settle the §6 open question (server-coupled approach, datasource in scope) with the user.
 - Golden fixture from the real web editor (a report with a few widgets) to pin `model` round-trip against actual
   server output; currently pinned against a hand-written sample mirroring `models/data.rs`.
 
 ## 9. Feature coverage
 
-✔ done and verified · ◐ implemented and unit-tested, not exercised live · ✘ not done · — not applicable.
+✔ done and verified · ◐ implemented and unit-tested, not exercised live · ✘ not done · - not applicable.
 Web lines are in `DataReportEditor.tsx` / `DataApp.tsx` / `visuals.tsx` as noted.
 
 | Feature | Web | Desktop |
@@ -238,4 +238,4 @@ Web lines are in `DataReportEditor.tsx` / `DataApp.tsx` / `visuals.tsx` as noted
 | Trash, star, duplicate, title, backstage stats | `DataApp.tsx` | ✘ increment C |
 | Focus mode | `:809-827` | ✘ increment B |
 | Macros (read-only API) | `DataApp.tsx:216-229` | ✘ no script runtime (shown inert) |
-| VS designer views, `Kubuno.Office.slnx` | — | ✘ VS increment |
+| VS designer views, `Kubuno.Office.slnx` | - | ✘ VS increment |

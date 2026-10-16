@@ -1,4 +1,4 @@
-# Shell controls — `WaffleMenu`, `AccountMenu` and the header (shared contract, web and desktop)
+# Shell controls - `WaffleMenu`, `AccountMenu` and the header (shared contract, web and desktop)
 
 User request (2026-10-02): « le wafflemenu du core doit être un usercontrol », then « ce menu aussi doit être un
 usercontrol » (the account menu). Both are **user controls** (`.kbcontrol`) on both targets, with the same names,
@@ -16,7 +16,7 @@ Names below are the XML/registry names (PascalCase). Desktop fields are their sn
 `AppLaunched` → `app_launched`, raised with `raise_app_launched`); on the web, properties and event props follow the
 web's own casing of the same names (`apps`, `onAppLaunched`).
 
-## 1. `WaffleMenu` — the app launcher
+## 1. `WaffleMenu` - the app launcher
 
 The favourites card (title « Vos favoris » and its pencil; while editing « Annuler », « OK » and « Glisser-déposer
 des applis ») over every other app, three tiles to a row, scrolling as one. 360 DIP/px wide.
@@ -45,10 +45,10 @@ des applis ») over every other app, three tiles to a row, scrolling as one. 360
 LauncherApp { id: string, label: string, icon: string, logo?: string }
 ```
 
-- `id`: the server's `sidebar_items[].id` — the key favourites are stored under.
+- `id`: the server's `sidebar_items[].id` - the key favourites are stored under.
 - `icon`: a Kubuno icon name (a module logo such as `DriveLogo`, or a Lucide glyph); unknown → `Cloud`.
 - `logo`: a logo the server serves (desktop: the cached file's path; web: its URL); wins over `icon`.
-- `module` / `moduleLabel` (both targets): a module with several apps — Office, PaintSharp — has its other apps
+- `module` / `moduleLabel` (both targets): a module with several apps - Office, PaintSharp - has its other apps
   grouped under its label (desktop `Tile.module` / `Tile.module_label`).
 - Web only: `Icon` (the icon component a module registered in `WaffleAppRegistry`; wins over `icon` and `logo`),
   `href` (the address the tile opens: tiles are links, a middle click opens a new tab).
@@ -89,7 +89,7 @@ Desktop: the Rust trait `kubuno_desktop_shell_controls::LauncherService`, given 
 - A module with ONE app at its root route is keyed by the module's id (Mail's `mail-inbox` entry is the tile and the
   favourite `mail`); a favourite an older desktop saved under the entry's id is mapped to it when read.
 
-## 2. `AccountMenu` — the account panel
+## 2. `AccountMenu` - the account panel
 
 The header's account panel: the active account's address and a close button (pinned), then, scrolling under it,
 its avatar, « Bonjour <first name> ! », « Gérer votre compte », the other accounts (a click opens one), then
@@ -138,7 +138,7 @@ AccountEntry { id: string, name: string, email: string, server: string, initials
   `RemoveAccount`) and `unread` (that account's unread notifications, a badge on its row): both targets (desktop
   `AccountEntry.remote` / `.unread`).
 - On `AccountMenu`, both targets: `Busy` (a switch is under way: the rows are disabled), `AvatarBusy` (an upload is
-  under way: the camera is disabled). Desktop only: `Expanded` (the accounts' card unfolded, `true` by default — the
+  under way: the camera is disabled). Desktop only: `Expanded` (the accounts' card unfolded, `true` by default - the
   web keeps it as internal state). Web only: `ManageHref` / `LabelsHref` / `AdminHref` (those entries are links; a plain click
   raises the event, a middle click opens the address). « Se déconnecter de tous les comptes » replaces « Se
   déconnecter » when the browser holds other accounts of this instance (the host's `SignOut` signs them all out).
@@ -167,13 +167,13 @@ Three more user controls, so an app drops ONE control in its header and gets the
 |---|---|---|---|
 | `WaffleButton` | the 36 round waffle (`LayoutGrid`); a click opens a `WaffleMenu` in a popup (§4) | `PopupAnchor` (`Button` \| `Window`), `PopupOffset`, `PopupMargin`, `PopupBottomGap` | `PopupOpened` |
 | `AccountButton` | the 36 avatar (photo, else initials on the accent); a click opens an `AccountMenu` in a popup | `UserName`, `Initials`, `AvatarPath` (bindable; else taken from the service), the four `Popup…` | `PopupOpened` |
-| `HeaderActions` | the web's right-hand header cluster, in the web's order: bell (+ counter), settings, help, waffle, avatar — 36 circles, no gap, the avatar 2 further (`ml-0.5`); a hidden item leaves no hole | `ShowNotifications`, `ShowSettings`, `ShowHelp`, `ShowWaffle`, `ShowAccount` (all `true` by default), `Minimal` (waffle + avatar only: the web's search mode), `UnreadCount` | `NotificationsClicked`, `SettingsClicked`, `HelpClicked` |
+| `HeaderActions` | the web's right-hand header cluster, in the web's order: bell (+ counter), settings, help, waffle, avatar - 36 circles, no gap, the avatar 2 further (`ml-0.5`); a hidden item leaves no hole | `ShowNotifications`, `ShowSettings`, `ShowHelp`, `ShowWaffle`, `ShowAccount` (all `true` by default), `Minimal` (waffle + avatar only: the web's search mode), `UnreadCount` | `NotificationsClicked`, `SettingsClicked`, `HelpClicked` |
 
-- Data: the buttons take the app's `LauncherService` / `AccountService` — per button (`set_service`) or once per UI
+- Data: the buttons take the app's `LauncherService` / `AccountService` - per button (`set_service`) or once per UI
   thread (`set_default_launcher`, `set_default_accounts` on the desktop; the web reads its stores).
 - `PopupAnchor="Button"` (default): under the button, right edges aligned, `PopupOffset` (4: the web's
   `sideOffset`) below it. `PopupAnchor="Window"`: at the window's top-right corner, `PopupMargin` (8: `right-2`) from
-  its right edge, `PopupOffset` below its client top — the shell's header, whose panels line up with the window.
+  its right edge, `PopupOffset` below its client top - the shell's header, whose panels line up with the window.
 - A click on the button while its panel is open closes it (the panel loses the focus) and does not reopen it.
 - **Other apps** (desktop, 2026-10-02): an app that is not the shell (Documents, Chat) gets both services from the
   shared crate `kubuno-desktop-header-data` (`desktop/windows/src/crates/kubuno-desktop-header-data`, see its README): one
@@ -192,7 +192,7 @@ Three more user controls, so an app drops ONE control in its header and gets the
 User requirement (2026-10-02): « le WaffleMenu et l'AccountMenu ne doivent pas rester enfermés dans la fenêtre qui
 les contient, ils doivent pouvoir s'afficher à l'extérieur ».
 
-- **Desktop**: the panel is a top-level window of its own — `kubuno_desktop::popup::Popup` (facade): a code-built
+- **Desktop**: the panel is a top-level window of its own - `kubuno_desktop::popup::Popup` (facade): a code-built
   `WindowKind="Flyout"` form holding the user control (docked to fill), `CornerRadius` 28 over the blur
   (`kubuno-desktop-controls::host::backdrop`), its shadow margin, the theme's tint, owned by the anchor's window (above it,
   top-most when it is), closing when it loses the focus (click outside, another window activated) and on Escape
@@ -222,8 +222,8 @@ and three free regions take any control. Everything sits in the title bar's own 
 | `ShowNotifications` | the bell, with `UnreadCount` (bindable, 0 = no counter, `9+`) | `NotificationsClicked` |
 | `ShowSettings` | the settings button | `SettingsClicked` |
 | `ShowHelp` | the header's help button (not the caption's `?` of `HelpButton`) | `HelpClicked` |
-| `ShowWaffle` | the app launcher (opens the `WaffleMenu` popup itself) | — |
-| `ShowAccount` | the avatar (opens the `AccountMenu` popup itself) | — |
+| `ShowWaffle` | the app launcher (opens the `WaffleMenu` popup itself) | - |
+| `ShowAccount` | the avatar (opens the `AccountMenu` popup itself) | - |
 
 - **Defaults: off for every window kind** (Form, Dialog, ToolWindow, Splash, Flyout, MdiChild); what the view writes
   wins, a binding (`ShowWaffle="{Binding SignedIn}"`) counts as shown for the room it takes. Not on by default for
@@ -261,7 +261,7 @@ and three free regions take any control. Everything sits in the title bar's own 
   190 for all five.
 - **Look**: a band carrying the items and coloured by nobody takes the web header's ground (`Background`, the
   `var(--body-bg)` token) and the text colour for the title and caption buttons, light and dark. On a coloured band
-  (`TitleBarBackground`, `AccentColor`, or a ribbon whose tab strip it continues — Documents) the items take the band's
+  (`TitleBarBackground`, `AccentColor`, or a ribbon whose tab strip it continues - Documents) the items take the band's
   ink (`ForeColor` = `TitleBarForeground`, else `OnPrimary`) and the avatar its pale accent tint (`AvatarTint="Accent"`).
   Hover: the controls' own round wash (`hover:bg-surface-3`).
 - **Free regions**: `TitleBar.Region="Left" | "Center" | "Right"` on any child of the root (`IconButton`,
@@ -274,7 +274,7 @@ and three free regions take any control. Everything sits in the title bar's own 
 
 - **Hit-testing** (checked with `WM_NCHITTEST` on the example window): `HTCLIENT` on every item and region control
   (they are title-bar holes), `HTCAPTION` between the title and the controls and in the gap before the caption buttons
-  (drag, double-click maximises — checked live), `HTMAXBUTTON` on the maximise button (snap layouts).
+  (drag, double-click maximises - checked live), `HTMAXBUTTON` on the maximise button (snap layouts).
 - **Keyboard**: **F6** (Shift+F6) moves the focus from the page to the first focusable control of the title band and
   back to the control that had it; **Alt** pressed alone does the same in a view without a menu bar (with one, Alt keeps
   entering the menu bar). Tab reaches the band's controls after the page's.
@@ -310,7 +310,7 @@ code-first Form with every item, a menu button on the left and a search field in
 
 ## 7. Web as built (core pilot, 2026-10-02)
 
-Files: `core/frontend/src/core/shell/menus/` — `WaffleMenu.kbcontrol` + `WaffleMenu.ts`, `AccountMenu.kbcontrol` +
+Files: `core/frontend/src/core/shell/menus/` - `WaffleMenu.kbcontrol` + `WaffleMenu.ts`, `AccountMenu.kbcontrol` +
 `AccountMenu.ts` (the user controls), `AppTileGrid.tsx` and `MenuLink.tsx` (custom controls used inside them),
 `WaffleButton.tsx` and `AccountButton.tsx` (the header buttons and their popovers), `model.ts` (the data shapes and
 services of §1–§2), `controls.meta.ts` → `kbview-controls.json` (the core project's registry of its custom controls).
@@ -344,8 +344,8 @@ same names, properties, events and data shapes (§1–§3). What remains differe
 | Topic | Desktop | Web | Why |
 |---|---|---|---|
 | Event args of `AppTileGrid` (an inner part) | `TileInvoked { id }`, `FavoritesEdited { favorites }` | `e.value` (`ValueChangedEventArgs`) | each target's event-args convention; the user-control events (§1–§2) are identical |
-| Tiles as links, `href`, `Icon` component, `ShowMarketplace` / `MarketplaceHref` / `OpenMarketplace` | — | yes | the browser's link semantics (middle click) and the web's module bundles; the desktop opens apps through `LauncherService::launch` |
-| `ManageHref` / `LabelsHref` / `AdminHref` | — | yes | links (web) |
+| Tiles as links, `href`, `Icon` component, `ShowMarketplace` / `MarketplaceHref` / `OpenMarketplace` | - | yes | the browser's link semantics (middle click) and the web's module bundles; the desktop opens apps through `LauncherService::launch` |
+| `ManageHref` / `LabelsHref` / `AdminHref` | - | yes | links (web) |
 | « Se déconnecter de tous les comptes » | « Se déconnecter » (the current account) | all the browser's accounts of the instance | a desktop account is one instance's session; signing out of every instance is the accounts page's |
 | `Expanded` on `AccountMenu` | a property (`true` by default) | internal state | the desktop host sizes its popup window from it (`ContentHeightChanged`) |
 | `Popup…` properties, `ContentHeightChanged` handled | yes (a popup window sized by the host) | CSS sizing, popovers anchored to their button | §4 |

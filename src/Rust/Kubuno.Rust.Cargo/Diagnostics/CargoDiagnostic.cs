@@ -6,7 +6,7 @@ namespace Kubuno.Rust.Cargo.Diagnostics
     /// <summary>
     /// One rustc diagnostic (a "compiler-message" build event), flattened into what a VS
     /// Error List entry needs: severity, code, message, an absolute file path with a 1-based
-    /// line/column (from the message's *primary* span only — secondary spans, e.g. "value
+    /// line/column (from the message's *primary* span only - secondary spans, e.g. "value
     /// moved here" pointing elsewhere in the file, are never used as the diagnostic's own
     /// location), and its child notes/help.
     /// </summary>

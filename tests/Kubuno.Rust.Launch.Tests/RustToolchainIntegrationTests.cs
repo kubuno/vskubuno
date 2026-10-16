@@ -8,7 +8,7 @@ namespace Kubuno.Rust.Launch.Tests
 {
     /// <summary>
     /// Exercises <see cref="RustToolchain"/> against the real `rustc` on this machine, via
-    /// the real <see cref="SystemProcessRunner"/> — no fakes. Marked "Integration" and
+    /// the real <see cref="SystemProcessRunner"/> - no fakes. Marked "Integration" and
     /// skips itself (via <see cref="Assert.Inconclusive(string)"/>, MSTest's skip
     /// mechanism) rather than failing when `rustc` isn't on PATH, per task point 5: "mark
     /// as integration test, skippable when rustc is absent".

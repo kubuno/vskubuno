@@ -880,7 +880,7 @@ Module `windows/src/shell/src/session.rs`, called by `main` before the window (n
 7. **Remote revocation pauses**: the daemon checks the session before each cycle; a genuine failure emits one
    `expired` event, skips push and pull (nothing deleted), and resumes after a new sign-in to the same key; the
    WebSocket listener backs off to 60 s without network. The owner's `SessionExpired` event reaches the window
-   (`session::set_event_handler`): activity entry + toast « Session expirée — reconnectez-vous ».
+   (`session::set_event_handler`): activity entry + toast « Session expirée - reconnectez-vous ».
 8. **Sandboxed profile** `KUBUNO_SANDBOX_DIR=<dir>` (`kubuno_desktop_account::paths`, now the home of the per-user
    directories; the engine's `paths` re-exports them): config/data/cache/run/legacy under `<dir>`, secrets under
    `Kubuno/sandbox-<tag>.<account>/…` (`PrefixedSecretStore`), pipe `kubuno-auth-<SID>-sandbox-<tag>`, and no `Run`

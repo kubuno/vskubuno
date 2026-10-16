@@ -6,11 +6,11 @@ namespace Kubuno.Rust.Launch
     /// <summary>
     /// A fully-resolved description of how to launch and debug one Rust target, independent
     /// of how the VSIX ends up starting it (Open Folder's `launch.vs.json`, or a direct
-    /// `IVsDebugger4` launch — see `docs/ARCHITECTURE.md` phase 1c). Deliberately a plain
+    /// `IVsDebugger4` launch - see `docs/ARCHITECTURE.md` phase 1c). Deliberately a plain
     /// mutable class with a parameterless constructor and settable properties, not a
     /// record: the VSIX will (de)serialize this with whatever JSON stack it already uses
     /// (VS SDK ships Newtonsoft.Json; a future MCP server layer may use
-    /// System.Text.Json) — a plain POCO round-trips through either with no extra attributes.
+    /// System.Text.Json) - a plain POCO round-trips through either with no extra attributes.
     /// </summary>
     public sealed class LaunchDescription
     {
@@ -33,8 +33,8 @@ namespace Kubuno.Rust.Launch
         /// <summary>
         /// Natvis files the debugger should load for this session (see
         /// <see cref="RustToolchain.FindNatvisFiles"/>). Informational for
-        /// `launch.vs.json` generation — see the remarks on <see cref="LaunchVsJsonWriter"/>
-        /// for why this list isn't emitted as a `launch.vs.json` field — but consumed
+        /// `launch.vs.json` generation - see the remarks on <see cref="LaunchVsJsonWriter"/>
+        /// for why this list isn't emitted as a `launch.vs.json` field - but consumed
         /// directly by a VSIX-driven `IVsDebugger4` launch, which can register them with
         /// the debug engine itself.
         /// </summary>

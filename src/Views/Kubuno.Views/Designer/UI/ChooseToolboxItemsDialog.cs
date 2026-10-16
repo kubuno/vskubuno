@@ -59,7 +59,7 @@ namespace Kubuno.Views.Designer.UI
                     var key = ProjectComponentsFile.ChoiceKey(component);
                     var box = new CheckBox
                     {
-                        Content = component.Name + (string.IsNullOrEmpty(component.LocalizedDoc) ? string.Empty : "  —  " + component.LocalizedDoc),
+                        Content = component.Name + (string.IsNullOrEmpty(component.LocalizedDoc) ? string.Empty : "  -  " + component.LocalizedDoc),
                         IsChecked = chosen.Contains(key),
                         Margin = new Thickness(8, 2, 0, 2),
                     };

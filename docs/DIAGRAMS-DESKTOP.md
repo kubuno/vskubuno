@@ -1,4 +1,4 @@
-# Kubuno Diagrams (desktop) — design note
+# Kubuno Diagrams (desktop) - design note
 
 Status: design of record for the native desktop version of the Office module's **Diagrams** sub-application
 (`kubuno-diagrams.exe`), started 2026-10-07. User goal: the desktop app catches up with the **whole** web Diagrams
@@ -141,16 +141,16 @@ lot started; the diagrams core **reuses it** (`Path`/`Cmd` with SVG arcs, the 14
 adjustments, the catalogue) instead of a second port. The Canvas 2D context described below lives in
 `diagrams-core::canvas` (the shapes crate produces paths; the diagram code paints them through `Ctx2D`).
 
-- `canvas` — **a Canvas 2D context in Rust** (`Ctx2D`): the state stack (transform, fill/stroke style, line width,
+- `canvas` - **a Canvas 2D context in Rust** (`Ctx2D`): the state stack (transform, fill/stroke style, line width,
   dash, cap/join, global alpha, shadow, font, text align/baseline), the current path (`moveTo`, `lineTo`,
   `quadraticCurveTo`, `bezierCurveTo`, `arc`, `arcTo`, `ellipse`, `rect`, `roundRect`, `closePath`, SVG path data
   for `Path2D`), `fill`/`stroke`/`fillRect`/`strokeRect`/`fillText`/`measureText`, with the HTML spec's semantics
   (arcs flattened to cubic Béziers in core, points transformed when added). A backend implements the small
-  `Surface` trait (fill a path, stroke a path, draw text, measure text) — Direct2D on Windows, a recorder in the
+  `Surface` trait (fill a path, stroke a path, draw text, measure text) - Direct2D on Windows, a recorder in the
   tests. Porting the web's canvas code then stays line for line, which is what keeps it faithful.
-- `color` — CSS colour parsing (`#rgb`, `#rrggbb`, `rgb()`, `rgba()`, names used by the code, `none`).
-- `svgpath` — SVG path data (`M L H V C Q A Z`, relative forms) into canvas calls.
-- `preset` — the 144 LibreOffice presets: the data extracted verbatim from `preset-data.ts` into `presets.json`
+- `color` - CSS colour parsing (`#rgb`, `#rrggbb`, `rgb()`, `rgba()`, names used by the code, `none`).
+- `svgpath` - SVG path data (`M L H V C Q A Z`, relative forms) into canvas calls.
+- `preset` - the 144 LibreOffice presets: the data extracted verbatim from `preset-data.ts` into `presets.json`
   (embedded), the equation evaluator, path building with the same 2-decimal formatting, text frame, handles and the
   numeric drag solver (`preset-engine.ts`).
 - `native` (`native-geometry.ts`), `adjust` (`adjust.ts`), `catalog` (`catalog.ts`: kinds, French labels, default
@@ -170,7 +170,7 @@ adjustments, the catalogue) instead of a second port. The Canvas 2D context desc
 | `geometry` | ports, anchors, endpoint resolution, routing (`orthogonalize`, Catmull-Rom), label centre, segment intersection, hit tests, `magnetizeRightAngle` |
 | `layout` | `computeLayout` (hierarchical ↓/→, tree, circle, grid) |
 | `render` | `renderCanvas`, `renderConnector` with corner rounding and hops, the minimap, the rulers, stencil thumbnails, export rendering |
-| `editor` | `Editor`: pages, the current page's data, selection, history (snapshots, gesture coalescing), the pointer state machine (every drag of §1.2), commands (align, distribute, order, group, flip, rotate, themes, styles, layers, clipboard, connectors, labels, auto-layout, templates, import) — the façade a platform drives |
+| `editor` | `Editor`: pages, the current page's data, selection, history (snapshots, gesture coalescing), the pointer state machine (every drag of §1.2), commands (align, distribute, order, group, flip, rotate, themes, styles, layers, clipboard, connectors, labels, auto-layout, templates, import) - the façade a platform drives |
 | `io` | `diagramIo.ts` + `inflate.ts` (draw.io XML both ways, CSV) |
 | `templates`, `pdf` | `diagramTemplates.ts`, `diagramPdf.ts` |
 
@@ -179,13 +179,13 @@ base-36 characters). Web quirks are ported as quirks and marked `QUIRK`; bugs ar
 
 ### 2.3 Desktop app
 
-- `desktop/common/kubuno-office-diagrams-common` — the complete portable app: launch options
+- `desktop/common/kubuno-office-diagrams-common` - the complete portable app: launch options
   (`kubuno-diagrams [--dark] [--culture fr|en] [--zoom 50] [--sample|--live] [--doc <id> | file.kbdia]`), opening a
   local `.kbdia`/`.json` file, the server client for the diagram routes (over `kubuno-office-desktop-common`'s
   `Transport`, i.e. the shell's token broker, never a password), the session host (the Documents state machine
   `api::session` and worker `api::live`, reused as they are: they are generic over `Server`/`Journal`), the crash
   journal (`<data>/diagrams/journal/<id>.kbdia`), the extension points (`platform`) and a text UI for Linux/macOS.
-- `desktop/windows/kubuno-office-diagrams` — `kubuno-diagrams.exe`: `views/diagram_window.kbview` (TitleBarStyle Tall,
+- `desktop/windows/kubuno-office-diagrams` - `kubuno-diagrams.exe`: `views/diagram_window.kbview` (TitleBarStyle Tall,
   header menus, declarative `<Ribbon Tone="Diagrams">` matching the web's tabs, a `DockArea` with the Formes, Format
   and Calques panels around the canvas, the page bar, the status bar), the custom controls `DiagramCanvas` (the
   core's editor painted through a Direct2D `Surface`, input, minimap and rulers overlaid as on the web),
@@ -199,12 +199,12 @@ Reused without copying: `kubuno-office-desktop-common::api::{session, live, clie
 Request, Response, Method}}` (a path dependency). The ribbon shell, the backstage and the confirm dialog are `.kbview`
 files of each app (the framework's controls are the shared part); the confirm dialog follows Documents' vendored copy.
 Moving `session`/`live`/`client` into a crate of their own (`kubuno-office-desktop-session`) is the clean next step
-once both apps use them — it touches the Documents crate, so it is coordinated, not done here.
+once both apps use them - it touches the Documents crate, so it is coordinated, not done here.
 
 ## 3. The save path
 
 1. Open (`--doc <id>`): `GET /diagrams/:id` (title, pages), then the session `join` (`POST :id/editing/join` →
-   the whole content) — owner-only, so on someone else's diagram the session is `DigestOnly` and says so.
+   the whole content) - owner-only, so on someone else's diagram the session is `DigestOnly` and says so.
 2. The window holds every page's data; the session's content is the canonical JSON of `{ pageId: data }` for all
    pages (sorted keys: the digest compares meaning, not the server's formatting).
 3. Autosave: the session's cadence (structural changes 700 ms, typing with the office autosave setting); before each
@@ -217,15 +217,15 @@ once both apps use them — it touches the Documents crate, so it is coordinated
 
 ## 4. Increments
 
-- **Note** — this file (commit 1).
-- **Core** — shapes-core, then diagrams-core (model + file + stencils + render + geometry + layout + editor + io +
+- **Note** - this file (commit 1).
+- **Core** - shapes-core, then diagrams-core (model + file + stencils + render + geometry + layout + editor + io +
   templates + pdf), golden fixtures written by the web editor, unit tests mirroring the web, cross-target checks.
-- **A** — open a local file and `--doc <id>`, display read-only at parity (shapes, connectors, grid, layers, pages,
+- **A** - open a local file and `--doc <id>`, display read-only at parity (shapes, connectors, grid, layers, pages,
   minimap, rulers, zoom/pan), light and dark.
-- **B** — editing: every gesture and command of §1.2, ribbon/context menus/panels wired, shortcuts.
-- **C** — save (session, digest, join/leave, conflict, 413, journal), page management, star, rename, trash,
+- **B** - editing: every gesture and command of §1.2, ribbon/context menus/panels wired, shortcuts.
+- **C** - save (session, digest, join/leave, conflict, 413, journal), page management, star, rename, trash,
   exports (PNG/JPEG/PDF/.drawio/JSON), import, templates.
-- **VS** — the views in the designer, `Kubuno.Office.slnx` regenerated.
+- **VS** - the views in the designer, `Kubuno.Office.slnx` regenerated.
 
 ## 5. Theme
 
@@ -238,12 +238,12 @@ the app theme (light/dark).
 - Fonts: the web asks for Inter/Outfit with Arial fallback; the desktop uses DirectWrite with the same family names
   and the system fallback (desktop font decision), so label wrapping can differ by a few pixels.
 - Canvas shadows: the web blurs (5 px); the desktop draws the shadow with a Direct2D shadow effect where available,
-  else an unblurred offset copy — listed in the parity report.
+  else an unblurred offset copy - listed in the parity report.
 - Hardware icons are SVGs rasterised by the browser; the desktop draws the same paths (only `path`, `circle`, `rect`,
   `polygon` and fills occur in the data).
 - The web keeps the clipboard inside the page (`clipboardRef`); the desktop also puts a private format on the system
   clipboard so a copy survives between two windows.
-- Macros (F33) run JavaScript in the browser; the desktop has no script runtime — listed as not done.
+- Macros (F33) run JavaScript in the browser; the desktop has no script runtime - listed as not done.
 
 ## 7. Verification
 
@@ -254,7 +254,7 @@ mouse on the ribbon (under the shared VS/input lock), keyboard shortcuts, UIA na
 
 ## 8. Log
 
-**2026-10-07** — note written.
+**2026-10-07** - note written.
 
 **2026-10-07 (as built)**
 - Core `office/common/diagrams-core`: canvas (Ctx2D over a `Surface` trait), color, model (JSON-object backed,
@@ -262,11 +262,11 @@ mouse on the ribbon (under the shared VS/input lock), keyboard shortcuts, UIA na
   with rounded corners and hops, minimap, rulers, thumbnails, export frame), editor (per-page history, pointer state
   machine, every command of §1.2), stencils (+ office catalogue via shapes-core), hardware (30 SVGs), io (draw.io both
   ways, CSV), templates, pdf. 67 unit tests + 5 golden tests (two-page diagram made through the web UI by CDP
-  automation) — pass on Windows and natively on Linux (.220, cargo 1.98.1); `cargo check` wasm32 and
+  automation) - pass on Windows and natively on Linux (.220, cargo 1.98.1); `cargo check` wasm32 and
   aarch64-apple-darwin clean; clippy `-D warnings` clean.
 - Portable app `desktop/common/kubuno-office-diagrams-common`: options, sample/file/server sources, diagram client
   over the shell broker **as an account** (`kubuno_desktop_sync::account_api`; the first version passed the account
-  key as a file-sync instance id — fixed with a regression test), `DiagramServer` (diff-based save, join/leave, own
+  key as a file-sync instance id - fixed with a regression test), `DiagramServer` (diff-based save, join/leave, own
   user left out of « also editing »), journal `<data>/diagrams/journal`, reuse of Documents' `api::session`/`api::live`.
 - Windows app `kubuno-diagrams.exe`: `diagram_window.kbview` (ribbon Tone=Diagrams, contextual Forme/Connecteur tabs,
   backstage, dock with Formes/Propriétés/Calques, page bar, status zoom), custom controls DiagramCanvas, StencilPalette,
@@ -274,10 +274,10 @@ mouse on the ribbon (under the shared VS/input lock), keyboard shortcuts, UIA na
   (confirm, prompt, style JSON, templates), D2D surface with DirectWrite, private clipboard format `Kubuno.Diagram`,
   PNG/JPEG export through WIC.
 - Framework findings (to report to the framework owner): a named `DockPanel` cannot carry a literal `Title`
-  (« attribute `Title` must be a literal value » at runtime) — the panels are unnamed; a `{Res}` binding on a
-  button's `Text` is re-applied when a dialog shows and overwrites text set from code — dialog answers set from code
+  (« attribute `Title` must be a literal value » at runtime) - the panels are unnamed; a `{Res}` binding on a
+  button's `Text` is re-applied when a dialog shows and overwrites text set from code - dialog answers set from code
   use literals in the view; posted (PostMessage) clicks reach neither the ribbon in the title strip nor the dock
-  panels nor dialog buttons — tests use the real mouse under the shared input lock.
+  panels nor dialog buttons - tests use the real mouse under the shared input lock.
 - Server round trip on a dev core (core :18180, office :13205, own DB `kubuno_dev_diagrams`): open by `--doc`, delete
   a shape → saved (server 7 shapes), Ctrl+Z → saved (8), `leave` on close promotes the draft (`draft_file_id` null),
   conflict (another client's PUT) → dialog → « Garder ma version » → server holds ours, 413 on a 2 MB page →
@@ -296,7 +296,7 @@ mouse on the ribbon (under the shared VS/input lock), keyboard shortcuts, UIA na
 ## 9. Feature coverage
 
 ✔ done and verified live (capture, real input or server round trip) · ◐ implemented and unit-tested, not
-exercised live · ✘ not done · — not applicable. Web lines are in `DiagramEditorPage.tsx` unless stated.
+exercised live · ✘ not done · - not applicable. Web lines are in `DiagramEditorPage.tsx` unless stated.
 
 | Feature | Web | Desktop |
 |---|---|---|
@@ -333,11 +333,11 @@ exercised live · ✘ not done · — not applicable. Web lines are in `DiagramE
 | F31 Rulers | `:940-989` | ◐ (not in the compared captures: off in the fixture's view) |
 | F32 Status bar | | ✔ counts, selection label, zoom control |
 | F33 Macros | page bar | ✘ the desktop has no script runtime; the entry is shown disabled |
-| F34 Mobile read mode, touch | | — |
+| F34 Mobile read mode, touch | | - |
 | Save path: join, digest, conflict, 413, journal, leave | §3 | ✔ all verified on a dev core (§8) |
 | Exports PNG/JPEG/PDF/.drawio/JSON, import | `diagramIo.ts`, `diagramPdf.ts` | ◐ PNG size and JPEG/PDF validity unit-tested; not run from the ribbon live |
 
-Differences seen in the captures (web vs desktop, same diagram): fonts (system font vs Plus Jakarta Sans — accepted
+Differences seen in the captures (web vs desktop, same diagram): fonts (system font vs Plus Jakarta Sans - accepted
 decision); dock panel widths follow the saved dock layout; the status zoom slider is longer than the web's compact
 one; the « Coller » glyph differs; the title-bar waffle icon is barely visible in dark mode (framework title bar);
 the backstage leaves a strip of the dock visible at the bottom; the print preview toolbar of the framework renders

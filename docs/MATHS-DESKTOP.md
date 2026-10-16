@@ -1,4 +1,4 @@
-# Kubuno Maths (desktop) — design of record
+# Kubuno Maths (desktop) - design of record
 
 Status: plan and log of the Maths desktop lot (user request: every office sub-application available as a native
 desktop app, following the Kubuno Documents method, to **full web parity**). Reference for behaviour and look: the
@@ -41,17 +41,17 @@ plus a **Visuel / Code** mode toggle (`APP:1227-1228`); dockable panels **Objets
 ## 1. The stored format (round-trip target)
 
 Storage is **not** the Drive-file-blob + digest-PATCH model of Documents/Spreadsheets. Each formula is a DB row
-`office_maths.formulas` (`server/src/maths/models/formula.rs`) — `id, owner_id, name, description, file_id,
-is_starred, is_trashed, created_at, updated_at` — whose **content is a single `latex` string** read from / written to
+`office_maths.formulas` (`server/src/maths/models/formula.rs`) - `id, owner_id, name, description, file_id,
+is_starred, is_trashed, created_at, updated_at` - whose **content is a single `latex` string** read from / written to
 a `.kbmath` Drive file (JSON-gzip) via `services::content_files` (`maths/handlers/formulas.rs:63,103,237`). The row
 itself stores only metadata; `latex` is populated after the SELECT.
 
 That single `latex` string encodes the whole workbench document (`mathPages.ts:60-128`):
 
-* **Plain LaTeX** — one page, one centred formula block with default placement (back-compatible, keeps clean file
+* **Plain LaTeX** - one page, one centred formula block with default placement (back-compatible, keeps clean file
   previews). `serializeDoc` emits this "trivial" form whenever the document reduces to it (`mathPages.ts:116-126`).
-* **`%%KBMATH-MULTIPAGE%%` + JSON `{pages:[{name,latex}]}`** — legacy multi-page (one formula per page).
-* **`%%KBMATH-DOC%%` + JSON `{v:1, pages:[{name, blocks:[…], format?, orientation?}]}`** — the block document.
+* **`%%KBMATH-MULTIPAGE%%` + JSON `{pages:[{name,latex}]}`** - legacy multi-page (one formula per page).
+* **`%%KBMATH-DOC%%` + JSON `{v:1, pages:[{name, blocks:[…], format?, orientation?}]}`** - the block document.
   Each block is `{type:'formula', latex, align?, numbered?, frame?, scale?}`, `{type:'graph', spec, frame?}` or
   `{type:'text', text, style?, frame?, scale?}`; `frame = {x,y,w,h?,r?}`. `GraphSpec` normalised by
   `normalizeGraphSpec`.
@@ -70,17 +70,17 @@ Base `/office/maths` (`maths-api.ts`, `server/src/maths/handlers/formulas.rs`):
   on a name change)
 * `DELETE /formulas/:id`, `POST /formulas/:id/{trash,restore,duplicate}`, `POST /formulas/open-by-file {file_id}`
 
-There is **no** `If-Match`, editing session, collab epoch or 413 path in the maths handlers — save is a plain metadata
+There is **no** `If-Match`, editing session, collab epoch or 413 path in the maths handlers - save is a plain metadata
 PATCH plus a Drive file write. So the Documents save session (digest precondition, join/leave, conflict, 413, collab
 epoch) **does not apply as-is**: the maths desktop save is `PATCH /formulas/:id {latex}`. A last-write-wins conflict
-is still possible at the Drive-file level; the desktop mitigates it the only way the server allows — re-`GET` before a
-PATCH and, if `latex` changed under us, offer the Kubuno conflict dialog (keep mine / take theirs) — but it cannot be
+is still possible at the Drive-file level; the desktop mitigates it the only way the server allows - re-`GET` before a
+PATCH and, if `latex` changed under us, offer the Kubuno conflict dialog (keep mine / take theirs) - but it cannot be
 as strong as the digest guard. Open question Q1 (below).
 
 ## 3. The shared core
 
 **Decision (verified 2026-10-11): `office/common/math-core` already exists as the crate
-`kubuno-office-math-core`, but it is a Rust port of KaTeX's HTML builder — math *typesetting* only** (LaTeX → a
+`kubuno-office-math-core`, but it is a Rust port of KaTeX's HTML builder - math *typesetting* only** (LaTeX → a
 display list of glyphs/rules/paths, `render()` → `Rendered`). It has **none** of the web's computational engine
 (expression tree, calculator, CAS, graphs, matrices, stats, number theory) and none of the document model. Per the
 "reuse, don't recreate" rule, the computational engine and the document model are **added to this same crate** as new
@@ -118,7 +118,7 @@ Layout mirrors the other office apps (`repo-layout-platform-folders`): a portabl
 the platform extension points) and a Windows crate `desktop/windows/kubuno-office-maths` (Win32 window, Direct2D
 paint, input, ribbon wiring, backstage, the `.kbview`), exe `kubuno-maths.exe`. Shared office-desktop pieces
 (backstage, open/save, the live thread) are taken from `desktop/common/kubuno-office-desktop-{common,shared}` rather
-than copied — the one difference is the save model (§2), so the maths save path is written against
+than copied - the one difference is the save model (§2), so the maths save path is written against
 `kubuno-office-desktop-shared` where it fits and bespoke where it does not.
 
 Rendering: every block's LaTeX goes through the existing `kubuno-office-math-core::render()` → a display list painted
@@ -127,13 +127,13 @@ the `graph` display list. Text blocks use DirectWrite. The canvas is one custom 
 
 Increments (each shippable, verified before the next):
 
-* **A — open & display (read-only, at parity).** Parse the stored format with `doc`, render formulas / graphs / text
+* **A - open & display (read-only, at parity).** Parse the stored format with `doc`, render formulas / graphs / text
   blocks on the sheet at parity with the web (light/dark from the web theme tokens). Open a local `.kbmath`/LaTeX
   file and `--doc <id>` from the server through the shell's broker in the sandbox profile.
-* **B — editing.** The WYSIWYG caret editor (visual + code modes), the ribbon commands wired (Insertion/Équation
+* **B - editing.** The WYSIWYG caret editor (visual + code modes), the ribbon commands wired (Insertion/Équation
   galleries, Calcul/Matrices/Statistiques/Nombres operations inserting their LaTeX result as a new block), block
   manipulation (move/resize/rotate/align/number/duplicate/z-order), multi-page, undo/redo.
-* **C — save.** `PATCH /formulas/:id {latex}` with the re-GET conflict check (§2), the Kubuno conflict dialog, an
+* **C - save.** `PATCH /formulas/:id {latex}` with the re-GET conflict check (§2), the Kubuno conflict dialog, an
   offline local journal replayed at start.
 
 ## 5. VS integration
@@ -145,7 +145,7 @@ generator (`KUBUNO_GEN_REPO=office KUBUNO_GEN_FRESH=1`) so the two new projects 
 ## 6. Parity coverage table
 
 Legend: ✔ done (unit test mirroring the web; *(run)* = also a real run) · ◐ partial (what is missing is said) ·
-✘ not done yet (why) · ⛔ blocked (a decision / a missing platform piece) · — nothing to port.
+✘ not done yet (why) · ⛔ blocked (a decision / a missing platform piece) · - nothing to port.
 
 ### Shared core (computation + model)
 
@@ -165,23 +165,23 @@ Legend: ✔ done (unit test mirroring the web; *(run)* = also a real run) · ◐
 
 | Feature | Web | Desktop status |
 |---|---|---|
-| Open local file + `--doc <id>`; read-only display at parity | `APP`, `maths-api.ts` | ✔ *(run — captures light/dark)* |
+| Open local file + `--doc <id>`; read-only display at parity | `APP`, `maths-api.ts` | ✔ *(run - captures light/dark)* |
 | WYSIWYG caret editor (visual) | `MTE` | ⛔ blocked: needs slot-mapped layout from math-core (the web's `mc-h` markers) to hit-test a click to a tree slot and place the caret; `render()` emits a flat display list with no link to the source tree. A math-core prerequisite (a dedicated lot). Code / « Modifier… » edits the LaTeX as text meanwhile. |
 | Code-mode formula editing (edit the LaTeX) | `APP:1228` | ✔ (a prompt edits the selected formula's LaTeX; re-parsed and re-rendered) |
 | Ribbon: Insertion (formula / graph / text / page) | `APP:1211-1256` | ✔ |
-| Ribbon: Équation structures + Greek symbols | `APP:1251-1268` | ◐ inserted as buttons that append the snippet to the selected formula; a visual gallery with KaTeX previews is ⛔ blocked (the gallery cell's `&dyn Canvas` has no path-fill to paint glyph outlines — Spreadsheets' gallery uses labels too) |
-| Ribbon: Calcul / Matrices / Statistiques / Nombres | `APP:1271-1345` | ✔ *(wired; the engine is unit-tested)* — each runs on the selected formula and inserts its LaTeX result; parameters (bounds, order, point…) via a prompt |
+| Ribbon: Équation structures + Greek symbols | `APP:1251-1268` | ◐ inserted as buttons that append the snippet to the selected formula; a visual gallery with KaTeX previews is ⛔ blocked (the gallery cell's `&dyn Canvas` has no path-fill to paint glyph outlines - Spreadsheets' gallery uses labels too) |
+| Ribbon: Calcul / Matrices / Statistiques / Nombres | `APP:1271-1345` | ✔ *(wired; the engine is unit-tested)* - each runs on the selected formula and inserts its LaTeX result; parameters (bounds, order, point…) via a prompt |
 | Block canvas: select, delete, duplicate, re-order, insert | `APP:426-575` | ◐ selection + delete/duplicate/move-order/insert done; free placement, resize, rotate and smart guides not yet (frames are rendered, not edited) |
 | Undo / redo | `APP:348-351` | ✔ (document snapshots) |
 | Multi-page, paper formats, orientation | `mathPages.ts` | ◐ add page + rendered; per-page format/orientation UI not yet |
-| Save (`PATCH latex`, re-GET conflict, offline journal) | `maths-api.ts` | ✔ *(contract verified live against the shared dev core — login, GET, PATCH persists, re-GET conflict detected, restore; see the log)* — the full GUI `--doc` edit→save needs a signed-in sandbox account |
+| Save (`PATCH latex`, re-GET conflict, offline journal) | `maths-api.ts` | ✔ *(contract verified live against the shared dev core - login, GET, PATCH persists, re-GET conflict detected, restore; see the log)* - the full GUI `--doc` edit→save needs a signed-in sandbox account |
 | Print / export | `mathPrint.ts` | ✘ (later lot: printing) |
 | Dockable panels (Objets/Symboles/Propriétés) + structures bar | `APP:945-1005`, `MTE` | ◐ the Objets / Symboles / Propriétés docks and the WYSIWYG structures bar (live KaTeX previews, appended to the selection) are present and wired; the Symboles search box, per-block property *editing* and drag-to-reorder docks are later refinements |
-| VS designer integration (`.kbview`, slnx) | — | ◐ the two `.rsproj` are in `Kubuno.Office.slnx`; the live designer check is pending a free vs-lock |
+| VS designer integration (`.kbview`, slnx) | - | ◐ the two `.rsproj` are in `Kubuno.Office.slnx`; the live designer check is pending a free vs-lock |
 
 ## 7. Risks and open questions
 
-* **Q1 — save/conflict model.** Maths has no digest/If-Match/editing-session/collab-epoch. A desktop save that
+* **Q1 - save/conflict model.** Maths has no digest/If-Match/editing-session/collab-epoch. A desktop save that
   overwrites a concurrent web save can lose work. Options: (a) accept last-write-wins with the re-GET check only;
   (b) add an `If-Match`/digest path to the maths handlers like Documents. Needs a user decision; until then the
   desktop uses (a) and says so.
@@ -191,12 +191,12 @@ Legend: ✔ done (unit test mirroring the web; *(run)* = also a real run) · ◐
 * **Float-formatting parity** (`fmtResult`, `numLatex`, `fracLatex`, `fmtTick`): JS `Number(x.toPrecision(n)).toString()`
   has specific shortest-round-trip behaviour; the Rust port reproduces it exactly or the LaTeX output diverges.
 * **Graph painting** stays per-platform (Canvas 2D on the web, Direct2D on Windows); only the sampling/scaling/tick
-  math is shared, so a pixel-identical graph is not expected — parity is judged on axes, ticks and curve shape.
+  math is shared, so a pixel-identical graph is not expected - parity is judged on axes, ticks and curve shape.
 
 ## 8. Log
 
-**2026-10-11 — design note + shared core (deliverable #2).** Extended `kubuno-office-math-core` (the existing
-KaTeX typesetting crate) with a new `engine` module — the platform-neutral Rust port of the web Maths workbench, no
+**2026-10-11 - design note + shared core (deliverable #2).** Extended `kubuno-office-math-core` (the existing
+KaTeX typesetting crate) with a new `engine` module - the platform-neutral Rust port of the web Maths workbench, no
 Win32/UI: `num_fmt` (JS `Number.toString`/`toPrecision` reproduced), `expr`, `tree` (model + serialise + tolerant
 parse), `eval`, `number`, `cas` (differentiate, simplify, integrate, definite integral, expand, factor, roots, exact
 roots, Taylor, nth derivative, tangent, extrema, inflection, asymptotes, limit, Σ/Π, eval-at), `matrix`, `stats`,
@@ -207,30 +207,30 @@ round-trip via a hand-written `JSON.stringify`-compatible serialiser). Verified:
 (`x(x+1)` parses as a function call → NaN; a power of plain `()` atoms is not evaluable, `\left…\right` is); the tests
 document each.
 
-**2026-10-12 — increment A: the desktop app, read-only at parity.** Built the two desktop crates on the branch
+**2026-10-12 - increment A: the desktop app, read-only at parity.** Built the two desktop crates on the branch
 `maths-desktop-app` (a worktree off `main`; the shared office checkout was occupied by another agent's branch):
-- `desktop/common/kubuno-office-maths-common` — the portable app (launch options; `MathsDoc` over `engine::doc`;
+- `desktop/common/kubuno-office-maths-common` - the portable app (launch options; `MathsDoc` over `engine::doc`;
   the `/office/maths` routes; a `.kbmath` / bare-LaTeX opener; a text UI). 9 unit tests.
-- `desktop/windows/kubuno-office-maths` (`kubuno-maths.exe`) — the Win32 window (`maths_window.kbview`): the tall
+- `desktop/windows/kubuno-office-maths` (`kubuno-maths.exe`) - the Win32 window (`maths_window.kbview`): the tall
   title bar with the waffle/account, a ribbon (Fichier backstage with the formula info, Accueil = document / mode /
   zoom, Insertion / Équation / Calcul), the status bar, and `MathsCanvas` filling the body. The canvas paints the
-  document read-only: paper sheets stacked and wheel-scrolled, each block drawn by kind — **formula** via the math
+  document read-only: paper sheets stacked and wheel-scrolled, each block drawn by kind - **formula** via the math
   core's KaTeX layout (`render()` → glyph outlines, vendored painter), **text** via DirectWrite, **graph** via a
   port of `drawGraph` (auto Y-range, nice ticks, curve breaks) sampled from `engine::expr`. Light/dark palettes.
   Opens a local file or a server formula (`GET /office/maths/formulas/:id` through the shell broker).
 
 Verified: `cargo build` and `cargo clippy --all-targets -- -D warnings` clean for both crates; the exe runs and renders
-the sample (title + the quadratic formula typeset by KaTeX + a sin(x) graph) in **light and dark** — captures in
+the sample (title + the quadratic formula typeset by KaTeX + a sin(x) graph) in **light and dark** - captures in
 `C:\kubuno-build\release\maths\captures\` (`desktop-sample-{light,dark}.png` at 100 %, `…-{light,dark}-fit.png` showing
 the whole sheet). VS: the `.rsproj` for both crates added to `Kubuno.Office.slnx` under Desktop (the shared
 `Kubuno.Office.Math.Core` project was already listed).
 
-**2026-10-12 — increments B and C: editing and save.** On `maths-desktop-app`:
+**2026-10-12 - increments B and C: editing and save.** On `maths-desktop-app`:
 - `MathsCanvas` became an editor: block selection (click, with a selection outline + hit-test rects), undo/redo
   (document snapshots), duplicate / delete (Delete key) / move-order / insert blocks, add page, append a
   structure/symbol to the selected formula, edit a formula's LaTeX, and a dirty flag.
 - The ribbon wires it all: Accueil (Document / Bloc / Historique / Mode / Zoom), Insertion (formula/graph/text/page),
-  Équation (structures + Greek symbols appended to the selected formula), and the engine operations as tabs —
+  Équation (structures + Greek symbols appended to the selected formula), and the engine operations as tabs -
   **Calcul** (derivative, 2nd derivative, integral, definite integral, simplify, expand, factor, solve, exact roots,
   Taylor, extrema, inflection, asymptotes, limit, tangent, eval-at, value table, sum, product), **Matrices**
   (determinant, inverse, transpose, rank, trace, power, RREF, char poly, eigenvalues, linear system),
@@ -244,49 +244,49 @@ the whole sheet). VS: the `.rsproj` for both crates added to `Kubuno.Office.slnx
 Verified: both crates `cargo build` + `cargo clippy --all-targets -- -D warnings` clean. The `maths-desktop-app`
 branch was rebased onto `origin/main` (which had the Whiteboard increment B) cleanly and merged to `main`.
 
-**2026-10-12 (later) — VS designer, C round-trip, web parity, side panels.**
+**2026-10-12 (later) - VS designer, C round-trip, web parity, side panels.**
 - **VS designer (main instance, no fresh hive)**: `devenv` (no `/rootsuffix`, already signed in) opens
-  `maths_window.kbview` and the **Kubuno designer renders the view** — the tall title bar, the full ribbon
+  `maths_window.kbview` and the **Kubuno designer renders the view** - the tall title bar, the full ribbon
   (Accueil/Insertion/Équation/Calcul/Matrices/Statistiques/Nombres with the Bloc/Historique/Mode groups) and the
   `MathsCanvas` control (a named placeholder, since the lone view is opened outside its project). Capture
   `vs-designer-maths.png`; vs-lock taken and released promptly.
 - **Increment C round-trip (live, against the shared dev core `http://127.0.0.1:18900`)**: verified the exact save
-  contract the desktop sends — login → `GET /office/maths/formulas/:id` (`e^{i\pi}+1=0`) → `PATCH {latex}` **persists**
+  contract the desktop sends - login → `GET /office/maths/formulas/:id` (`e^{i\pi}+1=0`) → `PATCH {latex}` **persists**
   → a simulated concurrent `PATCH` is **detected by the re-GET conflict check** (server ≠ our base) → restored. The
   window's `save_server` is thin glue over this. The full *GUI* `--doc` edit→save still needs a signed-in sandbox
-  account (a Kubuno Desktop shell / sign-in seeding) — the desktop auth borrows tokens from the shell broker, which
+  account (a Kubuno Desktop shell / sign-in seeding) - the desktop auth borrows tokens from the shell broker, which
   wasn't available to seed here.
-- **Web-vs-desktop parity**: same formula `e^{i\pi}+1=0` in the web (Visual mode, headless Chrome) and the desktop —
+- **Web-vs-desktop parity**: same formula `e^{i\pi}+1=0` in the web (Visual mode, headless Chrome) and the desktop -
   **renders identically** (KaTeX typesetting). Differences: the web's *Coloration* (coloured tokens) vs solid ink; the
   web's dock panels / structures bar (now also on the desktop, below); ribbon organisation. Composites
   `web-vs-desktop-maths.png` and `web-vs-desktop-panels.png`.
 - **Dockable side panels + structures bar** (the biggest visual gap): added `ObjectsPanel`, `SymbolsPanel`,
   `PropertiesPanel` (docked around the canvas in a `DockArea`) and `StructuresBar` (below the ribbon, with **live
-  KaTeX previews** — a custom control can paint glyph outlines where a ribbon gallery cell cannot). Wired to insert
+  KaTeX previews** - a custom control can paint glyph outlines where a ribbon gallery cell cannot). Wired to insert
   blocks / append structures and symbols; the Propriétés dock follows the selection. Capture `desktop-panels.png`.
 All merged to `main`.
 
 ### Where I stopped / next steps (2026-10-12)
 
 Done: deliverables #1 (design note), #2 (shared core), **increment A** (read-only display, live-captured),
-**increment B** (editing + the full compute suite), **increment C** (save — contract verified live against the dev
+**increment B** (editing + the full compute suite), **increment C** (save - contract verified live against the dev
 core), the **VS designer check** (view renders), **web-vs-desktop parity** (identical rendering), and the **dockable
-side panels + structures bar** — all merged to `main`. Two items are **blocked by missing capabilities**, not by
+side panels + structures bar** - all merged to `main`. Two items are **blocked by missing capabilities**, not by
 time:
-- **WYSIWYG caret editor** ⛔ — needs math-core to emit a *slot-mapped* layout (the web's `mc-h` markers) so a click
+- **WYSIWYG caret editor** ⛔ - needs math-core to emit a *slot-mapped* layout (the web's `mc-h` markers) so a click
   maps to a tree slot and a caret can sit between nodes. `render()` currently emits a flat display list with no link
   to the source tree. This is a math-core prerequisite (its own lot). Code / « Modifier… » edits the LaTeX as text
   in the meantime, giving full formula editability.
-- **Équation gallery with KaTeX previews** ⛔ — a ribbon gallery cell renderer receives a limited `&dyn Canvas`
+- **Équation gallery with KaTeX previews** ⛔ - a ribbon gallery cell renderer receives a limited `&dyn Canvas`
   (no path-fill), so KaTeX glyph outlines cannot be painted in a cell (Spreadsheets' gallery uses text labels for the
   same reason). The structures are offered as buttons that append their snippet to the selected formula.
 
 Pending (not blocked):
-- **Full GUI `--doc` edit→save round-trip** — the save *contract* is verified live (above); exercising it through the
+- **Full GUI `--doc` edit→save round-trip** - the save *contract* is verified live (above); exercising it through the
   window needs a signed-in sandbox account against the dev core. The desktop auth borrows tokens from the Kubuno
   Desktop shell's broker (`BrokerProvider::for_app`); mounting a sandbox shell (`KUBUNO_SANDBOX_DIR`, `owner.sign_in`
   with the dev-core tokens) is the remaining step, then a real-input edit + Ctrl+S under the vs-lock.
-- **Live real-input test** of a Calcul operation / a panel click — needs the vs-lock for real clicks; the wiring is
+- **Live real-input test** of a Calcul operation / a panel click - needs the vs-lock for real clicks; the wiring is
   compile-verified, the engine unit-tested, and the designer confirms the controls render.
 - **Refinements**: the Symboles **search box**, per-block property **editing** in the Propriétés dock, block **free
   placement / resize / rotate / smart guides** (frames are rendered, not edited), a dedicated **Maths ribbon tone**

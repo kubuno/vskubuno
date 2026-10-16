@@ -11,7 +11,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
     /// <summary>
     /// <c>cargo test</c> (or, with <see cref="NoRun"/>, <c>cargo test --no-run</c>: build the test
     /// binaries without executing them, matching <c>cargo test --no-run --message-format=json</c>
-    /// as already used to find a test binary's hash-suffixed path for the native debugger — see
+    /// as already used to find a test binary's hash-suffixed path for the native debugger - see
     /// <c>Kubuno.Rust.Launch.ExecutableResolver</c>'s own remarks).
     /// </summary>
     public sealed class CargoTest : CargoBuildTaskBase
@@ -23,7 +23,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
         /// <summary>
         /// One item per <c>compiler-artifact</c> test binary produced, with the absolute
         /// executable path as the item spec and a <c>TargetName</c> metadata (the test target's
-        /// own name, e.g. the integration test file's module name) — the authoritative source for
+        /// own name, e.g. the integration test file's module name) - the authoritative source for
         /// a test binary's hash-suffixed on-disk name.
         /// </summary>
         [Output]

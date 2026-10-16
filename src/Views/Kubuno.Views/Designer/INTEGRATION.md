@@ -432,7 +432,7 @@ own new `ToolWindowPane` subclasses and MEF-imported buffer/undo-history bridge,
 `OutlineToolWindow` are new files this step adds - most naturally to this library, per their own
 suggestion - not edits to anything already here.
 
-## 10. Designer integration — open issues (VSIX integration step, live testing)
+## 10. Designer integration - open issues (VSIX integration step, live testing)
 
 The VSIX-side wiring above (§1, §3, §4, §6, §7, §8, §9) is implemented, committed, and builds with
 0 warnings (Debug and Release). Live testing in the experimental instance found one severe issue

@@ -1,4 +1,4 @@
-# Kubuno Views — visual designer (phase 4) — design note
+# Kubuno Views - visual designer (phase 4) - design note
 
 > Scope: a WinForms/XAML-designer-class visual editor for `.kbview` files inside
 > Visual Studio 2026, building on `docs/XML_VIEWS.md` (the format, the
@@ -14,16 +14,16 @@
 
 A custom editor for the `kbview` content type (`KbviewConstants.ContentType`,
 `LanguageService/ContentDefinition.cs`), registered through `IVsEditorFactory`
-alongside — not instead of — the existing plain-text LSP editor (VS allows more
+alongside - not instead of - the existing plain-text LSP editor (VS allows more
 than one registered editor per extension; "Open With" picks). The new editor
 opens a **split Design | XML view**, modelled on the XAML designer's own split
 (surface and text pane share one document, with a splitter), rather than
 WinForms' separate-tab model (`Form1.cs [Design]` vs `Form1.cs`): a `.kbview`
 file is XML text end to end, so keeping the source visible alongside the
-surface — the way XAML does, not the way WinForms hides its generated-looking
-markup — fits a format whose entire premise (`XML_VIEWS.md` §6) is that a
+surface - the way XAML does, not the way WinForms hides its generated-looking
+markup - fits a format whose entire premise (`XML_VIEWS.md` §6) is that a
 human and Claude both hand-edit that same text. *(Exact XAML-designer split
-behavior — user-resizable per document vs. a fixed default ratio — is from
+behavior - user-resizable per document vs. a fixed default ratio - is from
 general knowledge of VS's XAML editor and should be verified against VS 2026
 specifically, not assumed identical.)*
 
@@ -32,18 +32,18 @@ Both panes stay in sync in both directions:
 - **Selection/caret sync.** Selecting an element on the design surface moves
   the XML pane's caret to that element's tag; placing the caret in the XML
   pane (or selecting a range) highlights the corresponding element on the
-  surface — the same behavior VS's XAML designer and the WinForms designer's
+  surface - the same behavior VS's XAML designer and the WinForms designer's
   "View Code"/"View Designer" pairing both give, just continuously rather than
   only on view-switch, because here both views are visible at once.
 - **Toolbox.** One entry per `ComponentMeta` from the registry (`kubuno-desktop-views/
-  src/registry/mod.rs`), grouped by family — the module grouping already used
+  src/registry/mod.rs`), grouped by family - the module grouping already used
   in the crate (`registry::families::{choice, containers, data, display,
   text}`, plus the five components declared directly in `registry/components.
   rs` as a "Core" group). Drag from the toolbox onto the surface inserts a new
   element (§4 covers per-container drop behavior); drag onto the XML pane
-  inserts the same element as text at the drop position — one insertion
+  inserts the same element as text at the drop position - one insertion
   command, two possible target panes.
-- **Design surface — the real rendering.** Not a schematic/mock: the surface
+- **Design surface - the real rendering.** Not a schematic/mock: the surface
   is `kubuno-desktop-views`' own interpreter (`compile`/`runtime`/`node`) painting the
   same pixels the app would, exactly as `examples/view_preview.rs` already
   proves end to end for a standalone window. §3 covers how that gets embedded.
@@ -57,7 +57,7 @@ Both panes stay in sync in both directions:
 - **Properties window** with **Properties** and **Events** tabs (the WinForms
   `PropertyGrid`'s own split, toggled by its toolbar's lightning-bolt icon),
   driven entirely by registry metadata: each `PropertyMeta` becomes one row,
-  typed by `PropKind` — `Bool` → a checkbox/dropdown, `Enum(&[...])` → a
+  typed by `PropKind` - `Bool` → a checkbox/dropdown, `Enum(&[...])` → a
   dropdown of exactly those variants (the same list the language server
   already offers as completion, `completion.rs`), `F32` → a numeric editor,
   `String` → a text box; any property's value can instead be typed as a
@@ -67,9 +67,9 @@ Both panes stay in sync in both directions:
   **Events** tab lists `ComponentMeta.events`; each row shows the current
   `On*="handler_name"` attribute if present, with a dropdown of handler names
   already found via the language server (see §3), plus **double-click on an
-  empty row to generate a new handler** — see below.
+  empty row to generate a new handler** - see below.
 - **Double-click to create a handler.** Double-clicking a control on the
-  surface — or the empty cell of its default event in the Events tab — is a
+  surface - or the empty cell of its default event in the Events tab - is a
   **surgical** two-part edit, never a regeneration: (1) set the `On*="…"`
   attribute (a synthesized name, `<x:Name or ordinal>_<EventName>`) via
   `kubuno_desktop_views::edit::set_attribute`, and (2) insert a new handler `fn` stub
@@ -80,14 +80,14 @@ Both panes stay in sync in both directions:
   the designer needs the corresponding *write*, built the same way (see §6,
   DSG-10).
 - **Document outline** reuses `kubuno-views-ls/src/symbols.rs`
-  (`textDocument/documentSymbol`, already implemented — "the element tree,
+  (`textDocument/documentSymbol`, already implemented - "the element tree,
   `x:Name` as the label") verbatim; no new Rust is needed for the tree itself,
   only a WPF tree view bound to the existing LSP response.
 
 ## 2. Source of truth: the VS text buffer, never disk
 
-Every designer gesture — a drag, a resize, a toolbox drop, a property edit, a
-double-click handler stub — ends as **one surgical edit applied to the live VS
+Every designer gesture - a drag, a resize, a toolbox drop, a property edit, a
+double-click handler stub - ends as **one surgical edit applied to the live VS
 `ITextBuffer`**, exactly the channel a normal keystroke uses, never a direct
 file write. This is what makes VS's own Undo/Redo, dirty-state (`*` in the
 tab), and interleaving with the developer's or Claude's own edits (made with
@@ -98,32 +98,32 @@ another writer of the same buffer, not a second document model that has to be
 reconciled with it.
 
 Concretely: `kubuno_desktop_views::edit`'s functions (`set_attribute`, `insert_child`,
-`remove_child`, `move_child`, `remove_attribute` — `kubuno-desktop-views/src/edit.rs`)
+`remove_child`, `move_child`, `remove_attribute` - `kubuno-desktop-views/src/edit.rs`)
 already compute a precise `TextRange` on the *original* source and splice it,
 returning the whole document's new text (see the module's own doc: "computes
 one precise byte range … and splices it"). For the designer, that return
 value needs to travel as **`{range, newText}`**, not just the new full-text
 string, so the VS side can apply a single minimal `ITextEdit.Replace` instead
-of diffing two whole-file strings to find what changed — a small, additive
+of diffing two whole-file strings to find what changed - a small, additive
 change to `edit.rs`'s public surface (return the computed `TextRange`
 alongside the spliced text; the splice itself is unchanged) that the LSP
 bridge in §3 depends on. Applying that minimal range, rather than the whole
 document, keeps unrelated marks (breakpoints if any, other extensions'
-adornments, the developer's own scroll position) stable — the same reason a
+adornments, the developer's own scroll position) stable - the same reason a
 normal LSP `textEdit` is scoped, not a whole-document replace.
 
 A **drag** is the one gesture that must not become dozens of undo units or
 buffer writes per second: intermediate mouse-move frames update the design
-surface's **local, client-side** preview only (§3 — the preview process
+surface's **local, client-side** preview only (§3 - the preview process
 already renders every frame regardless; a drag just feeds it a temporary
 override of one element's bounds, never touching text). Only **mouse-up**
 computes and applies the final surgical edit, wrapped in one `IOleUndoManager`
 compound action (or `ITextUndoHistory` transaction) so `Ctrl+Z` undoes the
-whole drag in one step — the same granularity WinForms' own designer gives a
+whole drag in one step - the same granularity WinForms' own designer gives a
 drag today.
 
 The compiled preview always re-renders from **buffer text**, pushed over IPC
-(§3) on every text change — including an *unsaved* one, since the buffer, not
+(§3) on every text change - including an *unsaved* one, since the buffer, not
 the file on disk, is authoritative. This mirrors `examples/view_preview.rs`'s
 `FileWatcher`, with one change: `FileWatcher::poll` reads from disk on an
 mtime change; the designer's equivalent reads from `ITextBuffer.CurrentSnapshot`
@@ -144,14 +144,14 @@ keystroke.
   `Microsoft.VisualStudio.LanguageServer.Client.Connection` over
   `process.StandardOutput`/`StandardInput`. The client already implements
   `ILanguageClientCustomMessage2` and exposes `Rpc` (a `StreamJsonRpc.JsonRpc`)
-  in `AttachForCustomMessageAsync` — the exact hook custom, non-`textDocument/*`
+  in `AttachForCustomMessageAsync` - the exact hook custom, non-`textDocument/*`
   methods need. On the Rust side, `server.rs`'s `handle_request` dispatches on
-  `req.method` as a plain string match with a `MethodNotFound` fallback — 
+  `req.method` as a plain string match with a `MethodNotFound` fallback - 
   adding `kubuno/registry`, `kubuno/applyEdit`, `kubuno/elementAtOffset` is a
   few new match arms, not a protocol redesign. `kubuno-views-ls` already links
   `kubuno_desktop_views`' `syntax`/`ast`/`validate`/`registry` (its own module doc is
   explicit it deliberately does **not** link `node`/`compile`/`runtime`/
-  `binding` — "another agent is actively building" those); adding `edit` to
+  `binding` - "another agent is actively building" those); adding `edit` to
   that same allowed set is the natural next addition, not a boundary change.
 - **The design surface is a separate, new process** (proposed crate
   `kubuno-views-designer`, promoting `examples/view_preview.rs`'s logic out of
@@ -161,11 +161,11 @@ keystroke.
   blocking `for msg in &connection.receiver` loop (`server.rs::main_loop`):
   mixing a GUI pump into that loop would stall diagnostics/completion whenever
   the surface repaints, and vice versa. This process links `kubuno_desktop_views`'
-  `compile`/`runtime`/`node`/`registry` — the *other* half of the crate
+  `compile`/`runtime`/`node`/`registry` - the *other* half of the crate
   `kubuno-views-ls` deliberately stays out of, keeping that existing boundary
   intact rather than merging the two roles into one process.
 
-**Who computes an edit — decision.** Both processes stay Rust; C# never
+**Who computes an edit - decision.** Both processes stay Rust; C# never
 computes a text splice or re-implements layout math, per `docs/ARCHITECTURE.
 md`'s explicit rule ("everything that knows Rust/Kubuno is in Rust; C# only
 integrates") and `XML_VIEWS.md`'s repeated warning against a second, drifting
@@ -174,7 +174,7 @@ gesture into a structured, semantic edit request** (`SetAttribute`,
 `InsertChild`, `MoveChild`, a `Move/Resize` batched into `X/Y/Width/Height`+
 `Anchor`) using the bounds/hit-testing only it has (the real layout engines,
 via `kubuno_desktop_controls`); **`kubuno-views-ls` performs the actual textual
-splice**, because it — not the designer process — holds the buffer-synced
+splice**, because it - not the designer process - holds the buffer-synced
 `rowan` tree at the exact moment VS asks (`documents.rs`'s full-text sync on
 every `didChange`). If the designer process instead returned raw new-document
 text from its own, separately-pushed copy of the buffer, a keystroke landing
@@ -186,7 +186,7 @@ both.
 
 **IPC.** The designer process is spawned and owned by the VSIX exactly like
 `kubuno-views-ls` already is (`Process.Start` with redirected stdio) and
-speaks the same `StreamJsonRpc` idiom over its own stdin/stdout — not a named
+speaks the same `StreamJsonRpc` idiom over its own stdin/stdout - not a named
 pipe with a discovery file (the pattern `docs/MCP.md` uses for `kubuno-vs-mcp.
 exe`, appropriate there because Claude Code, not the VSIX, owns that process's
 lifecycle and must *find* an already-running `devenv.exe`). Here the VSIX
@@ -204,17 +204,17 @@ Proposed methods (all JSON-RPC over the process's own stdio channel):
 | `kubuno/applyEdit` | `{uri, op}` (`op` = SetAttribute/RemoveAttribute/InsertChild/RemoveChild/MoveChild, addressed by a stable element id, §6 cross-cutting note) → `{range, newText}` |
 | `kubuno/elementAtOffset` | `{uri, offset}` → `{elementId, range}` (XML→Design selection sync) |
 | `kubuno/rangeOfElement` | `{uri, elementId}` → `{range}` (Design→XML selection sync) |
-| `kubuno/insertHandler` | `{uri, elementId, event, handlerName}` → the `applyEdit`-shaped attribute change, plus the sibling `.rs` file path and insertion point (extends `definition.rs`'s existing lookup — §6, DSG-10) |
+| `kubuno/insertHandler` | `{uri, elementId, event, handlerName}` → the `applyEdit`-shaped attribute change, plus the sibling `.rs` file path and insertion point (extends `definition.rs`'s existing lookup - §6, DSG-10) |
 
 `kubuno-views-designer` (new channel, spawned separately, its HWND hosted per
 below):
 | Method | Params → Result / Notification |
 |---|---|
 | `kubuno/embed` | `{parentHwnd}` → (creates the child window; see below) |
-| `kubuno/surfaceReady` | notification, `{hwnd}` — once the child HWND exists, for reparenting |
-| `kubuno/setBuffer` | `{text, version}` — full-text push, replacing `FileWatcher`'s disk polling |
+| `kubuno/surfaceReady` | notification, `{hwnd}` - once the child HWND exists, for reparenting |
+| `kubuno/setBuffer` | `{text, version}` - full-text push, replacing `FileWatcher`'s disk polling |
 | `kubuno/elementAt` | `{x, y}` → `{elementId, bounds}` (hit test) |
-| `kubuno/selection` | `{elementIds[]}` — repaint with adorners |
+| `kubuno/selection` | `{elementIds[]}` - repaint with adorners |
 | `kubuno/beginDrag` / `kubuno/drag` / `kubuno/endDrag` | local, no-text-write feedback; `endDrag` returns the structured intent for the VSIX to forward to `kubuno/applyEdit` |
 | `kubuno/paletteDrop` | `{component, x, y}` → `InsertChild` intent |
 
@@ -222,21 +222,21 @@ below):
 ("Embedded native preview (phase 4): HwndHost in a tool window"), and `Kubuno.
 VisualStudio.Views.csproj` already references `PresentationCore`/
 `PresentationFramework`/`WindowsBase` (WPF's `HwndHost` lives in
-`PresentationFramework`) — the interop path was anticipated, though not yet
+`PresentationFramework`) - the interop path was anticipated, though not yet
 used. Today, `kubuno_desktop_controls::host::run_with_options`
 (`kubuno-desktop-controls/src/host/mod.rs`) only ever creates a **top-level**
 `CreateWindowExW` window and blocks its thread in its own message loop
-("Blocks until the window is closed" — `run`'s own doc); `HostOptions` has no
+("Blocks until the window is closed" - `run`'s own doc); `HostOptions` has no
 parent-HWND field. Embedding needs additive work: a `WS_CHILD` creation mode
 keyed off the HWND handed in through `kubuno/embed`, and DPI handling that
 reacts to the parent's `WM_DPICHANGED` instead of querying its own (now
-meaningless, as a child) monitor — `mod.rs`'s current per-monitor-v2 path
+meaningless, as a child) monitor - `mod.rs`'s current per-monitor-v2 path
 assumes a top-level window. This is the single biggest open risk in the plan
 (§6): cross-process `SetParent` is a known, valid technique, but keyboard/
-focus/Tab routing across the process boundary — reconciling VS's own
-`IOleCommandTarget` chain with the child's own message loop — is untried here
+focus/Tab routing across the process boundary - reconciling VS's own
+`IOleCommandTarget` chain with the child's own message loop - is untried here
 and needs a spike first (fallback: an always-on-top overlay kept positioned
-over the tool window's client rect — simpler, but z-order/clipping-fragile).
+over the tool window's client rect - simpler, but z-order/clipping-fragile).
 
 ## 4. Layout model and per-container drop behavior
 
@@ -245,7 +245,7 @@ over the tool window's client rect — simpler, but z-order/clipping-fragile).
 `kubuno-views-ls/src/common_attrs.rs`) already give the WinForms-shaped
 vocabulary: `Dock` (`Top|Bottom|Left|Right|Fill`), `Anchor` (a comma-combination
 of edges), and `X`/`Y`/`Width`/`Height`, all *attached* properties read by the
-parent, not modelled per-component — exactly how WinForms reads
+parent, not modelled per-component - exactly how WinForms reads
 `Control.Dock`/`Control.Anchor` off any control regardless of its type. The
 designer's drag/drop behavior branches on the parent's layout engine:
 
@@ -256,7 +256,7 @@ designer's drag/drop behavior branches on the parent's layout engine:
   only (§2); mouse-up emits one batched `SetAttribute` for whatever of `X/Y/
   Width/Height/Anchor` changed.
 - **Dock.** `XML_VIEWS.md` §1 is explicit that dock bands "stack in reverse
-  z-order" and that document order **is** z-order — so a drag over a `<Panel>`
+  z-order" and that document order **is** z-order - so a drag over a `<Panel>`
   with docked children shows an **insertion marker between existing bands**
   (a line, like WinForms' own dock/table insertion cue), not free XY. Drop
   computes the target index and emits `MoveChild`/`InsertChild` plus
@@ -264,23 +264,23 @@ designer's drag/drop behavior branches on the parent's layout engine:
 - **Flow (`<Stack>`, `ChildrenModel::List`).** No `X`/`Y` at all; drop shows an
   insertion caret perpendicular to `Direction` between blocks. Resize handles
   on a `<Stack>`'s direct children are suppressed (a block's extent comes from
-  its own measured content plus `Gap`, not a settable size) — only the
+  its own measured content plus `Gap`, not a settable size) - only the
   child's own intrinsic properties (e.g. a `TextField`'s `Width`) remain
   editable, never its position.
-- **SingleWidget** (`Card`'s body — `ChildrenModel::SingleWidget`). Dropping a
+- **SingleWidget** (`Card`'s body - `ChildrenModel::SingleWidget`). Dropping a
   second control onto an already-filled body needs a product decision this
   note does not make unilaterally: replace the existing child, or auto-wrap
   both in an implicit `<Stack>`. Flagged for the phase-4 owner to confirm
   before DSG-9 (§6) implements either.
 - **Split (`<Splitter>`/`<Pane>`).** Not yet a registered component (`XML_
   VIEWS.md` names it among `kubuno-desktop-ui`'s four engines, but only `Card`/`Stack`/
-  `Button`/`Switch`/`TextField` are in `registry/components.rs` today) —
+  `Button`/`Switch`/`TextField` are in `registry/components.rs` today) -
   dragging the splitter itself, once registered, changes a ratio/size
   attribute; a `<Pane>` behaves like `SingleWidget` for drops.
 
 **A concrete registry gap this surfaces:** `ChildrenModel::List` alone cannot
 tell the designer whether a container is Dock, Flow, or (once registered)
-Split — today only `<Stack>` (Flow) is registered, so the ambiguity is latent,
+Split - today only `<Stack>` (Flow) is registered, so the ambiguity is latent,
 but the designer needs a `LayoutKind` (or equivalent) alongside `ChildrenModel`
 before `<Panel>`/`<Splitter>` are registered, or its drop visualization cannot
 pick the right cue. This is a small, additive registry field (§6, DSG-1).
@@ -290,7 +290,7 @@ pick the right cue. This is a small, additive registry field (§6, DSG-1).
 **Shape.** One JSON object per `ComponentMeta`: `{name, doc, properties:
 [{name, kind, default, doc}], events: [{name, doc}], children: "None"|
 "SingleWidget"|"List", family}`, where `kind` serializes `PropKind` as
-`"Bool"`/`"F32"`/`"String"`/`{"Enum": ["A", "B", …]}` — a direct mirror of
+`"Bool"`/`"F32"`/`"String"`/`{"Enum": ["A", "B", …]}` - a direct mirror of
 `kubuno-desktop-views/src/registry/mod.rs`'s Rust types, nothing invented. Two
 additive fields are needed beyond what `ComponentMeta` carries today: an
 **icon** glyph name (none exists yet; `node.rs`'s `static_icon` table is the
@@ -298,41 +298,41 @@ right precedent for a short curated name list, reused for the toolbox) and
 the **`LayoutKind`** from §4. `family` groups the toolbox exactly as `registry
 ::families::ALL_FAMILIES` already groups the table internally.
 
-**Sync mechanism — decision.** Query it **live from `kubuno-views-ls`** via
+**Sync mechanism - decision.** Query it **live from `kubuno-views-ls`** via
 `kubuno/registry`, not a JSON file generated at VSIX build time and shipped in
 the box. Reasons: `registry::all()` is already a runtime `OnceLock`
 (`registry/mod.rs`) computed once per process, so asking the *already-running*
 `kubuno-views-ls.exe` costs one round trip at document-open time and, crucially,
 always matches the exact binary the developer's own `KubunoViewsLanguageServerLocator`
 resolved (option override → extension `tools\` → PATH → local dev build
-folders — `Locating/KubunoViewsLanguageServerLocator.cs`), which per `CLAUDE.
+folders - `Locating/KubunoViewsLanguageServerLocator.cs`), which per `CLAUDE.
 md`'s "mode de dev choisi = publié" may be a locally-rebuilt, ahead-of-VSIX
 `kubuno-views-ls`. A VSIX-baked JSON snapshot would silently drift from that
-the moment either side changes — exactly the failure mode `XML_VIEWS.md`
+the moment either side changes - exactly the failure mode `XML_VIEWS.md`
 keeps naming and mitigating elsewhere (the registry's own `smoke`-tested link
 to `kubuno-desktop-ui`, `common_attrs.rs`'s own note about its hand-copied table).
 Cached for the language client's session only; the registry cannot change
 without restarting the process that computed it.
 
-## 6. Phased plan — parallelizable work packages
+## 6. Phased plan - parallelizable work packages
 
 Ten packages, each with an owner scope narrow enough for a separate agent/
 session to hold without touching another package's files. **Cross-cutting
 coordination point, called out once rather than in every row below:** DSG-2
 and DSG-6 must agree on one **stable element-id scheme** (e.g. a path of
 child-ordinal indices from the document root, independent of `x:Name`) before
-either is implemented in isolation — this is the one place two packages share
+either is implemented in isolation - this is the one place two packages share
 a contract that is not just a JSON shape.
 
 | # | Package | Owns | Depends on | Effort | Test strategy |
 |---|---|---|---|---|---|
 | DSG-1 | Registry JSON export + `kubuno/registry`, plus the additive `icon`/`LayoutKind` fields on `ComponentMeta` | `kubuno-desktop-views/src/registry/*` (additive fields), new `kubuno-views-ls/src/registry_export.rs` + `server.rs` wiring | none | S | Rust unit/golden-file tests on the JSON shape; no visual check |
-| DSG-2 | `kubuno/applyEdit`, `kubuno/elementAtOffset`, `kubuno/rangeOfElement`; `edit.rs` returning `{range, text}` instead of whole-file text; the element-id scheme | `kubuno-desktop-views/src/edit.rs` (additive), new `kubuno-views-ls/src/edit_bridge.rs` + `server.rs` | none (defines the id scheme DSG-6 must match) | M | Rust unit tests, purely textual — CLI-testable, no visual check |
-| DSG-3 | `IVsEditorFactory` for `.kbview`, split Design\|XML `WindowPane`, XML pane reusing the existing text-editor view | new `src/Desktop/Kubuno.Desktop/Views.Designer/EditorFactory.cs`, `DesignerWindowPane.*` | none (design surface can be a placeholder pane until DSG-7) | M | Manual, experimental instance — **visual check**: opening a `.kbview` shows the split |
+| DSG-2 | `kubuno/applyEdit`, `kubuno/elementAtOffset`, `kubuno/rangeOfElement`; `edit.rs` returning `{range, text}` instead of whole-file text; the element-id scheme | `kubuno-desktop-views/src/edit.rs` (additive), new `kubuno-views-ls/src/edit_bridge.rs` + `server.rs` | none (defines the id scheme DSG-6 must match) | M | Rust unit tests, purely textual - CLI-testable, no visual check |
+| DSG-3 | `IVsEditorFactory` for `.kbview`, split Design\|XML `WindowPane`, XML pane reusing the existing text-editor view | new `src/Desktop/Kubuno.Desktop/Views.Designer/EditorFactory.cs`, `DesignerWindowPane.*` | none (design surface can be a placeholder pane until DSG-7) | M | Manual, experimental instance - **visual check**: opening a `.kbview` shows the split |
 | DSG-4 | Toolbox + Properties/Events WPF tool windows, bound to DSG-1's JSON (a fixture JSON is enough to start) | new WPF views/viewmodels under the Designer project | DSG-1 (schema; can stub) | M | Viewmodel unit tests (PropKind → editor kind); **visual check** for grid rendering |
 | DSG-5 | Buffer-diff/apply plumbing: `{range,newText}` → one `ITextEdit`, compound-action batching for drags | new `Infrastructure/BufferEditApplier.cs`, `DesignerUndoScope.cs` | DSG-2's response shape | S–M | Unit test against a fake/real `ITextBuffer`; manual Ctrl+Z check |
 | DSG-6 | `kubuno-views-designer` crate: promote `view_preview.rs`'s runtime loop out of `examples/`, add `kubuno/setBuffer`, `kubuno/elementAt` hit-testing (needs an id on *every* node, not just `x:Name`'d ones), adorner paint pass | new crate `kubuno-views-designer` | DSG-2 (id scheme) | L | Hit-test math is unit-testable headless (layout is already exercised without a `Canvas` in `node.rs`'s own tests); adorner rendering needs a **visual check** (standalone run + screenshot) |
-| DSG-7 | HwndHost embedding: `WS_CHILD`/parent-HWND mode + parent-driven DPI in `kubuno_desktop_controls::host`; C# `HwndHost` subclass doing the spawn/handshake/`SetParent`/focus forwarding | `kubuno-desktop-controls/src/host/mod.rs` (additive), new `DesignSurfaceHost.cs` | DSG-6 (can integrate against a placeholder colored window first) | L, **highest risk** | **Visual check mandatory** — this is exactly the class of change that cannot be verified by compiling alone |
+| DSG-7 | HwndHost embedding: `WS_CHILD`/parent-HWND mode + parent-driven DPI in `kubuno_desktop_controls::host`; C# `HwndHost` subclass doing the spawn/handshake/`SetParent`/focus forwarding | `kubuno-desktop-controls/src/host/mod.rs` (additive), new `DesignSurfaceHost.cs` | DSG-6 (can integrate against a placeholder colored window first) | L, **highest risk** | **Visual check mandatory** - this is exactly the class of change that cannot be verified by compiling alone |
 | DSG-8 | Bidirectional selection/caret sync + Document Outline (reusing `symbols.rs` as-is) | `DesignerSelectionSync.cs` | DSG-3, DSG-6, DSG-2 | M | Manual, **visual check** (inherently a UI behavior) |
 | DSG-9 | Drag/drop, snaplines, insertion markers per §4's container kinds; toolbox-drop into the foreign child HWND (likely a Win32 `IDropTarget` on the child window, not WPF's own `DragDrop`, since OLE drag-drop across an `HwndHost` boundary into another process's HWND is untested here) | split across `kubuno-views-designer` (snap/insertion-index math) and `DesignerDragDropSource.cs` | DSG-6, DSG-7 | L | **Visual check mandatory** |
 | DSG-10 | Double-click → handler generation: `kubuno/insertHandler` extending `definition.rs`'s existing handler-location logic with an insert mode; Events-tab double-click wiring | `kubuno-views-ls/src/definition.rs` (extended), `HandlerInsertionCommand.cs` | DSG-2 | M | Rust unit tests for the locate/insert logic; manual check for the VS-side open/insert/caret-jump |
@@ -347,22 +347,22 @@ packages landing.
 
 ### Risks
 
-- **HwndHost cross-process reparenting in VS 2026** — the single largest
+- **HwndHost cross-process reparenting in VS 2026** - the single largest
   unknown (§3): no code in this repo does this today; verify against the real
   2026 experimental instance before the plan commits to it, with the overlay
   fallback noted in §3 ready if it does not work.
-- **Keyboard/focus routing** across the process boundary — `IOleCommandTarget`
+- **Keyboard/focus routing** across the process boundary - `IOleCommandTarget`
   and VS's accelerator table do not automatically see a foreign-process child
   window; needs an explicit forwarding shim.
-- **DPI** — `host`'s current per-monitor-v2 handling assumes a top-level
+- **DPI** - `host`'s current per-monitor-v2 handling assumes a top-level
   window querying its own monitor; a reparented child needs the parent's
   `WM_DPICHANGED` instead (§3).
-- **Re-render performance** — debounce buffer pushes (§2); drags stay local
+- **Re-render performance** - debounce buffer pushes (§2); drags stay local
   (no text write, no re-parse) until mouse-up.
-- **Undo granularity** — a drag or multi-attribute edit must land as exactly
+- **Undo granularity** - a drag or multi-attribute edit must land as exactly
   one undo unit (§2, DSG-5), or the designer feels broken even when each edit
   is individually correct.
-- **OLE drag-and-drop into a foreign HWND** (DSG-9) — likely needs a raw
+- **OLE drag-and-drop into a foreign HWND** (DSG-9) - likely needs a raw
   Win32 `IDropTarget` on the child window; WPF's own `DragDrop` does not
   natively span a process boundary, and this is unverified here.
 
@@ -454,29 +454,29 @@ Work package DSG-2 (§6) is implemented: `kubuno-views-ls` now also links
 `textDocument/*` methods, in `src/kubuno-views-ls/src/edit_bridge.rs` (+
 wiring in `server.rs`). `kubuno-desktop-views/src/edit.rs` and `src/ast/mod.rs` grew
 the additive surface this bridge is built on. This section documents the
-actual wire shapes, which refine §3's sketch table in a few places — each
+actual wire shapes, which refine §3's sketch table in a few places - each
 refinement is called out below with why.
 
 ### The stable element id
 
 An element's id is the dot-separated path of **child-ordinal indices**
-(element children only — text/comments never consume an index) from the
+(element children only - text/comments never consume an index) from the
 document root, exactly as §6's cross-cutting note asked for: **independent of
 `x:Name`**. The document's root element is the empty string `""`; its first
 child is `"0"`; that child's second child is `"0.1"`; and so on.
 [`kubuno_desktop_views::ast::Element::stable_id`] computes it, and
 [`kubuno_desktop_views::ast::Document::resolve_id`] is its exact inverse (`None` for a
 malformed id, an out-of-range index at any level, or a document with no root
-element — never a panic). Both live in `kubuno_desktop_views::ast` rather than in
+element - never a panic). Both live in `kubuno_desktop_views::ast` rather than in
 `kubuno-views-ls` specifically *because* DSG-6 (`kubuno-views-designer`, a
 separate process that also links `kubuno_desktop_views` but not `kubuno-views-ls`)
 needs to compute the identical id from its own copy of the document text and
-agree with the language server on "which element" — the one place, per §6,
+agree with the language server on "which element" - the one place, per §6,
 the two packages share a contract that is not just a JSON shape.
 
 An id is **stable across edits that do not reorder/insert/remove elements
 above it in the tree**, and *not* stable across ones that do (inserting a
-sibling before an element shifts every id after it at that level) — a
+sibling before an element shifts every id after it at that level) - a
 client (the designer process, or the VSIX) that holds an id across an edit it
 just requested must treat it as invalidated and re-resolve, exactly as it
 would already have to re-parse after applying a `TextEdit`.
@@ -484,7 +484,7 @@ would already have to re-parse after applying a `TextEdit`.
 Because the id *is* the ordinal path, a caller does not need to walk the tree
 to find an element's own parent and index: splitting the id at its last `.`
 gives `(parent_id, index)` directly (`"2.0.3"` → `("2.0", 3)`; `"3"` →
-`("", 3)`; `""` has no parent — the document root cannot be
+`("", 3)`; `""` has no parent - the document root cannot be
 removed/moved/renamed as a designer gesture, a `.kbview` file always having
 exactly one). `kubuno-views-ls`'s `edit_bridge::split_parent` is this one-line
 string operation, not a tree walk.
@@ -492,7 +492,7 @@ string operation, not a tree walk.
 ### `kubuno_desktop_views::edit`'s new public surface
 
 Every function in `edit.rs` now returns `Vec<Edit>` (`struct Edit { range:
-TextRange, new_text: String }`) instead of a whole new document string — one
+TextRange, new_text: String }`) instead of a whole new document string - one
 disjoint `{range, newText}` pair per byte range actually touched, still
 expressed in the *original* document's own coordinates, still empty for a
 no-op (an out-of-range index, a missing attribute, an id that will not
@@ -502,7 +502,7 @@ of edits back into a whole-file string (applying them back-to-front by
 module's own tests and for any caller that wants to re-parse in one step
 rather than apply `TextEdit`s incrementally. This is what §2 asked for
 ("a small, additive change to `edit.rs`'s public surface: return the computed
-`TextRange` alongside the spliced text") — refined from a single `{range,
+`TextRange` alongside the spliced text") - refined from a single `{range,
 newText}` to a small `Vec` of them, because a single splice cannot express a
 move (old slot + new slot are two disjoint ranges) or a rename with a
 separate end tag (two token ranges) as one contiguous replacement.
@@ -510,7 +510,7 @@ separate end tag (two token ranges) as one contiguous replacement.
 Two functions are new, both additive, neither touching `registry/*`, `node
 .rs`, `binding.rs`, `validate.rs`, `props.rs` or `macros.rs`:
 
-- `move_element(source_parent, from, dest_parent, to) -> Vec<Edit>` — the
+- `move_element(source_parent, from, dest_parent, to) -> Vec<Edit>` - the
   general case `move_child` (same-parent reorder only) does not cover: a drop
   into a *different* container (§4's Dock/Flow drop targets). Delegates to
   `move_child` verbatim when `source_parent`/`dest_parent` are the same
@@ -519,7 +519,7 @@ Two functions are new, both additive, neither touching `registry/*`, `node
   since the two parents' subtrees never overlap in that case. A no-op when
   the destination is the moved element itself or one of its own descendants
   (moving a container into its own contents has no sane result).
-- `rename_element(element, new_name) -> Vec<Edit>` — rewrites the start-tag
+- `rename_element(element, new_name) -> Vec<Edit>` - rewrites the start-tag
   name token and, when present, the separate end-tag name token (a self-
   closing element only has the one). Every attribute, and the element's own
   `x:Name` *value* (never the tag name), is left untouched.
@@ -538,7 +538,7 @@ for the end tag) and `stable_id()`; `ast::Document` gained `resolve_id()`.
 `op.kind` (tagged on `"kind"`, not `"op"`, to avoid a field named the same as
 its own containing object) is one of: `setAttribute {elementId, name, value}`,
 `removeAttribute {elementId, name}`, `insertChild {parentId, index, xml}`
-(`xml` a well-formed `.kbview` fragment, inserted byte-for-byte —
+(`xml` a well-formed `.kbview` fragment, inserted byte-for-byte -
 `insert_child`'s own doc; addressed by the *parent's* id, since the new
 element has no id of its own yet), `removeElement {elementId}`,
 `moveElement {elementId, newParentId, index}` (same parent as today for a
@@ -546,7 +546,7 @@ reorder, a different one for a cross-container drop), `renameElement
 {elementId, newName}`. Every field name that is `snake_case` in Rust is
 `camelCase` on the wire (`elementId`, `newParentId`, `newName`, …).
 
-The result is always `{ "edits": [ {range, newText}, … ] }` — a **list**, not
+The result is always `{ "edits": [ {range, newText}, … ] }` - a **list**, not
 the single `{range, newText}` §3's sketch table shows, because `moveElement`
 (two disjoint ranges, unless it degenerates to a same-parent `move_child`,
 which can still be two) and `renameElement` (two token ranges, unless
@@ -554,7 +554,7 @@ self-closing) cannot always be expressed as one contiguous replacement; the
 VS side applies every entry in the list as its own minimal `ITextEdit
 .Replace` (§2), inside the one compound/undo transaction DSG-5 owns for the
 whole gesture. An id that does not resolve (stale, or simply invalid) yields
-`{"edits": []}`, never an error — the same "degrade to no-op" rule
+`{"edits": []}`, never an error - the same "degrade to no-op" rule
 `kubuno_desktop_views::edit` itself uses for an out-of-range index, so a client
 racing its own debounced re-parse against a fresh keystroke never gets a hard
 failure for it. A `uri` with no open document behaves the same way.
@@ -566,9 +566,9 @@ failure for it. A `uri` with no open document behaves the same way.
   -> { "elementId": "1", "range": {...} }        // or `null`
 ```
 
-Takes a `position` — an ordinary LSP `Position` (0-based line, UTF-16
+Takes a `position` - an ordinary LSP `Position` (0-based line, UTF-16
 character), the exact shape `textDocument/hover`/`/completion`/`/definition`
-already use — rather than the flat byte `offset` §3's sketch names. This is a
+already use - rather than the flat byte `offset` §3's sketch names. This is a
 deliberate refinement: every position this server already accepts goes
 through [`crate::position::PositionIndex`]'s existing UTF-16 conversion, and
 reusing that shape means neither side of the wire needs a second coordinate
@@ -597,7 +597,7 @@ subtree-cycle guard, id ⇄ stable-id round trips, out-of-range/malformed ids).
 resolution, no-op degradation, root-element guard). `kubuno-views-ls/tests
 /roundtrip.rs` exercises all three methods over a real in-memory
 `lsp-server` `Connection`, the same harness the crate's existing
-`textDocument/*` round-trip tests use — `cargo test -p kubuno-desktop-views-ls`.
+`textDocument/*` round-trip tests use - `cargo test -p kubuno-desktop-views-ls`.
 
 ## 9. DSG-6 protocol
 
@@ -607,23 +607,23 @@ task narrowed it: **inside the existing `kubuno-desktop-views` crate** (a new
 `Runtime::frame_with_design` wiring `crate::compile::build_node` needs to
 record it) and **`examples/view_embed.rs`**, the same exe DSG-7's spike
 already proved out as the embedded surface `vskubuno`'s `RustDesignSurfaceHost`
-launches — not a new, separate `kubuno-views-designer` crate/binary as §3's
+launches - not a new, separate `kubuno-views-designer` crate/binary as §3's
 original sketch proposed. `view_embed`'s own `<file.kbview>` argument is now
 **optional**: the DSG-6 protocol's `setText` (below) pushes the buffer's live
 text directly, the same "buffer, not disk, is authoritative" rule §2 already
 states, finally implemented instead of the temp-file bridge `RustDesignSurfaceHost
 .SetDocumentText` used until now (`DESIGNER.md`'s own §7/§3 "Document text"
 remarks called this out as a placeholder to swap once DSG-6 shipped a process
-that speaks the protocol; `view_embed` already existed and is that process —
+that speaks the protocol; `view_embed` already existed and is that process -
 no new `kubuno-views-designer` binary was needed for it to happen).
 
 ### The layout map and hit-testing
 
-`kubuno_desktop_views::design::LayoutMap` is a frame-local `Vec<LayoutEntry>` —
-`{id, parent_id, bounds, layout}` — rebuilt every frame design mode records
+`kubuno_desktop_views::design::LayoutMap` is a frame-local `Vec<LayoutEntry>` -
+`{id, parent_id, bounds, layout}` - rebuilt every frame design mode records
 into. **Every** compiled element is wrapped in a `design::DesignSlot`
-(`crate::compile::build_node`, the single choke point every element — this
-crate's own five node types, or any `registry::families::*` component —
+(`crate::compile::build_node`, the single choke point every element - this
+crate's own five node types, or any `registry::families::*` component -
 already passes through), so recording needs no change to any individual
 `ViewNode` impl: `DesignSlot::paint` records `{id: Element::stable_id(),
 parent_id: design::parent_id_of(id), bounds, layout}` (`layout` = the
@@ -631,7 +631,7 @@ parent_id: design::parent_id_of(id), bounds, layout}` (`layout` = the
 `LayoutKind::DockAnchor` even though the child element itself might have
 `LayoutKind::None`) and then delegates to the wrapped node unchanged. This is
 additive and zero-cost when design mode is off: `PaintCx::design` is
-`Option<&mut LayoutMap>`, `None` for an ordinary (non-designer) frame — the
+`Option<&mut LayoutMap>`, `None` for an ordinary (non-designer) frame - the
 only added cost anywhere in the paint path is one `if let Some(..)` branch
 per element, no allocation. `Runtime::frame` (every existing caller) is
 unchanged; `Runtime::frame_with_design` is the new entry point that threads a
@@ -640,7 +640,7 @@ unchanged; `Runtime::frame_with_design` is the new entry point that threads a
 `LayoutMap::hit_test(x, y)` returns the **deepest** element under a point:
 since a container is always recorded before its own children (`DesignSlot::
 paint` records itself, then recurses), scanning the entries in **reverse**
-paint order finds the most-nested match first — the same trick doubles as a
+paint order finds the most-nested match first - the same trick doubles as a
 z-order tiebreak for overlapping siblings (the later-painted one wins), with
 no separate depth bookkeeping. A degenerate (zero-or-negative-area) entry is
 skipped, so an element that measured to nothing never steals a click from
@@ -652,7 +652,7 @@ items", §6's own phrasing).
 `design::DesignController` owns `enabled`/`selected`/`hover` and is
 deliberately **host-agnostic**: it never reads `kubuno_desktop_controls::host`'s
 global input state itself (`click_select`/`update_hover` take a plain `x, y`;
-`handle_keys` takes a plain `DesignKeyInput` struct) — `view_embed.rs` is the
+`handle_keys` takes a plain `DesignKeyInput` struct) - `view_embed.rs` is the
 only place that bridges the real host globals (`host::take_key`, one call per
 tracked key) into these host-agnostic shapes, which is what makes every
 selection/nudge/delete code path unit-testable with no live window (see
@@ -666,10 +666,10 @@ selection/nudge/delete code path unit-testable with no live window (see
   (`ButtonNode::interact` et al., unchanged by DSG-6) gates everything behind
   `hot = bounds.contains(mouse)`/`mouse_down`, so a pointer that can never be
   "hot" and a button that is never "down" can never start a press, complete a
-  click, or take keyboard focus — a `TextField` only starts reading typed
+  click, or take keyboard focus - a `TextField` only starts reading typed
   characters once it has focus, which only a real click ever grants. This
   needed no change to `kubuno_desktop_controls::host` itself (out of DSG-6's scope;
-  concurrent work owns that crate's keyboard-forwarding code) — the REAL
+  concurrent work owns that crate's keyboard-forwarding code) - the REAL
   `Frame` still drives design mode's own click/hover/keyboard handling,
   computed separately in the same frame closure.
 - **Click → select.** A completed press-edge (`f.mouse_down` just went true)
@@ -682,25 +682,25 @@ selection/nudge/delete code path unit-testable with no live window (see
   element (skipped when it is also the selection); a solid outline plus
   **8 compass-point resize handles** on the **selected** element **only**
   when its recorded `layout == LayoutKind::DockAnchor`(an Anchor/absolute
-  child, §4) — anything else (a `<Stack>` flow child, or a `SingleWidget`
+  child, §4) - anything else (a `<Stack>` flow child, or a `SingleWidget`
   body) gets the outline alone, no handles, matching §4's "resize handles on
   a `<Stack>`'s direct children are suppressed". DSG-6 only **draws** the
   handles; a mouse-driven drag/resize through them is DSG-9's own scope
   (`§6`'s table), not implemented here.
 - **Keyboard** (`DesignController::handle_keys`, driven by `view_embed`'s
-  `read_design_keys` — one `host::take_key` pair per tracked key, so a held
+  `read_design_keys` - one `host::take_key` pair per tracked key, so a held
   key does not keep re-triggering every frame): **Esc** moves the selection
-  to its parent (a local selection change, no edit request — `handle_keys`
+  to its parent (a local selection change, no edit request - `handle_keys`
   returns `Vec::new()`); **Delete** returns one `EditOp::RemoveElement`;
   an **arrow** (`Shift` = a 10 DIP step instead of 1) returns one
   `EditOp::SetAttribute` per axis that moved, **only** when the selected
-  element's recorded `layout` is `LayoutKind::DockAnchor` — nudging is a
+  element's recorded `layout` is `LayoutKind::DockAnchor` - nudging is a
   no-op for anything else (a flow child has no `X`/`Y` to nudge, §4). A
   nudge's new value is the element's CURRENT literal `X`/`Y` (read by
-  re-parsing the surface's own current text on demand — `EditOp` always
+  re-parsing the surface's own current text on demand - `EditOp` always
   carries the new ABSOLUTE value, never a delta, matching `setAttribute`'s
   own wire shape below) plus the step; a missing/non-numeric current value is
-  treated as `0`. **Nothing here ever mutates `.kbview` text directly** — every
+  treated as `0`. **Nothing here ever mutates `.kbview` text directly** - every
   state-changing gesture becomes an `EditOp` the host forwards to
   `kubuno-views-ls`'s `kubuno/applyEdit` (DSG-2, §8); `view_embed` only ever
   applies a REQUEST locally to `design`'s own selection state, never to the
@@ -709,12 +709,12 @@ selection/nudge/delete code path unit-testable with no live window (see
 ### Wire protocol
 
 Line-delimited JSON on the surface's own stdin (host → surface) and stdout
-(surface → host) — `kubuno_desktop_views::protocol` implements both directions;
+(surface → host) - `kubuno_desktop_views::protocol` implements both directions;
 `vskubuno`'s `RustDesignSurfaceHost.Protocol.cs` (a `partial class` split out
 of `RustDesignSurfaceHost.cs` so it would not collide with concurrent
 keyboard-forwarding work on that file) speaks the C# side, byte-for-byte the
 same shapes (its own `DesignSurfaceProtocol`, unit-tested independently of a
-live process — see that project's test suite). `stderr` is unchanged: still
+live process - see that project's test suite). `stderr` is unchanged: still
 the plain `[embed] …` trace/log channel `RustDesignSurfaceHost` already
 captured before DSG-6 (`ErrorDataReceived`); the protocol lives on stdin/
 stdout exclusively, never mixed into the trace text.
@@ -723,20 +723,20 @@ Host → surface (`kubuno_desktop_views::protocol::HostMessage`):
 
 | `type` | Fields | Meaning |
 |---|---|---|
-| `setText` | `text: string` | Re-parses and renders `text` as the current document — replaces the temp-file bridge. |
+| `setText` | `text: string` | Re-parses and renders `text` as the current document - replaces the temp-file bridge. |
 | `setDesignMode` | `on: bool` | Turns design mode on/off. |
 | `select` | `id: string \| null` | Host-driven selection (XML pane → Design surface sync, §1); `null` clears it. |
-| `setDesignOptions` | `containerOutlines: bool` (default `true`) | The designer options that change what the surface draws, sent first to every started surface. `containerOutlines` (*Show design outlines*): a faint dashed outline, in the theme's divider colour, around a container that paints nothing of its own (a `Panel` or `Stack` with no `Surface`, `BorderStyle` or background) — like Windows Forms' dotted border around a borderless `Panel`. Controls are never outlined: they look exactly as at run time. |
+| `setDesignOptions` | `containerOutlines: bool` (default `true`) | The designer options that change what the surface draws, sent first to every started surface. `containerOutlines` (*Show design outlines*): a faint dashed outline, in the theme's divider colour, around a container that paints nothing of its own (a `Panel` or `Stack` with no `Surface`, `BorderStyle` or background) - like Windows Forms' dotted border around a borderless `Panel`. Controls are never outlined: they look exactly as at run time. |
 
 Surface → host (`kubuno_desktop_views::protocol::SurfaceMessage`):
 
 | `type` | Fields | Meaning |
 |---|---|---|
 | `selectionChanged` | `id: string \| null`, `bounds: {left,top,right,bottom} \| null` | The selection changed (a click, or Esc-to-parent). `bounds` is the newly selected element's painted rect, `null` when nothing is selected or the id has no current layout-map entry. |
-| `editRequest` | `op: EditOp` | Delete or a nudging arrow — `op` is EXACTLY DSG-2's `kubuno/applyEdit` op shape (below), for the host to forward as-is. |
+| `editRequest` | `op: EditOp` | Delete or a nudging arrow - `op` is EXACTLY DSG-2's `kubuno/applyEdit` op shape (below), for the host to forward as-is. |
 
 `EditOp` (`kubuno_desktop_views::design::EditOp`, tagged on `"kind"`, every field
-`camelCase` on the wire — the identical convention DSG-2's own `kubuno/
+`camelCase` on the wire - the identical convention DSG-2's own `kubuno/
 applyEdit` op already uses, §8):
 
 ```json
@@ -752,10 +752,10 @@ host   (later): {"type":"select","id":"0.1"}                        // e.g. echo
 surface → host: {"type":"editRequest","op":{"kind":"removeElement","elementId":"0.1"}}
 ```
 
-A malformed or unrecognised line is **never an error** on either side —
+A malformed or unrecognised line is **never an error** on either side -
 `kubuno_desktop_views::protocol::parse_host_message` returns `None`,
 `DesignSurfaceProtocol.TryParseSelectionChanged`/`TryParseEditRequest` return
-`false` — the same "stale/bogus input, no-op" rule `kubuno_desktop_views::edit`
+`false` - the same "stale/bogus input, no-op" rule `kubuno_desktop_views::edit`
 itself already uses (§8): a client racing its own debounced re-parse against
 a fresh keystroke never gets a hard failure for it, and one bad line never
 tears down a whole design surface process.
@@ -765,29 +765,29 @@ tears down a whole design surface process.
 `RustDesignSurfaceHost.Protocol.cs` adds, to the existing `RustDesignSurfaceHost`
 (now a `partial class`):
 
-- `SendSetText`/`SendSetDesignMode`/`SendSelect` — write one JSON line to
+- `SendSetText`/`SendSetDesignMode`/`SendSelect` - write one JSON line to
   `Process.StandardInput` (`ProcessStartInfo.RedirectStandardInput` is now
   `true`, alongside the pre-existing `RedirectStandardError`; `SetDocumentText`
-  — `IDesignSurfaceHost`'s own member — now calls `SendSetText` instead of
+  - `IDesignSurfaceHost`'s own member - now calls `SendSetText` instead of
   writing the temp file the class doc used to describe) and cache the last
   value sent, so a crash-restart (`OnSurfaceExited`'s existing backoff) can
   **resend** design mode/selection/text to the fresh process instead of
   silently losing that state.
-- `OnSurfaceProtocolLine` — the `Process.OutputDataReceived` handler
+- `OnSurfaceProtocolLine` - the `Process.OutputDataReceived` handler
   (`RedirectStandardOutput` is now `true` too; wired in `BeginProtocolIo`,
   called right after `BeginErrorReadLine`): parses each line with
   `DesignSurfaceProtocol`'s pure `TryParseSelectionChanged`/
   `TryParseEditRequest` and raises `SelectionChanged`/the new `EditRequested`
-  event, marshalled onto the UI thread via `Dispatcher.BeginInvoke` — the same
+  event, marshalled onto the UI thread via `Dispatcher.BeginInvoke` - the same
   pattern `OnSurfaceExited` already uses, and for the same reason (a
   subscriber may touch WPF/VS objects that require it). A line matching
   neither shape is logged and dropped, never thrown.
 - `DesignSurfaceEditOp`/`DesignSurfaceEditOpKind`/
-  `DesignSurfaceEditRequestedEventArgs` — the C# mirror of `kubuno_desktop_views::
+  `DesignSurfaceEditRequestedEventArgs` - the C# mirror of `kubuno_desktop_views::
   design::EditOp`, carried by the new `EditRequested` event
   (`EventHandler<DesignSurfaceEditRequestedEventArgs>`).
 
-`Toolbox/`, `Properties/`, `Editing/` are untouched by this package — forwarding
+`Toolbox/`, `Properties/`, `Editing/` are untouched by this package - forwarding
 an `EditRequested` op to `kubuno-views-ls`'s `kubuno/applyEdit` and applying
 the result through `Editing/Infrastructure/BufferEditApplier.cs` (DSG-5) is
 wiring left for whichever package actually connects the two ends end-to-end
@@ -801,29 +801,29 @@ the adorner geometry (`resize_handles`'s eight compass points, `dashed_outline`'
 four-edge coverage) with no `Canvas` at all, and `DesignController`'s full
 request-generation surface (click/hover, Esc-to-parent, Delete, arrow nudge
 incl. the `LayoutKind::DockAnchor`-only gate and the Shift step) against
-hand-built `LayoutMap`s and parsed `ast::Document`s — no live window, no
+hand-built `LayoutMap`s and parsed `ast::Document`s - no live window, no
 `kubuno_desktop_controls::host` global state. `kubuno-desktop-views/src/compile.rs` gained a
 regression test compiling a `<Panel>` with Anchor/Dock children end to end
 (the one `build_node` call site that does not go through a `Props` helper).
 `kubuno-desktop-views/src/protocol.rs` unit-tests every wire shape byte-for-byte
 (`serde` round trips plus exact-string assertions, so a silent field-name
-drift — confirmed live during this package's own development: `rename_all`
+drift - confirmed live during this package's own development: `rename_all`
 on an enum does not, on its own, camelCase a struct variant's fields, only
-its tag — fails a test immediately rather than shipping). `Kubuno.VisualStudio
+its tag - fails a test immediately rather than shipping). `Kubuno.VisualStudio
 .Designer.Tests/DesignSurface/RustDesignSurfaceHostProtocolTests.cs` asserts
 the identical strings on the C# side (`DesignSurfaceProtocol`, no live
 process/WPF `Dispatcher` needed), so the two sides cannot silently drift from
-each other. `DesignSlot`'s own wrapping — the mechanism, not the geometry —
+each other. `DesignSlot`'s own wrapping - the mechanism, not the geometry -
 is exercised the way `crate::node`'s own tests already establish nothing in
 this crate can avoid: a live paint pass needs a real `kubuno_desktop_controls::
 ControlCanvas` (Direct2D/DirectWrite), which no unit test in this crate
-constructs (§6's own "without a Canvas where possible" carve-out) — covered
+constructs (§6's own "without a Canvas where possible" carve-out) - covered
 instead by the visual check below.
 
 Environment note: `dotnet test`/`vstest.console.exe` on this machine fails to
 load `MSTest.TestAdapter.dll` for `Kubuno.Desktop.Tests`
 (`NETStandardCompatError_MSTest_TestAdapter`) for EVERY test in that project,
-not just the new ones — a pre-existing tooling/SDK-resolution issue (only the
+not just the new ones - a pre-existing tooling/SDK-resolution issue (only the
 .NET 10 SDK is installed, no `global.json`), reproduced against an existing,
 previously-passing test (`ComponentRegistryTests`) too. The new tests are
 verified by `MSBuild` compiling the test project cleanly; running them was
@@ -836,7 +836,7 @@ Work package DSG-9 (§6) is implemented, scoped exactly as the table asks:
 drop-validation math, `src/protocol.rs`'s wire extensions, `examples/
 view_embed.rs`'s wiring) **and a NEW C# file**,
 `Kubuno.Desktop.Designer/DesignSurface/RustDesignSurfaceHost.DragDrop.cs`
-— a `partial class` split out for the same reason DSG-6's own `RustDesignSurfaceHost
+- a `partial class` split out for the same reason DSG-6's own `RustDesignSurfaceHost
 .Protocol.cs` was ("so this work does not collide with concurrent changes"):
 `RustDesignSurfaceHost.cs`, `RustDesignSurfaceHost.Protocol.cs` and
 `IDesignSurfaceHost.cs` were all under active concurrent development by other
@@ -848,60 +848,60 @@ them needed to change for DSG-9's own scope.
 `design::DesignController` gained a `drag: Option<DragSession>` state machine,
 driven entirely by the same host-agnostic pattern DSG-6 established
 (`click_select`/`update_hover`/`handle_keys` never read `kubuno_desktop_controls::
-host` directly — `examples/view_embed.rs` is the only bridge):
+host` directly - `examples/view_embed.rs` is the only bridge):
 
-- **`DesignController::press(layout, x, y) -> bool`** — a completed press. If
+- **`DesignController::press(layout, x, y) -> bool`** - a completed press. If
   the CURRENTLY selected element is a `DockAnchor` child, a press on one of
   its 8 resize handles (`handle_at`, hit-testing [`resize_handles`]'s own
   geometry at [`RESIZE_HANDLE_SIZE`]) arms a `Resize` drag immediately,
   `confirmed` (unambiguous intent, no debounce). Otherwise, SELECTS whatever
   is under the pointer and, if it is itself draggable (`DockAnchor` → `Move`,
   `Flow` → `Reorder`), arms that gesture in the SAME press, `confirmed:
-  false` — revised from an earlier two-press design (select, then a SECOND
+  false` - revised from an earlier two-press design (select, then a SECOND
   press to arm) after a live visual check showed that reads as "dragging an
   unselected element does nothing but select it", not the WinForms/XAML
   one-gesture behavior DSG-9 item 1 actually asks for. An unconfirmed session
   produces no preview/marker and no `EditOp`; [`DesignController::update_drag`]
-  confirms it — applying the FULL delta from the original press, no jump —
+  confirms it - applying the FULL delta from the original press, no jump -
   the first time the pointer crosses [`DRAG_THRESHOLD`] (4 DIP), so a plain
   click (press, release with negligible movement) still just selects.
   Returns whether the selection itself changed.
-- **`DesignController::update_drag(layout, x, y, suppress_snap)`** — called
+- **`DesignController::update_drag(layout, x, y, suppress_snap)`** - called
   every frame a drag is active. For `Move`/`Resize`, computes the raw new
-  bounds ([`move_rect`]/[`resize_rect`], pure `Rect` arithmetic — `resize_rect`
+  bounds ([`move_rect`]/[`resize_rect`], pure `Rect` arithmetic - `resize_rect`
   clamps at [`MIN_ELEMENT_SIZE`] per handle, the opposite edge never moving)
-  then, unless `suppress_snap` (Shift held — `DESIGNER.md` §4: "Shift
+  then, unless `suppress_snap` (Shift held - `DESIGNER.md` §4: "Shift
   suppresses snapping, as WinForms does"), snaps it ([`snap_bounds`] below)
   against the OTHER children of the same parent plus the parent's own outer
   bounds. The result is [`DesignController::drag_preview`] (a live GHOST
-  rect) — **never written to text**, exactly §2's "intermediate mouse-move
+  rect) - **never written to text**, exactly §2's "intermediate mouse-move
   frames update the design surface's local, client-side preview only".
-- **`DesignController::end_drag(doc) -> DragOutcome`** — mouse-up. Compares
+- **`DesignController::end_drag(doc) -> DragOutcome`** - mouse-up. Compares
   the final live bounds to the drag's own starting bounds and emits one
   `setAttribute` per axis that actually changed (`X`/`Y` for a `Move`,
-  whichever of `X`/`Y`/`Width`/`Height` a `Resize` handle touched — reusing
+  whichever of `X`/`Y`/`Width`/`Height` a `Resize` handle touched - reusing
   the same `nudge_attr` helper DSG-6's own arrow-nudge already uses, so the
   new value is read from `doc`'s CURRENT literal attribute, per that
   function's own "absolute value, never a delta" rule), wrapped as
-  **`DragOutcome::Batch { ops, gesture }`** — never a `DragOutcome::Single`
+  **`DragOutcome::Batch { ops, gesture }`** - never a `DragOutcome::Single`
   for this pair of gestures, because the whole point is that every op in it
   lands as ONE undo unit (below). An unmoved drag (no axis changed) is
   `DragOutcome::None`.
-- **Esc cancels** — [`DesignController::handle_keys`] checks
+- **Esc cancels** - [`DesignController::handle_keys`] checks
   `self.drag.is_some()` BEFORE its existing Esc-to-parent handling: cancelling
-  a drag (`DesignController::cancel_drag`, just drops the session — nothing
+  a drag (`DesignController::cancel_drag`, just drops the session - nothing
   was ever written to text) leaves the SELECTION untouched, unlike the
   ordinary Esc-to-parent case it would otherwise fall into.
 
 **Snapping** (`design::snap_bounds`) is deliberately axis-independent: a
 drag's left/right/h-centre are matched against every candidate rect's own
 left/right/centre-x (and similarly top/bottom/v-centre against y), within
-[`SNAP_THRESHOLD`] DIP, picking the closest match per axis — so a drag can
+[`SNAP_THRESHOLD`] DIP, picking the closest match per axis - so a drag can
 snap horizontally without also snapping vertically, and vice versa. Returns
 both the (possibly shifted, same-size) bounds and the [`SnapGuide`]s that
 fired, for [`paint_drag_preview`] to draw as blue lines. Candidates are
 "every other bounds worth snapping to" (siblings' own painted rects, the
-container's own outer bounds) — `LayoutMap` records painted bounds only, no
+container's own outer bounds) - `LayoutMap` records painted bounds only, no
 padding value (`DesignSlot`'s own doc), so "container padding" (DSG-9 item
 1's own phrasing) snaps to the container's outer edge, the padding-`0` line;
 this is a documented approximation, not the container's real inset.
@@ -913,7 +913,7 @@ A `Reorder` drag session tracks a `reorder_index`, recomputed every
 same parent (the dragged element excluded), their own painted bounds, and
 the pointer's position along whichever axis **[`flow_axis`]** infers the
 container flows along (comparing how much the siblings' own centres spread
-in X vs. Y — `LayoutMap` carries no `Direction` attribute, the same kind of
+in X vs. Y - `LayoutMap` carries no `Direction` attribute, the same kind of
 approximation `snap_bounds` makes for padding). **[`flow_insertion_marker`]**
 turns that same index into the paintable line DSG-9 item 2 asks for ("an
 insertion marker between siblings"), which
@@ -921,28 +921,28 @@ insertion marker between siblings"), which
 [`paint_insertion_marker`]. Mouse-up (`end_drag`) compares the final index to
 the one recorded when the drag armed and, if it moved, emits exactly ONE
 `EditOp::MoveElement { element_id, new_parent_id, index }` as
-`DragOutcome::Single` — DSG-2's own `moveElement` shape (`DESIGNER.md` §8),
+`DragOutcome::Single` - DSG-2's own `moveElement` shape (`DESIGNER.md` §8),
 same parent on both sides (an in-place reorder; DSG-9 never produces a
-cross-container move — out of this package's own scope, §6's table).
+cross-container move - out of this package's own scope, §6's table).
 
 ### Toolbox drop
 
 `design::ToolboxController` is independent of `DesignController` (a toolbox
-drag has no click-selection of its own — the dragged thing is a NEW,
+drag has no click-selection of its own - the dragged thing is a NEW,
 not-yet-inserted component) and directly mirrors the four host→surface
 messages:
 
-- **`drag_enter(component)`** (`kubuno/dragEnter`) — remembers the registry
+- **`drag_enter(component)`** (`kubuno/dragEnter`) - remembers the registry
   element name being dragged; clears any stale target.
 - **`drag_over(layout, doc, x, y) -> Option<&DropTarget>`** (`kubuno/dragOver`)
-  — **routing rule**: if the element directly under the pointer itself
+  - **routing rule**: if the element directly under the pointer itself
   accepts children (`registry::lookup`'s own `ChildrenModel != None`), the
   target is THAT element (dropping "into" it); otherwise the target is its
-  PARENT (dropping "near" a leaf targets its container) — the same rule a
+  PARENT (dropping "near" a leaf targets its container) - the same rule a
   WinForms-class designer uses. The target's `index`/`xy`/`marker` then
   depend on the target container's own registry `LayoutKind`: `DockAnchor`
   gets `xy = Some((x, y))` parent-local DIP (an approximation of the same
-  kind `snap_bounds` already documents — no padding value on hand) and an
+  kind `snap_bounds` already documents - no padding value on hand) and an
   outline ghost sized [`DEFAULT_DROP_WIDTH`]×[`DEFAULT_DROP_HEIGHT`];
   `Flow` gets [`flow_insertion_index`]/[`flow_insertion_marker`] exactly as
   the reorder drag does; anything else (a `SingleWidget` body, `Split`,
@@ -950,21 +950,21 @@ messages:
   the marker. **Validity** (`can_drop_component`) mirrors `crate::validate`'s
   own gating rule at single-candidate granularity: `ChildrenModel::None`
   never accepts; `SingleWidget` only when currently empty (§4's own SDG-1-era
-  note flagged replace-vs-wrap as an undecided product call — DSG-9 makes
+  note flagged replace-vs-wrap as an undecided product call - DSG-9 makes
   neither: an already-filled `SingleWidget` is simply an INVALID drop target,
   same as `ChildrenModel::None`, deferring that decision exactly as before);
   `List(allowed)` accepts an ungated component unconditionally, a GATED one
-  (some other component's own `allowed` names it — `is_gated_anywhere`) only
+  (some other component's own `allowed` names it - `is_gated_anywhere`) only
   when `allowed` itself names it.
-- **`drop() -> Option<EditOp>`** (`kubuno/drop`) — consumes the current
+- **`drop() -> Option<EditOp>`** (`kubuno/drop`) - consumes the current
   target; `None` for no active drag, no computed target, or an INVALID one
-  (DSG-9 item 3's "not allowed… marker" — the surface itself refuses to emit
+  (DSG-9 item 3's "not allowed… marker" - the surface itself refuses to emit
   an edit for it, not just paint a warning). A valid drop emits
   `EditOp::InsertChild { parent_id, index, xml }`, `xml` a skeleton built by
   `skeleton_xml`: `<Component/>` for a Flow/other target, `<Component X="…"
-  Y="…" Width="80" Height="24"/>` for an Anchor one — "sensible defaults", not
+  Y="…" Width="80" Height="24"/>` for an Anchor one - "sensible defaults", not
   a per-component table (out of this package's own scope).
-- **`drag_leave()`** (`kubuno/dragLeave`) — clears the drag entirely.
+- **`drag_leave()`** (`kubuno/dragLeave`) - clears the drag entirely.
 
 ### Wire protocol (extends §9's DSG-6 protocol)
 
@@ -981,11 +981,11 @@ Surface → host (`kubuno_desktop_views::protocol::SurfaceMessage`, new variants
 
 | `type` | Fields | Meaning |
 |---|---|---|
-| `editRequests` | `ops: EditOp[], gesture: "move"\|"resize"` | A move/resize drag's mouse-up — EVERY entry is a `setAttribute` (design.rs's own `end_drag` never batches anything else); the host applies the whole list as ONE undo-scoped compound action (§2, DSG-5's own scope). |
-| `dropTargetChanged` | `target: {valid, parentId, index, xy, marker} \| null` | Re-sent after every `dragOver` (and on `dragLeave`, with `target: null`) — live drop feedback: `valid` is what a real `IDropTarget.DragOver` would read to choose `DROPEFFECT_COPY` vs. `DROPEFFECT_NONE` (the "not allowed" cursor). |
+| `editRequests` | `ops: EditOp[], gesture: "move"\|"resize"` | A move/resize drag's mouse-up - EVERY entry is a `setAttribute` (design.rs's own `end_drag` never batches anything else); the host applies the whole list as ONE undo-scoped compound action (§2, DSG-5's own scope). |
+| `dropTargetChanged` | `target: {valid, parentId, index, xy, marker} \| null` | Re-sent after every `dragOver` (and on `dragLeave`, with `target: null`) - live drop feedback: `valid` is what a real `IDropTarget.DragOver` would read to choose `DROPEFFECT_COPY` vs. `DROPEFFECT_NONE` (the "not allowed" cursor). |
 
 A Flow reorder's `moveElement` and a toolbox drop's `insertChild` both travel
-as the EXISTING single `editRequest { op }` message (§9) — DSG-2's
+as the EXISTING single `editRequest { op }` message (§9) - DSG-2's
 `kubuno/applyEdit` op shape already covers both kinds (§8); DSG-9 adds no new
 message for them, only two more `op.kind` values a consumer must handle.
 
@@ -1006,17 +1006,17 @@ surface: {"type":"dropTargetChanged","target":null}
 `RustDesignSurfaceHost.DragDrop.cs` adds, to the existing `RustDesignSurfaceHost`
 (now a THIRD partial-class piece, alongside the DSG-6-era `.cs`/`.Protocol.cs`):
 
-- **`NotifyDragEnter`/`NotifyDragOver`/`NotifyDrop`/`NotifyDragLeave`** — NOT
+- **`NotifyDragEnter`/`NotifyDragOver`/`NotifyDrop`/`NotifyDragLeave`** - NOT
   named `DragEnter`/`DragOver`/`Drop`/`DragLeave`: `RustDesignSurfaceHost`
   derives from `HwndHost` → `UIElement`, which already declares ROUTED EVENTS
   of those exact names for WPF's own (unrelated) drag-drop system; reusing
   them would only HIDE, not override, WPF's own members (confirmed live: a
-  `CS0108` build warning) — a legal but needlessly confusing shadow this file
+  `CS0108` build warning) - a legal but needlessly confusing shadow this file
   avoids by not colliding on the name at all. Each writes one JSON line via
-  the EXISTING private `SendLine` (`RustDesignSurfaceHost.Protocol.cs`) —
+  the EXISTING private `SendLine` (`RustDesignSurfaceHost.Protocol.cs`) -
   calling a sibling partial-class-part's private member is ordinary C#, not a
   file edit.
-- **`OnDragDropProtocolLine`** — a SECOND, independent listener on the
+- **`OnDragDropProtocolLine`** - a SECOND, independent listener on the
   surface process's own `Process.OutputDataReceived`, recognising only the
   shapes DSG-9 adds that `RustDesignSurfaceHost.Protocol.cs`'s own
   `OnSurfaceProtocolLine` does NOT already parse: the batched `editRequests`,
@@ -1024,27 +1024,27 @@ surface: {"type":"dropTargetChanged","target":null}
   (`DesignSurfaceProtocol.TryParseEditRequest` already returns `false` for
   those two kinds, leaving the line otherwise unhandled), and
   `dropTargetChanged`. The two listeners' recognised shapes are DISJOINT by
-  construction, so a line is never processed twice. Wired LAZILY — from the
+  construction, so a line is never processed twice. Wired LAZILY - from the
   top of every `Notify*` method (`EnsureDragDropListenerWired`), not from the
   constructor: **an instance field initializer cannot call an instance
   method** (`CS0236`, confirmed live while building this file, the first
   approach tried), and this file must not touch `RustDesignSurfaceHost.cs`'s
-  own constructor body either — lazy wiring on first use sidesteps both
+  own constructor body either - lazy wiring on first use sidesteps both
   constraints, and doubles as its own restart-recovery (a fresh `Process`
   instance after a crash compares unequal to whatever was last wired, so the
   very next `Notify*` call re-attaches automatically).
-- **`EditRequestsReceived`/`DragDropEditRequested`/`DropTargetChanged`** — the
+- **`EditRequestsReceived`/`DragDropEditRequested`/`DropTargetChanged`** - the
   three new public events, plus their own event-args/op types
   (`DesignSurfaceGesture`, `DesignSurfaceDragDropOp(Kind)`,
   `DesignSurfaceDropTarget`) mirroring the Rust shapes field-for-field.
   `DesignSurfaceEditOpKind` itself (DSG-6's own two-kind enum, declared in
   `RustDesignSurfaceHost.Protocol.cs`) could not be extended with
-  `MoveElement`/`InsertChild` (C# enums are not `partial`) — the batched
+  `MoveElement`/`InsertChild` (C# enums are not `partial`) - the batched
   `editRequests`' own ops ARE always plain `setAttribute`, so those reuse the
   EXISTING `DesignSurfaceEditOp`/`DesignSurfaceEditOpKind` unchanged; only the
   two DSG-9-specific single-op kinds get the new, separate
   `DesignSurfaceDragDropOp` type.
-- **`DesignSurfaceDragDropProtocol`** — the pure encode/parse half, structured
+- **`DesignSurfaceDragDropProtocol`** - the pure encode/parse half, structured
   exactly like DSG-6's own `DesignSurfaceProtocol`, kept as a separate static
   class rather than added to that one (this package must not touch that
   file).
@@ -1054,7 +1054,7 @@ Forwarding these three events into `kubuno-views-ls`'s `kubuno/applyEdit`
 scope) and turning `DropTargetChanged` into a real OLE `IDropTarget`'s
 `DragOver`/`Drop` effect is wiring left for whichever package connects the
 two ends end-to-end (the same carve-out DSG-6's own doc already states for
-`EditRequested`) — not implemented here.
+`EditRequested`) - not implemented here.
 
 ### Testing
 
@@ -1072,7 +1072,7 @@ no-op) against hand-built `LayoutMap`s and parsed `ast::Document`s; and
 `ToolboxController` end to end (an Anchor drop's `xy`, a Flow drop's bare
 skeleton, a leaf hit routing to its own parent, a gated child rejected
 outside its required parent, an already-full `SingleWidget` rejected, an
-unknown component rejected, `dragLeave` clearing the drag) — 50 tests total
+unknown component rejected, `dragLeave` clearing the drag) - 50 tests total
 in this file, all passing, no live window anywhere. `kubuno-desktop-views/src/protocol
 .rs` unit-tests every new wire shape byte-for-byte (the batched
 `editRequests`, the `moveElement`/`insertChild` single `editRequest`,
@@ -1086,7 +1086,7 @@ asserts the identical `Encode*`/exact-string shapes on the C# side (no live
 process/WPF `Dispatcher` needed), plus every `TryParse*` rejection case
 (wrong `type`, blank/garbage lines, a batch entry that is not `setAttribute`,
 an unrecognised `gesture`, `setAttribute`/`removeElement` correctly left to
-the OTHER parser) — same environment limitation as §9 (`MSTest.TestAdapter.dll`
+the OTHER parser) - same environment limitation as §9 (`MSTest.TestAdapter.dll`
 fails to load on this machine for every test in this project, pre-existing);
 verified by `MSBuild` compiling both `Kubuno.Desktop.Designer.csproj` and
 `Kubuno.Desktop.Tests.csproj` cleanly.
@@ -1098,7 +1098,7 @@ drop onto the `<Card>` root correctly reports `valid:false` (it already has
 its one `SingleWidget` child, the `<Stack>`), walking the pointer down into
 the `<Stack>` correctly reports `valid:true` with an increasing Flow
 insertion `index` and a moving marker, and the final `drop` emits exactly
-`{"kind":"insertChild","parentId":"0","index":3,"xml":"<Button/>"}` — the
+`{"kind":"insertChild","parentId":"0","index":3,"xml":"<Button/>"}` - the
 example traffic block above is taken directly from that run.
 
 ### First-write BOM (found and fixed during this package's own visual check)
@@ -1106,16 +1106,16 @@ example traffic block above is taken directly from that run.
 The first manual trace above surfaced a real bug, not a DSG-9 one but one
 that blocked DSG-9's own visual check outright: the FIRST line ever written
 to a freshly-launched surface's stdin arrived on the Rust side as
-`\u{feff}{...}` — a UTF-8 byte-order mark `str::trim()` does not strip (BOM
+`\u{feff}{...}` - a UTF-8 byte-order mark `str::trim()` does not strip (BOM
 lost its Unicode `White_Space` property in Unicode 6.3), so
 `parse_host_message` correctly, silently ignored it, same as any other
-malformed line — except this "malformed line" was the surface's own
+malformed line - except this "malformed line" was the surface's own
 `setText`, so it never loaded a document and every later gesture (including
 DSG-9's own toolbox drop) had nothing to hit-test against. Traced to
 `RustDesignSurfaceHost.cs`'s own `LaunchSurface` (§7): its `ProcessStartInfo`
 never set an input encoding, so `Process.StandardInput`'s auto-created
-`StreamWriter` used whatever `.NET` picks by default, which — on this
-machine, confirmed live — emits a UTF-8 BOM preamble on the stream's very
+`StreamWriter` used whatever `.NET` picks by default, which - on this
+machine, confirmed live - emits a UTF-8 BOM preamble on the stream's very
 FIRST write only.
 
 Fixed two ways, belt and braces, with the visual-check orchestrator's
@@ -1124,12 +1124,12 @@ this specific bug (both otherwise off-limits to this package):
 
 - **The real fix, at the write site.** `ProcessStartInfo.StandardInputEncoding`
   does not exist on .NET Framework 4.8 at all (confirmed live: `CS0117` on a
-  build attempt — that property was only added in .NET Core 3.0+), so it
+  build attempt - that property was only added in .NET Core 3.0+), so it
   cannot be set the way `StandardOutputEncoding` (which DOES exist on net48,
   and is now also set explicitly, symmetrically) can. `RustDesignSurfaceHost
   .Protocol.cs`'s `SendLine` now writes UTF-8-without-BOM bytes directly to
   `Process.StandardInput.BaseStream` instead of calling `StreamWriter
-  .WriteLine` — bypassing the auto-created writer's preamble logic entirely,
+  .WriteLine` - bypassing the auto-created writer's preamble logic entirely,
   on the first write and every other one.
 - **Defence in depth, on the Rust side.** `kubuno_desktop_views::protocol
   ::parse_host_message` now strips a leading `\u{feff}` before parsing, so a
@@ -1151,7 +1151,7 @@ surface's very first two writes, the probe line's `design=` field turning
 `true`, and the full toolbox-drop pipeline (`dragEnter`/`dragOver`/
 `dropTargetChanged`/`drop`/`DragDropEditRequested`) working end to end.
 
-### Second visual check — findings and fixes
+### Second visual check - findings and fixes
 
 With the BOM fixed, an interactive visual check (real mouse gestures, not
 `--simulate-toolbox`) found two more real bugs, both fixed, and three
@@ -1162,42 +1162,42 @@ implemented).
 
 1. **"Press-and-drag on an unselected element did nothing but select it."**
    `DesignController::press`'s ORIGINAL design required two presses (select,
-   then a second press on the now-selected element to arm the drag) — a
+   then a second press on the now-selected element to arm the drag) - a
    deliberate simplification at the time, but not the WinForms/XAML-class
    "one gesture" behavior DSG-9 item 1 actually asks for. Fixed: `press` now
    selects AND arms the gesture in the SAME press (`DragSession::confirmed:
    false`), and `DRAG_THRESHOLD` (4 DIP) gates when an armed-but-unconfirmed
-   session actually starts moving/reordering — see §10's own "Move/resize
+   session actually starts moving/reordering - see §10's own "Move/resize
    drag" section above, now rewritten to match.
 2. **The C# host logged `editRequests`/`dropTargetChanged` as "unrecognised".**
    Root cause was NOT a parsing mismatch (the wire shapes and
    `DesignSurfaceDragDropProtocol`'s parsing were already correct end to
-   end — confirmed by re-reading both sides' tests side by side) but a
+   end - confirmed by re-reading both sides' tests side by side) but a
    WIRING gap: `RustDesignSurfaceHost.DragDrop.cs`'s own stdout listener
    (`OnDragDropProtocolLine`) was only ever attached from the `Notify*`
    (toolbox-drag) entry points, so if the user's FIRST gesture on a pane was
-   a mouse drag — not a toolbox drop — the listener was never attached at
+   a mouse drag - not a toolbox drop - the listener was never attached at
    all, and the line was seen only by `RustDesignSurfaceHost.Protocol.cs`'s
    own, unrelated listener, which correctly (and misleadingly) logs it as
    unrecognised. Fixed by wiring `EnsureDragDropListenerWired` from a STATIC
    `EventManager.RegisterClassHandler` on `FrameworkElement.LoadedEvent`
    instead (every instance, every `Loaded`, subscribes to `ChildReady`,
-   which fires once per (re)start with a live `Surface`) — see
+   which fires once per (re)start with a live `Surface`) - see
    `RustDesignSurfaceHost.DragDrop.cs`'s own updated doc for the full
    reasoning, including why this still could not be constructor code or a
    field initializer.
 
-**Open** (not implemented under this session's budget constraint — next
+**Open** (not implemented under this session's budget constraint - next
 session's own scope):
 
 3. **Invalid-drop feedback painted the WHOLE surface solid opaque red**
    (`paint_drop_marker`'s `c.fill_rect(&target.marker, color)` branch, hit
-   whenever `target.xy` is `None` — a Flow/other target, including the root
-   `<Card>` itself rejecting a drop — fills `target.marker`, which for a
+   whenever `target.xy` is `None` - a Flow/other target, including the root
+   `<Card>` itself rejecting a drop - fills `target.marker`, which for a
    non-Anchor, non-Flow target is the CONTAINER'S OWN full bounds, not a
    thin line). Needs a subtle indication instead: a red OUTLINE (or a light
    hatched overlay, in this crate's own existing `dashed_outline`-style
-   "draw the geometry ourselves" idiom — no alpha-blended fill primitive is
+   "draw the geometry ourselves" idiom - no alpha-blended fill primitive is
    available without adding a `windows`/Direct2D feature this crate does not
    already depend on, see `PaintCx`/`Canvas`'s own doc) around the target
    container only, plus a "no" cursor (host-side, from
@@ -1206,18 +1206,18 @@ session's own scope):
    trace at the same drop point.** `--simulate-toolbox`'s own fixed short
    path (a few `dragOver` steps then `drop`) landed at `index: 0` where an
    earlier manual trace at a deliberately-chosen deeper point gave `index: 3`
-   — both are `flow_insertion_index`'s correct answer for their OWN actual
+   - both are `flow_insertion_index`'s correct answer for their OWN actual
    drop coordinates (`drop`'s own handler re-evaluates `drag_over` at the
    EXACT drop point, `DESIGNER.md` §10's own "Toolbox drop" section already
    documents this), so this is very likely `--simulate-toolbox`'s fixed path
    not reaching far enough into the `<Stack>` before dropping, not a real
-   index-computation bug — needs a live re-check (move the mouse to the
+   index-computation bug - needs a live re-check (move the mouse to the
    BOTTOM of the `<Stack>` and confirm the drop appends) before treating it
    as one.
 5. **The move ghost is a thin outline, easy to miss against the original.**
    `paint_drag_preview` currently only strokes `preview`'s outline. Wanted: a
    translucent filled rectangle (~20% alpha) plus the outline, optionally
-   dimming the original — blocked on the same "no alpha-blended fill
+   dimming the original - blocked on the same "no alpha-blended fill
    primitive available in this crate without a new dependency" constraint as
    item 3; the same hatched-fill idiom would work here too.
 
@@ -1779,7 +1779,7 @@ do exactly that:
   `selectionChanged`/`select`/`selectMany`, as `selectMany` for a multi-selection). Late stdout lines and
   the `Exited` event of the replaced process are ignored (`sender != _surface`).
 - **Info bar** (`DesignerSplitView`, VS info colours): shown in Design/Split mode unless the state is
-  *Project* - "Aperçu : runtime intégré — générez le projet pour utiliser sa propre kubuno_desktop_ui." + **Générer**
+  *Project* - "Aperçu : runtime intégré - générez le projet pour utiliser sa propre kubuno_desktop_ui." + **Générer**
   (`IVsSolutionBuildManager.StartSimpleUpdateProjectConfiguration`, a normal build whose completion runs the
   design build), "Aperçu : compilation de l'aperçu…" + **Annuler**, failure (+ detail) + **Générer**, or the
   not-applicable text. Progress and errors (cargo stderr, rustc output) go to the *Kubuno* output pane.
@@ -1849,7 +1849,7 @@ surface does now:
 
 | Cause | Before | Now |
 |---|---|---|
-| XML not well-formed while typing | blank page until the first good text; then the last good tree, unmarked | the last good preview, **dimmed**, and the banner « La vue contient des erreurs — dernier aperçu valide affiché » |
+| XML not well-formed while typing | blank page until the first good text; then the last good tree, unmarked | the last good preview, **dimmed**, and the banner « La vue contient des erreurs - dernier aperçu valide affiché » |
 | A broken file opened first | blank page | what the error-tolerant parser recovered, rebuilt into well-formed text and compiled tolerantly (state `recovered`) |
 | Unknown element (typo, newer control, project control not built, gated child in the wrong parent) | blank page | a **placeholder** at its place: hatched dashed box, puzzle icon, `<Name>`, the reason; its children built inside it; selectable, movable, resizable |
 | Unknown attribute, invalid value (enum, number, colour, design-time attribute below the root) | blank page | the attribute is ignored (the property keeps its default) and the element gets a **warning marker** |
@@ -1984,7 +1984,7 @@ checked.
   Completion is the drop-down's search box and the XML editor's: an auto-complete list on the grid's own edit box was tried
   and brought Visual Studio down (a handle re-created under another DPI context), so the grid's controls are left alone.
 - **Commands** of a bindable row (`BindingCommands`): « Créer une liaison… » (unbound), « Modifier la liaison… »,
-  « Supprimer la liaison (rétablir la valeur) », « Aller à la définition » (bound) — also the picker's links. They are placed in
+  « Supprimer la liaison (rétablir la valeur) », « Aller à la définition » (bound) - also the picker's links. They are placed in
   `IDM_VS_CTXT_PROPBRS` / `IDG_VS_PROPBRS_MISC`, but Visual Studio 18's Properties window builds its own context menu
   (Réinitialiser, Commandes, Description) and does not show extension commands there (checked live): they are reached from
   the picker, `Tools > Customize` or a key binding. F12 while the focus is in the grid on a bound row goes to the
@@ -2000,8 +2000,8 @@ The source picker on the left; on the right the path and the source component, t
 with a line of help), the converter (built-in and project ones, editable) and its parameter, the format (presets,
 editable), the culture, the value when null, the fallback value, the design-time value (`d:Property`), a sample source
 value with what the property shows (live, `kubuno/bindingPreview`), and the resulting expression. OK writes only what
-changed — the expression is edited part by part (`BindingMarkup`: unknown keys, the order of the parts and the alias in
-use are kept; the default mode or trigger is written only if it already was) — then the `d:` attribute, in one
+changed - the expression is edited part by part (`BindingMarkup`: unknown keys, the order of the parts and the alias in
+use are kept; the default mode or trigger is written only if it already was) - then the `d:` attribute, in one
 dispatcher turn: **one undo unit** (`PropertyEditBatcher`). « Supprimer la liaison (rétablir la valeur) » removes the
 binding and keeps the value the designer showed: the design-time value becomes the property's value (its `d:` goes),
 else the attribute goes. The dialog is in the dialog gallery (sample schema).
@@ -2013,7 +2013,7 @@ member's values (the binding and its `d:`), applied with the rest at OK.
 
 ### Data Sources window (docs/DATA.md §21)
 
-A « Modèle de vue — Type » node lists the active view's data context; a member dragged onto a control binds it, onto
+A « Modèle de vue - Type » node lists the active view's data context; a member dragged onto a control binds it, onto
 empty space it adds a label and a bound control (`BindingDropPlanner`).
 
 ### Limits
@@ -2042,12 +2042,12 @@ kept); « Avancé… » opens « Liaison de données », whose OK wrote the bind
 `Edit.Undo` removed both; « Supprimer la liaison » removed it; a typed `{Binding Statut}` got the amber marker,
 « ⚠ chemin inconnu » and the Error List warning; F12 in the grid and « Aller à la définition » opened the row chain's
 `.with("Title", …)` in the code-behind; the live sample showed the runtime's `N0`/`fr-FR` format and the `Not`
-converter; the Data Sources window listed « Modèle de vue — StorageSection » and inserted a bound `TextField`; a member
+converter; the Data Sources window listed « Modèle de vue - StorageSection » and inserted a bound `TextField`; a member
 dropped on a control bound it; the collection editor's « ▾ » offered the `DataTable` row's fields and a click set the
 column's `Binding`. Found and fixed during the check: the first picker (WPF in an `ElementHost`) closed on a mouse click
 (now Windows Forms), an auto-complete list on the grid's edit box brought Visual Studio down (removed), the binding
 commands are not shown by the Properties window's own context menu (links of the picker instead), the collection
-editor showed the buttons only from the second member (the first is now refreshed — fixed after the check).
+editor showed the buttons only from the second member (the first is now refreshed - fixed after the check).
 
 ## 19. Menus (as built 2026-10-02)
 
@@ -2056,7 +2056,7 @@ The menu family and its designer are described in [MENUS.md](MENUS.md) §5. In s
 every row a selectable element; « Tapez ici » slots take typed items in place (Enter: next, Tab: sub-menu, `-`: a
 separator; F2 renames), the slot's « ▾ » adds a separator or a header, rows drag within and across levels, the smart
 tag inserts the standard items (Fichier, Édition, Outils, Aide) and edits the items, and a double-click creates the
-row's `OnClick` handler like a button's. Protocol additions: none — the slots and drags produce the existing
+row's `OnClick` handler like a button's. Protocol additions: none - the slots and drags produce the existing
 `insertChild`, `setAttribute` and `moveElement` edit requests, and the « ▾ » / smart tag reuse the `contextMenu`
 message with `menu: "add" | "tasks"`.
 

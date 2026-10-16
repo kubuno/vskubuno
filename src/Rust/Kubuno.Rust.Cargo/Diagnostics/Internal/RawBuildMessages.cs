@@ -8,7 +8,7 @@ namespace Kubuno.Rust.Cargo.Diagnostics.Internal
     // curated models (CargoDiagnostic, CargoArtifact...) so the public API stays small and
     // Error-List-shaped while parsing still sees every field it needs. Deliberately omits
     // fields CargoMessageParser never reads (byte offsets, span "text" snippets, macro
-    // expansion...) — System.Text.Json ignores unknown JSON members by default, so Cargo can
+    // expansion...) - System.Text.Json ignores unknown JSON members by default, so Cargo can
     // keep adding fields without breaking this. Property names all follow Cargo's snake_case
     // convention, so they round-trip through CargoJsonOptions' naming policy without needing
     // per-property [JsonPropertyName] attributes.

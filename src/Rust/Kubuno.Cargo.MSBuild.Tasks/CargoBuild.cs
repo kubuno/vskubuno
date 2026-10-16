@@ -38,7 +38,7 @@ namespace Kubuno.Cargo.MSBuild.Tasks
 
         /// <summary>
         /// The built executable's absolute path once <see cref="CargoBuildTaskBase.Execute"/>
-        /// returns — the authoritative <c>compiler-artifact</c> path when cargo actually rebuilt
+        /// returns - the authoritative <c>compiler-artifact</c> path when cargo actually rebuilt
         /// the target, otherwise a path-convention fallback (<see cref="ExecutableResolver"/>) for
         /// an incremental, already-fresh build. This is what <c>Sdk.targets</c> assigns to
         /// <c>$(TargetPath)</c>.

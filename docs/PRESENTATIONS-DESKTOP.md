@@ -1,8 +1,8 @@
-# Kubuno Presentations (desktop) — design note
+# Kubuno Presentations (desktop) - design note
 
 Status: design of record for the native desktop version of the office module's presentation editor
 (`kubuno-presentations.exe`), written before any code (mission of 2026-10-07: « the desktop app must fully catch
-up with the web version — every feature of the web Presentations editor, not a subset »). It follows the method of
+up with the web version - every feature of the web Presentations editor, not a subset »). It follows the method of
 `DOCUMENTS-EDITING.md`: the web editor is the behavioural and visual reference, its engine is ported into a
 platform-neutral shared core, the desktop app is the portable app of `desktop/common` plus the Win32 window of
 `desktop/windows`. Section 7 (coverage) and section 8 (log) are kept up to date as increments land.
@@ -158,7 +158,7 @@ Server facts that shape the client:
 - Any slide write creates a draft file (`ensure_pres_content_file`) that only `leave` cleans up; reads prefer the
   draft. Access is owner OR collaborator for every route here (unlike Documents' owner-only sessions).
 - Request bodies are capped at axum's default 2 MiB per request (no `DefaultBodyLimit`): a slide whose JSON exceeds
-  it is refused with 413 forever — terminal for that slide. Images go to assets, so only legacy `data:` images can
+  it is refused with 413 forever - terminal for that slide. Images go to assets, so only legacy `data:` images can
   hit it.
 - The web keeps Yjs (`office-presentation:<id>` room, one `Y.Map` of `{elements, notes}` per slide) for live merge.
   The desktop does not speak Yjs in this lot (§6): web clients see desktop writes on their next load, and a web
@@ -183,7 +183,7 @@ office/
 | `render` | `SlideRenderer`, `presentationChart.ts`, `presentationTable.ts` | the slide drawn through a Canvas-2D-like surface trait (paths, gradients, text runs, images, transforms, opacity, shadow, clip) that each platform implements |
 | `edit` | `SlideCanvas` gestures and commands | selection, hit testing, move/resize/rotate/knob/crop/draw state machine, snapping, every ribbon and menu command as a pure function over the slide |
 | `history` | `PEP:4976` | per-slide element snapshots, 500 ms sliding coalescing, depth 80 |
-| `show` | `PresenterMode` | the slideshow sequence (visible slides, animation steps, reveal timing, transition progress, autoplay, loop) — pure, time given by the caller |
+| `show` | `PresenterMode` | the slideshow sequence (visible slides, animation steps, reveal timing, transition progress, autoplay, loop) - pure, time given by the caller |
 | `smartart`, `layouts` | `presentationSmartArt.ts`, `SLIDE_LAYOUTS` | generators |
 
 No Win32, no clock, no randomness: ids come from an injected generator (the web's `uid()`: 8 base-36 characters),
@@ -196,14 +196,14 @@ shape paths, rich-text line breaking with a fixed measurer, chart and table draw
 
 ### 3.2 Desktop app
 
-`desktop/common/kubuno-office-presentations-common` — everything but the window: launch options (`--doc <id>`,
+`desktop/common/kubuno-office-presentations-common` - everything but the window: launch options (`--doc <id>`,
 local `.kbsld`/JSON file, `--dark`, `--culture`, `--zoom`, `--sample`), the open deck's view state, the server client
 (routes above) and the save session (§4), the crash journal, the platform extension points (`LaunchRules`,
 `UiHost`) and a text interface for Linux/macOS until their windows exist. It reuses Documents' portable pieces
 (`kubuno-office-desktop-common`: HTTP transport over the shell's token broker, error mapping, digests, ids) instead
 of copying them; what both apps need beyond that is factored into `desktop/common` when Documents' owner agrees.
 
-`desktop/windows/kubuno-office-presentations` — `kubuno-presentations.exe`: `presentation_window.kbview` (TitleBarStyle
+`desktop/windows/kubuno-office-presentations` - `kubuno-presentations.exe`: `presentation_window.kbview` (TitleBarStyle
 Tall with the header menus, the declarative `<Ribbon>` with the web's tabs, the QAT, the Backstage, the status bar)
 and the custom controls drawn with the framework's `on_paint`: `SlidePanel` (thumbnails), `SlideCanvas` (the
 editing surface), `NotesPane`, `SlideShowWindow` (full screen). The core's surface trait is implemented with
@@ -229,12 +229,12 @@ The web has no conflict protection beyond Yjs. The desktop adds the Documents ru
 
 ## 5. Increments
 
-- **A — read-only display at parity**: crates, model round trip, rendering of every element type, slide panel,
+- **A - read-only display at parity**: crates, model round trip, rendering of every element type, slide panel,
   notes, status bar, ribbon shell, light/dark, open a local file and `--doc <id>` through the shell's broker.
-- **B — editing**: selection and the pointer state machine, text editing, every ribbon/menu command with checked
+- **B - editing**: selection and the pointer state machine, text editing, every ribbon/menu command with checked
   states, undo/redo, slide operations, slideshow.
-- **C — save**: §4, journal, conflict dialog, 413.
-- **D — the rest of the web**: export PDF/PNG/JPG, image assets, charts/tables/SmartArt editors, backstage start page,
+- **C - save**: §4, journal, conflict dialog, 413.
+- **D - the rest of the web**: export PDF/PNG/JPG, image assets, charts/tables/SmartArt editors, backstage start page,
   share, presence (read-only), remote control (needs Yjs: §6).
 - **VS**: the views open in the designer; `Kubuno.Office.slnx` regenerated (`KUBUNO_GEN_REPO=office
   KUBUNO_GEN_FRESH=1`).
@@ -242,7 +242,7 @@ The web has no conflict protection beyond Yjs. The desktop adds the Documents ru
 ## 6. Risks and open questions
 
 - Yjs: live merge with web clients and the phone remote need a Rust Yjs client (`yrs`) speaking the core's collab
-  protocol — a lot in itself; out of this lot unless time allows. Until then concurrent web editing of the same
+  protocol - a lot in itself; out of this lot unless time allows. Until then concurrent web editing of the same
   slide is last-writer-wins on the web side.
 - Server: no concurrency token (a slide revision or an etag on `GET …/:sid` would make the digest re-read
   unnecessary); interleaved read-modify-writes; drafts that outlive web sessions. To report to the office owner.
@@ -273,12 +273,12 @@ Desktop paths: `office/common/slides-core` (core), `office/desktop/common/kubuno
 | F10 | SmartArt | `presentationSmartArt.ts` | ✔ core `smartart` (tests); ◐ insertion |
 | F11–F13 | Select, marquee, move, smart guides, grid snap, resize, rotate, knobs, crop | `PEP:2002-2368` | ✔ core `edit` (tests mirroring the web; locked-selectable and line-move bugs fixed); ◐ canvas input |
 | F14 | Tools (text, shape draw, 7 line kinds) | `PEP:2056-2098` | ✔ core; ◐ toolbar / gallery arming |
-| F15 | Double click (text, cell, crop, polyline end) | — | ◐ canvas |
+| F15 | Double click (text, cell, crop, polyline end) | - | ◐ canvas |
 | F16 | Canvas keyboard | `PEP:2768` | ✔ core `key` (tests); ◐ canvas |
 | F17 | Element menu (all sections incl. shape/image/text/line) | `PEP:3106` | ✔ actions (common `model/actions.rs`, tests); ◐ menu clicks |
 | F18 | Ground menu (background, 11 layouts, guides) | `PEP:3248` | ◐ |
 | F19 | Rich text editing, marks, paragraph attrs, fit menu | `PEP:2664` | ✔ core `textedit`, `format` (tests); ◐ caret/IME in the canvas (no IME composition window yet) |
-| F20 | Zoom pill (fit, ±, %, grid, snap, checker, dark, ruler) | — | ✔ drawn (capture); ◐ clicks |
+| F20 | Zoom pill (fit, ±, %, grid, snap, checker, dark, ruler) | - | ✔ drawn (capture); ◐ clicks |
 | F21 | Slide list (selection, drag reorder, footer, menu) | `PEP:1435` | ◐; resizable width ✘ (fixed 150) |
 | F22 | Layouts, placeholders | `PEP:351` | ✔ core (tests) + capture |
 | F23 | Background editor | `PEP:4866` | ◐ dialog + side panel |
@@ -287,18 +287,18 @@ Desktop paths: `office/common/slides-core` (core), `office/desktop/common/kubuno
 | F26 | Insertion (shape gallery) + toolbar insertions | `PEP:5513`, `SlideToolbar` | ◐ |
 | F27 | Disposition | `PEP:5551` | ◐ (all commands wired to tested core ops) |
 | F28 | Animations tab | `PEP:5585` | ◐ |
-| F29/F30 | Transitions tab, Forme tab | — | ◐ |
-| F31 | Backstage | `useFileTab` | ✔ Accueil (recent, browse, new, open, duplicate, trash — real input on a dev core), Informations, Ouvrir, Enregistrer une copie, Exporter PDF, Imprimer (preview, one slide per sheet), Fermer |
+| F29/F30 | Transitions tab, Forme tab | - | ◐ |
+| F31 | Backstage | `useFileTab` | ✔ Accueil (recent, browse, new, open, duplicate, trash - real input on a dev core), Informations, Ouvrir, Enregistrer une copie, Exporter PDF, Imprimer (preview, one slide per sheet), Fermer |
 | F32 | Slideshow (keys, click, black, numbers, autoplay, loop, timer, notes, bar) | `PEP:4285` | ✔ opened from the title band, slide drawn, ✕ and Escape close (real input); keys B/N/P/L not re-run by hand |
 | F33 | Entry animations, transitions | `PEP:4442` | ✔ core (tests); ◐ drawing (layers for fade/wipe) |
 | F34 | Phone remote, laser | Yjs awareness | ✘ (no Yjs on the desktop) |
 | F35 | Per-slide persistence | §2 | ✔ live round trip test on a dev core (`tests/live_roundtrip.rs`): edits identical, conflict kept until « keep mine », 413 terminal per slide |
 | F36 | Undo/redo (500 ms coalescing, depth 80) | `PEP:4976` | ✔ core `history` (tests) |
 | F37 | Image assets upload (`kbfile:`) | `PEP:4719` | ✔ insert / replace / background upload as assets (multipart), verified on a dev core: a 1.5 MB PNG stored as an asset, the slide JSON 1.2 KB; `data:` images still read; legacy `data:` images migrated on open (distinct images uploaded once, element and background refs rewritten, changed slides saved; verified on a dev core: no `data:` left, 2 `kbfile:` refs) |
-| F38 | Rename, star, trash, share, presence, Yjs merge | — | ✔ title field (rename at the next publish tick), star (verified on the server); trash from the start page; share dialog (search, add, change role, withdraw — real input on a dev core with a second account), presence avatars from the session editors (not exercised live: one account per window); Yjs replaced by the digest-guarded save (by design) |
+| F38 | Rename, star, trash, share, presence, Yjs merge | - | ✔ title field (rename at the next publish tick), star (verified on the server); trash from the start page; share dialog (search, add, change role, withdraw - real input on a dev core with a second account), presence avatars from the session editors (not exercised live: one account per window); Yjs replaced by the digest-guarded save (by design) |
 | F39 | Status bar | `PEP:6061` | ✔ capture vs web |
-| — | Exports PDF/PNG/JPG/all | `PEP:5034` | ✔ off-screen render + PDF writer (tests); ◐ dialogs |
-| — | Web top bar extras (slide navigator, Slideshow button, share, « Affichage » tab of OfficeShell, Macros) | `OfficeShell` | ✔ navigator, Diaporama, Affichage › Plein écran (F11: maximize — a window resized over the taskbar is not laid out again by the framework at desktop-v0.1.1-alpha); share, the whole header cluster (bell with counter and this window's notices, settings menu with light/dark live, help menu), Macros ✘ |
+| - | Exports PDF/PNG/JPG/all | `PEP:5034` | ✔ off-screen render + PDF writer (tests); ◐ dialogs |
+| - | Web top bar extras (slide navigator, Slideshow button, share, « Affichage » tab of OfficeShell, Macros) | `OfficeShell` | ✔ navigator, Diaporama, Affichage › Plein écran (F11: maximize - a window resized over the taskbar is not laid out again by the framework at desktop-v0.1.1-alpha); share, the whole header cluster (bell with counter and this window's notices, settings menu with light/dark live, help menu), Macros ✘ |
 
 ## 7.1 As built (2026-10-07)
 
@@ -319,22 +319,22 @@ Desktop paths: `office/common/slides-core` (core), `office/desktop/common/kubuno
 
 ## 8. Log
 
-**2026-10-07** — design note; `kubuno-office-shapes-core` (shared with Diagrams) committed with its golden test
+**2026-10-07** - design note; `kubuno-office-shapes-core` (shared with Diagrams) committed with its golden test
 against the web engine (every catalogue kind and slide kind: sub-paths, text frames, knobs).
 
-**2026-10-07** — `kubuno-office-slides-core` and `kubuno-office-presentations-common` (office 35047eb, c999f89,
+**2026-10-07** - `kubuno-office-slides-core` and `kubuno-office-presentations-common` (office 35047eb, c999f89,
 f01eebf); the Windows app `kubuno-presentations.exe` (office 53713c1), the solution regenerated by the generator
 (4e975fa), the live round trip test (9be547b). Coverage in §7; next: real-input runs, UIA, designer check, asset
 upload, backstage start page, title field and the web top bar's extras.
 
-**2026-10-07 (2)** — image assets, Backstage home and print, title band, favourite, View tab (office f97cef7), all
+**2026-10-07 (2)** - image assets, Backstage home and print, title band, favourite, View tab (office f97cef7), all
 exercised with real input against a dev core through the sandboxed shell's broker (input lock held). Found and
 fixed on the way: the slideshow stage started before its control existed (black screen), Escape reached no
 control, background images stored under the element key, the star read a state the checkable command had
 already flipped. Framework limits seen: a window resized to the monitor's full size from code is not laid out
 again (`[host] resize … 0x887A0001`), the Backstage leaves the slide list's footer visible at its bottom.
 
-**2026-10-07 (3)** — legacy `data:` images migrated on open, sharing, presence, the header cluster, Backstage
+**2026-10-07 (3)** - legacy `data:` images migrated on open, sharing, presence, the header cluster, Backstage
 footer (office cd23332, f8a17de). Real input on a dev core: share dialog (search, add, role change, withdraw with
 a second account), bell (empty menu, counter), settings menu (light/dark live), help menu (« À propos » resolves
 to the server's `/about`), Backstage without the slide list's footer. Framework limits found: `HeaderActions`

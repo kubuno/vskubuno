@@ -9,11 +9,11 @@ using MSBuildTask = Microsoft.Build.Utilities.Task;
 namespace Kubuno.Cargo.MSBuild.Tasks
 {
     /// <summary>
-    /// <c>cargo fetch</c>: downloads dependencies without building — the <c>Kubuno.Rust.Sdk</c>
+    /// <c>cargo fetch</c>: downloads dependencies without building - the <c>Kubuno.Rust.Sdk</c>
     /// <c>CargoRestore</c> target's own NuGet-free "Restore" step (docs/RSPROJ.md §2). Kept
     /// separate from <see cref="CargoBuildTaskBase"/>: <c>cargo fetch</c> has no
     /// <c>--message-format</c> support (it emits no build diagnostics), so nothing here needs the
-    /// JSON streaming/parsing the build/test tasks do — only an exit code and stderr passthrough.
+    /// JSON streaming/parsing the build/test tasks do - only an exit code and stderr passthrough.
     /// </summary>
     public sealed class CargoFetch : MSBuildTask
     {

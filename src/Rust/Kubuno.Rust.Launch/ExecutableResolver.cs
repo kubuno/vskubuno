@@ -13,11 +13,11 @@ namespace Kubuno.Rust.Launch
         ///
         /// Precedence (highest first):
         /// 1. <see cref="LaunchTarget.TestBinaryPath"/> for a <see cref="LaunchTargetKind.Test"/>
-        ///    target, as reported by `cargo test --no-run --message-format=json` — the
+        ///    target, as reported by `cargo test --no-run --message-format=json` - the
         ///    authoritative source, since test binary names are mangled with a hash suffix
         ///    (`my_test-1a2b3c4d5e6f.exe`) that path convention alone can't reproduce.
         /// 2. <see cref="LaunchTarget.CargoExecutablePath"/> for a bin/example target, as
-        ///    reported by cargo's `compiler-artifact` JSON message — authoritative because
+        ///    reported by cargo's `compiler-artifact` JSON message - authoritative because
         ///    it's what Cargo actually produced.
         /// 3. Path-convention fallback: `&lt;target-dir&gt;/[&lt;triple&gt;/]&lt;profile-dir&gt;/[examples/]&lt;name&gt;.exe`,
         ///    used when no `cargo … --message-format=json` output is available yet (e.g. a
